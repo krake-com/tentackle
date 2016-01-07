@@ -1,0 +1,47 @@
+#@/blah/somefile.java:123
+## Root entity for invoice lines.
+name := Invoice
+id := 1
+comment := the invoice header
+table := invoice
+integrity := related
+
+## attributes
+[size, autoselect, tracked, tokenlock, tableserial]
+
+long             subsidiaryId    subsidiary_id     subsidiary ID [context]
+String(10)       invoiceNo       invoice_no        the unique invoice number [uc]
+Date             invoiceDate     invoice_date      the invoice's date
+Long             customerId      customer_id       object ID of the customer [uc]
+String(200)      address         address           the address (multiline) [default 'blah x' , uc]
+DMoney           total           total             sum (without tax)
+DMoney           tax             tax               tax (vat)
+Timestamp        printed         printed           first printed [utc, default 1970-01-01 00:00:00.000]
+Double(10,2)     someDouble      some_double       digits with scale
+MyType<int>      extra           extra             some application specific type
+# some binary object
+Binary<Blah>     blah            blah
+Boolean          testBool        testbool          some boolean [default true]
+
+## indexes
+unique index invoice_no := subsidiary_id, invoice_no
+index invoice_customer := customer_id
+# to show latest invoices
+index invoice_date := invoice_date
+
+## validations
+invoiceNo:    @NotNull(message="{ @('please_enter_the_invoice-number') }")
+invoiceDate:  @NotNull(scope=AllScope.class, message="{ @('please_enter_the_invoice-date') }", condition="{ object?.printed == null }")
+total:        @NotNull(scope=PersistenceScope.class),
+              @Greater(value="0", scope=PersistenceScope.class, condition="{ object.printed != null }")
+
+## relations
+InvoiceLine:
+     relation = composite referenced list,
+     link = setInvoice position,
+     comment = the invoice lines,
+     select = lazy
+
+# the customer object
+Customer: select = cached,
+          @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}")

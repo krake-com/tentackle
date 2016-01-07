@@ -1,0 +1,138 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+package org.tentackle.fx;
+
+import java.util.Collection;
+import javafx.scene.image.Image;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.util.BuilderFactory;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.table.TableConfiguration;
+
+
+interface FxFactory$Singleton {
+  static FxFactory INSTANCE = ServiceFactory.createService(FxFactory.class);
+}
+
+/**
+ * A factory for FX-related stuff.
+ *
+ * @author harald
+ */
+public interface FxFactory {
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  static FxFactory getInstance() {
+    return FxFactory$Singleton.INSTANCE;
+  }
+
+
+  /**
+   * Gets all classes annotated with {@link FxControllerService}.
+   *
+   * @return the classes
+   */
+  Collection<Class<FxController>> getControllerClasses();
+
+
+  /**
+   * Loads all controllers marked with {@link FxControllerService.CACHING#PRELOAD}.
+   */
+  void preloadControllers();
+
+
+  /**
+   * Gets the builder factory.
+   *
+   * @return the FX builder factory
+   */
+  BuilderFactory getBuilderFactory();
+
+
+  /**
+   * Gets the configurator for a given class.
+   *
+   * @param clazz the class
+   * @return the configurator, null if none
+   */
+  <T> Configurator<T> getConfigurator(Class<T> clazz);
+
+
+  /**
+   * Creates a value translator.
+   *
+   * @param <M> the model type
+   * @param <V> the view type
+   * @param modelClass the model's value class
+   * @param viewClass the view's value class
+   * @param component the fx component
+   * @return the value translator best fitting for the requested types
+   */
+  <M,V> ValueTranslator<V,M> createValueTranslator(Class<M> modelClass, Class<V> viewClass, FxComponent component);
+
+
+  /**
+   * Creates a configured stage.
+   *
+   * @param stageStyle the style
+   * @param modality the modality
+   * @return the stage
+   */
+  Stage createStage(StageStyle stageStyle, Modality modality);
+
+
+  /**
+   * Creates a controller together with its FXML-based view.<br>
+   * The controller class must be annotated with {@link FxControllerService}.
+   *
+   * @param <T> the controller type
+   * @param controllerClass the controller class
+   * @return the initialized controller
+   */
+  <T extends FxController> T createController(Class<T> controllerClass);
+
+
+  /**
+   * Gets the given image.
+   *
+   * @param realm the realm, null of empty if tentackle images
+   * @param name the image name
+   * @return the image
+   * @throws IllegalArgumentException if no such image and/or realm
+   */
+  Image getImage(String realm, String name);
+
+
+  /**
+   * Creates a configuration.
+   *
+   * @param template a template object
+   * @param name the table's name, null if basename from effective class of template
+   * @return the table configuration
+   */
+  <S> TableConfiguration<S> createTableConfiguration(S template, String name);
+
+}

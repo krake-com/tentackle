@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.search.PdoSearch">
+   <bottom>
+      <HBox fx:id="buttonBox" alignment="CENTER_RIGHT" spacing="5.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="treeButton" mnemonicParsing="false" />
+            <Label fx:id="countLabel" text="0" />
+            <TextField fx:id="filterField" />
+            <Button fx:id="filterButton" text="%filter" />
+            <HBox minWidth="30.0" HBox.hgrow="ALWAYS" />
+            <Button fx:id="newButton" text="%new" />
+            <Button fx:id="findButton" text="%find" />
+            <Button fx:id="okButton" text="%ok" />
+            <Button fx:id="cancelButton" text="%cancel" />
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+      </HBox>
+   </bottom>
+</BorderPane>

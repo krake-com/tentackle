@@ -1,0 +1,35 @@
+@[
+    if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+]@
+    if (isClassIdRequiredInWhereClause()) {
+      st.setInt(ndx++, getValidClassId());
+    }
+@[
+    }
+    if (getContextAttribute() != null) {
+]@
+    st.@(createJdbcSetterName(getContextAttribute()))@(ndx++, @(getContextAttribute().getJavaName())@);
+@[
+    }
+    for (WurbletParameter par: getMethodParameters())  {
+      if (par.isSqlArg()) {
+        Attribute attr = par.getAttribute();
+        if (attr.getOptions().isMapNull())  {
+]@
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getSqlArg()))@, true);
+@[
+        }
+        else  {
+]@
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getSqlArg()))@);
+@[
+        }
+        // for multi column types, such as BMoney/DMoney
+        for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+]@
+    ndx++;
+@[
+        }
+      }
+    }
+]@

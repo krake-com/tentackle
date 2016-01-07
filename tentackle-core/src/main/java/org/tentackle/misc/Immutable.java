@@ -1,0 +1,65 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.misc;
+
+import org.tentackle.log.Logger.Level;
+
+/**
+ * Objects implementing this interface may be mutable or immutable.
+ *
+ * @author harald
+ */
+public interface Immutable {
+
+  /**
+   * Sets the immutable property.
+   * <p>
+   * Any attempt to modify an immutable object
+   * results in an {@link ImmutableException}, if logging level is null.
+   *
+   * @param immutable true if object is immutable
+   */
+  void setImmutable(boolean immutable);
+
+  /**
+   * Returns whether object is immutable.
+   * <p>
+   * By default objects are mutable.
+   *
+   * @return true if immutable
+   */
+  boolean isImmutable();
+
+  /**
+   * Sets the optional logging level.<br>
+   * If set, any attempt to modify an immutable object will just
+   * log the violation instead of throwing an {@link ImmutableException}.
+   *
+   * @param immutableLoggingLevel the logging level, null if no logging
+   */
+  void setImmutableLoggingLevel(Level immutableLoggingLevel);
+
+  /**
+   * Gets the logging level.
+   *
+   * @return the logging level, null if no logging (default)
+   */
+  Level getImmutableLoggingLevel();
+
+}

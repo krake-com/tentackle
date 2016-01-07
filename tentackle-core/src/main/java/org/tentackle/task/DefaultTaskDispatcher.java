@@ -1,0 +1,963 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.task;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.tentackle.daemon.Supervisable;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.NamedCounter;
+
+
+/**
+ * A thread executing tasks in a serialized manner.
+ * <p>
+ * Primariliy, the task dispatcher executes tasks from a queue.
+ * Additionally, dispatchers can be locked by the application which will
+ * prevent tasks from being executed until the dispatcher is unlocked again.
+ * This is particularly useful whenever resources must be shared between the dispatcher and the application.<br>
+ * The TaskDispatcher's lock/unlock synchronization may be either mutex- or counter-based.
+ * Mutex-based is the preferred method if the lock and its corresponding unlock operation is invoked
+ * from the same thread. Any attempt to unlock from a different thread will result
+ * in an {@link IllegalMonitorStateException}.<br>
+ * If different threads may lock and unlock, counter-based synchronization should be used instead.
+ * For example, RMI services requests via threads from a threadpool and consecutive RMI-requests
+ * may be serviced by different threads.<br>
+ * With counter based synchronization it is stronly recommended to provide
+ * an application-specific locking key for each lock/unlock operation. This ensures
+ * that only threads with the correct key (usually a shared resource) may unlock the dispatcher.
+ *
+ * @author harald
+ */
+public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Supervisable  {
+
+  /**
+   * Name-based daemon instance counter.
+   */
+  public static final NamedCounter instanceCounter = new NamedCounter();   // daemon instance counter
+
+  /** The logger for this class. */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTaskDispatcher.class);
+
+  private static final DateFormat MILLIS_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
+
+  private static final AtomicLong taskCounter = new AtomicLong();           // global task ID
+
+
+  private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
+  private ReentrantReadWriteLock mutex;                 // mutex lock
+  private long sleepInterval;                           // keepalive in ms
+  private long deadInterval;                            // dead detection interval in ms, 0 if disabled
+  private long shutdownIdleTimeout;                     // shutdown thread after idle milliseconds, 0 if permanent
+  private long lastActivity;                            // last activity, 0 if a tasks is currently executed
+  private final ConcurrentSkipListSet<Task> queue;      // the job queue
+  private final ConcurrentHashMap<Long,Task> idMap;     // tasks by id
+  private final List<TaskListener> listeners;           // task listeners
+  private final ReentrantReadWriteLock interruptMutex;  // mutex lock to prevent interrupts during execution of task
+  private int nonMutexLockCount;                        // non-mutex lock count
+  private Object unlockKey;                             // optional key to unlock
+  private volatile long lastMillis;                     // last milliseconds to check for dead dispatcher
+  private volatile boolean stopRequested;               // true if stop has been requested
+  private volatile boolean killed;                      // true if daemon has been killed
+  private volatile boolean delayInterrupt;              // true if delay the interrupt until in safe code
+  private volatile boolean wasInterrupted;              // true if interrupted while executing a task
+  private volatile long startTime;                      // time when dispatcher was started
+  private volatile long terminationTime;                // time when dispatcher was terminated
+  private volatile RuntimeException terminationCause;   // the termination cause
+
+
+
+  /**
+   * Creates a task dispatcher.<br>
+   *
+   * @param name the dispatcher's name
+   * @param usingMutexLocking true use a mutex for locking, else just a counter
+   * @param sleepInterval keep alive in milliseconds
+   * @param deadInterval interval in milliseconds to detect a dead dispatcher, 0 to disable detection
+   */
+  public DefaultTaskDispatcher(String name, boolean usingMutexLocking, long sleepInterval, long deadInterval) {
+    super(name + "(" + instanceCounter.next(name) + ")");
+
+    setDaemon(true);
+    setUsingMutexLocking(usingMutexLocking);
+    setSleepInterval(sleepInterval);
+    setDeadInterval(deadInterval);
+
+    queue = new ConcurrentSkipListSet<>();
+    listeners = new ArrayList<>();
+    idMap = new ConcurrentHashMap<>();
+    interruptMutex = new ReentrantReadWriteLock();
+  }
+
+  /**
+   * Creates a task dispatcher with counter-based locking, 1s sleep, 10s dead interval.
+   *
+   * @param name the dispatcher's name
+   */
+  public DefaultTaskDispatcher(String name) {
+    this(name, false, 1000, 10000);
+  }
+
+  /**
+   * Checks whether current thread is this task dispatcher itself.
+   *
+   * @return true if invoker is this task dispatcher
+   */
+  public boolean isTaskDispatcherThread() {
+    return Thread.currentThread() == this;
+  }
+
+  @Override
+  public void setShutdownIdleTimeout(long shutdownIdleTimeout) {
+    this.shutdownIdleTimeout = shutdownIdleTimeout;
+  }
+
+  @Override
+  public long getShutdownIdleTimeout() {
+    return shutdownIdleTimeout;
+  }
+
+  @Override
+  public long getSleepInterval() {
+    return sleepInterval;
+  }
+
+  @Override
+  public void setSleepInterval(long sleepInterval) {
+    if (sleepInterval <= 0) {
+      throw new IllegalArgumentException(this + ": sleep interval must be > 0");
+    }
+    this.sleepInterval = sleepInterval;
+    assertIntervalsInRange();
+  }
+
+  @Override
+  public long getDeadInterval() {
+    return deadInterval;
+  }
+
+  @Override
+  public void setDeadInterval(long deadInterval) {
+    if (deadInterval < 0) {
+      throw new IllegalArgumentException(this + ": dead interval must be >= 0");
+    }
+    this.deadInterval = deadInterval;
+    assertIntervalsInRange();
+  }
+
+  @Override
+  public boolean isUsingMutexLocking() {
+    return usingMutexLocking;
+  }
+
+  @Override
+  public void setUsingMutexLocking(boolean usingMutexLocking) {
+    assertNotAlive();
+    this.usingMutexLocking = usingMutexLocking;
+    if (usingMutexLocking) {
+      mutex = new ReentrantReadWriteLock();
+    }
+    else  {
+      mutex = null;
+      nonMutexLockCount = 0;
+    }
+  }
+
+  @Override
+  public String toDiagnosticString() {
+    StringBuilder buf = new StringBuilder(toString());
+    buf.append("\n    class=");
+    buf.append(getClass());
+    buf.append(", useMutexLocking=");
+    buf.append(isUsingMutexLocking());
+    buf.append(", sleepInterval=");
+    buf.append(getSleepInterval());
+    buf.append(", deadInterval=");
+    buf.append(getDeadInterval());
+    buf.append("\n    lastMillis=");
+    buf.append(MILLIS_FORMAT.format(new Date(lastMillis)));
+    buf.append(", stopRequested=");
+    buf.append(stopRequested);
+    buf.append(", dead=");
+    buf.append(isDead());
+    buf.append(", killed=");
+    buf.append(isKilled());
+    if (unlockKey != null) {
+      buf.append(", unlockKey='");
+      buf.append(unlockKey);
+      buf.append("'");
+    }
+    return buf.toString();
+  }
+
+  @Override
+  public boolean isDead() {
+    return deadInterval > 0 && lastMillis > 0 && System.currentTimeMillis() > lastMillis + deadInterval;
+  }
+
+  @Override
+  public void setDead(boolean dead) {
+    assertNotKilled();
+    if (dead) {
+      if (deadInterval <= 0) {
+        throw new TaskException("cannot mark dispatcher dead with deadInterval <= 0");
+      }
+      lastMillis = 1;
+    }
+    else  {
+      // force alive
+      lastMillis = System.currentTimeMillis();
+    }
+  }
+
+  @Override
+  public long startedAt() {
+    return startTime;
+  }
+
+  @Override
+  public long terminatedAt() {
+    return terminationTime;
+  }
+
+  @Override
+  public RuntimeException getTerminationCause() {
+    return terminationCause;
+  }
+
+  @Override
+  public void kill() {
+    assertNotKilled();
+    terminate();
+    killed = true;
+  }
+
+  @Override
+  public boolean isKilled() {
+    return killed;
+  }
+
+  @Override
+  public synchronized void addTaskListener(TaskListener listener) {
+    assertNotKilled();
+    listeners.add(listener);
+  }
+
+  @Override
+  public synchronized void removeTaskListener(TaskListener listener) {
+    assertNotKilled();
+    listeners.remove(listener);
+  }
+
+  @Override
+  public boolean addTask(Task task) {
+    assertNotKilled();
+    synchronized(task) {
+      if (task.getDispatcher() != null && task.getDispatcher() != this) {
+        throw new TaskException("task " + task + " already belongs to dispatcher " + task.getDispatcher() + ", cannot be added to " + this);
+      }
+      if (task.getId() != 0 && queue.contains(task)) {
+        LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);
+        return false;
+      }
+      else {
+        task.setDispatcher(this);
+        if (task.getId() == 0) {
+          // task never added before: set a unique id
+          task.setId(taskCounter.incrementAndGet());
+        }
+        queue.add(task);
+        idMap.put(task.getId(), task);
+        LOGGER.fine("{0}: task {1} added", this, task);
+        safeInterrupt();   // wake up!
+        return true;
+      }
+    }
+  }
+
+  @Override
+  public boolean isTaskPending(Task task) {
+    assertNotKilled();
+    return queue.contains(task);
+  }
+
+  @Override
+  public Collection<Task> getAllTasks() {
+    return new ArrayList<>(idMap.values());
+  }
+
+  @Override
+  public boolean isInstanceOfTaskPending(Class<? extends Task> clazz) {
+    for (Task task: idMap.values()) {
+      if (clazz.isAssignableFrom(task.getClass())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public void waitForTask(Task task) {
+    for (;;) {
+      try {
+        synchronized(task) {
+          if (isTaskPending(task)) {
+            task.wait(sleepInterval);
+          }
+          else  {
+            break;
+          }
+        }
+      }
+      catch (InterruptedException ex) {
+        LOGGER.warning("interrupted -> ignored");
+      }
+    }
+  }
+
+  @Override
+  public boolean addTaskAndWait(Task task) {
+    if (addTask(task)) {
+      waitForTask(task);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public boolean removeTask(Task task) {
+    synchronized(task) {
+      assertNotKilled();
+      boolean removed = queue.remove(task);
+      if (removed) {
+        idMap.remove(task.getId());
+        task.setDispatcher(null);
+      }
+      return removed;
+    }
+  }
+
+  @Override
+  public int getQueueSize() {
+    assertNotKilled();
+    return queue.size();
+  }
+
+  @Override
+  public boolean isQueueEmpty() {
+    assertNotKilled();
+    return queue.isEmpty();
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to delay interrupt while running tasks.
+   */
+  @Override
+  public void interrupt() {
+    if (delayInterrupt) {
+      wasInterrupted = true;
+    }
+    else  {
+      super.interrupt();
+    }
+  }
+
+  @Override
+  public void requestTermination() {
+    assertNotKilled();
+    stopRequested = true;
+    interrupt();
+  }
+
+  @Override
+  public boolean isTerminationRequested() {
+    return stopRequested;
+  }
+
+  @Override
+  @SuppressWarnings("deprecation")
+  public void terminate() {
+
+    requestTermination();
+
+    if (Thread.currentThread() != this) {
+      for (;;) {
+        try {
+          join(deadInterval > 0 ? deadInterval : (sleepInterval * 10));
+          break;
+        }
+        catch (InterruptedException e)  {
+          LOGGER.warning("termination interrupted -> ignored");
+        }
+      }
+
+      if (isAlive()) {
+        // thread won't die
+        LOGGER.severe(this + " does not terminate -> marking dispatcher killed!");
+        killed = true;
+      }
+
+      cleanup();
+    }
+  }
+
+  @Override
+  public TaskDispatcherLock lock(Object key) {
+
+    assertNotKilled();
+
+    LOGGER.finer("{0}: lock requested for {1}", this, key);
+
+    checkNullKey(key);
+
+    Thread currentThread = Thread.currentThread();
+    if (currentThread == this) {
+      throw new TaskException(this + ": is not allowed to lock itself");
+    }
+
+    return _lock(key);
+  }
+
+  @Override
+  public boolean unlock(Object key) {
+
+    assertNotKilled();
+
+    LOGGER.finer("{0}: unlock requested for {1}", this, key);
+
+    checkNullKey(key);
+
+    return _unlock(key);
+  }
+
+
+  /**
+   * Asserts that this dispatcher hasn't been killed yet.
+   */
+  protected void assertNotKilled() {
+    if (isKilled()) {
+      throw new TaskException("dispatcher " + this + " has already been killed");
+    }
+  }
+
+
+  /**
+   * Invoke {@link TaskListener#started(org.tentackle.task.Task)}
+   * for all listeners.
+   * @param task
+   */
+  protected void fireStarted(Task task) {
+    for (TaskListener listener: listeners) {
+      try {
+        listener.started(task);
+      }
+      catch (Exception ex) {
+        LOGGER.warning("invoking listener failed", ex);
+      }
+    }
+  }
+
+
+  /**
+   * Invoke {@link TaskListener#completed(org.tentackle.task.Task)}
+   * for all listeners.
+   * @param task
+   */
+  protected void fireCompleted(Task task) {
+    for (TaskListener listener: listeners) {
+      try {
+        listener.completed(task);
+      }
+      catch (Exception ex) {
+        LOGGER.warning("invoking listener failed", ex);
+      }
+    }
+  }
+
+
+  /**
+   * Requests a lock for executing a task from the queue.
+   */
+  protected void lockInternal() {
+    _lock(null);
+  }
+
+
+  /**
+   * Releases a lock after having executed a task from the queue (or none).
+   *
+   * @param sleepMs milliseconds to sleep after unlock, 0 if no sleep
+   */
+  protected void unlockInternal(long sleepMs) {
+    _unlock(null);
+    if (sleepMs > 0 && !wasInterrupted) {
+      sleepForInterval(sleepMs);
+    }
+    wasInterrupted = false;
+  }
+
+
+
+
+  @Override
+  public void run() {
+
+    startTime = System.currentTimeMillis();
+    lastActivity = startTime;
+
+    LOGGER.info("{0} started", this);
+
+    if (sleepInterval <= 0) {
+      throw new TaskException("sleep interval not configured");
+    }
+    assertIntervalsInRange();
+
+    try {
+      while (!stopRequested && !isKilled()) {
+
+        lockInternal();
+
+        lastMillis = System.currentTimeMillis();
+
+        Task task = nextTask();
+
+        if (stopRequested || isKilled()) {
+          break;
+        }
+
+        if (task == null) {
+          LOGGER.finer("{0}: queue is empty", this);
+          if (lastActivity != 0 && shutdownIdleTimeout > 0 && lastMillis - lastActivity > shutdownIdleTimeout) {
+            LOGGER.info("shutting down {0} due to idle timeout", this);
+            break;
+          }
+          unlockInternal(sleepInterval);   // unlock and wait (until interrupted due to added task or time elapsed)
+        }
+        else if (task.getScheduledEpochalTime() > lastMillis) {
+          long sleepMs = task.getScheduledEpochalTime() - lastMillis;
+          LOGGER.finer("{0}: next task {1} will be executed in {2}ms", this, task, sleepMs);
+          lastActivity = lastMillis;
+          unlockInternal(sleepMs);
+        }
+        else {
+          try {
+            executeTask(task);
+          }
+          catch (Exception ex) {
+            // some other exception (not task.run)
+            LOGGER.severe("executing task failed", ex);
+          }
+        }
+      }
+    }
+    catch (RuntimeException rex) {
+      LOGGER.severe("dispatcher failed", rex);
+      terminationCause = rex;
+    }
+
+    try {
+      cleanup();
+    }
+    catch (Exception ex) {
+      LOGGER.warning("cleanup failed", ex);
+    }
+
+    terminationTime = System.currentTimeMillis();
+    LOGGER.info("{0} {1}", this, (isKilled() ? "killed" : "terminated"));
+  }
+
+
+  /**
+   * Determines the next task to execute.
+   *
+   * @return the task, null if no more tasks
+   */
+  protected Task nextTask() {
+    try {
+      return queue.first();
+    }
+    catch (NoSuchElementException nse) {
+      return null;
+    }
+  }
+
+  /**
+   * Executes a task.
+   *
+   * @param task the task
+   */
+  protected void executeTask(Task task) {
+
+    lastMillis = System.currentTimeMillis();
+    lastActivity = 0;   // task is pending -> don't timeout
+    task.setStarted(lastMillis);
+    LOGGER.fine("{0}: task {1} started", this, task);
+
+    fireStarted(task);
+
+    synchronized (task) {
+      try {
+        if (!task.isInterruptable()) {
+          delayInterrupt = true;
+        }
+        interruptMutex.writeLock().lock();
+        try {
+          task.run();
+        }
+        catch (Throwable t) {
+          task.setCause(t);
+          LOGGER.severe("task '" + task + "', ID=" + task.getId() + " terminated abnormally", t);
+        }
+        finally {
+          delayInterrupt = false;
+          interruptMutex.writeLock().unlock();
+        }
+        lastMillis = System.currentTimeMillis();
+        try {
+          task.setCompleted(lastMillis);
+        }
+        catch (Exception ex) {
+          LOGGER.severe("cannot set task '" + task + "', ID=" + task.getId() + " completed", ex);
+        }
+        lastActivity = lastMillis;
+      }
+      finally {
+        task.notifyAll();
+      }
+
+      unlockInternal(0);
+
+      queue.remove(task);
+
+      long repeat = task.getRepeatInterval();
+      if (repeat > 0 && task.getDispatcher() == this) {
+        // if repeat and not removed from dispatcher in the meantime
+        task.setScheduledEpochalTime(lastMillis + repeat);
+        queue.add(task);
+      }
+      else  {
+        idMap.remove(task.getId());
+      }
+    }
+
+    LOGGER.fine("{0}: task {1} completed", this, task);
+
+    fireCompleted(task);
+  }
+
+  /**
+   * Does any necessary cleanup after dispatcher thread has been terminated.<br>
+   */
+  protected void cleanup() {
+    // to be implemented in derivates
+  }
+
+  /**
+   * Sleeps for sleep interval.
+   *
+   * @param sleepMs the interval to sleep
+   */
+  protected void sleepForInterval(long sleepMs) {
+    try {
+      sleep(sleepMs);
+    }
+    catch (InterruptedException ex) { }
+  }
+
+  /**
+   * Creates a dispatcher lock.
+   *
+   * @param key the locking key
+   * @return the lock
+   */
+  protected TaskDispatcherLock createLock(Object key) {
+    return new DefaultTaskDispatcherLock(this, key);
+  }
+
+  /**
+   * Asserts that dispatcher is still alive.
+   */
+  protected void assertAlive() {
+    if (lastMillis > 0 && !isAlive()) {
+      throw new TaskException("dispatcher " + this + " has already been terminated");
+    }
+  }
+
+  /**
+   * Asserts that dispatcher is not running.
+   */
+  protected void assertNotAlive() {
+    if (isAlive()) {
+      throw new TaskException("dispatcher " + this + " is already running");
+    }
+  }
+
+  /**
+   * Asserts that the intervals are in range, if set
+   */
+  protected void assertIntervalsInRange() {
+    if (deadInterval > 0 && sleepInterval > 0 && deadInterval <= sleepInterval) {
+      throw new IllegalArgumentException(this + ": dead detection interval must be > sleep interval");
+    }
+  }
+
+
+  /**
+   * Waits for the lock.
+   *
+   * @param key the optional unlock key
+   * @return the lock if really locked, else just incremented the lock count
+   */
+  private TaskDispatcherLock _lock(Object key) {
+
+    int lockingLevel;
+
+    for (;;) {    // repeat if key doesn't match
+
+      if (usingMutexLocking) {
+        /**
+         * We don't need a 'synchronized(this)' here because
+         * if there is already a lock only the same thread can lock it again.
+         * If it is not the same thread the lock() below will block.
+         */
+        for (;;) {
+          assertAlive();
+          assertNotKilled();
+          try {
+            /**
+             * We don't use lock() here because the operation should be interruptable
+             * (which is currently the case for termination or when a task has been added).
+             * Interrupts will force to check whether the dispatcher is still alive,
+             * which is a must for supervised dispatchers. Otherwise threads waiting
+             * for a lock on a dispatcher that has been killed in the meantime will wait forever.
+             */
+            mutex.writeLock().lockInterruptibly();
+            break;
+          }
+          catch (InterruptedException ie) {
+            // ignore -> continue
+          }
+          catch (RuntimeException re) {
+            throw new TaskException("mutex lock failed", re);
+          }
+        }
+
+        try {
+          lockingLevel = mutex.getWriteHoldCount();
+          if (checkLockKey(key, lockingLevel)) {
+            break;
+          }
+        }
+        catch (RuntimeException re) {
+          mutex.writeLock().unlock();   // must work
+          if (re instanceof TaskException) {
+            throw (TaskException) re;
+          }
+          else  {
+            throw new TaskException("obtaining lock failed", re);
+          }
+        }
+      }
+      else {
+        synchronized(this) {
+          assertAlive();
+          assertNotKilled();
+          nonMutexLockCount++;
+          // we need a synchronized here because otherwise another thread
+          // may increment and checkLockKey in parallel
+          lockingLevel = nonMutexLockCount;
+          try {
+            if (checkLockKey(key, lockingLevel)) {
+              break;
+            }
+          }
+          catch (RuntimeException re) {
+            nonMutexLockCount--;
+            if (re instanceof TaskException) {
+              throw (TaskException) re;
+            }
+            else  {
+              throw new TaskException("counter lock failed", re);
+            }
+          }
+          // try again...
+        }
+      }
+    }
+
+    return lockingLevel == 1 ? createLock(key) : null;
+  }
+
+
+  /**
+   * Sets and checks the locking key.<br>
+   * If lockingLevel == 1 the key is just set.
+   * Otherwise it is compared with the current key and if it does
+   * not match, the nested lock is decremented by one and the thread
+   * waits for an unlock operation by another thread.
+   *
+   * @param key the locking key to be checked or set
+   * @param lockingLevel the locking level (1 to set the key, else nested lock)
+   * @return true if key matches and/or lock set
+   */
+  private synchronized boolean checkLockKey(Object key, int lockingLevel) {
+    assertAlive();
+    assertNotKilled();
+    if (lockingLevel == 1) {
+      // set the locking key only for the first lock
+      unlockKey = key;
+      LOGGER.fine("{0}: lock succeeded for {1}", this, unlockKey);
+    }
+    else if (key != unlockKey) {
+      // nested lock for a different key: unlock and start over
+      if (usingMutexLocking) {
+        _unlock(unlockKey);
+        throw new TaskException(this + ": same thread '" + Thread.currentThread()
+                + "' requested nested mutex lock with non-matching key! Expected="
+                + (unlockKey == null ? "<null>" : unlockKey.toString())
+                + ", got=" + (key == null ? "<null>" : key.toString()));
+      }
+      else {
+        // another thread: wait for the counter to become released completely
+        nonMutexLockCount--;    // revert increment of the lock count
+        try {
+          LOGGER.finer("{0}: waiting for unlock of {1} ...", this, unlockKey);
+          wait(sleepInterval); // release monitor on this and wait for notify
+        }
+        catch (InterruptedException ie) {
+          // nothing to do
+        }
+        return false; // try again...
+      }
+    }
+
+    return true;    // key matches or lock set
+  }
+
+
+  /**
+   * Performs the unlock.
+   *
+   * @param key the unlock key
+   * @return true if really unlocked, else just decremented the lock count
+   */
+  private boolean _unlock(Object key) {
+
+    int lockingLevel = 0;
+
+    if (usingMutexLocking) {
+      /**
+       * We don't need a 'synchronized(this)' here because we can assume
+       * that the same thread that locked the dispatcher will also unlock it.
+       * If it is not the same thread or there is no lock at all
+       * the unlock() below will fail with an IllegalMonitorStateException.
+       */
+      checkUnlockKey(key);
+      try {
+        mutex.writeLock().unlock();
+      }
+      catch (RuntimeException re) {
+        throw new TaskException("unlock failed", re);
+      }
+      lockingLevel = mutex.getWriteHoldCount();
+    }
+    else {
+      synchronized(this) {
+        try {
+          checkUnlockKey(key);
+          if (nonMutexLockCount <= 0) {
+            throw new TaskException("dispatcher is not locked at all");
+          }
+          nonMutexLockCount--;
+          lockingLevel = nonMutexLockCount;
+        }
+        finally {
+          notifyAll();    // notify all threads waiting for a lock (see _lock: wait() above)
+        }
+      }
+    }
+
+    if (lockingLevel == 0) {
+      LOGGER.fine("{0}: unlock succeeded for {1}", this, unlockKey);
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
+
+
+
+  /**
+   * Safely interrupt the dispatcher without interrupting any running task.
+   * (even if task was interruptable)
+   */
+  private void safeInterrupt() {
+    if (interruptMutex.readLock().tryLock()) {
+      // not executing any task
+      try {
+        super.interrupt();    // interrupt possible sleep()
+      }
+      finally {
+        interruptMutex.readLock().unlock();
+      }
+    }
+    // else: executing task: no need to interrupt because not sleeping
+  }
+
+  /**
+   * Warns if key is not null for counter-based dispatchers.
+   *
+   * @param key the lock/unlock key
+   */
+  private void checkNullKey(Object key) {
+    if (!usingMutexLocking && key == null) {
+      LOGGER.warning(this + ": counter-based locking and null key is potentially unsafe! Please use a key!",
+                     new TaskException(">>> invoked from >>>"));
+    }
+  }
+
+
+  /**
+   * Checks for matching unlock key.
+   *
+   * @param key the key to unlock
+   */
+  private void checkUnlockKey(Object key) {
+    if (key != unlockKey) {
+      throw new TaskException(this + ": non-matching unlock key! Expected="
+              + (unlockKey == null ? "<null>" : unlockKey.toString())
+              + ", got=" + (key == null ? "<null>" : key.toString()));
+    }
+  }
+
+}

@@ -1,0 +1,207 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * generate unique domain key class for a pdo.
+     *
+     * usage:  \@wurblet <tag> UniqueDomainKey --model=<mapfile>
+     *
+     *         <mapfile> is the mapping description
+     *
+     * Example: \@wurblet uniqueDomainKey UniqueDomainKey --model=$mapping
+     */
+
+    List<Attribute> udk = getEntity().getUniqueDomainKey();
+    List<Attribute> superUdk = null;
+    if (getEntity().getSuperEntity() != null) {
+      superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+    }
+    if (superUdk != null && !udk.isEmpty() && udk.equals(superUdk)) {
+]@
+
+  // @(getEntity())@ inherits from @(getEntity().getSuperEntity())@
+@[
+    }
+    else if (!getEntity().isRootEntityAccordingToModel()) {
+]@
+
+  // @(getEntity())@ is not a root entity
+@[
+    }
+    else if (udk.isEmpty()) {
+]@
+
+  // no unique domain key defined for @(getEntity())@
+@[
+    }
+    else if (udk.size() == 1) {
+]@
+
+  // unique domain key for @(getEntity())@ is @(udk.get(0))@
+@[
+    }
+    else  {
+]@
+
+  /**
+   * The unique domain key for @(getEntity())@.
+   */
+  public static class @(getEntity())@UDK implements Comparable<@(getEntity())@UDK> {
+@[
+      StringBuilder con1Args = new StringBuilder();   // 1st constructor arguments
+      StringBuilder con2Args = new StringBuilder();   // 2nd constructor arguments
+      boolean first = true;
+      for (Attribute attr: udk) {
+        if (first) {
+          first = false;
+        }
+        else {
+          con1Args.append(", ");
+          con2Args.append(", ");
+        }
+        con1Args.append(attr.getJavaType()).append(" ").append(attr.getJavaName());
+        con2Args.append("pdo.").append(attr.getGetterName()).append("()");
+]@
+
+    /** @(attr.getOptions().getComment())@. */
+    public final @(attr.getJavaType())@ @(attr.getJavaName())@;
+@[
+
+      }
+]@
+
+    /**
+     * Creates a unique domain key.
+     *
+@[
+        for (Attribute attr: udk) {
+]@
+     * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+@[
+        }
+]@
+     */
+    public @(getEntity())@UDK(@(con1Args.toString())@) {
+@[
+        for (Attribute attr: udk) {
+]@
+      this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
+@[
+        }
+]@
+    }
+
+    /**
+     * Creates a unique domain key for a pdo.
+     *
+     * \@param pdo the pdo
+     */
+    public @(getEntity())@UDK(@(getEntity())@ pdo) {
+      this(@(con2Args.toString())@);
+    }
+
+    \@Override
+    public int hashCode() {
+      int hash = 7;
+@[
+        for (Attribute attr: udk) {
+          if (attr.getDataType().isPrimitive()) {
+]@
+      hash = 79 * hash + @(attr.getJavaName())@;
+@[
+          }
+          else  {
+]@
+      hash = 79 * hash + Objects.hashCode(@(attr.getJavaName())@);
+@[
+          }
+        }
+]@
+      return hash;
+    }
+
+    \@Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      @(getEntity())@UDK other = (@(getEntity())@UDK) obj;
+@[
+        for (Attribute attr: udk) {
+          if (attr.getDataType().isPrimitive()) {
+]@
+      if (@(attr.getJavaName())@ != other.@(attr.getJavaName())@) {
+        return false;
+      }
+@[
+          }
+          else  {
+]@
+      if (!Objects.equals(@(attr.getJavaName())@, other.@(attr.getJavaName())@)) {
+        return false;
+      }
+@[
+          }
+        }
+]@
+      return true;
+    }
+
+    \@Override
+    public int compareTo(@(getEntity())@UDK other) {
+      int rv = other == null ? 1 : 0;
+@[
+        String inset = "";
+        for (Attribute attr: udk) {
+]@
+      @(inset)@if (rv == 0) {
+@[
+          if (attr.getDataType().isPrimitive()) {
+]@
+      @(inset)@  rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
+@[
+          }
+          else  {
+]@
+      @(inset)@  rv = Compare.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
+@[
+          }
+          inset += "  ";
+        }
+
+        do {
+          inset = inset.substring(2);
+]@
+      @(inset)@}
+@[
+
+        } while (!inset.isEmpty());
+]@
+      return rv;
+    }
+  }
+@[
+  }
+]@

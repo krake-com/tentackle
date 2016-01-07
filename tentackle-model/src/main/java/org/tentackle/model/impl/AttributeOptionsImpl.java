@@ -1,0 +1,234 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.model.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.tentackle.common.Constants;
+import org.tentackle.model.Attribute;
+import org.tentackle.model.AttributeOptions;
+import org.tentackle.model.DataType;
+import org.tentackle.model.EntityOptions;
+import org.tentackle.model.ModelException;
+import org.tentackle.model.SourceInfo;
+
+/**
+ *
+ * @author harald
+ */
+public class AttributeOptionsImpl extends CommonOptionsImpl implements AttributeOptions {
+
+  /** generate SQL DEFAULT. */
+  static final String OPTION_DEFAULT = "DEFAULT";
+
+  /** this is the object id holding the context. */
+  static final String OPTION_CONTEXT = "CONTEXT";
+
+  /** this is a unique domain key (or part of it). */
+  static final String OPTION_DOMAINKEY = "KEY";
+
+  /** timestamp, date or time with database timezone. */
+  static final String OPTION_TZ = "TZ";
+
+
+
+  private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
+
+  private List<String> annotations;
+  private Object defaultValue;
+  private boolean contextId;
+  private boolean domainKey;
+  private boolean utc;
+  private boolean withTimezone;
+  private boolean unsigned;
+
+
+  /**
+   * Creates attribute options.
+   *
+   * @param attribute the attribute
+   * @param sourceInfo the source info, null if none
+   */
+  public AttributeOptionsImpl(Attribute attribute, SourceInfo sourceInfo) {
+    super(sourceInfo);
+    this.attribute = (AttributeImpl) attribute;
+    annotations = new ArrayList<>();
+  }
+
+
+  @Override
+  public AttributeImpl getAttribute() {
+    return attribute;
+  }
+
+
+  /**
+   * Sets the default from entity options.
+   *
+   * @param options the entity options
+   * @param dataType the datatype of the attribute
+   */
+  public void applyEntityOptions(EntityOptions options, DataType dataType) {
+    setNoDeclare(options.isNoDeclare());
+    setNoMethod(options.isNoMethod());
+    setNoConstant(options.isNoConstant());
+    setDerived(options.isDerived());
+    setFromSuper(options.isFromSuper());
+    setReadOnly(options.isReadOnly());
+    setWriteOnly(options.isWriteOnly());
+    setAccessScope(options.getAccessScope());
+    setTrimRead(options.isTrimRead());
+    setTrimWrite(options.isTrimWrite());
+    setMapNull(options.isMapNull());
+    setSetGet(options.isSetGet());
+    setBind(options.isBind());
+    setUpperCase(options.isUpperCase());
+    setLowerCase(options.isLowerCase());
+    setMaxCol(options.isMaxCol());
+    setBindOptions(options.getBindOptions());
+    if (dataType.isNumeric()) {
+      setAutoSelect(options.isAutoSelect());
+    }
+    else  {
+      // remove autoselect from bindoptions, if set
+      removeBindOption(Constants.BIND_AUTOSELECT);
+    }
+  }
+
+
+
+  @Override
+  public boolean applyOption(String option, Boolean ctrl) {
+
+    boolean applied = super.applyOption(option, ctrl);
+    boolean on = ctrl == null || ctrl;
+
+    if (!applied) {
+      String uco = option.toUpperCase();
+      if (uco.startsWith(OPTION_DEFAULT)) {
+        if (on) {
+          String str = option.substring(OPTION_DEFAULT.length()).trim();
+          Object value = getAttribute().getDataType().parse(str);
+          setDefaultValue(value);
+        }
+        else  {
+          setDefaultValue(null);
+        }
+        applied = true;
+      }
+      else if (uco.equals(OPTION_CONTEXT)) {
+        setContextId(on);
+        applied = true;
+      }
+      else if (uco.equals(OPTION_DOMAINKEY)) {
+        setDomainKey(on);
+        applied = true;
+      }
+      else if (uco.equals(OPTION_TZ)) {
+        setWithTimezone(on);
+        applied = true;
+      }
+      else if (uco.equals(Constants.BIND_UTC)) {
+        setUTC(on);
+        processBindOption(uco, on);
+        applied = true;
+      }
+      else if (uco.equals(Constants.BIND_UNSIGNED)) {
+        setUnsigned(on);
+        processBindOption(uco, on);
+        applied = true;
+      }
+    }
+    return applied;
+  }
+
+
+  @Override
+  public List<String> getAnnotations() {
+    return annotations;
+  }
+
+  @Override
+  public Object getDefaultValue() {
+    return defaultValue;
+  }
+
+  public void setAnnotations(List<String> annotations) {
+    this.annotations = annotations;
+  }
+
+  public void setDefaultValue(Object defaultValue) {
+    this.defaultValue = defaultValue;
+  }
+
+  @Override
+  public boolean isContextId() {
+    return contextId;
+  }
+
+  public void setContextId(boolean contextId) {
+    this.contextId = contextId;
+  }
+
+  @Override
+  public boolean isDomainKey() {
+    return domainKey;
+  }
+
+  public void setDomainKey(boolean domainKey) {
+    this.domainKey = domainKey;
+  }
+
+  @Override
+  public boolean isUTC() {
+    return utc;
+  }
+
+  public void setUTC(boolean utc) {
+    this.utc = utc;
+  }
+
+  @Override
+  public boolean isWithTimezone() {
+    return withTimezone;
+  }
+
+  public void setWithTimezone(boolean withTimezone) {
+    this.withTimezone = withTimezone;
+  }
+
+  @Override
+  public boolean isUnsigned() {
+    return unsigned;
+  }
+
+  public void setUnsigned(boolean unsigned) {
+    this.unsigned = unsigned;
+  }
+
+
+  @Override
+  public ModelException createModelException(String message) {
+    if (attribute != null) {
+      return attribute.createModelException(message);
+    }
+    return super.createModelException(message);
+  }
+
+}

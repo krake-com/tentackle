@@ -1,0 +1,100 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a declarations for db-attributes.
+
+     * usage:  \@wurblet <somename> Declare --model=<mapfile> [--protected] [--attracked | --fulltracked] [--annotations]
+     *         --protected mades variabes protected for derived classes
+     *         --attracked generate attribute modification tracking flags
+     *         --fulltracked sames as attracked but keeps the original value since last persistence operation
+     *         --annotations to generate annotations (default is no generation as they are generated for the methods only)
+     *
+     * Example: \@wurblet methods Declare --model=$scripts/artikel.map
+     */
+
+    String[] args = getContainer().getArgs();   // cmd line args
+
+    boolean isPdo;
+    try {
+      getPdoClassName();
+      isPdo = true;
+    }
+    catch (WurbelException we) {
+      isPdo = false;
+    }
+
+    String protection = "private";
+    boolean generateAnnotations = false;
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("protected")) {
+        protection = "protected";
+      }
+      else if (arg.equals("annotations")) {
+        generateAnnotations = true;
+      }
+    }
+
+    for (Attribute attr: getEntity().getAttributes()) {
+      if (!attr.getOptions().isNoDeclare())    {
+]@
+
+  /** @(attr.getOptions().getComment())@. */
+@[
+        if (generateAnnotations) {
+          for (String annotation: attr.getOptions().getAnnotations()) {
+]@
+  @(annotation)@
+@[
+          }
+        }
+        if (isPdo) {
+]@
+  \@Persistent(@(BasicStringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
+@[
+        }
+]@
+  @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@;
+@[
+        if (isAttracked()) {
+]@
+  /** true if @(attr)@ has been modified. */
+  @(protection)@ boolean @(attr.getJavaName())@Modified;
+@[
+          if (isFullTracked()) {
+]@
+  /** the last persisted value of @(attr)@. */
+  @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@Persisted;
+@[
+          }
+        }
+
+        if (!attr.getOptions().isSetGet() && attr.getDataType().isMutable()) {
+]@
+  /** the snapshot of @(attr)@. */
+  private transient @(attr.getJavaType())@ @(attr.getJavaName())@Snapshot;
+@[
+        }
+      }
+    }
+]@

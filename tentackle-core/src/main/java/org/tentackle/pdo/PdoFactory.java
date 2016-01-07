@@ -1,0 +1,219 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.pdo;
+
+import org.tentackle.common.ServiceFactory;
+
+
+interface PdoFactory$Singleton {
+  static PdoFactory INSTANCE = ServiceFactory.createService(PdoFactory.class);
+}
+
+/**
+ * A factory for persistent domain objects.
+ *
+ * @author harald
+ */
+public interface PdoFactory {
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  static PdoFactory getInstance() {
+    return PdoFactory$Singleton.INSTANCE;
+  }
+
+  /**
+   * Creates a PDO.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param context the domain context
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, DomainContext context);
+
+  /**
+   * Creates a PDO.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param session the session
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, Session session);
+
+  /**
+   * Creates a PDO.
+   *
+   * @param className the name of PDO-class, usually an interface
+   * @param context the domain context
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, DomainContext context);
+
+  /**
+   * Creates a PDO for a session only.
+   * <p>
+   * Note: the application must set the context.
+   *
+   * @param className the name of PDO-class, usually an interface
+   * @param session the session
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, Session session);
+
+  /**
+   * Creates a PDO without any domain context or session.
+   * <p>
+   * Note: the application must set the context.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz);
+
+  /**
+   * Creates a PDO without any domain context or session.
+   * <p>
+   * Note: the application must set the context.
+   *
+   * @param className the name of PDO-class, usually an interface
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className);
+
+  /**
+   * Creates a PDO.
+   *
+   * @param <T> the PDO class
+   * @param pdo the PDO
+   * @return the created PDO belonging to the same class as the given {@code pdo} and in same context.
+   */
+  <T extends PersistentDomainObject<T>> T create(T pdo);
+
+  /**
+   * Creates a PDO for a given persistence delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param persistenceDelegate the persistence delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate);
+
+  /**
+   * Creates a PDO for a given persistence delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param className the name of PDO-class, usually an interface
+   * @param persistenceDelegate the persistence delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate);
+
+  /**
+   * Creates a PDO for a given domain delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param context the domain context
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, DomainContext context, DomainObject<T> domainDelegate);
+
+  /**
+   * Creates a PDO for a given domain delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param className the name of PDO-class, usually an interface
+   * @param context the domain context
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, DomainContext context, DomainObject<T> domainDelegate);
+
+  /**
+   * Creates a PDO for a given domain delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param session the session
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, Session session, DomainObject<T> domainDelegate);
+
+  /**
+   * Creates a PDO for a given domain delegate.
+   *
+   * @param <T> the persistent domain object class
+   * @param className the name of PDO-class, usually an interface
+   * @param session the session
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, Session session, DomainObject<T> domainDelegate);
+
+  /**
+   * Creates a PDO for given delegates.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the class of the PDO, usually an interface
+   * @param persistenceDelegate the persistence delegate
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate);
+
+  /**
+   * Creates a PDO for given delegates.
+   *
+   * @param <T> the persistent domain object class
+   * @param className the name of PDO-class, usually an interface
+   * @param persistenceDelegate the persistence delegate
+   * @param domainDelegate the domain delegate
+   * @return the created PDO
+   */
+  <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate);
+
+  /**
+   * Gets the class implementing the persistence layer.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the pdo class
+   * @return the persistent class
+   */
+  <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>> getPersistentClass(Class<T> clazz);
+
+  /**
+   * Gets the class implementing the persistence layer.
+   *
+   * @param <T> the persistent domain object class
+   * @param clazz the pdo class
+   * @return the domain class
+   */
+  <T extends PersistentDomainObject<T>> Class<? extends DomainObject<T>> getDomainClass(Class<T> clazz);
+
+}

@@ -1,0 +1,252 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.reflect;
+
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Mixin for PDOs.<br>
+ * Used to implement dynamic proxies.
+ *
+ * @param <T> the type the mixin is mixed in
+ * @param <M> the type of the mixin
+ * @author harald
+ */
+public class Mixin<T,M> implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
+  /**
+   * cache to speed up the decision whether a given class (name) implements the declClass.
+   * The map is <given-class> => <declClass> => Boolean and thus can be used for all instances
+   * of PdoMixin.
+   */
+  private static final Map<Class<?>,Map<Class<?>,Boolean>> MATCH_CACHE = new ConcurrentHashMap<>();
+
+
+  private Class<M> implClass;      // the implementation class
+  private Class<M> declClass;      // the declaring interface class
+  private M delegate;              // the delegate implementation
+
+
+  /**
+   * Creates a mixin.
+   *
+   * @param mapper the classmapper to find implementation classes, null if this is a dummy mixin
+   * @param clazz the declaring interface class
+   * @param superInterface the super interface class the implementation class must implement an extension of,
+   *        null if use the clazz as the declaring class
+   *
+   * @throws ClassNotFoundException
+   */
+  @SuppressWarnings("unchecked")
+  public Mixin(ClassMapper mapper, Class<T> clazz, Class<?> superInterface)
+         throws ClassNotFoundException {
+
+    if (clazz == null) {
+      throw new NullPointerException("clazz must not be null");
+    }
+
+    if (mapper != null) {
+      // get the implementation class via classmapper
+      implClass = (Class<M>) mapper.mapLenient(clazz);
+
+      // find the declaring interface
+      if (superInterface != null) {
+        for (Class<?> interfaze: implClass.getInterfaces()) {
+          if (superInterface.isAssignableFrom(interfaze)) {
+            declClass = (Class<M>) interfaze;
+            break;
+          }
+        }
+        if (declClass == null) {
+          throw new IllegalArgumentException("implementation of " + clazz.getName() +
+                                             " does not implement an extension of " + superInterface.getName());
+        }
+      }
+      else  {
+        declClass = (Class<M>) clazz;   // T == M
+      }
+    }
+    else  {
+      declClass = (Class<M>) (superInterface == null ? clazz : superInterface);
+    }
+  }
+
+
+  /**
+   * Creates a dummy mixin.<br>
+   * Dummy mixins just map nothing at all.
+   *
+   * @param clazz the declaring interface class
+   * @param superInterface the super interface class the implementation class must implement an extension of,
+   *        null if use the clazz as the declaring class
+   * @throws ClassNotFoundException
+   */
+  @SuppressWarnings("unchecked")
+  public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {
+    this(null, clazz, superInterface);
+  }
+
+
+  /**
+   * Returns whether this is a dummy mixin.
+   *
+   * @return true if dummy
+   */
+  public boolean isDummy() {
+    return implClass == null;
+  }
+
+
+  /**
+   * Creates the delegate instance for the implementation class.
+   *
+   * @param constructorArgumentClasses the constructor argument classes
+   * @param constructorArguments the constructor arguments
+   *
+   * @throws NoSuchMethodException
+   * @throws InstantiationException
+   * @throws IllegalAccessException
+   * @throws IllegalArgumentException
+   * @throws InvocationTargetException
+   */
+  @SuppressWarnings("unchecked")
+  public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
+
+    if (!isDummy()) {
+      // find the constructor and create the object
+      Constructor<?>[] cons = implClass.getConstructors();
+      for (Constructor<?> con : cons) {
+        Class<?>[] params = con.getParameterTypes();
+        if (params.length == constructorArgumentClasses.length) {
+          boolean allParmsMatch = true;
+          for (int i = 0; i < params.length; i++) {
+            if (!constructorArgumentClasses[i].isAssignableFrom(params[i])) {
+              allParmsMatch = false;
+              break;
+            }
+          }
+          if (allParmsMatch) {
+            delegate = (M) con.newInstance(constructorArguments);
+            break;
+          }
+        }
+      }
+
+      if (delegate == null) {
+        StringBuilder paramsAsString = new StringBuilder();
+        for (Class<?> paramClass : constructorArgumentClasses) {
+          if (paramsAsString.length() > 0) {
+            paramsAsString.append(", ");
+          }
+          paramsAsString.append(paramClass.getName());
+        }
+        throw new NoSuchMethodException("no matching constructor found for " +
+                                        implClass.getName() + "(" + paramsAsString + ")");
+      }
+    }
+  }
+
+
+  /**
+   * Sets the delegate.
+   *
+   * @param delegate the implementation instance
+   */
+  public void setDelegate(M delegate) {
+    this.delegate = delegate;
+  }
+
+
+  /**
+   * Gets the delegate object.
+   *
+   * @return the instance of the declaring class
+   */
+  public M getDelegate() {
+    return delegate;
+  }
+
+
+  /**
+   * Gets the declaring class (an interface).
+   * @return the interface class
+   */
+  public Class<M> getDeclaringClass() {
+    return declClass;
+  }
+
+
+  /**
+   * Gets the implementing class.
+   *
+   * @return the class, null if dummy
+   */
+  public Class<M> getImplementingClass() {
+    return implClass;
+  }
+
+
+  /**
+   * Determines whether a given interface class extends the declaring class of this mixin
+   * or any of its super interfaces.
+   *
+   * @param clazz the class to test
+   * @return true if clazz belongs to this mixin
+   */
+  public boolean matches(Class<?> clazz) {
+    Map<Class<?>,Boolean> clazzMap = MATCH_CACHE.get(clazz);
+    Boolean m = null;
+    if (clazzMap == null) {
+      clazzMap = new ConcurrentHashMap<>();
+      MATCH_CACHE.put(clazz, clazzMap);
+    }
+    else {
+      m = clazzMap.get(declClass);
+    }
+    if (m == null) {
+      m = matchInterface(clazz, declClass);
+      clazzMap.put(declClass, m);
+    }
+    return m;
+  }
+
+
+  private boolean matchInterface(Class<?> clazz, Class<?> interfaze) {
+    if (clazz.equals(interfaze)) {
+      return true;
+    }
+    // try super interfaces
+    for (Class<?> superInterface: interfaze.getInterfaces()) {
+      if (matchInterface(clazz, superInterface)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+}

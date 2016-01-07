@@ -1,0 +1,155 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * Generates code to implement PdoObject's copy() method.
+     *
+     * usage:  \@wurblet <tag> PdoCopy --model=<mapfile> [--maponly] [skip list]
+     *
+     *         <mapfile> is the mapping description
+     *         --super invokes super.copy() to create the object
+     *         --maponly generates code only for columns in mapfile (i.e. not for ID and SERIAL)
+     *         --sorted generates code sorted by relation names
+     *         skip list: optional list of attributes and/or relations that must not be copied
+     *
+     * Example: \@wurblet setFrom PdoCopy --model=$mapping $relations
+     */
+
+
+
+    // main class
+    String pdoClass = getEntity().getName();
+    char objName = Character.toLowerCase(pdoClass.charAt(0));
+    boolean mapOnly = false;
+    boolean sorted = false;
+    boolean useSuper = false;
+
+    for (String arg: getOptionArgs()) {
+      switch (arg) {
+        case "maponly":
+          mapOnly = true;
+          break;
+        case "sorted":
+          sorted = true;
+          break;
+        case "super":
+          useSuper = true;
+          break;
+      }
+    }
+
+]@
+
+  /**
+   * Creates a copy of this object.
+   */
+  \@Override
+  \@SuppressWarnings("unchecked")
+  public @(pdoClass)@ copy() {
+@[
+    if (useSuper) {
+]@
+    @(pdoClass)@ @(objName)@ = (@(pdoClass)@) super.copy();
+@[
+    }
+    else {
+]@
+    @(pdoClass)@ @(objName)@ = newInstance();
+@[
+    }
+    for (Attribute attr: getEntity().getAttributes())  {
+      String name = attr.getJavaName();
+      if (!attr.getOptions().isDerived() && !getArgs().contains(name))  {
+        if (attr.getOptions().isSetGet()) {
+          if (attr.getDataType().isMutable()) {
+            String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
+]@
+    @(objName)@.@(attr.getSetterName())@(@(castStr)@@(attr.getGetterName())@().clone());
+@[
+          }
+          else  {
+]@
+    @(objName)@.@(attr.getSetterName())@(@(attr.getGetterName())@());
+@[
+          }
+        }
+        else  {
+          if (attr.getDataType().isMutable()) {
+            String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
+]@
+    @(objName)@.@(name)@ = @(castStr)@@(name)@.clone();
+@[
+          }
+          else  {
+]@
+    @(objName)@.@(name)@ = @(name)@;
+@[
+          }
+        }
+      }
+    }
+
+    if (!mapOnly)  {
+]@
+    @(objName)@.setId(getId());
+    @(objName)@.setSerial(getSerial());
+@[
+    }
+
+    for (Relation rel: getEntity().getRelations()) {
+      String var = rel.getVariableName();
+      if (rel.isComposite() && !getArgs().contains(var)) {
+        String type;
+        if (rel.getRelationType() == RelationType.LIST) {
+          type = (rel.isTracked() ? "TrackedArrayList" : "List") + "<" + rel.getClassName() + ">";
+        }
+        else  {
+          type = rel.getClassName();
+        }
+]@
+    // @(rel)@
+    if (@(rel.getGetterName())@() != null) {
+@[
+        if (rel.getRelationType() == RelationType.LIST) {
+]@
+      @(objName)@.@(var)@ = (@(type)@) AbstractPersistentObject.copyCollection(@(var)@);
+@[
+        }
+        else  {
+]@
+      @(objName)@.@(var)@ = @(var)@.copy();
+@[
+        }
+]@
+    }
+@[
+        if (rel.getSelectionType() == SelectionType.LAZY) {
+]@
+    @(objName)@.@(var)@Loaded = true;
+@[
+        }
+      }
+    }
+]@
+    @(objName)@.setModified(false);
+    return @(objName)@;
+  }

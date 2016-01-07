@@ -1,0 +1,90 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package org.tentackle.fx.component.delegate;
+
+import javafx.scene.Parent;
+import org.tentackle.fx.FxComponentDelegate;
+import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.ValueTranslator;
+import org.tentackle.fx.component.FxCheckBox;
+
+/**
+ * Delegate for FxCheckBox.
+ *
+ * @author harald
+ */
+public class FxCheckBoxDelegate extends FxComponentDelegate {
+
+  private final FxCheckBox component;   // the component
+
+  /**
+   * Creates the delegate.
+   *
+   * @param component the component
+   */
+  public FxCheckBoxDelegate(FxCheckBox component) {
+    this.component = component;
+  }
+
+  @Override
+  public FxCheckBox getComponent() {
+    return component;
+  }
+
+  @Override
+  public FxContainer getParentContainer() {
+    Parent parent = component.getParent();
+    return parent instanceof FxContainer ? (FxContainer) parent : null;
+  }
+
+
+  @Override
+  public void setType(Class<?> type) {
+    // important to set the type before creating the translator,
+    // since the translator may need to know the type
+    super.setType(type);
+    if (getValueTranslator() == null) {    // if not already set by application
+      setValueTranslator(FxFactory.getInstance().createValueTranslator(type, Boolean.class, getComponent()));
+    }
+    component.setAllowIndeterminate(Boolean.TYPE != type);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Boolean getViewObject() {
+    if (component.isIndeterminate()) {
+      return null;
+    }
+    return component.isSelected();
+  }
+
+  @Override
+  public void setViewObject(Object viewObject) {
+    if (viewObject == null && component.isAllowIndeterminate()) {
+      component.setIndeterminate(true);
+    }
+    else {
+      component.setSelected(viewObject != null && (Boolean) viewObject);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void setViewValue(Object value) {
+    ValueTranslator translator = getValueTranslator();
+    setViewObject(translator.toView(value));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T getViewValue() {
+    ValueTranslator translator = getValueTranslator();
+    return (T) translator.toModel(getViewObject());
+  }
+
+}

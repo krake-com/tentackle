@@ -1,0 +1,89 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.wurblet;
+
+import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelUtilities;
+import org.wurbelizer.wurblet.AbstractWurblet;
+
+
+/**
+ *
+ * @author harald
+ */
+public class IncludeWurblet extends AbstractWurblet {
+
+  protected String filename;
+  protected boolean asComment;
+  protected boolean missingOk;
+  protected boolean translate;
+  protected boolean delete;
+
+
+  public IncludeWurblet() {
+    super();
+  }
+
+  @Override
+  public void run() throws WurbelException {
+    super.run();
+
+    int argCount = 0;
+
+    for (String arg: getContainer().getArgs())  {
+      if (arg.startsWith("--"))  {
+        switch (arg) {
+          case "--comment":
+            asComment = true;
+            break;
+          case "--missingok":
+            missingOk = true;
+            break;
+          case "--translate":
+            translate = true;
+            break;
+          case "--delete":
+            delete = true;
+            break;
+        }
+      }
+      else {
+        argCount++;
+        if (argCount == 1)  {
+          filename = arg;
+        }
+      }
+    }
+
+    if (filename == null) {
+      throw new WurbelException("usage: @wurblet <guardname> Include <filename> [--comment] [--missingok] [--translate]");
+    }
+  }
+
+  @Override
+  public void cleanup() throws WurbelException {
+    if (delete) {
+      if (WurbelUtilities.deleteFile(filename)) {
+        getContainer().getLogger().warning("included file '" + filename + "' deleted");
+      }
+    }
+  }
+
+}

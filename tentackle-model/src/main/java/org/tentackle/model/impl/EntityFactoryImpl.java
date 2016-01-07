@@ -1,0 +1,474 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.model.impl;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.Constants;
+import org.tentackle.model.Attribute;
+import org.tentackle.model.AttributeSorting;
+import org.tentackle.model.DataType;
+import org.tentackle.model.Entity;
+import org.tentackle.model.EntityFactory;
+import org.tentackle.model.Index;
+import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelException;
+import org.tentackle.model.Relation;
+import org.tentackle.model.SortType;
+import org.tentackle.model.SourceInfo;
+import org.tentackle.model.parser.AttributeLine;
+import org.tentackle.model.parser.CommentLine;
+import org.tentackle.model.parser.ConfigurationLine;
+import org.tentackle.model.parser.Document;
+import org.tentackle.model.parser.GlobalOptionLine;
+import org.tentackle.model.parser.Line;
+import org.tentackle.model.parser.OptionLine;
+import org.tentackle.model.parser.RelationLine;
+import org.tentackle.sql.Backend;
+
+
+/**
+ * The default entity model factory.
+ *
+ * @author harald
+ */
+public class EntityFactoryImpl implements EntityFactory {
+
+  /** last pending comment line. */
+  private String pendingComment;
+
+  /** list of backends to validate against. */
+  private Collection<Backend> backends;
+
+  @Override
+  public Collection<Backend> getBackends() {
+    if (backends == null) {
+      backends = new ArrayList<>();
+    }
+    return backends;
+  }
+
+  @Override
+  public void setBackends(Collection<Backend> backends) {
+    this.backends = backends;
+  }
+
+  @Override
+  public EntityImpl createEntity(SourceInfo sourceInfo) {
+    return new EntityImpl(this, sourceInfo);
+  }
+
+  @Override
+  public AttributeImpl createAttribute(Entity entity, SourceInfo sourceInfo, boolean implicit) {
+    return new AttributeImpl(this, entity, sourceInfo, implicit);
+  }
+
+  @Override
+  public AttributeOptionsImpl createAttributeOptions(Attribute attribute, SourceInfo sourceInfo) {
+    return new AttributeOptionsImpl(attribute, sourceInfo);
+  }
+
+  @Override
+  public EntityOptionsImpl createEntityOptions(Entity entity, SourceInfo sourceInfo) {
+    return new EntityOptionsImpl(this, entity, sourceInfo);
+  }
+
+  @Override
+  public IndexImpl createIndex(Entity entity, SourceInfo sourceInfo) {
+    return new IndexImpl(this, entity, sourceInfo);
+  }
+
+  @Override
+  public IndexAttributeImpl createIndexAttribute(Index index, SourceInfo sourceInfo) {
+    return new IndexAttributeImpl(index, sourceInfo);
+  }
+
+  @Override
+  public RelationImpl createRelation(Entity entity, SourceInfo sourceInfo) {
+    return new RelationImpl(entity, sourceInfo);
+  }
+
+
+
+  @Override
+  public Entity createEntity(String model, ModelDefaults modelDefaults) throws ModelException {
+
+    // parse the model (syntax only)
+    Document document = new Document(model);
+    List<Line> lines = document.getLines();
+
+    // apply the semantics to the entity
+    EntityImpl entity = createEntity(document.getSourceInfo());
+
+    if (modelDefaults != null) {
+      if (modelDefaults.getBind() != null) {
+        entity.getOptions().applyOption(CommonOptionsImpl.OPTION_BIND, true);
+      }
+      if (modelDefaults.getSize() != null) {
+        entity.getOptions().applyOption(CommonOptionsImpl.BIND_SIZE, true);
+      }
+      if (modelDefaults.getAutoSelect()!= null) {
+        entity.getOptions().applyOption(Constants.BIND_AUTOSELECT, true);
+      }
+    }
+
+    // add id, serial for processing (may be removed or moved later)
+    AttributeImpl idAttribute = createAttribute(entity, document.getSourceInfo(), true);
+    idAttribute.setDataType(DataType.LONG_PRIMITIVE);
+    idAttribute.setColumnName(Constants.CN_ID);
+    idAttribute.setJavaName(Constants.AN_ID);
+    idAttribute.getOptions().setComment("object id");
+    idAttribute.getOptions().setFromSuper(true);
+    idAttribute.getOptions().setSetGet(true);
+    entity.getAttributes().add(idAttribute);
+
+    AttributeImpl serialAttribute = createAttribute(entity, document.getSourceInfo(), true);
+    serialAttribute.setDataType(DataType.LONG_PRIMITIVE);
+    serialAttribute.setColumnName(Constants.CN_SERIAL);
+    serialAttribute.setJavaName(Constants.AN_SERIAL);
+    serialAttribute.getOptions().setComment("object serial");
+    serialAttribute.getOptions().setFromSuper(true);
+    serialAttribute.getOptions().setSetGet(true);
+    entity.getAttributes().add(serialAttribute);
+
+    // process the lines
+    for (Line line: lines) {
+      switch(line.getLineType()) {
+
+        case EMPTY:
+          break;    // nothing to do
+
+        case COMMENT:
+          // remember last comment line
+          String comment = ((CommentLine) line).getComment();
+          if (comment != null && !comment.isEmpty() && comment.charAt(0) == '#') {
+            // comments starting with double hash '##' are completely ignored
+            continue;
+          }
+          setPendingComment(comment);
+          if (entity.getName() == null) {
+            // collect comment lines as long as name is not set
+            entity.getOptions().setComment(pendingComment);
+          }
+          break;
+
+        case CONFIGURATION:
+          processConfiguration(entity, (ConfigurationLine) line);
+          break;
+
+        case GLOBAL_OPTION:
+          processGlobalOption(entity, (GlobalOptionLine) line);
+          break;
+
+        case ATTRIBUTE_OPTION:
+          processAttributeOption(entity, (OptionLine) line);
+          break;
+
+        case ATTRIBUTE:
+          processAttribute(entity, (AttributeLine) line);
+          break;
+
+        case RELATION:
+          processRelation(entity, (RelationLine) line);
+          break;
+
+        case RELATION_OPTION:
+          processRelationOption(entity, (OptionLine) line);
+          break;
+
+        default: throw new ModelException("unknown linetype " + line.getLineType(),
+                                          document.getSourceInfo().add(line.getLineNumber() - 1, 0));
+      }
+    }
+
+    for (Attribute attribute: entity.getAttributes()) {
+      if (Constants.AN_TABLESERIAL.equals(attribute.getJavaName()) ||
+          Constants.CN_TABLESERIAL.equals(attribute.getColumnName())) {
+        if (!attribute.isImplicit()) {
+          throw new ModelException("use [TABLESERIAL] option instead of explicit attribute", entity);
+        }
+        if (entity.getSuperEntityName() != null) {
+          throw new ModelException("[TABLESERIAL] option not allowed in subclasses", entity);
+        }
+      }
+
+      if (Constants.AN_NORMTEXT.equals(attribute.getJavaName()) ||
+          Constants.CN_NORMTEXT.equals(attribute.getColumnName())) {
+        if (!attribute.isImplicit()) {
+          throw new ModelException("use [NORMTEXT] option instead of explicit attribute", entity);
+        }
+        if (entity.getSuperEntityName() != null) {
+          throw new ModelException("[NORMTEXT] option not allowed in subclasses", entity);
+        }
+      }
+
+      if (Constants.AN_EDITEDBY.equals(attribute.getJavaName()) ||
+          Constants.CN_EDITEDBY.equals(attribute.getColumnName()) ||
+          Constants.AN_EDITEDSINCE.equals(attribute.getJavaName()) ||
+          Constants.CN_EDITEDSINCE.equals(attribute.getColumnName()) ||
+          Constants.AN_EDITEDEXPIRY.equals(attribute.getJavaName()) ||
+          Constants.CN_EDITEDEXPIRY.equals(attribute.getColumnName())) {
+        if (!attribute.isImplicit()) {
+          throw new ModelException("use [EDITEDBY] option instead of explicit attribute", entity);
+        }
+        if (entity.getSuperEntityName() != null) {
+          throw new ModelException("[EDITEDBY] option not allowed in subclasses", entity);
+        }
+      }
+    }
+
+    // determine the context id attribute, if any
+    for (Attribute attribute: entity.getAttributes()) {
+      if (attribute.getOptions().isContextId()) {
+        if (entity.getContextIdAttribute() != null) {
+          throw new ModelException("context id attribute set more than once", entity);
+        }
+        entity.setContextIdAttribute(attribute);
+      }
+    }
+
+    // find associated attributes associated to relations
+    for (Relation relation: entity.getRelations()) {
+      String firstArg = relation.getMethodArgs().get(0);
+      Attribute attribute = entity.getAttributeByJavaName(firstArg, false);
+      if (attribute != null) {
+        ((RelationImpl) relation).setAttribute(attribute);
+        ((AttributeImpl) attribute).setRelation(relation);
+      }
+    }
+
+    if (entity.isRootOfInheritanceHierarchy() && !entity.getInheritanceType().isMappingToNoTable()) {
+      AttributeImpl classIdAttribute = createAttribute(entity, document.getSourceInfo(), true);
+      classIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
+      classIdAttribute.setColumnName(Constants.CN_CLASSID);
+      classIdAttribute.setJavaName(Constants.AN_CLASSID);
+      classIdAttribute.getOptions().setComment("class id");
+      classIdAttribute.getOptions().setFromSuper(true);
+      classIdAttribute.getOptions().setSetGet(true);
+      entity.getAttributes().add(0, classIdAttribute);    // comes first
+    }
+
+    // move from start to end of model
+    entity.getAttributes().remove(idAttribute);
+    entity.getAttributes().remove(serialAttribute);
+
+    if (entity.getSuperEntityName() == null ||
+            entity.isAbstract() && entity.getInheritanceType().isMappingToOwnTable()) {
+      // top of hierarchy or no hierarchy at all or MULTI inheritance
+
+      // all entities provide an id and serial attribute (should be last in model)
+      entity.getAttributes().add(idAttribute);
+      entity.getAttributes().add(serialAttribute);
+    }
+
+    // creates the sorting info, if any
+    List<String> sortOpts = entity.getOptions().getSorting();
+    if (sortOpts != null) {
+      List<AttributeSorting> sorting = new ArrayList<>();
+      for (String sortOpt: sortOpts) {
+        String name = sortOpt.substring(1);
+        SortType sortType = sortOpt.charAt(0) == '+' ? SortType.ASC : SortType.DESC;
+        Attribute attribute = entity.getAttributeByJavaName(name, false);
+        if (attribute == null) {
+          attribute = entity.getAttributeByColumnName(name, false);
+        }
+        if (attribute == null) {
+          throw new ModelException("no such attribute '" + name + "' to sort", entity.getOptions().getSourceInfo());
+        }
+        sorting.add(new AttributeSorting(attribute, sortType));
+      }
+      entity.setSorting(sorting);
+    }
+
+    entity.validate();
+    return entity;
+  }
+
+
+  /**
+   * Processes a configuration line.
+   *
+   * @param entity the entity
+   * @param line the configuration line
+   * @throws ModelException if processing failed
+   */
+  protected void processConfiguration(EntityImpl entity, ConfigurationLine line) throws ModelException {
+    if (!entity.parseConfiguration(line)) {
+      // should be an index config line
+      processIndexConfiguration(entity, line);
+    }
+    consumePendingComment();
+  }
+
+
+  /**
+   * Processes an index configuration line.<br>
+   * Requires the attribute already processed.
+   *
+   * @param entity the entity
+   * @param line the configuration line
+   * @throws ModelException if processing failed
+   */
+  protected void processIndexConfiguration(EntityImpl entity, ConfigurationLine line) throws ModelException {
+    IndexImpl index = createIndex(entity, line.getSourceInfo());
+    index.parse(entity, line);
+    String comment = consumePendingComment();
+    if (BasicStringHelper.isAllWhitespace(index.getComment())) {
+      index.setComment(comment);
+    }
+    entity.getIndexes().add(index);
+  }
+
+
+  /**
+   * Processes a global option line.
+   *
+   * @param entity the entity
+   * @param line the global option line
+   * @throws ModelException if processing failed
+   */
+  protected void processGlobalOption(EntityImpl entity, GlobalOptionLine line) throws ModelException {
+    if (!entity.getAttributes().isEmpty()) {
+      line.createModelException("global options must appear before attributes declaration section");
+    }
+    EntityOptionsImpl options = entity.getOptions();
+    for (String option: line.getOptions()) {
+      if (!options.processOption(option)) {
+        throw line.createModelException("illegal global option: " + option);
+      }
+    }
+    consumePendingComment();
+  }
+
+
+  /**
+   * Processes an attribute option line.
+   *
+   * @param entity the entity
+   * @param line the attribute option line
+   * @throws ModelException if processing failed
+   */
+  protected void processAttributeOption(EntityImpl entity, OptionLine line) throws ModelException {
+    Attribute attribute = entity.getAttributeByJavaName(line.getName(), false);
+    if (attribute == null) {
+      throw line.createModelException("no such attribute: " + line.getName());
+    }
+    AttributeOptionsImpl attributeOptions = (AttributeOptionsImpl) attribute.getOptions();
+    for (String option: line.getOptions()) {
+      if (option.startsWith("@")) {
+        // annotation
+        attributeOptions.getAnnotations().add(option);
+      }
+      else  {
+        if (!attributeOptions.processOption(option.toUpperCase())) {
+          throw line.createModelException("illegal option '" + option + "' for attribute " + attribute);
+        }
+      }
+    }
+    consumePendingComment();
+  }
+
+  /**
+   * Processes a relation option line.
+   *
+   * @param entity the entity
+   * @param line the attribute option line
+   * @throws ModelException if processing failed
+   */
+  protected void processRelationOption(EntityImpl entity, OptionLine line) throws ModelException {
+    Relation relation = entity.getRelation(line.getName(), false);
+    if (relation == null) {
+      throw line.createModelException("no such relation: " + line.getName());
+    }
+    for (String option: line.getOptions()) {
+      if (option.startsWith("@")) {
+        // annotation
+        relation.getAnnotations().add(option);
+      }
+      else  {
+        throw line.createModelException("illegal option '" + option + "' for relation " + relation);
+      }
+    }
+    consumePendingComment();
+  }
+
+
+  /**
+   * Processes an attribute line.
+   *
+   * @param entity the entity
+   * @param line the attribute line
+   * @throws ModelException if processing failed
+   */
+  protected void processAttribute(EntityImpl entity, AttributeLine line) throws ModelException {
+    AttributeImpl attribute = createAttribute(entity, line.getSourceInfo(), false);
+    attribute.parse(entity, line);
+    String comment = consumePendingComment();
+    if (BasicStringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
+      attribute.getOptions().setComment(comment);
+    }
+    entity.getAttributes().add(attribute);
+  }
+
+
+  /**
+   * Processes a relation line.
+   *
+   * @param entity the entity
+   * @param line the relation line
+   * @throws ModelException if processing failed
+   */
+  protected void processRelation(EntityImpl entity, RelationLine line) throws ModelException {
+    RelationImpl relation = createRelation(entity, line.getSourceInfo());
+    relation.parse(entity, line);
+    String comment = consumePendingComment();
+    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+      relation.setComment(comment);
+    }
+    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+      relation.setComment(relation.getName());
+    }
+    entity.getRelations().add(relation);
+  }
+
+
+  /**
+   * Adds a pending comment line.
+   *
+   * @param commentLine the comment line
+   */
+  protected void setPendingComment(String commentLine) {
+    pendingComment = commentLine;
+  }
+
+
+  /**
+   * Returns the pending comment and consumes it.
+   *
+   * @return the pending comment, null if none
+   */
+  protected String consumePendingComment() {
+    String str = pendingComment;
+    pendingComment = null;
+    return str;
+  }
+
+}

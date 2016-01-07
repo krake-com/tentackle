@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!--
+   Tentackle Parent
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle-parent</artifactId>
+  <version>2.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Tentackle Parent</name>
+  <description>common configuration for all tentackle modules</description>
+  <url>${project.artifactId}</url>
+  <inceptionYear>2010</inceptionYear>
+  <organization>
+    <name>Krake Softwaretechnik</name>
+    <url>http://www.krake.de</url>
+  </organization>
+
+  <modules>
+    <module>tentackle-common</module>
+    <module>tentackle-build-support</module>
+    <module>tentackle-sql</module>
+    <module>tentackle-model</module>
+    <module>tentackle-wurblets</module>
+    <module>tentackle-maven-plugin</module>
+    <module>tentackle-sql-maven-plugin</module>
+    <module>tentackle-core</module>
+    <module>tentackle-log-util</module>
+    <module>tentackle-log-log4j</module>
+    <module>tentackle-log-slf4j</module>
+    <module>tentackle-script-groovy</module>
+    <module>tentackle-script-ruby</module>
+    <module>tentackle-domain</module>
+    <module>tentackle-persistence-wurblets</module>
+    <module>tentackle-persistence</module>
+    <module>tentackle-fx</module>
+    <module>tentackle-fx-rdc</module>
+    <module>tentackle-swing</module>
+    <module>tentackle-swing-tinylaf</module>
+    <module>tentackle-swing-looks</module>
+    <module>tentackle-swing-substance</module>
+    <module>tentackle-swing-print</module>
+    <module>tentackle-swing-rdc</module>
+    <module>tentackle-web</module>
+    <module>tentackle-all</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scm.base.dir>${scm.url}/tentackle</scm.base.dir>
+    <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
+    <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
+    <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
+    <netbeans.hint.license>tentackle</netbeans.hint.license>
+    <!-- override the default wurbelDir for multi-module project -->
+    <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
+    <!-- for the tentackle sql plugin -->
+    <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
+    <tentackle.sqlDir>${project.parent.build.directory}/sql</tentackle.sqlDir>
+  </properties>
+
+  <scm>
+    <developerConnection>scm:git://${scm.base.dir}</developerConnection>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>deploy-releases</id>
+      <name>Release Repository</name>
+      <url>${repo.releases.url}</url>
+    </repository>
+    <snapshotRepository>
+      <id>deploy-snapshots</id>
+      <name>Snapshot Repository</name>
+      <url>${repo.snapshots.url}</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <dependencyManagement>
+    <dependencies>
+
+      <dependency>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer</artifactId>
+        <version>2.0-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+        <version>2.0-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>3.12</version>
+      </dependency>
+
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>2.5</version>
+      </dependency>
+
+      <dependency>
+        <!-- must be uploaded to repository manually. Jar is $JAVA_HOME/jre/lib/javaws.jar since JDK7 -->
+        <groupId>javax.jnlp</groupId>
+        <artifactId>jnlp-api</artifactId>
+        <version>1.8.0</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.jgoodies</groupId>
+        <artifactId>looks</artifactId>
+        <version>2.2.2</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.java.net.substance</groupId>
+        <artifactId>substance</artifactId>
+        <version>5.3</version>
+      </dependency>
+
+      <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.17</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.12</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jruby</groupId>
+        <artifactId>jruby</artifactId>
+        <version>1.7.21</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.groovy</groupId>
+        <artifactId>groovy</artifactId>
+        <version>2.4.4</version>
+        <classifier>indy</classifier>
+      </dependency>
+
+      <!-- test dependencies -->
+      <dependency>
+        <groupId>org.testng</groupId>
+        <artifactId>testng</artifactId>
+        <version>6.9.6</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>9.1-901-1.jdbc4</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>5.1.36</version>
+        <scope>test</scope>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+
+        <plugin>
+          <groupId>org.wurbelizer</groupId>
+          <artifactId>wurbelizer-maven-plugin</artifactId>
+          <version>2.0-SNAPSHOT</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-help-plugin</artifactId>
+          <version>2.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.3</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <source>1.8</source>
+            <target>1.8</target>
+            <showWarnings>true</showWarnings>
+            <showDeprecation>true</showDeprecation>
+            <compilerArgument>-Xlint:unchecked</compilerArgument>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.7</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <escapeString>\</escapeString>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.18.1</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.10.3</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.6</version>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+      </resource>
+      <!--  additional source directory for generated service files -->
+      <resource>
+        <directory>${tentackle.serviceDir}</directory>
+      </resource>
+    </resources>
+
+    <testResources>
+      <testResource>
+        <directory>${basedir}/src/test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>${tentackle.testServiceDir}</directory>
+      </testResource>
+    </testResources>
+
+  </build>
+
+</project>
+

@@ -1,0 +1,252 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.wurblet;
+
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import org.tentackle.common.BasicStringHelper;
+import org.tentackle.model.Entity;
+import org.tentackle.model.Relation;
+import org.tentackle.model.RelationType;
+
+/**
+ * Support methods for model comment.
+ *
+ * @author harald
+ */
+public class ModelCommentSupport {
+
+
+  /**
+   * Prints the attribute holding the link.
+   *
+   * @param relation the relation
+   * @param out the output stream
+   */
+  public static void printVia(Relation relation, PrintStream out) {
+    out.print(" via ");
+    if (relation.getAttribute() != null) {
+      out.print(relation.getAttribute());
+    }
+    else if (relation.getForeignEntity() != null && relation.getForeignAttribute() != null) {
+      String entityName = relation.getForeignEntity().getName();
+      if (relation.getForeignEntity().getTableAlias() != null) {
+        entityName = relation.getForeignEntity().getTableAlias();   // is shorter and better to read
+      }
+      out.print(entityName);
+      out.print('.');
+      out.print(relation.getForeignAttribute());
+    }
+    else {
+      out.print("?");
+    }
+  }
+
+  /**
+   * Prints the referencing relation.
+   *
+   * @param relation the relation
+   * @param indent the indent string
+   * @param out the output stream
+   */
+  public static void printReferencedBy(Relation relation, String indent, PrintStream out) {
+    Entity entity = relation.getEntity();   // the referencing entity
+    out.print(indent);
+    out.print(entity);
+    printRootEntities(entity, entity.getRootEntities(), out);
+    if (relation.isDeepReference()) {
+      out.print(" deeply");
+    }
+
+    printVia(relation, out);
+
+    if (!relation.getName().equalsIgnoreCase(entity.toString())) {
+      out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+    }
+    Relation nmRel = relation.getNmRelation();
+    Relation rel = relation;
+    if (nmRel == null && relation.getForeignRelation() != null) {
+      nmRel = relation.getForeignRelation().getNmRelation();
+      if (nmRel != null) {
+        rel = relation.getForeignRelation();
+      }
+    }
+    if (nmRel != null) {
+      out.print(" [N:M] to ");
+      Entity nmEntity = nmRel.getForeignEntity();
+      out.print(nmEntity);
+      if (rel.getNmMethodName() != null &&
+          !rel.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
+        out.print(" as " + BasicStringHelper.firstToLower(rel.getNmMethodName()));
+      }
+      out.println();
+    }
+    else  {
+      if (relation.getRelationType() == RelationType.LIST) {
+        out.println(" [1:N]");
+      }
+      else {
+        out.println(" [1:1]");
+      }
+    }
+  }
+
+
+  /**
+   * Recursively prints the components and sub-entities of an entity.
+   *
+   * @param compositeRelations the composite relations
+   * @param subEntities the sub entities
+   * @param indent the indent string
+   * @param out the output stream
+   */
+  public static void printComponents(Collection<Relation> compositeRelations, Collection<Entity> subEntities,
+                                     String indent, PrintStream out) {
+
+    for (Relation relation: compositeRelations) {
+      Entity component = relation.getForeignEntity();
+      for (Entity sub: subEntities) {
+        if (!sub.getComponents().isEmpty()) {
+          out.print(indent);
+          out.print("^ ");
+          out.println(sub);
+          List<Relation> subCompositeRelations = new ArrayList<>();
+          for (Relation subRelation : sub.getRelationsIncludingInherited()) {
+            if (subRelation.isComposite()) {
+              subCompositeRelations.add(subRelation);
+            }
+          }
+          printComponents(subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
+        }
+      }
+      out.print(indent);
+      out.print("+ ");
+      out.print(component);
+
+      printVia(relation, out);
+
+      if (!relation.getName().equalsIgnoreCase(component.toString())) {
+        out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+      }
+      if (relation.getNmRelation() != null) {
+        out.print(" [N:M] to ");
+        Entity nmEntity = relation.getNmRelation().getForeignEntity();
+        out.print(nmEntity);
+        if (relation.getNmMethodName() != null &&
+            !relation.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
+          out.print(" as " + BasicStringHelper.firstToLower(relation.getNmMethodName()));
+        }
+        out.println();
+      }
+      else  {
+        if (relation.getRelationType() == RelationType.LIST) {
+          out.println(" [1:N]");
+        }
+        else {
+          out.println(" [1:1]");
+        }
+      }
+
+      List<Relation> componentCompositeRelations = new ArrayList<>();
+      for (Relation subRelation : component.getRelationsIncludingInherited()) {
+        if (subRelation.isComposite()) {
+          componentCompositeRelations.add(subRelation);
+        }
+      }
+      printComponents(componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
+    }
+  }
+
+  /**
+   * Recursively prints the sub-entities of an entity.
+   *
+   * @param subEntities the sub entities
+   * @param indent the indent string
+   * @param out the output stream
+   */
+  public static void printSubEntities(Collection<Entity> subEntities, String indent, PrintStream out) {
+    for (Entity sub: subEntities) {
+      out.print(indent);
+      out.print("^ ");
+      out.println(sub);
+      printSubEntities(sub.getSubEntities(), indent + "    ", out);
+    }
+  }
+
+
+  /**
+   * Prints outgoing non-composite relations from components.
+   *
+   * @param entity the root entity
+   * @param relations the outgoing relations
+   * @param indent the indent string
+   * @param out the output stream
+   */
+  public static void printNonCompositeRelations(Entity entity, List<Relation> relations, String indent, PrintStream out) {
+
+    for (Relation relation: relations) {
+      if (!relation.isComposite() && !relation.getForeignEntity().equals(entity)) {
+        out.print(indent);
+        out.print(relation.getForeignEntity());
+        printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
+        if (!relation.getEntity().equals(entity)) {   // some sub entity
+          out.print(" from ");
+          out.print(relation.getEntity());
+          printRootEntities(entity, relation.getEntity().getRootEntities(), out);
+        }
+        printVia(relation, out);
+        if (relation.isReversed()) {
+          out.println(" reversed");
+        }
+        out.println();
+      }
+    }
+  }
+
+
+  private static void printRootEntities(Entity entity, Collection<Entity> rootEntities, PrintStream out) {
+    List<Entity> roots = new ArrayList<>();
+    for (Entity rootEntity: rootEntities) {
+      if (!rootEntity.equals(entity)) {
+        roots.add(rootEntity);
+      }
+    }
+    if (!roots.isEmpty()) {
+      out.print(" (");
+      boolean needComma = false;
+      for (Entity rootEntity : roots) {
+        if (needComma) {
+          out.print(", ");
+        }
+        else  {
+          needComma = true;
+        }
+        out.print(rootEntity);
+      }
+      out.print(")");
+    }
+  }
+
+
+  private ModelCommentSupport() {}
+
+}

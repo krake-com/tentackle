@@ -1,0 +1,3 @@
+tablename=modification
+classid=1
+mapfile=$model/$tablename.map

@@ -1,0 +1,63 @@
+@{package org.tentackle.wurblet}@
+@{import java.util.*}@
+@{import java.io.*}@
+@{import org.wurbelizer.wurbel.*}@
+@{import org.wurbelizer.wurblet.*}@
+@{args}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * Injects from the argument list.
+     * All args will be concatenated as strings.
+     *
+     * This wurblet is normally used as an inline wurblet like this:
+     *
+     * usage:  \@wurblet + Inject [--string] <text>
+     *        --string to enclose in double quotes (same as "\"xxxxxxx\"")
+     *
+     *
+     * Example (simple dependency injection):
+     */
+    // \@wurblet + Inject $implClass
+    // public MyInterface injected = new /**/<REPLACE_THIS>/**/();
+
+    StringBuilder text = new StringBuilder();
+    boolean asString = false;
+
+    for (String arg: getContainer().getArgs())  {
+      if (arg.startsWith("--")) {
+        if (arg.equals("--string")) {
+          asString = true;
+        }
+      }
+      else  {
+        text.append(arg);
+      }
+    }
+    if (asString) {
+      out.print('"');
+    }
+    out.print(text);
+    if (asString) {
+      out.print('"');
+    }
+]@

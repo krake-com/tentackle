@@ -1,0 +1,827 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.validate;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeSet;
+import org.tentackle.bind.Binder;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.StringHelper;
+import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.validate.validator.FailedValidationResult;
+
+
+interface ValidationUtilities$Singleton {
+  static ValidationUtilities INSTANCE = ServiceFactory.createService(ValidationUtilities.class, ValidationUtilities.class);
+}
+
+
+/**
+ * Utilities for validation.
+ *
+ * @author harald
+ */
+@Service(ValidationUtilities.class)    // defaults to self
+public class ValidationUtilities {
+
+  /**
+   * logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(ValidationUtilities.class);
+
+
+  /**
+   * The singleton.
+   *
+   * @return the singleton
+   */
+  public static ValidationUtilities getInstance() {
+    return ValidationUtilities$Singleton.INSTANCE;
+  }
+
+
+  /**
+   * Gets the default validation path.<br>
+   * The default implementation just returns the object's class basename
+   * with the first letter in lowercase (according to variable name rules).
+   *
+   * @param object the object to validate
+   * @return the default (root) validation path, null if object is null
+   */
+  public String getDefaultValidationPath(Object object) {
+    Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
+    return clazz == null ? "null" : StringHelper.firstToLower(ReflectionHelper.getClassBaseName(clazz));
+  }
+
+
+  /**
+   * Creates a failed validation result.
+   *
+   * @param validator the validator
+   * @param validationContext the validation context
+   * @param message the message
+   * @return the validation result
+   */
+  public ValidationResult createFailedValidationResult(Validator validator, ValidationContext validationContext, String message) {
+    return new FailedValidationResult(validator, validationContext, message);
+  }
+
+
+  /**
+   * Validates an object.<br>
+   * The method first applies the field validators followed by the object validators.
+   * Objects simply refer to this method in order to implement {@link Validateable}.
+   *
+   * @param object the object to be validated
+   * @param validationPath the validation path, null if {@link #getDefaultValidationPath()}
+   * @param scope the validation scope
+   * @return the validation results, empty if okay, never null
+   */
+  public List<ValidationResult> validate(Validateable object, String validationPath, ValidationScope scope) {
+    Class<?> clazz = EffectiveClassProvider.getEffectiveClass(object);
+    List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(clazz);
+    List<ValidationResult> results = validateFields(validators, scope, validationPath, object);
+    validators = ValidatorCache.getInstance().getObjectValidators(clazz);
+    results.addAll(validateObject(validators, scope, validationPath, object, object, object.getClass()));
+    return results;
+  }
+
+
+  /**
+   * Validates a collection of objects.<br>
+   *
+   * @param collection the objects to validate
+   * @param validationPath the validation path, null if {@link #getDefaultValidationPath()}
+   * @param scope the validation scope
+   * @return the validation results
+   */
+  public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection, String validationPath, ValidationScope scope)  {
+    List<ValidationResult> results = new ArrayList<>();
+    if (collection != null) {
+      int ndx = 0;
+      for (Validateable obj: collection)  {
+        if (obj != null) {
+          results.addAll(obj.validate(validationPath + "[" + (ndx++) + "]", scope));
+        }
+      }
+    }
+    return results;
+  }
+
+
+
+  /**
+   * Gets all validators for all annotated fields or methods of given class.<br>
+   * If an attribute is annotated both at the field and the (getter-)method level,
+   * the method gets precedence.
+   * @param clazz
+   * @param scope optional validation scope, null = all
+   * @return the validators
+   */
+  public List<Validator> getFieldValidators(Class<?> clazz, ValidationScope scope) {
+    Map<ValidatorKey,Validator> validatorMap = new HashMap<>();
+    addFieldValidatorsToMap(validatorMap, clazz, scope);
+    List<Validator> validators = new ArrayList<>(validatorMap.values());
+    sortValidatorsByPriority(validators);
+    return validators;
+  }
+
+
+
+  /**
+   * Gets all validators for all annotated fields or methods of given class.<br>
+   * If an attribute is annotated both at the field and the (getter-)method level,
+   * the method gets precedence.
+   *
+   * @param validatorMap the validator map (unique on attribute names)
+   * @param clazz
+   * @param scope optional validation scope, null = all
+   */
+  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Class<?> clazz, ValidationScope scope) {
+    for (Field field: ReflectionHelper.getAllFields(clazz, null, true, null, true)) {
+      for (Validator validator: getElementValidators(field, scope)) {
+        LOGGER.fine("field validator @{0} found for {1}:{2}",
+                    validator.getClass().getName(), clazz.getName(), field.getName());
+        validatorMap.put(new ValidatorKey(validator), validator);
+      }
+    }
+
+    for (Method method: ReflectionHelper.getAllMethods(clazz, null, true, null, true)) {
+      if (!method.isBridge() && ReflectionHelper.isGetter(method)) {
+        for (Validator validator: getElementValidators(method, scope)) {
+          LOGGER.fine("method validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), clazz.getName(), method.getName());
+          validatorMap.put(new ValidatorKey(validator), validator);
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Get validators for an annotated fields and/or method.<br>
+   *
+   * @param field the field, null if none
+   * @param method the (getter-)method, null if none
+   * @param scope optional validation scope, null = all
+   * @return the validators
+   */
+  public List<Validator> getFieldValidators(Field field, Method method, ValidationScope scope) {
+    Map<ValidatorKey,Validator> validatorMap = new HashMap<>();
+    addFieldValidatorsToMap(validatorMap, field, method, scope);
+    List<Validator> validators = new ArrayList<>(validatorMap.values());
+    sortValidatorsByPriority(validators);
+    return validators;
+  }
+
+
+  /**
+   * Get validators for an annotated fields and/or method.<br>
+   *
+   * @param validatorMap the validator map (unique on attribute names)
+   * @param field the field, null if none
+   * @param method the (getter-)method, null if none
+   * @param scope optional validation scope, null = all
+   */
+  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
+    if (field != null) {
+      for (Validator validator: getElementValidators(field, scope)) {
+        LOGGER.fine("field validator @{0} found for {1}:{2}",
+                    validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
+        validatorMap.put(new ValidatorKey(validator), validator);
+      }
+    }
+
+    if (method != null && ReflectionHelper.isGetter(method)) {
+      for (Validator validator: getElementValidators(method, scope)) {
+        if (LOGGER.isFineLoggable()) {
+          LOGGER.fine("method validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), method.getDeclaringClass().getName(), method.getName());
+        }
+        validatorMap.put(new ValidatorKey(validator), validator);
+      }
+    }
+  }
+
+
+
+  /**
+   * Gets all validators for annotated class.
+   *
+   * @param clazz the class to inspect
+   * @param scope optional validation scope, null = all
+   * @return the list of field validators
+   */
+  public List<Validator> getObjectValidators(Class<?> clazz, ValidationScope scope) {
+    List<Validator> validators = new ArrayList<>();
+    for (Annotation annotation: clazz.getAnnotations()) {
+      extractValidators(annotation, clazz, validators, scope);
+    }
+    sortValidatorsByPriority(validators);
+    return validators;
+  }
+
+
+
+
+  /**
+   * Applies validators for fields of the given parent object.<br>
+   * The model values are determined by the annotated elements per validator.
+   *
+   * @param validators the validators for the fields
+   * @param effectiveScope the effective scope, null = all
+   * @param validationPath the validation path corresponding to <code>object</code>, null if {@link #getDefaultValidationPath()}
+   * @param object the parent object to verify
+   * @return the list of validation results
+   */
+  public List<ValidationResult> validateFields(
+          List<Validator> validators, ValidationScope effectiveScope,
+          String validationPath, Object object) {
+
+    if (validationPath == null) {
+      validationPath = getDefaultValidationPath(object);
+    }
+
+    List<ValidationResult> allResults = new ArrayList<>();
+
+    for (Validator validator : validators) {
+
+      // build validation context
+      ValidationContext validationContext = new ValidationContext();
+      validationContext.setParentObject(object);    // set object prior to determine condition
+      validationContext.setEffectiveScope(effectiveScope);
+      validationContext.setValidationPath(validationPath + "." + validator.getValidatedElementName());
+
+      AnnotatedElement element = validator.getAnnotatedElement();
+      if (element instanceof Field) {
+        Field field = (Field) element;
+        if (!field.isAccessible()) {
+          field.setAccessible(true);
+        }
+        try {
+          validationContext.setObject(object == null ? null : field.get(object));
+          validationContext.setType(field.getType());
+        }
+        catch (Exception ex) {
+          throw new ValidationRuntimeException("cannot access value of field " + field, ex);
+        }
+      }
+      else if (element instanceof Method) {
+        Method method = (Method) element;
+        try {
+          validationContext.setObject(object == null ? null : method.invoke(object));
+          validationContext.setType(method.getReturnType());
+        }
+        catch (Exception ex) {
+          throw new ValidationRuntimeException("cannot invoke method " + method, ex);
+        }
+      }
+
+      // check if scope applies
+      if (validator.isConditionValid(validationContext)
+              && (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
+        // scope applies
+        List<? extends ValidationResult> results = validator.validate(validationContext);
+        if (results != null) {
+          boolean failed = false;
+          for (ValidationResult result : results) {
+            allResults.add(result);
+            if (result.hasFailed() && validator.getStopIfFailed()) {
+              failed = true;
+              break;
+            }
+          }
+          if (failed) {
+            break;
+          }
+        }
+      }
+    }
+
+    return allResults;
+  }
+
+
+  /**
+   * Applies validators to the given object.
+   *
+   * @param validators the validators to be applied
+   * @param effectiveScope the effective scope, null = all
+   * @param validationPath the validation path corresponding to <code>object</code>, null if {@link #getDefaultValidationPath()}
+   * @param parentObject the parent object the validated object is declared in
+   * @param object the object to verify
+   * @param type the type of the object
+   * @return the list of validation results
+   */
+  public List<ValidationResult> validateObject(
+          List<Validator> validators, ValidationScope effectiveScope,
+          String validationPath, Object parentObject, Object object, Class<?> type) {
+
+    if (validationPath == null) {
+      validationPath = getDefaultValidationPath(object);
+    }
+
+    List<ValidationResult> allResults = new ArrayList<>();
+
+    for (Validator validator : validators) {
+
+      // build validation context
+      ValidationContext validationContext = new ValidationContext();
+      validationContext.setParentObject(parentObject);    // set object prior to determine condition
+      validationContext.setObject(object);
+      validationContext.setType(type);
+      validationContext.setEffectiveScope(effectiveScope);
+      validationContext.setValidationPath(validationPath);
+
+      // check if scope applies and validator is valid
+      if (validator.isConditionValid(validationContext)
+              && (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
+        // scope applies
+        try {
+          List<? extends ValidationResult> results = validator.validate(validationContext);
+          if (results != null) {
+            boolean failed = false;
+            for (ValidationResult result : results) {
+              allResults.add(result);
+              if (result.hasFailed() && validator.getStopIfFailed()) {
+                failed = true;
+                break;
+              }
+            }
+            if (failed) {
+              break;
+            }
+          }
+        }
+        catch (RuntimeException ex) {
+          // just log the error for diagnostics
+          LOGGER.severe("validator '" + validator + "' failed", ex);
+          throw ex;
+        }
+      }
+    }
+
+    return allResults;
+  }
+
+
+
+  /**
+   * Checks whether a list of validation results contains a failed validation.
+   *
+   * @param results the list of validation results
+   * @return true if a validation failed
+   */
+  public boolean hasFailed(List<ValidationResult> results) {
+    for (ValidationResult result: results) {
+      if (result.hasFailed()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /**
+   * Checks whether a list of validation results contains a message.
+   *
+   * @param results the list of validation results
+   * @return true if a message found
+   */
+  public boolean hasMessage(List<ValidationResult> results) {
+    for (ValidationResult result: results) {
+      if (result.hasMessage()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /**
+   * Concatenates the validation results toString() to a single string.
+   *
+   * @param results the list of validation results
+   * @return the string, never null
+   */
+  public String resultsToString(List<ValidationResult> results) {
+    StringBuilder buf = new StringBuilder();
+    if (results != null) {
+      for (ValidationResult result: results) {
+        if (buf.length() > 0) {
+          buf.append('\n');
+        }
+        buf.append(result.toString());
+      }
+    }
+    return buf.toString();
+  }
+
+
+  /**
+   * Concatenates the validation results getMessage() to a single string.
+   *
+   * @param results the list of validation results
+   * @return the string, never null
+   */
+  public String resultsToMessage(List<ValidationResult> results) {
+    StringBuilder buf = new StringBuilder();
+    if (results != null) {
+      for (ValidationResult result: results) {
+        if (buf.length() > 0) {
+          buf.append('\n');
+        }
+        buf.append(result.getMessage());
+      }
+    }
+    return buf.toString();
+  }
+
+
+  /**
+   * Mapping result from {@link #mapValidationPath}.
+   */
+  public static class MapResult {
+
+    private final Binder binder;
+    private final String bindingPath;
+
+    /**
+     * Creates the result.
+     *
+     * @param binder the binder
+     * @param bindingPath the binding path
+     */
+    public MapResult(Binder binder, String bindingPath) {
+      this.binder = binder;
+      this.bindingPath = bindingPath;
+    }
+
+    /**
+     * Gets the binder.
+     *
+     * @return the binder
+     */
+    public Binder getBinder() {
+      return binder;
+    }
+
+    /**
+     * Gets the binding path.
+     *
+     * @return the binding path
+     */
+    public String getBindingPath() {
+      return bindingPath;
+    }
+  }
+
+  /**
+   * Maps binding paths.<br>
+   * Translates one binding path (usually a validation path from a validation result) to
+   * binding paths and their corresponding binder. Binders may be nested as it is often
+   * the case in UIs.
+   *
+   * @param mappers the validation mappers
+   * @param binder the top level binder
+   * @param bindingPath the binding path
+   * @return the mapped binder and bindingpath
+   */
+  public MapResult mapValidationPath(TreeSet<ValidationMapper> mappers, Binder binder, String bindingPath) {
+
+    Binder currentBinder = binder;
+    String currentPath = bindingPath;
+
+    if (mappers != null) {
+      // translate validation path to binding path and optionally switch to other binders
+      for (;;) {
+        /**
+         * The bindingpath from the results is always longer than the bindingpath of the validation mapper, hence
+         * lowerEntry.
+         */
+        ValidationMapper mapper = mappers.lower(new ValidationMapper(currentPath, currentBinder, null, null));
+        if (mapper != null) {
+          // some mapper found
+          if (currentPath.startsWith(mapper.getValidationPath()) &&
+                  (mapper.getBinder() == null || mapper.getBinder().equals(currentBinder))) {
+            currentPath = mapper.getBindingPath() + currentPath.substring(mapper.getValidationPath().length());
+            if (mapper.getNextBinder() != null) {
+              currentBinder = mapper.getNextBinder();
+            }
+            LOGGER.fine("{0}:{1} translated to {2}:{3}",
+                    binder.getInstanceNumber(), bindingPath,
+                    currentBinder.getInstanceNumber(), currentPath);
+          }
+          else {
+            break;
+          }
+        }
+        else {
+          break;
+        }
+      }
+    }
+
+    return new MapResult(currentBinder, currentPath);
+  }
+
+
+  /**
+   * Gets a formatted and localized string.
+   * <p>
+   * Instead of
+   * <pre>java.text.MessageFormat.format(my.domain.application.package.Bundle.getString("{0}_is_wrong"), value)</pre>
+   * you can write in a Groovy-script:
+   * <pre>ValidationUtilities().getInstance().format(clazz, '{0}_is_wrong', value)</pre>
+   * Or much shorter directly as a message parameter in the validator:
+   * <pre>message={ @('{0}_is_wrong', value) }</pre>
+   * <p>
+   * This method will lookup a class ValidationBundle in the package of where the validator is used
+   * and invokes the static method getString().
+   *
+   * @param clazz the class to look for <code>ValidationBundle</code> in the same package
+   * @param pattern the message pattern
+   * @param args arguments to pattern
+   * @return the formatted and localized string
+   *
+   * @see MessageFormat
+   */
+  public String format(Class<?> clazz, String pattern, Object... args) {
+
+    if (pattern != null) {
+      if (clazz == null) {
+        throw new IllegalArgumentException("clazz is necessary to determine package");
+      }
+      // find package of given object
+      String packageName = ReflectionHelper.getPackageName(clazz);
+      if (packageName == null) {
+        throw new IllegalArgumentException(clazz + " is not within a package");
+      }
+
+      // find a class in the same package with the name 'Locales'
+      Class<?> bundleClass = null;
+
+      try {
+        bundleClass = Class.forName(packageName + ".ValidationBundle");
+        // class must contain a public static attribute named "bundle" which must be a ResourceBundle
+        Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
+        if (!bundleMethod.getReturnType().equals(String.class)) {
+          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
+        }
+        if (!Modifier.isStatic(bundleMethod.getModifiers())) {
+          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");
+        }
+        if (!Modifier.isPublic(bundleMethod.getModifiers())) {
+          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not public");
+        }
+        // okay, here we go...
+        try {
+          String localizedPattern = (String) bundleMethod.invoke(null, pattern);
+          return MessageFormat.format(localizedPattern, args);
+        }
+        catch (Exception ex) {
+          // could not translate: format without translation and write a log
+          LOGGER.warning("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
+          return MessageFormat.format(pattern, args);
+        }
+      }
+      catch (ClassNotFoundException e1) {
+        throw new IllegalArgumentException("no ValidationBundle found in " + packageName);
+      }
+      catch (NoSuchMethodException e2) {
+        throw new IllegalArgumentException(bundleClass.getName() + " does not provide the method getString()");
+      }
+    }
+
+    return null;
+  }
+
+
+  /**
+   * Gets a formatted and localized string.
+   *
+   * @param object the object to look for <code>ValidationBundle</code> in the same package
+   * @param pattern the message pattern
+   * @param args arguments to pattern
+   * @return the formatted and localized string
+   *
+   * @see #format(java.lang.Class, java.lang.String, java.lang.Object...)
+   */
+  public String format(Object object, String pattern, Object... args) {
+    return format(object instanceof EffectiveClassProvider ? ((EffectiveClassProvider) object).getEffectiveClass() : object.getClass(), pattern, args);
+  }
+
+
+
+  /**
+   * Key to override field annotations by method annotations.
+   */
+  public static class ValidatorKey {
+
+    private final String elementName;
+    private final Class<?> validatorClass;
+    private final int validationIndex;
+
+    /**
+     * Creates a validator key.
+     *
+     * @param validator
+     */
+    public ValidatorKey(Validator validator) {
+      this.elementName = validator.getValidatedElementName();
+      this.validatorClass = validator.getClass();
+      this.validationIndex = validator.getValidationIndex();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final ValidatorKey other = (ValidatorKey) obj;
+      if ((this.elementName == null) ? (other.elementName != null) : !this.elementName.equals(other.elementName)) {
+        return false;
+      }
+      if (this.validatorClass != other.validatorClass && (this.validatorClass == null || !this.validatorClass.equals(other.validatorClass))) {
+        return false;
+      }
+      return this.validationIndex == other.validationIndex;
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 7;
+      hash = 53 * hash + (this.elementName != null ? this.elementName.hashCode() : 0);
+      hash = 53 * hash + (this.validatorClass != null ? this.validatorClass.hashCode() : 0);
+      hash = 53 * hash + this.validationIndex;
+      return hash;
+    }
+
+  }
+
+
+  /**
+   * Sorts validators by priority
+   *
+   * @param validators
+   */
+  protected void sortValidatorsByPriority(List<Validator> validators) {
+    Collections.sort(validators, (Validator o1, Validator o2) -> {
+      if (o1 == null) {
+        return o2 == null ? 0 : -1;
+      }
+      else if (o2 == null) {
+        return 1;
+      }
+      else  {
+        return o1.getPriority() - o2.getPriority();
+      }
+    });
+  }
+
+
+
+  /**
+   * Gets the member-name of the annotated element.
+   *
+   * @param element the annotated element
+   * @return the element's name
+   */
+  protected String getAnnotatedElementName(AnnotatedElement element) {
+    if (element instanceof Field) {
+      return ((Field) element).getName();
+    }
+    else if (element instanceof Method) {
+      return StringHelper.firstToLower(ReflectionHelper.getPathMethodName((Method) element));
+    }
+    else if (element instanceof Class<?>) {
+      return ((Class<?>) element).getName();
+    }
+    else  {
+      throw new ValidationRuntimeException("cannot determine element name");
+    }
+  }
+
+
+  /**
+   * Extract validators for an annotation.
+   * Allows also lists of annotations.
+   *
+   * @param annotation the annotation
+   * @param element the annotated element
+   * @param validators the validation annotation(s)
+   * @param scope the validation scope, null = all
+   */
+  protected void extractValidators(Annotation annotation, AnnotatedElement element,
+                                   List<Validator> validators, ValidationScope scope) {
+
+    // check the annotations present on given annotation
+    for (Annotation anno: annotation.annotationType().getAnnotations()) {
+      if (anno instanceof Validation) {
+        Validation validation = (Validation) anno;
+        Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
+        addValidator(annotation, element, -1, validators, scope, validatorClazz);
+      }
+      else if (anno instanceof RepeatableValidation) {
+        Class<? extends Annotation> repeatedAnnoClazz = ((RepeatableValidation) anno).value();
+        Annotation[] repeatedAnnotations = element.getAnnotationsByType(repeatedAnnoClazz);   // this returns proxies!
+        int validationIndex = 0;
+        /**
+         * We need to analyze the annotations of repeatedAnnotations again, because the
+         * returned proxies are not instanceof Validation. (is this a bug in Java8?)
+         */
+        for (Annotation repeatedAnno: repeatedAnnotations) {
+          for (Annotation anno2: repeatedAnno.annotationType().getAnnotations()) {
+            if (anno2 instanceof Validation) {
+              Validation validation = (Validation) anno2;
+              Class<? extends Validator> validatorClazz = validation.value();   // get validator implementation class
+              addValidator(repeatedAnno, element, validationIndex++, validators, scope, validatorClazz);
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Adds a validator to a list.
+   *
+   * @param annotation the annotation
+   * @param element the annotated element
+   * @param validationIndex the validation index >= 0 if
+   * @param validators the list of validators
+   * @param scope the validation scope
+   * @param validatorClass the class to create a validator instance from
+   */
+  protected void addValidator(Annotation annotation, AnnotatedElement element, int validationIndex,
+                              List<Validator> validators, ValidationScope scope,
+                              Class<? extends Validator> validatorClass) {
+    try {
+      Validator validator = validatorClass.newInstance();
+      validator.setAnnotation(annotation);
+      validator.setAnnotatedElement(element);
+      validator.setValidatedElementName(getAnnotatedElementName(element));
+      validator.setValidationIndex(validationIndex);
+      if (scope == null || scope.appliesTo(validator.getConfiguredScopes(null))) {
+        validators.add(validator);
+      }
+    }
+    catch (Exception ex) {
+      throw new ValidationRuntimeException("could not create validator", ex);
+    }
+  }
+
+
+  /**
+   * Gets all validators for annotated attributes
+   *
+   * @param element the {@link Field} or {@link Method} to inspect
+   * @param scope optional validation scope, null = all
+   * @return the list of field validators
+   */
+  protected List<Validator> getElementValidators(AnnotatedElement element, ValidationScope scope) {
+    List<Validator> validators = new ArrayList<>();
+    for (Annotation annotation: element.getAnnotations()) {
+      extractValidators(annotation, element, validators, scope);
+    }
+    return validators;
+  }
+
+}

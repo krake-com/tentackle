@@ -1,0 +1,3 @@
+tablename = secrules
+classid   = 5
+mapping   = $model/$tablename.map

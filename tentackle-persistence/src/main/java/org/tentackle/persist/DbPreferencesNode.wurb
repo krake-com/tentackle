@@ -1,0 +1,3 @@
+tablename = prefnode
+classid   = 3
+mapfile   = $model/$tablename.map

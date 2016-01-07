@@ -1,0 +1,214 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.security;
+
+import org.tentackle.log.Loggable;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.Identifiable;
+import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.Session;
+
+
+/**
+ * Runtime exception thrown for security violations.
+ *
+ * @author harald
+ */
+public class SecurityException extends PersistenceException implements Loggable {
+
+  private static final long serialVersionUID = -5355906838551059054L;
+
+ /**
+   * Constructs a new security violation exception for a given session
+   * with <code>null</code> as its detail message.
+   * The cause is not initialized, and may subsequently be
+   * initialized by a call to {@link #initCause}.
+   *
+   * @param session the session
+   */
+  public SecurityException(Session session) {
+    super(session);
+  }
+
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified detail message.
+   * The cause is not initialized, and may subsequently be initialized by a
+   * call to {@link #initCause}.
+   *
+   * @param   session the session
+   * @param   message   the detail message. The detail message is saved for
+   *          later retrieval by the {@link #getMessage()} method.
+   */
+  public SecurityException(Session session, String message) {
+    super(session, message);
+  }
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified detail message and
+   * cause.  <p>Note that the detail message associated with
+   * <code>cause</code> is <i>not</i> automatically incorporated in
+   * this object not found's detail message.
+   *
+   * @param  session the session
+   * @param  message the detail message (which is saved for later retrieval
+   *         by the {@link #getMessage()} method).
+   * @param  cause the cause (which is saved for later retrieval by the
+   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         permitted, and indicates that the cause is nonexistent or
+   *         unknown.)
+   * @since  1.4
+   */
+  public SecurityException(Session session, String message, Throwable cause) {
+    super(session, message, cause);
+  }
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified cause and a
+   * detail message of <tt>(cause==null ? null : cause.toString())</tt>
+   * (which typically contains the class and detail message of
+   * <tt>cause</tt>).  This constructor is useful for runtime exceptions
+   * that are little more than wrappers for other throwables.
+   *
+   * @param  session the session
+   * @param  cause the cause (which is saved for later retrieval by the
+   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         permitted, and indicates that the cause is nonexistent or
+   *         unknown.)
+   * @since  1.4
+   */
+  public SecurityException(Session session, Throwable cause) {
+    super(session, cause);
+  }
+
+
+
+  /**
+   * Constructs a new security violation exception for a given pc object
+   * with <code>null</code> as its detail message.
+   * The cause is not initialized, and may subsequently be
+   * initialized by a call to {@link #initCause}.
+   *
+   * @param object the persistent object
+   */
+  public SecurityException(Identifiable object) {
+    super(object);
+  }
+
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified detail message.
+   * The cause is not initialized, and may subsequently be initialized by a
+   * call to {@link #initCause}.
+   *
+   * @param   object the persistent object
+   * @param   message   the detail message. The detail message is saved for
+   *          later retrieval by the {@link #getMessage()} method.
+   */
+  public SecurityException(Identifiable object, String message) {
+    super(object, message);
+  }
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified detail message and
+   * cause.  <p>Note that the detail message associated with
+   * <code>cause</code> is <i>not</i> automatically incorporated in
+   * this object not found's detail message.
+   *
+   * @param  object the persistent object
+   * @param  message the detail message (which is saved for later retrieval
+   *         by the {@link #getMessage()} method).
+   * @param  cause the cause (which is saved for later retrieval by the
+   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         permitted, and indicates that the cause is nonexistent or
+   *         unknown.)
+   * @since  1.4
+   */
+  public SecurityException(Identifiable object, String message, Throwable cause) {
+    super(object, message, cause);
+  }
+
+  /**
+   * Constructs a new security violation exception for a given session with the specified cause and a
+   * detail message of <tt>(cause==null ? null : cause.toString())</tt>
+   * (which typically contains the class and detail message of
+   * <tt>cause</tt>).  This constructor is useful for runtime exceptions
+   * that are little more than wrappers for other throwables.
+   *
+   * @param  object the persistent object
+   * @param  cause the cause (which is saved for later retrieval by the
+   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         permitted, and indicates that the cause is nonexistent or
+   *         unknown.)
+   * @since  1.4
+   */
+  public SecurityException(Identifiable object, Throwable cause) {
+    super(object, cause);
+  }
+
+
+  /**
+   * Constructs a new security violation exception without a session and
+   * with <code>null</code> as its detail message.
+   * The cause is not initialized, and may subsequently be
+   * initialized by a call to {@link #initCause}.
+   */
+  public SecurityException() {
+    super();
+  }
+
+
+  /**
+   * Constructs a new security violation exception without a session with the specified detail message.
+   * The cause is not initialized, and may subsequently be initialized by a
+   * call to {@link #initCause}.
+   *
+   * @param   message   the detail message. The detail message is saved for
+   *          later retrieval by the {@link #getMessage()} method.
+   */
+  public SecurityException(String message) {
+    super(message);
+  }
+
+  /**
+   * Constructs a new security violation exception without a session with the specified detail message and
+   * cause.  <p>Note that the detail message associated with
+   * <code>cause</code> is <i>not</i> automatically incorporated in
+   * this runtime exception's detail message.
+   *
+   * @param  message the detail message (which is saved for later retrieval
+   *         by the {@link #getMessage()} method).
+   * @param  cause the cause (which is saved for later retrieval by the
+   *         {@link #getCause()} method).  (A <tt>null</tt> value is
+   *         permitted, and indicates that the cause is nonexistent or
+   *         unknown.)
+   */
+  public SecurityException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+
+  @Override
+  public Logger.Level getLogLevel() {
+    // don't log the stacktrace, it's an expected exception
+    return null;
+  }
+
+}

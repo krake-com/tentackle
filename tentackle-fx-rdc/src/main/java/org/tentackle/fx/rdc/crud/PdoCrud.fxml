@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<StackPane xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.crud.PdoCrud">
+   <children>
+      <Label fx:id="noViewLabel" text="%noViewPermission" textFill="RED">
+         <font>
+            <Font name="System Bold" size="18.0" />
+         </font>
+      </Label>
+      <BorderPane fx:id="borderPane">
+         <bottom>
+            <HBox fx:id="buttonBox" alignment="CENTER_RIGHT" spacing="5.0">
+               <children>
+                  <Button fx:id="securityButton" mnemonicParsing="false" />
+                  <Button fx:id="previousButton" mnemonicParsing="false" />
+                  <Button fx:id="nextButton" mnemonicParsing="false" />
+                  <HBox minWidth="10.0" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="treeButton" text="%tree" />
+                  <Button fx:id="findButton" text="%find" />
+                  <Button fx:id="newButton" text="%new" />
+                  <Button fx:id="saveButton" text="%save" />
+                  <Button fx:id="deleteButton" text="%delete" />
+                  <Button fx:id="printButton" text="%print" />
+                  <Button fx:id="cancelButton" text="%cancel" />
+               </children>
+               <BorderPane.margin>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </BorderPane.margin>
+            </HBox>
+         </bottom>
+      </BorderPane>
+   </children>
+</StackPane>

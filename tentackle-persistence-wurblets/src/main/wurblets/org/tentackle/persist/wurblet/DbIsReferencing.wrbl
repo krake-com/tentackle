@@ -1,0 +1,145 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a check for reference
+     * usage:  \@wurblet <methodname> DbIsReferencing --model=<mapfile> [--remote|--local] [--append=...] [--private]
+     *                              [--classvar=<access_to_classvariables>] <key1> ... <keyn>
+     *         --remote means "with remote rmi-code" (overrides default)
+     *         --local means "without remote rmi-code" (overrides default)
+     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever
+     *         --private makes the method private (default is public, turns on --local as well)
+     *         --classvar=... name or method to classvariables for statementId, default is private static
+     *
+     *         the keys are java-names.
+     *
+     * Example: \@wurblet isReferencingArtikel DbIsReferencing --model=$scripts/artikel.map --remote artikelNr
+     */
+
+    String className = getClassName();
+    String methodName = getMethodName();
+    String delegateCast = "(" + className + "RemoteDelegate)";
+
+    String  classVar    = null;
+    String  scope       = "public";
+    String  append      = null;
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("private")) {
+        scope = "private";
+        setRemote(false);
+      }
+      else if (arg.startsWith("append=")) {
+        append = arg.substring(7);
+      }
+      else if (arg.startsWith("classvar="))  {
+        classVar = arg.substring(9);
+      }
+    }
+
+    if (classVar == null) {
+      classVar = "";
+    }
+    else  {
+      classVar += ".";    // add dot to access class var
+    }
+
+    if (getExpressionParameters().isEmpty())  {
+      throw new WurbelException("no select keys given");
+    }
+
+    String params = buildMethodParameters();
+    String iparms = buildInvocationParameters();
+    String statementId = createStatementId();
+    boolean whereWithAliases = true;   // for genwhere.incl
+
+]@
+  @(scope)@ boolean @(methodName)@(@(params)@) {
+@[
+
+    if (isRemote()) {
+      // create includes
+      RemoteIncludes genInc = new RemoteIncludes(this);
+      PrintStream implOut      = genInc.getImplStream();
+      PrintStream remoteOut    = genInc.getRemoteStream();
+]@
+    if (getSession().isRemote())  {
+      // invoke remote method
+      try {
+@{to remoteOut}@
+  public boolean @(methodName)@(@(params)@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public boolean @(methodName)@(@(params)@) throws RemoteException {
+    try {
+      return dbObject.@(methodName)@(@(iparms)@);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+        return (@(delegateCast)@ getRemoteDelegate()).
+                  @(methodName)@(@(iparms)@);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(getSession(), e);
+      }
+    }
+    // else: local mode
+@[
+    } // end if remote
+
+]@
+    PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
+      () -> {
+        StringBuilder sql = createSelectIdInnerSql();
+@{include $currentDir/genwhere.incl}@
+        getBackend().buildSelectSql(sql, false, 1, 0);
+@[
+    if (append != null) {
+]@
+        sql.append(' ');
+        sql.append(@(append)@);
+@[
+    }
+]@
+        return sql.toString();
+      }
+    );
+    int ndx = getBackend().setLeadingSelectParameters(st, 1, 0);
+@{include $currentDir/gensetpar.incl}@
+    getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
+    try (ResultSetWrapper rs = st.executeQuery()) {
+      return rs.next();
+    }
+  }
+@[
+    if (classVar.length() == 0) {
+]@
+
+  private static final StatementId @(statementId)@ = new StatementId();
+
+@[
+    }
+]@

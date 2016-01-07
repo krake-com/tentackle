@@ -1,0 +1,148 @@
+@[
+    if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+]@
+        boolean classIdRequired = isClassIdRequiredInWhereClause();
+        if (classIdRequired) {
+          sql.append(Backend.SQL_AND);
+          sql.append(getTopSuperTableAlias()).append('.').append(CN_CLASSID);
+          sql.append(Backend.SQL_EQUAL_PAR);
+        }
+@[
+    }
+    boolean andPrepended = false;
+    if (getContextAttribute() != null) {
+        andPrepended = true;
+]@
+        sql.append(Backend.SQL_AND);
+        sql.append(CN_@(getContextAttribute().getJavaName().toUpperCase())@);
+        sql.append(Backend.SQL_EQUAL_PAR);
+@[
+    }
+
+    boolean needParentheses = false;
+
+    if (!getExpressionParameters().isEmpty()) {
+      needParentheses = getExpression().needParenthesesAfterAndOperator();
+      if (andPrepended || needParentheses) {
+]@
+        sql.append(Backend.SQL_AND).append(Backend.SQL_LEFT_PARENTHESIS);
+@[
+      }
+      else {
+]@
+        sql.append(Backend.SQL_AND);
+@[
+        if (needParentheses && getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+]@
+        if (classIdRequired) {
+          sql.append(Backend.SQL_LEFT_PARENTHESIS);
+        }
+@[
+        }
+      }
+      // not a lambda because reference to instance of codeWriter within itself
+      final CodeGenerator<Object> generator = new CodeGenerator<Object>() {
+        \@Override
+        public String generate(Object t) throws WurbelException {
+          if (t instanceof WurbletParameterOperator) {
+            return "        sql.append(Backend." + ((WurbletParameterOperator) t).getSql() + ");\n";
+          }
+          if (t instanceof WurbletParameterExpression) {
+            StringBuilder buf = new StringBuilder();
+            buf.append("        sql.append(Backend.SQL_LEFT_PARENTHESIS);\n");
+            buf.append(((WurbletParameterExpression) t).toCode(this));
+            buf.append("        sql.append(Backend.SQL_RIGHT_PARENTHESIS);\n");
+            return buf.toString();
+          }
+          if (t instanceof WurbletParameter) {
+            StringBuilder buf = new StringBuilder();
+            WurbletParameter par = (WurbletParameter) t;
+            Attribute attr = par.getAttribute();
+            if (par.isComponentKey() || par.isRelationKey()) {
+              String compKeyClass = deriveClassNameForEntity(attr.getEntity());
+              for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+                String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+                boolean mainColumn = sp.getPostfix().isEmpty();
+                if (!mainColumn) {
+                  buf.append("        sql.append(Backend.SQL_AND);\n");
+                }
+                buf.append("        sql.append(").append(compKeyClass).
+                    append(".CLASSVARIABLES.getColumnName(").
+                    append(compKeyClass).append(".CN_").append(name).append(")).\n");
+                if (mainColumn) {
+                  buf.append("            append(").append(par.getRelop()).append(");\n");
+                }
+                else {
+                  buf.append("            append(Backend.SQL_EQUAL_PAR);\n");
+                }
+              }
+            }
+            else {
+              for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+                String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+                boolean mainColumn = sp.getPostfix().isEmpty();
+                if (!mainColumn) {
+                  buf.append("        sql.append(Backend.SQL_AND);\n");
+                }
+                if (whereWithAliases) {
+                  if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
+                     buf.append("        sql.append(");
+                     buf.append(deriveClassNameForEntity(attr.getEntity()));
+                     buf.append(".CLASSVARIABLES.getColumnName(CN_");
+                     buf.append(name).append("));\n");
+                  }
+                  else  {
+                    if (isPdo()) {
+                      buf.append("        sql.append(getColumnName(CN_").append(name).append("));\n");
+                    }
+                    else  {
+                      buf.append("        sql.append(CN_").append(name).append(");\n");
+                    }
+                  }
+                }
+                else  {
+                  buf.append("        sql.append(CN_").append(name).append(");\n");
+                }
+                if (mainColumn) {
+                  buf.append("        sql.append(").append(par.getRelop()).append(");\n");
+                }
+                else  {
+                  buf.append("        sql.append(Backend.SQL_EQUAL_PAR);\n");
+                }
+              }
+            }
+            return buf.toString();
+          }
+          return "        sql.append(" + t + ");\n";
+        }
+      };
+      // generate it!
+      String code = getExpression().toCode(generator);
+      if (code.endsWith("\n")) {
+        code = code.substring(0, code.length() - 1);
+      }
+]@
+@(code)@
+@[
+      if (andPrepended || needParentheses) {
+]@
+        sql.append(Backend.SQL_RIGHT_PARENTHESIS);
+@[
+      }
+      else if (needParentheses && getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+]@
+        if (classIdRequired) {
+          sql.append(Backend.SQL_RIGHT_PARENTHESIS);
+        }
+@[
+      }
+    }
+
+    String orderByStr = createOrderBy();
+    if (orderByStr != null) {
+]@
+        sql.append(Backend.SQL_ORDERBY)
+           @(orderByStr)@;
+@[
+    }
+]@

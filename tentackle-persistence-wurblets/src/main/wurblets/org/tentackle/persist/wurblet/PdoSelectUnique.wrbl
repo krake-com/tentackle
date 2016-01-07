@@ -1,0 +1,259 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a unique select
+     * usage:  \@wurblet <methodname> PdoSelectUnique --model=<mapfile> [--remote|--local] [--private] [--sort]
+     *                          [--noif] [--append=<sqltext>] [--lock] <key1> ... <keyn>
+     *         --remote means "with remote rmi-code" (overrides default)
+     *         --local means "without remote rmi-code" (overrides default)
+     *         --private makes the method private (default is public, turns on --local as well)
+     *         --lock selects FOR UPDATE
+     *         --sort checks for orderBy()-Method and adds a LIMIT 1
+     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever and adds a LIMIT 1
+     *         --noif "no interface method", i.e. no \@Override will be generated
+     *
+     *         the keys are java-names.
+     *
+     * Example: \@wurblet selectByArtikelNr PdoSelectUnique --model=$scripts/artikel.map --remote artikelNr
+     */
+
+
+    assertEntityIsPersistable();
+
+    if (!getExtraParameters().isEmpty()) {
+      String msg = "unexpected extra parameters:";
+      for (WurbletParameter par: getExtraParameters()) {
+        msg += " " + par;
+      }
+      throw new WurbelException(msg);
+    }
+
+    String className  = getClassName();
+    String methodName = getMethodName();
+    String pdoName    = getPdoClassName();
+    String returnType = pdoName;
+    String poType     = className;
+    if (isGenerified()) {
+      returnType = "T";
+      poType = "P";
+    }
+
+    boolean sort        = false;
+    boolean lock        = false;
+    String  append      = null;
+    boolean noif        = false;
+    String  scope       = "public";
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("private")) {
+        scope = "private";
+      }
+      else if (arg.equals("noif")) {
+        noif = true;
+      }
+      else if (arg.equals("sort")) {
+        if (isWithDefaultSorting()) {
+          if (isWithSorting()) {
+            throw new WurbelException("either default sorting (--sort) or explicit sorting (+/-AN) allowed");
+          }
+          sort = true;
+        }
+        else {
+          throw new WurbelException("no sorting configured in model for " + getEntity());
+        }
+      }
+      else if (arg.equals("lock")) {
+        lock = true;
+      }
+      else if (arg.startsWith("append=")) {
+        append = arg.substring(7);
+      }
+    }
+
+    if (scope.equals("private")) {
+      setRemote(false);
+      noif = true;
+    }
+
+    if (methodName == null) {
+      throw new WurbelException("can't determine <methodname>");
+    }
+    if (getExpressionParameters().isEmpty() && !sort && append == null && getContextAttribute() == null) {
+      throw new WurbelException("no keys given");
+    }
+
+    String params = buildMethodParameters();
+    String iparms = buildInvocationParameters();
+    String statementId = createStatementId();
+    String reflMethod = getGuardName() + "Method";
+    boolean needLimit = sort || append != null || createOrderBy() != null;
+    boolean whereWithAliases = true;   // for genwhere.incl
+
+    String alias = getEntity().getTopSuperEntity().getTableAlias();
+    String poImpl = deriveClassNameForEntity(getEntity());
+
+]@
+
+  private static final StatementId @(statementId)@ = new StatementId();
+
+@[
+    if (!noif) {
+]@
+  \@Override
+@[
+    }
+]@
+  @(scope)@ @(returnType)@ @(methodName)@(@(as(params))@) {
+@[
+    if (isRemote()) {
+      // create includes
+      RemoteIncludes genInc = new RemoteIncludes(this);
+      PrintStream implOut   = genInc.getImplStream();
+      PrintStream remoteOut = genInc.getRemoteStream();
+]@
+    if (getSession().isRemote())  {
+      // invoke remote method
+      try {
+@{to remoteOut}@
+  public @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException {
+    try {
+      return newInstance(context).@(methodName)@(@(iparms)@);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+        @(returnType)@ obj = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "getDomainContext()"))@);
+        configureRemoteObject(getDomainContext(), obj);
+        return obj;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    // else: local mode
+@[
+    } // end if remote
+
+    if (!getJoins().isEmpty()) {
+]@
+    JoinedSelect<@(returnType)@> js = new JoinedSelect<>();
+@[
+      int joinCount = 0;
+      for (Relation join: getJoins()) {
+        joinCount++;
+        String joinClass = join.getForeignEntity().getName();
+        String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
+        if (join.getRelationType() == RelationType.LIST) {
+]@
+    js.addJoin(
+      new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
+        (@(alias)@, @(joinAlias)@) -> {
+          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
+          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+        }
+      )
+    );
+@[
+        }
+        else  {
+]@
+    js.addJoin(
+      new Join<>(JoinType.LEFT, getColumnName(CN_@(join.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
+        (@(alias)@, @(joinAlias)@) -> {
+          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+        }
+      )
+    );
+@[
+        }
+      }
+    }
+
+]@
+    PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
+      () -> {
+        StringBuilder sql = createSelectAllInnerSql();
+@{include $currentDir/genwhere.incl}@
+        getBackend().buildSelectSql(sql, @(lock ? "true" : "false")@, @(needLimit ? 1 : 0)@, 0);
+@[
+    if (sort) {
+]@
+        String orderSuffix = orderBy();
+        if (orderSuffix != null && !orderSuffix.isEmpty()) {
+          sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
+        }
+@[
+    }
+    if (append != null)  {
+]@
+        sql.append(' ');
+        sql.append(@(append)@);
+@[
+    }
+]@@{include $currentDir/genjoinsql.incl}@
+        return sql.toString();
+      }
+    );
+@[
+    if (needLimit) {
+]@
+    int ndx = getBackend().setLeadingSelectParameters(st, 1, 0);
+@[
+    }
+    else  {
+]@
+    int ndx = 1;
+@[
+    }
+
+    if (!getJoins().isEmpty()) {
+]@
+    ndx = js.setClassIdsInStatement(st, ndx);
+@[
+    }
+]@
+@{include $currentDir/gensetpar.incl}@
+@[
+    if (needLimit) {
+]@
+    getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
+@[
+    }
+    if (getJoins().isEmpty()) {
+]@
+    return executeFirstPdoQuery(st);
+@[
+    }
+    else  {
+]@
+    return executeFirstPdoQuery(st, js);
+@[
+    }
+]@
+  }

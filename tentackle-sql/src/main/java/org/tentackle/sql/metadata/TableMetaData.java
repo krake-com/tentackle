@@ -1,0 +1,341 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.sql.metadata;
+
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import org.tentackle.sql.BackendException;
+
+/**
+ * Meta data for a table.
+ *
+ * @author harald
+ */
+public class TableMetaData {
+
+  protected final ModelMetaData modelMetaData;                  // the model containing this table
+  protected final String modelTableName;                        // the full table name including optional schema
+  protected String schemaName;                                  // the schema name, null if default or none
+  protected String tableName;                                   // the tablename without schema
+  protected String comment;                                     // the comment
+  protected final Collection<ColumnMetaData> columns;           // the columns
+  protected final Map<String,IndexMetaData> indexes;            // the indexes
+  protected final Map<String,ForeignKeyMetaData> foreignKeys;   // the foreign keys
+
+
+  /**
+   * Creates a table meta instance.
+   *
+   * @param modelMetaData the model this table belongs to
+   * @param modelTableName the tablename used in the model
+   */
+  public TableMetaData(ModelMetaData modelMetaData, String modelTableName) {
+    this.modelMetaData = modelMetaData;
+    this.modelTableName = modelTableName;
+    columns = new ArrayList<>();
+    indexes = new TreeMap<>();
+    foreignKeys = new TreeMap<>();
+  }
+
+
+  /**
+   * Sets up the column from the database meta data result.
+   *
+   * @param metaData the database metadata
+   * @param schemaPattern the schema (null if none, "" if without schema)
+   * @param tablePattern the table pattern
+   * @throws SQLException the processing failed
+   * @throws BackendException if logical meta data processing error
+   */
+  public void setupTableFromMetaData(DatabaseMetaData metaData, String schemaPattern, String tablePattern) throws SQLException {
+
+    ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null);
+    try {
+      if (resultSet.next()) {
+        schemaName = resultSet.getString("TABLE_SCHEM");
+        tableName = resultSet.getString("TABLE_NAME");
+        comment = resultSet.getString("REMARKS");
+      }
+      else  {
+        throw new BackendException("no metadata for schema " + schemaPattern + ", table " + tablePattern);
+      }
+    }
+    finally {
+      resultSet.close();
+    }
+
+    resultSet = metaData.getColumns(null, schemaPattern, tablePattern, null);
+    try {
+      while (resultSet.next()) {
+        // check same schema, tablename
+        String schema = resultSet.getString("TABLE_SCHEM");
+        String table = resultSet.getString("TABLE_NAME");
+        // check that we're getting the same results
+        if (schema != null && schemaName != null && !schemaName.equals(schema)) {
+            throw new BackendException("different schemas apply to '" + (schemaPattern == null ? "" : (schemaPattern + ".")) + tablePattern + "': " +
+                                       schemaName + " != " + schema);
+        }
+        else if (schema == null && schemaName != null ||
+                 schema != null && schemaName == null) {
+          // schema is null??
+          throw new BackendException("null- and non-null schemas found for '" + (schemaPattern == null ? "" : (schemaPattern + ".")) + tablePattern + "': " +
+                                     (schemaName == null ? "<null>" : schemaName) + " != " +
+                                     (schema == null ? "<null>" : schema));
+        }
+        if (table != null && tableName != null && !tableName.equals(table)) {
+            throw new BackendException("different tablenames apply to '" + (schemaPattern == null ? "" : (schemaPattern + ".")) + tablePattern + "': " +
+                                       tableName + " != " + table);
+        }
+        else if (table == null && tableName != null ||
+                 table != null && tableName == null) {
+          // table is null??
+          throw new BackendException("null- and non-null tablenames found for '" + (schemaPattern == null ? "" : (schemaPattern + ".")) + tablePattern + "': " +
+                                     (tableName == null ? "<null>" : tableName) + " != " +
+                                     (table == null ? "<null>" : table));
+        }
+
+        ColumnMetaData columnMetaData = modelMetaData.getBackend().createColumnMetaData(this);
+        columnMetaData.setupColumnFromMetaData(resultSet);
+        if (columnMetaData.getColumnName() != null && !columnMetaData.getColumnName().startsWith("_")) {
+          columns.add(columnMetaData);
+        }
+      }
+    }
+    finally {
+      resultSet.close();
+    }
+
+    // extract index information
+    resultSet = metaData.getIndexInfo(null, schemaName, tableName, false, false);
+    try {
+      while (resultSet.next()) {
+        String indexName = resultSet.getString("INDEX_NAME");
+        if (indexName != null && !indexName.startsWith("_")) {
+          // find index meta data, if new: create one
+          IndexMetaData indexMetaData = indexes.get(indexName);
+          if (indexMetaData == null) {
+            // new: create it and add to tableMetaData
+            indexMetaData = modelMetaData.getBackend().createIndexMetaData(this);
+            indexMetaData.setupIndexFromMetaData(resultSet);
+            indexes.put(indexName, indexMetaData);
+          }
+          indexMetaData.addIndexColumnFromMetaData(resultSet);
+        }
+      }
+    }
+    finally {
+      resultSet.close();
+    }
+
+    // extract foreign keys
+    ForeignKeyMetaData foreignKeyMetaData = null;
+    resultSet = metaData.getImportedKeys(null, schemaName, tableName);
+    try {
+      while (resultSet.next()) {
+        short keySeq = resultSet.getShort("KEY_SEQ");
+        if (keySeq == 1) {
+          // new foreign key
+          foreignKeyMetaData = new ForeignKeyMetaData(this);
+          foreignKeyMetaData.setupForeignKeyFromMetaData(resultSet);
+          if (foreignKeyMetaData.getForeignKeyName() != null &&
+              !foreignKeyMetaData.getForeignKeyName().startsWith("_")) {
+            foreignKeys.put(foreignKeyMetaData.getForeignKeyName(), foreignKeyMetaData);
+          }
+        }
+        else if (foreignKeyMetaData == null) {
+          throw new BackendException("unexpected KEY_SEQ " + keySeq + " in " + foreignKeyMetaData);
+        }
+        ForeignKeyColumnMetaData column = new ForeignKeyColumnMetaData(foreignKeyMetaData);
+        column.setupForeignKeyColumnFromMetaData(resultSet);
+        foreignKeyMetaData.addForeignKeyColumn(column);
+      }
+    }
+    finally {
+      resultSet.close();
+    }
+
+    validate();
+  }
+
+
+  /**
+   * Gets the model this table belongs to.
+   *
+   * @return the model
+   */
+  public ModelMetaData getModelMetaData() {
+    return modelMetaData;
+  }
+
+  /**
+   * Gets the table name used in the model.
+   *
+   * @return the model's tablename
+   */
+  public String getModelTableName() {
+    return modelTableName;
+  }
+
+  /**
+   * Gets the database schema name.<br>
+   * Always in lowercase.
+   *
+   * @return the schema, null if none
+   */
+  public String getSchemaName() {
+    return schemaName;
+  }
+
+  /**
+   * Gets the database table name.<br>
+   * Always in lowercase.
+   *
+   * @return the table name (without schema)
+   */
+  public String getTableName() {
+    return tableName;
+  }
+
+  /**
+   * Gets the database table name with optional schemaname prepended.<br>
+   * Always in lowercase.
+   *
+   * @return the full table name
+   */
+  public String getFullTableName() {
+    if (schemaName != null) {
+      return schemaName + "." + tableName;
+    }
+    return tableName;
+  }
+
+  /**
+   * Gets the comment.
+   * @return the comment, null if none
+   */
+  public String getComment() {
+    return comment;
+  }
+
+  /**
+   * Gets the meta data for columns.
+   *
+   * @return the columns
+   */
+  public Collection<ColumnMetaData> getColumns() {
+    return columns;
+  }
+
+  /**
+   * Gets a column by its column name.
+   *
+   * @param columnName the column name
+   * @return the column, null if no such column
+   */
+  public ColumnMetaData getColumnByName(String columnName) {
+    columnName = columnName.toLowerCase();
+    for (ColumnMetaData column: columns) {
+      if (column.getColumnName().equals(columnName)) {
+        return column;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Gets the meta data for indexes.
+   *
+   * @return the indexes
+   */
+  public Collection<IndexMetaData> getIndexes() {
+    return indexes.values();
+  }
+
+  /**
+   * Gets the foreign keys.
+   *
+   * @return the foreign keys
+   */
+  public Collection<ForeignKeyMetaData> getForeignKeys() {
+    return foreignKeys.values();
+  }
+
+
+  /**
+   * Validates and postprocesses the table data.
+   */
+  public void validate() {
+    if (comment != null && comment.isEmpty()) {
+      comment = null;
+    }
+  }
+
+
+  @Override
+  public int hashCode() {
+    int hash = 5;
+    hash = 71 * hash + Objects.hashCode(this.schemaName);
+    hash = 71 * hash + Objects.hashCode(this.tableName);
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final TableMetaData other = (TableMetaData) obj;
+    if (!Objects.equals(this.schemaName, other.schemaName)) {
+      return false;
+    }
+    return Objects.equals(this.tableName, other.tableName);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder("TABLE ");
+    buf.append(getFullTableName());
+    buf.append(" (");
+    for (ColumnMetaData column: getColumns()) {
+      buf.append("\n    ");
+      buf.append(column);
+    }
+    buf.append("\n)");
+    for (IndexMetaData index: getIndexes()) {
+      buf.append("\n");
+      buf.append(index);
+    }
+    for (ForeignKeyMetaData foreignKey: getForeignKeys()) {
+      buf.append("\n");
+      buf.append(foreignKey);
+    }
+    buf.append("\n");
+    return buf.toString();
+  }
+
+}

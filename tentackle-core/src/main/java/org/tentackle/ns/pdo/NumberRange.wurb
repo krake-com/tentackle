@@ -1,0 +1,3 @@
+tablename = numrange
+classid   = 7
+mapping   = $model/$tablename.map

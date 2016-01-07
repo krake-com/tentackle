@@ -1,0 +1,185 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a getter and setter methods for pdo interfaces.
+
+     * usage:  \@wurblet <somename> Methods --model=<mapfile> [--noudk]
+     *
+     *         --noudk don't generate selectByUniqueDomainKey method definition
+     *
+     * Example: \@wurblet methods Methods --model=$scripts/artikel.map
+     */
+
+    boolean generateSelectByUDK = getOption("noudk") == null;
+
+    for (Attribute attr: getEntity().getAttributes())  {
+
+      if (attr.getOptions().getAccessScope() != AccessScope.PUBLIC ||
+          attr.getOptions().isFromSuper()) {
+        continue; // skip
+      }
+
+      if (attr.getOptions().isNoMethod())    {
+]@
+
+  // no accessor methods for @(attr)@
+  // @(attr.getOptions().getComment())@
+@[
+      }
+      else {
+        String type = attr.getJavaType();
+        String methodSuffix = attr.getMethodNameSuffix();
+        String getter = attr.getGetterName();
+        String setter = attr.getSetterName();
+        if (attr.getOptions().isWriteOnly()) {
+]@
+
+  // @(attr)@ is writeonly, no getter.
+@[
+        }
+        else  {
+]@
+
+  /**
+   * Gets the attribute @(attr)@.
+   *
+   * \@return @(attr.getOptions().getComment())@
+   */
+  \@Persistent(@(BasicStringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
+@[
+          for (String annotation: attr.getOptions().getAnnotations()) {
+]@
+  @(annotation)@
+@[
+          }
+          if (attr.getOptions().isBind()) {
+]@
+  @(attr.getBindableAnnotation())@
+@[
+          }
+          if (attr.getOptions().isDomainKey()) {
+]@
+  \@DomainKey
+@[
+          }
+]@
+  @(type)@ @(getter)@();
+@[
+        }
+
+        if (attr.getOptions().isReadOnly()) {
+]@
+
+  // @(attr)@ is readonly, no setter.
+@[
+        }
+        else {
+          // check to make setter for lazy or eager object relations hidden to the application
+          Relation rel = attr.getRelation();
+          if (rel == null || rel.getSelectionType() == SelectionType.ALWAYS) {
+]@
+
+  /**
+   * Sets the attribute @(attr)@.
+   *
+   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   */
+@[
+            if (attr.getOptions().isBind()) {
+]@
+  \@Bindable
+@[
+            }
+]@
+  void @(setter)@(@(type)@ @(attr.getJavaName())@);
+@[
+          }
+        }
+        if (getEntity().getOptions().getTrackType().isAttracked()) {
+]@
+
+  /**
+   * Gets the modification state of @(attr)@.
+   *
+   * \@return true if modified
+   */
+  boolean is@(methodSuffix)@Modified();
+@[
+        }
+        if (getEntity().getOptions().getTrackType() == TrackType.FULLTRACKED) {
+]@
+
+  /**
+   * Gets the last persisted value of @(attr)@.
+   *
+   * \@return the last persisted value
+   */
+  @(attr.getJavaType())@ @(getter)@Persisted();
+@[
+        }
+        if (attr.getOptions().isWithTimezone()) {
+]@
+
+  /**
+   * Gets the database timezone for @(attr)@.
+   *
+   * \@return the timezone configuration to read/write from/to the backend.
+   */
+  Calendar get@(methodSuffix)@TimezoneConfig();
+@[
+        }
+      }
+    }
+
+    if (isPdo() && generateSelectByUDK) {
+      List<Attribute> udk = getEntity().getUniqueDomainKey();
+      if (!udk.isEmpty()) {
+        List<Attribute> superUdk = null;
+        if (getEntity().getSuperEntity() != null) {
+          superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+        }
+        if (superUdk == null || !udk.equals(superUdk)) {
+]@
+
+  /**
+   * Selects @(getEntity())@ by its unique domain key.
+   *
+@[
+          String returnType = isGenerified() ? "T" : getPdoClassName();
+          StringBuilder params = new StringBuilder();
+          for (Attribute attr: udk) {
+            appendCommaSeparated(params, attr.getJavaType());
+            params.append(' ').append(attr.getJavaName());
+]@
+   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+@[
+          }
+]@
+   * \@return the @(getEntity())@, null if no such PDO
+   */
+  @(returnType)@ selectByUniqueDomainKey(@(params)@);
+@[
+        }
+      }
+    }
+]@

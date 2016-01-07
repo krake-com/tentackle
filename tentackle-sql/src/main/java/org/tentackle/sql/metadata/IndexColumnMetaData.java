@@ -1,0 +1,120 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.sql.metadata;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import org.tentackle.common.BasicStringHelper;
+
+
+/**
+ * Meta data for a column of an index.
+ *
+ * @author harald
+ */
+public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
+
+  protected final IndexMetaData indexMetaData;    // index column belongs to
+  protected String columnName;                    // column columnName
+  protected boolean descending;                   // true = DESC, false = ASC
+  protected int position;                         // ordinal position within index
+
+
+  /**
+   * Creates an index column.
+   *
+   * @param indexMetaData the index column belongs to
+   */
+  public IndexColumnMetaData(IndexMetaData indexMetaData) {
+    this.indexMetaData = indexMetaData;
+  }
+
+  /**
+   * Sets up the index column from the database meta data result.
+   *
+   * @param resultSet the column result set
+   * @throws SQLException the processing the result set failed
+   */
+  public void setupIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
+    columnName = BasicStringHelper.toLower(resultSet.getString("COLUMN_NAME"));
+    String ascDesc = resultSet.getString("ASC_OR_DESC");
+    descending = ascDesc != null && ascDesc.startsWith("D");
+    position = resultSet.getShort("ORDINAL_POSITION");
+
+    validate();
+  }
+
+  /**
+   * Gets the index.
+   *
+   * @return index column belongs to
+   */
+  public IndexMetaData getIndexMetaData() {
+    return indexMetaData;
+  }
+
+  /**
+   * Returns ascending or descending order.
+   *
+   * @return true if descending
+   */
+  public boolean isDescending() {
+    return descending;
+  }
+
+  /**
+   * Gets the column columnName.
+   *
+   * @return the index column's columnName in lowercase
+   */
+  public String getColumnName() {
+    return columnName;
+  }
+
+  /**
+   * Gets the ordinal position within the index.
+   *
+   * @return the position
+   */
+  public int getPosition() {
+    return position;
+  }
+
+  @Override
+  public int compareTo(IndexColumnMetaData o) {
+    return position - o.position;
+  }
+
+  /**
+   * Validates and postprocesses the index column data.
+   */
+  public void validate() {
+  }
+
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder(columnName);
+    if (descending) {
+      buf.append(" DESC");
+    }
+    return buf.toString();
+  }
+
+}

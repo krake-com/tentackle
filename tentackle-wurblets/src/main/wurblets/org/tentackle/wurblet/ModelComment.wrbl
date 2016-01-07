@@ -1,0 +1,195 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * generate a comment to document the relations of the entity.
+     *
+     * usage:  \@wurblet <tag> ModelComment --model=<mapfile>
+     *
+     *         <mapfile> is the mapping description
+     *
+     * Example: \@wurblet relations Relations --model=$mapping
+     */
+
+    // create comment for referencing relations
+    List<Relation> referencingRelations = getEntity().getReferencingRelationsIncludingInherited();
+    List<Entity> subEntities = getEntity().getSubEntities();
+    Set<List<Relation>> compositePaths = getEntity().getTopSuperEntity().getCompositePaths();
+    List<Relation> compositeRelations = new ArrayList<>();
+    for (Relation relation: getEntity().getRelationsIncludingInherited()) {
+      if (relation.isComposite()) {
+        compositeRelations.add(relation);
+      }
+    }
+]@
+
+  /****************************************************************************
+   *
+@[
+    List<Relation> refRels = new ArrayList<>();   // referencing relations without backlinks from components
+    for (Relation rel: referencingRelations) {
+      Relation foreignRelation = rel.getForeignRelation();
+      // don't print composite back-relations
+      if (foreignRelation == null || !foreignRelation.getEntity().equals(getEntity()) ||
+          !foreignRelation.isComposite()) {
+        refRels.add(rel);
+      }
+    }
+
+    if (refRels.isEmpty()) {
+]@
+   * @(getEntity())@ is not referenced by any other entity
+@[
+    }
+    else {
+]@
+   * @(getEntity())@ is referenced by:
+   *
+@[
+    }
+    for (Relation rel: refRels) {
+      ModelCommentSupport.printReferencedBy(rel, "   * ", out);
+    }
+
+    if (getEntity().isRootEntityAccordingToModel() ||
+        getEntity().getOptions().isRootEntity()) {
+]@
+   *
+   *
+   * @(getEntity())@ is a root entity
+@[
+    }
+
+    if (!compositeRelations.isEmpty()) {
+]@
+   *
+   *
+   * @(getEntity())@ is a composite with the components:
+@[
+      ModelCommentSupport.printComponents(compositeRelations, subEntities, "   *    ", out);
+    }
+
+    List<Relation> outRels = new ArrayList<>();
+    Set<Entity> components = new HashSet<>();
+    components.add(getEntity());
+    components.addAll(getEntity().getSuperEntities());
+    for (Entity component: getEntity().getAllComponents()) {
+      components.add(component);
+      components.addAll(component.getSuperEntities());
+    }
+    for (Entity component: components) {
+      for (Relation relation: component.getRelationsIncludingSubEntities()) {
+        if (!relation.isComposite() && !components.contains(relation.getForeignEntity())) {
+          outRels.add(relation);
+        }
+      }
+    }
+
+    if (outRels.isEmpty()) {
+]@
+   *
+   *
+   * @(getEntity())@ is not referencing other entities
+@[
+    }
+    else  {
+]@
+   *
+   *
+   * @(getEntity())@ is referencing the following entities:
+   *
+@[
+      ModelCommentSupport.printNonCompositeRelations(getEntity(), outRels, "   * ", out);
+    }
+
+    if (getEntity().isComposite()) {
+      List<Relation> deepRels = getEntity().getDeepReferencesToComponents();
+      if (deepRels.isEmpty()) {
+]@
+   *
+   *
+   * Components of @(getEntity())@ are not deeply referenced
+@[
+      }
+      else {
+]@
+   *
+   *
+   * The following components of @(getEntity())@ are deeply referenced:
+   *
+@[
+        ModelCommentSupport.printNonCompositeRelations(getEntity(), deepRels, "   * ", out);
+      }
+    }
+
+    if (!compositePaths.isEmpty()) {
+]@
+   *
+   *
+@[
+      Set<Entity> roots = new TreeSet<>();
+      Set<Entity> parents = new TreeSet<>();
+      for (List<Relation> compositePath: compositePaths) {
+        roots.add(compositePath.get(0).getEntity());
+        parents.add(compositePath.get(compositePath.size() - 1).getEntity());
+      }
+      StringBuilder buf = new StringBuilder();
+      for (Entity parent: parents) {
+        if (buf.length() > 0) {
+          buf.append(", ");
+        }
+        buf.append(parent);
+      }
+]@
+   * @(getEntity())@ is a component of: @(buf)@
+@[
+      buf = new StringBuilder();
+      for (Entity root: roots) {
+        if (buf.length() > 0) {
+          buf.append(", ");
+        }
+        buf.append(root);
+      }
+]@
+   * and belongs to the root @(roots.size() > 1 ? "entities" : "entity")@: @(buf)@
+@[
+    }
+
+
+    if (subEntities.isEmpty()) {
+]@
+   *
+   *
+   * @(getEntity())@ is not extended
+@[
+    }
+    else {
+]@
+   *
+   *
+   * @(getEntity())@ is extended by:
+@[
+      ModelCommentSupport.printSubEntities(subEntities, "   *    ", out);
+    }
+]@
+   *
+   ****************************************************************************/

@@ -1,0 +1,134 @@
+  @Override
+  public void setColumns(int columns) {
+    getDelegate().setColumns(columns);
+  }
+
+  @Override
+  public int getColumns() {
+    return getDelegate().getColumns();
+  }
+
+  @Override
+  public void setMaxColumns(int maxColumns) {
+    getDelegate().setMaxColumns(maxColumns);
+  }
+
+  @Override
+  public int getMaxColumns() {
+    return getDelegate().getMaxColumns();
+  }
+
+  @Override
+  public void setAutoSelect(boolean autoSelect) {
+    getDelegate().setAutoSelect(autoSelect);
+  }
+
+  @Override
+  public boolean isAutoSelect() {
+    return getDelegate().isAutoSelect();
+  }
+
+  @Override
+  public void setPattern(String pattern) {
+    getDelegate().setPattern(pattern);
+  }
+
+  @Override
+  public String getPattern() {
+    return getDelegate().getPattern();
+  }
+
+  @Override
+  public void setScale(int scale) {
+    getDelegate().setScale(scale);
+  }
+
+  @Override
+  public int getScale() {
+    return getDelegate().getScale();
+  }
+
+  @Override
+  public void setUnsigned(boolean unsigned) {
+    getDelegate().setUnsigned(unsigned);
+  }
+
+  @Override
+  public boolean isUnsigned() {
+    return getDelegate().isUnsigned();
+  }
+
+  @Override
+  public void setCaseConversion(CaseConversion caseConversion) {
+    getDelegate().setCaseConversion(caseConversion);
+  }
+
+  @Override
+  public CaseConversion getCaseConversion() {
+    return getDelegate().getCaseConversion();
+  }
+
+  @Override
+  public void setFiller(char filler) {
+    getDelegate().setFiller(filler);
+  }
+
+  @Override
+  public char getFiller() {
+    return getDelegate().getFiller();
+  }
+
+  @Override
+  public void setTextAlignment(Pos textAlignment) {
+    getDelegate().setTextAlignment(textAlignment);
+  }
+
+  @Override
+  public Pos getTextAlignment() {
+    return getDelegate().getTextAlignment();
+  }
+
+  @Override
+  public void setValidChars(String validChars) {
+    getDelegate().setValidChars(validChars);
+  }
+
+  @Override
+  public String getValidChars() {
+    return getDelegate().getValidChars();
+  }
+
+  @Override
+  public void setInvalidChars(String invalidChars) {
+    getDelegate().setInvalidChars(invalidChars);
+  }
+
+  @Override
+  public String getInvalidChars() {
+    return getDelegate().getInvalidChars();
+  }
+
+  @Override
+  public void setTextConverter(Function<String, String> textConverter) {
+    getDelegate().setTextConverter(textConverter);
+  }
+
+  @Override
+  public Function<String, String> getTextConverter() {
+    return getDelegate().getTextConverter();
+  }
+
+  @Override
+  public void setErrorOffset(Integer errorOffset) {
+    getDelegate().setErrorOffset(errorOffset);
+  }
+
+  @Override
+  public Integer getErrorOffset() {
+    return getDelegate().getErrorOffset();
+  }
+
+  @Override
+  public void mapErrorOffsetToCaretPosition() {
+    getDelegate().mapErrorOffsetToCaretPosition();
+  }

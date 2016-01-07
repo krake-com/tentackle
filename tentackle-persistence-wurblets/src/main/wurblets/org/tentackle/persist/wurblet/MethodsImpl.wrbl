@@ -1,0 +1,1010 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a getter and setter methods for db-attributes.
+     *
+     * usage:  \@wurblet <somename> MethodsImpl --model=<mapfile> [--remote] [--tracked] [--attracked] [--fulltracked] [--noif] [--noudk]
+     *         --remote generate covariant getRemoteDelegate()
+     *         --tracked will create setModified()-code in setter methods
+     *         --attracked same as tracked but generate code on attribute level as well
+     *         --fulltracked sames as attracked but keeps the original value since last persistence operation
+     *         --noif: there is no interface (don't generate \@Override)
+     *         --noudk don't generate selectByUniqueDomainKey wurblet
+     *
+     * Example: \@wurblet methods MethodsImpl --model=$scripts/artikel.map --tracked
+     */
+
+    // main class
+    String mainClass = getClassName();
+    String pdoClass = null;
+    boolean isPdo;
+    try {
+      pdoClass = getPdoClassName();
+      isPdo = true;
+    }
+    catch (WurbelException we) {
+      isPdo = false;
+    }
+
+    boolean noif = false;
+    boolean generateSnapshot = false;
+    boolean generateSelectByUDK = true;
+
+    int argcount = 0;
+    for (String arg: getOptionArgs())  {
+      if ("noif".equals(arg)) {
+        noif = true;
+      }
+      else if ("noudk".equals(arg)) {
+        generateSelectByUDK = false;
+      }
+    }
+
+    if (isRemote() && isPdo) {
+      new RemoteIncludes(this);   // create RMI-files if they don't exist yet
+      String delegateType = pdoClass + "RemoteDelegate";
+      if (getEntity().isAbstract()) {
+        delegateType += "<T,P>";
+      }
+]@
+
+  \@Override
+  public @(delegateType)@ getRemoteDelegate() {
+    return (@(delegateType)@) super.getRemoteDelegate();
+  }
+@[
+    }
+
+    if (getEntity().isAbstract()) {
+      if (getEntity().getInheritanceType() == InheritanceType.MULTI) {
+]@
+
+  \@Override
+  public boolean isExplicitIdAliasRequiredInJoins() {
+    return true;
+  }
+@[
+      }
+    }
+    else {
+      if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
+]@
+
+  \@Override
+  public boolean isClassIdRequiredInWhereClause() {
+    return true;
+  }
+@[
+      }
+    }
+
+    boolean multiInheritance = getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI;
+
+    if (getEntity().getSuperEntity() == null) {
+
+      if (getEntity().getOptions().isRootEntity()) {
+]@
+
+  /**
+   * Object is a root entity.
+   * \@return true
+   */
+  \@Override
+  public boolean isRootEntity() {
+    return true;
+  }
+@[
+      }
+
+      if (getEntity().getOptions().isTableSerialProvided()) {
+]@
+
+  /**
+   * Object provides the tableserial.
+   * \@return true
+   */
+  \@Override
+  public boolean isTableSerialProvided() {
+    return true;
+  }
+@[
+      }
+
+      if (getEntity().getOptions().isTokenLockProvided()) {
+]@
+
+  /**
+   * PDO provides the token lock columns.
+   * \@return true
+   */
+  \@Override
+  public boolean isTokenLockProvided() {
+    return true;
+  }
+@[
+      }
+
+      if (getEntity().getOptions().isNormTextProvided()) {
+]@
+
+  /**
+   * Object provides the normtext.
+   * \@return true
+   */
+  \@Override
+  public boolean isNormTextProvided() {
+    return true;
+  }
+@[
+      }
+
+      if (getEntity().getOptions().isRootIdProvided()) {
+]@
+
+  /**
+   * Object provides the id of the root-entity.
+   * \@return true
+   */
+  \@Override
+  public boolean isRootIdProvided() {
+    return true;
+  }
+@[
+      }
+      else {
+        Attribute rootAttribute = getEntity().getRootAttribute();
+        if (rootAttribute != null) {
+
+]@
+
+  /**
+   * The root entity id is @(rootAttribute)@.
+   * \@return the ID of the root entity
+   */
+  \@Override
+  public long getRootId() {
+    return @(rootAttribute.getJavaName())@;
+  }
+@[
+        }
+      }
+
+      if (getEntity().getOptions().isRootClassIdProvided()) {
+]@
+
+  /**
+   * Object provides the class-id of the root-entity.
+   * \@return true
+   */
+  \@Override
+  public boolean isRootClassIdProvided() {
+    return true;
+  }
+@[
+      }
+      else {
+        Entity rootEntity = getEntity().getRootEntity();
+        if (rootEntity != null) {
+]@
+
+  /**
+   * The root entity class is @(rootEntity)@.
+   * \@return the class ID of the root entity
+   */
+  \@Override
+  public int getRootClassId() {
+    return @(rootEntity.getClassId())@;
+  }
+@[
+        }
+      }
+
+      if (isTracked())  {
+]@
+
+  /**
+   * Overridden cause of "--tracked".
+   * \@return true = setters check for modification
+   */
+  \@Override
+  public boolean isTracked() {
+    return true;    // invoking isModified() is ok
+  }
+@[
+        if (isAttracked()) {
+]@
+
+  /**
+   * Overridden cause of "--attracked".
+   */
+  \@Override
+  public void setModified(boolean modified) {
+    super.setModified(modified);
+    if (!modified) {
+@[
+      for (Attribute attr: getEntity().getAttributes())  {
+        if (!attr.getOptions().isNoMethod())    {
+]@
+      @(attr.getJavaName())@Modified = false;
+@[
+          if (isFullTracked()) {
+]@
+      @(attr.getJavaName())@Persisted = @(attr.getJavaName())@;
+@[
+          }
+        }
+      }
+]@
+    }
+  }
+@[
+        }
+      }
+    }
+
+    if (!getEntity().getInheritanceType().isMappingToNoTable()) {
+
+      String orderBy = getEntity().getSorting() != null ? createOrderBy(getDefaultSortKeys()) : null;
+      if (orderBy != null) {
+]@
+
+  \@Override
+  public String orderBy() {
+    StringBuilder sql = new StringBuilder();
+    sql@(orderBy)@;
+    return sql.toString();
+  }
+@[
+      }
+]@
+
+  \@Override
+  public void getFields(ResultSetWrapper rs) {
+    super.getFields(rs);
+    if (rs.configureSection(CLASSVARIABLES)) {
+@[
+    for (Attribute attr: getEntity().getMappedAttributes())  {
+      if (!attr.getOptions().isDerived())  {
+
+        for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+          String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+]@
+      rs.configureColumn(CN_@(name)@);
+@[
+        }
+      }
+    }
+]@
+    }
+    if (rs.getRow() <= 0) {
+      throw new PersistenceException(getSession(), "no valid row");
+    }
+@[
+    for (Attribute attr: getEntity().getMappedAttributes())  {
+      if (!attr.getOptions().isDerived())  {
+        String getterMethod = createJdbcGetterName(attr);
+        String name = attr.getJavaName().toUpperCase();
+        boolean useSetter = isSetGetRequired(attr);
+
+        if (attr.getDataType() == DataType.BINARY) {
+          // Binary getter takes additional size argument
+          String castStr = "";
+          if (attr.getJavaType().indexOf('<') >= 0) {
+            // with generic type: -> need a cast
+            castStr = "(" + attr.getJavaType() + ") ";
+          }
+          if (useSetter)  {
+]@
+    @(attr.getSetterName())@(@(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@));
+@[
+          }
+          else  {
+]@
+    @(attr.getJavaName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
+@[
+          }
+        }
+
+        else  {
+          String rsGetter = "rs." + getterMethod + "(";
+          boolean needComma = false;
+          if (attr.getOptions().isWithTimezone()) {
+            rsGetter += "get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+            needComma = true;
+          }
+          if (attr.getOptions().isMapNull()) {
+            if (needComma) {
+              rsGetter += ", ";
+            }
+            rsGetter += "true";
+            needComma = true;
+          }
+          rsGetter += ")";
+
+          String modelCode = getModelCode(attr, rsGetter);
+
+          if (attr.getOptions().isTrimRead()) {
+            modelCode = "StringHelper.trim(" + modelCode + ", " + attr.getSizeWithDefault() + ")";
+          }
+
+          if (useSetter) {
+            modelCode = attr.getSetterName() + "(" + modelCode + ")";
+          }
+          else  {
+            modelCode = attr.getJavaName() + " = " + modelCode;
+          }
+]@
+    @(modelCode)@;
+@[
+          if (attr.getOptions().isUTC()) {
+            if (useSetter) {
+              modelCode = attr.getGetterName() + "()";
+            }
+            else  {
+              modelCode = attr.getJavaName();
+            }
+]@
+    if (@(modelCode)@ != null) {
+      @(modelCode)@.setUTC(true);
+    }
+@[
+          }
+        }
+      }
+    }
+]@
+  }
+
+@[
+    if (multiInheritance) {
+]@
+  /**
+   * Sets the values of all @(pdoClass)@-columns in the given statement.
+   *
+   * \@param st the prepared statement
+   * \@return the number of columns set
+   */
+  public int setFields@(pdoClass)@(PreparedStatementWrapper st) {
+    int ndx = 0;
+@[
+    }
+    else  {
+]@
+  \@Override
+  public int setFields(PreparedStatementWrapper st) {
+    int ndx = super.setFields(st);
+@[
+    }
+
+    for (Attribute attr: getEntity().getMappedAttributes()) {
+      if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
+        String setterName = createJdbcSetterName(attr);
+
+        String modelCode;
+        if (isSetGetRequired(attr)) {
+          modelCode = attr.getGetterName() + "()";
+        }
+        else {
+          modelCode = attr.getJavaName();
+        }
+
+        String jdbcCode = getJdbcCode(attr, modelCode);
+
+        if (attr.getOptions().isTrimWrite()) {
+          jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
+        }
+
+        jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
+        if (attr.getOptions().isWithTimezone()) {
+          jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+        }
+        if (attr.getOptions().isMapNull()) {
+          jdbcCode += ", true)";
+        }
+        else  {
+          jdbcCode += ")";
+        }
+]@
+    @(jdbcCode)@;
+@[
+
+        // for multi column types, such as BMoney/DMoney
+        for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+]@
+    ++ndx;
+@[
+        }
+      }
+    }
+
+    if (multiInheritance && getEntity().getSuperEntity() != null) {
+]@
+    st.setLong(++ndx, getId());
+@[
+    }
+]@
+    return ndx;
+  }
+@[
+      }
+
+      if (getEntity().getInheritanceType().isMappingToOwnTable()) {
+
+        List<String> names = new ArrayList<>();
+        List<Attribute> attributes = multiInheritance ?
+                                        getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
+        for (Attribute attr: attributes)  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
+            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+              String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+              names.add(name);
+            }
+          }
+        }
+
+]@
+
+@[
+    if (multiInheritance) {
+]@
+  /**
+   * Creates the SQL code for the @(pdoClass)@ insert statement.
+   *
+   * \@return the SQL code
+   */
+  public String createInsertSql@(pdoClass)@() {
+@[
+    }
+    else  {
+]@
+  \@Override
+  public String createInsertSql() {
+@[
+    }
+]@
+    return Backend.SQL_INSERT_INTO + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_LEFT_PARENTHESIS +
+@[
+
+        int count = 0;
+        for (String name: names) {
+          String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
+]@
+           CN_@(name)@@(lineSep)@
+@[
+          count++;
+        }
+]@
+           Backend.SQL_INSERT_VALUES +
+@[
+        while (--count > 0)	{
+]@
+           Backend.SQL_PAR_COMMA +
+@[
+        }
+]@
+           Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
+  }
+@[
+
+    names.clear();
+    for (Attribute attr: attributes)  {
+      if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
+        for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+          String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+          names.add(name);
+        }
+      }
+    }
+
+]@
+
+@[
+    if (multiInheritance) {
+]@
+  /**
+   * Creates the SQL code for the @(pdoClass)@ update statement.
+   *
+   * \@return the SQL code
+   */
+  public String createUpdateSql@(pdoClass)@() {
+@[
+    }
+    else  {
+]@
+  \@Override
+  public String createUpdateSql() {
+@[
+    }
+]@
+    return Backend.SQL_UPDATE + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_SET +
+@[
+        boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
+        int ncnt = 0;
+        for (String name: names) {
+          ncnt++;
+          if (!checkSerial && ncnt == names.size()) {
+]@
+           CN_@(name)@ + Backend.SQL_EQUAL_PAR +
+@[
+          }
+          else {
+]@
+           CN_@(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
+@[
+          }
+        }
+
+        if (ncnt == 0 && !checkSerial) {
+          // special case: no attributes and no checkserial
+]@
+           CN_ID + Backend.SQL_EQUAL + CN_ID +
+@[
+        }
+
+        if (checkSerial) {
+]@
+           CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
+           Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
+@[
+        }
+        else  {
+]@
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
+@[
+        }
+]@
+  }
+@[
+      }
+
+
+
+      if (multiInheritance) {
+        // create joinable sql selects with table aliases
+        Entity topEntity = getEntity().getTopSuperEntity();
+        List<Entity> chain = topEntity.getInheritanceChain(getEntity());
+        List<Entity> subs = orderByInheritanceLevelAndClassId(getEntity().getAllSubEntities());
+        String topImplClass = deriveClassNameForEntity(topEntity);
+]@
+
+  /**
+   * Creates the SQL code for the @(pdoClass)@ delete statement.
+   *
+   * \@return the sql code
+   */
+  public String createDeleteSql@(pdoClass)@() {
+@[
+        if (getEntity().isRootOfInheritanceHierarchy()) {
+]@
+    return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
+           Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
+@[
+        }
+        else  {
+]@
+    return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
+           Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
+@[
+        }
+]@
+  }
+
+  \@Override
+  public StringBuilder createSelectAllInnerSql() {
+    StringBuilder sql = new StringBuilder();
+@[
+        boolean needComma = false;
+        for (Entity entity: chain) {
+          String implClass = deriveClassNameForEntity(entity);
+]@
+    sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
+@[
+          needComma = true;
+          if (entity == topEntity) {
+            for (Entity sub: subs) {
+              implClass = deriveClassNameForEntity(sub);
+]@
+    sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
+@[
+            }
+          }
+        }
+]@
+    sql.append(Backend.SQL_FROM);
+    sql.append(@(topImplClass)@.CLASSVARIABLES.getTableName()).
+        append(getBackend().sqlAsBeforeTableAlias()).append(@(topImplClass)@.CLASSVARIABLES.getTableAlias());
+@[
+        if (chain.size() > 1) {
+          for (Entity entity: chain.subList(1, chain.size())) {
+            String implClass = deriveClassNameForEntity(entity);
+]@
+    sql.append(getBackend().sqlJoin(JoinType.INNER,
+               @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
+               @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
+               @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
+@[
+          }
+        }
+
+        for (Entity sub: subs) {
+          String implClass = deriveClassNameForEntity(sub);
+]@
+    sql.append(getBackend().sqlJoin(JoinType.LEFT,
+               @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
+               @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
+               @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
+@[
+        }
+]@
+    sql.append(Backend.SQL_WHEREALL);
+    return sql;
+  }
+
+@[
+        String implClass = deriveClassNameForEntity(topEntity);
+]@
+  \@Override
+  public StringBuilder createSelectAllByIdInnerSql() {
+    StringBuilder sql = createSelectAllInnerSql();
+    sql.append(Backend.SQL_AND).
+        append(@(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)).
+        append(Backend.SQL_EQUAL_PAR);
+    return sql;
+  }
+@[
+
+        if (getEntity().isRootOfInheritanceHierarchy()) {
+]@
+
+  \@Override
+  protected void updateImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
+                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, () -> createUpdateSql@(pdoClass)@());
+    setFields@(pdoClass)@(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  \@Override
+  protected void insertImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
+                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, () -> createInsertSql@(pdoClass)@());
+    setFields@(pdoClass)@(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  \@Override
+  protected void deleteImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
+                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, () -> createDeleteSql@(pdoClass)@());
+    st.setLong(1, getId());
+    st.setLong(2, getSerial());
+    assertThisRowAffected(st.executeUpdate());
+  }
+@[
+        }
+        else  {
+]@
+
+  \@Override
+  protected void updateImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
+                            Supplier<String> sqlsupplier) {
+    super.updateImpl(classVariables, sqlsupplier);
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, () -> createUpdateSql@(pdoClass)@());
+    setFields@(pdoClass)@(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  \@Override
+  protected void insertImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
+                            Supplier<String> sqlsupplier) {
+    super.insertImpl(classVariables, sqlsupplier);
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, () -> createInsertSql@(pdoClass)@());
+    setFields@(pdoClass)@(st);
+    assertThisRowAffected(st.executeUpdate());
+  }
+
+  \@Override
+  protected void deleteImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
+                            Supplier<String> sqlsupplier) {
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, () -> createDeleteSql@(pdoClass)@());
+    st.setLong(1, getId());
+    assertThisRowAffected(st.executeUpdate());
+    super.deleteImpl(classVariables, sqlsupplier);
+  }
+@[
+        }
+      }
+
+      for (Attribute attr: getEntity().getAttributes())  {
+        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet()) {
+          generateSnapshot = true;
+        }
+        if (attr.getOptions().isNoMethod()) {
+          if (!attr.getOptions().isFromSuper()) {
+]@
+
+  /**
+   * no accessor methods for @(attr)@.
+   * @(attr.getOptions().getComment())@
+   */
+@[
+          }
+        }
+        else {
+          String protection = attr.getOptions().getAccessScope().toString();
+          String type = attr.getJavaType();
+          String methodSuffix = attr.getMethodNameSuffix();
+          String getter = attr.getGetterName();
+          String setter = attr.getSetterName();
+          if (attr.getOptions().isWriteOnly()) {
+]@
+
+  // @(attr)@ is writeonly, no getter.
+@[
+          }
+          else  {
+]@
+
+  /**
+   * Gets the attribute @(attr.getJavaName())@.
+   *
+   * \@return @(attr.getOptions().getComment())@
+   */
+@[
+            if (!noif) {
+]@
+  \@Override
+@[
+            }
+]@
+  @(protection)@ @(type)@ @(getter)@()    {
+    return @(attr.getJavaName())@;
+  }
+@[
+          }
+
+          if (attr.getOptions().isReadOnly()) {
+]@
+
+  // @(attr)@ is readonly, no setter.
+@[
+          }
+          else {
+            String setterProtection = protection;
+            boolean useOverride = !noif && "public".equals(protection);
+            // check to make setter for lazy or eager object relations private
+            Relation rel = attr.getRelation();
+            if (rel != null && rel.getSelectionType() != SelectionType.ALWAYS) {
+              setterProtection = getEntity().isAbstract() ? "protected" : "private";
+              useOverride = false;
+            }
+]@
+
+  /**
+   * Sets the attribute @(attr.getJavaName())@.
+   *
+   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   */
+@[
+            if (useOverride) {
+]@
+  \@Override
+@[
+            }
+]@
+  @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getJavaName())@) {
+    assertMutable();
+@[
+            if (isTracked())  {
+              if (attr.getDataType().isPrimitive()) {
+]@
+    if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
+      setModified(true);
+@[
+                if (isAttracked()) {
+]@
+      @(attr.getJavaName())@Modified = true;
+      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+@[
+                }
+]@
+    }
+@[
+              }
+              else  {
+]@
+    if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
+      setModified(true);
+@[
+                if (isAttracked()) {
+]@
+      @(attr.getJavaName())@Modified = true;
+      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+@[
+                }
+]@
+    }
+@[
+              }
+            }
+]@
+    this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
+@[
+            if (type.equals("Timestamp")) {
+]@
+    if (@(attr.getJavaName())@ != null) {
+      @(attr.getJavaName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
+    }
+@[
+            }
+]@
+  }
+@[
+            if (isAttracked()) {
+]@
+
+  /**
+   * Gets the modification state of @(attr.getJavaName())@.
+   *
+   * \@return true if @(attr)@ has been modified
+   */
+@[
+              if (!noif) {
+]@
+  \@Override
+@[
+              }
+]@
+  @(protection)@ boolean is@(methodSuffix)@Modified() {
+    return @(attr.getJavaName())@Modified;
+  }
+@[
+            }
+            if (isFullTracked()) {
+]@
+
+  /**
+   * Gets the last persisted value of @(attr)@.
+   *
+   * \@return the last persisted value
+   */
+@[
+              if (!noif) {
+]@
+  \@Override
+@[
+              }
+]@
+  @(protection)@ @(attr.getJavaType())@ @(getter)@Persisted() {
+    return @(attr.getJavaName())@Persisted;
+  }
+@[
+            }
+          }
+        }
+      }
+
+      if (isPdo && generateSnapshot) {
+]@
+
+  /**
+   * Updates the attributes in snapshot object.<br>
+   * The snapshot object is assumed to be a clone of this object.
+   *
+   * \@param snapshot the snapshot
+   */
+  protected void createAttributesInSnapshot(@(mainClass)@ snapshot) {
+    super.createAttributesInSnapshot(snapshot);
+@[
+        for (Attribute attr: getEntity().getAttributes())  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
+            String name = attr.getJavaName();
+            if (attr.getDataType().isMutable()) {
+              String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
+]@
+    if (@(name)@ != null) {
+      snapshot.@(name)@Snapshot = @(castStr)@@(name)@.clone();
+    }
+@[
+            }
+          }
+        }
+]@
+  }
+
+  /**
+   * Copies all attributes from a snapshot back to this object.
+   *
+   * \@param snapshot the snapshot object
+   */
+  protected void revertAttributesToSnapshot(@(mainClass)@ snapshot) {
+    super.revertAttributesToSnapshot(snapshot);
+@[
+        for (Attribute attr: getEntity().getAttributes()) {
+          if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
+            String name = attr.getJavaName();
+]@
+    // @(attr.getOptions().getComment())@
+    @(name)@ = snapshot.@(name)@;
+@[
+            if (attr.getDataType().isDateOrTime()) {
+]@
+    if (@(name)@ != null) {
+      @(name)@.setTime(snapshot.@(name)@Snapshot.getTime());
+    }
+@[
+            }
+            else if (attr.getDataType() == DataType.BINARY) {
+]@
+    if (@(name)@ != null) {
+      @(name)@.setData(snapshot.@(name)@Snapshot.getData());
+    }
+@[
+            }
+            if (isAttracked()) {
+]@
+    @(name)@Modified = snapshot.@(name)@Modified;
+@[
+              if (isFullTracked()) {
+]@
+    @(name)@Persisted = snapshot.@(name)@Persisted;
+@[
+              }
+            }
+          }
+        }
+]@
+  }
+@[
+      }
+
+      if (generateSelectByUDK) {
+        List<Attribute> udk = getEntity().getUniqueDomainKey();
+        if (!udk.isEmpty()) {
+          List<Attribute> superUdk = null;
+          if (getEntity().getSuperEntity() != null) {
+            superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+          }
+          if (superUdk == null || !udk.equals(superUdk)) {
+            Set<Entity> components = getEntity().getAllComponents();
+            StringBuilder attribs = new StringBuilder();
+            for (Attribute attribute: udk) {
+              if (attribs.length() != 0) {
+                attribs.append(" ");
+              }
+              if (components.contains(attribute.getEntity())) {
+                attribs.append(attribute.getEntity()).append(".");
+              }
+              attribs.append(attribute.getJavaName());
+            }
+]@
+
+  // selects by unique domain key
+  // \@wurblet selectByUniqueDomainKey PdoSelectUnique @(attribs)@
+@[
+          }
+        }
+      }
+]@

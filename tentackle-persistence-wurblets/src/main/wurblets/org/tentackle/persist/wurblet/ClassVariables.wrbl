@@ -1,0 +1,162 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a code for setting up the field names.
+     *
+     * usage:  \@wurblet <somename> ClassVariables --model=<mapfile>
+     */
+
+
+    String pdoName    = getPdoClassName();
+    String className  = getClassName();
+    boolean multiInheritance = getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI;
+    Entity superEntity = getEntity().getSuperEntity();
+    List<Entity> subEntities = getEntity().getSubEntities();
+
+]@
+  /** Variables common to all instances of @(className)@. */
+@[
+    if (getEntity().isAbstract() && getEntity().getInheritanceType().isMappingToNoTable()) {  // PLAIN
+]@
+  /** no classvariables for @(getEntity().getInheritanceType())@ inheritance. */
+@[
+    }
+    else  {
+      String cvType = "PersistentObjectClassVariables";
+      String cvImpliedType = cvType;
+      if (!getEntity().isAbstract()) {
+        cvType += "<" + pdoName + ", " + className + ">";
+        cvImpliedType += "<>";
+      }
+      String alias = getEntity().getTableAlias();
+      String strAlias = alias != null ? "\"" + alias + "\"" : "null";
+      String superCV = "null";
+
+      List<Relation> joins = getEagerRelations();
+
+      if (superEntity != null && !superEntity.getInheritanceType().isMappingToNoTable() ||
+          !subEntities.isEmpty()) {
+        if (superEntity != null) {
+          superCV = deriveClassNameForEntity(superEntity) + ".CLASSVARIABLES";
+]@
+  \@SuppressWarnings({"unchecked", "FieldNameHidesFieldInSuperclass"})
+@[
+        }
+        else {
+]@
+  \@SuppressWarnings("unchecked")
+@[
+        }
+      }
+      else {
+]@
+  \@SuppressWarnings("unchecked")
+@[
+      }
+]@
+  public static final @(cvType)@ CLASSVARIABLES =
+            new @(cvImpliedType)@(
+                    @(pdoName)@.class,
+                    @(className)@.class,
+                    @(strAlias)@,
+                    @(superCV)@,
+@[
+      if (joins != null) {
+        String poImpl = deriveClassNameForEntity(getEntity());
+]@
+                    Arrays.asList(
+@[
+        int joinCount = 0;
+        for (Relation join: joins) {
+          joinCount++;
+          String joinClass = join.getForeignEntity().getName();
+          String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
+          if (join.getForeignEntity().isAbstract()) {
+            if (join.getRelationType() == RelationType.LIST) {
+]@
+                      new Join<>(JoinType.LEFT, "@(alias)@.id", "_e@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "_e@(joinCount)@",
+                        (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
+                          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
+                          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+                        }
+                      @(joinCount < joins.size() ? ")," : ")")@
+@[
+            }
+            else {
+]@
+                      new Join<>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "_e@(joinCount)@.id", @(joinClass)@.class, "_e@(joinCount)@",
+                        (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
+                          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+                        }
+                      @(joinCount < joins.size() ? ")," : ")")@
+@[
+            }
+          }
+          else  { // non-abstract
+            if (join.getRelationType() == RelationType.LIST) {
+]@
+                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.id", "_e@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "_e@(joinCount)@",
+                        (@(alias)@, @(joinAlias)@) -> {
+                          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
+                          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+                        }
+                      @(joinCount < joins.size() ? ")," : ")")@
+@[
+            }
+            else {
+]@
+                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "_e@(joinCount)@.id", @(joinClass)@.class, "_e@(joinCount)@",
+                        (@(alias)@, @(joinAlias)@) -> {
+                          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+                        }
+                      @(joinCount < joins.size() ? ")," : ")")@
+@[
+            }
+          }
+        }
+]@
+                    )
+                );
+@[
+      }
+      else {
+]@
+                    null);
+@[
+      }
+]@
+
+  \@Override
+@[
+  if (getEntity().isAbstract()) {
+]@
+  \@SuppressWarnings("unchecked")
+@[
+  }
+]@
+  public @(cvType)@ getClassVariables() {
+    return CLASSVARIABLES;
+  }
+@[
+    }
+]@

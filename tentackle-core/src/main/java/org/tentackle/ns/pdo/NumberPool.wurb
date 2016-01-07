@@ -1,0 +1,3 @@
+tablename = numpool
+classid   = 6
+mapping   = $model/$tablename.map

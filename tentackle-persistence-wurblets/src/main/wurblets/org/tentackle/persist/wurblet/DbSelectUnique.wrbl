@@ -1,0 +1,201 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * create a unique select
+     * usage:  \@wurblet <methodname> DbSelectUnique --model=<mapfile> [--remote|--local] [--sort] [--append=<sqltext>] [--private] [--lock]
+     *                    [--classvar=<access_to_classvariables>] <key1> ... <keyn>
+     *         --remote means "with remote rmi-code" (overrides default)
+     *         --local means "without remote rmi-code" (overrides default)
+     *         --sort checks for orderBy()-Method and adds a LIMIT 1
+     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever and adds a LIMIT 1
+     *         --lock selects FOR UPDATE
+     *         --private makes the method private (default is public, turns on --local as well)
+     *         --classvar=... name or method to classvariables for statementId, default is private static
+     *
+     *         the keys are java-names.
+     *
+     * Example: \@wurblet selectByArtikelNr DbSelectUnique --model=$scripts/artikel.map --remote artikelNr
+     */
+
+    if (!getExtraParameters().isEmpty()) {
+      String msg = "unexpected extra parameters:";
+      for (WurbletParameter par: getExtraParameters()) {
+        msg += " " + par;
+      }
+      throw new WurbelException(msg);
+    }
+
+    String className = getClassName();
+    String methodName = getMethodName();
+    String delegateCast = "(" + className + "RemoteDelegate)";
+
+    String  classVar    = null;
+    String  scope       = "public";
+    boolean lock        = false;
+    boolean sort        = false;
+    String  append      = null;
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("private")) {
+        scope = "private";
+        setRemote(false);
+      }
+      else if (arg.equals("sort")) {
+        if (isWithDefaultSorting()) {
+          if (isWithSorting()) {
+            throw new WurbelException("either default sorting (--sort) or explicit sorting (+/-AN) allowed");
+          }
+          sort = true;
+        }
+        else {
+          throw new WurbelException("no sorting configured in model for " + getEntity());
+        }
+      }
+      else if (arg.equals("lock")) {
+        lock = true;
+      }
+      else if (arg.startsWith("append=")) {
+        append = arg.substring(7);
+      }
+      else if (arg.startsWith("classvar="))  {
+        classVar = arg.substring(9);
+      }
+    }
+
+    if (classVar == null) {
+      classVar = "";
+    }
+    else  {
+      classVar += ".";    // add dot to access class var
+    }
+
+    if (getExpressionParameters().isEmpty() && !sort && append == null)  {
+      throw new WurbelException("no keys given");
+    }
+
+    String params = buildMethodParameters();
+    String iparms = buildInvocationParameters();
+    String statementId = createStatementId();
+    boolean needLimit = sort || append != null || createOrderBy() != null;
+    String rmiReturnType  = isGenerified() ? "P" : className;
+    boolean whereWithAliases = true;   // for genwhere.incl
+
+]@
+  @(scope)@ @(className)@ @(methodName)@(@(params)@) {
+@[
+    if (isRemote()) {
+      // create includes
+      RemoteIncludes genInc = new RemoteIncludes(this);
+      PrintStream implOut   = genInc.getImplStream();
+      PrintStream remoteOut = genInc.getRemoteStream();
+]@
+    if (getSession().isRemote())  {
+      // invoke remote method
+      try {
+@{to remoteOut}@
+  public @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException {
+    try {
+      return newInstance().@(methodName)@(@(iparms)@);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+        @(className)@ obj = (@(delegateCast)@ getRemoteDelegate()).
+                @(methodName)@(@(iparms)@);
+        getSession().applyTo(obj);
+        return obj;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    // else: local mode
+@[
+    } // end if remote
+]@
+    PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
+      () -> {
+        StringBuilder sql = createSelectAllInnerSql();
+@{include $currentDir/genwhere.incl}@
+        getBackend().buildSelectSql(sql, @(lock ? "true" : "false")@, @(needLimit ? 1 : 0)@, 0);
+@[
+    if (sort) {
+]@
+        String orderSuffix = orderBy();
+        if (orderSuffix != null && !orderSuffix.isEmpty()) {
+          sql.append(Backend.SQL_ORDERBY).append(orderSuffix);
+        }
+@[
+    }
+    if (append != null)  {
+]@
+        sql.append(' ');
+        sql.append(@(append)@);
+@[
+    }
+]@
+        return sql.toString();
+      }
+    );
+@[
+    if (needLimit) {
+]@
+    int ndx = getBackend().setLeadingSelectParameters(st, 1, 0);
+@[
+    }
+    else  {
+]@
+    int ndx = 1;
+@[
+    }
+]@
+@{include $currentDir/gensetpar.incl}@
+@[
+    if (needLimit) {
+]@
+    getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
+@[
+    }
+]@
+    try (ResultSetWrapper rs = st.executeQuery()) {
+      if (rs.next()) {
+        return readFromResultSetWrapper(rs);
+      }
+      return null;  // not found
+    }
+  }
+@[
+    if (classVar.length() == 0) {
+]@
+
+  private static final StatementId @(statementId)@ = new StatementId();
+
+@[
+    }
+]@

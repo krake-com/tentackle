@@ -1,0 +1,1683 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * generate code for PDO relations.
+     *
+     * usage:  \@wurblet <tag> PdoRelations [options] --model=<mapfile>
+     *
+     *         <mapfile> is the mapping description
+     *
+     *         --loadcomponents force generation of method loadComponents()
+     *         --insertcomponents force generation of method insertPlainWithComponents()
+     *         --deletecomponents force generation of method deletePlainWithComponents()
+     *         --noloadcomponents don't generate method loadComponents()
+     *         --noinsertcomponents don't generate method insertPlainWithComponents()
+     *         --nodeletecomponents don't generate method deletePlainWithComponents()
+     *         --nori don't generate PdoIsReferencing wurblets and addReferencingClasses static block
+     *         --noselects don't generate (foreign) select list wurblets
+     *         --nodeletes don't generate (foreign) delete list wurblets
+     *
+     * Example: \@wurblet relations PdoRelations --model=$mapping $relations
+     */
+
+
+
+    // main class
+    String mainClass = getClassName();
+
+    String pdoName = null;
+    try {
+      // in implementation
+      pdoName = getPdoClassName();
+    }
+    catch (WurbelException we) {
+      // in interface
+      pdoName = getClassName();
+    }
+
+    boolean generateDeclarations                    = false;
+    boolean generateIsModified                      = false;
+    boolean generateIsComposite                     = false;
+    boolean generateSaveReferencingRelations        = false;
+    boolean generateSaveReferencedRelations         = false;
+    boolean generateDeleteReferencingRelations      = false;
+    boolean generateDeleteReferencedRelations       = false;
+    boolean generateLazyDeleteReferencingRelations  = false;
+    boolean generateLazyDeleteReferencedRelations   = false;
+    boolean generateSetSession                      = false;
+    Boolean generateLoadComponents                  = null;
+    Boolean generateInsertComponents                = null;
+    Boolean generateDeleteComponents                = null;
+    boolean generateMarkDeleted                     = false;
+    boolean generateIsReferencing                   = true;
+    boolean generateAddReferencing                  = false;
+    boolean generateSelects                         = true;
+    boolean generateDeletes                         = true;
+    boolean generateValidate                        = false;
+    boolean generateSetImmutable                    = false;
+    boolean generateSnapshot                        = false;
+    boolean generateClearOnRemoteSave               = false;
+
+    for (Relation rel: getEntity().getReferencingRelations()) {
+      if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
+            rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
+        generateAddReferencing = true;
+        break;
+      }
+    }
+
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("noloadcomponents")) {
+        generateLoadComponents = false;
+      }
+      else if (arg.equals("noinsertcomponents")) {
+        generateInsertComponents = false;
+      }
+      else if (arg.equals("nodeletecomponents")) {
+        generateDeleteComponents = false;
+      }
+      else if (arg.equals("loadcomponents")) {
+        generateLoadComponents = true;
+      }
+      else if (arg.equals("insertcomponents")) {
+        generateInsertComponents = true;
+      }
+      else if (arg.equals("deletecomponents")) {
+        generateDeleteComponents = true;
+      }
+      else if (arg.equals("nori")) {
+        generateIsReferencing = false;
+        generateAddReferencing = false;
+      }
+      else if (arg.equals("noselects")) {
+        generateSelects = false;
+      }
+      else if (arg.equals("nodeletes")) {
+        generateDeletes = false;
+      }
+    }
+
+    // check which methods need generation
+    for (Relation rel: getEntity().getRelations()) {
+      if (rel.getSelectionType() == SelectionType.LAZY ||
+          rel.getSelectionType() == SelectionType.EAGER)  {
+        generateDeclarations = true;
+        generateSetSession   = true;
+      }
+      if (rel.isComposite()) {
+        generateIsComposite         = true;
+        generateDeclarations        = true;
+        generateIsModified          = true;
+        generateSetSession          = true;
+        generateMarkDeleted         = true;
+        generateValidate            = true;
+        generateSnapshot            = true;
+        generateSetImmutable        = true;
+
+        if (rel.getRelationType() == RelationType.OBJECT) {
+          generateSaveReferencedRelations = true;
+          generateDeleteReferencedRelations = true;
+          generateLazyDeleteReferencedRelations = true;
+        }
+        else  { // LIST
+          generateSaveReferencingRelations = true;
+          generateDeleteReferencingRelations = true;
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+            generateLazyDeleteReferencingRelations = true;
+          }
+        }
+      }
+      if (rel.isClearOnRemoteSave()) {
+        generateClearOnRemoteSave = true;
+      }
+    }
+
+    if (generateLoadComponents == null) {
+      generateLoadComponents = generateIsComposite;
+    }
+    if (generateInsertComponents == null) {
+      generateInsertComponents = generateIsComposite;
+    }
+    if (generateDeleteComponents == null) {
+      generateDeleteComponents = generateIsComposite;
+    }
+
+    boolean useDatabaseRefInt = getEntity().getIntegrity().isCompositesCheckedByDatabase() &&
+                                Boolean.FALSE.equals(getEntity().isDeletionCascaded());
+
+    // dump what we read from source
+]@
+  /**
+   * # Relations for @(pdoName)@:
+   *
+@[
+    for (Relation rel: getEntity().getRelations()) {
+]@
+   * @(rel)@
+@[
+    }
+]@
+   */
+@[
+
+    if (generateDeclarations) {
+      // declarations
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite())  {
+          String type = rel.getDeclaredJavaType();
+          String transientModifier = isRelationTransient(rel) ? "transient " : "";
+]@
+
+  // @(rel)@
+@[
+          if (rel.isComposite()) {
+]@
+  \@Persistent(@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@)
+@[
+          }
+]@
+  private @(transientModifier)@@(type)@ @(rel.getVariableName())@;
+@[
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+]@
+  private @(transientModifier)@boolean @(rel.getVariableName())@Loaded;
+@[
+          }
+          if (rel.isComposite())  {
+            if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
+]@
+  private transient @(type)@ @(rel.getVariableName())@Snapshot;
+@[
+            }
+            if (rel.getRelationType() == RelationType.OBJECT) {
+]@
+  private long @(rel.getVariableName())@RemovedId;
+@[
+            }
+          }
+        }
+
+        if (rel.getNmName() != null) {
+          String nmVar;
+          if (rel.getNmMethodName() != null) {
+            nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+          }
+          else  {
+            nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+          }
+]@
+  private transient TrackedList<@(rel.getNmRelation().getDeclaredJavaType())@> @(nmVar)@;
+@[
+        }
+      }
+    }
+
+    if (generateClearOnRemoteSave) {
+]@
+
+  \@Override
+  public void clearOnRemoteSave() {
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.isClearOnRemoteSave()) {
+]@
+    @(rel.getVariableName())@ = null;
+@[
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+]@
+    @(rel.getVariableName())@Loaded = false;
+@[
+          }
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+
+    // generate getter/setter
+    for (Relation rel: getEntity().getRelations()) {
+      String var = rel.getVariableName();
+      String type = rel.getDeclaredJavaType();
+      String effType = rel.getJavaType();
+      String scope = rel.getAccessScope().toString();
+      boolean createGetter = !rel.isWriteOnly();
+      boolean createSetter = !rel.isReadOnly() &&
+                             (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
+                             (!rel.isComposite() || rel.getRelationType() == RelationType.OBJECT);
+      Attribute attr = rel.getAttribute();
+      if (attr != null) {
+        scope = attr.getOptions().getAccessScope().toString();
+        createGetter &= !attr.getOptions().isWriteOnly();
+        createSetter &= !attr.getOptions().isReadOnly();
+      }
+      if (rel.getForeignRelation() != null) {
+        String linkMethodName = rel.getForeignRelation().getLinkMethodName();
+        if (linkMethodName != null && !rel.getSetterName().equals(linkMethodName)) {
+          // don't generate setter impl if linkmethodname is not default from model
+          createSetter = false;
+        }
+      }
+
+      Relation nmRel = rel.getNmRelation();
+      String nmName = null;
+      String nmVar = null;
+      if (nmRel != null) {
+        if (rel.getNmMethodName() != null) {
+          nmName = BasicStringHelper.firstToUpper(rel.getNmMethodName());
+          nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+        }
+        else  {
+          nmName = BasicStringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
+          nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+        }
+      }
+
+      // getter
+
+      if (createGetter)  {
+        String checkNull = rel.getMethodArgs().get(0) + " == 0";
+        if (attr != null && !attr.getDataType().isPrimitive()) {
+          checkNull = rel.getMethodArgs().get(0) + " == null || " + checkNull;
+        }
+]@
+
+  /**
+   * Gets @(rel.getGetterSetterComment())@.
+   *
+   * \@return @(var)@ @(rel.getComment())@
+   */
+  \@Override
+@[
+        if (rel.getForeignEntity().isAbstract()) { // needs a cast
+]@
+  \@SuppressWarnings("unchecked")
+@[
+        }
+]@
+  @(scope)@ @(type)@ @(rel.getGetterName())@()  {
+@[
+        if (rel.getSelectionType() == SelectionType.ALWAYS) {
+          if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.isSelectionCached()) {
+]@
+    @(var)@ = @(createRelationSelectCode(rel))@;
+@[
+            }
+            else {
+]@
+    @(type)@ @(var)@ = @(createRelationSelectCode(rel))@;
+@[
+            }
+            if (rel.isReferenced()) {
+              if (rel.getLinkMethodIndex() != null) {
+]@
+    int ndx = 0;
+@[
+              }
+]@
+    for (@(rel.getClassName())@ obj: @(var)@)  {
+      obj.@(createRelationUpdateReferenceCode(rel))@;
+    }
+@[
+            }
+]@
+    return @(var)@;
+@[
+          }
+          else  {
+            if (rel.isComposite()) {
+]@
+    @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+@[
+              if (rel.isReferenced()) {
+]@
+    if (@(var)@ != null) {
+      @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+    }
+@[
+              }
+              if (rel.isProcessed()) {
+]@
+    @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+              }
+]@
+    return @(var)@;
+@[
+            }
+            else  {
+              if (rel.isReferenced()) {
+]@
+    @(type)@ obj = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+    if (obj != null) {
+      obj.@(createRelationUpdateReferenceCode(rel))@;
+    }
+    return obj;
+@[
+              }
+              else {
+]@
+    return @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+@[
+              }
+            }
+          }
+        }
+        else if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+]@
+    if (!@(var)@Loaded) {
+@[
+          if (rel.isComposite())  {
+            if (rel.getRelationType() == RelationType.LIST) {
+]@
+      @(var)@ = isNew() ? new @(effType)@(@(rel.isTracked() ? "false" : "")@) : @(createRelationSelectCode(rel))@;
+@[
+              if (rel.isReferenced()) {
+                if (rel.getLinkMethodIndex() != null) {
+]@
+      int ndx = 0;
+@[
+                }
+]@
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationUpdateReferenceCode(rel))@;
+      }
+@[
+              }
+            }
+            else  {
+]@
+      @(var)@ =  @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+@[
+              if (rel.isReferenced()) {
+]@
+      if (@(var)@ != null) {
+        @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+      }
+@[
+              }
+            }
+            if (rel.getRelationType() == RelationType.LIST) {
+              if (rel.isTracked()) {
+]@
+      if (isImmutable()) {
+        @(var)@.setImmutable(true);
+      }
+@[
+              }
+            }
+            else  {
+]@
+      if (isImmutable() && @(var)@ != null) {
+        @(var)@.setImmutable(true);
+      }
+@[
+            }
+            if (rel.isProcessed()) {
+]@
+      @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+            }
+          }
+          else  {
+            if (rel.getRelationType() == RelationType.LIST) {
+]@
+      @(var)@ = @(createRelationSelectCode(rel))@;
+@[
+              if (rel.isReferenced()) {
+                if (rel.getLinkMethodIndex() != null) {
+]@
+      int ndx = 0;
+@[
+                }
+]@
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationUpdateReferenceCode(rel))@;
+      }
+@[
+              }
+            }
+            else  {
+]@
+      @(var)@ = @(checkNull)@ ? null : @(createRelationSelectCode(rel))@;
+@[
+              if (rel.isReferenced()) {
+]@
+      if (@(var)@ != null) {
+        @(var)@.@(createRelationUpdateReferenceCode(rel))@;
+      }
+@[
+              }
+            }
+          }
+]@
+      @(var)@Loaded = true;
+@[
+          if (nmRel != null) {
+]@
+      @(var)@.addListener(new TrackedListListener<@(rel.getClassName())@>() {
+
+        \@Override
+        public void added(@(rel.getClassName())@ element) {
+          get@(nmName)@().addIfAbsent(element.@(nmRel.getGetterName())@());
+        }
+
+        \@Override
+        public void removed(@(rel.getClassName())@ element) {
+          get@(nmName)@().remove(element.@(nmRel.getGetterName())@());
+        }
+      });
+@[
+          }
+]@
+    }
+    return @(var)@;
+@[
+        }
+]@
+  }
+@[
+
+        if (rel.getRelationType() == RelationType.LIST && !rel.isReversed() &&
+            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+]@
+
+  /**
+   * Gets @(var)@ without performing a select if not loaded.
+   *
+   * \@return @(var)@ @(rel.getComment())@
+   */
+  @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
+    if (!@(var)@Loaded) {
+      @(var)@ = new @(effType)@(@(rel.isTracked() ? "false" : "")@);
+      @(var)@Loaded = true;
+    }
+    return @(var)@;
+  }
+@[
+        }
+
+        if (nmRel != null) {
+]@
+
+  /**
+   * Gets list of @(nmRel.getDeclaredJavaType())@ joined via @(rel)@.
+   *
+   * \@return list of @(nmRel.getVariableName())@
+   */
+  \@Override
+  public TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@() {
+    if (@(nmVar)@ == null) {
+      @(nmVar)@ = new TrackedArrayList<@(nmRel.getDeclaredJavaType())@>() {
+
+        \@Override
+        public boolean isModified() {
+          return @(rel.getGetterName())@().isModified();
+        }
+      };
+
+      for (@(rel.getForeignEntity())@ obj: @(rel.getGetterName())@()) {
+        @(nmVar)@.add(obj.@(nmRel.getGetterName())@());
+      }
+
+      @(nmVar)@.addListener(new TrackedListListener<@(nmRel.getDeclaredJavaType())@>() {
+
+        \@Override
+        public void added(@(nmRel.getDeclaredJavaType())@ element) {
+          @(rel.getClassName())@ obj = on(@(rel.getClassName())@.class);
+          obj.@(nmRel.getSetterName())@(element);
+          getNmLinks().add(obj);
+        }
+
+        \@Override
+        public void removed(@(nmRel.getDeclaredJavaType())@ element) {
+          for (Iterator<@(rel.getClassName())@> iter = @(rel.getGetterName())@().iterator(); iter.hasNext(); ) {
+            @(rel.getClassName())@ obj = iter.next();
+            if (Objects.equals(obj.@(nmRel.getGetterName())@(), element)) {
+              iter.remove();
+              break;
+            }
+          }
+        }
+      });
+    }
+    return @(nmVar)@;
+  }
+@[
+        }
+      }
+
+
+      if (createSetter)  {
+        String nullVal = attr != null && !attr.getDataType().isPrimitive() ? "null" : "0";
+        String linkMethodIndex = rel.getForeignRelation() != null ?
+            rel.getForeignRelation().getLinkMethodIndex() : null;
+]@
+
+  /**
+   * Sets @(rel.getGetterSetterComment())@.
+   *
+   * \@param @(var)@ @(rel.getComment())@
+@[
+        if (linkMethodIndex != null) {
+]@
+   * \@param index the index starting at 0
+@[
+        }
+]@
+   */
+  \@Override
+@[
+        if (linkMethodIndex != null) {
+]@
+  @(scope)@ void @(rel.getForeignRelation().getLinkMethodName())@(@(type)@ @(var)@, int index)  {
+@[
+        }
+        else {
+]@
+  @(scope)@ void @(rel.getSetterName())@(@(type)@ @(var)@)  {
+@[
+        }
+        if (!rel.isReversed()) {
+]@
+    assertMutable();
+@[
+        }
+        if ((rel.getRelationType() == RelationType.LIST && !rel.isReversed()) ||
+            rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite()) {
+          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+]@
+    if (!attributesModified()) {
+      setModified(!Objects.equals(this.@(var)@, @(var)@));
+    }
+@[
+          }
+]@
+    this.@(var)@ = @(var)@;
+@[
+          if (linkMethodIndex != null) {
+]@
+    set@(BasicStringHelper.firstToUpper(linkMethodIndex))@(index);
+@[
+          }
+        }
+        if (rel.getRelationType() == RelationType.OBJECT) {
+          if (rel.isComposite())  {
+            if (attr != null && !attr.getDataType().isPrimitive()) {
+]@
+    @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0))@;
+@[
+            }
+            else {
+]@
+    long oldId = @(rel.getMethodArgs().get(0))@;
+@[
+            }
+          }
+]@
+    @(createRelationSetFirstArgMethodName(rel))@(@(var)@ == null ? @(nullVal)@ : @(var)@.getId());
+@[
+        }
+        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+]@
+    @(var)@Loaded = true;
+@[
+        }
+        if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
+          if (attr != null && !attr.getDataType().isPrimitive()) {
+]@
+    if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0))@, oldId)) {
+      @(rel.getVariableName())@RemovedId = oldId;
+    }
+@[
+          }
+          else {
+]@
+    if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0))@ != oldId) {
+      @(rel.getVariableName())@RemovedId = oldId;
+    }
+@[
+          }
+        }
+]@
+  }
+@[
+      }
+    }
+
+
+    // gerenate setSession for referenced objects (necessary for RMI)
+    if (generateSetSession)  {
+]@
+
+  /**
+   * Sets the session in this and all related objects.
+   *
+   * \@param session the session
+   */
+  \@Override
+  public void setSession(Session session)  {
+    super.setSession(session);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER || rel.isComposite()) {
+]@
+    session.applyTo(@(rel.getVariableName())@);
+@[
+        }
+      }
+]@
+  }
+
+  /**
+   * Sets the context in this and all related objects.
+   *
+   * \@param context the domain context
+   */
+  \@Override
+  public void setDomainContext(DomainContext context)  {
+    super.setDomainContext(context);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER || rel.isComposite()) {
+]@
+    context.applyTo(@(rel.getVariableName())@);
+@[
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+
+    // generate code to remove delete composite relations
+
+    if (generateDeleteReferencingRelations)  {
+      if (useDatabaseRefInt) {
+]@
+
+  /**
+   * Deletes all referencing composite relations that have been removed from the PDO.<br>
+   * The database cascades down via referential integrity.
+   */
+  public void deleteRemovedReferencingRelations() {
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+              if (!rel.isTracked()) {
+                throw new WurbelException("inconsistent model: untracked not allowed with db-integrity");
+              }
+              String var = rel.getVariableName();
+]@
+    // @(rel)@. @(rel.getComment())@
+    if (@(var)@ != null && @(var)@.isSomeRemoved()) {
+      delete(@(var)@.getRemovedObjects());
+    }
+@[
+            }
+          }
+]@
+  }
+@[
+      }
+      else { // no database ref. integrity
+        if (generateLazyDeleteReferencingRelations)  {
+]@
+
+  /**
+   * Deletes all referencing composite relations from storage.
+   */
+  \@Override
+  public void deleteReferencingRelations() {
+    super.deleteReferencingRelations();
+    deleteReferencingRelations(true);
+  }
+
+
+  /**
+   * Deletes referencing composite relations.
+   * This method is invoked from deleteReferencingRelations() or saveReferencingRelations().
+   * When invoked from saveReferencingRelations() lazy relations not
+   * already loaded will be considered to be unchanged, i.e.
+   * need no update or insert.
+   *
+   * \@param delete is true if invoked from deleteReferencingRelations()
+   */
+  private void deleteReferencingRelations(boolean delete)  {
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            String var = rel.getVariableName();
+            if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+              if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+                if (rel.isTracked())  {
+]@
+    if (delete) {
+@[
+                  if (rel.isDeletionCascaded()) {
+]@
+      delete(@(rel.getGetterName())@());
+@[
+                  }
+                  else {
+]@
+      markDeleted(@(var)@);
+      @(createRelationDeleteCode(rel))@;
+@[
+                  }
+]@
+    }
+    if (@(var)@ != null && @(var)@.isSomeRemoved()) {
+      delete(@(var)@.getRemovedObjects());
+    }
+@[
+                }  // end if isTracked
+                else  {
+]@
+    if (delete || @(var)@ != null) {
+@[
+                  if (rel.isDeletionCascaded()) {
+]@
+      markDeleted(@(rel.getGetterName())@());
+      deleteMissingInCollection(@(createRelationSelectCode(rel))@, @(var)@);
+@[
+                  } // end isDeleteCascade
+                  else {
+]@
+      markDeleted(@(var)@);
+      @(createRelationDeleteCode(rel))@;
+@[
+                  }
+]@
+    }
+@[
+                }
+              }
+            } // end composite
+          }
+]@
+  }
+@[
+        } // end if generateLazyDeleteReferencingRelations
+
+        else  {   // no lazy loading at all
+]@
+
+  /**
+   * Deletes all referencing composite relations from storage.
+   */
+  \@Override
+  public void deleteReferencingRelations() {
+    super.deleteReferencingRelations();
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            String var = rel.getVariableName();
+            if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+              if (rel.isDeletionCascaded()) {
+]@
+    delete(@(rel.getGetterName())@());
+@[
+              }
+              else {
+]@
+    markDeleted(@(var)@);
+    @(createRelationDeleteCode(rel))@;
+@[
+              }
+            }
+          }
+]@
+  }
+@[
+        }
+      } // end w/o db-integrity
+    }
+
+
+    if (generateDeleteReferencedRelations)  {
+      if (useDatabaseRefInt) {
+]@
+
+  /**
+   * Deletes all referenced composite relations that have been removed from the PDO.<br>
+   * The database cascades down via referential integrity.
+   */
+  public void deleteRemovedReferencedRelations() {
+@[
+        for (Relation rel: getEntity().getRelations()) {
+          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+            if (!rel.isTracked()) {
+              throw new WurbelException("inconsistent model: untracked not allowed with db-integrity");
+            }
+            // remove the old deleted composite too, if set
+            // we need to replace <varname>Id by <varname>RemovedId in the select statement
+            String var = rel.getVariableName();
+            String selectStmt = createRelationSelectCode(rel).replace(rel.getVariableName() + "Id", rel.getVariableName() + "RemovedId");
+]@
+    // @(rel)@. @(rel.getComment())@
+    if (@(rel.getVariableName())@RemovedId != 0) {
+      @(rel.getClassName())@ old = @(selectStmt)@;
+      if (old != null) {
+        old.delete();
+        @(rel.getVariableName())@RemovedId = 0;
+      }
+    }
+@[
+          }
+        }
+]@
+  }
+@[
+      }
+      else  {
+        if (generateLazyDeleteReferencedRelations)  {
+]@
+
+  /**
+   * Deletes all referenced composite relations from storage.
+   */
+  \@Override
+  public void deleteReferencedRelations() {
+    super.deleteReferencedRelations();
+    deleteReferencedRelations(true);
+  }
+
+
+  /**
+   * Deletes referenced composite relations.
+   * This method is invoked from deleteReferencedRelations() or saveReferencedRelations().
+   * When invoked from saveReferencedRelations() lazy relations not
+   * already loaded will be considered to be unchanged, i.e.
+   * need no update or insert.
+   *
+   * \@param delete is true if invoked from deleteReferencedRelations()
+   */
+  private void deleteReferencedRelations(boolean delete)  {
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            String var = rel.getVariableName();
+            if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+              if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
+]@
+    if (delete && @(rel.getGetterName())@() != null && !@(var)@.isVirgin()) {
+      delete(@(var)@);
+    }
+@[
+              }
+              // remove the old deleted composite too, if set
+              // we need to replace <varname>Id by <varname>RemovedId in the select statement
+              String selectStmt = createRelationSelectCode(rel).replace(rel.getVariableName() + "Id", rel.getVariableName() + "RemovedId");
+]@
+    if (@(rel.getVariableName())@RemovedId != 0) {
+      @(rel.getClassName())@ old = @(selectStmt)@;
+      if (old != null) {
+        old.delete();
+        @(rel.getVariableName())@RemovedId = 0;
+      }
+    }
+@[
+            } // end composite
+          }
+]@
+  }
+@[
+        } // end if generateLazyDeleteReferencedRelations
+
+        else  {   // no lazy loading at all
+]@
+
+  /**
+   * Deletes all referenced composite relations from storage.
+   */
+  \@Override
+  public void deleteReferencedRelations() {
+    super.deleteReferencedRelations();
+@[
+          for (Relation rel: getEntity().getRelations()) {
+            String var = rel.getVariableName();
+            if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+              if (rel.getSelectionType() == SelectionType.ALWAYS) {
+                throw new WurbelException("internal wurblet logic error");
+              }
+              else {
+]@
+    if (@(var)@ != null) {
+      delete(@(var)@);
+    }
+@[
+              }
+            }
+          }
+]@
+  }
+@[
+        }
+      }
+    }
+
+
+    // save composite relations
+
+    if (generateSaveReferencingRelations)  {
+]@
+
+  /**
+   * Saves composite relations referencing @(pdoName)@.
+   */
+  \@Override
+  public void saveReferencingRelations(boolean update)  {
+    super.saveReferencingRelations(update);
+    if (update) {
+@[
+      if (useDatabaseRefInt) {
+]@
+      deleteRemovedReferencingRelations();
+@[
+      }
+      else  {
+]@
+      deleteReferencingRelations(@(generateLazyDeleteReferencingRelations ? "false" : "")@);
+@[
+      }
+]@
+    }
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+          if (rel.isProcessed()) {
+]@
+    @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+          }
+]@
+    if (@(var)@ != null) {
+      getDomainContext().applyTo(@(var)@);
+@[
+          if (rel.getLinkMethodName() != null)  {
+            if (rel.getLinkMethodIndex() != null) {
+]@
+      int ndx = 0;
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationLinkCode(rel))@;
+      }
+@[
+            }
+            else  {
+]@
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationLinkCode(rel))@;
+      }
+@[
+            }
+          }
+          else  {
+]@
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationLinkCode(rel))@;
+      }
+@[
+          }
+]@
+      save(@(var)@, @(rel.isTracked() ? "true" : "false")@);
+    }
+@[
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+    if (generateSaveReferencedRelations)  {
+]@
+
+  /**
+   * Saves composite relations referenced by @(pdoName)@.
+   */
+  \@Override
+  public void saveReferencedRelations(boolean update)  {
+@[
+      if (getEntity().getOptions().isRootEntity()) {
+        // need a valid id to store in rootId of composite object relations
+]@
+    reserveId();
+@[
+      }
+]@
+    super.saveReferencedRelations(update);
+    if (update) {
+@[
+      if (useDatabaseRefInt) {
+]@
+      deleteRemovedReferencedRelations();
+@[
+      }
+      else  {
+]@
+      deleteReferencedRelations(@(generateLazyDeleteReferencedRelations ? "false" : "")@);
+@[
+      }
+]@
+    }
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    getDomainContext().applyTo(@(var)@);
+@[
+          if (rel.isProcessed()) {
+]@
+    @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+          }
+          if (rel.isTracked())  {
+]@
+    if (@(var)@ != null && @(var)@.isModified()) {
+      save(@(var)@);
+      @(createRelationSetFirstArgMethodName(rel))@(@(var)@.getId());
+    }
+@[
+          }
+          else  {
+]@
+    if (@(var)@ != null) {
+      save(@(var)@);
+      @(createRelationSetFirstArgMethodName(rel))@(@(var)@.getId());
+    }
+@[
+          }
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+
+    // generate code to validate
+    if (generateValidate)  {
+]@
+
+  /**
+   * Validates the object.
+   *
+   * \@param validationPath the validation path
+   * \@param scope the validation scope
+   * \@return the list of validation results, never null
+   */
+  \@Override
+  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
+    List<ValidationResult> results = super.validate(validationPath, scope);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    if (@(var)@ != null) {
+@[
+          if (rel.getRelationType() == RelationType.LIST) {
+]@
+      results.addAll(ValidationUtilities.getInstance().validateCollection(
+                @(rel.getVariableName())@, validationPath + ".@(var)@", scope));
+@[
+          }
+          else  {
+]@
+      results.addAll(@(rel.getVariableName())@.validate(validationPath + ".@(var)@", scope));
+@[
+          }
+]@
+    }
+@[
+        }
+      }
+]@
+    return results;
+  }
+@[
+    }
+
+
+
+    // generate code to check set the immutable flag
+    if (generateSetImmutable)  {
+]@
+
+  /**
+   * Sets the mutable flag for this object and all its components.
+   *
+   * \@param immutable true if object is immutable
+   */
+  \@Override
+  public void setImmutable(boolean immutable) {
+    super.setImmutable(immutable);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    if (@(rel.getVariableName())@ != null) {
+      @(rel.getVariableName())@.setImmutable(immutable);
+    }
+@[
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+
+    // generate code to check for modifications
+    if (generateIsModified)  {
+]@
+
+  /**
+   * Checks composite relations for modification recursively.
+   *
+   * \@return true if this or any composition is modified
+   */
+  \@Override
+  public boolean isModified()  {
+    return super.isModified()
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.isComposite()) {
+]@
+           // @(rel)@. @(rel.getComment())@
+@[
+          if (rel.getRelationType() == RelationType.LIST) {
+]@
+           || isModified(@(rel.getVariableName())@)
+@[
+          }
+          else  {
+]@
+           || @(rel.getVariableName())@ != null && @(rel.getVariableName())@.isModified()
+@[
+          }
+        }
+      }
+]@
+           ;
+  }
+@[
+    }
+
+    if (getEntity().isDeeplyReferenced()) {
+      List<Relation> deepRelations = new ArrayList<>();
+      for (Relation rel: getEntity().getRelations()) {
+        if (rel.isComposite() && rel.getForeignEntity().isDeeplyReferenced()) {
+          deepRelations.add(rel);
+        }
+      }
+      if (!deepRelations.isEmpty()) {
+]@
+
+  \@Override
+  public boolean isReferenced()  {
+    if (super.isReferenced()) {
+      return true;
+    }
+    // check deeply referenced relations
+@[
+        for (Relation rel: deepRelations) {
+          if (rel.getRelationType() == RelationType.LIST) {
+]@
+    for (@(rel.getForeignEntity())@ obj: @(rel.getGetterName())@()) {
+      if (obj.isReferenced()) {
+        return true;
+      }
+    }
+@[
+          }
+          else {
+]@
+    if (@(rel.getGetterName())@() != null && @(rel.getGetterName())@().isReferenced()) {
+      return true;
+    }
+@[
+          }
+        }
+]@
+    return false;
+  }
+
+@[
+      }
+    }
+
+
+
+    // override isComposite()
+    if (generateIsComposite)  {
+]@
+
+  /**
+   * This is a composite object.
+   */
+  \@Override
+  public boolean isComposite()  {
+    return true;
+  }
+
+@[
+    }
+
+
+    //  load all components
+    if (generateLoadComponents)  {
+
+]@
+
+  /**
+   * Loads components.<br>
+   *
+   * \@param onlyLoaded true if return only already loaded components
+   * \@return the map of all components, including this object.
+   */
+  \@Override
+  public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
+    IdentifiableMap<PersistentDomainObject<?>> components = new IdentifiableMap<>();
+    addComponents(components, onlyLoaded);
+    return components;
+  }
+
+  \@Override
+  public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded)  {
+    int count = 0;
+    count += super.addComponents(components, onlyLoaded);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+]@
+    if (!onlyLoaded || @(var)@Loaded) {
+@[
+            if (rel.getRelationType() == RelationType.LIST) {
+]@
+      count += addComponents(components, @(rel.getGetterName())@(), onlyLoaded);
+@[
+            }
+            else  {
+]@
+      if (@(rel.getGetterName())@() != null) {
+        count += ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).addComponents(components, onlyLoaded);
+      }
+@[
+            }
+]@
+    }
+@[
+          }
+          else  {
+            if (rel.getRelationType() == RelationType.LIST) {
+]@
+    count += addComponents(components, @(rel.getGetterName())@(), onlyLoaded);
+@[
+            }
+            else  {
+]@
+    if (@(rel.getGetterName())@() != null) {
+      count += ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).addComponents(components, onlyLoaded);
+    }
+@[
+            }
+          }
+        }
+      }
+]@
+    return count;
+  }
+@[
+    }
+
+
+
+    //  insert all components
+    if (generateInsertComponents)  {
+
+]@
+
+  /**
+   * Inserts this object and all components.
+   */
+  \@Override
+  public void insertPlainWithComponents()  {
+    insertPlain();
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+          if (rel.getRelationType() == RelationType.LIST) {
+]@
+    insertPlainWithComponents(@(rel.getGetterName())@());
+@[
+          }
+          else  {
+]@
+    if (@(rel.getGetterName())@() != null) {
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).insertPlainWithComponents();
+    }
+@[
+          }
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+    //  delete all components
+    if (generateDeleteComponents)  {
+
+]@
+
+  /**
+   * Deletes this object and all components.
+   */
+  \@Override
+  public void deletePlainWithComponents()  {
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+@[
+          if (rel.getRelationType() == RelationType.LIST) {
+]@
+    deletePlainWithComponents(@(rel.getGetterName())@());
+@[
+          }
+          else  {
+]@
+    if (@(rel.getGetterName())@() != null) {
+      ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).deletePlainWithComponents();
+    }
+@[
+          }
+        }
+      }
+]@
+    deletePlain();
+  }
+@[
+    }
+
+
+
+    // mark object and all components deleted
+    if (generateMarkDeleted)  {
+]@
+
+  /**
+   * Marks this object and all its components to be deleted.
+   */
+  \@Override
+  public void markDeleted() {
+    super.markDeleted();
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    markDeleted(@(var)@);
+@[
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+    // generate snapshot methods
+    if (generateSnapshot) {
+]@
+
+  /**
+   * Updates the components in snapshot object.<br>
+   * The snapshot object is assumed to be a clone of this object.
+   *
+   * \@param snapshot the snapshot
+   */
+  \@SuppressWarnings("unchecked")
+  protected void createComponentsInSnapshot(@(mainClass)@ snapshot) {
+    super.createComponentsInSnapshot(snapshot);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite() &&
+            (rel.getRelationType() == RelationType.OBJECT || rel.isTracked())) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    if (@(var)@ != null) {
+      snapshot.@(var)@Snapshot = @(var)@.createSnapshot();
+    }
+@[
+        }
+      }
+]@
+  }
+
+  /**
+   * Reverts all components of this object to a given snapshot.
+   *
+   * \@param snapshot the snapshot object
+   */
+  \@SuppressWarnings("unchecked")
+  protected void revertComponentsToSnapshot(@(mainClass)@ snapshot) {
+    super.revertComponentsToSnapshot(snapshot);
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite()) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    @(var)@ = snapshot.@(var)@;
+@[
+          if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.isTracked()) {
+]@
+    if (@(var)@ != null) {
+      @(var)@.clear();
+      @(var)@.addAll(snapshot.@(var)@Snapshot);
+    }
+@[
+            }
+          }
+          else  {
+]@
+    if (@(var)@ != null) {
+      @(var)@.revertToSnapshot(snapshot.@(var)@Snapshot);
+    }
+@[
+          }
+          if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+]@
+    @(var)@Loaded = snapshot.@(var)@Loaded;
+@[
+          }
+          if (rel.getRelationType() == RelationType.OBJECT) {
+]@
+    @(var)@RemovedId = snapshot.@(var)@RemovedId;
+@[
+          }
+        }
+      }
+]@
+  }
+@[
+    }
+
+
+    if (generateIsReferencing && isEntityPersistable()) {
+      for (Relation rel: getEntity().getTableRelations()) {
+        if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
+            (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
+            rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
+          String tagName = "isReferencing" + rel.getClassName() + "By" +
+                           BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
+]@
+
+  // Determines whether any @(pdoName)@ references given @(rel.getClassName())@
+  // \@wurblet @(tagName)@ PdoIsReferencing --model=@(getModelName())@ --static @(rel.getMethodArgs().get(0))@
+@[
+        }
+      }
+    }
+
+    if (generateSelects && isEntityPersistable()) {
+      for (Relation rel: getEntity().getReferencingRelations()) {
+        if (rel.getAccessScope() != AccessScope.PUBLIC) {
+          continue;   // skip non-public in interfaces
+        }
+        if (rel.getRelationType() == RelationType.LIST) {
+          Attribute attribute = rel.getForeignAttribute();
+          if (attribute != null) {
+            // force tracked even if related object is not tracked
+            String trackedOption = rel.isTracked() ? "--tracked " : "";
+            String joins = "";
+            if (rel.getNmName() != null) {
+              Relation join = rel.getNmRelation();
+              if (join != null && join.getRelationType() == RelationType.OBJECT &&
+                  join.getSelectionType() == SelectionType.LAZY &&
+                  !join.isComposite() && join.isSerialized()) {
+                joins = " *" + rel.getNmName();
+              }
+            }
+            // add eager joins, if any
+            for (Relation eRel: getEntity().getRelationsIncludingInherited()) {
+              if (eRel.getSelectionType() == SelectionType.EAGER) {
+                joins += " *" + eRel.getName();
+              }
+            }
+
+            String extraWurbletOptions = rel.getSelectionWurbletArguments();
+            if (extraWurbletOptions == null) {
+              extraWurbletOptions = "";
+            }
+            else {
+              extraWurbletOptions = " " + extraWurbletOptions;
+            }
+]@
+
+  // selects @(rel)@
+@[
+            if (rel.isReversed()) {
+]@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectUnique @(attribute.getJavaName())@@(joins)@@(extraWurbletOptions)@
+@[
+            }
+            else {
+]@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectList @(trackedOption)@@(attribute.getJavaName())@@(joins)@@(extraWurbletOptions)@
+@[
+            }
+          }
+        }
+      }
+    }
+
+    if (generateDeletes && isEntityPersistable()) {
+      for (Relation rel: getEntity().getReferencingRelations()) {
+        if (rel.getAccessScope() != AccessScope.PUBLIC) {
+          continue;   // skip non-public in interfaces
+        }
+        if (rel.getRelationType() == RelationType.LIST) {
+          Attribute attribute = rel.getForeignAttribute();
+          if (attribute != null && rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
+]@
+
+  // deletes @(rel)@
+  // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(attribute.getJavaName())@
+@[
+          }
+        }
+      }
+    }
+
+    if (generateAddReferencing) {
+]@
+
+  // add referencing classes and their methods
+  static {
+    \@SuppressWarnings("unchecked")
+    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
+        Pdo.create(@(pdoName)@.class).getPersistenceDelegate();
+@[
+      // register referencing classes and the methods
+      for (Relation rel: getEntity().getReferencingRelations()) {
+        if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
+            (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
+            rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
+          String methodName = "isReferencing" + rel.getClassName() + "By" +
+                              BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
+          for (Entity leaf: rel.getEntity().getLeafEntities()) {
+]@
+    po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
+@[
+          }
+        }
+      }
+]@
+  }
+@[
+    }
+]@

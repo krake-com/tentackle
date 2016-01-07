@@ -1,0 +1,281 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.fx.bind;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import org.tentackle.bind.AbstractBinder;
+import org.tentackle.bind.Bindable;
+import org.tentackle.bind.BindableElement;
+import org.tentackle.bind.Binding;
+import org.tentackle.bind.BindingException;
+import org.tentackle.bind.BindingMember;
+import org.tentackle.fx.table.TableColumnConfiguration;
+import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.StringHelper;
+
+
+/**
+ * Binding Workhorse.
+ *
+ * @param <S> type of the objects contained within the table's items list
+ * @author harald
+ */
+public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBinder<S> {
+
+  /**
+   * logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxTableBinder.class);
+
+  private final TableConfiguration<S> tableConfig;           // the table configuration to bind
+  private final Map<String,FxTableBinding<S,?>> boundPaths;  // the bindings mapped by binding path / column name
+
+
+  /**
+   * Creates a binder for a table.
+   *
+   * @param tableConfiguration the table configuration
+   */
+  public DefaultFxTableBinder(TableConfiguration<S> tableConfiguration) {
+    super();
+    this.tableConfig = tableConfiguration;
+    boundPaths = new TreeMap<>();
+  }
+
+
+  @Override
+  public TableConfiguration<S> getTableConfiguration() {
+    return tableConfig;
+  }
+
+
+  /**
+   * Binds objects to a table.
+   * <p>
+   * The form and all components in the form's parent classes
+   * and all members or submembers
+   * annotated with the {@link Bindable}-annotation.
+   * Inherited members will be included as well.
+   * <p>
+   * Notice that the object references are <em>not</em> kept in the binding.
+   * <p>
+   * CAUTION: expensive operation!
+   *
+   * @return number of members bound
+   */
+  @Override
+  public int bindAllInherited() {
+    return doBind(null, null, getTableConfiguration().getObjectClass(), false);
+  }
+
+
+  /**
+   * Binds objects to a table.
+   * <p>
+   * The form will be scanned for members or submembers
+   * annotated with the {@link Bindable}-annotation.
+   * Inherited members will not be included.
+   * <p>
+   * Notice that the object references are <em>not</em> kept in the binding.
+   *
+   * @return number of members bound
+   */
+  @Override
+  public int bind() {
+    return doBind(null, null, getTableConfiguration().getObjectClass(), true);
+  }
+
+
+  /**
+   * Removes all bindings of the form.
+   */
+  @Override
+  public void unbind() {
+    boundPaths.clear();
+  }
+
+
+  /**
+   * Gets the list of all bindings for this form.
+   *
+   * @return the bindings, never null
+   */
+  @Override
+  public Collection<FxTableBinding<S,?>> getBindings() {
+    return boundPaths.values();
+  }
+
+
+  @Override
+  public Collection<String> getBoundColumns() {
+    return boundPaths.keySet();
+  }
+
+
+  @Override
+  public Collection<String> getUnboundColumns() {
+    int columnCount = tableConfig.getColumnConfigurations().size();
+    List<String> unboundColumns = new ArrayList<>();
+    for (TableColumnConfiguration<S,?> column: tableConfig.getColumnConfigurations()) {
+      if (!boundPaths.containsKey(column.getName())) {
+        unboundColumns.add(column.getName());
+      }
+    }
+    return unboundColumns;
+  }
+
+
+  /**
+   * Tests the binding.<br>
+   * The method verifies that all components of the form are bound
+   * and throws a {@link BindingException} if it finds at least one
+   * unbound component.<br>
+   * All unbound components are logged.
+   * @throws BindingException if at least one unbound component found
+   */
+  @Override
+  public void assertAllBound() throws BindingException {
+    Collection<String> unboundColumns = getUnboundColumns();
+    if (!unboundColumns.isEmpty()) {
+      for (String columnName: unboundColumns) {
+        LOGGER.severe("unbound column " + columnName + " in table " + tableConfig);
+      }
+      throw new BindingException("unbound columns in " + tableConfig);
+    }
+  }
+
+
+  /**
+   * Programmatically adds a binding to this form.
+   *
+   * @param binding the binding to add
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  public void addBinding(Binding binding) {
+    if (binding instanceof FxTableBinding) {
+      FxTableBinding<S,?> oldBinding = boundPaths.put(binding.getMember().getMemberPath(), (FxTableBinding<S,?>) binding);
+      if (oldBinding != null) {
+        throw new BindingException(binding + ": binding path '" + binding.getMember().getMemberPath() +
+                                   "' already bound to column " + oldBinding.getConfiguration().getName());
+      }
+    }
+  }
+
+
+  @Override
+  public FxTableBinding<S,?> getBinding(String bindingPath) {
+    return boundPaths.get(bindingPath);
+  }
+
+
+  /**
+   * Programmatically removes a binding from this form.
+   *
+   * @param bindingPath the object's binding path
+   *
+   * @return the removed binding, null if no such binding found
+   */
+  @Override
+  public FxTableBinding<S,?> removeBinding(String bindingPath) {
+    FxTableBinding<S,?> binding = boundPaths.remove(bindingPath);
+    return binding;
+  }
+
+
+
+  @Override
+  protected int doBind(BindingMember[] parents, String parentMemberPath, Class<?> parentClass, boolean declaredOnly) {
+
+    /**
+     * To detect recursion loops:
+     * we don't need to recursively walk down the binding path more
+     * than the max binding path length of all components in the container.
+     */
+    if (parentMemberPath != null) {
+      boolean found = false;
+      for (TableColumnConfiguration<S,?> column: tableConfig.getColumnConfigurations()) {
+        // check if the binding path is leading part of any component
+        String bindingPath = column.getName();
+        if (bindingPath != null && bindingPath.startsWith(parentMemberPath)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return 0;
+      }
+    }
+
+
+    int count = 0;
+
+    // all fields and/or setter/getters annotated with the @Bindable annotation
+    for (BindableElement element: FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
+
+      String fieldMemberName = StringHelper.firstToLower(element.getCamelName());
+      String fieldMemberPath = (parentMemberPath == null ? "" : (parentMemberPath + ".")) + fieldMemberName;
+
+      BindingMember[] fieldParents = new BindingMember[parents == null ? 1 : (parents.length + 1)];
+      BindingMember   fieldMember  = FxBindingFactory.getInstance().createBindingMember(
+                                              parentClass, (parents == null ? null : parents[parents.length-1]),
+                                              fieldMemberName, fieldMemberPath, element);
+
+      if (parents != null) {
+        System.arraycopy(parents, 0, fieldParents, 0, parents.length);
+        fieldParents[parents.length] = fieldMember;
+      }
+      else  {
+        fieldParents[0] = fieldMember;
+      }
+
+      try {
+
+        if (element.getField() != null && !element.getField().isAccessible()) {
+          element.getField().setAccessible(true);  // make this directly accessible
+        }
+
+        // try to bind this member
+        for (TableColumnConfiguration<S,?> columnConfig: tableConfig.getColumnConfigurations()) {
+          String bindingPath = columnConfig.getName();
+          if (bindingPath != null && bindingPath.equals(fieldMemberPath)) {
+            addBinding(FxBindingFactory.getInstance().createTableBinding(this, parents, fieldMember, columnConfig, element.getBindingOptions()));
+            count++;
+          }
+        }
+
+        // recursively try to bind sub-members
+        count += doBind(fieldParents, fieldMemberPath, fieldMember.getType(), declaredOnly);
+      }
+      catch (Exception ex) {
+        throw new BindingException("binding " + fieldMemberPath + " failed", ex);
+      }
+    }
+
+    return count;
+  }
+
+}

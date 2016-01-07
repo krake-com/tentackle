@@ -1,0 +1,318 @@
+@{package org.tentackle.wurblets}@
+@{import java.util.*}@
+@{extends SqlWurblet}@
+@{args}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     * Copyright (C) 2001-2008 Harald Krake, harald\@krake.de, +49 7722 9508-0
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * Generate SQL-scripts for the different dbms flavors.
+     *
+     * usage:   \@wurblet createTable CreateSql --dbtype=<dbtype> <mapfile>
+     *
+     *          <mapfile> the db mapping
+     *          <dbtype>  is one of db2,ingres,informix,mssql,mysql,oracle,postgres
+     *                    (others will follow in the future)
+     *
+     * options: --public          add "GRANT ALL ON ... TO PUBLIC"
+     *          --history         create the table for history logging
+     *          --maxchar=<len>   maximum length for strings and 0-len strings
+     */
+
+    if (!genHistory || mapping.isGlobalHistory()) {    // create history tables only if [HISTORY] global option is set
+
+      String closer;
+      String lineEnd;
+      if (db2)  {
+        closer = ")";
+        lineEnd = "";
+      }
+      else  {
+        closer = ");";
+        lineEnd = ";";
+      }
+
+      String lineSep = db2 ? ", \\" : ",";
+
+      // metadata if migrate option enabled
+      TableMetaData metaData = getMetaData();
+      List<ColumnMetaData> dropColumns = null;
+      List<ColumnMetaData> alterColumns = null;
+      List<ColumnMetaData> renameColumns = null;
+      List<ModelAttribute> missingColumns = null;
+      List<IndexMetaData> dropIndexes = null;
+      List<IndexMetaData> addIndexes = null;
+
+      boolean allMissing = true;    // true if create the table
+      int migrateCount   = 0;       // number of migration statements generated
+
+      if (metaData != null) {
+
+        // if migrate option given
+        dropColumns = new ArrayList<ColumnMetaData>();
+        alterColumns = new ArrayList<ColumnMetaData>();
+        renameColumns = new ArrayList<ColumnMetaData>();
+        missingColumns = new ArrayList<ModelAttribute>();
+        dropIndexes = new ArrayList<IndexMetaData>();
+        addIndexes = new ArrayList<IndexMetaData>();
+
+        for (ColumnMetaData column: metaData.columns) {
+          if (column.line == null || column.line.derived) {
+            dropColumns.add(column);
+            migrateCount++;
+          }
+          else if (!column.typeMatch || !column.exactTypeMatch || !column.nullMatch || !column.defaultMatch) {
+            alterColumns.add(column);
+            migrateCount++;
+          }
+        }
+
+        // check if some columns are missing in database
+        for (ModelAttribute line: attributeList) {
+          boolean found = false;
+          for (ColumnMetaData column: metaData.columns) {
+            if (column.line == line) {
+              found = true;
+              break;
+            }
+          }
+          if (!found && !line.derived) {
+            missingColumns.add(line);
+            migrateCount++;
+          }
+          else  {
+            allMissing = false;
+          }
+        }
+
+        if (!allMissing) {
+          // find columns that are only renamed in dropColumns and missingColumns.
+          // rule: if a column is dropped and there is _one_ _exact_ type match in missing columns,
+          // this column is probably just renamed. Generate the rename statement, but keep the drop/add-
+          // statements as comments (so they can be used if guess was wrong)
+          for (ColumnMetaData dropColumn: dropColumns) {
+            ModelAttribute matchedColumn = null;
+            for (ModelAttribute missingColumn: missingColumns) {
+              if (dropColumn.checkType(missingColumn) &&
+                  dropColumn.checkNull(missingColumn)) {
+                if (matchedColumn != null) {
+                  // more than one column matches
+                  matchedColumn = null;   // no match
+                  break;
+                }
+                else  {
+                  // first match found
+                  matchedColumn = missingColumn;
+                }
+              }
+            }
+            if (matchedColumn != null) {
+              // matchedColumn must not be renamed to more than once
+              boolean rename = true;
+              for (ColumnMetaData rColumn: renameColumns) {
+                if (rColumn.line.dbName.equals(matchedColumn.dbName)) {
+                  rename = false;
+                  break;
+                }
+              }
+              if (rename) {
+                ColumnMetaData renameColumn = dropColumn.clone();
+                renameColumn.line = matchedColumn;
+                renameColumns.add(renameColumn);
+                migrateCount++;
+                dropColumn.commentOnly = true;
+                matchedColumn.commentOnly = true;
+                // special handling for money columns:
+                if (matchedColumn.javaType.toLowerCase().endsWith("money")) {
+                  // add a rename statement for the p-column as well
+                  for (ColumnMetaData pColumn: dropColumns) {
+                    if (pColumn.name.length() == dropColumn.name.length() + 1 &&
+                        pColumn.name.startsWith(dropColumn.name) &&
+                        Character.toLowerCase(pColumn.name.charAt(dropColumn.name.length())) == 'p') {
+                      renameColumn = pColumn.clone();
+                      renameColumn.line = matchedColumn;
+                      renameColumn.pColumn = true;
+                      renameColumns.add(renameColumn);
+                      migrateCount++;
+                      pColumn.commentOnly = true;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          // drop indexes that are not part of the model or that have changed
+          for (IndexMetaData index: metaData.indexes) {
+            boolean found = false;
+            for (IndexMetaData modelIndex: indexList) {
+              if (modelIndex.equals(index)) {
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              dropIndexes.add(index);
+              migrateCount++;
+            }
+          }
+          // add indexes that are not in the database
+          for (IndexMetaData modelIndex: indexList) {
+            boolean found = false;
+            for (IndexMetaData index: metaData.indexes) {
+              if (index.equals(modelIndex)) {
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              addIndexes.add(modelIndex);
+              migrateCount++;
+            }
+          }
+        }
+      }
+
+      if (allMissing) {
+]@
+
+CREATE TABLE @(tableName)@ (@(db2 ? " \\" : "")@
+@[
+
+        int max = attributeList.size();
+        for (int i=0; i < max; i++) {
+          ModelAttribute line = attributeList.get(i);
+          String eol = i < max-1 ? lineSep : closer;
+          if (!line.derived) {
+            if (line.isMoney()) {
+]@
+  @(line.dbName + " ")@@(sqlType(line, false))@@(lineSep)@
+  @(line.dbName + "P ")@@(sqlMoneyScaleType(line))@@(eol)@
+@[
+            }
+            else  {
+]@
+  @(line.dbName + " ")@@(sqlType(line, false))@@(eol)@
+@[
+            }
+          }
+        }
+
+        // create index statements
+        for (IndexMetaData index: indexList) {
+]@
+@(index)@@(lineEnd)@
+@[
+        }
+
+        if (grantPublic) {
+]@
+GRANT ALL ON @(tableName)@ TO PUBLIC@(lineEnd)@
+@[
+        }
+      }
+
+      else if (migrateCount > 0) {
+]@
+
+@[
+        // drop indexes
+        for (IndexMetaData index: dropIndexes) {
+]@
+@(dropIndexSql(index))@@(lineEnd)@
+@[
+        }
+        // create missing columns
+        for (ModelAttribute line: missingColumns) {
+]@
+@(addColumnSql(line))@@(lineEnd)@
+@[
+          // add default clause if any
+          if (line.defaultSql) {
+]@
+@(modifyColumnDefaultSql(line))@@(lineEnd)@
+@[
+          }
+
+          // initialize if not null
+          if (line.isNotNull()) {
+]@
+@(initializeColumnSql(line))@@(lineEnd)@
+@(modifyColumnNullConstraintSql(line))@@(lineEnd)@
+@[
+          }
+        }
+        // alter changed columns
+        for (ColumnMetaData column: alterColumns) {
+          if (column.typeMatch == false) {
+]@
+@(modifyColumnTypeSql(column.line))@@(lineEnd)@
+@[
+          }
+          else if (column.exactTypeMatch == false) {
+]@
+-- suggested SQL-type for Java-type '@(column.line.javaType)@'
+-- @(modifyColumnTypeSql(column.line))@@(lineEnd)@
+@[
+          }
+
+          if (column.defaultMatch == false) {
+]@
+@(modifyColumnDefaultSql(column.line))@@(lineEnd)@
+@[
+          }
+
+          if (column.nullMatch == false) {
+            if (!column.line.isNotNull()) {
+]@
+@(modifyColumnNullConstraintSql(column.line))@@(lineEnd)@
+@[
+            }
+            else {
+]@
+-- @(initializeColumnSql(column.line))@@(lineEnd)@
+-- @(modifyColumnNullConstraintSql(column.line))@@(lineEnd)@
+@[
+            }
+          }
+        }
+        // drop removed columns
+        for (ColumnMetaData column: dropColumns) {
+]@
+@(dropColumnSql(column))@@(lineEnd)@
+@[
+        }
+        // rename columns
+        for (ColumnMetaData column: renameColumns) {
+]@
+@(renameColumnSql(column))@@(lineEnd)@
+@[
+        }
+        // create new indexes
+        for (IndexMetaData index: addIndexes) {
+]@
+@(index)@@(lineEnd)@
+@[
+        }
+      }
+    }
+]@

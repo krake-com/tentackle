@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>2.0-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle-fx</artifactId>
+  <version>2.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Tentackle FX</name>
+  <description>UI components based on FX</description>
+  <url>http://www.tentackle.org</url>
+
+  <dependencies>
+
+    <!-- local dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- ordinary dependencies -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>true</showCompileOutput>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>wurbel</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <wurbletDependencies>
+            <wurbletDependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>tentackle-wurblets</artifactId>
+              <version>${project.version}</version>
+            </wurbletDependency>
+          </wurbletDependencies>
+
+          <verbosity>info</verbosity>
+
+          <wurbletPaths>
+            <param>org.tentackle.wurblet</param>
+          </wurbletPaths>
+
+          <wurbletProperties>
+            <property>
+              <name>guardtype</name>
+              <value>netbeans</value>
+            </property>
+            <property>
+              <name>foldtype</name>
+              <value>collapsed</value>
+            </property>
+          </wurbletProperties>
+
+          <filesets>
+            <fileset>
+              <includes>
+                <include>**/component/*.java</include>
+                <include>**/container/*.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
+          <compilerArgument>-proc:none</compilerArgument>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+

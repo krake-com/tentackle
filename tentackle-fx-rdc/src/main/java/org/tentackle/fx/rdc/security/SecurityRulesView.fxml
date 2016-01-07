@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/8.0.40" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.security.SecurityRulesView">
+   <bottom>
+      <HBox fx:id="buttonBox" alignment="CENTER_RIGHT" spacing="5.0">
+         <children>
+            <Button fx:id="moveUpButton" mnemonicParsing="false" text="%moveUp" />
+            <Button fx:id="moveDownButton" mnemonicParsing="false" text="%moveDown" />
+            <Button fx:id="addButton" text="%add" />
+            <Button fx:id="removeButton" text="%remove" />
+            <HBox minWidth="10.0" HBox.hgrow="ALWAYS" />
+            <Button fx:id="saveButton" text="%save" />
+            <Button fx:id="cancelButton" text="%cancel" />
+         </children>
+         <BorderPane.margin>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </BorderPane.margin>
+      </HBox>
+   </bottom>
+   <center>
+      <VBox fx:id="vBox" BorderPane.alignment="CENTER">
+         <children>
+            <TabPane fx:id="tabPane">
+               <tabs>
+                  <Tab fx:id="classTab" closable="false">
+                     <content>
+                        <TableView fx:id="classRulesNode" prefHeight="200.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn prefWidth="75.0" text="C1" />
+                            <TableColumn prefWidth="75.0" text="C2" />
+                          </columns>
+                        </TableView>
+                     </content>
+                  </Tab>
+                  <Tab fx:id="pdoTab" closable="false">
+                     <content>
+                        <TableView fx:id="pdoRulesNode" prefHeight="200.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn prefWidth="75.0" text="C1" />
+                            <TableColumn prefWidth="75.0" text="C2" />
+                          </columns>
+                        </TableView>
+                     </content>
+                  </Tab>
+               </tabs>
+            </TabPane>
+         </children>
+      </VBox>
+   </center>
+</BorderPane>

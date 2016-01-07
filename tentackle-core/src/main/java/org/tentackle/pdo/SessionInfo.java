@@ -1,0 +1,250 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.pdo;
+
+import java.io.Serializable;
+import java.util.Locale;
+import java.util.Properties;
+import org.tentackle.misc.Immutable;
+
+/**
+ * Session information.
+ *
+ * @author harald
+ */
+public interface SessionInfo extends Immutable {
+
+  /**
+   * Gets the user id.
+   *
+   * @return the object Id of the current user
+   */
+  long getUserId();
+
+  /**
+   * Sets the user id.
+   *
+   * @param userId the object ID of the user
+   */
+  void setUserId(long userId);
+
+  /**
+   * Gets the class id of the current user.
+   *
+   * @return the class id
+   */
+  int getUserClassId();
+
+  /**
+   * Sets the class id of the current user.
+   *
+   * @param userClassId the class id
+   */
+  void setUserClassId(int userClassId);
+
+  /**
+   * Gets the username.
+   *
+   * @return the username
+   */
+  String getUserName();
+
+  /**
+   * Sets the username.
+   *
+   * @param userName the name of the user
+   */
+  void setUserName(String userName);
+
+  /**
+   * Gets the password.
+   *
+   * @return the password
+   */
+  char[] getPassword();
+
+  /**
+   * Sets the password.
+   *
+   * @param password the password
+   */
+  void setPassword(char[] password);
+
+  /**
+   * Clears the password.<br>
+   * Will remove it from memory by overwriting each
+   * element in the character array.
+   */
+  void clearPassword();
+
+  /**
+   * Gets the password as a string.
+   *
+   * @return the password, never null
+   */
+  String getPasswordAsString();
+
+  /**
+   * Gets the epochal time since when logged in.
+   *
+   * @return logged in since, null if not logged in
+   */
+  long getSince();
+
+  /**
+   * Sets the epochal time since when logged in.
+   *
+   * @param since logged in since, null if not logged in
+   */
+  void setSince(long since);
+
+  /**
+   * Gets the name of the application.
+   *
+   * @return the name, null if none
+   */
+  String getApplicationName();
+
+  /**
+   * Sets the name of the application.
+   *
+   * @param name the name
+   */
+  void setApplicationName(String name);
+
+  /**
+   * Sets the application id.<br>
+   * Should be unique among the same application name.
+   *
+   * @param applicationId the optional application id
+   */
+  void setApplicationId(long applicationId);
+
+  /**
+   * Returns the application id.
+   *
+   * @return the id, 0 if none
+   */
+  long getApplicationId();
+
+  /**
+   * Clones a sessioninfo.<br>
+   * The password will be copied if not null.
+   *
+   * @return the cloned session info
+   */
+  SessionInfo clone();
+
+  /**
+   * Cleares the cloned flag.
+   *
+   * Useful if the sessioninfo should no longer be treated as cloned.
+   */
+  void clearCloned();
+
+  /**
+   * Checks whether this UserInfo is cloned.
+   *
+   * @return true if cloned
+   */
+  boolean isCloned();
+
+  /**
+   * Sets the client's version info.
+   *
+   * @param clientVersionInfo the version info
+   */
+  void setClientVersionInfo(Serializable clientVersionInfo);
+
+  /**
+   * Gets the client version info.
+   *
+   * @return the version info
+   */
+  Serializable getClientVersionInfo();
+
+  /**
+   * Sets the connection properties.
+   *
+   * @param properties the connection properties.
+   */
+  void setProperties(Properties properties);
+
+  /**
+   * Gets the connection properties.<br>
+   * The the properties are not set so far, the method will load
+   * the properties file by adding the extension {@code ".properties"}
+   * to {@code dbPropertiesName} (if it does not contain an extension already).<br>
+   * If there is no such file, the properties will be read as a resource according
+   * to the classpath.<br>
+   * If all failes the db errorhandler
+   * will be invoked (which will usually terminate the application).
+   *
+   * @return the connection properties, never null
+   */
+  Properties getProperties();
+
+  /**
+   * Gets the name of the property file.
+   *
+   * @return the filename
+   */
+  String getPropertiesName();
+
+  /**
+   * Sets the name of the property file.<br>
+   * (without the extension {@code .properties})
+   *
+   * @param propertiesName the filename
+   */
+  void setPropertiesName(String propertiesName);
+
+  /**
+   * Applies the properties to this session info.<br>
+   * Sets user and password from properties, if given.
+   */
+  void applyProperties();
+
+  /**
+   * Gets the session's locale.<br>
+   * Returns the JVM's default locale if not set explicitly via {@link #setLocale(java.util.Locale)}.
+   *
+   * @return the locale, never null
+   */
+  Locale getLocale();
+
+  /**
+   * Sets the session's locale.
+   *
+   * @param locale the locale, null to use JVM's locale
+   */
+  void setLocale(Locale locale);
+
+  /**
+   * Checks the version information (of the server).
+   * <p>
+   * The default implementation does nothing.
+   *
+   * @param serverVersionInfo the server's version info
+   * @throws VersionInfoIncompatibleException if versions are not compatible
+   */
+  void checkServerVersionInfo(Serializable serverVersionInfo) throws VersionInfoIncompatibleException;
+
+}

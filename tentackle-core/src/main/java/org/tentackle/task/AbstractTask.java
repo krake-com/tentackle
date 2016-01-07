@@ -1,0 +1,226 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.task;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Default task.
+ *
+ * @author harald
+ */
+public abstract class AbstractTask implements Task {
+
+  private static final long serialVersionUID = 6759258472780726126L;
+
+  private Throwable cause;            // an exception thrown in a runnable
+  private Serializable result;        // the result (return value) of the task
+  private long started;               // timestamp when started
+  private long completed;             // timestamp when completed
+  private long scheduled;             // time scheduled for next execution
+  private long repeat;                // repeat interval
+  private long id;                    // the (unique) task id
+  private TaskDispatcher dispatcher;  // the dispatcher
+
+  private transient List<TaskListener> listeners;    // listeners
+
+
+  /**
+   * Creates a task.
+   */
+  public AbstractTask() {
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Tasks are sorted by scheduled time + id.
+   *
+   * @param o
+   * @return
+   */
+  @Override
+  public int compareTo(Task o) {
+    int rv = Long.compare(getScheduledEpochalTime(), o.getScheduledEpochalTime());
+    if (rv == 0) {
+      rv = Long.compare(getId(), o.getId());
+    }
+    return rv;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final AbstractTask other = (AbstractTask) obj;
+    if (this.id != other.id) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    hash = 53 * hash + (int) (this.id ^ (this.id >>> 32));
+    return hash;
+  }
+
+
+  @Override
+  public void setScheduledEpochalTime(long scheduled) {
+    this.scheduled = scheduled;
+  }
+
+  @Override
+  public long getScheduledEpochalTime() {
+    return scheduled;
+  }
+
+  @Override
+  public long getRepeatInterval() {
+    return repeat;
+  }
+
+  @Override
+  public void setRepeatInterval(long repeat) {
+    if (repeat <= 0) {
+      throw new IllegalArgumentException("interval must be positive: " + repeat);
+    }
+    this.repeat = repeat;
+    this.scheduled = System.currentTimeMillis() + repeat;
+  }
+
+  @Override
+  public long getId() {
+    return id;
+  }
+
+  @Override
+  public void setId(long id) {
+    this.id = id;
+  }
+
+  @Override
+  public TaskDispatcher getDispatcher() {
+    return dispatcher;
+  }
+
+  @Override
+  public void setDispatcher(TaskDispatcher dispatcher) {
+    this.dispatcher = dispatcher;
+  }
+
+  @Override
+  public void setCause(Throwable cause) {
+    this.cause = cause;
+  }
+
+  @Override
+  public Throwable getCause() {
+    return cause;
+  }
+
+  @Override
+  public Serializable getResult() {
+    return result;
+  }
+
+  @Override
+  public void setResult(Serializable result) {
+    this.result = result;
+  }
+
+  @Override
+  public long getCompleted() {
+    return completed;
+  }
+
+  @Override
+  public void setCompleted(long completed) {
+    this.completed = completed;
+    fireCompleted();
+  }
+
+  @Override
+  public long getStarted() {
+    return started;
+  }
+
+  @Override
+  public void setStarted(long started) {
+    this.started = started;
+    fireStarted();
+  }
+
+  @Override
+  public void addTaskListener(TaskListener listener) {
+    synchronized (this) {
+      getListeners().add(listener);
+    }
+  }
+
+  @Override
+  public void removeTaskListener(TaskListener listener) {
+    synchronized (this) {
+      getListeners().remove(listener);
+    }
+  }
+
+  @Override
+  public void fireStarted() {
+    if (listeners != null) {
+      for (TaskListener listener : listeners) {
+        listener.started(this);
+      }
+    }
+  }
+
+  @Override
+  public void fireCompleted() {
+    if (listeners != null) {
+      for (TaskListener listener : listeners) {
+        listener.completed(this);
+      }
+    }
+  }
+
+  @Override
+  public boolean isInterruptable() {
+    return true;
+  }
+
+  /**
+   * Gets the listeners.
+   *
+   * @return the listeners, never null
+   */
+  private List<TaskListener> getListeners() {
+    if (listeners == null) {
+      listeners = new ArrayList<TaskListener>();
+    }
+    return listeners;
+  }
+}

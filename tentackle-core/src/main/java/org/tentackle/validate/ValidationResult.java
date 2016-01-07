@@ -1,0 +1,136 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.validate;
+
+import java.io.Serializable;
+
+/**
+ * The result of a validation.
+ * <p>
+ * Validation results are serializable, however,
+ * the object, parentObject and validator are transient and
+ * therefore null if deserialized.
+ *
+ * @author harald
+ * @version $Revision: 2450 $
+ */
+public interface ValidationResult extends Serializable {
+
+  /**
+   * Indicates that this result must be treated as failed.<br>
+   *
+   * @return true if failed
+   */
+  boolean hasFailed();
+
+  /**
+   * Gets the error code.<br>
+   * The error code is optional and provided to identify
+   * an error by a unique code rather than some text message.
+   *
+   * @return the errorcode
+   */
+  String getErrorCode();
+
+  /**
+   * Indicates that this result provides a message.<br>
+   *
+   * @return true if there is a message
+   */
+  boolean hasMessage();
+
+  /**
+   * Gets the message of this result.
+   *
+   * @return the message, null if none
+   */
+  String getMessage();
+
+  /**
+   * Gets the validation path.<br>
+   * Applications may use it to associate the validation result with a component.
+   *
+   * @return the validation path
+   */
+  String getValidationPath();
+
+  /**
+   * Gets the validated object.
+   *
+   * @return the object.
+   */
+  Object getObject();
+
+  /**
+   * Gets the validated parent object
+   *
+   * @return the object containing the annotated element
+   */
+  Object getParentObject();
+
+  /**
+   * Gets the configured scopes for this validation.
+   *
+   * @return the configured scopes
+   */
+  Class<? extends ValidationScope>[] getConfiguredScopes();
+
+  /**
+   * Gets the validator that created this result.
+   *
+   * @return the validator
+   */
+  Validator getValidator();
+
+
+
+
+  /**
+   * A collection index within a validation path
+   */
+  public class CollectionIndex {
+    /** the index within the collection */
+    public int index;
+    /** the leading part of the path */
+    public String pathPrefix;
+    /** the trailing part */
+    public String pathPostfix;
+  }
+
+
+  /**
+   * Gets all {@link CollectionIndex}es for this validation result.
+   *
+   * <p>
+   * Example:
+   * <pre>
+   * "invoice.invoiceLineList[3].referenceList[0].text"
+   * </pre>
+   * would return 2 for indexes with the following contents:
+   * <pre>
+   *   { 3, "invoice.invoiceLineList", "referenceList[0].text" },
+   *   { 0, "invoice.invoiceLineList[3].referenceList", "text" }
+   * </pre>
+   * @return the indexes, null if validationpath without indexes
+   * @throws ValidationRuntimeException if the decoding the path failed
+   */
+  CollectionIndex[] getValidationCollectionIndexes() throws ValidationRuntimeException;
+
+}

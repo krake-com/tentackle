@@ -1,0 +1,284 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.sql.metadata;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import org.tentackle.common.BasicStringHelper;
+
+/**
+ * Meta data for foreign keys.
+ * <p>
+ * Tentackle uses foreign keys only for simple columns (ID).
+ *
+ * @author harald
+ */
+public class ForeignKeyMetaData {
+
+  protected final TableMetaData tableMetaData;                  // the table the key belongs to
+  protected String foreignKeySchema;                            // the schema of the fk
+  protected String foreignKeyTable;                             // the table of the fk
+  protected String foreignKeyName;                              // the name of the foreign key (all TT-fk are named!)
+  protected String primaryKeySchema;                            // the schema of the pk
+  protected String primaryKeyTable;                             // the table of the pk
+  protected ForeignKeyAction updateRule;                        // the update rule
+  protected ForeignKeyAction deleteRule;                        // the delete rule
+  protected final Set<ForeignKeyColumnMetaData> columns;        // fk columns
+
+
+  /**
+   * Creates foreign key meta data.
+   *
+   * @param tableMetaData the tablethis fk belongs to
+   */
+  public ForeignKeyMetaData(TableMetaData tableMetaData) {
+    this.tableMetaData = tableMetaData;
+    this.columns = new TreeSet<>();
+  }
+
+
+  /**
+   * Adds a column to the fk.
+   *
+   * @param column the column
+   */
+  public void addForeignKeyColumn(ForeignKeyColumnMetaData column) {
+    columns.add(column);
+  }
+
+  /**
+   * Gets the columns.
+   *
+   * @return the columns ordered by position
+   */
+  public List<ForeignKeyColumnMetaData> getForeignKeyColumns() {
+    return new ArrayList<>(columns);
+  }
+
+  /**
+   * Gets the table this foreign key belongs to.
+   *
+   * @return the table
+   */
+  public TableMetaData getTableMetaData() {
+    return tableMetaData;
+  }
+
+
+  /**
+   * Gets the name of the foreign key.
+   *
+   * @return the fk name
+   */
+  public String getForeignKeyName() {
+    return foreignKeyName;
+  }
+
+  /**
+   * Geths the schema of the referencing column.
+   *
+   * @return the referencing schema, null if default
+   */
+  public String getForeignKeySchema() {
+    return foreignKeySchema;
+  }
+
+  /**
+   * Gets the referencing table.
+   *
+   * @return the table name
+   */
+  public String getForeignKeyTable() {
+    return foreignKeyTable;
+  }
+
+  /**
+   * Gets the full foreign key tablename including optional schema.
+   *
+   * @return the full tablename
+   */
+  public String getFullForeignKeyTableName() {
+    StringBuilder buf = new StringBuilder();
+    if (foreignKeySchema != null) {
+      buf.append(foreignKeySchema);
+      buf.append('.');
+    }
+    buf.append(foreignKeyTable);
+    return buf.toString();
+  }
+
+  /**
+   * Gets the schema of the referenced column.
+   *
+   * @return the referenced schema, null if default
+   */
+  public String getPrimaryKeySchema() {
+    return primaryKeySchema;
+  }
+
+  /**
+   * Gets the referenced table.
+   *
+   * @return the table name
+   */
+  public String getPrimaryKeyTable() {
+    return primaryKeyTable;
+  }
+
+  /**
+   * Gets the full primary key tablename including optional schema.
+   *
+   * @return the full tablename
+   */
+  public String getFullPrimaryKeyTableName() {
+    StringBuilder buf = new StringBuilder();
+    if (primaryKeySchema != null) {
+      buf.append(primaryKeySchema);
+      buf.append('.');
+    }
+    buf.append(primaryKeyTable);
+    return buf.toString();
+  }
+
+  /**
+   * Gets the update rule.
+   *
+   * @return the update rule
+   */
+  public ForeignKeyAction getUpdateRule() {
+    return updateRule;
+  }
+
+  /**
+   * Gets the delete rule.
+   *
+   * @return the delete rule
+   */
+  public ForeignKeyAction getDeleteRule() {
+    return deleteRule;
+  }
+
+
+  /**
+   * Sets up the foreign key from the database meta data result.
+   *
+   * @param resultSet the foreign key column result set
+   * @throws SQLException the processing the result set failed
+   */
+  public void setupForeignKeyFromMetaData(ResultSet resultSet) throws SQLException {
+    foreignKeySchema = BasicStringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
+    foreignKeyTable = BasicStringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
+    foreignKeyName = BasicStringHelper.toLower(resultSet.getString("FK_NAME"));
+    // cut off schema name, if any
+    int dotNdx = foreignKeyName.indexOf('.');
+    if (dotNdx >= 0) {
+      foreignKeyName = foreignKeyName.substring(dotNdx + 1);
+    }
+    primaryKeySchema = BasicStringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
+    primaryKeyTable = BasicStringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
+    updateRule = ForeignKeyAction.createFromAction(resultSet.getShort("UPDATE_RULE"));
+    deleteRule = ForeignKeyAction.createFromAction(resultSet.getShort("DELETE_RULE"));
+
+    validate();
+  }
+
+
+  /**
+   * Validates and postprocesses the foreign key data.
+   */
+  public void validate() {
+  }
+
+
+  @Override
+  public int hashCode() {
+    int hash = 7;
+    hash = 79 * hash + Objects.hashCode(this.tableMetaData);
+    hash = 79 * hash + Objects.hashCode(this.foreignKeyName);
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final ForeignKeyMetaData other = (ForeignKeyMetaData) obj;
+    if (!Objects.equals(this.tableMetaData, other.tableMetaData)) {
+      return false;
+    }
+    if (!Objects.equals(this.foreignKeyName, other.foreignKeyName)) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder("FOREIGN KEY ");
+    buf.append(foreignKeyName);
+    buf.append(" (");
+    boolean needComma = false;
+    for (ForeignKeyColumnMetaData column: columns) {
+      if (needComma) {
+        buf.append(", ");
+      }
+      else  {
+        needComma = true;
+      }
+      buf.append(column);
+    }
+    buf.append(") REFERENCES ");
+    if (primaryKeySchema != null) {
+      buf.append(primaryKeySchema);
+      buf.append(".");
+    }
+    buf.append(primaryKeyTable);
+    buf.append(" (");
+    needComma = false;
+    for (ForeignKeyColumnMetaData column: columns) {
+      if (needComma) {
+        buf.append(", ");
+      }
+      else  {
+        needComma = true;
+      }
+      buf.append(column.getPrimaryKeyColumn());
+    }
+    buf.append(")");
+    if (updateRule != null) {
+      buf.append(" ON UPDATE ");
+      buf.append(updateRule);
+    }
+    if (deleteRule != null) {
+      buf.append(" ON DELETE ");
+      buf.append(deleteRule);
+    }
+    return buf.toString();
+  }
+
+}

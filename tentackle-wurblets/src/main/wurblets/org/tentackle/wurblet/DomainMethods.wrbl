@@ -1,0 +1,112 @@
+@{include $currentDir/header.incl}@
+@[
+    /**
+     * Tentackle - http://www.tentackle.org
+     *
+     * This library is free software; you can redistribute it and/or
+     * modify it under the terms of the GNU Lesser General Public
+     * License as published by the Free Software Foundation; either
+     * version 2.1 of the License, or (at your option) any later version.
+     *
+     * This library is distributed in the hope that it will be useful,
+     * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     * Lesser General Public License for more details.
+     *
+     * You should have received a copy of the GNU Lesser General Public
+     * License along with this library; if not, write to the Free Software
+     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+     */
+
+
+
+    /**
+     * generate domain methods.
+     *
+     * usage:  \@wurblet <tag> DomainMethods --model=<mapfile>
+     *
+     *         <mapfile> is the mapping description
+     *
+     * Example: \@wurblet domainMethods DomainMethods --model=$mapping
+     */
+
+    List<Attribute> udk = getEntity().getUniqueDomainKey();
+    if (!udk.isEmpty()) {
+      List<Attribute> superUdk = null;
+      if (getEntity().getSuperEntity() != null) {
+        superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+      }
+      if (superUdk == null || !udk.equals(superUdk)) {
+        String returnType = isGenerified() ? "T" : getPdoClassName();
+        if (udk.size() == 1) {
+          Attribute attr = udk.get(0);
+          String javaType = attr.getDataType().isPrimitive() ?
+                                attr.getDataType().toNonPrimitive().toString() : attr.getJavaType();
+]@
+
+  \@Override
+  public boolean isUniqueDomainKeyProvided() {
+    return true;
+  }
+
+  \@Override
+  public Class<?> getUniqueDomainKeyType() {
+    return @(javaType)@.class;
+  }
+
+  \@Override
+  public @(returnType)@ findByUniqueDomainKey(Object domainKey) {
+    return on().selectByUniqueDomainKey((@(udk.get(0).getJavaType())@) domainKey);
+  }
+
+  \@Override
+  public @(javaType)@ getUniqueDomainKey() {
+    return pdo().@(udk.get(0).getGetterName())@();
+  }
+
+  \@Override
+  public void setUniqueDomainKey(Object domainKey) {
+    pdo().@(udk.get(0).getSetterName())@((@(udk.get(0).getJavaType())@) domainKey);
+  }
+@[
+        }
+        else {
+          StringBuilder params = new StringBuilder();
+          for (Attribute attr: udk) {
+            appendCommaSeparated(params, "udk.");
+            params.append(attr.getJavaName());
+          }
+]@
+
+  \@Override
+  public Class<?> getUniqueDomainKeyType() {
+    return @(getEntity())@UDK.class;
+  }
+
+  \@Override
+  public @(returnType)@ findByUniqueDomainKey(Object domainKey) {
+    @(getEntity())@UDK udk = (@(getEntity())@UDK) domainKey;
+    return on().selectByUniqueDomainKey(@(params)@);
+  }
+
+  \@Override
+  public @(getEntity())@UDK getUniqueDomainKey() {
+    return new @(getEntity())@UDK(pdo());
+  }
+
+  \@Override
+  public void setUniqueDomainKey(Object domainKey) {
+    @(getEntity())@UDK udk = (@(getEntity())@UDK) domainKey;
+@[
+          for (Attribute attr: udk) {
+]@
+    pdo().@(attr.getSetterName())@(udk.@(attr.getJavaName())@);
+@[
+          }
+]@
+  }
+@[
+        }
+      }
+    }
+]@

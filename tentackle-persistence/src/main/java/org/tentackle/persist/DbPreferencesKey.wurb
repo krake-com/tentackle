@@ -1,0 +1,3 @@
+tablename = prefkey
+classid   = 4
+mapfile   = $model/$tablename.map

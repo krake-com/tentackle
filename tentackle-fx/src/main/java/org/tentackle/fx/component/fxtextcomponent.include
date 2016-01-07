@@ -1,0 +1,13 @@
+  private /**/delegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
+
+  @Override
+  public /**/delegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
+    if (delegate == null) {
+      delegate = new /**/delegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+    }
+    return delegate;
+  }
+
+  // @wurblet component Include $currentDir/component.include
+
+  // @wurblet textcomponent Include $currentDir/textcomponent.include

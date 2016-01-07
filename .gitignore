@@ -1,0 +1,9 @@
+
+# Netbeans
+nb-configuration.xml
+nbactions*.xml
+
+# Maven
+target/
+log/
+

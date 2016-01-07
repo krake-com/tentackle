@@ -1,0 +1,159 @@
+  private /**/delegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
+
+  @Override
+  public /**/delegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
+    if (delegate == null) {
+      delegate = new /**/delegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+    }
+    return delegate;
+  }
+
+  @Override
+  public FxContainer getParentContainer() {
+    return getDelegate().getParentContainer();
+  }
+
+  @Override
+  public ObservableList<?> getComponents() {
+    return getDelegate().getComponents();
+  }
+
+  @Override
+  public void setChangeable(boolean changeable) {
+    getDelegate().setChangeable(changeable);
+  }
+
+  @Override
+  public boolean isChangeable() {
+    return getDelegate().isChangeable();
+  }
+
+  @Override
+  public void setContainerChangeable(boolean containerChangeable) {
+    getDelegate().setContainerChangeable(containerChangeable);
+  }
+
+  @Override
+  public void setContainerChangableIgnored(boolean containerChangeableIgnored) {
+    getDelegate().setContainerChangableIgnored(containerChangeableIgnored);
+  }
+
+  @Override
+  public boolean isContainerChangeableIgnored() {
+    return getDelegate().isContainerChangeableIgnored();
+  }
+
+  @Override
+  public ReadOnlyBooleanProperty changeableProperty() {
+    return getDelegate().changeableProperty();
+  }
+
+  @Override
+  public void updateView() {
+    getDelegate().updateView();
+  }
+
+  @Override
+  public void updateModel() {
+    getDelegate().updateModel();
+  }
+
+  @Override
+  public void saveView() {
+    getDelegate().saveView();
+  }
+
+  @Override
+  public void invalidateSavedView() {
+    getDelegate().invalidateSavedView();
+  }
+
+  @Override
+  public void triggerViewModified() {
+    getDelegate().triggerViewModified();
+  }
+
+  @Override
+  public void setViewModified(boolean viewModified) {
+    getDelegate().setViewModified(viewModified);
+  }
+
+  @Override
+  public boolean isViewModified() {
+    return getDelegate().isViewModified();
+  }
+
+  @Override
+  public BooleanProperty viewModifiedProperty() {
+    return getDelegate().viewModifiedProperty();
+  }
+
+  @Override
+  public void setBindable(boolean bindable) {
+    getDelegate().setBindable(bindable);
+  }
+
+  @Override
+  public boolean isBindable() {
+    return getDelegate().isBindable();
+  }
+
+  @Override
+  public void setHelpUrl(String helpUrl) {
+    getDelegate().setHelpUrl(helpUrl);
+  }
+
+  @Override
+  public String getHelpUrl() {
+    return getDelegate().getHelpUrl();
+  }
+
+  @Override
+  public void showHelp() {
+    getDelegate().showHelp();
+  }
+
+  @Override
+  public String toGenericString() {
+    return getDelegate().toGenericString();
+  }
+
+  @Override
+  public void clearErrors() {
+    getDelegate().clearErrors();
+  }
+
+  @Override
+  public FxController getController() {
+    return getDelegate().getController();
+  }
+
+  @Override
+  public void setController(FxController controller) {
+    getDelegate().setController(controller);
+  }
+
+  @Override
+  public <C extends FxController> C getController(Class<C> clazz) {
+    return getDelegate().getController(clazz);
+  }
+
+  @Override
+  public void addModelToViewListener(ModelToViewListener listener) {
+    getDelegate().addModelToViewListener(listener);
+  }
+
+  @Override
+  public void removeModelToViewListener(ModelToViewListener listener) {
+    getDelegate().removeModelToViewListener(listener);
+  }
+
+  @Override
+  public void addViewToModelListener(ViewToModelListener listener) {
+    getDelegate().addViewToModelListener(listener);
+  }
+
+  @Override
+  public void removeViewToModelListener(ViewToModelListener listener) {
+    getDelegate().removeViewToModelListener(listener);
+  }

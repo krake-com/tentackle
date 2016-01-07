@@ -1,0 +1,20 @@
+
+/* show allowed in green */
+.sec-allow:selected > .radio > .dot {
+  -fx-background-color: green;
+  -fx-background-insets: 0 0 0 0, 0;
+}
+
+
+/* show denied in red */
+.sec-deny:selected > .radio > .dot {
+  -fx-background-color: red;
+  -fx-background-insets: 0 0 0 0, 0;
+}
+
+/* show not-applicable as strikethrough */
+.sec-na > .text {
+  -fx-strikethrough: true;
+}
+
+

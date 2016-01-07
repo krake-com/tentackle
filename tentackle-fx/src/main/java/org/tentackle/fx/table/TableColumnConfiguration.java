@@ -1,0 +1,245 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+package org.tentackle.fx.table;
+
+import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import javafx.geometry.Pos;
+import javafx.scene.control.TableColumn;
+import org.tentackle.fx.bind.FxTableBinding;
+
+/**
+ * Configuration for a table column.<br>
+ *
+ * @param <S> type of the objects contained within the table's items list
+ * @param <T> type of the content in all cells in this column
+ *
+ * @author harald
+ */
+public interface TableColumnConfiguration<S,T> {
+
+  /**
+   * Gets the table configuration.
+   *
+   * @return the table configuration
+   */
+  TableConfiguration<S> getTableConfiguration();
+
+  /**
+   * Gets the column name.<br>
+   * This is usually the property- or attribute name.<br>
+   * The name is also used as a key to the table preferences.
+   *
+   * @return the name of the column
+   */
+  String getName();
+
+  /**
+   * Gets the column name displayed in the column header.<br>
+   *
+   * @return the display name of the column
+   */
+  String getDisplayedName();
+
+  /**
+   * Determines the class for a given column.<br>
+   *
+   * @return the column class
+   */
+  Class<T> getType();
+
+  /**
+   * Sets the column type.
+   *
+   * @param type the type
+   */
+  void setType(Class<T> type);
+
+  /**
+   * Sets the generic type.
+   *
+   * @param genericType the generic type
+   */
+  void setGenericType(Type genericType);
+
+  /**
+   * Gets the generic type.
+   *
+   * @return the generic type
+   */
+  Type getGenericType();
+
+  /**
+   * Defines the format for numeric or date/time-types.<br>
+   * If null is returned a default format will be used according to the column class.
+   *
+   * @return the format pattern or null if default
+   */
+  String getPattern();
+
+  /**
+   * Sets the formatting string.
+   *
+   * @param pattern the format pattern
+   */
+  void setPattern(String pattern);
+
+  /**
+   * Gets the number format.
+   *
+   * @return the number format, null if default
+   */
+  DecimalFormat getNumberFormat();
+
+  /**
+   * Gets the date format.
+   *
+   * @return the date format, null if default
+   */
+  DateFormat getDateFormat();
+
+  /**
+   * Defines the alignment of the column.
+   *
+   * @return the alignment or null if default
+   */
+  Pos getAlignment();
+
+  /**
+   * Sets the alignment within the cell.
+   *
+   * @param alignment the alignment
+   */
+  void setAlignment(Pos alignment);
+
+  /**
+   * Defines the "blankzero" attribute of the column.
+   *
+   * @return true if blank zeros, false if not, null if use default from editor
+   */
+  Boolean isBlankZero();
+
+  /**
+   * Sets whether to blank out numeric zero values.
+   *
+   * @param blankZero true if blank zeros, false if not, null if use default from editor
+   */
+  void setBlankZero(Boolean blankZero);
+
+  /**
+   * Sets whether a numeric field is unsigned or signed.
+   *
+   * @param unsigned true if unsigned, null if use default from editor
+   */
+  void setUnsigned(Boolean unsigned);
+
+  /**
+   * Returns whether a numeric field is unsigned or signed.
+   *
+   * @return true if unsigned, null if use default from editor
+   */
+  Boolean isUnsigned();
+
+  /**
+   * Gets the autoselect flag.
+   *
+   * @return true if autoselect, false if not, null if use default from editor
+   */
+  Boolean isAutoSelect();
+
+  /**
+   * Sets the autoselect feature.
+   *
+   * @param autoSelect true if autoselect, false if not, null if use default from editor
+   */
+  void setAutoSelect(Boolean autoSelect);
+
+  /**
+   * Gets the maximum columns for text cell editors.
+   *
+   * @return the max columns, null if not defined
+   */
+  Integer getMaxColumns();
+
+  /**
+   * Sets the max columns.
+   *
+   * @param maxColumns the max columns, null if not defined
+   */
+  void setMaxColumns(Integer maxColumns);
+
+  /**
+   * Gets the scale for fractional numeric cell editors.
+   *
+   * @return the scale, null if not defined
+   */
+  Integer getScale();
+
+  /**
+   * Sets the numeric scale.
+   *
+   * @param scale the scale, null if not defined
+   */
+  void setScale(Integer Scale);
+
+  /**
+   * Gets the case conversion.
+   *
+   * @return true = convert to uppercase, false = lowercase, null = no conversion (default)
+   */
+  Boolean getCaseConversion();
+
+  /**
+   * Sets the case conversion.
+   *
+   * @param caseConversion true = convert to uppercase, false = lowercase, null = no conversion (default)
+   */
+  void setCaseConversion(Boolean caseConversion);
+
+  /**
+   * Determines whether the given column is summable.<br>
+   *
+   * @return false if column is definitely NOT numeric, else we dont know
+   */
+  boolean isSummable();
+
+  /**
+   * Gets the binding for this column.
+   *
+   * @return the binding, null if none
+   */
+  FxTableBinding<S,T> getBinding();
+
+  /**
+   * Sets the binding.
+   *
+   * @param binding the binding
+   */
+  void setBinding(FxTableBinding<S, T> binding);
+
+  /**
+   * Gets the table column.
+   *
+   * @return the table column
+   */
+  TableColumn<S,T> getTableColumn();
+
+}

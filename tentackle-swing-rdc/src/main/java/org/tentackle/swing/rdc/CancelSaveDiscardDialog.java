@@ -1,0 +1,294 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+// Created on January 4, 2003, 9:07 PM
+
+package org.tentackle.swing.rdc;
+
+import java.awt.Component;
+import java.awt.event.KeyEvent;
+
+
+/**
+ * A dialog to prompt the user for cancel, save or discard.
+ */
+public class CancelSaveDiscardDialog extends org.tentackle.swing.FormDialog {
+
+
+  // any other key than these invokes CANCEL
+  /** key codes for "save" **/
+  private static final String SAVE_KEYS    = RdcSwingRdcBundle.getString("SAVE_KEYS"); // Ss1Yy
+  /** key codes for "discard" **/
+  private static final String DISCARD_KEYS = RdcSwingRdcBundle.getString("DISCARD_KEYS"); // Dd0Nn
+
+
+  /** return code for "cancel" **/
+  public static final int CANCEL  = 0;
+  /** return code for "save" **/
+  public static final int SAVE    = 1;
+  /** return code for "discard" **/
+  public static final int DISCARD = 2;
+
+  private static final long serialVersionUID = -7542059032899743591L;
+
+
+  /**
+   * Creates a question dialog and waits for user's answer.
+   *
+   * @param question the question text
+   * @param discard the text of the discard button, null if default
+   * @param save the text of the save button, null if default
+   * @param cancel the text of the cancel button, null if default
+   * @return {@link #CANCEL}, {@link #SAVE} or {@link #DISCARD}
+   */
+  public static int getAnswer (String question, String discard, String save, String cancel) {
+    return new CancelSaveDiscardDialog().showDialog(question, discard, save, cancel);
+  }
+
+
+  /**
+   * Creates a question dialog and waits for user's answer.
+   *
+   * @param question the question text
+   * @return {@link #CANCEL}, {@link #SAVE} or {@link #DISCARD}
+   */
+  public static int getAnswer (String question) {
+    return getAnswer (question, null, null, null);
+  }
+
+
+  /**
+   * Creates the default "data has been modified"-dialog and waits for user's answer.
+   *
+   * @return {@link #CANCEL}, {@link #SAVE} or {@link #DISCARD}
+   */
+  public static int getAnswer() {
+    return getAnswer(RdcSwingRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"));
+  }
+
+
+
+
+
+
+  private int answer;                 // the user's choice
+  private Component messageComp;      // the message component if not the default
+
+
+  public CancelSaveDiscardDialog() {
+    initComponents();
+    messageComp = messagePanel;
+  }
+
+  /**
+   * Shows the modal dialog and returns the user's answer.
+   *
+   * @param question the question text
+   * @param discard the text of the discard button, null if default
+   * @param save the text of the save button, null if default
+   * @param cancel the text of the cancel button, null if default
+   * @return {@link #CANCEL}, {@link #SAVE} or {@link #DISCARD}
+   */
+  public int showDialog (String question, String discard, String save, String cancel) {
+    if (question != null) {
+      messageField.setText(question);
+      messageField.setSize(messageField.getOptimalSize());
+    }
+    if (discard != null) {
+      discardButton.setText(discard);
+    }
+    if (save    != null) {
+      saveButton.setText(save);
+    }
+    if (cancel  != null) {
+      cancelButton.setText(cancel);
+    }
+    answer = CANCEL;
+    pack();
+    setVisible(true);
+    return answer;
+  }
+
+  /**
+   * Shows the modal dialog and returns the user's answer.<br>
+   * If {@link #setMessageComponent} is used.
+   *
+   * @return {@link #CANCEL}, {@link #SAVE} or {@link #DISCARD}
+   */
+  public int showDialog() {
+    return showDialog(null, null, null, null);
+  }
+
+
+  /**
+   * Replaces the default center panel with some other Component.
+   *
+   * @param comp the component
+   */
+  public void setMessageComponent(Component comp)  {
+    getContentPane().remove(messageComp);
+    messageComp = comp;
+    getContentPane().add(messageComp, java.awt.BorderLayout.CENTER);
+  }
+
+  /**
+   * Gets the message component.
+   * @return the component
+   */
+  public Component getMessageComponent()  {
+    return messageComp;
+  }
+
+
+
+  /** This method is called from within the constructor to
+   * initialize the form.
+   * WARNING: Do NOT modify this code. The content of this method is
+   * always regenerated by the Form Editor.
+   */
+  // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+  private void initComponents() {
+    java.awt.GridBagConstraints gridBagConstraints;
+
+    messagePanel = new javax.swing.JPanel();
+    iconLabel = new javax.swing.JLabel();
+    messageField = new org.tentackle.swing.FormTextArea();
+    buttonPanel = new javax.swing.JPanel();
+    discardButton = new org.tentackle.swing.FormButton();
+    saveButton = new org.tentackle.swing.FormButton();
+    cancelButton = new org.tentackle.swing.FormButton();
+
+    setAutoPosition(true);
+    setModal(true);
+    addKeyListener(new java.awt.event.KeyAdapter() {
+      public void keyTyped(java.awt.event.KeyEvent evt) {
+        formKeyTyped(evt);
+      }
+    });
+
+    messagePanel.setLayout(new java.awt.GridBagLayout());
+
+    iconLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+    iconLabel.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("QuestionDialog"));
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+    messagePanel.add(iconLabel, gridBagConstraints);
+
+    messageField.setEditable(false);
+    messageField.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
+    messageField.setLineWrap(true);
+    messageField.setWrapStyleWord(true);
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+    messagePanel.add(messageField, gridBagConstraints);
+
+    getContentPane().add(messagePanel, java.awt.BorderLayout.CENTER);
+
+    buttonPanel.setLayout(new java.awt.GridBagLayout());
+
+    discardButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
+    discardButton.setText(RdcSwingRdcBundle.getTranslation("DISCARD")); // NOI18N
+    discardButton.setName("discard"); // NOI18N
+    discardButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        discardButtonActionPerformed(evt);
+      }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+    gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+    buttonPanel.add(discardButton, gridBagConstraints);
+
+    saveButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("save"));
+    saveButton.setText(RdcSwingRdcBundle.getTranslation("SAVE")); // NOI18N
+    saveButton.setName("save"); // NOI18N
+    saveButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        saveButtonActionPerformed(evt);
+      }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+    gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+    buttonPanel.add(saveButton, gridBagConstraints);
+
+    cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
+    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setName("cancel"); // NOI18N
+    cancelButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        cancelButtonActionPerformed(evt);
+      }
+    });
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+    gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+    buttonPanel.add(cancelButton, gridBagConstraints);
+
+    getContentPane().add(buttonPanel, java.awt.BorderLayout.SOUTH);
+
+    pack();
+  }// </editor-fold>//GEN-END:initComponents
+
+  private void saveButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveButtonActionPerformed
+    answer = SAVE;
+    dispose();
+  }//GEN-LAST:event_saveButtonActionPerformed
+
+  private void formKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyTyped
+    // notice: works only if no component in the panel ever gets the keyboard focus!
+    char key = evt.getKeyChar();
+    if (key != KeyEvent.CHAR_UNDEFINED) {
+      if (DISCARD_KEYS.indexOf(key) >= 0)  {
+        discardButton.doClick();
+      }
+      else if (SAVE_KEYS.indexOf(key) >= 0)     {
+        saveButton.doClick();
+      }
+      else  {
+        cancelButton.doClick();
+      }
+    }
+  }//GEN-LAST:event_formKeyTyped
+
+  private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
+    dispose();
+  }//GEN-LAST:event_cancelButtonActionPerformed
+
+  private void discardButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_discardButtonActionPerformed
+    answer = DISCARD;
+    dispose();
+  }//GEN-LAST:event_discardButtonActionPerformed
+
+
+
+  // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JPanel buttonPanel;
+  private org.tentackle.swing.FormButton cancelButton;
+  private org.tentackle.swing.FormButton discardButton;
+  private javax.swing.JLabel iconLabel;
+  private org.tentackle.swing.FormTextArea messageField;
+  private javax.swing.JPanel messagePanel;
+  private org.tentackle.swing.FormButton saveButton;
+  // End of variables declaration//GEN-END:variables
+
+}

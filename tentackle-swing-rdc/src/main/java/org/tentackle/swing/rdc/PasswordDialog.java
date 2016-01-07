@@ -1,0 +1,311 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.swing.rdc;
+
+import org.tentackle.common.Compare;
+import org.tentackle.log.Logger;
+import org.tentackle.swing.FormQuestion;
+import org.tentackle.swing.FormUtilities;
+import org.tentackle.misc.StringHelper;
+
+/**
+ * Password dialog.
+ * <p>
+ * The user is prompted for the old password and enters the
+ * new password twice. The passwords are assumed to be
+ * in MD5-format by default. Otherwise the method
+ * encryptPassword must be overwritten.
+ *
+ * @author harald
+ */
+public class PasswordDialog extends org.tentackle.swing.FormDialog {
+
+  private static final long serialVersionUID = -4354288019954531769L;
+
+  private boolean checkOld;         // true if check old password
+  private boolean okFlag;           // false if user canceled the dialog
+  private String oldPassword;       // the old (encrypted) password
+  private String password;          // the new (encrypted) password
+  private int passwordLength = 8;   // max. length of password (unencrypted)
+
+
+  /**
+   * Creates a password dialog.
+   *
+   * @param oldPassword the old password (encrypted), null if none
+   */
+  public PasswordDialog(String oldPassword) {
+    this.oldPassword = oldPassword;
+    checkOld = oldPassword != null;
+    initComponents();
+    // cursor movement and ENTER-key
+    FormUtilities.getInstance().setupDefaultBindings(oldPasswordField);
+    FormUtilities.getInstance().setupDefaultBindings(new1PasswordField);
+    FormUtilities.getInstance().setupDefaultBindings(new2PasswordField);
+  }
+
+  /**
+   * Creates a password dialog and prompts for the new password.
+   */
+  public PasswordDialog() {
+    this(null);
+  }
+
+
+  /**
+   * Sets the length of the password fields.
+   * This is the unencrypted length.
+   *
+   * @param passwordLength the password length
+   */
+  public void setPasswordLength(int passwordLength) {
+    this.passwordLength = passwordLength;
+  }
+
+  /**
+   * Gets the length of the password fields.
+   * This is the unencrypted length.
+   *
+   * @return the password length, default is 8.
+   */
+  public int getPasswordLength() {
+    return passwordLength;
+  }
+
+
+
+  /**
+   * Shows the modal dialog.
+   *
+   * @return true if user wants to change the password, false if user cancelled the dialog
+   */
+  public boolean showDialog()  {
+    okFlag = false;
+    oldPasswordField.setVisible(checkOld);
+    oldPasswordLabel.setVisible(checkOld);
+    oldPasswordField.setColumns(passwordLength);
+    new1PasswordField.setColumns(passwordLength);
+    new2PasswordField.setColumns(passwordLength);
+    pack();
+    setVisible(true);
+    return okFlag;
+  }
+
+
+  /**
+   * Gets the new password.
+   *
+   * @return null if no password (cleared), else the (encrypted) password.
+   */
+  public String getPassword() {
+    return password;
+  }
+
+
+  /**
+   * Encrypts the password.
+   * The default implementation calculates an MD5-hash.
+   *
+   * @param password the password to be encrypted (may be null)
+   * @return the encrypted password, null if password was null
+   * @see StringHelper#md5sum(char[])
+   */
+  public String encryptPassword(char[] password) {
+    return StringHelper.md5sum(password);
+  }
+
+
+
+  // checks the old password
+  private boolean checkOldPassword()  {
+    if (checkOld)  {
+      String passwd = encryptPassword(oldPasswordField.getPassword());
+      if (Compare.compare(passwd, oldPassword) != 0) {
+        errorPanel.setErrors(InteractiveErrorFactory.getInstance().createInteractiveError(
+                RdcSwingRdcBundle.getString("OLD PASSWORD DOES NOT MATCH!"),
+                Logger.Level.WARNING, null, null, null));
+        return false;
+      }
+    }
+    return true;  // ok
+  }
+
+  // encrypts the new password(s)
+  private String encrypt(char[] pass) {
+    if (pass != null && pass.length == 0) {
+      pass = null;
+    }
+    String passwd = encryptPassword(pass);
+    if (pass != null)  {
+      for (int i=0; i < pass.length; i++)  {
+        pass[i] = 0;   // scratch from memory
+      }
+    }
+    return passwd;
+  }
+
+
+  /** This method is called from within the constructor to
+   * initialize the form.
+   * WARNING: Do NOT modify this code. The content of this method is
+   * always regenerated by the Form Editor.
+   */
+  // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+  private void initComponents() {
+
+    passwordPanel = new org.tentackle.swing.FormPanel();
+    dataPanel = new org.tentackle.swing.FormPanel();
+    oldPasswordLabel = new org.tentackle.swing.FormLabel();
+    jLabel2 = new org.tentackle.swing.FormLabel();
+    jLabel3 = new org.tentackle.swing.FormLabel();
+    oldPasswordField = new javax.swing.JPasswordField();
+    new1PasswordField = new javax.swing.JPasswordField();
+    new2PasswordField = new javax.swing.JPasswordField();
+    errorPanel = new org.tentackle.swing.rdc.TooltipAndErrorPanel();
+    buttonPanel = new org.tentackle.swing.FormPanel();
+    okButton = new org.tentackle.swing.FormButton();
+    cancelButton = new org.tentackle.swing.FormButton();
+
+    setAutoPosition(true);
+    setHelpURL("#passworddialog");
+    setTitle(RdcSwingRdcBundle.getTranslation("CHANGE PASSWORD")); // NOI18N
+    setModal(true);
+
+    passwordPanel.setLayout(new java.awt.BorderLayout());
+
+    oldPasswordLabel.setText(RdcSwingRdcBundle.getTranslation("OLD PASSWORD:")); // NOI18N
+
+    jLabel2.setText(RdcSwingRdcBundle.getTranslation("NEW PASSWORD:")); // NOI18N
+
+    jLabel3.setText(RdcSwingRdcBundle.getTranslation("NEW PASSWORD REPEATED:")); // NOI18N
+
+    oldPasswordField.setColumns(8);
+    oldPasswordField.setName("oldPassword"); // NOI18N
+
+    new1PasswordField.setColumns(8);
+    new1PasswordField.setName("newPassword"); // NOI18N
+
+    new2PasswordField.setColumns(8);
+    new2PasswordField.setName("newRepeatedPassword"); // NOI18N
+
+    javax.swing.GroupLayout dataPanelLayout = new javax.swing.GroupLayout(dataPanel);
+    dataPanel.setLayout(dataPanelLayout);
+    dataPanelLayout.setHorizontalGroup(
+      dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(dataPanelLayout.createSequentialGroup()
+        .addContainerGap()
+        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+          .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(oldPasswordLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addComponent(oldPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(new1PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(new2PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addContainerGap(48, Short.MAX_VALUE))
+    );
+    dataPanelLayout.setVerticalGroup(
+      dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+      .addGroup(dataPanelLayout.createSequentialGroup()
+        .addContainerGap()
+        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(oldPasswordLabel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(oldPasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(new1PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+          .addComponent(new2PasswordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+        .addContainerGap(31, Short.MAX_VALUE))
+    );
+
+    passwordPanel.add(dataPanel, java.awt.BorderLayout.CENTER);
+    passwordPanel.add(errorPanel, java.awt.BorderLayout.SOUTH);
+
+    getContentPane().add(passwordPanel, java.awt.BorderLayout.CENTER);
+
+    okButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
+    okButton.setText(RdcSwingRdcBundle.getTranslation("OK")); // NOI18N
+    okButton.setName("ok"); // NOI18N
+    okButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        okButtonActionPerformed(evt);
+      }
+    });
+    buttonPanel.add(okButton);
+
+    cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
+    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setName("cancel"); // NOI18N
+    cancelButton.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        cancelButtonActionPerformed(evt);
+      }
+    });
+    buttonPanel.add(cancelButton);
+
+    getContentPane().add(buttonPanel, java.awt.BorderLayout.SOUTH);
+
+    pack();
+  }// </editor-fold>//GEN-END:initComponents
+
+  private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
+    dispose();
+  }//GEN-LAST:event_cancelButtonActionPerformed
+
+  private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
+    if (checkOldPassword()) {
+      password = encrypt(new1PasswordField.getPassword());
+      String passwd2 = encrypt(new2PasswordField.getPassword());
+      if (Compare.compare(password, passwd2) != 0) {
+        errorPanel.setErrors(InteractiveErrorFactory.getInstance().createInteractiveError(
+                RdcSwingRdcBundle.getString("NEW PASSWORDS DON'T MATCH!"),
+                Logger.Level.WARNING, null, null, null));
+      }
+      else if (FormQuestion.yesNo(password == null ?
+                                    RdcSwingRdcBundle.getString("REALLY CLEAR THE PASSWORD?") :
+                                    RdcSwingRdcBundle.getString("REALLY SET THE NEW PASSWORD?"))) {
+        okFlag = true;
+        dispose();
+      }
+    }
+  }//GEN-LAST:event_okButtonActionPerformed
+
+
+  // Variables declaration - do not modify//GEN-BEGIN:variables
+  private org.tentackle.swing.FormPanel buttonPanel;
+  private org.tentackle.swing.FormButton cancelButton;
+  private org.tentackle.swing.FormPanel dataPanel;
+  private org.tentackle.swing.rdc.TooltipAndErrorPanel errorPanel;
+  private org.tentackle.swing.FormLabel jLabel2;
+  private org.tentackle.swing.FormLabel jLabel3;
+  private javax.swing.JPasswordField new1PasswordField;
+  private javax.swing.JPasswordField new2PasswordField;
+  private org.tentackle.swing.FormButton okButton;
+  private javax.swing.JPasswordField oldPasswordField;
+  private org.tentackle.swing.FormLabel oldPasswordLabel;
+  private org.tentackle.swing.FormPanel passwordPanel;
+  // End of variables declaration//GEN-END:variables
+
+}

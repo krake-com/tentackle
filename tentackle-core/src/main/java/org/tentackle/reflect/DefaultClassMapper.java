@@ -1,0 +1,169 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.reflect;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+
+
+/**
+ * A default implementation of a classmapper.<br>
+ * The map is either initialized from a map or a {@link Properties}-object which in turn
+ * could be loaded from a properties file, an XML-file or constructed at runtime.
+ *
+ * @author harald
+ */
+public class DefaultClassMapper extends AbstractClassMapper<String> implements ClassMapper {
+
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClassMapper.class);
+
+  private Class<?> defaultClass;                      // the optional default class
+  private final Map<String,Class<?>> classMap;        // the internal map to speed-up lookup
+  private final Map<String,String> nameMap;           // the service name map
+  private final String[] packageNames;                // the optional package names
+
+
+  /**
+   * Constructs a class mapper.
+   *
+   * @param name the mapper's name
+   * @param nameMap the mapping of classnames
+   * @param packageNames the package names, null or empty array if none
+   */
+  public DefaultClassMapper(String name, Map<String,String> nameMap, String packageNames[]) {
+    super(name);
+    this.packageNames = packageNames;
+    this.nameMap = nameMap;
+    classMap = new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Constructs a class mapper.
+   *
+   * @param name the mapper's name
+   * @param nameProps the properties holding the mapping.
+   * @param packageNames the package names, null or empty array if none
+   */
+  public DefaultClassMapper(String name, Properties nameProps, String packageNames[]) {
+    this(name, new HashMap<>(), packageNames);
+    for (String key: nameProps.stringPropertyNames()) {
+      nameMap.put(key, nameProps.getProperty(key));
+    }
+  }
+
+
+  @Override
+  public Map<String,String> getNameMap() {
+    return nameMap;
+  }
+
+  @Override
+  public String[] getPackageNames() {
+    return packageNames;
+  }
+
+
+  /**
+   * Gets the default class.
+   *
+   * @return the class, null if no default
+   */
+  public Class<?> getDefaultClass() {
+    return defaultClass;
+  }
+
+  /**
+   * Sets the default class.<br>
+   * If there is no matching class, the mapper returns this class.
+   *
+   * @param defaultClass the default class
+   */
+  public void setDefaultClass(Class<?> defaultClass) {
+    this.defaultClass = defaultClass;
+  }
+
+
+  /**
+   * Maps to the class.
+   *
+   * @param className the class name
+   * @param lenient true if try superclasses/interfaces
+   * @return the mapped class, never null
+   * @throws ClassNotFoundException if no mapping or mapped classname not found
+   */
+  private Class<?> mapClass(String className, boolean lenient) throws ClassNotFoundException {
+    Class<?> clazz = classMap.get(className);
+    if (clazz == null) {    // no mapping so far
+      String mappedName;
+      try {
+        mappedName = map(className, lenient);
+      }
+      catch (ClassNotFoundException cx) {
+        // no mapping at all
+        if (defaultClass != null) {
+          LOGGER.fine("{0} -> using default {0}", cx.getMessage(), defaultClass);
+          // map to default and remember
+          classMap.put(className, defaultClass);
+          return defaultClass;
+        }
+        else {
+          throw cx;
+        }
+      }
+      // mappedName resolved:
+      clazz = Class.forName(mappedName);    // may throw ClassNotFoundException!
+      // found: remember mapping
+      classMap.put(className, clazz);
+    }
+    return clazz;
+  }
+
+
+  // ------------- implements ClassMapper --------------------------
+
+
+  @Override
+  public Class<?> map(Class<?> clazz) throws ClassNotFoundException {
+    return map(clazz.getName());
+  }
+
+  @Override
+  public Class<?> map(String className) throws ClassNotFoundException {
+    return mapClass(className, false);
+  }
+
+  @Override
+  public Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException {
+    return mapLenient(clazz.getName());
+  }
+
+  @Override
+  public Class<?> mapLenient(String className) throws ClassNotFoundException {
+    return mapClass(className, true);
+  }
+
+}
