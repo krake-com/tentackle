@@ -19,11 +19,6 @@
 
 package org.tentackle.misc;
 
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
-
 
 /**
  * Holds Tentackle versioning information.
