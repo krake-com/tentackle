@@ -17,7 +17,6 @@
  */
 package org.tentackle.validate.validator;
 
-import com.sun.media.sound.EmergencySoundbank;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
