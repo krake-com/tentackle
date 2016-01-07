@@ -5,5 +5,4 @@ nbactions*.xml
 
 # Maven
 target/
-log/
 

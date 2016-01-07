@@ -1,0 +1,114 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.log;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import org.tentackle.misc.Duration;
+import org.tentackle.reflect.ReflectionHelper;
+
+/**
+ * Method statistics collector.
+ *
+ * @author harald
+ */
+public class MethodStatistics {
+
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(MethodStatistics.class);
+
+  // the statistics map.
+  private final Map<MethodStatisticsKey, StatisticsResult> stats;
+
+  /**
+   * Creates a new statistics object.
+   */
+  public MethodStatistics() {
+    this.stats = new HashMap<>();
+  }
+
+  /**
+   * Counts the invocation of a delegate method.
+   *
+   * @param method the method invoked
+   * @param servicedClass the serviced class, null if method#getDeclatingClass
+   * @param duration execution duration
+   */
+  public synchronized void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
+    MethodStatisticsKey key = new MethodStatisticsKey(method, servicedClass);
+    StatisticsResult result = stats.get(key);
+    if (result == null) {
+      result = new StatisticsResult();
+      stats.put(key, result);
+    }
+    result.count(duration);
+  }
+
+  /**
+   * Counts the invocation of a delegate method.
+   *
+   * @param method the method invoked
+   * @param duration execution duration
+   */
+  public void countMethodInvocation(Method method, Duration duration) {
+    countMethodInvocation(method, null, duration);
+  }
+
+  /**
+   * Logs the statistics.
+   *
+   * @param level the logging level
+   * @param tag intro logging tag
+   * @param clear true if clear statistics after dump
+   */
+  public synchronized void logStatistics(Logger.Level level, String tag, boolean clear) {
+    if (LOGGER.isLoggable(level)) {
+      try {
+        StringBuilder buf = new StringBuilder("Invocation statistics:");
+        for (Map.Entry<MethodStatisticsKey,StatisticsResult> entry: stats.entrySet()) {
+          StatisticsResult result = entry.getValue();
+          MethodStatisticsKey key = entry.getKey();
+          buf.append('\n').append(tag).
+              append(result.getMinDuration().millisToString()).append(' ').
+              append(result.getMaxDuration().millisToString()).append(' ').
+              append(result.getTotalDuration().millisToString()).
+              append(" ms / ").append(result.getCount()).append(" x ").
+              append(ReflectionHelper.methodToString(key.getMethod()));
+          if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
+            buf.append(" for ").append(ReflectionHelper.getClassBaseName(key.getServicedClass()));
+          }
+        }
+        if (clear) {
+          buf.append("\n    (cleared)");
+        }
+        LOGGER.log(level, buf.toString(), null);
+      }
+      catch (RuntimeException rex) {
+        LOGGER.severe("cannot log method statistics", rex);
+      }
+    }
+    if (clear) {
+      stats.clear();
+    }
+  }
+
+}
