@@ -17,7 +17,9 @@
  */
 
 
-package org.tentackle.misc;
+package org.tentackle.common;
+
+import java.util.ResourceBundle;
 
 
 /**
@@ -27,8 +29,20 @@ package org.tentackle.misc;
  */
 public class Version {
 
-  /** the release from manifest **/
-  public static final String RELEASE = Version.class.getPackage().getImplementationVersion();
+  /** the artifact version **/
+  public static final String RELEASE = getBundle().getString("version");
+
+  /** the build timestamp **/
+  public static final String DATE = getBundle().getString("date");
+
+  /**
+   * Gets the bundle.
+   *
+   * @return the resource bundle
+   */
+  public static ResourceBundle getBundle() {
+    return ResourceBundle.getBundle(Version.class.getName());
+  }
 
 
   /**
@@ -39,7 +53,7 @@ public class Version {
   public static void main(String[] args) {
     System.out.println(
 "\nTentackle - http://www.tentackle.org" +
-"\n\nVersion " + RELEASE + "\n\n" +
+"\n\nVersion " + RELEASE + " (" + DATE + ")\n\n" +
 "This library is free software; you can redistribute it and/or\n" +
 "modify it under the terms of the GNU Lesser General Public\n" +
 "License as published by the Free Software Foundation; either\n" +

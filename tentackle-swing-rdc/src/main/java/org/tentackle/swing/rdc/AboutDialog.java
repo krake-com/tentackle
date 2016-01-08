@@ -66,7 +66,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     initComponents();
 
     applicationTextArea.setText(text);
-    tentackleVersionLabel.setText("Tentackle " + org.tentackle.misc.Version.RELEASE);  // NOI18N
+    tentackleVersionLabel.setText("Tentackle " + org.tentackle.common.Version.RELEASE);  // NOI18N
     javaVersionLabel.setText("Java " + System.getProperty("java.version"));  // NOI18N
 
     Dimension size = imageLabel.getPreferredSize();
