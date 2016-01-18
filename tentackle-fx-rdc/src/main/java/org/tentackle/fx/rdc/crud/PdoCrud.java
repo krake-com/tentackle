@@ -246,6 +246,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     treeButton.setDisable(pdo.isNew() || !guiProvider.providesTreeChildObjects());
     deleteButton.setDisable(!editor.isRemoveAllowed());
+    newButton.setDisable(!editAllowed.get());
     saveButton.disableProperty().bind(getContainer().viewModifiedProperty().and(editAllowed).not());
     securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(pdo.getDomainContext()));
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());

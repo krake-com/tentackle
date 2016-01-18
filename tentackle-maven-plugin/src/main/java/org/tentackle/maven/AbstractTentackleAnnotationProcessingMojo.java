@@ -36,7 +36,6 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.wurbelizer.misc.Constants;
-import org.wurbelizer.wurbile.Wurbiler;
 
 
 
@@ -46,7 +45,6 @@ import org.wurbelizer.wurbile.Wurbiler;
  * Picks up all annotations annotated with @{@link WurbelSupply}.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public abstract class AbstractTentackleAnnotationProcessingMojo extends AbstractTentackleMojo {
 
@@ -248,7 +246,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       getLog().info("analyzing files in " + dirName);
     }
 
-    int errorCount = 0;       // apt errors
+    int errorCount = 0;           // compiler errors
     int compileErrorCount = 0;    // source compilation errors
 
     String[] fileNames = new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet);
@@ -273,7 +271,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       StringBuilder buf = new StringBuilder();
       for (String element: classpathElements) {
         if (buf.length() > 0) {
-          buf.append(':');
+          buf.append(File.pathSeparatorChar);
         }
         buf.append(element);
       }
@@ -281,7 +279,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       // options started with -A are passed to the annotation processors (without leading -A)
       options.add("-Averbosity=" + verbosityLevel);
 
-      CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null, fileManager.getJavaFileObjects(fileNames));
+      CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null,
+                                              fileManager.getJavaFileObjects(fileNames));
 
       if (processors != null) {
         task.setProcessors(processors);
@@ -319,7 +318,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
                   errorCount + " errors");
 
     if (compileErrorCount > 0) {
-      getLog().warn(compileErrorCount + " Java compilation errors! Some annotations may have been processed improperly or not processed at all");
+      getLog().warn(compileErrorCount +
+                    " Java compilation errors! Some annotations may have been processed improperly or not processed at all");
     }
 
     totalErrors += errorCount;

@@ -25,7 +25,6 @@ import java.lang.annotation.Annotation;
  * The repeatable container validator.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public interface RepeatableValidator {
 

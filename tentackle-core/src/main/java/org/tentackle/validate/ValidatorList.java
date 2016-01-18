@@ -34,7 +34,6 @@ import java.util.List;
  * </pre>
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public interface ValidatorList {
 

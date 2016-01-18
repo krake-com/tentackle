@@ -37,7 +37,6 @@ import java.util.List;
  * @requiresDependencyResolution test
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 

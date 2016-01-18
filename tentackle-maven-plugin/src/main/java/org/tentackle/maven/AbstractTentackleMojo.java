@@ -35,7 +35,6 @@ import org.wurbelizer.misc.Verbosity;
  * A generic wurbelizer mojo.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public abstract class AbstractTentackleMojo extends AbstractMojo {
 

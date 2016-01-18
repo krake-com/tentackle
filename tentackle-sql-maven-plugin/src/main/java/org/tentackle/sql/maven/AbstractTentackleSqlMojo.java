@@ -54,7 +54,6 @@ import org.tentackle.sql.BackendInfo;
  * A generic tentackle sql mojo.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
 

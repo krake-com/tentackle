@@ -37,7 +37,6 @@ import org.tentackle.buildsupport.AnalyzeProcessor;
  * each annotation.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {
 

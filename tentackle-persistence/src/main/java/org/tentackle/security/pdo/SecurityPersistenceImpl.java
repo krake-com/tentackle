@@ -242,6 +242,10 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     return null;
   }
 
+  @Override
+  public void assertRootContextIsAccepted() {
+    // always accepted
+  }
 
   /**
    * Sets the object this rule applies to.<br>

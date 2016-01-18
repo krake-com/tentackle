@@ -29,7 +29,6 @@ import java.io.Serializable;
  * therefore null if deserialized.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public interface ValidationResult extends Serializable {
 

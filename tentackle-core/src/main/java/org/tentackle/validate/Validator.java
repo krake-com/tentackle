@@ -31,7 +31,6 @@ import java.util.List;
  * State values are passed via {@link ValidationContext}.
  *
  * @author harald
- * @version $Revision: 2450 $
  */
 public interface Validator {
 
