@@ -54,6 +54,7 @@
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
+    <wurbelizer.version>2.1-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
     <!-- for the tentackle sql plugin -->
@@ -85,13 +86,13 @@
       <dependency>
         <groupId>org.wurbelizer</groupId>
         <artifactId>wurbelizer</artifactId>
-        <version>2.0.0</version>
+        <version>${wurbelizer.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.wurbelizer</groupId>
         <artifactId>wurbelizer-maven-plugin</artifactId>
-        <version>2.0.0</version>
+        <version>${wurbelizer.version}</version>
       </dependency>
 
       <dependency>
@@ -201,7 +202,7 @@
         <plugin>
           <groupId>org.wurbelizer</groupId>
           <artifactId>wurbelizer-maven-plugin</artifactId>
-          <version>2.0.0</version>
+          <version>${wurbelizer.version}</version>
         </plugin>
 
         <plugin>

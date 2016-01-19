@@ -54,7 +54,7 @@ public class Document {
       if (ndx > 0) {
         String firstLine = text.substring(2, ndx);
         text = text.substring(ndx + 1);   // remove source line, 1 line added again below in new SourceInfo(....)
-        ndx = firstLine.indexOf(':');   // get line number
+        ndx = firstLine.lastIndexOf(':'); // get line number
         if (ndx > 0) {
           sourceInfo = new SourceInfo(firstLine.substring(0, ndx), Integer.valueOf(firstLine.substring(ndx + 1)) + 1);
         }
