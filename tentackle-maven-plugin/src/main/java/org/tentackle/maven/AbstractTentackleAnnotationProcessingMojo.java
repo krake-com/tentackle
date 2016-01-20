@@ -262,6 +262,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
 
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      if (compiler == null) {
+        throw new MojoExecutionException(
+                "No Java compiler! Make sure you're using the JDK or tools.jar is in your classpath.");
+      }
       DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 
