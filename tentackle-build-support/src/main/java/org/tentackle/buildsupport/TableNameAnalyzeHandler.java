@@ -103,13 +103,14 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                       Diagnostic.Kind.ERROR, "no value method in annotation " + annotationType, element);
               return;
             }
+
+            break;
           }
-          break;
         }
 
         if (tableName == null) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "internal logic error");
+                  Diagnostic.Kind.ERROR, "internal logic error", element);
         }
 
         // notice: tablename is a string enclosed in doublequotes!
