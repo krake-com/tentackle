@@ -26,7 +26,6 @@ import java.util.Date;
 import java.util.StringTokenizer;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
@@ -41,22 +40,22 @@ import org.tentackle.script.ScriptVariable;
  * used as parameters for methods or annotations. They come in three different flavors:
  *
  * <ol>
- * <li>fixed constants: these are simple strings and will be treated as constants.</li>.
+ * <li>fixed constants: these are simple strings and will be treated as constants.</li>
  * <li>references: they start with a dollar followed by a reference in dot-notation relative to a given object or a
  * static method or field. If the dotted path contains an element with the first character in uppercase, the latter is assumed.
  * Boolean references may be preceeded by <code>"!"</code> to negate the result.</li>
  * <li>a script in a scripting language, for example Groovy or JRuby.</li>
  * <li>an indirect reference: just like a normal or static reference, but the result will be parsed and will in turn
- * be treated as a constant, reference or script. Nice to load scripts from the database.
+ * be treated as a constant, reference or script. Nice to load scripts from the database.</li>
  * </ol>
  *
  * Examples:
  * <pre>
- * "123" -> constant
- * "$grandTotal" -> object.getGrandTotal()
- * "!$customer.customerNoValid" -> !object.getCustomer().isCustomerNoValid()
- * "$org.tentackle.misc.StringHelper.now" -> org.tentackle.misc.StringHelper.now()
- * "#!groovy{ object.amount > 200}"
+ * "123" -&gt; constant
+ * "$grandTotal" -&gt; object.getGrandTotal()
+ * "!$customer.customerNoValid" -&gt; !object.getCustomer().isCustomerNoValid()
+ * "$org.tentackle.misc.StringHelper.now" -&gt; org.tentackle.misc.StringHelper.now()
+ * "#!groovy{ object.amount &gt; 200}"
  * </pre>
  *
  * If the object parameter in the constructor is not-null the script will get the
@@ -74,7 +73,6 @@ public class CompoundValue {
 
   /**
    * The value type of strings.
-   * <p>
    * <ul>
    * <li>{@link #CONSTANT}: a constant value (e.g.: <code>"123"</code>)</li>
    * <li>{@link #REFERENCE}: a reference-path relative to the annotated parent object in dot-notation (e.g.: <code>"$invoice.grantTotal"</code>)</li>
@@ -479,7 +477,7 @@ public class CompoundValue {
    * </ul>
    *
    * @param parentObjectClass for {@link Type#REFERENCE}
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if parsing failed
    */
   public void parse(Class<?> parentObjectClass) throws IllegalArgumentException {
 

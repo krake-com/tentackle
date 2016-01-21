@@ -436,6 +436,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    *
    * @param associates the set of associated entities so far
    * @param entity the current entity to analyze
+   * @param processedEntities the already processed entities (to avoid loops)
    */
   protected void collectAssociatedEntities(Set<Entity> associates, Entity entity, Set<Entity> processedEntities) {
     if (!processedEntities.contains(entity)) {
@@ -521,7 +522,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Sets the context id attribute.
    *
-   * @param contextIdAttribute
+   * @param contextIdAttribute the attribute providing the context ID
    */
   public void setContextIdAttribute(Attribute contextIdAttribute) {
     this.contextIdAttribute = contextIdAttribute;
@@ -598,7 +599,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   /**
    * Sets whether this entity should provide a root id according to model.
    *
-   * @param modelRootClassId  true if should provide a root id
+   * @param modelRootId  true if should provide a root id
    */
   public void setProvidingRootIdAccordingToModel(boolean modelRootId) {
     this.modelRootId = modelRootId;
@@ -1251,7 +1252,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   /**
    * Validates the relation dependent settings.<br>
-   * Assumes {@link ModelImpl#updateRelations()} applied successfully.
+   * Assumes {@link ModelImpl#updateRelations} applied successfully.
    *
    * @throws ModelException if validation failed
    */

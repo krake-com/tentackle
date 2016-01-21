@@ -128,7 +128,7 @@ abstract public class Line {
    * Gets the line's text.
    *
    * @return the text within the document
-   * @throws ModelException
+   * @throws ModelException if line has not been parsed yet
    */
   public String getText() throws ModelException {
     return document.getText().substring(offset, offset + getLength());
@@ -164,9 +164,9 @@ abstract public class Line {
   /**
    * Creates a model exception.
    *
-   * @param message
-   * @param cause
-   * @return
+   * @param message the message
+   * @param cause the optional chained cause
+   * @return the exception
    */
   public ModelException createModelException(String message, Throwable cause) {
     return new ModelException(message, getSourceInfo(), cause);
@@ -174,8 +174,8 @@ abstract public class Line {
 
   /**
    * Creates a model exception.
-   * @param message
-   * @return
+   * @param message the message
+   * @return the exception
    */
   public ModelException createModelException(String message) {
     return new ModelException(message, getSourceInfo());

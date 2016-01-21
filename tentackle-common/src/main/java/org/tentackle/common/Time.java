@@ -92,11 +92,13 @@ public class Time extends java.sql.Time {
   }
 
 
-    /**
+  /**
    * Save the state of this object to a stream.
    *
-   * @serialData the value YYYYMMDD is emitted. This allows serializing
-   * and deserializing in different timezones without changing the date.
+   * @serialData the value HHMMSSsss is emitted. This allows serializing
+   * and deserializing in different timezones without changing the time.
+   * @param s the stream
+   * @throws IOException if writing to stream failed
    */
   private void writeObject(ObjectOutputStream s)
           throws IOException {
@@ -109,6 +111,10 @@ public class Time extends java.sql.Time {
 
   /**
    * Reconstitute this object from a stream.
+   *
+   * @param s the stream
+   * @throws IOException if reading from stream failed
+   * @throws ClassNotFoundException if class contained in stream is not found
    */
   private void readObject(ObjectInputStream s)
           throws IOException, ClassNotFoundException {

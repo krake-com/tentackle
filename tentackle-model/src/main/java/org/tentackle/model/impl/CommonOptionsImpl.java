@@ -149,7 +149,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
     boolean applied = true;
 
     switch(uco) {
-      
+
       case OPTION_NODECLARE:
         setNoDeclare(on);
         break;
@@ -301,7 +301,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   /**
    * Sets the comment.
    *
-   * @param comment
+   * @param comment the comment
    */
   public void setComment(String comment) {
     this.comment = comment;

@@ -65,8 +65,9 @@ public interface Validator {
   int getPriority();
 
   /**
-   * Gets the validation scopes set by the annotation's scopes()-parameter
-   * @return
+   * Gets the validation scopes set by the annotation's scopes()-parameter.
+   *
+   * @return the validation scopes
    */
   Class<? extends ValidationScope>[] getScope();
 
@@ -109,6 +110,7 @@ public interface Validator {
 
   /**
    * Gets the annotated element.
+   *
    * @return the element, null if dynamic validator
    */
   AnnotatedElement getAnnotatedElement();
@@ -117,13 +119,14 @@ public interface Validator {
   /**
    * Sets the name of the validated element.
    *
-   * @param name
+   * @param name the element name
    */
   void setValidatedElementName(String name);
 
   /**
    * Gets the name of the validated element.
-   * @return
+   * 
+   * @return the element name
    */
   String getValidatedElementName();
 

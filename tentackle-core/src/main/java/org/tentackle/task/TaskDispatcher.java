@@ -46,7 +46,7 @@ public interface TaskDispatcher extends Terminatable {
   /**
    * Sets the sleep interval.
    * <p>
-   * @param sleepInterval the sleep interval, must be > 0
+   * @param sleepInterval the sleep interval, must be &gt; 0
    */
   void setSleepInterval(long sleepInterval);
 
@@ -103,14 +103,14 @@ public interface TaskDispatcher extends Terminatable {
   /**
    * Adds a task listener.
    *
-   * @param listener
+   * @param listener the task listener
    */
   void addTaskListener(TaskListener listener);
 
   /**
    * Removes a task listener.
    *
-   * @param listener
+   * @param listener the task listener
    */
   void removeTaskListener(TaskListener listener);
 
@@ -180,7 +180,7 @@ public interface TaskDispatcher extends Terminatable {
    * @param key optional key to unlock
    * @return the lock if really locked, else just incremented the lock count
    * @throws TaskException if {@link TaskDispatcher} itself attempts to lock
-   * @see ReentrantReadWriteLock
+   * @see java.util.concurrent.locks.ReentrantReadWriteLock
    */
   TaskDispatcherLock lock(Object key);
 
@@ -193,13 +193,13 @@ public interface TaskDispatcher extends Terminatable {
    * @param key the key to unlock
    * @return true if really unlocked, else just decremented the lock count
    * @throws IllegalMonitorStateException if the caller thread is not holding the lock
-   * @see ReentrantReadWriteLock
+   * @see java.util.concurrent.locks.ReentrantReadWriteLock
    */
   boolean unlock(Object key);
 
   /**
    * Returns a diagnostic string.<br>
-   * This is an extended version of {@link #toString()}.
+   * This is an extended version of {@link Object#toString()}.
    *
    * @return the disgnostic string
    */

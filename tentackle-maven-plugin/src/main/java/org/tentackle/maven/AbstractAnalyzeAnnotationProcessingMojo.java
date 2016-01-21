@@ -107,8 +107,8 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   /**
    * Initializes a processor.
    *
-   * @param processor
-   * @param srcDir
+   * @param processor the annotation processor
+   * @param srcDir the sources dir
    */
   @Override
   protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {

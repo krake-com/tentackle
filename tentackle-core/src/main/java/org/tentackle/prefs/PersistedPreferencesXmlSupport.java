@@ -276,7 +276,7 @@ public class PersistedPreferencesXmlSupport {
    * @throws BackingStoreException if preference data cannot be read from
    *         backing store.
    * @throws IllegalStateException if this node (or an ancestor) has been
-   *         removed with the {@link Preferences#removeNode()} method.
+   *         removed with the {@link PersistedPreferences#removeNode()} method.
    */
   static public void export(OutputStream os, final PersistedPreferences prefs, boolean subTree)
           throws IOException, BackingStoreException {

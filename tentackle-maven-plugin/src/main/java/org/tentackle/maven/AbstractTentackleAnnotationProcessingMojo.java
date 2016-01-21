@@ -42,7 +42,7 @@ import org.wurbelizer.misc.Constants;
 /**
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
- * Picks up all annotations annotated with @{@link WurbelSupply}.
+ * Picks up all annotations annotated with {@link org.tentackle.common.Analyze}.
  *
  * @author harald
  */
@@ -183,13 +183,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   }
 
 
-
-
   /**
    * Initializes a processor.
    *
-   * @param processor
-   * @param srcDir
+   * @param processor the annotation processor
+   * @param srcDir the source dir
    */
   protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
     processor.setSourceDir(srcDir);

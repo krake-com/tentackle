@@ -24,7 +24,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Session;
 
 /**
- * The SecurityManager applies security rules to {@link PersistentDomainObject}s
+ * The SecurityManager applies security rules to {@link org.tentackle.pdo.PersistentDomainObject}s
  * and grants or denies permissions.<br>
  *
  * @author harald
@@ -63,6 +63,8 @@ public interface SecurityManager {
    * <p>
    * Since the model has no relation to the security implementation, security rules may become
    * obsolete if PDOs are deleted. This method will remove such obsolete rules.
+   *
+   * @param session the session
    */
   void removeObsoleteRules(Session session);
 
@@ -75,14 +77,9 @@ public interface SecurityManager {
 
   /**
    * Enables or disables this security manager.
-   * <p>
-   * If disabled, all requests return a {@link SecurityResult} with
-   * {@link SecurityResult#isDefault()}, {@link SecurityResult#isAccepted} or {@link SecurityResult#isDenied} returning true
-   * according to {@link #isAcceptByDefault} and {@link #isDenyByDefault}.
    *
    * @param enabled true to enable the security manager
    * @see #setAcceptByDefault(boolean)
-   * @see #setDenyByDefault(boolean)
    */
   void setEnabled(boolean enabled);
 

@@ -186,6 +186,8 @@ public interface Relation {
   /**
    * Returns whether this is list relation with only one element.<br>
    * A.k.a. reversed 1:1 object relation.
+   *
+   * @return true if reversed
    */
   boolean isReversed();
 
@@ -207,7 +209,8 @@ public interface Relation {
 
   /**
    * Returns whether the select method is a caching one.
-   * @return
+   *
+   * @return true if cached
    */
   boolean isSelectionCached();
 
@@ -342,7 +345,8 @@ public interface Relation {
 
   /**
    * Gets the comment line for getter and setter.
-   * @return
+   *
+   * @return the comment
    */
   String getGetterSetterComment();
 

@@ -148,7 +148,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Checks if given directory resides in resources.
-   * @param dirName
+   * 
+   * @param dirName the directory name
    * @return the resource dir, null if not a resource
    */
   protected String getResourceDirName(String dirName) {

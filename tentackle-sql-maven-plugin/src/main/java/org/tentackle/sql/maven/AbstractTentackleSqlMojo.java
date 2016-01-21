@@ -178,9 +178,9 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Gets the open connection.<br>
    * Opens it if it is closed.
    *
-   * @param backendInfo
+   * @param backendInfo the connection info
    * @return the open connection
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if connection failed
    */
   protected Connection getConnection(BackendInfo backendInfo) throws MojoExecutionException {
     if (connection == null) {
@@ -209,7 +209,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Creates the sqlFile, sqlDirName and sqlWriter.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if sql file could not be created
    */
   protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
     sqlFile = new File(new File(sqlDir, backendInfo.getBackend().getName()), getSqlFileName());
@@ -230,7 +230,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Opens the resources such as session and creates the SQL file.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if sql file could not be created
    */
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
     createSqlFile(backendInfo);
@@ -240,7 +240,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Closes the resources.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if closing failed
    */
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
     if (connection != null) {
@@ -269,7 +269,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend info
    * @param fileSet the fileset
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if processing failed
    */
   protected abstract void processFileSet(BackendInfo backendInfo, FileSet fileSet) throws MojoExecutionException;
 
@@ -436,7 +436,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend infor
    * @param modelDirName the model directory name
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if writing to SQL file failed
    */
   protected void writeModelIntroComment(BackendInfo backendInfo, String modelDirName) throws MojoExecutionException {
     try {

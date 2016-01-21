@@ -123,7 +123,7 @@ public interface Attribute {
    * Gets the application specific type.
    *
    * @return the application specific type, never null or empty
-   * @throws ModelException if application specific type not set or this is not {@link #APPLICATION}
+   * @throws ModelException if application specific type not set or this is not {@link DataType#APPLICATION}
    */
   String getApplicationType() throws ModelException;
 
@@ -155,6 +155,7 @@ public interface Attribute {
    * Returns whether database column is nullable.
    *
    * @return true if WITH NULL, false if NOT NULL
+   * @throws ModelException if type is misconfigured
    */
   boolean isNullable() throws ModelException;
 

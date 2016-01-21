@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to mark an annotation to be processed by the ServiceAnalyzeHandler.<br.
+ * Annotation to mark an annotation to be processed by the ServiceAnalyzeHandler.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

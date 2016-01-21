@@ -340,7 +340,9 @@ public class DefaultSecurityManager implements SecurityManager {
 
 
   /**
-   * Creates a security result with {@link SecurityResult#isDefault()} == true.
+   * Creates a default security result.<br>
+   * This result is returned, if no matching rules were found.
+   *
    * @param message the message
    * @return the result
    */
@@ -352,7 +354,8 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
   /**
-   * Creates a security result with {@link SecurityResult#isAccepted()} == true.
+   * Creates an accepting security result.
+   *
    * @param message the message
    * @return the result
    */
@@ -361,7 +364,8 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
   /**
-   * Creates a security result with {@link SecurityResult#isDenied()} == true.
+   * Creates a denying security result.
+   *
    * @param message the message
    * @return the result
    */

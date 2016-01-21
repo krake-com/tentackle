@@ -186,7 +186,7 @@ public final class StringHelper {
    * already in the string according to Unix rules.
    * Example:
    * <pre>
-   * Length 5" --> "Length 5\""
+   * Length 5" --&gt; "Length 5\""
    * </pre>
    *
    * @param str the string
@@ -232,38 +232,6 @@ public final class StringHelper {
    */
   public static List<String> split(String str, String delimiters) {
     return BasicStringHelper.split(str, delimiters);
-  }
-
-
-  /**
-   * Takes a string, surrounds it with double-quotes and escapes all double-quotes
-   * already in the string according to Windows-rules.
-   * Example:
-   * <pre>
-   * Length 5" --> "Length 5""
-   * </pre>
-   *
-   * @param str the string
-   * @return the string in double quotes
-   */
-  public static String toWindowsDoubleQuotes(String str) {
-    StringBuilder buf = new StringBuilder();
-    buf.append('"');
-    if (str != null)  {
-      int len = str.length();
-      for (int i=0; i < len; i++) {
-        char c = str.charAt(i);
-        if (c == '"') {
-          buf.append('"');
-        }
-        else if (Character.isISOControl(c)) {
-          c = ' ';    // transform any controls to spaces
-        }
-        buf.append(c);
-      }
-    }
-    buf.append('"');
-    return buf.toString();
   }
 
 
@@ -979,7 +947,7 @@ public final class StringHelper {
   /**
    * Converts to string containing only the letters A-z or digits.<br>
    * All other characters will be converted to an underscore.
-   * All diacrits will be converted first (see {@link #unDiacrit(java.lang.String)}.
+   * All diacrits will be converted first (see {@link #unDiacrit}.
    * The resulting string will not contain more than one underscore in a row.
    * <p>
    * Nice to create filenames.
@@ -1107,7 +1075,7 @@ public final class StringHelper {
    * Gets the word-string for a digit.<br>
    * Example:
    * <pre>
-   * '0' -> "zero"
+   * '0' -&gt; "zero"
    * </pre>
    *
    * @param digit the digit character

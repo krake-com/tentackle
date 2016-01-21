@@ -169,10 +169,10 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   /**
    * Sets the application specific type.<br>
-   * Only allowed {@link #APPLICATION}.
+   * Only allowed {@link DataType#APPLICATION}.
    *
    * @param applicationType the application specific type
-   * @throws ModelException if this is not {@link #APPLICATION}
+   * @throws ModelException if this is not {@link DataType#APPLICATION}
    */
   public void setApplicationType(String applicationType) throws ModelException {
     if (applicationType != null && dataType != DataType.APPLICATION) {
@@ -185,7 +185,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
    * Gets the application specific type.
    *
    * @return the application specific type, never null or empty
-   * @throws ModelException if application specific type not set or this is not {@link #APPLICATION}
+   * @throws ModelException if application specific type not set or this is not {@link DataType#APPLICATION}
    */
   @Override
   public String getApplicationType() throws ModelException {
@@ -205,7 +205,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
    * Sets the inner type.
    *
    * @param innerType the inner type
-   * @throws ModelException if this is neither {@link #APPLICATION} nor {@link #BINARY}
+   * @throws ModelException if this is neither {@link DataType#APPLICATION} nor {@link DataType#BINARY}
    */
   public void setInnerName(String innerType) throws ModelException {
     if (innerType != null && dataType != DataType.APPLICATION && dataType != DataType.BINARY) {
@@ -217,8 +217,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   /**
    * Returns the inner type.
    *
-   * @return the inner type, null if none (only if {@link #BINARY})
-   * @throws ModelException this is {@link #APPLICATION} and inner type not set
+   * @return the inner type, null if none (only if {@link DataType#BINARY})
+   * @throws ModelException this is {@link DataType#APPLICATION} and inner type not set
    */
   @Override
   public String getInnerName() throws ModelException {
@@ -236,7 +236,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
    * Gets the innertype for application specific types.
    *
    * @return the inner type to convert to agains the SQL backend
-   * @throws ModelException if not {@link #APPLICATION} or innertype not a legal DataType.
+   * @throws ModelException if not {@link DataType#APPLICATION} or innertype not a legal DataType.
    */
   @Override
   public DataType getInnerType() throws ModelException {
@@ -435,7 +435,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
    * Refers to the source line if set, otherwise just the message.
    *
    * @param message the message
-   * @return
+   * @return the exception
    */
   public ModelException createModelException(String message) {
     ModelException ex;

@@ -172,7 +172,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
     if (referencingEntity != null) {
       buf.append(referencingEntity).append('.').append(referencingAttribute);
     }
-    buf.append(" -> ");
+    buf.append(": ");
     if (referencedEntity != null) {
       buf.append(referencedEntity).append('.').append(referencedAttribute);
     }

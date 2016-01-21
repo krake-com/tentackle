@@ -21,17 +21,17 @@ package org.tentackle.misc;
 
 /**
  * Fast array for long primitives.<br>
- * 
+ *
  * We cannot use generics because they don't work with primitives (at least not without auto-boxing).
- * Currently, we need that class only as a fast replacement for ArrayList<Long>.
- * 
+ * Currently, we need that class only as a fast replacement for <code>ArrayList&lt;Long&gt;</code>.
+ *
  * @author harald
  */
 public class LongArray {
-  
+
   private long[] array;
   private int count;
-  
+
   /**
    * Creates an empty array of longs.
    *
@@ -41,20 +41,20 @@ public class LongArray {
     array = new long[size];
     count = 0;
   }
-  
+
   /**
    * Creates an empty array of longs with a default initial size.
    */
   public LongArray() {
     this(32);
   }
-  
-  
+
+
   /**
    * Adds a long value to the array
    *
    * @param value the long value
-   */ 
+   */
   public void add(long value) {
     if (count >= array.length) {
       long[] nArray = new long[array.length << 1];    // double the size
@@ -63,8 +63,8 @@ public class LongArray {
     }
     array[count++] = value;
   }
-  
-  
+
+
   /**
    * Gets the array.
    *
@@ -82,5 +82,5 @@ public class LongArray {
       return array;
     }
   }
-  
+
 }

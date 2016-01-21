@@ -41,6 +41,7 @@ public class ModelDirectory {
    *
    * @param modelDir the directory name
    * @param defaults the model defaults
+   * @throws ModelException if directory does not exist or is not a directory
    */
   public ModelDirectory(String modelDir, ModelDefaults defaults) throws ModelException {
     dir = new File(modelDir);

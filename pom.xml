@@ -11,12 +11,29 @@
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
-  <description>common configuration for all tentackle modules</description>
+  <description>Parent pom.xml for the Tentackle modules.</description>
   <url>http://www.tentackle.org</url>
   <organization>
     <name>Krake Softwaretechnik</name>
     <url>http://www.krake.de</url>
   </organization>
+
+  <licenses>
+    <license>
+      <name>GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1, February 1999</name>
+			<url>http://www.gnu.org/licenses/lgpl-2.1.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <email>harald@krake.de</email>
+      <name>Harald Krake</name>
+      <url>http://www.krake.de</url>
+      <id>hkr</id>
+    </developer>
+  </developers>
 
   <modules>
     <module>tentackle-common</module>
@@ -49,22 +66,36 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scm.base.dir>${scm.url}/tentackle</scm.base.dir>
+    <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <javac.version.src>1.8</javac.version.src>
+    <javac.version.target>1.8</javac.version.target>
+    <maven.version>3.0.5</maven.version>
+
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
+
     <wurbelizer.version>2.0.1</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
+
     <!-- for the tentackle sql plugin -->
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
     <tentackle.sqlDir>${project.parent.build.directory}/sql</tentackle.sqlDir>
   </properties>
 
   <scm>
-    <developerConnection>scm:git://${scm.base.dir}</developerConnection>
+    <connection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</connection>
+    <developerConnection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</developerConnection>
+    <url>https://bitbucket.org/krake-oss/tentackle.git/</url>
   </scm>
+
+  <issueManagement>
+    <system>Bitbucket</system>
+    <url>https://bitbucket.org/krake-oss/tentackle/</url>
+  </issueManagement>
 
   <distributionManagement>
     <repository>
@@ -207,24 +238,47 @@
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-plugin-plugin</artifactId>
+          <version>3.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
           <version>2.2</version>
         </plugin>
-
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.8.2</version>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.3</version>
           <configuration>
             <encoding>UTF-8</encoding>
-            <source>1.8</source>
-            <target>1.8</target>
+            <source>${javac.version.src}</source>
+            <target>${javac.version.target}</target>
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgument>-Xlint:unchecked</compilerArgument>
           </configuration>
         </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
@@ -234,28 +288,21 @@
             <escapeString>\</escapeString>
           </configuration>
         </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.18.1</version>
+          <version>2.19.1</version>
         </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <version>2.4</version>
         </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>2.10.3</version>
-          <configuration>
-            <skip>true</skip>
-          </configuration>
         </plugin>
-
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
@@ -286,6 +333,40 @@
 
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-property</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[${javac.version.src},)</version>
+                  <message>[ERROR] The currently supported version of Java is ${javac.version.src} or higher</message>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[${maven.version},)</version>
+                  <message>[ERROR] The currently supported version of Maven is ${maven.version} or higher</message>
+                </requireMavenVersion>
+                <requirePluginVersions>
+                  <banLatest>true</banLatest>
+                  <banRelease>true</banRelease>
+                  <banSnapshots>false</banSnapshots>
+                  <phases>clean,deploy,site</phases>
+                  <message>[ERROR] All maven plugin versions must be specified.</message>
+                </requirePluginVersions>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>external.atlassian.jgitflow</groupId>
         <artifactId>jgitflow-maven-plugin</artifactId>
         <version>1.0-m5.1</version>
@@ -304,6 +385,55 @@
     </plugins>
 
   </build>
+
+  <profiles>
+    <profile>
+      <!-- generate sources and javadoc jar -->
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <configuration>
+                  <quiet>true</quiet>
+                  <archive>
+                    <manifest>
+                      <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                      <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                    </manifest>
+                    <manifestEntries>
+                      <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
+                      <X-Compile-Source-JDK>${javac.src.version}</X-Compile-Source-JDK>
+                      <X-Compile-Target-JDK>${javac.target.version}</X-Compile-Target-JDK>
+                    </manifestEntries>
+                  </archive>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
 

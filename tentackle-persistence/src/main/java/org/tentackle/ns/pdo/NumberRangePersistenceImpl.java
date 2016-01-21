@@ -454,10 +454,10 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   /**
    * # Relations for NumberRange:
    *
-   * NumberRange -> NumberPool numberPool via numberPoolId (numberPool)
+   * NumberRange: NumberPool numberPool via numberPoolId (numberPool)
    */
 
-  // NumberRange -> NumberPool numberPool via numberPoolId (numberPool)
+  // NumberRange: NumberPool numberPool via numberPoolId (numberPool)
   private transient NumberPool numberPool;
   private transient boolean numberPoolLoaded;
 
@@ -510,7 +510,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     context.applyTo(numberPool);
   }
 
-  // selects NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
+  // selects NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
   // @wurblet selectByNumberPoolId PdoSelectList --tracked numberPoolId
 
   // </editor-fold>//GEN-END:relations

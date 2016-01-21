@@ -107,6 +107,7 @@ public interface ValidationScopeFactory {
   /**
    * Gets a request validation scope implementation singleton by its interface.
    *
+   * @param <T> the interface type
    * @param iFace the interface
    * @return the validation scope, null if no such validation scope configured
    */
