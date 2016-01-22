@@ -47,7 +47,7 @@ public abstract class ReflectiveVisitor {
 
 
   // the cached method map
-  private static final MethodCache methodCache = new MethodCache("methodcache[" + ReflectiveVisitor.class.getName() + "]");
+  private static final MethodCache METHOD_CACHE = new MethodCache("methodcache[" + ReflectiveVisitor.class.getName() + "]");
 
 
 
@@ -81,13 +81,13 @@ public abstract class ReflectiveVisitor {
 
     Class<?> clazz = visitedClass;
     while (clazz != null && isImplementedClass(clazz)) {
-      method = methodCache.getMethod(getClass(), types);
+      method = METHOD_CACHE.getMethod(getClass(), types);
       if (method == null) {
         try {
           types[0] = clazz;
           method = findVisitMethod(types);
           types[0] = visitedClass;
-          methodCache.addMethod(method, getClass(), types);
+          METHOD_CACHE.addMethod(method, getClass(), types);
         }
         catch (NoSuchMethodException nme) {
           clazz = clazz.getSuperclass();

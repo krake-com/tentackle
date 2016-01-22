@@ -20,12 +20,12 @@ package org.tentackle.pdo;
 
 /**
  * An envelope for the execution within a transaction.<br>
- * Provided as an alternative to the @{@link Transaction}-interceptor
- * if the class holding the implementation of the transaction is no {@link Interceptable}.
+ * Provided as an alternative to the {@link Transaction}-interceptor
+ * if the class holding the implementation of the transaction is no {@link org.tentackle.reflect.Interceptable}.
  * <p>
  * Usage:
  * <pre>
- * return session.transaction(() -> {
+ * return session.transaction(() -&gt; {
  *    ..do something..
  *    return whatever;
  * });
@@ -34,7 +34,7 @@ package org.tentackle.pdo;
  * The type is determined by type inference automatically.
  * If there is nothing to return, <code>null</code> must be returned by the envelope:
  * <pre>
- * session.transaction(() -> {
+ * session.transaction(() -&gt; {
  *    ..do something..
  *    return null;
  * });

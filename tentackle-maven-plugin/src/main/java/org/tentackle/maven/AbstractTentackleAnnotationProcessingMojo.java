@@ -42,7 +42,7 @@ import org.wurbelizer.misc.Constants;
 /**
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
- * Picks up all annotations annotated with {@link org.tentackle.common.Analyze}.
+ * Picks up all annotations annotated with {@code org.tentackle.common.Analyze}.
  *
  * @author harald
  */

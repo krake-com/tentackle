@@ -99,17 +99,17 @@ import org.tentackle.log.LoggerFactory;
  * <ol>
  * <li>
  * If the servlet parameter {@code "applicationServer"} is given the servlet
- * will start an {@link ServerApplication}. All servlet parameters are converted
+ * will start an server application. All servlet parameters are converted
  * to server properties, so there's no need for an extra property file.
  * However, the {@code "tentackle.properties"} is supported via {@code &lt;env-entry&gt;}
- * as in {@link WebApplication}.
+ * as in {@link org.tentackle.app.WebApplication}.
  * </li>
  * <li>
  * If thers is no such servlet parameter the servlet will only forward RMI requests.
  * </li>
  * </ol>
  * The logger can be set by the servlet parameter {@code "logger"}. If not
- * set the {@link DefaultLogger} will be used.
+ * set the default logger will be used.
  */
 public class ApplicationServlet extends HttpServlet {
 
@@ -163,7 +163,7 @@ public class ApplicationServlet extends HttpServlet {
    * List of handlers for supported commands. A new command will be
    * created for every service request
    */
-  private final static RMICommandHandler commands[] = {
+  private final static RMICommandHandler COMMANDS[] = {
     new ServletForwardCommand(),
     new ServletGethostnameCommand(),
     new ServletPingCommand(),
@@ -171,11 +171,11 @@ public class ApplicationServlet extends HttpServlet {
   };
 
   /* construct table mapping command strings to handlers */
-  private static final Map<String,RMICommandHandler> commandLookup = new HashMap<>();
+  private static final Map<String,RMICommandHandler> COMMAND_LOOKUP = new HashMap<>();
 
   static {
-    for (RMICommandHandler command: commands) {
-      commandLookup.put(command.getName(), command);
+    for (RMICommandHandler command: COMMANDS) {
+      COMMAND_LOOKUP.put(command.getName(), command);
     }
   }
 
@@ -255,9 +255,9 @@ public class ApplicationServlet extends HttpServlet {
    * @param req  HTTP servlet request, contains incoming command and
    *             arguments
    * @param res  HTTP servlet response
-   * @exception  ServletException and IOException when invoking
-   *             methods of <code>req<code> or <code>res<code>.
-   * @throws IOException
+   * @throws  ServletException and IOException when invoking
+   *             methods of <code>req</code> or <code>res</code>.
+   * @throws IOException if internal error
    */
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse res)
@@ -281,7 +281,7 @@ public class ApplicationServlet extends HttpServlet {
       LOGGER.info("command: {0}, param: {1}", command, param);
 
       // lookup command to execute on the client's behalf
-      RMICommandHandler handler = commandLookup.get(command);
+      RMICommandHandler handler = COMMAND_LOOKUP.get(command);
 
       // execute the command
       if (handler != null) {

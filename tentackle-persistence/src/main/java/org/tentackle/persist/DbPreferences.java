@@ -79,8 +79,7 @@ import org.tentackle.prefs.PersistedPreferencesXmlSupport;
  * </li>
  * <li>a node is added or removed: the node is inserted into or removed from the db and its parent is
  *   updated to allow detection by its tableserial. NodeChangeEvents are triggered accordingly.
- *   The fact that "some" nodes have been deleted is detected by gaps in the retrieved tableSerials
- *   (see {@link ModificationCounter} for details).
+ *   The fact that "some" nodes have been deleted is detected by gaps in the retrieved tableSerials.
  * </li>
  * </ul>
  *
@@ -130,9 +129,11 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   private DbPreferences parent;                       // parent node, null = this is the root
   private DbPreferences root;                         // the root preference (non-static because of user and system-scope)
   private DbPreferencesNode node;                     // the database node (backing store), null = deleted
-  private Map<String, DbPreferencesKey> keys;         // list of keys associated with this node (lazy if no PreferenceChangeListeners registered)
+  private Map<String, DbPreferencesKey> keys;         // list of keys associated with this node
+                                                      // (lazy if no PreferenceChangeListeners registered)
   private Set<Long> childIds;                         // IDs of all child nodes (only if NodeChangeListeners registered)
-  private Map<String, DbPreferences> childPrefs;      // accessed child preferences so far. Key is the name relative to the parent.
+  private Map<String, DbPreferences> childPrefs;      // accessed child preferences so far.
+                                                      // Key is the name relative to the parent.
   private PreferenceChangeListener[] prefListeners;   // preference change listeners
   private NodeChangeListener[] nodeListeners;         // node change listeners
 
@@ -197,7 +198,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    * Package scope!
    * @param parent the parent preferences
    * @param node the node
-   * @throws BackingStoreException
+   * @throws BackingStoreException if creation failed
    */
   public DbPreferences(DbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
 
@@ -233,7 +234,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   /**
    * Gets the persistence parent.
    *
-   * @return
+   * @return the parent
    */
   public DbPreferences getParent() {
     return parent;
@@ -241,7 +242,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
   /**
    * Gets the name.
-   * @return
+   *
+   * @return the name
    */
   public String getName() {
     return name;
@@ -691,6 +693,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
 
   /**
+   * Returns whether reference listeners are registered.
+   *
    * @return true if any preferences listeners are registered on this node
    */
   public boolean arePreferenceListenersRegistered()  {
@@ -698,17 +702,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   }
 
 
-
-
-
-
   /**
-   * Returns a string representation of this preferences node.<br>
+   * Returns the string represenation of this node.
+   *
    * <ul>
    * <li>if node is deleted: "&lt;absolutePath&gt; [deleted]"</li>
-   * <li>user node: "&lt;user&gt:&lt;absolutePath&gt;"</li>
-   * <li>system node: "&lt;system&gt:&lt;absolutePath&gt;"</li>
+   * <li>user node: "&lt;user&gt;:&lt;absolutePath&gt;"</li>
+   * <li>system node: "&lt;system&gt;:&lt;absolutePath&gt;"</li>
    * </ul>
+   *
+   * @return the string
    */
   @Override
   public String toString() {

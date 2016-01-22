@@ -95,7 +95,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    * @param name the name of the connection manager
    * @param iniSize the initial iniSize of the db table
    * @param maxSize the maximum number of connections, 0 = unlimited (dangerous!)
-   * @param idOffset the offset for connection ids (> 0)
+   * @param idOffset the offset for connection ids (&gt; 0)
    */
   public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset) {
 

@@ -431,7 +431,6 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
   /**
    * Adds a modification listener.
    *
-   * @param tableName the tablename, null if master serial listener
    * @param listener the listener to add
    */
   public void addModificationListener(ModificationListener listener) {

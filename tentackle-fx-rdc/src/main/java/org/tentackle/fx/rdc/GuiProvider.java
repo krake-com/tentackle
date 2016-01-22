@@ -67,6 +67,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Creates a controller to edit or view this object.
    *
+   * @param <C> the controller type
    * @return the controller
    * @throws FxRuntimeException if {@link #editorExists()} == false
    */
@@ -82,6 +83,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Creates a controller to search PDOs.
    *
+   * @param <C> the controller type
    * @return the controller
    * @throws FxRuntimeException if {@link #editorExists()} == false
    */
@@ -97,6 +99,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Drops the dragboard on the pdo.
    *
+   * @param dragbord the dragboard
    * @return true if dropped, false if PDO does not accept the dragboard
    */
   boolean dropDragboard(Dragboard dragbord);
@@ -177,7 +180,8 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * Gets all childs of this objects that should be visible to the user
    * in a navigatable object tree.
    *
-   * @return the childs (may be of any type, not only PDOs, and mixed!)
+   * @param <S> the item type
+   * @return the childs
    */
   <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects();
 
@@ -185,8 +189,9 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * Gets the childs with respect to the parent object this
    * object is displayed in the current tree.
    *
+   * @param <S> the item type
    * @param parentObject the parent object of this object in the tree, null = no parent
-   * @return @return the childs (may be of any type, not only PDOs, and mixed!)
+   * @return the childs
    */
   <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects(Object parentObject);
 
@@ -214,7 +219,8 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Gets the parents of this object.
    *
-   * @return the parents (may be of any type, not only PDOs, and mixed!)
+   * @param <S> the item type
+   * @return the parents
    * @see #providesTreeParentObjects
    */
   <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects();
@@ -223,8 +229,9 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * Gets the parents with respect to the parent object this
    * object is displayed in the current tree.
    *
+   * @param <S> the item type
    * @param parentObject the parent object, null if no parent
-   * @return the parents (may be of any type, not only PDOs, and mixed!)
+   * @return the parents
    */
   <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects(Object parentObject);
 

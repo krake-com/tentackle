@@ -38,9 +38,12 @@ import javafx.stage.StageStyle;
 public class Fx {
 
   /**
-   * Loads an object hierarchy from a FXML document.
-   * <p>
-   * @param location
+   * Loads an object hierarchy from a FXML document.<br>
+   *
+   * @param <T> the object's type
+   * @param location the url
+   * @return the object
+   * @throws IOException if loading failed
    */
   public static <T> T load(URL location) throws IOException {
     FXMLLoader loader = new FXMLLoader(location, null, FxFactory.getInstance().getBuilderFactory());
@@ -48,10 +51,13 @@ public class Fx {
   }
 
   /**
-   * Loads an object hierarchy from a FXML document.
-   * <p>
-   * @param location
-   * @param resources
+   * Loads an object hierarchy from a FXML document.<br>
+   *
+   * @param <T> the object's type
+   * @param location the url
+   * @param resources the optional resources
+   * @return the object
+   * @throws IOException if loading failed
    */
   public static <T> T load(URL location, ResourceBundle resources) throws IOException {
     FXMLLoader loader = new FXMLLoader(location, resources, FxFactory.getInstance().getBuilderFactory());

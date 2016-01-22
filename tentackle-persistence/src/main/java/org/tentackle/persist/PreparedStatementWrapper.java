@@ -43,7 +43,7 @@ import org.tentackle.sql.BackendPreparedStatement;
 /**
  * A wrapper for prepared statements.<br>
  * Will catch and report SQLExceptions and
- * keep track of being used only once after {@link Db#getPreparedStatement(int)}.
+ * keep track of being used only once after {@link Db#getPreparedStatement}.
  *
  * @author harald
  */
@@ -546,7 +546,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    *
    * @param p the sql position
    * @param m the money value, null to set SQL NULL
-   * @see #setDMoney(int, org.tentackle.misc.DMoney)
+   * @see #setDMoney(int, DMoney)
    */
   public void setBMoney (int p, BMoney m) {
     try {
@@ -584,7 +584,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    *
    * @param p the sql position
    * @param m the money value, null to set SQL NULL
-   * @see #setBMoney(int, org.tentackle.misc.BMoney)
+   * @see #setBMoney(int, BMoney)
    */
   public void setDMoney (int p, DMoney m) {
     try {

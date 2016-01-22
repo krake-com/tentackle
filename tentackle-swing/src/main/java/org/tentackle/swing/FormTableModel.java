@@ -397,7 +397,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
    * The row numbers are silently aligned if out of range.
    *
    * @param firstRow the first row
-   * @param lastRow the last changed row (>= firstRow)
+   * @param lastRow the last changed row (&ge; firstRow)
    */
   public void listUpdated(int firstRow, int lastRow) {
     synchronized (this) {
@@ -450,7 +450,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
    * Will nullpex if not in list-mode.
    *
    * @param firstRow the first row
-   * @param lastRow the last changed row (>= firstRow)
+   * @param lastRow the last changed row (&ge;firstRow)
    */
   @SuppressWarnings("unchecked")
   public void listInserted(int firstRow, int lastRow)  {
@@ -492,7 +492,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
    * Will nullpex if not in list-mode.
    *
    * @param firstRow the first row
-   * @param lastRow the last changed row (>= firstRow)
+   * @param lastRow the last changed row (&ge; firstRow)
    */
   @SuppressWarnings("unchecked")
   public void listDeleted(int firstRow, int lastRow) {

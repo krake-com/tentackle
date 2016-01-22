@@ -52,7 +52,6 @@ import org.tentackle.swing.rdc.Rdc;
 /**
  * The default formtable entry for a {@link Security} rule.
  *
- * @param <T> the security type
  * @author harald
  */
 public class SecurityTableEntry extends DefaultPdoTableEntry<Security> {
@@ -248,7 +247,7 @@ public class SecurityTableEntry extends DefaultPdoTableEntry<Security> {
 
   /**
    * Selects the grantee.
-   * The default implementation invokes the {@link PdoSearchDialog}.
+   * The default implementation invokes the {@link org.tentackle.swing.rdc.PdoSearchDialog}.
    * for the grantee class.
    *
    * @return the grantee, null if cancelled or no granteeclazz set

@@ -59,6 +59,7 @@ public interface PdoTracker extends SessionTaskDispatcher, ExclusiveSessionProvi
    * Removes a modification listener.
    *
    * @param listener to remove
+   * @return true if removed
    */
   boolean removeModificationListener(ModificationListener listener);
 
@@ -90,6 +91,7 @@ public interface PdoTracker extends SessionTaskDispatcher, ExclusiveSessionProvi
   /**
    * Gets the serial for a given class.
    *
+   * @param <T> the PDO type
    * @param clazz the PDO class
    * @return the table serial
    */
@@ -98,7 +100,7 @@ public interface PdoTracker extends SessionTaskDispatcher, ExclusiveSessionProvi
   /**
    * Gets the serial for a given modification name.
    *
-   * @param the modification name
+   * @param name the modification name
    * @return the table serial
    */
   long getSerial(String name);

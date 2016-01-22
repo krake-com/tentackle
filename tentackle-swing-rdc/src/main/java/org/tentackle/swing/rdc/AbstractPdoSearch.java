@@ -40,8 +40,6 @@ import org.tentackle.task.Task;
 
 /**
  * Common base class for a PDO search.
- * <p>
- *
  *
  * @param <T> the pdo type
  * @author harald
@@ -101,7 +99,6 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
    *
    * @param pdoClass the pdo class
    * @param context the domain context
-   * @param executor the search executor
    */
   public AbstractPdoSearch(Class<T> pdoClass, DomainContext context) {
     this(pdoClass, context, defaultFetchSize, defaultWarnRowCount, defaultMaxRowCount);

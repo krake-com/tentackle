@@ -58,7 +58,7 @@ public class Mixin<T,M> implements Serializable {
    * @param superInterface the super interface class the implementation class must implement an extension of,
    *        null if use the clazz as the declaring class
    *
-   * @throws ClassNotFoundException
+   * @throws ClassNotFoundException if no implementation found
    */
   @SuppressWarnings("unchecked")
   public Mixin(ClassMapper mapper, Class<T> clazz, Class<?> superInterface)
@@ -102,7 +102,7 @@ public class Mixin<T,M> implements Serializable {
    * @param clazz the declaring interface class
    * @param superInterface the super interface class the implementation class must implement an extension of,
    *        null if use the clazz as the declaring class
-   * @throws ClassNotFoundException
+   * @throws ClassNotFoundException if no implementation found
    */
   @SuppressWarnings("unchecked")
   public Mixin(Class<T> clazz, Class<?> superInterface) throws ClassNotFoundException {
@@ -126,11 +126,11 @@ public class Mixin<T,M> implements Serializable {
    * @param constructorArgumentClasses the constructor argument classes
    * @param constructorArguments the constructor arguments
    *
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   @SuppressWarnings("unchecked")
   public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)

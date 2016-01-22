@@ -19,21 +19,23 @@
 
 package org.tentackle.swing.plaf.tsubstance;
 
-import org.tentackle.swing.plaf.TTableUI;
 import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
+import org.tentackle.swing.plaf.TTableUI;
 
 /**
  * UI for JTable/FormTable.
- * 
+ *
  * @author harald
  */
 public class TSubstanceTableUI extends TTableUI {
-  
+
   /**
    * We don't use the "always-busy" and nerving SubstanceTableUI!
+   * @param c the component
+   * @return the ui
    */
   public static ComponentUI createUI(JComponent c) {
     return new TSubstanceTableUI();
-  }    
+  }
 }

@@ -78,8 +78,9 @@ public abstract class AbstractInterceptor implements Interceptor {
    * @param orgMethod the original method, same as method if not chained
    * @param orgArgs the original arguments, same as args if not chained
    * @return the method's return value
-   * @throws Throwable
+   * @throws Throwable if invoked method failed
    */
-  abstract public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable;
+  abstract public Object proceed(Object proxy, Method method, Object[] args,
+                                 Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable;
 
 }

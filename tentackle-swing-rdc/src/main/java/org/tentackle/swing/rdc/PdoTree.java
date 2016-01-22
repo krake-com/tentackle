@@ -599,7 +599,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    * Collapses a given path.<br>
    * The method invokes {@code collapsePath} and set {@code expanded=false}
    * in all {@link PdoTreeObject}-nodes. Furthermore, all nodes
-   * referring to {@link AppDbTreeToggleNodeObject}s will get their childs removed.
+   * referring to {@link PdoTreeToggleNodeObject}s will get their childs removed.
    * Tentackle applications should not use {@code collapsePath} directly.
    *
    * @param path the tree path to collapse
@@ -621,7 +621,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    * Checks whether a path contains only {@link PersistentDomainObject}s.
    *
    * @param path the tree path
-   * @return true if only {@code PersistentDomainObject}s.
+   * @return true if only {@link PersistentDomainObject}s.
    */
   public boolean pathConsistsOfPdos(TreePath path) {
     int depth = path.getPathCount();
@@ -645,7 +645,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    * <p>
    * Loads child objects from the database.
    * @param e the expansion event
-   * @throws javax.swing.tree.ExpandVetoException
+   * @throws javax.swing.tree.ExpandVetoException if expanding not allowed
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -889,7 +889,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    * <p>
    * Overridden to insert the object.
    * @param dtde the drop target drop event
-   * @see PersistentDomainObject#dropTransferable(java.awt.datatransfer.Transferable)
+   * @see GuiProvider#dropTransferable(java.awt.datatransfer.Transferable)
    */
   @Override
   public void drop(DropTargetDropEvent dtde) {

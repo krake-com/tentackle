@@ -354,7 +354,7 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
    * Binds an object to a form.
    * <p>
    * The object will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation and their
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation and their
    * corresponding setter- and getter methods.
    * <p>
    * More than one object can be bound to a form.

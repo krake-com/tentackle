@@ -834,7 +834,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
   /**
    * Creates a pdo for the table.
    *
-   * @return
+   * @return the pdo
    */
   protected T createPdo() {
     return Pdo.create(template.getObject());

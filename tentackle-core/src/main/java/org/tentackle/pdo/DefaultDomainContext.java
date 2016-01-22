@@ -383,7 +383,7 @@ public class DefaultDomainContext implements DomainContext {
    * This does the trick to setup the non-transient rootId and rootClassId when sent via rmi the first time.
    *
    * @return me
-   * @throws ObjectStreamException
+   * @throws ObjectStreamException to fullfill the signature only
    * @see Serializable
    */
   private Object writeReplace() throws ObjectStreamException {

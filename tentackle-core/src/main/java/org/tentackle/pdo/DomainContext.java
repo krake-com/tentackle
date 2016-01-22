@@ -40,16 +40,16 @@ import org.tentackle.misc.TrackedList;
  * <p>
  * The DomainContext can be extended
  * to hold the ID(s) of the object(s) describing the context. Because
- * an {@link AbstractPersistentObject} carries a reference to that context, it can serve as
- * a root for a logical data space. For example, a {@link AbstractPersistentObject#selectAllPdo()}
+ * an {@link PersistentDomainObject} carries a reference to that context, it can serve as
+ * a root for a logical data space. For example, a {@link PersistentObject#selectAll()}
  * of accounts will deliver only the accounts belonging to that particular space.<br>
  * All classes depending on those extended contexts must also implement
  * an appropriate extension of {@link DomainContextDependable}. By further subclassing,
  * a context hierarchy can be achieved. For example, in a financial
- * accounting system, the hierarchy could be: TenantDb -> FiscalYearDb -> BookDb
- * with corresponding TenantDependable -> FiscalYearDependable -> BookDependable.
- * It is recommended to subclass AbstractPersistentObject accordingly, i.e. TenantDbObject ->
- * FiscalYearDbObject -> BookDbObject and/or to override the methods in {@link DomainContextDependable}
+ * accounting system, the hierarchy could be: TenantDb -&gt; FiscalYearDb -&gt; BookDb
+ * with corresponding TenantDependable -&gt; FiscalYearDependable -&gt; BookDependable.
+ * It is recommended to subclass AbstractPersistentObject accordingly, i.e. TenantDbObject -&gt;
+ * FiscalYearDbObject -&gt; BookDbObject and/or to override the methods in {@link DomainContextDependable}
  * by applying multiple inheritance emulation via the Wurbelizer.
  * <p>
  * Note: the wurblets support multitenancy by means of the options
@@ -88,14 +88,14 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
   /**
    * Asserts that this context is allowed to be used by the current user.<br>
    *
-   * If it is not allowed, a {@link DbRuntimeException} is thrown.
+   * If it is not allowed, a {@link PersistenceException} is thrown.
    * The default implementation does nothing.
    * <p>
    * Override the method in middle tier servers, for example in a hypothetical
    * {@code TenantContext}:
    * <pre>
    *  void assertPermissions()  {
-   *    if (DbGlobal.serverDb != null &&    // if in RMI server
+   *    if (DbGlobal.serverDb != null &amp;&amp;    // if in RMI server
    *        !getTenant().isUsageAllowed()) {
    *       throw new DbSecurityException("malicious client tried to use context " + this);
    *    }
@@ -129,17 +129,17 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * Determines whether this context belongs to an inheritance hierarchy that
    * is created from a given context object.
    * <p>
-   * The method is invoked from {@link Security#evaluate} to check whether a
+   * The method is invoked from the security manager to check whether a
    * security rule applies to a given context. Note that contextClass is the
    * basename of the context object's class, for example "Tenant" or "FiscalYear",
    * and not the classname of the DomainContext.
    * <p>
-   * The default implementation returns {@code contextId < 0 || contextId == getContextId()}.<br>
+   * The default implementation returns {@code contextId &lt; 0 || contextId == getContextId()}.<br>
    * This is sufficient for zero or one level of context inheritance. For more than one
    * level this method must be overwridden in each level. Example for a hypothetical "TenantContext":
    * <pre>
    *  boolean isWithinContext(long contextId, String contextClass) {
-   *    if (contextClass != null && contextClass.equals("Tenant") && contextId == getContextId()) {
+   *    if (contextClass != null &amp;&amp; contextClass.equals("Tenant") &amp;&amp; contextId == getContextId()) {
    *      return true;
    *    }
    *    return super.isWithinContext(contextId, contextClass);
@@ -166,7 +166,7 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * <p>
    * Use this for logging as it will not invoke methods on other objects.
    *
-   * @return the String as <tt>Classname[contextId]<tt>
+   * @return the String as <code>Classname[contextId]</code>
    */
   String toGenericString();
 
@@ -228,8 +228,8 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
 
 
   /**
-   * Sets the context in a {@link ContextDependable}.<br>
-   * The method invokes <tt>obj.setDomainContext()</tt> only if the context really differs.
+   * Sets the context in a {@link DomainContextDependable}.<br>
+   * The method invokes <code>obj.setDomainContext()</code> only if the context really differs.
    * This prevents infinite loops in object circular references.
    *
    * @param obj the PDO, null if ignore

@@ -19,9 +19,9 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.daemon.DaemonSupervisor;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.daemon.DaemonSupervisor;
 import org.tentackle.task.PooledTaskDispatcher;
 import org.tentackle.task.TaskDispatcher;
 
@@ -108,7 +108,7 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
   /**
    * Creates a new db session.
    *
-   * @return
+   * @return the session
    */
   protected Session createSession() {
     return Pdo.createSession(getSessionManager(), getSessionInfo());

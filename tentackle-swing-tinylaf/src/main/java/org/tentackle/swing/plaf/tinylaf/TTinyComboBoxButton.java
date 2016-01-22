@@ -55,7 +55,6 @@ import org.tentackle.swing.FormComboBox;
 
 /**
  * UI for combobox button.
- * <p>
  *
  * @author harald
  */
@@ -71,7 +70,7 @@ public class TTinyComboBoxButton extends JButton {
   static final int COMBO_BUTTON_WIDTH = 18;
 
 	// cache for already drawn buttons
-  private static final HashMap<ButtonKey, Image> cache = new HashMap<>();
+  private static final HashMap<ButtonKey, Image> CACHE = new HashMap<>();
 
   protected JComboBox<?> comboBox;
 
@@ -86,7 +85,7 @@ public class TTinyComboBoxButton extends JButton {
   private static BufferedImage focusImg;
 
   public static void clearCache() {
-    cache.clear();
+    CACHE.clear();
   }
 
   public final JComboBox<?> getComboBox() {
@@ -149,8 +148,8 @@ public class TTinyComboBoxButton extends JButton {
   }
 
   /**
-   * Mostly taken from the swing sources
-   * <p>
+   * Mostly taken from the swing sources.
+   * 
    * @see javax.swing.JComponent#paintComponent(Graphics)
    */
   @SuppressWarnings("unchecked")
@@ -175,7 +174,7 @@ public class TTinyComboBoxButton extends JButton {
               comboBox.isEditable(),
               model.isPressed(),
               model.isRollover());
-      Object value = cache.get(key);
+      Object value = CACHE.get(key);
 
       if (value != null) {
         // image already cached - paint image
@@ -267,10 +266,10 @@ public class TTinyComboBoxButton extends JButton {
         g.drawImage(img, 0, 0, this);
 
         // add the image to the cache
-        cache.put(key, img);
+        CACHE.put(key, img);
 
         if (TinyLookAndFeel.PRINT_CACHE_SIZES) {
-          LOGGER.info("TinyComboBoxButton.cache.size=" + cache.size());
+          LOGGER.info("TinyComboBoxButton.cache.size=" + CACHE.size());
         }
       }
     }

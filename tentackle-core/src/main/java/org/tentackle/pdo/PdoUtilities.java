@@ -522,10 +522,10 @@ public class PdoUtilities {
    * If modifiedOnly is true only isModified() objects will be saved.
    * All objects with isSaveable() == false and isNew() == false
    * are removed!
-   * By definition, a {@link TrackedArrayList} must *NOT* contain untracked objects.
+   * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
    * The errorhandler will be invoked if such an object
    * is detected. This is a quality measure to ensure code consistency.
-   * The wurblet DbRelations automatically takes care of that.
+   * The wurblets automatically take care of that.
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
@@ -603,10 +603,10 @@ public class PdoUtilities {
    * If modifiedOnly is true only isModified() objects will be saved.
    * All objects with isSaveable() == false and isNew() == false
    * are removed!
-   * By definition, a {@link TrackedArrayList} must *NOT* contain untracked objects.
+   * By definition, a {@link TrackedList} must *NOT* contain untracked objects.
    * The errorhandler will be invoked if such an object
    * is detected. This is a quality measure to ensure code consistency.
-   * The wurblet DbRelations automatically takes care of that.
+   * The wurblets automatically take care of that.
    *
    * @param pdos the list to save
    * @param modifiedOnly is true if only modified objects are saved
@@ -623,7 +623,6 @@ public class PdoUtilities {
    * @param pdos the collection of PDOs
    *
    * @return the number of objects saved, -1 if some error
-   * @see AbstractDbObject#saveCollection(java.util.List)
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos) {
     return saveCollection(pdos, false);

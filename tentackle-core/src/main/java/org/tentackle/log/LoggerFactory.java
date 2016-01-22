@@ -47,12 +47,6 @@ public interface LoggerFactory {
 
   /**
    * Gets a logger for the given name.
-   * <p>
-   * The method loads the class given by {@link #loggerClassname} and looks
-   * for a static method <tt>getLogger(String)</tt>. If no such method is
-   * found, it will instantiate the class using a constructor with the name
-   * as its single argument. If all else failes, it returns a new {@link DefaultLogger}
-   * for that name.
    *
    * @param name the logger name
    * @return the logger
@@ -84,7 +78,7 @@ public interface LoggerFactory {
    * If there is no such method, <tt>"new clazz(name)"</tt> will be invoked.
    * If all else failes, it returns a new {@link DefaultLogger} for the given <tt>name</tt>.
    * <p>
-   * If <tt>clazz</tt> is <tt>null</tt> the class given by {@link #defaultLogger} will be used.
+   * If <tt>clazz</tt> is <tt>null</tt> the default logger will be used.
    *
    * @param name the logger name
    * @param loggerClass the class implementing {@link Logger},

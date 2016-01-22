@@ -21,14 +21,14 @@ package org.tentackle.swing.print;
 
 /**
  * Datasource for a {@link Report}.<br>
- * 
+ *
  * Reports are implemented as state machines and get the data
  * to be printed from a {@code ReportSource}.
  *
  * @author harald
  */
 public interface ReportSource {
-  
+
 
   // returnvalues from advance()
   /** some error, abort! **/
@@ -42,8 +42,8 @@ public interface ReportSource {
   /** print subfooter, decrement level **/
   public static final int POP     = 3;
 
-  
-  
+
+
   /**
    * Opens this report source.
    */
@@ -71,20 +71,20 @@ public interface ReportSource {
    */
   public void restore();
 
-  
+
   /**
    * Checks if there is more data to print.<br>
    * Notice that advance() may still be invoked even if
    * hasNext() has returned false!
    * Furthermore, advance() will not always be invoked after hasNext(),
    * thus hasNext() must not change any state!
-   * 
+   *
    * @return true if there is more data
-   * @see #advance(org.tentackle.print.Report)
+   * @see #advance
    */
   public boolean hasNext();
 
-  
+
   /**
    * Prepare the data in this report source so that it can be printed.
    * This method is the basic workhorse to setup the print panels,
@@ -92,7 +92,7 @@ public interface ReportSource {
    *
    * @param   report the Report requesting the preparation
    * @return  the new state
-   * @see #hasNext() 
+   * @see #hasNext()
    */
   public int advance(Report report);
 
@@ -100,70 +100,70 @@ public interface ReportSource {
   /**
    * Prepares the intro panel for printing.
    * The intro is printed once at the start of the report.
-   * 
+   *
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareIntro(Report report);
-  
-  
+
+
   /**
    * Prepares the trailer panel for printing.
    * The trailer is printed once at the end of the report.
-   * 
+   *
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareTrailer(Report report);
-  
-  
+
+
   /**
    * Prepares the header panel for printing.
    * The header is printed at the beginning of each page, except
    * the first if an intro is defined.
-   * 
+   *
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareHeader(Report report);
-  
-  
+
+
   /**
    * Prepares the footer panel for printing.
    * The footer is printed at the end of each page, except
    * the last if a trailer is defined.
-   * 
+   *
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareFooter(Report report);
-  
-  
+
+
   /**
    * Prepares the line panel for printing.
    * The line panel prints the current "data row".
-   * 
+   *
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareLine(Report report);
-  
-  
+
+
   /**
    * Prepares the subheader panel for printing.
    * The subheader is printed at start of each logical "data group".
-   * 
+   *
    * @param report the report
    * @param level the logical group level (starting at 1)
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
   public int prepareSubHeader(Report report, int level);
-  
-  
+
+
   /**
    * Prepares the subfooter for printing.
    * The subheader is printed at end of each logical "data group".
-   * 
+   *
    * @param report the report
    * @param level the logical group level (starting at 1)
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)

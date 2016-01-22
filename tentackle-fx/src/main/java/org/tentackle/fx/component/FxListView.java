@@ -36,35 +36,21 @@ import org.tentackle.fx.component.delegate.FxListViewDelegate;
  * Extended ListView.
  *
  * @author harald
+ * @param <T> the item type
  */
 public class FxListView<T> extends ListView<T> implements FxComponent {
 
   /**
-   * Creates a default ListView which will display contents stacked vertically. As no {@link ObservableList} is provided
+   * Creates a default ListView which will display contents stacked vertically.<br>
+   * As no {@link ObservableList} is provided
    * in this constructor, an empty ObservableList is created, meaning that it is legal to directly call
    * {@link #getItems()} if so desired. However, as noted elsewhere, this is not the recommended approach (instead call
    * {@link #setItems(javafx.collections.ObservableList)}).
-   * <p>
    * <p>
    * Refer to the {@link ListView} class documentation for details on the default state of other properties.
    */
   public FxListView() {
     super();
-  }
-
-  /**
-   * Creates a default ListView which will stack the contents retrieved from the provided {@link ObservableList}
-   * vertically.
-   * <p>
-   * <p>
-   * Attempts to add a listener to the {@link ObservableList}, such that all subsequent changes inside the list will be
-   * shown to the user.
-   * <p>
-   * <p>
-   * Refer to the {@link ListView} class documentation for details on the default state of other properties.
-   */
-  public FxListView(ObservableList<T> items) {
-    super(items);
   }
 
 

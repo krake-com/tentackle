@@ -36,7 +36,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param context the domain context
    * @return the created PDO
@@ -49,7 +49,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param session the session
    * @return the created PDO
@@ -62,7 +62,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param context the domain context
    * @return the created PDO
@@ -75,7 +75,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param session the session
    * @return the created PDO
@@ -88,7 +88,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the PDO's class
+   * @param <T> the PDO type
    * @param pdo the PDO
    * @return the created PDO belonging to the same class as the given {@code pdo} and in same context.
    */
@@ -100,7 +100,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the PDO's class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @return the created PDO without session and context
    */
@@ -112,7 +112,7 @@ public class Pdo {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @return the created PDO without session and context
    */
@@ -124,7 +124,7 @@ public class Pdo {
   /**
    * Creates a PDO for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created PDO
@@ -137,7 +137,7 @@ public class Pdo {
   /**
    * Creates a PDO for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created PDO
@@ -150,13 +150,14 @@ public class Pdo {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  public static <T extends PersistentDomainObject<T>> T create(Class<T> clazz, DomainContext context, DomainObject<T> domainDelegate) {
+  public static <T extends PersistentDomainObject<T>> T create(Class<T> clazz, DomainContext context,
+                                                               DomainObject<T> domainDelegate) {
     return PdoFactory.getInstance().create(clazz, context, domainDelegate);
   }
 
@@ -164,13 +165,14 @@ public class Pdo {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  public static <T extends PersistentDomainObject<T>> T create(String className, DomainContext context, DomainObject<T> domainDelegate) {
+  public static <T extends PersistentDomainObject<T>> T create(String className, DomainContext context,
+                                                               DomainObject<T> domainDelegate) {
     return PdoFactory.getInstance().create(className, context, domainDelegate);
   }
 
@@ -178,13 +180,14 @@ public class Pdo {
   /**
    * Creates a PDO for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  public static <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
+  public static <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate,
+                                                               DomainObject<T> domainDelegate) {
     return PdoFactory.getInstance().create(clazz, persistenceDelegate, domainDelegate);
   }
 
@@ -192,13 +195,14 @@ public class Pdo {
   /**
    * Creates a PDO for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  public static <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
+  public static <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate,
+                                                               DomainObject<T> domainDelegate) {
     return PdoFactory.getInstance().create(className, persistenceDelegate, domainDelegate);
   }
 
@@ -206,11 +210,12 @@ public class Pdo {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the pdo class
    * @return the persistent class
    */
-  public static <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>> getPersistentObjectClass(Class<T> clazz) {
+  public static <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>>
+         getPersistentObjectClass(Class<T> clazz) {
     return PdoFactory.getInstance().getPersistentClass(clazz);
   }
 
@@ -218,7 +223,7 @@ public class Pdo {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the pdo class
    * @return the domain class
    */
@@ -233,7 +238,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param context the domain context
    * @return the created operation
@@ -246,7 +251,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param session the session
    * @return the created operation
@@ -259,6 +264,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param context the domain context
    * @return the created operation
@@ -271,6 +277,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param session the session
    * @return the created operation
@@ -283,7 +290,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation's class
+   * @param <T> the operation type
    * @param opn the operation
    * @return the created operation belonging to the same class as the given operation and in same context.
    */
@@ -295,7 +302,7 @@ public class Pdo {
   /**
    * Creates an operation.
    *
-   * @param <T> the operation's class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @return the created operation without session and context
    */
@@ -307,7 +314,7 @@ public class Pdo {
   /**
    * Creates an operation for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created operation
@@ -320,7 +327,7 @@ public class Pdo {
   /**
    * Creates an operation for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created operation
@@ -333,13 +340,14 @@ public class Pdo {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
    * @return the created operation
    */
-  public static <T extends Operation<T>> T createOperation(Class<T> clazz, DomainContext context, DomainOperation<T> domainDelegate) {
+  public static <T extends Operation<T>> T createOperation(Class<T> clazz, DomainContext context,
+                                                           DomainOperation<T> domainDelegate) {
     return OperationFactory.getInstance().create(clazz, context, domainDelegate);
   }
 
@@ -347,13 +355,14 @@ public class Pdo {
   /**
    * Creates an operation for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
    * @return the created operation
    */
-  public static <T extends Operation<T>> T createOperation(String className, DomainContext context, DomainOperation<T> domainDelegate) {
+  public static <T extends Operation<T>> T createOperation(String className, DomainContext context,
+                                                           DomainOperation<T> domainDelegate) {
     return OperationFactory.getInstance().create(className, context, domainDelegate);
   }
 
@@ -361,13 +370,14 @@ public class Pdo {
   /**
    * Creates an operation for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the class of the operation, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created operation
    */
-  public static <T extends Operation<T>> T createOperation(Class<T> clazz, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
+  public static <T extends Operation<T>> T createOperation(Class<T> clazz, PersistentOperation<T> persistenceDelegate,
+                                                           DomainOperation<T> domainDelegate) {
     return OperationFactory.getInstance().create(clazz, persistenceDelegate, domainDelegate);
   }
 
@@ -375,13 +385,14 @@ public class Pdo {
   /**
    * Creates an operation for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param className the name of operation-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created operation
    */
-  public static <T extends Operation<T>> T createOperation(String className, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
+  public static <T extends Operation<T>> T createOperation(String className, PersistentOperation<T> persistenceDelegate,
+                                                           DomainOperation<T> domainDelegate) {
     return OperationFactory.getInstance().create(className, persistenceDelegate, domainDelegate);
   }
 
@@ -389,7 +400,7 @@ public class Pdo {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the operation class
    * @return the persistent class
    */
@@ -401,7 +412,7 @@ public class Pdo {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the operation type
    * @param clazz the operation class
    * @return the domain class
    */
@@ -421,7 +432,7 @@ public class Pdo {
    * If the current PDO tracker is a dummy tracker, the tracker
    * will be replaced.
    *
-   * @param <T> the data object class
+   * @param <T> the PDO type
    * @param clazz is the PersistentDomainObject-class managed by the cache.
    * @param preload is true if preload all objects in domain context of cache.
    * @param readOnly true if cache is readonly (shared)
@@ -458,7 +469,7 @@ public class Pdo {
   /**
    * Checks whether a PDO-class provides a cache.
    *
-   * @param <T> the PDO class type
+   * @param <T> the PDO type
    * @param clazz the class
    * @return the cache, null if none
    */
@@ -574,7 +585,7 @@ public class Pdo {
   /**
    * Gets the tablename of given class.
    *
-   * @param <T>
+   * @param <T> the PDO type
    * @param clazz the class
    * @return the name
    */

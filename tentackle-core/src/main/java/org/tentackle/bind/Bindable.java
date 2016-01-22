@@ -45,7 +45,6 @@ public @interface Bindable {
    * Example: <tt>@Bindable(options="UC,LC,MAXCOL,COL,[-]AUTOSELECT")</tt>
    *
    * @return the options, the empty string if none
-   * @see DefaultBinding
    */
   String options() default "";
 

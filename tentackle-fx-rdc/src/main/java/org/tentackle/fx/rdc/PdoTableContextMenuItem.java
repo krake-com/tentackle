@@ -31,7 +31,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  *   SomeMenuItem(PdoTableCell cell)
  * </pre>
  * This is checked by an annotation processor.
- * p>
+ * <p>
  * Items with isVisible() == false will not be added to the contextmenu.
  *
  * @author harald

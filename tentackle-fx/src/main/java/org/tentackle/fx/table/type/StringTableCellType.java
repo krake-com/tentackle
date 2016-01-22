@@ -28,7 +28,6 @@ import org.tentackle.fx.table.TableCellTypeService;
  * Fallback if type is not known.
  *
  * @author harald
- * @param <T> the item type
  */
 @TableCellTypeService(String.class)
 public class StringTableCellType extends AbstractTableCellType<String> {

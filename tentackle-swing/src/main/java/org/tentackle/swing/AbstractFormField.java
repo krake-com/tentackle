@@ -201,7 +201,7 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
 
   /**
    * Restores the previously saved value.<br>
-   * Method is provided to be overridden by {@link NumberFormField}.
+   * Method is provided to be overridden by {@link AbstractNumberFormField}.
    */
   protected void restoreSavedValue() {
     setText(savedValue);

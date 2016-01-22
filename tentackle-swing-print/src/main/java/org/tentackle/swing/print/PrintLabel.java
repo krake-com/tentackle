@@ -136,7 +136,7 @@ public class PrintLabel extends JLabel implements PrintComponent {
    * character <em>m</em> for the font used.  This method can be
    * redefined to be some alternative amount
    *
-   * @return the column width >= 1
+   * @return the column width &ge; 1
    */
   protected int getColumnWidth() {
     if (columnWidth == 0) {

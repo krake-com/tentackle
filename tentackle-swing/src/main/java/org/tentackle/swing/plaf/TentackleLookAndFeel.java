@@ -44,8 +44,7 @@ import javax.swing.ImageIcon;
 public interface TentackleLookAndFeel {
 
   /**
-   * Loads an image icon for the look and feel.
-   * The method is invoked by {@link PlafGlobal}.
+   * Loads an image icon for the look and feel.<br>
    * It allows each look and feel to provide its own icon set.
    *
    * @param name the icon's name (without extension like gif or png!)

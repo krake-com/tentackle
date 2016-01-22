@@ -198,7 +198,7 @@ public interface TableColumnConfiguration<S,T> {
    *
    * @param scale the scale, null if not defined
    */
-  void setScale(Integer Scale);
+  void setScale(Integer scale);
 
   /**
    * Gets the case conversion.

@@ -449,7 +449,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * The default implementation starts the modification thread, unless
    * {@code "--nomodthread"} given.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {

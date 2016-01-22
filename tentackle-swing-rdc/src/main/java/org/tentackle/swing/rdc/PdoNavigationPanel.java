@@ -44,6 +44,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import org.tentackle.misc.ObjectFilter;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.FormButton;
@@ -58,7 +59,6 @@ import org.tentackle.swing.FormTree;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.SumFormTableEntry;
 import org.tentackle.swing.UIFactory;
-import org.tentackle.misc.ObjectFilter;
 
 
 
@@ -373,7 +373,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
    * <p>
    * The default is visible.
    *
-   * @param visible
+   * @param visible true if visible
    */
   public void setViewModeButtonsVisible(boolean visible) {
     treeViewButton.setVisible(visible);

@@ -41,6 +41,8 @@ public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends Compone
   /**
    * Updates the model and the view.
    * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the control
    */
   protected void updateModelAndView(FxControl control) {
     control.updateModel();

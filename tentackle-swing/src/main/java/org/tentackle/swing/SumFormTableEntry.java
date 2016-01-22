@@ -27,7 +27,7 @@ import org.tentackle.common.BMoney;
 /**
  * A formtable entry to sumup the numeric columns of a table.
  *
- * @param <T>
+ * @param <T> the item type
  * @author harald
  */
 public class SumFormTableEntry<T> extends FormTableEntry<T> {

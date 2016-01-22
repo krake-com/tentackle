@@ -99,7 +99,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final StatementId selectByNormTextStatementId = new StatementId();
 
   /**
-   * prepared statement ID for {@link AbstractPersistentObject#selectAllInContext}.
+   * prepared statement ID for {@link AbstractPersistentObject#selectAll}.
    */
   public final StatementId selectAllStatementId = new StatementId();
 
@@ -109,7 +109,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final StatementId selectByNormTextCursorStatementId = new StatementId();
 
   /**
-   * prepared statement ID for {@link AbstractPersistentObject#selectAllInContextCursor}.
+   * prepared statement ID for {@link AbstractPersistentObject#selectAllAsCursor()}.
    */
   public final StatementId selectAllCursorStatementId = new StatementId();
 
@@ -532,11 +532,15 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
   /**
    * Check security for this class.
+   *
+   * @param context the domain context
+   * @param permission the permission
+   * @return true if accepted
    */
-  protected boolean checkClassPermission(DomainContext context, Permission privilege) {
+  protected boolean checkClassPermission(DomainContext context, Permission permission) {
     try {
       return !checkSecurity ||
-             SecurityFactory.getInstance().getSecurityManager().evaluate(context, privilege, classId, 0).isAccepted();
+             SecurityFactory.getInstance().getSecurityManager().evaluate(context, permission, classId, 0).isAccepted();
     }
     catch (Exception ex) {
       // either context not set or security manager or whatever...

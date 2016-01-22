@@ -49,18 +49,10 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
   /**
    * Creates a default FxComboBox instance with an empty {@link #itemsProperty() items} list and default
-   * {@link #selectionModelProperty() selection model}.
+   * selection model.
    */
   public FxComboBox() {
     super();
-  }
-
-  /**
-   * Creates a default FxComboBox instance with the provided items list and a default
-   * {@link #selectionModelProperty() selection model}.
-   */
-  public FxComboBox(ObservableList<T> items) {
-    super(items);
   }
 
 

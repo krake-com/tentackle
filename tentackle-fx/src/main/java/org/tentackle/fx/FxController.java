@@ -84,7 +84,7 @@ public interface FxController extends Initializable {
   void configure();
 
   /**
-   * Gets all fields in this controller annotated with @FXML.<nr>
+   * Gets all fields in this controller annotated with &#64;FXML.<br>
    * The fields are made accessible, if private.
    *
    * @return the fields
@@ -92,7 +92,7 @@ public interface FxController extends Initializable {
   List<Field> getFXMLFields();
 
   /**
-   * Gets all methods in this controller annotated with @FXML.<br>
+   * Gets all methods in this controller annotated with &#64;FXML.<br>
    * The methods are made accessible, if private.
    *
    * @return the methods

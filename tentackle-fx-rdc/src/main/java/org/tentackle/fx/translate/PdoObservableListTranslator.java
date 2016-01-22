@@ -28,7 +28,6 @@ import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.fx.translate.ObservableListTranslator;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -48,7 +47,7 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
   /**
    * Creates a translator for components maintaining a list of objects.
    *
-   * @param component
+   * @param component the component
    */
   @SuppressWarnings("unchecked")
   public PdoObservableListTranslator(FxComponent component) {

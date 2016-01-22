@@ -108,7 +108,8 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
    * along with the exception in parentheses.
    * This is due to the fact that toString should never throw
    * an exception as it is used for logging and debugging.
-   * @return
+   *
+   * @return the string representation
    */
   @Override
   public String toString() {

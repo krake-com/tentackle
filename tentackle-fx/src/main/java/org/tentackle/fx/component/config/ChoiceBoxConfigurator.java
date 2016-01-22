@@ -43,6 +43,8 @@ public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConf
   /**
    * Updates the model and the view.
    * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the choicebox
    */
   protected void updateModelAndView(FxControl control) {
     control.updateModel();

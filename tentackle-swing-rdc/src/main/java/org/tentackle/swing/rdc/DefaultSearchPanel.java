@@ -38,8 +38,6 @@ public class DefaultSearchPanel extends FormPanel {
 
   /**
    * Creates a search panel for a given search parameter.
-   *
-   * @param parameter the search parameter
    */
   public DefaultSearchPanel() {
     initComponents();

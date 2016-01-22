@@ -75,6 +75,7 @@ public interface FxFactory {
   /**
    * Gets the configurator for a given class.
    *
+   * @param <T> the node type
    * @param clazz the class
    * @return the configurator, null if none
    */
@@ -129,6 +130,7 @@ public interface FxFactory {
   /**
    * Creates a configuration.
    *
+   * @param <S> the type of the objects contained within the table's items list
    * @param template a template object
    * @param name the table's name, null if basename from effective class of template
    * @return the table configuration

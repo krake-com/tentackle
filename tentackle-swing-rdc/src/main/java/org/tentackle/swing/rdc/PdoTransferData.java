@@ -88,12 +88,9 @@ public class PdoTransferData<T extends PersistentDomainObject<T>> implements Ser
    *
    * @param session the session
    * @return the database object, null if no such object
-   * @throws ClassNotFoundException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
    */
   @SuppressWarnings("unchecked")
-  public T getPdo(Session session) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+  public T getPdo(Session session) {
     return (T) Pdo.create(className, session).select(id);
   }
 

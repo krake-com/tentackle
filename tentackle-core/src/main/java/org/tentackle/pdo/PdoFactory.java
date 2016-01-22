@@ -45,7 +45,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param context the domain context
    * @return the created PDO
@@ -55,7 +55,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param session the session
    * @return the created PDO
@@ -65,6 +65,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO.
    *
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param context the domain context
    * @return the created PDO
@@ -76,6 +77,7 @@ public interface PdoFactory {
    * <p>
    * Note: the application must set the context.
    *
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param session the session
    * @return the created PDO
@@ -87,7 +89,7 @@ public interface PdoFactory {
    * <p>
    * Note: the application must set the context.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @return the created PDO
    */
@@ -98,6 +100,7 @@ public interface PdoFactory {
    * <p>
    * Note: the application must set the context.
    *
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @return the created PDO
    */
@@ -106,7 +109,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO.
    *
-   * @param <T> the PDO class
+   * @param <T> the PDO type
    * @param pdo the PDO
    * @return the created PDO belonging to the same class as the given {@code pdo} and in same context.
    */
@@ -115,7 +118,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created PDO
@@ -125,7 +128,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given persistence delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @return the created PDO
@@ -135,7 +138,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
@@ -146,7 +149,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param context the domain context
    * @param domainDelegate the domain delegate
@@ -157,7 +160,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param session the session
    * @param domainDelegate the domain delegate
@@ -168,7 +171,7 @@ public interface PdoFactory {
   /**
    * Creates a PDO for a given domain delegate.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param session the session
    * @param domainDelegate the domain delegate
@@ -179,29 +182,31 @@ public interface PdoFactory {
   /**
    * Creates a PDO for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the class of the PDO, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate);
+  <T extends PersistentDomainObject<T>> T create(Class<T> clazz, PersistentObject<T> persistenceDelegate,
+                                                 DomainObject<T> domainDelegate);
 
   /**
    * Creates a PDO for given delegates.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param className the name of PDO-class, usually an interface
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
    * @return the created PDO
    */
-  <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate);
+  <T extends PersistentDomainObject<T>> T create(String className, PersistentObject<T> persistenceDelegate,
+                                                 DomainObject<T> domainDelegate);
 
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the pdo class
    * @return the persistent class
    */
@@ -210,7 +215,7 @@ public interface PdoFactory {
   /**
    * Gets the class implementing the persistence layer.
    *
-   * @param <T> the persistent domain object class
+   * @param <T> the PDO type
    * @param clazz the pdo class
    * @return the domain class
    */

@@ -48,9 +48,9 @@ import org.tentackle.common.Analyze;
  * and in the code:
  *
  * <pre>
-   \@TableName(value=/**\/"md.ingotcategory"/**\/,    // @wurblet < Inject --string $tablename
-           mapSchema=/**\/false/**\/,     // @wurblet < Inject $mapSchema
-           prefix=/**\/""/**\/)       // @wurblet < Inject --string $tablePrefix
+   &#64;TableName(value=&#47;**&#47;"md.ingotcategory"&#47;**&#47;,    // &#64;wurblet &lt; Inject --string $tablename
+           mapSchema=&#47;**&#47;false&#47;**&#47;,     // @wurblet &lt; Inject $mapSchema
+           prefix=&#47;**&#47;""&#47;**&#47;)       // @wurblet &lt; Inject --string $tablePrefix
   </pre>
  *
  * Means: all schemas get "pls" prepended (for example: td.message becomes plstd.message).

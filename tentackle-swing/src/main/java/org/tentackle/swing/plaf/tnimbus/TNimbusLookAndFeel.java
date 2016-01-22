@@ -34,7 +34,7 @@ import org.tentackle.swing.plaf.TentackleLookAndFeel;
 /**
  * Extended Tentackle Nimbus Look And Feel.
  *
- * @todo: all tentackle features still missing, just rudimentary
+ * TODO: all tentackle features still missing, just rudimentary
  * @author harald
  */
 @Service(TentackleLookAndFeel.class)

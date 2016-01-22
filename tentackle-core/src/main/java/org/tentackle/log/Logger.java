@@ -70,7 +70,7 @@ public interface Logger {
      * SEVERE is a message level indicating a serious failure.
      */
     SEVERE
-    
+
   };
 
 
@@ -270,6 +270,8 @@ public interface Logger {
   /**
    * Gets the MDC.<br>
    * Usually a singleton (depending on the backend).
+   *
+   * @return the MDC
    */
   public MappedDiagnosticContext getMappedDiagnosticContext();
 

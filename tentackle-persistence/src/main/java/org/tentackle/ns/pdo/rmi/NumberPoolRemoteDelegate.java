@@ -5,9 +5,9 @@
 
 package org.tentackle.ns.pdo.rmi;
 
+import java.rmi.RemoteException;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberPoolPersistenceImpl;
-import java.rmi.RemoteException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.rmi.AbstractPersistentObjectRemoteDelegate;
 

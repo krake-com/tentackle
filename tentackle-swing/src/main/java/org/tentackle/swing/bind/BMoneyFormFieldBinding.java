@@ -30,7 +30,7 @@ import org.tentackle.swing.FormComponent;
  * Binding for {@link BMoneyFormField}.
  * <p>
  * The binding is necessary to detect whether the field is used for
- * {@link org.tentackle.misc.BMoney} or {@link org.tentackle.misc.DMoney} types.
+ * {@link org.tentackle.common.BMoney} or {@link org.tentackle.common.DMoney} types.
  *
  * @author harald
  */

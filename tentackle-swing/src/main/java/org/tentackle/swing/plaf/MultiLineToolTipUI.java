@@ -33,9 +33,7 @@ import javax.swing.plaf.basic.BasicToolTipUI;
 
 
 /**
- * Multi-line tooltip UI.<br>
- *
- * See the static init block in {@link FormHelper}.
+ * Multi-line tooltip UI.
  * <p>
  * Notice: the code is derived from {@code xdocletgui.swing.MultiLineToolTipUI}.
  */

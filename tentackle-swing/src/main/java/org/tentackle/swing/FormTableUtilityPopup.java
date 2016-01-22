@@ -779,9 +779,9 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
    *
    * @param file the output file
    * @param onlySelected true if export only selected rows
-   * @throws IOException
-   * @throws TransformerConfigurationException
-   * @throws SAXException
+   * @throws IOException if file could not be opened
+   * @throws TransformerConfigurationException if no transformer could be created
+   * @throws SAXException if xml document creation failed
    */
   public void toXml(File file, boolean onlySelected) throws IOException, TransformerConfigurationException, SAXException {
 

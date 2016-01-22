@@ -44,7 +44,7 @@ public class ObservableListTranslator<T, C extends List<T>> extends ValueTransla
   /**
    * Creates a translator for components maintaining a list of objects.
    *
-   * @param component
+   * @param component the component
    */
   public ObservableListTranslator(FxComponent component) {
     super(component);
