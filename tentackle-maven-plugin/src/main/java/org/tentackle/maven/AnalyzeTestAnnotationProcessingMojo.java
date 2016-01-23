@@ -21,61 +21,60 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.util.List;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 
 
 /**
- * Generates code and meta-information prior to wurbeling and compiling the sources.
+ * Generates code and meta-information prior to wurbeling and compiling the test sources.
  * <p>
  * Processes up all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
  * Processing results are either written to files in analyzeDir or placed on heap
  * for being picked up by wurblets, depending on the handler implementation for
  * each annotation.
  *
- * @goal testAnalyze
- * @phase generate-test-sources
- * @requiresDependencyResolution test
- *
  * @author harald
  */
+@Mojo(name = "testAnalyze",
+      defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
+      requiresDependencyResolution = ResolutionScope.TEST)
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**
    * Directory holding the sources to be processed.<br>
-   * Defaults to all java sources of the current project.
+   * Defaults to all java test sources of the current project.
    * If this is not desired, filesets must be used.
-   *
-   * @parameter property="tentackle.testSourceDir"
-   *            default-value="${project.build.testSourceDirectory}"
-   * @required
    */
+  @Parameter(defaultValue = "${project.build.testSourceDirectory}",
+             property = "tentackle.testSourceDir",
+             required = true)
   protected File sourceDir;
 
   /**
    * Project classpath.
-   *
-   * @parameter default-value="${project.testClasspathElements}"
-   * @required
-   * @readonly
    */
+  @Parameter(defaultValue = "${project.testClasspathElements}",
+             readonly = true,
+             required = true)
   protected List<String> classpathElements;
 
   /**
-   * Directory analyze results.<br>
-   *
-   * @parameter property="tentackle.testAnalyzeDir"
-   *            default-value="${project.build.directory}/test-analyze"
-   * @required
+   * Directory analyze results.
    */
+  @Parameter(defaultValue = "${project.build.directory}/test-analyze",
+             property = "tentackle.testAnalyzeDir",
+             required = true)
   protected File analyzeDir;
 
   /**
-   * Directory generated services.<br>
-   *
-   * @parameter property="tentackle.testServiceDir"
-   *            default-value="${project.build.directory}/generated-test-resources/service"
-   * @required
+   * Directory generated services.
    */
+  @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/service",
+             property = "tentackle.testServiceDir",
+             required = true)
   protected File servicesDir;
 
 

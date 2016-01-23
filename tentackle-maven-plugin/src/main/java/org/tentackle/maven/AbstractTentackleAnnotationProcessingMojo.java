@@ -32,6 +32,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
@@ -49,16 +50,15 @@ import org.wurbelizer.misc.Constants;
 public abstract class AbstractTentackleAnnotationProcessingMojo extends AbstractTentackleMojo {
 
   /**
-   * Show compile output.<br>
-   *
-   * @parameter default-value="${tentackle.showCompileOutput}"
+   * Show compile output.
    */
+  @Parameter(defaultValue = "${tentackle.showCompileOutput}")
   protected boolean showCompileOutput;
 
 
 
   /**
-   * Directory holding the sources to be processed.<br>
+   * Directory holding the sources to be processed.
    */
   private File sourceDir;
 
@@ -68,7 +68,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   private List<String> classpathElements;
 
   /**
-   * Total number of errors
+   * Total number of errors.
    */
   private int totalErrors;
 
@@ -80,7 +80,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Sets the mojo parameters
+   * Sets the mojo parameters.
    *
    * @param sourceDir the directory holding the sources to be processed
    * @param classpathElements the mavenProject classpath
@@ -118,9 +118,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   public abstract void prepareExecute();
 
-  /**
-   * {@inheritDoc}
-   */
+
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -326,7 +325,5 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
     totalErrors += errorCount;
   }
-
-
 
 }

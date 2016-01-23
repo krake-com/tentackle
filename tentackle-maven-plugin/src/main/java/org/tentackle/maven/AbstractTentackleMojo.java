@@ -26,13 +26,14 @@ import java.util.List;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.wurbelizer.misc.Verbosity;
 
 
 /**
- * A generic wurbelizer mojo.
+ * Base tentackle mojo.
  *
  * @author harald
  */
@@ -40,33 +41,30 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * The Maven Project.
-   *
-   * @parameter default-value="${project}"
-   * @required
-   * @readonly
    */
+  @Parameter(defaultValue = "${project}",
+             readonly = true,
+             required = true)
   protected MavenProject mavenProject;
 
   /**
    * The list of file sets.<br>
    * If set the source directory is ignored.
-   *
-   * @parameter
    */
+  @Parameter
   protected List<FileSet> filesets;
 
   /**
    * The verbosity.<br>
    * One of "default", "info" or "debug".
    * Debus is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
-   *
-   * @parameter default-value="${tentackle.verbosity}"
    */
+  @Parameter(defaultValue = "${tentackle.verbosity}")
   protected String verbosity;
 
 
   /**
-   * mapped verbosity level
+   * mapped verbosity level.
    */
   protected Verbosity verbosityLevel;
 
@@ -78,7 +76,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
 
   /**
-   * sets the verbosity
+   * sets the verbosity.
    */
   protected void determineVerbosity() {
     if (verbosity != null) {
@@ -148,7 +146,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
   /**
    * Checks if given directory resides in resources.
-   * 
+   *
    * @param dirName the directory name
    * @return the resource dir, null if not a resource
    */
