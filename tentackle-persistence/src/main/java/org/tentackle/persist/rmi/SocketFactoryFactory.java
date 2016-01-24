@@ -73,7 +73,7 @@ public class SocketFactoryFactory {
   /**
    * Creates a client socket factory.
    *
-   * @param defaultFactory the factory for {@link SocketFactoryType.DEFAULT}
+   * @param defaultFactory the factory for {@link SocketFactoryType#DEFAULT}
    * @param factoryType the socket factory type
    * @return the factory, null if system default
    */
@@ -111,7 +111,7 @@ public class SocketFactoryFactory {
   /**
    * Creates a server socket factory.
    *
-   * @param defaultFactory the factory for {@link SocketFactoryType.DEFAULT}
+   * @param defaultFactory the factory for {@link SocketFactoryType#DEFAULT}
    * @param factoryType the socket factory type
    * @return the factory, null if system default
    */
