@@ -43,23 +43,10 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   /**
    * Creates an empty TreeTableView.
    * <p>
-   * <p>
    * Refer to the {@link TreeTableView} class documentation for details on the default state of other properties.
    */
   public FxTreeTableView() {
     super();
-  }
-
-  /**
-   * Creates a TreeTableView with the provided root node.
-   * <p>
-   * <p>
-   * Refer to the {@link TreeTableView} class documentation for details on the default state of other properties.
-   * <p>
-   * @param root The node to be the root in this TreeTableView.
-   */
-  public FxTreeTableView(TreeItem<S> root) {
-    super(root);
   }
 
 

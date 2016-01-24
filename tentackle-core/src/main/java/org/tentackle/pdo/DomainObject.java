@@ -22,7 +22,7 @@ package org.tentackle.pdo;
 /**
  * The domain interface.
  *
- * @param <T>
+ * @param <T> the PDO type
  * @author harald
  */
 public interface DomainObject<T extends PersistentDomainObject<T>>

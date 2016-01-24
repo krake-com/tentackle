@@ -54,7 +54,7 @@ public class ErrorToolTip extends JToolTip {
 
   /**
    * Configures the tooltip.<br>
-   * The default implementation sets the foreground color to {@link Plaf#alarmColor}.
+   * The default implementation sets the foreground color to {@link PlafUtilities#alarmColor}.
    */
   protected void setup() {
     setForeground(PlafUtilities.getInstance().getAlarmColor());

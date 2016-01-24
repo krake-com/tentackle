@@ -24,8 +24,7 @@ import java.io.Serializable;
 
 
 /**
- * RMI clients should throw a VersionInfoIncompatibleException in {@link UserInfo#checkVersionInfo(java.lang.Object)}
- * if the servers version info is incompatible to the client.
+ * Exception thrown if client's and server's versions don't match.
  *
  * @author harald
  */

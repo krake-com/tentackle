@@ -26,6 +26,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Constants;
@@ -33,12 +37,11 @@ import org.wurbelizer.misc.Constants;
 /**
  * A mojo to find all BeanInfo-files and create a manifest from.
  *
- * @goal beaninfo
- * @phase generate-resources
- * @requiresDependencyResolution compile
- *
  * @author harald
  */
+@Mojo(name = "beaninfo",
+      defaultPhase = LifecyclePhase.GENERATE_RESOURCES,
+      requiresDependencyResolution = ResolutionScope.COMPILE)
 public class BeanInfoMojo extends AbstractTentackleMojo {
 
   private static final String MANIFEST_FILENAME = "MANIFEST.MF";    // generated filename
@@ -49,26 +52,24 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
    * Directory holding the sources to be processed.<br>
    * Defaults to all java sources of the current project.
    * If this is not desired, filesets must be used.
-   *
-   * @parameter property="tentackle.sourceDir"
-   *            default-value="${project.build.sourceDirectory}"
-   * @required
    */
+  @Parameter(defaultValue = "${project.build.sourceDirectory}",
+             property = "tentackle.sourceDir",
+             required = true)
   private File sourceDir;
 
 
   /**
    * Directory to write manifest to.
-   *
-   * @parameter property="tentackle.manifestDirectory"
-   *            default-value="${project.build.directory}/generated-resources/manifest"
-   * @required
    */
+  @Parameter(defaultValue = "${project.build.directory}/generated-resources/manifest",
+             property = "tentackle.manifestDirectory",
+             required = true)
   private String manifestDirectory;
 
 
   /**
-   * Total number of errors
+   * Total number of errors.
    */
   private int totalErrors;
 

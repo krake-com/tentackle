@@ -79,7 +79,7 @@ public class ByteFormField extends AbstractNumberFormField {
 
   /**
    * Gets the minimum value.<br>
-   * The default is {@link BYte#MIN_VALUE}.
+   * The default is {@link Byte#MIN_VALUE}.
    *
    * @return the minimum value
    */

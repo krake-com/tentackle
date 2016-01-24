@@ -94,8 +94,6 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   /**
    * Creates an instance of an PdoCache.
-   * <p>
-   * Notice: consider using {@link #createCache} instead!
    *
    * @param clazz is the PersistentDomainObject-class managed by the cache
    * @param preload is true if preload all objects in domain context of cache
@@ -144,8 +142,6 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   /**
    * Creates a cache without preloading.
-   * <p>
-   * Notice: consider using {@link #createCache} instead!
    *
    * @param objectClazz is the PersistentDomainObject-class managed by the cache.
    */
@@ -470,7 +466,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Otherwise, no objects are removed and those that were changed
    * in the persistance layer will be marked expired.
    * This is done by obtaining the IDs of all objects in the db-table with a
-   * tableSerial > cache.tableSerial.
+   * tableSerial &gt; cache.tableSerial.
    *
    * @param session the session to use, null = delay expiration check until next select
    * @param maxSerial is the max. tableSerial to scan for updates, 0 = clazz provides no tableSerial

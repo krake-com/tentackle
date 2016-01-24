@@ -94,7 +94,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    *
    * @param object
    * @throws java.rmi.RemoteException
-   * @see #save(org.tentackle.db.DbObject)
    */
   protected void validate(P object) throws RemoteException {
     //

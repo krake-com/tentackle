@@ -46,8 +46,8 @@ public class ColumnMigration {
 
   /**
    * Gets the (old) column name.
-   * <p>
-   * @return
+   *
+   * @return the column name
    */
   public String getColumnName() {
     return columnName;

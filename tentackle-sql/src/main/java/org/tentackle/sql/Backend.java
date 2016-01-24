@@ -121,7 +121,7 @@ public interface Backend {
   /** =0 string. */
   public static final String SQL_EQUAL_ZERO = SQL_EQUAL + "0";
 
-  /** <>0 string. */
+  /** &lt;&gt;0 string. */
   public static final String SQL_NOTEQUAL_ZERO = SQL_NOTEQUAL + "0";
 
   /** Parameter ,? string. */
@@ -136,19 +136,19 @@ public interface Backend {
   /** Parameter =?, string. */
   public static final String SQL_EQUAL_PAR_COMMA = SQL_EQUAL + SQL_PAR + SQL_COMMA;
 
-  /** Parameter <>? string. */
+  /** Parameter &lt;&gt;? string. */
   public static final String SQL_NOTEQUAL_PAR = SQL_NOTEQUAL + SQL_PAR;
 
-  /** Parameter >? string. */
+  /** Parameter &gt;? string. */
   public static final String SQL_GREATER_PAR = SQL_GREATER + SQL_PAR;
 
-  /** Parameter >=? string. */
+  /** Parameter &ge;? string. */
   public static final String SQL_GREATEROREQUAL_PAR = SQL_GREATEROREQUAL + SQL_PAR;
 
-  /** Parameter &lt? string. */
+  /** Parameter &lt;? string. */
   public static final String SQL_LESS_PAR = SQL_LESS + SQL_PAR;
 
-  /** Parameter &lt=? string. */
+  /** Parameter &lt;=? string. */
   public static final String SQL_LESSOREQUAL_PAR = SQL_LESSOREQUAL + SQL_PAR;
 
   /** Parameter LIKE ? string. */
@@ -307,7 +307,7 @@ public interface Backend {
 
 
   /**
-   * Determines whether the jdbc driver supports {@link ResultSet#isClosed()}.
+   * Determines whether the jdbc driver supports {@link java.sql.ResultSet#isClosed()}.
    *
    * @return true if the driver supports it
    */
@@ -371,6 +371,7 @@ public interface Backend {
   /**
    * Creates a join clause.
    *
+   * @param type the join type
    * @param joinedTableName the joined tablename
    * @param joinedTableAlias the joined table alias, null if none
    * @param join the join expression
@@ -383,7 +384,7 @@ public interface Backend {
    * <p>
    * Example:
    * <pre>
-   *  sqlFunction("max", CN_ID) -> "MAX(id)"
+   *  sqlFunction("max", CN_ID) --&gt; "MAX(id)"
    * </pre>
    *
    * @param functionName the function name, will be translated to uppercase
@@ -471,7 +472,7 @@ public interface Backend {
   /**
    * Determines the unique id or name used by the backend for a given connection.
    * <p>
-   * Useful to figure out the corresponding {@link ManagedConnection} from the backend's logfiles.
+   * Useful to figure out the corresponding {@code ManagedConnection} from the backend's logfiles.
    *
    * @param connection the jdbc connection
    * @return the backend id, null if none
@@ -587,7 +588,7 @@ public interface Backend {
    *
    * @param tableName the table name
    * @param comment optional comment, null if none
-   * @return the SQL code, empty string if comment is created via {@link #sqlCreateTableIntro()} or {@link #sqlCreateTableClosing()}
+   * @return the SQL code, empty string if comment is created via {@link #sqlCreateTableIntro} or {@link #sqlCreateTableClosing}
    */
   String sqlCreateTableComment(String tableName, String comment);
 
@@ -803,7 +804,7 @@ public interface Backend {
    * @param tableName the table name
    * @param columnName the column name
    * @param comment optional comment, null to clear
-   * @return the SQL code, null if use {@link #sqlAlterColumn()} instead
+   * @return the SQL code, null if use {@link #sqlRenameAndAlterColumnType} instead
    */
   String sqlAlterColumnComment(String tableName, String columnName, String comment);
 

@@ -48,7 +48,7 @@ public class FxTilePane extends TilePane implements FxContainer {
   /**
    * Creates a TilePane layout with the specified orientation, prefColumn/prefRows = 5 and hgap/vgap = 0.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    */
   public FxTilePane(Orientation orientation) {
     super(orientation);
@@ -67,7 +67,7 @@ public class FxTilePane extends TilePane implements FxContainer {
   /**
    * Creates a TilePane layout with the specified orientation, hgap/vgap, and prefRows/prefColumns = 5.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param hgap        the amount of horizontal space between each tile
    * @param vgap        the amount of vertical space between each tile
    */
@@ -87,7 +87,7 @@ public class FxTilePane extends TilePane implements FxContainer {
   /**
    * Creates a TilePane layout with the specified orientation, prefColumn/prefRows = 5 and hgap/vgap = 0.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param children    The initial set of children for this pane.
    */
   public FxTilePane(Orientation orientation, Node... children) {
@@ -108,7 +108,7 @@ public class FxTilePane extends TilePane implements FxContainer {
   /**
    * Creates a TilePane layout with the specified orientation, hgap/vgap, and prefRows/prefColumns = 5.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param hgap        the amount of horizontal space between each tile
    * @param vgap        the amount of vertical space between each tile
    * @param children    The initial set of children for this pane.

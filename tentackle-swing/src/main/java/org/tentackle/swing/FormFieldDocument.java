@@ -37,8 +37,7 @@ public class FormFieldDocument extends PlainDocument {
 
   /**
    * The default converter that applies to all components.<br>
-   * Default is null.<br>
-   * Note: chaining converters can be achieved via a {@link org.tentackle.misc.StringConverterChain}.
+   * Default is null.
    */
   public static Function<String,String> defaultConverter;
 
@@ -80,7 +79,6 @@ public class FormFieldDocument extends PlainDocument {
 
   /**
    * Sets the string converter.<br>
-   * Note: chaining converters can be achieved via a {@link org.tentackle.misc.StringConverterChain}.
    *
    * @param converter the string converter
    */

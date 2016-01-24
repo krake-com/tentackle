@@ -48,6 +48,7 @@ public interface I18nFactory {
    * @param key the original string used as a key
    * @param locale the locale used for translation
    * @param text the translated text
+   * @return the translation
    */
   I18nTranslation createTranslation(String key, Locale locale, String text);
 

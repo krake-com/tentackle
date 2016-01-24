@@ -106,7 +106,6 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
    * @param index index of the element to replace
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
-   * @throws IndexOutOfBoundsException
    */
   E replace(int index, E element);
 

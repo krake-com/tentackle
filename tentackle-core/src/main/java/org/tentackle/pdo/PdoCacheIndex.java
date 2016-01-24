@@ -310,7 +310,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param context the domain context
    * @param fromKey the start of range (including)
    * @param toKey the end of range (exluding)
-   * @return the objects with fromKey <= object < toKey.
+   * @return the objects with fromKey &le; object &lt; toKey.
    */
   protected List<T> getObjects(DomainContext context, C fromKey, C toKey) {
 

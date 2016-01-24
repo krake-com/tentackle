@@ -45,7 +45,7 @@ public interface FxComponentBinder extends Binder {
    * Binds including inherited bindables.
    * <p>
    * The controller will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited members of the controller's parent classes
    * will be included as well.
    * <p>
@@ -59,7 +59,7 @@ public interface FxComponentBinder extends Binder {
    * Binds including inherited components.
    * <p>
    * The controller will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited components declared in parent controllers are included.
    * <p>
    * CAUTION: expensive operation!

@@ -159,7 +159,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Sets the pdo as a template for the search.
    *
-   * @param <T> the pdo type
    * @param pdo the pdo
    */
   @Override
@@ -226,7 +225,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Gets the pdo.
    *
-   * @param <T> the pdo type
    * @return the pdo
    */
   @Override

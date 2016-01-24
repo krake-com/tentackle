@@ -30,7 +30,7 @@ interface UIFactory$Singleton {
 
 
 /**
- * The {@link UI} factory.
+ * The UI factory.
  *
  * @author harald
  */

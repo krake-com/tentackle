@@ -206,7 +206,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               return null;
             }
 
-            showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE APPLICATION..."), 0.25);
+            showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE APPLICATION..."), 0.1);
             try {
               doConfigureApplication();
             }
@@ -215,11 +215,13 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               return null;
             }
 
-            showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 0.5);
+            showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
+            final C mainController = Fx.load(getMainControllerClass());
+
+            showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 1.0);
             Platform.runLater(() -> {
               try {
                 session.makeCurrent();
-                C mainController = Fx.load(getMainControllerClass());
                 setMainController(mainController);
                 Stage stage = Fx.createStage(Modality.NONE);
                 configureMainStage(stage);
@@ -247,6 +249,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 view.getScene().getWindow().hide();
               }
             });
+
             return null;
           }
         };
@@ -299,6 +302,13 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   public void showApplicationStatus(String msg, double progress) {
     if (fxApplication != null) {
       Platform.runLater(() -> fxApplication.showApplicationStatus(msg, progress));
+      try {
+        // wait some time to show...
+        Thread.sleep(100);
+      }
+      catch (InterruptedException ix) {
+        // ignore
+      }
     }
     else {
       LOGGER.info(msg);
@@ -326,22 +336,10 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     };
   }
 
-
-
   @Override
   public boolean isServer() {
     return false;
   }
-
-
-  @Override
-  protected void configurePdoTracker() {
-    super.configurePdoTracker();
-    Session trackerSession = getSession().clone();          // already open
-    trackerSession.groupWith(getSession().getSessionId());  // build group
-    PdoTracker.getInstance().setSession(trackerSession);
-  }
-
 
   /**
    * {@inheritDoc}
@@ -437,10 +435,24 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    */
   @Override
   protected void configurePreferences() {
-    showApplicationStatus(AppFxRdcBundle.getString("INSTALLING PREFERENCES..."), 0.1);
+    showApplicationStatus(AppFxRdcBundle.getString("INSTALLING PREFERENCES..."), 0.2);
     super.configurePreferences();
   }
 
+  @Override
+  protected void configureSecurityManager() {
+    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE SECURITY..."), 0.3);
+    super.configureSecurityManager();
+  }
+
+  @Override
+  protected void configurePdoTracker() {
+    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE MONITORING..."), 0.4);
+    super.configurePdoTracker();
+    Session trackerSession = getSession().clone();          // already open
+    trackerSession.groupWith(getSession().getSessionId());  // build group
+    PdoTracker.getInstance().setSession(trackerSession);
+  }
 
 
   /**
@@ -449,7 +461,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * The default implementation starts the modification thread, unless
    * {@code "--nomodthread"} given.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {

@@ -32,6 +32,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
@@ -42,23 +43,22 @@ import org.wurbelizer.misc.Constants;
 /**
  * Generates code and meta-information prior to wurbeling and compiling the sources.
  * <p>
- * Picks up all annotations annotated with @{@link WurbelSupply}.
+ * Picks up all annotations annotated with {@code org.tentackle.common.Analyze}.
  *
  * @author harald
  */
 public abstract class AbstractTentackleAnnotationProcessingMojo extends AbstractTentackleMojo {
 
   /**
-   * Show compile output.<br>
-   *
-   * @parameter default-value="${tentackle.showCompileOutput}"
+   * Show compile output.
    */
+  @Parameter(defaultValue = "${tentackle.showCompileOutput}")
   protected boolean showCompileOutput;
 
 
 
   /**
-   * Directory holding the sources to be processed.<br>
+   * Directory holding the sources to be processed.
    */
   private File sourceDir;
 
@@ -68,7 +68,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   private List<String> classpathElements;
 
   /**
-   * Total number of errors
+   * Total number of errors.
    */
   private int totalErrors;
 
@@ -80,7 +80,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   /**
-   * Sets the mojo parameters
+   * Sets the mojo parameters.
    *
    * @param sourceDir the directory holding the sources to be processed
    * @param classpathElements the mavenProject classpath
@@ -118,9 +118,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   public abstract void prepareExecute();
 
-  /**
-   * {@inheritDoc}
-   */
+
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -183,13 +182,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   }
 
 
-
-
   /**
    * Initializes a processor.
    *
-   * @param processor
-   * @param srcDir
+   * @param processor the annotation processor
+   * @param srcDir the source dir
    */
   protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
     processor.setSourceDir(srcDir);
@@ -262,6 +259,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
 
       JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      if (compiler == null) {
+        throw new MojoExecutionException(
+                "No Java compiler! Make sure you're using the JDK or tools.jar is in your classpath.");
+      }
       DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 
@@ -324,7 +325,5 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
     totalErrors += errorCount;
   }
-
-
 
 }

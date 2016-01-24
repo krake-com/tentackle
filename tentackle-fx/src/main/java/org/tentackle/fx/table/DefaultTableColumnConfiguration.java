@@ -287,8 +287,8 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public void setScale(Integer Scale) {
-    this.scale = Scale;
+  public void setScale(Integer scale) {
+    this.scale = scale;
     numberFormat = null;
   }
 

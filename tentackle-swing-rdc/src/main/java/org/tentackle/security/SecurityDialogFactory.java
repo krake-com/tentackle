@@ -58,6 +58,7 @@ public class SecurityDialogFactory {
    * @param clazz   the class to set security rules for
    * @param id      the object id in clazz (if clazz is a PersistentDomainObject) or null
    *                if all objects or clazz is not a PersistentDomainObject.
+   * @return the dialog
    */
   public SecurityDialog createDialog(DomainContext context, Class<?> clazz, long id) {
     if (isDialogAllowed(context)) {

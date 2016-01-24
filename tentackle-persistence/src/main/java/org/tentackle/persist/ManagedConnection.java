@@ -51,7 +51,7 @@ import org.tentackle.sql.Backend;
  * such as a prepared statement cache
  * and translates SQLExceptions to DbRuntimeExceptions.
  * The ConnectionManager is responsible to attach and detach
- * the connection to a Db.
+ * the connection to a session.
  *
  * @author harald
  */
@@ -63,7 +63,7 @@ public class ManagedConnection {
    * The set is used to figure out which Db is attached to what connection
    * for debugging purposes.
    */
-  private static final Set<WeakReference<ManagedConnection>> managedConnections =
+  private static final Set<WeakReference<ManagedConnection>> MANAGED_CONNECTIONS =
           Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<ManagedConnection>,Boolean>());
 
 
@@ -74,7 +74,7 @@ public class ManagedConnection {
    */
   public static Collection<ManagedConnection> getManagedConnections() {
     List<ManagedConnection> mgcons = new ArrayList<>();
-    for (Iterator<WeakReference<ManagedConnection>> iter = managedConnections.iterator(); iter.hasNext(); ) {
+    for (Iterator<WeakReference<ManagedConnection>> iter = MANAGED_CONNECTIONS.iterator(); iter.hasNext(); ) {
       ManagedConnection mgcon = iter.next().get();
       if (mgcon != null && !mgcon.isClosed()) {
         mgcons.add(mgcon);
@@ -121,7 +121,7 @@ public class ManagedConnection {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ManagedConnection.class);
 
-  private static final AtomicLong instanceCounter = new AtomicLong();
+  private static final AtomicLong INSTANCE_COUNTER = new AtomicLong();
 
 
   private final ConnectionManager manager;                // the manager that created this connection
@@ -165,8 +165,8 @@ public class ManagedConnection {
     this.connection = connection;
 
     backendId = backend.getBackendId(connection);
-    instanceNumber = instanceCounter.incrementAndGet();
-    managedConnections.add(new WeakReference<>(this));
+    instanceNumber = INSTANCE_COUNTER.incrementAndGet();
+    MANAGED_CONNECTIONS.add(new WeakReference<>(this));
 
     establishedSince = System.currentTimeMillis();
     detachedSince = establishedSince;
@@ -278,9 +278,7 @@ public class ManagedConnection {
    * {@link MpxConnectionManager} to re-open connections before
    * being attached next time. Notice that not all connection managers
    * honour the dead-flag (makes only sense in servers, anyway).
-   * <p>
-   * Whenever the {@link DefaultErrorHandler} detects a communication link error,
-   * it marks a connection dead.
+   * 
    * @param dead true if marked dead, false not dead
    */
   public void setDead(boolean dead) {

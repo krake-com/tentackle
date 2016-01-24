@@ -83,18 +83,18 @@ import org.tentackle.sql.BackendInfo;
  * Local Db connections are used in client applications running in 2-tier mode
  * or in application servers.<br>
  * Remote Db connections are connected to a Tentackle application server
- * via RMI. Client applications running in 3-tier mode (more precise n-tier, with n >= 3)
+ * via RMI. Client applications running in 3-tier mode (more precise n-tier, with n &ge; 3)
  * use remote connections.<br>
  * With the abstraction of a logical Db connection, Tentackle applications
  * are able to run both in 2- or n-tier mode without a single modification
  * to the source code. It's just a small change in a config file.
  * <p>
  * The configuration is achieved by a property file, which is located
- * by the {@link UserInfo} passed to the Db.
+ * by the {@link SessionInfo} passed to the Db.
  * <p>
  * Local connections can be either a DataSource bound via JNDI or a direct
  * JDBC connection. JNDI is used in application servers, for example running
- * a JRuby on Rails {@link org.tentackle.appworx.WebApplication} from within Glassfish.
+ * a JRuby on Rails application from within Glassfish (see tentackle-web).<br>
  * JDBC connections are for standalone 2-tier applications or Tentackle application servers.
  * <br>
  * For local connections via JDBC the file contains at least the following properties:
@@ -110,8 +110,7 @@ import org.tentackle.sql.BackendInfo;
  *
  * Local connections via JNDI need only the url. The url starts with
  * "<tt>jndi:</tt>" and is followed by the JNDI-name. The optional database backend type is
- * only necessary if it cannot be determined from the connection's metadata. The following
- * types are currently supported: <tt>db2, ingres, informix, mssql, mysql, oracle and postgres</tt>.
+ * only necessary if it cannot be determined from the connection's metadata.
  *
  * <pre>
  * url=jndi:name[:database-type]
@@ -130,7 +129,6 @@ import org.tentackle.sql.BackendInfo;
  * </pre>
  *
  * The port is optional and defaults to 1099 (the default RMI registry).
- * For setting up an application server please refer to {@link rmi.DbServer}.
  * <p>
  * Optionally, the following properties can be defined:
  * <p>
@@ -515,7 +513,7 @@ public class Db implements Session, Cloneable {
    * Sets the pool id.
    * The method is invoked from a SessionPool when the Db is used in a pool.
    *
-   * @param poolId the ID given by the pool (> 0), 0 = not used (free Db), -1 if removed from pool
+   * @param poolId the ID given by the pool (&gt; 0), 0 = not used (free Db), -1 if removed from pool
    */
   public void setPoolId(int poolId) {
     this.poolId = poolId;
@@ -546,7 +544,7 @@ public class Db implements Session, Cloneable {
    * If a database is readonly, no updates, deletes or inserts
    * are possible. Any attempt to do so results in a persistence exception.
    *
-   * @param readOnly
+   * @param readOnly true if readonly
    */
   public void setReadOnly(boolean readOnly) {
     assertOpen();
@@ -1197,7 +1195,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the pending txLevel after an immediate rollback.
    *
-   * @return > 0 if there was an immediate rollback
+   * @return &gt; 0 if there was an immediate rollback
    */
   public int getImmediateRollbackTxLevel() {
     return immediatelyRolledBack;
@@ -1206,7 +1204,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the pending txLevel after an immediate commit.
    *
-   * @return > 0 if there was an immediate commit
+   * @return &gt; 0 if there was an immediate commit
    */
   public int getImmediateCommitTxLevel() {
     return immediatelyCommitted;
@@ -2192,7 +2190,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Gets the prepared statement.<br>
-   * Uses {@link ResultSet.TYPE_FORWARD_ONLY} and {@link ResultSet.CONCUR_READ_ONLY}.
+   * Uses {@link ResultSet#TYPE_FORWARD_ONLY} and {@link ResultSet#CONCUR_READ_ONLY}.
    *
    * @param stmtKey the statement key
    * @param alwaysPrepare true if always do a physical prepare
@@ -2200,7 +2198,8 @@ public class Db implements Session, Cloneable {
    *
    * @return the prepared statement for this db
    */
-  public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare, Supplier<String> sqlSupplier) {
+  public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare,
+                                                       Supplier<String> sqlSupplier) {
     return getPreparedStatement(stmtKey, alwaysPrepare, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, sqlSupplier);
   }
 
@@ -2228,7 +2227,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Creates a one-shot prepared statement.<br>
-   * Uses {@link ResultSet.TYPE_FORWARD_ONLY} and {@link ResultSet.CONCUR_READ_ONLY}.
+   * Uses {@link ResultSet#TYPE_FORWARD_ONLY} and {@link ResultSet#CONCUR_READ_ONLY}.
    *
    * @param sql the SQL code
    *
@@ -2577,7 +2576,7 @@ public class Db implements Session, Cloneable {
    *
    * @param className the classname
    * @return the delegate
-   * @throws RemoteException
+   * @throws RemoteException if creating the delegate failed
    */
   public RemoteDelegate createRemoteDelegate(String className) throws RemoteException {
     assertOpen();

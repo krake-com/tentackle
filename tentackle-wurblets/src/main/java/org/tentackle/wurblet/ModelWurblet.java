@@ -237,7 +237,7 @@ public class ModelWurblet extends AbstractWurblet {
   /**
    * Returns whether the entity is part of an inheritance tree.
    *
-   * @return
+   * @return truf if part of an inheritance tree
    */
   public boolean isPartOfInheritanceHierarchy() {
     return isPdo() && getEntity().getTopSuperEntity().isAbstract();
@@ -262,8 +262,8 @@ public class ModelWurblet extends AbstractWurblet {
    * Gets the methodname.<br>
    * From the guardname or from arg "--method=&lt;.....&gt;" if present.
    *
-   * @return the methidname
-   * @throws WurbelException
+   * @return the method name
+   * @throws WurbelException if no guardname
    */
   public String getMethodName() throws WurbelException {
     String methodName = getOption("method");
@@ -299,10 +299,10 @@ public class ModelWurblet extends AbstractWurblet {
    * Applies the semantics of {@link #getClassName()} to another entity.<br>
    * Example:
    * <pre>
-   * getEntity() -> Firma
-   * getClassName() -> "MyFirmaPersistenceImpl"
+   * getEntity() -&gt; Firma
+   * getClassName() -&gt; "MyFirmaPersistenceImpl"
    * Assumed that otherEntity = Kontakt (which is a superclass of Firma, for example), then:
-   * deriveClassNameForEntity(otherEntity) -> "MyKontaktPersistenceImpl"
+   * deriveClassNameForEntity(otherEntity) -&gt; "MyKontaktPersistenceImpl"
    * </pre>
    * @param otherEntity the other entity
    * @return the derived classname
@@ -528,8 +528,11 @@ public class ModelWurblet extends AbstractWurblet {
 
 
   /**
+   * {@inheritDoc}
+   * <p>
    * Overridden to load the map file.
-   * @throws WurbelException
+   *
+   * @throws WurbelException if running the wurblet failed
    */
   @Override
   public void run() throws WurbelException {

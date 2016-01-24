@@ -68,7 +68,7 @@ public class FailedValidationResult extends AbstractValidationResult {
   /**
    * Checks the arguments.
    *
-   * @throws IllegalArgumentException
+   * @throws IllegalArgumentException if message is empty
    */
   protected void checkArgs() throws IllegalArgumentException {
     String message = getMessage();

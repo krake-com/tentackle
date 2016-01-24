@@ -768,10 +768,10 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /**
    * # Relations for NumberPool:
    *
-   * NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
+   * NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
    */
 
-  // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
+  // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
   @Persistent("numberRange")
   private TrackedList<NumberRange> numberRangeList;
   private boolean numberRangeListLoaded;
@@ -852,7 +852,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    * @param delete is true if invoked from deleteReferencingRelations()
    */
   private void deleteReferencingRelations(boolean delete)  {
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (delete) {
       delete(getNumberRangeList());
     }
@@ -870,7 +870,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     if (update) {
       deleteReferencingRelations(false);
     }
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (numberRangeList != null) {
       getDomainContext().applyTo(numberRangeList);
       for (NumberRange obj: numberRangeList)  {
@@ -890,7 +890,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (numberRangeList != null) {
       results.addAll(ValidationUtilities.getInstance().validateCollection(
                 numberRangeList, validationPath + ".numberRangeList", scope));
@@ -906,7 +906,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public void setImmutable(boolean immutable) {
     super.setImmutable(immutable);
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (numberRangeList != null) {
       numberRangeList.setImmutable(immutable);
     }
@@ -920,7 +920,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public boolean isModified()  {
     return super.isModified()
-           // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+           // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
            || isModified(numberRangeList)
            ;
   }
@@ -951,7 +951,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded)  {
     int count = 0;
     count += super.addComponents(components, onlyLoaded);
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (!onlyLoaded || numberRangeListLoaded) {
       count += addComponents(components, getNumberRangeList(), onlyLoaded);
     }
@@ -964,7 +964,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public void insertPlainWithComponents()  {
     insertPlain();
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     insertPlainWithComponents(getNumberRangeList());
   }
 
@@ -973,7 +973,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   @Override
   public void deletePlainWithComponents()  {
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     deletePlainWithComponents(getNumberRangeList());
     deletePlain();
   }
@@ -984,7 +984,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public void markDeleted() {
     super.markDeleted();
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     markDeleted(numberRangeList);
   }
 
@@ -997,7 +997,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @SuppressWarnings("unchecked")
   protected void createComponentsInSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     if (numberRangeList != null) {
       snapshot.numberRangeListSnapshot = numberRangeList.createSnapshot();
     }
@@ -1011,7 +1011,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @SuppressWarnings("unchecked")
   protected void revertComponentsToSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    // NumberPool -> composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     numberRangeList = snapshot.numberRangeList;
     if (numberRangeList != null) {
       numberRangeList.clear();

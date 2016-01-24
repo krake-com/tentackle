@@ -50,7 +50,6 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
@@ -58,7 +57,6 @@ import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
-import org.tentackle.pdo.SessionProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.swing.FormError;
 import org.tentackle.swing.FormInfo;
@@ -339,7 +337,8 @@ public abstract class DesktopApplication extends AbstractApplication {
    * This method should be invoked if the user changed the look and feel intentionally.
    * The default implementation just invokes setLookAndFeel, but applications can override
    * it to save the setting, e.g. in the preferences.
-   * @param name the name of the l&f
+   *
+   * @param name the name of the l&amp;f
    */
   public void changeLookAndFeel(String name) {
     setLookAndFeel(name);
@@ -417,10 +416,9 @@ public abstract class DesktopApplication extends AbstractApplication {
    * @param modal true if modal, else non-modal
    *
    * @return the edited object if modal, else null
-   * @throws org.tentackle.misc.ApplicationException
    */
   @SuppressWarnings("unchecked")
-  public <T extends PersistentDomainObject<T>> T showEditDialog (Component comp, T object, boolean modal) throws ApplicationException {
+  public <T extends PersistentDomainObject<T>> T showEditDialog (Component comp, T object, boolean modal) {
     if (modal)  {
       return PdoEditDialogPool.getInstance().editModal(object, comp);
     }
@@ -440,9 +438,8 @@ public abstract class DesktopApplication extends AbstractApplication {
    * @param modal true if modal, else non-modal
    *
    * @return the edited object if modal, else null
-   * @throws org.tentackle.misc.ApplicationException
    */
-  public <T extends PersistentDomainObject<T>> T showEditDialog (Component comp, Class<T> clazz, boolean modal) throws ApplicationException {
+  public <T extends PersistentDomainObject<T>> T showEditDialog (Component comp, Class<T> clazz, boolean modal) {
     return showEditDialog(comp, on(clazz), modal);
   }
 
@@ -456,12 +453,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * @param clazz is the object's class
    */
   public <T extends PersistentDomainObject<T>> void showEditDialog (Class<T> clazz) {
-    try {
-      showEditDialog((Window) window, clazz, false);
-    }
-    catch (ApplicationException ex) {
-      FormError.showException(MessageFormat.format(AppSwingRdcBundle.getString("CANNOT CREATE EDIT DIALOG FOR CLASS {0}"), clazz), ex);
-    }
+    showEditDialog((Window) window, clazz, false);
   }
 
 
@@ -534,22 +526,22 @@ public abstract class DesktopApplication extends AbstractApplication {
    * Connects to the database backend (or application server).
    * <p>
    * Notice: if the application is started via JNLP (Java WebStart) and the
-   * commandline option {@code "--db="} is given, it is interpreted as a URL
-   * to the db-properties file relative to the JNLP codebase. If it starts with
+   * commandline option {@code "--backend="} is given, it is interpreted as a URL
+   * to the backend-properties file relative to the JNLP codebase. If it starts with
    * {@code "&lt;protocol&gt;://"} it is taken as an absolute URL.<br>
    * Example:
    * <pre>
-   * --db=http://www.tentackle.org/Invoicer/Db.properties
+   * --backend=http://www.tentackle.org/Invoicer/backend.properties
    *
    * is the same as:
    *
-   * --db=Db.properties
+   * --backend=backend.properties
    *
    * if the codebase is http://www.tentackle.org/Invoicer.
    * </pre>
    *
    * @return the connected context db, null if login aborted or authentication failed
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if login failed
    */
   protected DomainContext doLogin() throws ApplicationException {
 
@@ -692,7 +684,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * The default creates the modification thread (but does not start it),
    * installs the Preferences, tentackle's SecurityManager and the look and feels.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doConfigureApplication() throws ApplicationException {
@@ -707,7 +699,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * is executed from within the EventQueue.
    *
    * @return the toplevel window, ready for showing
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   protected abstract FormWindow doCreateWindow() throws ApplicationException;
 
@@ -717,7 +709,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * The default implementation initializes the Tentackle-EventQueue.
    *
    * @see FormUtilities#getEventQueue()
-   * @throws ApplicationException
+   * @throws ApplicationException if failed
    */
   protected void doInitializeGUI() throws ApplicationException {
     FormUtilities fu = FormUtilities.getInstance();
@@ -730,7 +722,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * Shows the window.
    * The default implementation invokes setVisible(true).
    * If the window is a FormContainer, setFormValue() and saveValues() will be invoked as well.
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   protected void doShowWindow() throws ApplicationException {
     window.setFormValues();
@@ -748,7 +740,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    * The default implementation starts the modification thread, unless
    * {@code "--nomodthread"} given.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {

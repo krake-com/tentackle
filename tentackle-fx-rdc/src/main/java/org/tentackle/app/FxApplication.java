@@ -21,7 +21,6 @@ package org.tentackle.app;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
-import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -43,7 +42,7 @@ public abstract class FxApplication extends Application {
   @Override
   public void start(Stage stage) throws Exception {
     try {
-      DesktopApplication application = (DesktopApplication) AbstractApplication.getRunningApplication();
+      DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
       application.setFxApplication(this);
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
@@ -56,7 +55,7 @@ public abstract class FxApplication extends Application {
 
   @Override
   public void stop() throws Exception {
-    DesktopApplication application = (DesktopApplication) AbstractApplication.getRunningApplication();
+    DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
     application.stop();
   }
 
@@ -68,6 +67,7 @@ public abstract class FxApplication extends Application {
    * client application is really implementing this method.
    *
    * @param primaryStage the primary stage
+   * @throws Exception if starting failed
    */
   public abstract void startApplication(Stage primaryStage) throws Exception;
 

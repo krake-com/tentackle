@@ -125,7 +125,7 @@ public class ModelException extends Exception {
    * Gets the related entities.<br>
    * If related to more than one entity.
    *
-   * @return
+   * @return the entities
    */
   public Set<Entity> getEntities() {
     if (entities == null) {

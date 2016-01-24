@@ -34,7 +34,7 @@ public interface NumberPoolDomain extends DomainObject<NumberPool> {
    * This is the first non-empty range with the lowest begin.
    *
    * @return the current range
-   * @throws NumberSourceEmptyException if no more non-empty range found
+   * @throws org.tentackle.ns.NumberSourceEmptyException if no more non-empty range found
    */
   NumberRange getCurrentRange();
 

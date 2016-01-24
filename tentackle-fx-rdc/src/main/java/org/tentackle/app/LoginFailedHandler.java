@@ -43,7 +43,7 @@ public class LoginFailedHandler {
   /**
    * Creates a login failed handler.
    *
-   * @param application
+   * @param application the application
    * @param view the view
    * @param sessionInfo the session info
    */
@@ -56,7 +56,7 @@ public class LoginFailedHandler {
   /**
    * Gets the application.
    *
-   * @return
+   * @return the application
    */
   public DesktopApplication<?> getApplication() {
     return application;
@@ -65,7 +65,7 @@ public class LoginFailedHandler {
   /**
    * Gets the view.
    *
-   * @return
+   * @return the view
    */
   public Parent getView() {
     return view;
@@ -74,7 +74,7 @@ public class LoginFailedHandler {
   /**
    * Gets the session info.
    *
-   * @return
+   * @return the session info
    */
   public SessionInfo getSessionInfo() {
     return sessionInfo;

@@ -18,8 +18,6 @@
 
 package org.tentackle.ns;
 
-import org.tentackle.common.TentackleRuntimeException;
-
 /**
  * Number source empty exception.
  *

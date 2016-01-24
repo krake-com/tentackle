@@ -57,8 +57,7 @@ import org.tentackle.pdo.VersionInfoIncompatibleException;
  */
 
 
-abstract public class RemoteDbConnectionImpl extends RemoteServerObject
-                                    implements RemoteDbConnection {
+abstract public class RemoteDbConnectionImpl extends RemoteServerObject implements RemoteDbConnection {
 
   private static final long serialVersionUID = -1008588987968414154L;
 
@@ -153,7 +152,7 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject
    * Checks the client's version information.
    * <p>
    * The default implementation does nothing.
-   * It is invoked from {@link Db#open()} for remote connections.
+   * It is invoked from {@link org.tentackle.persist.Db#open()} for remote connections.
    *
    * @param clientVersionInfo the server's version info from {@link org.tentackle.persist.rmi.RemoteDbConnection}.
    * @throws VersionInfoIncompatibleException if versions are not compatible

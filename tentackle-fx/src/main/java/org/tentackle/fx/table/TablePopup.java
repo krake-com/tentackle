@@ -83,7 +83,6 @@ public class TablePopup<S> {
    *
    * @param table the table
    * @param preferencesSuffix the preferences suffix to load/save table preferences
-   * @param system true if from system scope only, else try user first
    * @param noViewSize true if don't set the table view's size
    */
   public TablePopup(TableView<S> table, String preferencesSuffix, boolean noViewSize) {
@@ -447,7 +446,6 @@ public class TablePopup<S> {
    * Loads the table preferences.
    *
    * @param system true if from system scope only, else try user first
-   * @param noViewSize true if don't set the table view's size
    */
   public void loadPreferences(boolean system) {
     try {

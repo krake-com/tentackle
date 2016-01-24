@@ -28,7 +28,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.AbstractSessionTask;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.ModificationEvent;
 import org.tentackle.pdo.ModificationListener;
@@ -203,7 +202,6 @@ public class DefaultSecurityManager implements SecurityManager {
   private final Map<GranteeDescriptor, Collection<GranteeDescriptor>> granteeMap;   // maps root grantee to grantee descriptors
 
   private volatile boolean invalid;                           // true if cache needs initialization
-  private volatile boolean initialized;                       // true if initialized the first time
   private boolean enabled;                                    // true if security manager is enabled
   private boolean acceptByDefault;                            // true if isAccepted() by default
   private ModificationListener securityListener;              // the listener to invalidate the security manager
@@ -220,15 +218,6 @@ public class DefaultSecurityManager implements SecurityManager {
     pdoMap = new TreeMap<>();
     pdoClassMap = new TreeMap<>();
     granteeMap = new HashMap<>();
-
-    // delay first initialization
-    PdoTracker.getInstance().addTask(new AbstractSessionTask() {
-
-      @Override
-      public void run() {
-        initialize(getSession());
-      }
-    });
   }
 
 
@@ -340,7 +329,9 @@ public class DefaultSecurityManager implements SecurityManager {
 
 
   /**
-   * Creates a security result with {@link SecurityResult#isDefault()} == true.
+   * Creates a default security result.<br>
+   * This result is returned, if no matching rules were found.
+   *
    * @param message the message
    * @return the result
    */
@@ -352,7 +343,8 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
   /**
-   * Creates a security result with {@link SecurityResult#isAccepted()} == true.
+   * Creates an accepting security result.
+   *
    * @param message the message
    * @return the result
    */
@@ -361,7 +353,8 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
   /**
-   * Creates a security result with {@link SecurityResult#isDenied()} == true.
+   * Creates a denying security result.
+   *
    * @param message the message
    * @return the result
    */
@@ -444,10 +437,6 @@ public class DefaultSecurityManager implements SecurityManager {
     }
 
     if (invalid) {
-      if (!initialized) {
-        // avoid recursions on boot
-        return createdAcceptedSecurityResult("initializing...");
-      }
       if (context.getSession().isRemote()) {
         createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
       }
@@ -564,7 +553,6 @@ public class DefaultSecurityManager implements SecurityManager {
     }
 
     invalid = false;
-    initialized = true;
 
     if (securityListener == null) {
       // register listener once

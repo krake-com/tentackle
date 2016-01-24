@@ -59,8 +59,6 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.component.Note;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.StringHelper;
 
 interface FxUtilities$Singleton {
@@ -74,12 +72,6 @@ interface FxUtilities$Singleton {
  */
 @Service(FxUtilities.class)    // defaults to self
 public class FxUtilities {
-
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(FxUtilities.class);
-
 
   /**
    * The singleton.
@@ -517,7 +509,7 @@ public class FxUtilities {
    * the headers are not taken into account. As a result, the columns are sized
    * to the absolute minimum to display the content.
    *
-   * @param table
+   * @param table the table view
    */
   @SuppressWarnings("unchecked")
   public void resizeColumnsToFitContent(TableView<?> table) {

@@ -476,9 +476,9 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
    * Checks the version information (of the server).
    * <p>
    * The default implementation does nothing.
-   * It is invoked from {@link Db#open()} for remote connections.
+   * It is invoked from {@link Session#open()} for remote connections.
    *
-   * @param serverVersionInfo the server's version info from {@link org.tentackle.db.rmi.RemoteDbConnection}.
+   * @param serverVersionInfo the server's version info
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
   @Override

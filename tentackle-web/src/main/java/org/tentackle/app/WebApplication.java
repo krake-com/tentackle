@@ -19,7 +19,6 @@
 
 package org.tentackle.app;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Properties;
 import javax.naming.InitialContext;
@@ -84,7 +83,7 @@ public abstract class WebApplication extends AbstractApplication
   /**
    * Gets the current web application instance.<p>
    *
-   * This is just a convenience method to {@link Application#getRunningApplication()}.
+   * This is just a convenience method to {@link AbstractApplication#getRunningApplication()}.
    *
    * @return the application, null if not started yet
    */
@@ -296,7 +295,7 @@ public abstract class WebApplication extends AbstractApplication
    *
    * @param props the properties to configure the application
    * @throws ApplicationException if startup failed
-   * @see Application#setProperties(java.util.Properties)
+   * @see AbstractApplication#setProperties(java.util.Properties)
    */
   public void start(Properties props) throws ApplicationException {
     synchronized (this) {
@@ -382,7 +381,7 @@ public abstract class WebApplication extends AbstractApplication
    * The database properties may be either given by the "db" property
    * or if this is missing the application's properties will be used.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if login failed
    */
   protected void doLogin() throws ApplicationException {
 
@@ -463,7 +462,7 @@ public abstract class WebApplication extends AbstractApplication
    * {@code "--nomodthread"} given, creates the connection cache, the Db pool,
    * and the DbServer instance.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {

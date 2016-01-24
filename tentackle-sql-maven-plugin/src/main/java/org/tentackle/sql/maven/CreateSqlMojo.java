@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.model.Entity;
@@ -35,17 +37,16 @@ import org.tentackle.sql.BackendInfo;
 /**
  * Generate sql script to create the tables.
  *
- * @goal create
  * @author harald
  */
+@Mojo(name = "create")
 public class CreateSqlMojo extends AbstractTentackleSqlMojo {
 
   /**
    * The name of the created sql file.
-   *
-   * @parameter property="tentackle.createSqlFile"
-   *            default-value="createmodel.sql"
    */
+  @Parameter(defaultValue = "createmodel.sql",
+             property = "tentackle.createSqlFile")
   private String sqlFileName;
 
 

@@ -222,8 +222,6 @@ public abstract class FxControlDelegate implements FxControl {
 
   /**
    * Fires all model-to-view listeners.
-   *
-   * @param modelValue the model's value
    */
   public void fireModelToViewListeners() {
     if (modelToViewListeners != null) {
@@ -239,6 +237,8 @@ public abstract class FxControlDelegate implements FxControl {
 
   /**
    * Gets the view-to-model listeners with lazy collection creation.
+   *
+   * @return the listeners, never null
    */
   public Collection<ViewToModelListener> getViewToModelListeners() {
     if (viewToModelListeners == null) {

@@ -78,7 +78,7 @@ public abstract class CompositePreferences {
   /**
    * Flushes the preferences (system and user).
    *
-   * @throws BackingStoreException
+   * @throws BackingStoreException if failed
    */
   public void flush() throws BackingStoreException {
     if (userPrefs != null) {
@@ -91,7 +91,7 @@ public abstract class CompositePreferences {
   /**
    * Syncs the preferences (system and user).
    *
-   * @throws BackingStoreException
+   * @throws BackingStoreException if failed
    */
   public void sync() throws BackingStoreException {
     if (userPrefs != null) {

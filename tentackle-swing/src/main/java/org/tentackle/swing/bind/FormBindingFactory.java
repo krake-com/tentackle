@@ -29,7 +29,7 @@ import org.tentackle.swing.FormContainer;
  * The binding factory for forms.
  * <p>
  * Extends the {@link BindingFactory} by methods for form components.
- * 
+ *
  * @author harald
  */
 public interface FormBindingFactory extends BindingFactory {
@@ -37,7 +37,7 @@ public interface FormBindingFactory extends BindingFactory {
 
   /**
    * Defines the binding for a component class.
-   * 
+   *
    * @param componentClass the component class
    * @param bindingClass the binding class
    * @return the old binding class if replaced, else null
@@ -82,7 +82,6 @@ public interface FormBindingFactory extends BindingFactory {
    * Creates a component binding.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinding}.
    *
    * @param binder the binder managing the binding
    * @param component the GUI-component to bind
@@ -99,8 +98,7 @@ public interface FormBindingFactory extends BindingFactory {
    * Creates a component binder.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinder}.
-   * 
+   *
    * @param container the container for the created binder
    * @return the binder
    */
@@ -111,7 +109,6 @@ public interface FormBindingFactory extends BindingFactory {
    * Creates a table binding.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinding}.
    *
    * @param binder the binder managing the binding
    * @param mColumn the model column
@@ -128,11 +125,10 @@ public interface FormBindingFactory extends BindingFactory {
    * Creates a table binder.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinder}.
    *
    * @param model the table model
    * @return the binder
    */
-  public FormTableBinder createFormTableBinder(BindableTableModel model);
+  public FormTableBinder createFormTableBinder(BindableTableModel<?> model);
 
 }

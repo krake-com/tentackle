@@ -24,7 +24,7 @@ import java.util.List;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * An expression of {@link WurbletKeyParameter}s.
+ * An expression within a {@link WurbletParameter}.
  *
  * @author harald
  */
@@ -118,7 +118,7 @@ public class WurbletParameterExpression implements WurbletParameterOperand {
   /**
    * Returns whether expression must be enclosed in parentheses after an AND operator.
    *
-   * @return
+   * @return true need parentheses
    */
   public boolean needParenthesesAfterAndOperator() {
     return operators.contains(WurbletParameterOperator.OR) ||
@@ -131,6 +131,7 @@ public class WurbletParameterExpression implements WurbletParameterOperand {
    *
    * @param generator the code generator
    * @return the generated code
+   * @throws WurbelException if code generation failed
    */
   public String toCode(CodeGenerator<Object> generator) throws WurbelException {
     StringBuilder buf = new StringBuilder();

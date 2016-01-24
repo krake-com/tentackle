@@ -129,7 +129,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * <p>
    * @return the user preference node associated with the package of which
    * <tt>c</tt> is a member.
-   * <p>
+   *
    * @see Preferences#userNodeForPackage(java.lang.Class)
    */
   PersistedPreferences userNodeForPackage(Class<?> c);
@@ -142,7 +142,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * <p>
    * @return the system preference node associated with the package of which
    * <tt>c</tt> is a member.
-   * <p>
+   *
    * @see Preferences#systemNodeForPackage(java.lang.Class)
    */
   PersistedPreferences systemNodeForPackage(Class<?> c);
@@ -153,21 +153,8 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * imported into the calling user's preference tree (even if they originally came from a different user's preference
    * tree). If any of the preferences described by the document inhabit preference nodes that do not exist, the nodes
    * will be created.
-   * <p>
-   * <p>
-   * The XML document must have the following DOCTYPE declaration:
-   * <pre>{@code
-   * <!DOCTYPE preferences SYSTEM "http://java.sun.com/dtd/preferences.dtd">
-   * }</pre> (This method is designed for use in conjunction with {@link #exportNode(OutputStream)} and
-   * {@link #exportSubtree(OutputStream)}.
-   * <p>
-   * <p>
-   * This method is an exception to the general rule that the results of concurrently executing multiple methods in this
-   * class yields results equivalent to some serial execution. The method behaves as if implemented on top of the other
-   * public methods in this class, notably {@link #node(String)} and {@link #put(String, String)}.
-   * <p>
+   *
    * @param is the input stream from which to read the XML document.
-   * <p>
    * @throws IOException                       if reading from the specified input stream results in an
    *                                           <tt>IOException</tt>.
    * @throws InvalidPreferencesFormatException Data on input stream does not constitute a valid XML document with the

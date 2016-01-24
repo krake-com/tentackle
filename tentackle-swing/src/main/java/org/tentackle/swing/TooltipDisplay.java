@@ -26,17 +26,17 @@ package org.tentackle.swing;
  * usually in a StringFormField in a FormPanel.
  * FormComponents thus can display the tooltip as soon as
  * they receive focus.
- * See {@link org.tentackle.appworx.TooltipAndErrorPanel} for an example.
+ * See {@code org.tentackle.swing.rdc.TooltipAndErrorPanel} for an example.
  *
  * @author harald
  */
 public interface TooltipDisplay {
-  
+
   /**
    * Sets the text for the tooltip.
-   * 
+   *
    * @param text the tooltip text
    */
   public void setTooltip(String text);
-  
+
 }

@@ -63,7 +63,7 @@ public interface FormTableBinding extends Binding {
   /**
    * Gets the binding option for UC/LC-conversion.
    *
-   * @return some of {@link FormField}.CONVERT_??, null if not defined
+   * @return some of {@link org.tentackle.swing.FormFieldComponent}.CONVERT_??, null if not defined
    */
   Character getConvert();
 

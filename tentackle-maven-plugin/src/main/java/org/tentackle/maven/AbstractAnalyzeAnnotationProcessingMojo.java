@@ -41,20 +41,18 @@ import org.tentackle.buildsupport.AnalyzeProcessor;
 public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {
 
   /**
-   * Directory holding the analyze results.<br>
+   * Directory holding the analyze results.
    */
   private File analyzeDir;
 
   /**
-   * Directory holding the generated services.<br>
+   * Directory holding the generated services.
    */
   private File servicesDir;
 
 
   /**
    * Creates a mojo.
-   *
-   *
    */
   public AbstractAnalyzeAnnotationProcessingMojo() {
     addProcessor(new AnalyzeProcessor());
@@ -107,8 +105,8 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   /**
    * Initializes a processor.
    *
-   * @param processor
-   * @param srcDir
+   * @param processor the annotation processor
+   * @param srcDir the sources dir
    */
   @Override
   protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {

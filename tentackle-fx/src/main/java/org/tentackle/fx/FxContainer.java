@@ -50,7 +50,7 @@ public interface FxContainer extends FxControl {
   /**
    * Sets the controller of this container.
    *
-   * @param the controller, null if nested container without a controller
+   * @param controller the controller, null if nested container without a controller
    */
   void setController(FxController controller);
 

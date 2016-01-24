@@ -49,7 +49,7 @@ public interface IconProvider {
   /**
    * Loads an image icon for the given look and feel.
    * This allows each look and feel to provide its own icon set.
-   * Furthermore, applications can add their own realm-provider (see {@link PlafGlobal})
+   * Furthermore, applications can add their own realm-provider.
    *
    * @param plaf the look and feel
    * @param name the icon's name (without extension like gif or png!)

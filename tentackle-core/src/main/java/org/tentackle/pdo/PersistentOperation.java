@@ -24,7 +24,7 @@ package org.tentackle.pdo;
  * POs usually contain persistent-relevant methods that can not or should not be
  * associated with a operation.
  *
- * @param <T> the operation
+ * @param <T> the operation type
  * @author harald
  */
 public interface PersistentOperation<T extends Operation<T>>
@@ -42,7 +42,7 @@ public interface PersistentOperation<T extends Operation<T>>
   /**
    * Gets the delegate implementing the persistence operation.
    * <p>
-   * Note: the method is intercepted and executed by the {@link PersistentOperationInvocationHandler}.
+   * Note: the method is intercepted and executed by the {@link org.tentackle.pdo.OperationInvocationHandler}.
    *
    * @return the persistent operation
    */

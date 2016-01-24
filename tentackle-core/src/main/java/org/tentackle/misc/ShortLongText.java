@@ -26,11 +26,8 @@ package org.tentackle.misc;
  * A ShortLongText is something very simple and common:
  * a short String and a longer more detailed description of
  * an object.
- * <p>
- * see FormComboBox.setExtendedPopup().
  *
  * @author harald
- * @see org.tentackle.swing.FormComboBox#setShortLongPopupEnabled(boolean)
  */
 public interface ShortLongText {
 

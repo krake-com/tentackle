@@ -31,9 +31,9 @@ import org.tentackle.validate.ValidationSeverity;
 
 /**
  * The annotated element must match a regular expression.
- * <p/>
+ * <p>
  * The supported type is {@link String}.
- * <p/>
+ * <p>
  * <code>null</code> elements are considered valid.
  *
  * @author harald

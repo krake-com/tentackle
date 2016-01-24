@@ -344,13 +344,9 @@ public class PdoFieldPanel<T extends PersistentDomainObject<T>> extends FormFiel
    * @param contextDb the domain context
    * @param key the domain key
    * @return the object, null if not found
-   *
-   * @throws java.lang.InstantiationException
-   * @throws java.lang.IllegalAccessException
    */
   @SuppressWarnings("unchecked")
-  public T findByKey(Class<T> clazz, DomainContext contextDb, Object key)
-         throws InstantiationException, IllegalAccessException {
+  public T findByKey(Class<T> clazz, DomainContext contextDb, Object key) {
 
     return key == null ? null : Pdo.create(clazz, contextDb).findByUniqueDomainKey(key);
   }

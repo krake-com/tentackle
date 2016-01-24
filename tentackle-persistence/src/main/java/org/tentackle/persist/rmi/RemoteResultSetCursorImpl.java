@@ -31,9 +31,9 @@ import org.tentackle.persist.ResultSetCursor.FetchList;
 
 
 /**
- * Remote delegate implementation for {@link DbCursor}.
+ * Remote delegate implementation for {@link ResultSetCursor}.
  *
- * @author  harald
+ * @author harald
  * @param <T> the object type
  */
 public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>

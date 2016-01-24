@@ -45,7 +45,7 @@ public interface SessionManager {
    * session is logged out.
    *
    * @param session the session to login
-   * @return the unique ID of the session (> 0)
+   * @return the unique ID of the session (&gt; 0)
    * @throws PersistenceException if login failed.
    */
   int login(Session session);

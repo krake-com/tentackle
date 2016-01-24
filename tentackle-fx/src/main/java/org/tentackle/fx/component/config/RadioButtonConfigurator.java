@@ -43,6 +43,8 @@ public class RadioButtonConfigurator<T extends RadioButton> extends ButtonBaseCo
   /**
    * Updates the model and the view.
    * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the radio button
    */
   protected void updateModelAndView(FxControl control) {
     control.updateModel();

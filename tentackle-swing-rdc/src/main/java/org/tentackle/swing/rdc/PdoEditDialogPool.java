@@ -479,6 +479,7 @@ public class PdoEditDialogPool {
   /**
    * Shows an {@code Pdo} in a non-modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to view-only
    * @param comp optional component to determine the window owner, null = no owner
    */
@@ -489,6 +490,7 @@ public class PdoEditDialogPool {
   /**
    * Shows an {@code Pdo} in a non-modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to view-only
    */
   public <T extends PersistentDomainObject<T>>void view(T object) {
@@ -498,6 +500,7 @@ public class PdoEditDialogPool {
   /**
    * Shows an {@code Pdo} in a modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to view-only
    * @param comp optional component to determine the window owner, null = no owner
    */
@@ -508,6 +511,7 @@ public class PdoEditDialogPool {
   /**
    * Shows an {@code Pdo} in a modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to view-only
    */
   public <T extends PersistentDomainObject<T>>void viewModal(T object) {
@@ -518,6 +522,7 @@ public class PdoEditDialogPool {
   /**
    * Edits an {@code Pdo} in a non-modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to edit
    * @param comp optional component to determine the window owner, null = no owner
    * @param disposeOnDeleteOrSave true if dispose dialog after delete or save
@@ -529,6 +534,7 @@ public class PdoEditDialogPool {
   /**
    * Edits an {@code Pdo} in a non-modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to edit
    * @param disposeOnDeleteOrSave true if dispose dialog after delete or save
    */
@@ -539,6 +545,7 @@ public class PdoEditDialogPool {
   /**
    * Edits an {@code Pdo} in a non-modal dialog.
    *
+   * @param <T> the PDO type
    * @param object the Pdo to edit
    */
   public <T extends PersistentDomainObject<T>> void edit(T object) {
@@ -549,7 +556,7 @@ public class PdoEditDialogPool {
   /**
    * Edits an {@code Pdo} in a modal dialog.
    *
-   * @param <T>
+   * @param <T> the PDO type
    * @param object the Pdo to edit
    * @param comp optional component to determine the window owner, null = no owner
    *
@@ -563,7 +570,7 @@ public class PdoEditDialogPool {
   /**
    * Edits an {@code Pdo} in a modal dialog.
    *
-   * @param <T>
+   * @param <T> the PDO type
    * @param object the Pdo to edit
    *
    * @return the (possibly reloaded) object, null if cancel.

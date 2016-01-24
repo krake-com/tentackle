@@ -152,7 +152,7 @@ public final class BasicStringHelper {
    * already in the string according to Unix rules.
    * Example:
    * <pre>
-   * Length 5" --> "Length 5\""
+   * <code>Length 5" --&gt; "Length 5\""</code>
    * </pre>
    *
    * @param str the string
@@ -590,7 +590,7 @@ public final class BasicStringHelper {
    * Gets the word-string for a digit.<br>
    * Example:
    * <pre>
-   * '0' -> "zero"
+   * '0' --&gt; "zero"
    * </pre>
    *
    * @param digit the digit character

@@ -48,6 +48,7 @@ public abstract class AbstractScript implements Script {
    * Creates a script.
    *
    * @param language the language instance
+   * @param cached true if use caching, if possible
    */
   public AbstractScript(ScriptingLanguage language, boolean cached) {
     this.language = language;

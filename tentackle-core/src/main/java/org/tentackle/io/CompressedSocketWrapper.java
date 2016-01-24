@@ -26,8 +26,6 @@ import java.net.Socket;
 import java.net.SocketException;
 
 
-
-
 /**
  * A compressed socket wrapper on top of another socket, usually an SSL-socket.
  *
@@ -44,7 +42,7 @@ public class CompressedSocketWrapper extends SocketWrapper {
    * Creates a compressed socket wrapper.
    *
    * @param socket the wrapped socket (for example a {@link javax.net.ssl.SSLSocket}).
-   * @throws java.net.SocketException
+   * @throws SocketException if creating the socket failed
    */
   public CompressedSocketWrapper(Socket socket) throws SocketException {
     super(socket);

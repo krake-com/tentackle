@@ -49,8 +49,8 @@ public interface RemoteSession {
   /**
    * Logs at the server-side.
    *
-   * @param level
-   * @param message
+   * @param level the log level
+   * @param message the log message
    */
   void log(Logger.Level level, String message);
 

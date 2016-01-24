@@ -31,13 +31,14 @@ import org.tentackle.swing.FormPanel;
  * Combines arbitrary search criteria, a panel to edit those criteria, the execution and display of the search.
  *
  * @author harald
+ * @param <T> the PDO type
  */
 public interface PdoSearch<T extends PersistentDomainObject<T>> extends DomainContextProvider {
 
   /**
    * Executes the search.
    *
-   * @param the display for the retrieved pdos
+   * @param pdoDisplay the display for the retrieved pdos
    */
   void execute(Consumer<List<T>> pdoDisplay);
 
@@ -164,7 +165,7 @@ public interface PdoSearch<T extends PersistentDomainObject<T>> extends DomainCo
   boolean isViewRebuildNecessary();
 
   /**
-   * Overrides the {@link FormTable} preferences name.
+   * Overrides the {@link org.tentackle.swing.FormTable} preferences name.
    *
    * @return the preferences name, null if default
    */

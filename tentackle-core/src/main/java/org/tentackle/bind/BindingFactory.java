@@ -44,26 +44,24 @@ public interface BindingFactory {
    * @return the binding member
    */
   BindingMember createBindingMember(Class<?> parentClass, BindingMember parentMember,
-                                           String memberName, String memberPath,
-                                           BindableElement element);
+                                    String memberName, String memberPath,
+                                    BindableElement element);
 
 
   /**
    * Gets the cache for bindable elements.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBindableCache}.
    *
    * @return the cache
    */
   BindableCache getBindableCache();
 
-  
+
   /**
    * Creates a bindable element
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBindableElement}.
    *
    * @param modelClass the model class
    * @param camelName the camelcase name of the bindable
@@ -80,7 +78,7 @@ public interface BindingFactory {
    * @return the old element class if replaced, else null
    */
   Class<? extends BindableElement> putBindableElementClass(Class<?> modelClass,
-                                                                  Class<? extends BindableElement> elementClass);
+                                                           Class<? extends BindableElement> elementClass);
 
   /**
    * Gets the bindable element class for a given model class.

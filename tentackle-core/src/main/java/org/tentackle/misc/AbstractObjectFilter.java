@@ -34,7 +34,7 @@ public abstract class AbstractObjectFilter<T> implements ObjectFilter<T> {
   @Override
   public Collection<T> filter(Collection<T> objects) {
     if (objects != null) {
-      Collection<T> filteredObjects = new ArrayList<T>();
+      Collection<T> filteredObjects = new ArrayList<>();
       for (T obj : objects) {
         if (isValid(obj)) {
           filteredObjects.add(obj);

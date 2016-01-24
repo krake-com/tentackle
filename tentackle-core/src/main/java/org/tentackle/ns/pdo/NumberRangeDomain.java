@@ -55,6 +55,7 @@ public interface NumberRangeDomain extends DomainObject<NumberRange> {
   /**
    * Pops the next numbers from the range.
    *
+   * @param count amount of numbers to pop
    * @return the numbers
    * @throws org.tentackle.ns.NumberSourceEmptyException if range is empty
    */

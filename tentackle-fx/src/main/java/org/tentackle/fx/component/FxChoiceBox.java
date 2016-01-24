@@ -48,10 +48,11 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   }
 
   /**
-   * Create a new ChoiceBox with the given set of items. Since it is observable, the content of this list may change
+   * Create a new ChoiceBox with the given set of items.<br>
+   * Since it is observable, the content of this list may change
    * over time and the ChoiceBox will be updated accordingly.
-   * <p>
-   * @param items
+   * 
+   * @param items the items
    */
   public FxChoiceBox(ObservableList<T> items) {
     super(items);

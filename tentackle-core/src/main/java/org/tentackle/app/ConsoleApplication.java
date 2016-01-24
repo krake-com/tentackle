@@ -184,7 +184,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
    * Connects to the database backend (or application server).
    *
    * @return the connected context db, null if login aborted or authentication failed
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if login failed
    */
   protected DomainContext doLogin() throws ApplicationException {
 
@@ -234,7 +234,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
    * The default implementation starts the modification thread, unless
    * {@code "--nomodthread"} given.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {

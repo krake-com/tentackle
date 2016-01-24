@@ -40,7 +40,6 @@ import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.RdcUtilities;
-import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
@@ -51,7 +50,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 /**
  * PDO to String translator.
  *
- * @todo: DnD support
+ * TODO: DnD support
  *
  * @author harald
  */
@@ -288,7 +287,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * <p>
    * If the UDK consists of more than one member, the first Bindable annotation is returned.
    *
-   * @param pdoClass the PDO class to inspect
+   * @param proxy the PDO class to inspect
    * @return the annotation, null if not annotated with Bindable
    */
   protected Bindable getBindableAnnotation(T proxy) {

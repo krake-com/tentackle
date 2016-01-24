@@ -59,7 +59,7 @@ public interface DomainContextProvider {
 
   /**
    * Creates an operation within the domain context of this object.<br>
-   * Same as {@link #on()} but for operations.
+   * Same as {@link #on} but for operations.
    *
    * @param <T> the operation type
    * @param clazz the operation interface

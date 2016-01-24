@@ -43,6 +43,8 @@ public class ToggleButtonConfigurator<T extends ToggleButton> extends ButtonBase
   /**
    * Updates the model and the view.
    * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the toggle button
    */
   protected void updateModelAndView(FxControl control) {
     control.updateModel();

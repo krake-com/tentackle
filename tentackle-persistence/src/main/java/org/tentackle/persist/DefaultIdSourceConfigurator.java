@@ -32,7 +32,7 @@ import org.tentackle.sql.Backend;
  * There are 2 configuration options:
  * <ol>
  * <li>table:&lt;name&gt;</li>
- * <li>sequence:&lt;name&gt[:&lt;sequence-multiplier&gt:&lt;global-multiplier&gt]</li>
+ * <li>sequence:&lt;name&gt;[:&lt;sequence-multiplier&gt;:&lt;global-multiplier&gt;]</li>
  * </ol>
  *
  * @author harald

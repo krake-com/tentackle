@@ -43,6 +43,8 @@ public class CheckBoxConfigurator<T extends CheckBox> extends ButtonBaseConfigur
   /**
    * Updates the model and the view.
    * The view update will also trigger dynamic rendering such as mandatory/changeable.
+   *
+   * @param control the checkbox
    */
   protected void updateModelAndView(FxControl control) {
     control.updateModel();

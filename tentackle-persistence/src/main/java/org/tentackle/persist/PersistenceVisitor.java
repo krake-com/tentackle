@@ -27,17 +27,17 @@ import org.tentackle.reflect.ReflectiveVisitor;
  * <p>
  * Visitors can be registered at a {@link Db} and are only valid within a single transaction.
  * If present, the visitors will be consulted before each persistence operation such as
- * {@link DbObject#INSERT}, {@link DbObject#UPDATE} or {@link DbObject#DELETE}, whether
+ * {@link ModificationLog#INSERT}, {@link ModificationLog#UPDATE} or {@link ModificationLog#DELETE}, whether
  * the operation is allowed or should be <em>silently</em> skipped.
  *
  * <p>
  * The methods are invoked in the following order:
  * <ol>
- * <li>{@link #visit(org.tentackle.db.DbObject, Character)} which in turn invokes the type-specific visit method</li>
- * <li>{@link #isPersistenceOperationAllowed(org.tentackle.db.DbObject, char)}</li>
+ * <li>{@code visit(org.tentackle.db.DbObject, Character)} which in turn invokes the type-specific visit method</li>
+ * <li>{@code isPersistenceOperationAllowed(org.tentackle.db.DbObject, char)}</li>
  * </ol>
  *
- * A visitor may also throw a {@link DbRuntimeException} if the operation must not continue.
+ * A visitor may also throw a {@link org.tentackle.pdo.PersistenceException} if the operation must not continue.
  * <p>
  * The effective visit method for the concrete persistence class is determined by reflection.
  * The most specific method will be used, which allows to use a method for a class hierarchy.

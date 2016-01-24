@@ -93,6 +93,7 @@ public class GroovyScript extends AbstractScript {
    * Creates a groovy script.
    *
    * @param language the language instance
+   * @param cached true if use caching, if possible
    */
   public GroovyScript(GroovyLanguage language, boolean cached) {
     super(language, cached);

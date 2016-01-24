@@ -126,7 +126,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Defines whether attributes of the object may be changed.
    * <p>
    * Any attempt to invoke a setter on an immutable object
-   * results in a {@link PersistenceRuntimeException}.
+   * results in a {@link PersistenceException}.
    * All generated methods check this. Note that even lazy loading of
    * an immutable object isn't allowed as well because the
    * reference to the lazily loaded object must be changed.
@@ -191,7 +191,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Sets the class ID of the root entity this component belongs to.
    *
-   * @param rootId the root class id
+   * @param rootClassId the root class id
    */
   void setRootClassId(int rootClassId);
 
@@ -349,8 +349,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * if invoked outside a transaction. This is just an optimization hint.
    * <p>
    * @return true if referenced
-   * @see #addReferencingClass(java.lang.Class, java.lang.String)
-   * @see #removeReferencingClass(java.lang.Class, java.lang.String)
    */
   boolean isReferenced();
 
@@ -369,18 +367,17 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isExpired();
 
   /**
-   * Selects the current modification counter for the class of this object.
+   * Selects the current modification count for the class of this object.
    *
-   * @return the modification counter
-   * @see ModificationCounter
+   * @return the modification count
    */
   long getModificationCount();
 
 
   /**
-   * Combines {@link #selectExpiredTableSerials} and {@link #getExpirationBacklog}.<br>
+   * Gets the expired table serials.<br>
    * A physical database query is only done if the requested range is not in the backlog.
-   * Used in RMIservers to reduces db-roundtrips.
+   * Used to reduce roundtrips for remote sessions.
    *
    * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @param maxSerial inclusive upper bound for tableSerial (&le; maxSerial)
@@ -392,7 +389,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Determines the objects with a tableSerial starting at a given serial.
    * Useful to cleanup caches for example.
    *
-   * @param oldSerial non-inclusive lower bound for tableSerial (>oldSerial)
+   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return pairs of longs, the first being the ID, the second the tableserial, never null
    */
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial);
@@ -499,7 +496,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Notice that isRemovable() for performance reasons is not covered
    * by its own delegate method in remote connections.
    * Hence, if classes in your application require a different implementation
-   * (!isNew && !isReferenced) you must provide such a remote method.
+   * (!isNew &amp;&amp; !isReferenced) you must provide such a remote method.
    *
    * @return true if removable
    */
@@ -615,9 +612,9 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Gets the object associated to the id of the editedBy-attribute.<br>
    * This is usually the id of an PDO implementing the concept
-   * of a user, group, role or whatever. The default implementation
-   * invokes {@link AbstractApplication#getUser(long)}.
+   * of a user, group, role or whatever.
    *
+   * @param <U> the user type
    * @return the user object, null if no user or id was 0
    */
   <U extends PersistentDomainObject<U>> U getTokenLockObject();
@@ -625,6 +622,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Sets the user/group/role-object editing this object.
    *
+   * @param <U> the user type
    * @param obj the object, null to clear.
    */
   <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj);
@@ -697,10 +695,9 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
 
   /**
-   * Selects all records in current context as a cursor
+   * Selects all records in current context as a cursor.
    *
    * @return the cursor
-   * @see #resultAllInContextCursor
    */
   ScrollableResource<T> selectAllAsCursor();
 
@@ -734,7 +731,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * the default implementation gets it from the session.
    *
    * @return the list, never null
-   * @see #selectAllInContext()
+   * @see #selectAll()
    */
   List<T> selectAllCached();
 
@@ -952,7 +949,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param normText the normtext
    * @return the list of objects, never null
-   * @see #resultByNormText
    */
   List<T> selectByNormText(String normText);
 
@@ -961,7 +957,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param normText the normtext
    * @return the cursor
-   * @see #resultByNormTextCursor
    */
   ScrollableResource<T> selectByNormTextAsCursor(String normText);
 

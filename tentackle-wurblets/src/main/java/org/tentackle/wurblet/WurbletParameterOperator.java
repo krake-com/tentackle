@@ -19,7 +19,7 @@
 package org.tentackle.wurblet;
 
 /**
- * Logical operator for {@link WurbletKeyOperand}s.
+ * Logical operator for {@link WurbletParameterExpression}.
  *
  * @author harald
  */

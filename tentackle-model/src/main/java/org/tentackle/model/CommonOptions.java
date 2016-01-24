@@ -34,7 +34,8 @@ public interface CommonOptions {
   String getComment();
 
   /**
-   * the bind options (currently only AUTOSELECT for numbers, date & time).
+   * The bind options.
+   * 
    * @return the bind options
    */
   String getBindOptions();

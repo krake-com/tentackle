@@ -35,8 +35,8 @@ import org.tentackle.swing.FormRadioButton;
 /**
  * UI for JRadioButton/FormRadioButton.
  *
- * @todo mandatory property still missing
- * 
+ * TODO: mandatory property still missing
+ *
  * @author harald
  */
 public class TSubstanceRadioButtonUI extends SubstanceRadioButtonUI implements PropertyChangeListener {
@@ -77,7 +77,7 @@ public class TSubstanceRadioButtonUI extends SubstanceRadioButtonUI implements P
     }
   }
 
-  
+
   // copied from BasicTextUI and extended by mandatory option
 
   /**

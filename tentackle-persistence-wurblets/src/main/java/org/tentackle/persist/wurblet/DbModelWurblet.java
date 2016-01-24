@@ -67,7 +67,7 @@ public class DbModelWurblet extends ModelWurblet {
    * --or use OR instead of AND for multiple keys
    * </pre>
    *
-   * @throws WurbelException
+   * @throws WurbelException if running the wurblet failed
    */
   @Override
   public void run() throws WurbelException {
@@ -178,7 +178,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @return true if persistable
    */
-  public boolean isEntityPersistable() throws WurbelException {
+  public boolean isEntityPersistable() {
     return !getEntity().isAbstract() ||
            !getEntity().getHierarchyInheritanceType().isMappingToNoTable();
   }
@@ -246,6 +246,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Gets the component joins.
    *
    * @return the joins, empty if none
+   * @throws WurbelException if a join could not be created
    */
   public Set<ComponentJoin> getComponentJoins() throws WurbelException {
     if (componentJoins == null) {
@@ -293,6 +294,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param sortKeys the sorting keys
    * @return the order by clause, null if unsorted
+   * @throws WurbelException if failed
    */
   public String createOrderBy(List<WurbletParameter> sortKeys) throws WurbelException {
     if (!sortKeys.isEmpty()) {
@@ -333,6 +335,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the order by clause.
    *
    * @return the order by clause, null if unsorted
+   * @throws WurbelException if failed
    */
   public String createOrderBy() throws WurbelException {
     return createOrderBy(getSortingParameters());
@@ -367,7 +370,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @param limit optional limit rows
    * @param offset optional skip rows
    * @return the method parameters
-   * @throws WurbelException
+   * @throws WurbelException if failed
    */
   public String buildMethodParameters(boolean limit, boolean offset) throws WurbelException {
 
@@ -403,7 +406,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Builds the string of method parameters.
    *
    * @return the method parameters
-   * @throws WurbelException
+   * @throws WurbelException if failef
    */
   public String buildMethodParameters() throws WurbelException {
     return buildMethodParameters(false, false);
@@ -416,9 +419,8 @@ public class DbModelWurblet extends ModelWurblet {
    * @param limit optional limit rows
    * @param offset optional skip rows
    * @return the invocation parameters
-   * @throws WurbelException
    */
-  public String buildInvocationParameters(boolean limit, boolean offset) throws WurbelException {
+  public String buildInvocationParameters(boolean limit, boolean offset) {
 
     StringBuilder params = new StringBuilder();
 
@@ -444,9 +446,8 @@ public class DbModelWurblet extends ModelWurblet {
    * Builds the string of invocation parameters.
    *
    * @return the invocation parameters
-   * @throws WurbelException
    */
-  public String buildInvocationParameters() throws WurbelException {
+  public String buildInvocationParameters() {
     return buildInvocationParameters(false, false);
   }
 

@@ -426,8 +426,8 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    */
   public void addAllItems (E[] items) {
     if (items != null) {
-      for (int i=0; i < items.length; i++)  {
-        addItem(items[i]);
+      for (E item : items) {
+        addItem(item);
       }
     }
   }
@@ -622,7 +622,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    */
   public void setMultiKeySelectionManager(boolean flag)  {
     if (flag) {
-      setKeySelectionManager(new MultiKeySelectionManager<E>());
+      setKeySelectionManager(new MultiKeySelectionManager<>());
     }
     else  {
       setKeySelectionManager(createDefaultKeySelectionManager());
@@ -1107,7 +1107,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
 
   @Override
   public void setCellEditorUsage(boolean flag) {
-    putClientProperty(TABLECELLEDITOR_PROPERTY, Boolean.valueOf(flag));
+    putClientProperty(TABLECELLEDITOR_PROPERTY, flag);
   }
 
   @Override
@@ -1115,7 +1115,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
     try {
       Object obj = getClientProperty(TABLECELLEDITOR_PROPERTY);
       if (obj != null)  {
-        return ((Boolean)obj).booleanValue();
+        return ((Boolean) obj);
       }
     }
     catch (Exception ex) {
@@ -1359,13 +1359,13 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    *
    * To make use of it: setKeySelectionManager(new FormComboBox.MultiKeySelectionManager());
    * or setMultiKeySelectionManager(true);
-   * @param <E>
+   * @param <E> the element type
    */
   @SuppressWarnings("serial")
   public class MultiKeySelectionManager<E> implements JComboBox.KeySelectionManager, Serializable {
 
-    private StringBuilder leadChars;    // leading chars for selection
-    private long          lastTime;     // time last key pressed, for timeout
+    private final StringBuilder leadChars;    // leading chars for selection
+    private long lastTime;                    // time last key pressed, for timeout
 
     public MultiKeySelectionManager() {
       leadChars = new StringBuilder();

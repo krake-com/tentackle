@@ -20,9 +20,9 @@ package org.tentackle.persist.rmi;
 
 import java.io.OutputStream;
 import java.rmi.RemoteException;
+import org.tentackle.io.NotifyingByteArrayOutputStream;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.io.NotifyingByteArrayOutputStream;
 
 /**
  *
@@ -42,16 +42,17 @@ public class InputStreamRemoteDelegateImpl extends RemoteDelegateImpl<OutputStre
   /**
    * Creates an input stream delegate.
    * <p>
-   * Note that we don't extend {@link UnicastRemoteObject} to allow
+   * Note that we don't extend {@link java.rmi.server.UnicastRemoteObject} to allow
    * adding interceptors via dynamic proxies. Therefore, the object
    * must be explicitly exported by
-   * {@link RemoteDbSessionImpl#exportRemoteDelegate(org.tentackle.db.rmi.RemoteDelegate)}.
+   * {@link RemoteDbSessionImpl#exportRemoteDelegate}.
    *
    * @param serverSession the RMI serverSession
    * @param servicedClass the class the delegate provides service for
-   * @throws RemoteException
+   * @throws RemoteException if creating the delegate failed
    */
-  public InputStreamRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<OutputStream> servicedClass) throws RemoteException {
+  public InputStreamRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<OutputStream> servicedClass)
+         throws RemoteException {
     super(serverSession, servicedClass);
     out = new NotifyingByteArrayOutputStream();
   }

@@ -92,6 +92,7 @@ public class IndexMigrator {
   /**
    * Creates a migrator.
    *
+   * @param entity the entity
    * @param index the index to migrate, null if no such index in model
    * @param backend the backend
    * @param indexMetaData the foreign meta data, null if key does not exist

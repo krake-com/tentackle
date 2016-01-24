@@ -24,7 +24,7 @@ import java.util.Set;
  * A copy-on-write wrapper for sets.<br>
  * The first modifying operation creates a clone to leave the original set untouched.
  * <p>
- * With iteratorModifying=false, all operations are supported except {@link Iterator#remove()},
+ * With iteratorModifying=false, all operations are supported except {@link java.util.Iterator#remove()},
  * which will throw an {@link UnsupportedOperationException}.<br>
  * With iteratorModifying=true, iterator() will create a copy of the set
  * to allow modifications by the iterator.

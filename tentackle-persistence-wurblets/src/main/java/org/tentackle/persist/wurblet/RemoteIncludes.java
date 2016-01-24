@@ -25,7 +25,6 @@ import java.io.PrintStream;
 import java.util.Date;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.model.Entity;
-import org.tentackle.model.Model;
 import org.tentackle.wurblet.ModelWurblet;
 import org.wurbelizer.wurbel.HeapStream;
 import org.wurbelizer.wurbel.WurbelException;
@@ -60,7 +59,7 @@ public class RemoteIncludes {
    * Create remote includes.
    *
    * @param wurblet the wurblet
-   * @throws WurbelException
+   * @throws WurbelException if failed
    */
   public RemoteIncludes(ModelWurblet wurblet) throws WurbelException {
 

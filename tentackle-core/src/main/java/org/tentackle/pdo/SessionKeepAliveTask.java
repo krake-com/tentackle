@@ -30,7 +30,8 @@ import org.tentackle.task.AbstractTask;
 
 /**
  * The task to keep a session alive.<br>
- * The task uses the {@link ExecutorService} to spawn asynchroneous pings. This is necessary because a remote session
+ * The task uses the {@link java.util.concurrent.ExecutorService} to spawn asynchroneous pings.
+ * This is necessary because a remote session
  * may block on slow or bad communication lines which should not block the whole task dispatcher.
  */
 @SuppressWarnings("serial")

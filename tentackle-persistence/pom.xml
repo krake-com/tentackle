@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-persistence</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
   <packaging>jar</packaging>
   <name>Tentackle Persistence</name>
   <description>Tentackle Persistence Layer</description>
@@ -130,10 +130,31 @@
         <!-- only to create the SQL-files -->
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql-maven-plugin</artifactId>
-        <version>2.0.1</version>
+        <version>2.0.2</version>
         <configuration>
           <verbosity>info</verbosity>
           <backendNames>all</backendNames>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!--<excludePackageNames>*/ns/pdo/rmi, */security/pdo/rmi</excludePackageNames>-->
+          <sourceFileExcludes>
+            <exclude>**/rmi/*Delegate.java</exclude>
+            <exclude>**/rmi/*DelegateImpl.java</exclude>
+          </sourceFileExcludes>
+          <tags>
+            <tag>
+              <name>wurblet</name>
+              <placement>a</placement>
+              <head>Wurblet:</head>
+            </tag>
+          </tags>
+          <!-- don't complain about wurblet args -->
+          <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>
       </plugin>
 

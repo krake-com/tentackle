@@ -40,6 +40,7 @@ public class ModelEntity {
    *
    * @param entity the entity
    * @param fileName the modelfile's filename
+   * @throws ModelException if file does not exist or is not a regular file
    */
   public ModelEntity(Entity entity, String fileName) throws ModelException {
     this.entity = entity;

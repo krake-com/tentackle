@@ -109,14 +109,14 @@ public interface FormContainer extends FormChangeable {
    * Enables triggering value changes.<br>
    * Disabling this feature may be necessary for model-agnostic containers.
    *
-   * @param enabled true if invoke {@link #triggerValueChanged()} on each change (default), false if not.
+   * @param enabled true if invoke {@link #triggerValuesChanged()} on each change (default), false if not.
    */
   public void setTriggerValuesChangedEnabled(boolean enabled);
 
   /**
    * Determines whether triggering value changes is enabled.
    *
-   * @return true if invoke {@link #triggerValueChanged()} on each change (default), false if not.
+   * @return true if invoke {@link #triggerValuesChanged()} on each change (default), false if not.
    */
   public boolean isTriggerValuesChangedEnabled();
 
@@ -161,7 +161,7 @@ public interface FormContainer extends FormChangeable {
    * for the component the help was requested for.
    *
    * @param helpURL the help url
-   * @see FormHelper#openHelpURL(Component)
+   * @see FormUtilities#openHelpURL(Component)
    */
   public void setHelpURL(String helpURL);
 

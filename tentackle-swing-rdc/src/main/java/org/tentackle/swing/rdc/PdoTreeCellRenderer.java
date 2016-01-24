@@ -66,7 +66,7 @@ public class PdoTreeCellRenderer extends DefaultTreeCellRenderer {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to determine the tooltip from the {@link PersistentDomainObject}.
+   * Overridden to determine the tooltip from the {@link org.tentackle.pdo.PersistentDomainObject}.
    */
   @Override
   public String getToolTipText()  {

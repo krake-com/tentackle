@@ -32,7 +32,7 @@ import org.tentackle.validate.ValidationSeverity;
 /**
  * The annotated element must be false.
  * Supported types are <code>boolean</code> and <code>Boolean</code>
- * <p/>
+ * <p>
  * <code>null</code> elements are considered valid.
  * <p>
  * This validator can also be used as an object validator with the value

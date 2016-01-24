@@ -40,7 +40,7 @@ public final class ReflectionHelper {
   private static final String RH_CLASSNAME = ReflectionHelper.class.getName();
 
   // the default package names to exclude
-  private static final String[] excludedPackages = {
+  private static final String[] EXCLUDE_PACKAGES = {
     "org.tentackle.",
     "java.",
     "javax.",
@@ -230,7 +230,7 @@ public final class ReflectionHelper {
    * @return the trace element, null if not within application
    */
   public static StackTraceElement getApplicationInvocation() {
-    return getInvocation(excludedPackages);
+    return getInvocation(EXCLUDE_PACKAGES);
   }
 
   /**
@@ -257,7 +257,6 @@ public final class ReflectionHelper {
     if (classname.startsWith("["))  {
       // array
       String arr = "";
-      String type = null;
       int len = classname.length();
       int i = 0;
       while (i < len) {
@@ -269,7 +268,7 @@ public final class ReflectionHelper {
           break;
         }
       }
-      type = classname.substring(i);
+      String type = classname.substring(i);
       if (type.endsWith(";")) {
         // object
         type = type.substring(0, len - 1);
@@ -307,17 +306,17 @@ public final class ReflectionHelper {
 
 
 
-  private static final Map<Class<?>,Class<?>>  primitives = new HashMap<>();
+  private static final Map<Class<?>,Class<?>>  PRIMITIVES = new HashMap<>();
 
   static {
-    primitives.put(Boolean.TYPE, Boolean.class);
-    primitives.put(Byte.TYPE, Byte.class);
-    primitives.put(Character.TYPE, Character.class);
-    primitives.put(Short.TYPE, Short.class);
-    primitives.put(Integer.TYPE, Integer.class);
-    primitives.put(Long.TYPE, Long.class);
-    primitives.put(Double.TYPE, Double.class);
-    primitives.put(Float.TYPE, Float.class);
+    PRIMITIVES.put(Boolean.TYPE, Boolean.class);
+    PRIMITIVES.put(Byte.TYPE, Byte.class);
+    PRIMITIVES.put(Character.TYPE, Character.class);
+    PRIMITIVES.put(Short.TYPE, Short.class);
+    PRIMITIVES.put(Integer.TYPE, Integer.class);
+    PRIMITIVES.put(Long.TYPE, Long.class);
+    PRIMITIVES.put(Double.TYPE, Double.class);
+    PRIMITIVES.put(Float.TYPE, Float.class);
   }
 
 
@@ -329,7 +328,7 @@ public final class ReflectionHelper {
    * @throws ClassCastException if not a primitive class
    */
   public static Class<?> primitiveToWrapperClass(Class<?> primitiveClass) {
-    Class<?> wrapperClass = primitives.get(primitiveClass);
+    Class<?> wrapperClass = PRIMITIVES.get(primitiveClass);
     if (wrapperClass == null) {
       throw new ClassCastException("not a primitive: " + primitiveClass);
     }
@@ -337,17 +336,17 @@ public final class ReflectionHelper {
   }
 
 
-  private static final Map<Class<?>,Class<?>> wrappers = new HashMap<>();
+  private static final Map<Class<?>,Class<?>> WRAPPERS = new HashMap<>();
 
   static {
-    wrappers.put(Boolean.class, Boolean.TYPE);
-    wrappers.put(Byte.class, Byte.TYPE);
-    wrappers.put(Character.class, Character.TYPE);
-    wrappers.put(Short.class, Short.TYPE);
-    wrappers.put(Integer.class, Integer.TYPE);
-    wrappers.put(Long.class, Long.TYPE);
-    wrappers.put(Double.class, Double.TYPE);
-    wrappers.put(Float.class, Float.TYPE);
+    WRAPPERS.put(Boolean.class, Boolean.TYPE);
+    WRAPPERS.put(Byte.class, Byte.TYPE);
+    WRAPPERS.put(Character.class, Character.TYPE);
+    WRAPPERS.put(Short.class, Short.TYPE);
+    WRAPPERS.put(Integer.class, Integer.TYPE);
+    WRAPPERS.put(Long.class, Long.TYPE);
+    WRAPPERS.put(Double.class, Double.TYPE);
+    WRAPPERS.put(Float.class, Float.TYPE);
   }
 
   /**
@@ -357,7 +356,7 @@ public final class ReflectionHelper {
    * @throws ClassCastException if not a wrapper class
    */
   public static Class<?> wrapperToPrimitiveClass(Class<?> wrapperClass) {
-    Class<?> primitiveClass = wrappers.get(wrapperClass);
+    Class<?> primitiveClass = WRAPPERS.get(wrapperClass);
     if (primitiveClass == null) {
       throw new ClassCastException("not a wrapper: " + wrapperClass);
     }
@@ -500,8 +499,8 @@ public final class ReflectionHelper {
   /**
    * Checks whether a method is a setter.<br>
    * All void non-static methods with a single parameter are considered as setters.
-   * @param method
-   * @return
+   * @param method the method
+   * @return true if method is a setter
    */
   public static boolean isSetter(Method method) {
     return method.getReturnType() == Void.TYPE &&
@@ -515,16 +514,16 @@ public final class ReflectionHelper {
    * <p>
    * Examples:<br>
    * <pre>
-   * getBlah -> blah
-   * setBlah -> blah
-   * isValid -> valid (if boolean)
-   * computeThisAndThat -> computeThisAndThat
-   * gettingWorse -> gettingWorse
-   * isselDussel -> isselDussel
+   * getBlah -&gt; blah
+   * setBlah -&gt; blah
+   * isValid -&gt; valid (if boolean)
+   * computeThisAndThat -&gt; computeThisAndThat
+   * gettingWorse -&gt; gettingWorse
+   * isselDussel -&gt; isselDussel
    * </pre>
    *
-   * @param method
-   * @return
+   * @param method the method
+   * @return the path
    */
   public static String getPathMethodName(Method method) {
     String name = method.getName();

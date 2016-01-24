@@ -27,6 +27,7 @@ import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+
 import static java.awt.print.Pageable.UNKNOWN_NUMBER_OF_PAGES;
 
 
@@ -43,7 +44,7 @@ import static java.awt.print.Pageable.UNKNOWN_NUMBER_OF_PAGES;
  * @author harald
  */
 public class Report implements Printable, Pageable {
-  
+
 
   // aligments for panels
   /** align top left (default) **/
@@ -64,8 +65,8 @@ public class Report implements Printable, Pageable {
   public static final int SOUTH     = GridBagConstraints.SOUTH;
   /** align top **/
   public static final int NORTH     = GridBagConstraints.NORTH;
-  
-  
+
+
   // for scaling to fit on page
   /** fixed scaling (default = 1.0) **/
   public static final int SCALE_FIXED    = 0;
@@ -73,9 +74,9 @@ public class Report implements Printable, Pageable {
   public static final int SCALE_IF_WIDER = 1;
   /** scale to paper-width (enlarge or shrink) **/
   public static final int SCALE_TO_FIT   = 2;
-  
-  
-  
+
+
+
 
 
   private final ReportSource source;       // data source for the report
@@ -85,7 +86,7 @@ public class Report implements Printable, Pageable {
 
   private int     autoScale = SCALE_FIXED; // scaling mode
   private double  scale = 1.0;             // current scaling (always same for x/y)
-  
+
   private PrintPanel   intro;              // printed once at start of report, null = none
   private PrintPanel   trailer;            // printed once at end of report, null = none
   private PrintPanel   header;             // header on each page, except first
@@ -128,13 +129,13 @@ public class Report implements Printable, Pageable {
 
   private State state;                // current state
   private State savedState;           // saved state
-  
-  
-  
+
+
+
 
   /**
    * Creates a report.
-   * 
+   *
    * @param source the data source for this report
    * @param pageFormat the pageformat
    * @param imageable true if honor the imageable size, else full page size
@@ -165,11 +166,11 @@ public class Report implements Printable, Pageable {
     initDone = false;
   }
 
-  
+
   /**
    * Creates a standard report which honors the imageable size
    * and has no sublevels.
-   * 
+   *
    * @param source the data source for this report
    * @param pageFormat the pageformat
    */
@@ -177,14 +178,14 @@ public class Report implements Printable, Pageable {
     this(source, pageFormat, true, 0);
   }
 
-  
+
 
   /**
    * Sets the intro panel.
    * The intro will be printed at the beginning of the report.
-   * 
+   *
    * @param intro the intro panel, null for none (i.e. print header instead)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setIntro(PrintPanel intro) throws PrinterException {
     if (intro == null)  {
@@ -198,13 +199,13 @@ public class Report implements Printable, Pageable {
     this.intro  = intro;
   }
 
-  
+
   /**
    * Sets the trailer panel.
    * The trailer will be printed at the end of the report.
-   * 
+   *
    * @param trailer the trailer panel, null for none (i.e. print footer instead)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setTrailer(PrintPanel trailer) throws PrinterException {
     if (trailer == null)  {
@@ -218,14 +219,14 @@ public class Report implements Printable, Pageable {
     this.trailer = trailer;
   }
 
-  
+
   /**
    * Sets the header panel.
    * The header will be printed at the start of each page, except
    * the first if the intro is set.
-   * 
+   *
    * @param header the header panel, null for none.
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setHeader(PrintPanel header) throws PrinterException {
     if (header == null)  {
@@ -239,14 +240,14 @@ public class Report implements Printable, Pageable {
     this.header = header;
   }
 
-  
+
   /**
    * Sets the footer panel.
    * The footer will be printed at the end of each page, except
    * the last if the trailer is set.
-   * 
+   *
    * @param footer the footer panel, null for none.
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setFooter(PrintPanel footer) throws PrinterException {
     if (footer == null)  {
@@ -260,13 +261,13 @@ public class Report implements Printable, Pageable {
     this.footer = footer;
   }
 
-  
-  
+
+
   /**
    * Sets the panel for printing the data line.
-   * 
+   *
    * @param line the line panel, null if none
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setLine(PrintPanel line) throws PrinterException {
     if (line == null)  {
@@ -280,12 +281,12 @@ public class Report implements Printable, Pageable {
     this.line = line;
   }
 
-  
+
   /**
    * Sets the subheaders.
-   * 
+   *
    * @param subHeader the array of subheaders (size must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubHeader(PrintPanel[] subHeader) throws PrinterException {
     if (subHeader.length != subLevels)  {
@@ -298,12 +299,12 @@ public class Report implements Printable, Pageable {
     this.subHeader = subHeader;
   }
 
-  
+
   /**
    * Sets the subfooters.
-   * 
+   *
    * @param subFooter the array of subfooter (size must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubFooter(PrintPanel[] subFooter) throws PrinterException {
     if (subFooter.length != subLevels)  {
@@ -320,9 +321,9 @@ public class Report implements Printable, Pageable {
 
   /**
    * Sets the aligment of the intro.
-   * 
+   *
    * @param align the alignment
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setIntroAlignment(int align) throws PrinterException {
     if (intro == null)  {
@@ -331,12 +332,12 @@ public class Report implements Printable, Pageable {
     introAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the trailer.
-   * 
+   *
    * @param align the alignment
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setTrailerAlignment(int align) throws PrinterException {
     if (trailer == null)  {
@@ -345,12 +346,12 @@ public class Report implements Printable, Pageable {
     trailerAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the header.
-   * 
+   *
    * @param align the alignment
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setHeaderAlignment(int align) throws PrinterException {
     if (header == null)  {
@@ -359,12 +360,12 @@ public class Report implements Printable, Pageable {
     headerAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the footer.
-   * 
+   *
    * @param align the alignment
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setFooterAlignment(int align) throws PrinterException {
     if (footer == null)  {
@@ -373,12 +374,12 @@ public class Report implements Printable, Pageable {
     footerAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the data line.
-   * 
+   *
    * @param align the alignment
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setLineAlignment(int align) throws PrinterException {
     if (line == null)  {
@@ -387,12 +388,12 @@ public class Report implements Printable, Pageable {
     lineAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the subheaders.
-   * 
+   *
    * @param align the array of alignments (size must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubHeaderAlignment(int[] align) throws PrinterException {
     if (subHeader.length != subLevels)  {
@@ -401,12 +402,12 @@ public class Report implements Printable, Pageable {
     subHeaderAlignment = align;
   }
 
-  
+
   /**
    * Sets the aligment of the subfooters.
-   * 
+   *
    * @param align the array of alignments (size must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubFooterAlignment(int[] align) throws PrinterException {
     if (subFooter.length != subLevels)  {
@@ -421,9 +422,9 @@ public class Report implements Printable, Pageable {
   /**
    * Optionally sets the size of the intro if
    * not derived from the print panel.
-   * 
+   *
    * @param size the dimension
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setIntroSize(Dimension size) throws PrinterException {
     if (intro == null)  {
@@ -433,13 +434,13 @@ public class Report implements Printable, Pageable {
     introHeight = size.height;
   }
 
-  
+
   /**
    * Optionally sets the size of the trailer if
    * not derived from the print panel.
-   * 
+   *
    * @param size the dimension
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setTrailerSize(Dimension size) throws PrinterException {
     if (trailer == null)  {
@@ -449,13 +450,13 @@ public class Report implements Printable, Pageable {
     trailerHeight = size.height;
   }
 
-  
+
   /**
    * Optionally sets the size of the header if
    * not derived from the print panel.
-   * 
+   *
    * @param size the dimension
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setHeaderSize(Dimension size) throws PrinterException {
     if (header == null)  {
@@ -465,13 +466,13 @@ public class Report implements Printable, Pageable {
     headerHeight = size.height;
   }
 
-  
+
   /**
    * Optionally sets the size of the footer if
    * not derived from the print panel.
-   * 
+   *
    * @param size the dimension
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setFooterSize(Dimension size) throws PrinterException {
     if (footer == null)  {
@@ -481,13 +482,13 @@ public class Report implements Printable, Pageable {
     footerHeight = size.height;
   }
 
-  
+
   /**
    * Optionally sets the size of the data line if
    * not derived from the print panel.
-   * 
+   *
    * @param size the dimension
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setLineSize(Dimension size) throws PrinterException {
     if (line == null)  {
@@ -497,13 +498,13 @@ public class Report implements Printable, Pageable {
     lineHeight = size.height;
   }
 
-  
+
   /**
    * Optionally sets the size of the subheaders if
    * not derived from the print panel.
-   * 
+   *
    * @param sizes the array of dimensions (must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubHeaderSize(Dimension[] sizes) throws PrinterException {
     if (subHeader.length != subLevels)  {
@@ -515,13 +516,13 @@ public class Report implements Printable, Pageable {
     }
   }
 
-  
+
   /**
    * Optionally sets the size of the subfooters if
    * not derived from the print panel.
-   * 
+   *
    * @param sizes the array of dimensions (must match levels)
-   * @throws java.awt.print.PrinterException
+   * @throws PrinterException if failed
    */
   public void setSubFooterSize(Dimension[] sizes) throws PrinterException {
     if (subFooter.length != subLevels)  {
@@ -536,19 +537,19 @@ public class Report implements Printable, Pageable {
 
   /**
    * Get the current logical group level.
-   * 
-   * @return the logical level of the statemachine, 0 = top, 1 = first data group, etc... 
+   *
+   * @return the logical level of the statemachine, 0 = top, 1 = first data group, etc...
    */
   public int getLevel() {
     return state.level;
   }
 
-  
+
   /**
    * Gets the current state.
-   * 
+   *
    * @return the state
-   * @see ReportSource#advance(org.tentackle.print.Report) 
+   * @see ReportSource#advance
    */
   public int currentState() {
     return state.advance;
@@ -562,8 +563,8 @@ public class Report implements Printable, Pageable {
   public int currentPage()  {
     return state.lastPageIndex + 1;
   }
-  
-  
+
+
   /**
    * Sets the scaling.
    * Overwrites the automatic scaling.
@@ -580,8 +581,8 @@ public class Report implements Printable, Pageable {
   public double getScale()  {
     return scale;
   }
-  
-  
+
+
   /**
    * Sets the automatic scaling.
    * (one of SCALE_...)
@@ -590,7 +591,7 @@ public class Report implements Printable, Pageable {
   public void setAutoScale(int autoScale)  {
     this.autoScale = autoScale;
   }
-  
+
   /**
    * Gets the autoscale mode.
    * @return the scale mode
@@ -598,50 +599,50 @@ public class Report implements Printable, Pageable {
   public int getAutoScale() {
     return autoScale;
   }
-  
-  
-  
+
+
+
   /**
    * Sets the pixels to move before printing the next panel.<br>
    * The attribute will be cleared when used.
-   * 
+   *
    * @param moveBefore the number of pixels (&gt; 0 to move down)
    */
   public void setMoveBefore(int moveBefore) {
     state.moveBefore = moveBefore;
   }
-  
+
   /**
    * Gets the pending pixels to move before printing the next panel.
-   * 
+   *
    * @return the pixels to move before printing the next panel
    */
   public int getMoveBefore()  {
     return state.moveBefore;
   }
-  
-  
+
+
   /**
    * Sets the pixels to move after printing the next panel.<br>
    * The attribute will be cleared when used.
-   * 
+   *
    * @param moveAfter the number of pixels (&gt; 0 to move down)
    */
   public void setMoveAfter(int moveAfter) {
     state.moveAfter = moveAfter;
   }
-  
+
   /**
    * Gets the pending pixels to move after printing the next panel.
-   * 
+   *
    * @return the pixels to move after printing the next panel
    */
   public int getMoveAfter()  {
     return state.moveAfter;
   }
-  
-  
-  
+
+
+
   /**
    * Sets a runnable to be executed once before printing the next panel.
    * @param runBefore the runnable
@@ -649,7 +650,7 @@ public class Report implements Printable, Pageable {
   public void setRunBefore(Runnable runBefore)  {
     state.runBefore = runBefore;
   }
-  
+
   /**
    * Gets the runnable to be executed once before printing the next panel.
    * @return the runnable
@@ -657,8 +658,8 @@ public class Report implements Printable, Pageable {
   public Runnable getRunBefore() {
     return state.runBefore;
   }
-  
-  
+
+
   /**
    * Sets a runnable to be executed once after printing the next panel
    * @param runAfter the runnable
@@ -666,26 +667,26 @@ public class Report implements Printable, Pageable {
   public void setRunAfter(Runnable runAfter)  {
     state.runAfter = runAfter;
   }
-  
+
   /**
-   * Gets 
+   * Gets
    * therunnable to be executed once after printing the next panel
    * @return the runnable
    */
   public Runnable getRunAfter() {
     return state.runAfter;
   }
-  
-  
+
+
   /**
    * Triggers the last panel to be printed again.
    */
   public void triggerPrintAgain() {
     state.printAgain = true;
   }
-  
-    
-  
+
+
+
   /**
    * Retrieves the maximum printed y position so far for current page.
    * @return the max y-position
@@ -693,8 +694,8 @@ public class Report implements Printable, Pageable {
   public int getYMax()  {
     return yMax;
   }
-  
-  
+
+
   /**
    * Retrieves the maximum printed y offset so far for current page.
    * @return the max y-offset
@@ -702,21 +703,21 @@ public class Report implements Printable, Pageable {
   public int getYOffset() {
     return yOffset;
   }
-  
-  
+
+
   /**
    * Gets last returned code.
-   * 
+   *
    * @return the last advance code
-   * @see ReportSource#advance(org.tentackle.print.Report) 
+   * @see ReportSource#advance
    */
   public int getAdvance() {
     return state.advance;
   }
-  
-  
 
-  
+
+
+
   /**
    * Determines the number of pages *before* running the report.
    * If used as a Pageable this method will be invoked from PrinterJob.
@@ -728,10 +729,10 @@ public class Report implements Printable, Pageable {
       try {
         // run in layout-mode
         pages = 0;
-        
+
         // @todo: number of pages are based on graphics-context (cause of scaling!)
         // rework that!!!!
-        
+
         while (print(null, pageFormat, pages) == Printable.PAGE_EXISTS)  {
           pages++;
         }
@@ -754,15 +755,15 @@ public class Report implements Printable, Pageable {
          throws PrinterException {
     return print((Graphics2D)graphics, pageFormat, pageIndex, false);
   }
-  
+
 
 
   @Override
   public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
     return pageFormat;
   }
-  
-  
+
+
   @Override
   public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
     if (pageIndex < 0 || pageIndex >= pages)  {
@@ -776,13 +777,13 @@ public class Report implements Printable, Pageable {
   }
 
 
-  
-  
+
+
   /**
    * this is the printing workhorse
    */
   private int print(Graphics2D g2d, PageFormat pageFormat, int pageIndex, boolean countOnly)
-         throws PrinterException {  
+         throws PrinterException {
 
     init();   // initially get heights of panels
 
@@ -800,7 +801,7 @@ public class Report implements Printable, Pageable {
 
     // save to check if page has been printed twice
     state.lastPageIndex = pageIndex;
-    
+
 
 
     if (state.lastPagePrinted == false && pageIndex >= 0 &&
@@ -808,7 +809,7 @@ public class Report implements Printable, Pageable {
 
       int pageHeight;   // size of printable area
       int pageWidth;
-      
+
 
       // if not portrait: check if g2d is already transformed (job.print(aset)!) or not (job.print())
       PrintHelper.adjustGraphics2D(g2d, pageFormat);
@@ -823,7 +824,7 @@ public class Report implements Printable, Pageable {
 
       // set scaling
       g2d.scale(scale, scale);
-    
+
 
       if (imageable)  {
         // position to top left corner
@@ -837,12 +838,12 @@ public class Report implements Printable, Pageable {
         pageHeight = (int)(pageFormat.getHeight() / scale);
         pageWidth  = (int)(pageFormat.getWidth() / scale);
       }
-      
+
       yOffset = 0;   // we are at start
       yMax    = 0;   // clear maximum y so far
-      
+
       int yDiff;         // advanced pixels downwards
-      
+
 
       if (pageIndex == 0) {     // first page
         if (intro != null)  {   // print intro if any
@@ -857,7 +858,7 @@ public class Report implements Printable, Pageable {
               yDiff = source.prepareIntro(this);
               if (yDiff != 0) {
                 g2d.translate(0, yDiff);
-                yOffset += yDiff;                      
+                yOffset += yDiff;
               }
               yDiff = printPanel(g2d, intro, introAlignment,
                                  introWidth, introHeight,
@@ -882,7 +883,7 @@ public class Report implements Printable, Pageable {
               yDiff = source.prepareHeader(this);
               if (yDiff != 0) {
                 g2d.translate(0, yDiff);
-                yOffset += yDiff;                      
+                yOffset += yDiff;
               }
               yDiff = printPanel(g2d, header, headerAlignment,
                                  headerWidth, headerHeight,
@@ -897,25 +898,25 @@ public class Report implements Printable, Pageable {
 
       // read data from the source until page is full or end of data or some error
       for(;;) {
-        
+
         // check line-height whether to fit on page
         int topHeight = pageIndex == 0 ? introHeight : headerHeight;
         if (lineHeight > pageHeight - topHeight - footerHeight) {
           // pathological case
           throw new PrinterException("not even the first data line will not fit onto the page");
         }
-        
+
         // print page if next line would not fit
         if (source.hasNext() &&
             yOffset + lineHeight + footerHeight > pageHeight) {
           break;
         }
-        
-            
+
+
         if (state.runBefore != null)  {
           state.runBefore.run();
           state.runBefore = null;
-        } 
+        }
 
         if (state.pending != ReportSource.ERROR) {
           state.advance = state.pending;        // something was pending
@@ -931,9 +932,9 @@ public class Report implements Printable, Pageable {
         if (state.advance == ReportSource.ERROR)  {
           throw new PrinterException("ReportSource.prepare() failed");
         }
-        
+
         else  {
-          
+
           if (state.moveBefore != 0)  {
             g2d.translate(0, state.moveBefore);
             yOffset += state.moveBefore;
@@ -973,7 +974,7 @@ public class Report implements Printable, Pageable {
                       yDiff = source.prepareSubFooter(this, state.level + 1);
                       if (yDiff != 0) {
                         g2d.translate(0, yDiff);
-                        yOffset += yDiff;                      
+                        yOffset += yDiff;
                       }
                       yDiff = printPanel(g2d, subFooter[state.level],
                                          subFooterAlignment[state.level],
@@ -999,7 +1000,7 @@ public class Report implements Printable, Pageable {
               else  {
                 if (yMax > yOffset) {
                   g2d.translate(0, yMax - yOffset);
-                  yOffset = yMax;            
+                  yOffset = yMax;
                 }
                 if (countOnly) {
                   yOffset += trailerHeight +
@@ -1012,7 +1013,7 @@ public class Report implements Printable, Pageable {
                     yDiff = source.prepareTrailer(this);
                     if (yDiff != 0) {
                       g2d.translate(0, yDiff);
-                      yOffset += yDiff;                      
+                      yOffset += yDiff;
                     }
                     yDiff = printPanel(g2d, trailer, trailerAlignment,
                                        trailerWidth, trailerHeight,
@@ -1042,7 +1043,7 @@ public class Report implements Printable, Pageable {
                 yDiff = source.prepareLine(this);
                 if (yDiff != 0) {
                   g2d.translate(0, yDiff);
-                  yOffset += yDiff;                      
+                  yOffset += yDiff;
                 }
                 // cause prepareLine could have changed the line-Height
                 // we must align and optionally clip if too large
@@ -1078,7 +1079,7 @@ public class Report implements Printable, Pageable {
             }
             // print subheader if any
             int subHeight = subHeaderHeight[state.level];
-            
+
             if (subHeight > 0)  {
               // check that at least one header plus one dataline fits
               if (yOffset + subHeight + lineHeight + footerHeight >= pageHeight) {
@@ -1100,7 +1101,7 @@ public class Report implements Printable, Pageable {
                     yDiff = source.prepareSubHeader(this, state.level + 1);
                     if (yDiff != 0) {
                       g2d.translate(0, yDiff);
-                      yOffset += yDiff;                      
+                      yOffset += yDiff;
                     }
                     yDiff = printPanel(g2d, subHeader[state.level],
                                        subHeaderAlignment[state.level],
@@ -1116,7 +1117,7 @@ public class Report implements Printable, Pageable {
               // nothing to print, but make sure that subheader application code is run
               source.prepareSubHeader(this, state.level + 1);
             }
-            
+
             state.level++;        // count the new level
           } // if (state.advance == ReportSource.PUSH)
 
@@ -1151,7 +1152,7 @@ public class Report implements Printable, Pageable {
                     yDiff = source.prepareSubFooter(this, state.level + 1);
                     if (yDiff != 0) {
                       g2d.translate(0, yDiff);
-                      yOffset += yDiff;                      
+                      yOffset += yDiff;
                     }
                     yDiff = printPanel(g2d, subFooter[state.level],
                                        subFooterAlignment[state.level],
@@ -1164,7 +1165,7 @@ public class Report implements Printable, Pageable {
               }
             }
             else  {
-              source.prepareSubFooter(this, state.level + 1); 
+              source.prepareSubFooter(this, state.level + 1);
             }
 
           } // if (state.advance == ReportSource.POP)
@@ -1180,14 +1181,14 @@ public class Report implements Printable, Pageable {
             yOffset += state.moveAfter;
             state.moveAfter = 0;
           }
-          
+
         }
-        
+
         if (state.runAfter != null) {
           state.runAfter.run();
           state.runAfter = null;
         }
-        
+
       } // while (yOffset + lineHeight + footerHeight < pageHeight)
 
       // print footer (will always fit)
@@ -1195,7 +1196,7 @@ public class Report implements Printable, Pageable {
         if (footerHeight != 0)  {
           if (yMax > yOffset) {
             g2d.translate(0, yMax - yOffset);
-            yOffset = yMax;            
+            yOffset = yMax;
           }
           if (countOnly) {
             yOffset += footerHeight +
@@ -1208,7 +1209,7 @@ public class Report implements Printable, Pageable {
               yDiff = source.prepareFooter(this);
               if (yDiff != 0) {
                 g2d.translate(0, yDiff);
-                yOffset += yDiff;                      
+                yOffset += yDiff;
               }
               yDiff = printPanel(g2d, footer, footerAlignment,
                                  footerWidth, footerHeight,
@@ -1310,7 +1311,7 @@ public class Report implements Printable, Pageable {
                          int panelWidth, int panelHeight,
                          int pageWidth, int pageHeight,
                          int currentOffset)  {
-                           
+
     int xOff = alignPanelHorizontally (panel, align, panelWidth,  pageWidth);
     int yOff = alignPanelVertically   (panel, align, panelHeight, pageHeight - currentOffset);
 
@@ -1365,14 +1366,14 @@ public class Report implements Printable, Pageable {
     }
     return max;
   }
-  
-  
-  
-  
+
+
+
+
   /**
    * Represents the state of this state machine.
    */
-  private class State implements Cloneable {      
+  private class State implements Cloneable {
     // printing state of report
     int       lastPageIndex   = -1;                 // last printed page
     int       level           = 0;                  // current level (0=top, ... , subLevels)
@@ -1392,7 +1393,7 @@ public class Report implements Printable, Pageable {
       }
       catch (CloneNotSupportedException ex) {
         throw new InternalError();    // should never happen
-      }    
+      }
     }
   }
 

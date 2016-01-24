@@ -2252,7 +2252,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
    * and contains  a 1, a value of <code>true</code> is returned.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2267,7 +2266,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>float</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2286,7 +2284,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Float</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2301,7 +2298,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>double</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2320,7 +2316,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Double</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2335,7 +2330,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as a
    * <code>java.math.BigDecimal</code> with full precision.
    *
-   * @param pos the parameter index in the result set
    * @return the column value (full precision);
    * if the value is SQL <code>NULL</code>, the value returned is
    * <code>null</code> in the Java programming language.
@@ -2358,8 +2352,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * one for the value and
    * one for the scale (= name + "P")
    *
-   * @param pos the parameter index for the amount in the result set
-   * @param ppos the parameter index for the scale in the result set
    * @return the column value (full precision);
    * if the value is SQL <code>NULL</code>, the value returned is
    * <code>null</code> in the Java programming language.
@@ -2378,8 +2370,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * one for the value and
    * one for the scale (= name + "P")
    *
-   * @param pos the parameter index for the amount in the result set
-   * @param ppos the parameter index for the scale in the result set
    * @return the column value (full precision);
    * if the value is SQL <code>NULL</code>, the value returned is
    * <code>null</code> in the Java programming language.
@@ -2395,7 +2385,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>byte</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2413,7 +2402,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Byte</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2428,7 +2416,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>char</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code> or the empty string, the
    * value returned is <code>0</code>
    */
@@ -2448,7 +2435,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Character</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param mapNull if blanks should be treated as null values
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>. If the value is the empty string the returned
@@ -2465,7 +2451,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Character</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>. If the value is the empty string the returned
    * value is <code>new Character(0)</code>.
@@ -2481,7 +2466,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>short</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2500,7 +2484,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Short</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2515,7 +2498,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * an <code>int</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2534,7 +2516,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * an <code>Integer</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2549,7 +2530,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>long</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>0</code>
    */
@@ -2568,7 +2548,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>Long</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2583,7 +2562,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param timezone the calendar providing the timezone configuration
    * @param mapNull true if 1.1.1970 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
@@ -2611,7 +2589,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param mapNull true if 1.1.1970 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -2625,7 +2602,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param timezone the calendar providing the timezone configuration
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -2639,7 +2615,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Date</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2682,7 +2657,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -2696,7 +2670,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param timezone the calendar providing the timezone configuration
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -2710,7 +2683,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Timestamp</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2724,7 +2696,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Time</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param timezone the calendar providing the timezone configuration
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
@@ -2747,7 +2718,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a <code>java.sql.Time</code> in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @return the column value; if the value is SQL <code>NULL</code>, the
    * value returned is <code>null</code>
    */
@@ -2761,7 +2731,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a {@link Binary} in the Java programming language.
    *
-   * @param pos the parameter index in the result set
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
    */

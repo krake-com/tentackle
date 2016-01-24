@@ -99,9 +99,10 @@ public class Date extends java.sql.Date {
    *
    * @serialData the value YYYYMMDD is emitted. This allows serializing
    * and deserializing in different timezones without changing the date.
+   * @param s the stream
+   * @throws IOException if writing to stream failed
    */
-  private void writeObject(ObjectOutputStream s)
-          throws IOException {
+  private void writeObject(ObjectOutputStream s) throws IOException {
     s.writeShort(getCalendar().get(Calendar.YEAR));
     s.writeByte(getCalendar().get(Calendar.MONTH));
     s.writeByte(getCalendar().get(Calendar.DAY_OF_MONTH));
@@ -110,9 +111,12 @@ public class Date extends java.sql.Date {
 
   /**
    * Reconstitute this object from a stream.
+   *
+   * @param s the stream
+   * @throws IOException if reading from stream failed
+   * @throws ClassNotFoundException if class contained in stream is not found
    */
-  private void readObject(ObjectInputStream s)
-          throws IOException, ClassNotFoundException {
+  private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
     int year = s.readShort();
     int month = s.readByte();
     int day = s.readByte();

@@ -81,7 +81,7 @@ public interface BindableTableModel<T> extends TableModel {
 
 
   /**
-   * Gets the root class where to start scan for {@link Bindable}s.
+   * Gets the root class where to start scan for {@link org.tentackle.bind.Bindable}s.
    * <p>
    * For {@link FormTableModel}s this is the class of the {@link FormTableEntry}.
    * Other models may refer to other classes.

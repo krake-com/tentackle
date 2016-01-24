@@ -49,9 +49,9 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFormTableBinder.class);
 
-  private final BindableTableModel model;                 // the table to bind
-  private Map<Integer,FormTableBinding> boundColumns;     // the bindings mapped by column number
-  private Map<String,FormTableBinding> boundPaths;        // the bindings mapped by binding path
+  private final BindableTableModel<?> model;                    // the table to bind
+  private final Map<Integer,FormTableBinding> boundColumns;     // the bindings mapped by column number
+  private final Map<String,FormTableBinding> boundPaths;        // the bindings mapped by binding path
 
 
   /**
@@ -59,16 +59,16 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    *
    * @param model the table model to bind
    */
-  public DefaultFormTableBinder(BindableTableModel model) {
+  public DefaultFormTableBinder(BindableTableModel<?> model) {
     super();
     this.model = model;
-    boundColumns = new HashMap<Integer,FormTableBinding>();
-    boundPaths = new TreeMap<String,FormTableBinding>();
+    boundColumns = new HashMap<>();
+    boundPaths = new TreeMap<>();
   }
 
 
   @Override
-  public BindableTableModel getModel() {
+  public BindableTableModel<?> getModel() {
     return model;
   }
 
@@ -78,7 +78,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    * <p>
    * The form and all components in the form's parent classes
    * and all members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited members will be included as well.
    * <p>
    * Notice that the object references are <em>not</em> kept in the binding.
@@ -97,7 +97,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    * Binds objects to a form.
    * <p>
    * The form will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited members will not be included.
    * <p>
    * Notice that the object references are <em>not</em> kept in the binding.
@@ -150,7 +150,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
   @Override
   public Integer[] getUnboundColumns() {
     int columnCount = model.getColumnCount();
-    List<Integer> unboundColumns = new ArrayList<Integer>();
+    List<Integer> unboundColumns = new ArrayList<>();
     for (int mColumn = 0; mColumn < columnCount; mColumn++) {
       if (!boundColumns.containsKey(mColumn)) {
         unboundColumns.add(mColumn);

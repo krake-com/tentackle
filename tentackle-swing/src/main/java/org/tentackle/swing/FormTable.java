@@ -2255,7 +2255,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    * Sets the format for a given column.<br>
    *
    * @param column the column index
-   * @param fmt
+   * @param fmt the format string
    */
   public void setFormat (int column, String fmt) {
     format.set(column, fmt);
@@ -2645,8 +2645,6 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    * @param column the column index
    * @param asTimestamp true if default format to use is for timestamps
    * @return the date format
-   * @see StringHelper#shortDateFormat
-   * @see StringHelper#shortTimestampFormat
    */
   public DateFormat getDateFormat(int column, boolean asTimestamp) {
     DateFormat df = dateFormat.get(column);
@@ -2670,7 +2668,6 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    *
    * @param column the column index
    * @return the date format
-   * @see StringHelper#shortDateFormat
    */
   public DateFormat getDateFormat(int column) {
     return getDateFormat(column, false);
@@ -2682,7 +2679,6 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    *
    * @param column the column index
    * @return the number format
-   * @see StringHelper#INTEGER_PATTERN
    */
   public NumberFormat getNumberFormat(int column) {
     NumberFormat nf = numberFormat.get(column);

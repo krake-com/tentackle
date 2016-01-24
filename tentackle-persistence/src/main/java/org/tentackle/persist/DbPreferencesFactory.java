@@ -505,7 +505,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param parent the parent preferences
    * @param node the node
    * @return the preferences instance
-   * @throws BackingStoreException
+   * @throws BackingStoreException if creation failed
    */
   public DbPreferences createPreferences(DbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
     return new DbPreferences(parent, node);
@@ -544,14 +544,16 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   /**
    * Returns the absolute path name of the node corresponding to the package of the specified object.
-   * <p>
+   *
+   * @param clazz the class
+   * @return the path name
    * @throws IllegalArgumentException if the package has node preferences node associated with it.
    */
-  protected static String nodeName(Class<?> c) {
-    if (c.isArray()) {
+  protected static String nodeName(Class<?> clazz) {
+    if (clazz.isArray()) {
       throw new IllegalArgumentException("Arrays have no associated preferences node");
     }
-    String className = c.getName();
+    String className = clazz.getName();
     int pkgEndIndex = className.lastIndexOf('.');
     if (pkgEndIndex < 0) {
       return "/<unnamed>";

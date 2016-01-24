@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo.rmi;
 
-import org.tentackle.pdo.TokenLock;
 import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.Timestamp;
@@ -29,6 +28,7 @@ import org.tentackle.pdo.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.TokenLock;
 import org.tentackle.persist.rmi.AbstractDbObjectRemoteDelegateImpl;
 import org.tentackle.persist.rmi.DbObjectResult;
 import org.tentackle.persist.rmi.RemoteDbSessionImpl;
