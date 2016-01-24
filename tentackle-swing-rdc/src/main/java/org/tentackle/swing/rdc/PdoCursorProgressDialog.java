@@ -22,9 +22,9 @@ package org.tentackle.swing.rdc;
 import org.tentackle.swing.FormDialog;
 
 /**
- * Progress dialog for {@link PdoCursor}.
+ * Progress dialog for search cursors.
  * <p>
- * The modal dialog is shown if more than {@link SearchParameter#warnRowCount}
+ * The modal dialog is shown if more than {@link AbstractPdoSearch#warnRowCount}
  * rows are retrieved and the user answers the question to retrieve more
  * with "yes". The progress dialog shows and updates the numbers of rows retrieved
  * and provides an abort button.
@@ -41,8 +41,6 @@ public class PdoCursorProgressDialog extends FormDialog {
 
   /**
    * Creates a progress dialog.
-   *
-   * @param cursor the database cursor
    */
   public PdoCursorProgressDialog() {
     initComponents();
@@ -59,7 +57,7 @@ public class PdoCursorProgressDialog extends FormDialog {
   /**
    * Updates and displays the row count.
    *
-   * @param rowCount
+   * @param rowCount the row count
    */
   public void updateRowCount(int rowCount) {
     rowCountField.setIntValue(rowCount);

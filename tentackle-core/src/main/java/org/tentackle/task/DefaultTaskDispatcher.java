@@ -61,14 +61,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Name-based daemon instance counter.
    */
-  public static final NamedCounter instanceCounter = new NamedCounter();   // daemon instance counter
+  public static final NamedCounter INSTANCE_COUNTER = new NamedCounter();   // daemon instance counter
 
   /** The logger for this class. */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTaskDispatcher.class);
 
   private static final DateFormat MILLIS_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
-  private static final AtomicLong taskCounter = new AtomicLong();           // global task ID
+  private static final AtomicLong TASK_COUNTER = new AtomicLong();           // global task ID
 
 
   private boolean usingMutexLocking;                    // true if using a mutex lock, else just a counter
@@ -103,7 +103,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    * @param deadInterval interval in milliseconds to detect a dead dispatcher, 0 to disable detection
    */
   public DefaultTaskDispatcher(String name, boolean usingMutexLocking, long sleepInterval, long deadInterval) {
-    super(name + "(" + instanceCounter.next(name) + ")");
+    super(name + "(" + INSTANCE_COUNTER.next(name) + ")");
 
     setDaemon(true);
     setUsingMutexLocking(usingMutexLocking);
@@ -291,7 +291,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         task.setDispatcher(this);
         if (task.getId() == 0) {
           // task never added before: set a unique id
-          task.setId(taskCounter.incrementAndGet());
+          task.setId(TASK_COUNTER.incrementAndGet());
         }
         queue.add(task);
         idMap.put(task.getId(), task);
@@ -473,7 +473,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Invoke {@link TaskListener#started(org.tentackle.task.Task)}
    * for all listeners.
-   * @param task
+   * @param task the task
    */
   protected void fireStarted(Task task) {
     for (TaskListener listener: listeners) {
@@ -490,7 +490,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Invoke {@link TaskListener#completed(org.tentackle.task.Task)}
    * for all listeners.
-   * @param task
+   * @param task the task
    */
   protected void fireCompleted(Task task) {
     for (TaskListener listener: listeners) {

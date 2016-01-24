@@ -154,8 +154,6 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
   /**
    * Updates the thread local memory.
-   *
-   * @see #getCurrentDelegate()
    */
   protected void updateThreadLocal() {
     delegate.getSession().makeCurrent();

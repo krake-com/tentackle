@@ -36,11 +36,11 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   private Object value;         // the printed object
   private boolean autoHeight;   // automatically change the height after setPrintValue
   private boolean autoWidth;    // automatically change the width after setPrintValue
-  
-  
+
+
   /**
    * Creates a text area.
-   * 
+   *
    * @param text the text
    * @param rows the number of rows, 0 = derive from text
    * @param columns the number of columns, 0 = derive from text
@@ -60,10 +60,10 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
     // clear Border (default border shifts the printing result southeast)
     setBorder(null);
   }
-  
+
   /**
    * Creates a text area.
-   * 
+   *
    * @param text the text
    */
   public PrintTextArea(String text)  {
@@ -76,8 +76,8 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   public PrintTextArea() {
     this(null);
   }
-  
-  
+
+
   /**
    * Determines whether the textarea's height should be adjusted
    * after {@link #setPrintValue}.
@@ -87,7 +87,7 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   public void setAutoHeight(boolean autoHeight) {
     this.autoHeight = autoHeight;
   }
-  
+
   /**
    * Gets the autoHeight flag.
    * @return true if autoHeight enabled
@@ -95,8 +95,8 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   public boolean isAutoHeight() {
     return autoHeight;
   }
-  
-  
+
+
   /**
    * Determines whether the textarea's width should be adjusted
    * after {@link #setPrintValue}.
@@ -106,7 +106,7 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   public void setAutoWidth(boolean autoWidth) {
     this.autoWidth = autoWidth;
   }
-  
+
   /**
    * Gets the autoWidth flag.
    * @return true if autoWidth enabled
@@ -114,24 +114,24 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
   public boolean isAutoWidth() {
     return autoWidth;
   }
-  
 
-  
+
+
   @Override
   public Object getPrintValue() {
     return value;
   }
-  
+
   /**
    * {@inheritDoc}
    * <p>
    * If the autoHeight or autoWidth feature is enabled the
    * size of the textarea will be adjusted according to
    * the value. The new size of the panel can be retrieved
-   * by {@link PrintPanel#getDynamicSize()} and set in 
+   * by {@link PrintPanel#getDynamicSize()} and set in
    * the report, for example {@link Report#setLineSize(java.awt.Dimension)}.
-   * 
-   * @param value
+   *
+   * @param value the value to print
    * @see PrintPanel#getPreferredSize()
    */
   @Override
@@ -148,5 +148,5 @@ public class PrintTextArea extends JTextArea implements PrintComponent {
       setSize(getPreferredSize().width, getHeight());
     }
   }
-  
+
 }

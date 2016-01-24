@@ -31,8 +31,8 @@ import org.tentackle.swing.bind.FormComponentBinder;
  * Binding for {@link DateFormField} and {@link FormCalendarField}.
  * <p>
  * The binding is necessary to detect whether the field is used for
- * {@link java.util.Date}, {@link org.tentackle.misc.Date},
- * {@link org.tentackle.misc.Timestamp} or {@link org.tentackle.misc.Time}.
+ * {@link java.util.Date}, {@link org.tentackle.common.Date},
+ * {@link org.tentackle.common.Timestamp} or {@link org.tentackle.common.Time}.
  *
  * @author harald
  */

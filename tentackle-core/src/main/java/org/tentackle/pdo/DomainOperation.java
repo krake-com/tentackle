@@ -22,7 +22,7 @@ package org.tentackle.pdo;
 /**
  * The domain interface.
  *
- * @param <T>
+ * @param <T> the operation type
  * @author harald
  */
 public interface DomainOperation<T extends Operation<T>>

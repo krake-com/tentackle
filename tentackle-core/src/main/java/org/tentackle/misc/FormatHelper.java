@@ -261,7 +261,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the number
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Number parseInteger(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).integerFormat.parse(str);
@@ -272,7 +272,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the number
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Number parseFloatingNumber(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).floatingNumberFormat.parse(str);
@@ -283,7 +283,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the number
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Number parseMoney(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).moneyFormat.parse(str);
@@ -294,7 +294,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the timestamp
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseTimestamp(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).timestampFormat.parse(str);
@@ -305,7 +305,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the timestamp
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseShortTimestamp(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortTimestampFormat.parse(str);
@@ -316,7 +316,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the date
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseDate(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).dateFormat.parse(str);
@@ -327,7 +327,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the date
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseShortDate(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortDateFormat.parse(str);
@@ -338,7 +338,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the time
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseTime(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).timeFormat.parse(str);
@@ -349,7 +349,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the time
-   * @throws ParseException
+   * @throws ParseException if parsing failed
    */
   public static synchronized Date parseShortTime(String str) throws ParseException {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortTimeFormat.parse(str);
@@ -362,7 +362,6 @@ public class FormatHelper {
    *
    * @param number the number to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatInteger(Number number) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).integerFormat.format(number);
@@ -373,7 +372,6 @@ public class FormatHelper {
    *
    * @param number the number to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatFloatingNumber(Number number) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).floatingNumberFormat.format(number);
@@ -384,7 +382,6 @@ public class FormatHelper {
    *
    * @param number the number to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatMoney(Number number) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).moneyFormat.format(number);
@@ -395,7 +392,6 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatTimestamp(Date timestamp) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).timestampFormat.format(timestamp);
@@ -406,7 +402,6 @@ public class FormatHelper {
    *
    * @param timestamp the timestamp to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatShortTimestamp(Date timestamp) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortTimestampFormat.format(timestamp);
@@ -417,7 +412,6 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatDate(Date date) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).dateFormat.format(date);
@@ -428,7 +422,6 @@ public class FormatHelper {
    *
    * @param date the date to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatShortDate(Date date) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortDateFormat.format(date);
@@ -439,7 +432,6 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatTime(Date time) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).timeFormat.format(time);
@@ -450,7 +442,6 @@ public class FormatHelper {
    *
    * @param time the time to format
    * @return the formatted string
-   * @throws ParseException
    */
   public static synchronized String formatShortTime(Date time) {
     return getFormatting(LocaleProvider.getInstance().getLocale()).shortTimeFormat.format(time);
@@ -574,20 +565,20 @@ public class FormatHelper {
 
 
   /**
-   * Translates a field of {@link GregorianCalendar} to a localized string.
+   * Translates a field of {@link java.util.GregorianCalendar} to a localized string.
    * <p>
-   * Example: {@link GregorianCalendar#DAY_OF_MONTH} will be translated to "month".
+   * Example: {@link java.util.GregorianCalendar#DAY_OF_MONTH} will be translated to "month".
    * <p>
    * Notice that only the following field types are supported:
    * <ul>
-   * <li>{@link GregorianCalendar#YEAR}</li>
-   * <li>{@link GregorianCalendar#MONTH}</li>
-   * <li>{@link GregorianCalendar#WEEK_OF_YEAR}</li>
-   * <li>{@link GregorianCalendar#DAY_OF_MONTH} or {@link GregorianCalendar#DATE}</li>
-   * <li>{@link GregorianCalendar#HOUR} or {@link GregorianCalendar#HOUR_OF_DAY}</li>
-   * <li>{@link GregorianCalendar#MINUTE}</li>
-   * <li>{@link GregorianCalendar#SECOND}</li>
-   * <li>{@link GregorianCalendar#MILLISECOND}</li>
+   * <li>{@link java.util.GregorianCalendar#YEAR}</li>
+   * <li>{@link java.util.GregorianCalendar#MONTH}</li>
+   * <li>{@link java.util.GregorianCalendar#WEEK_OF_YEAR}</li>
+   * <li>{@link java.util.GregorianCalendar#DAY_OF_MONTH} or {@link java.util.GregorianCalendar#DATE}</li>
+   * <li>{@link java.util.GregorianCalendar#HOUR} or {@link java.util.GregorianCalendar#HOUR_OF_DAY}</li>
+   * <li>{@link java.util.GregorianCalendar#MINUTE}</li>
+   * <li>{@link java.util.GregorianCalendar#SECOND}</li>
+   * <li>{@link java.util.GregorianCalendar#MILLISECOND}</li>
    * </ul>
    *
    * @param field the field type

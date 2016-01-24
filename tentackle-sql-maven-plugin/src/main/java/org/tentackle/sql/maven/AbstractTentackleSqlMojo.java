@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
@@ -51,7 +52,7 @@ import org.tentackle.sql.BackendInfo;
 
 
 /**
- * A generic tentackle sql mojo.
+ * Base tentackle sql mojo.
  *
  * @author harald
  */
@@ -59,65 +60,56 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
 
   /**
    * The Maven Project.
-   *
-   * @parameter default-value="${project}"
-   * @required
-   * @readonly
    */
+  @Parameter(defaultValue = "${project}",
+             readonly = true,
+             required = true)
   protected MavenProject mvnProject;
 
   /**
-   * Directory holding the model files to be processed.<br>
-   *
-   * @parameter property="tentackle.modelDir"
-   *            default-value="${project.build.directory}/wurbel/model"
+   * Directory holding the model files to be processed.
    */
+  @Parameter(defaultValue = "${project.build.directory}/wurbel/model",
+             property = "tentackle.modelDir")
   protected File modelDir;
 
   /**
    * The model defaults.
-   *
-   * @parameter property="tentackle.modelDefaults"
    */
+  @Parameter(property = "tentackle.modelDefaults")
   protected String modelDefaults;
 
   /**
    * Map schema names to flat table names.
-   *
-   * @parameter property="tentackle.mapSchemas"
    */
+  @Parameter(property = "tentackle.mapSchemas")
   protected boolean mapSchemas;
 
   /**
-   * Directory holding the SQL statements.<br>
-   *
-   * @parameter property="tentackle.sqlDir"
-   *            default-value="${project.build.directory}/sql"
+   * Directory holding the SQL generated scripts.
    */
+  @Parameter(defaultValue = "${project.build.directory}/sql",
+             property = "tentackle.sqlDir")
   protected File sqlDir;
 
-
   /**
-   * The db propertie files.
-   *
-   * @parameter
+   * The backend property files.
    */
+  @Parameter
   protected List<FileSet> backendProperties;
 
   /**
    * The backend names.<br>
-   * Separated by commas.
-   * "all" means generate code for all backends.
-   *
-   * @parameter
+   * Separated by commas.<br>
+   * "all" means generate code for all backends found in classpath.
    */
+  @Parameter
   protected String backendNames;
 
   /**
    * Backend configuration via pom if not from property files.
-   *
-   * @parameter
    */
+  @Parameter
   protected List<BackendInfoParameter> backends;
 
 
@@ -178,9 +170,9 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Gets the open connection.<br>
    * Opens it if it is closed.
    *
-   * @param backendInfo
+   * @param backendInfo the connection info
    * @return the open connection
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if connection failed
    */
   protected Connection getConnection(BackendInfo backendInfo) throws MojoExecutionException {
     if (connection == null) {
@@ -209,7 +201,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Creates the sqlFile, sqlDirName and sqlWriter.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if sql file could not be created
    */
   protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
     sqlFile = new File(new File(sqlDir, backendInfo.getBackend().getName()), getSqlFileName());
@@ -230,7 +222,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Opens the resources such as session and creates the SQL file.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if sql file could not be created
    */
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
     createSqlFile(backendInfo);
@@ -240,7 +232,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Closes the resources.
    *
    * @param backendInfo the backend info
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if closing failed
    */
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
     if (connection != null) {
@@ -269,7 +261,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend info
    * @param fileSet the fileset
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if processing failed
    */
   protected abstract void processFileSet(BackendInfo backendInfo, FileSet fileSet) throws MojoExecutionException;
 
@@ -319,7 +311,8 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
         if (fileset.getDirectory() == null) {
           propertiesDirNames = resourceDirs;  // try all resource directories
           if (propertiesDirNames == null || propertiesDirNames.isEmpty()) {
-            throw new MojoExecutionException("no <directory> given in <fileset> of <backendProperties> and no resource directories found");
+            throw new MojoExecutionException(
+                    "no <directory> given in <fileset> of <backendProperties> and no resource directories found");
           }
         }
         else  {
@@ -436,7 +429,7 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend infor
    * @param modelDirName the model directory name
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if writing to SQL file failed
    */
   protected void writeModelIntroComment(BackendInfo backendInfo, String modelDirName) throws MojoExecutionException {
     try {
@@ -474,4 +467,5 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
     }
     return hostName;
   }
+
 }

@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.task.Task;
-import org.tentackle.task.TaskDispatcher;
-import org.tentackle.task.TaskListener;
 
 /**
  * A task dispatcher using a pool of threads.
@@ -211,7 +208,7 @@ public abstract class AbstractPooledTaskDispatcher implements TaskDispatcher {
   /**
    * Invoke {@link TaskListener#started(org.tentackle.task.Task)}
    * for all listeners.
-   * @param task
+   * @param task the task
    */
   protected void fireStarted(Task task) {
     for (TaskListener listener: listeners) {
@@ -222,7 +219,7 @@ public abstract class AbstractPooledTaskDispatcher implements TaskDispatcher {
   /**
    * Invoke {@link TaskListener#completed(org.tentackle.task.Task)}
    * for all listeners.
-   * @param task
+   * @param task the task
    */
   protected void fireCompleted(Task task) {
     for (TaskListener listener: listeners) {

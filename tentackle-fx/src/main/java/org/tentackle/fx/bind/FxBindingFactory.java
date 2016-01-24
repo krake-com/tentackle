@@ -75,7 +75,6 @@ public interface FxBindingFactory extends BindingFactory {
    * Creates a component binding.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinding}.
    *
    * @param binder the binder managing the binding
    * @param component the GUI-component to bind
@@ -91,7 +90,6 @@ public interface FxBindingFactory extends BindingFactory {
    * Creates a component binder.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinder}.
    *
    * @param controller the controller for the created binder
    * @return the binder
@@ -103,9 +101,9 @@ public interface FxBindingFactory extends BindingFactory {
    * Creates a table binding.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinding}.
    *
    * @param <S> type of the objects contained within the table's items list
+   * @param <T> the cell value's type
    * @param binder the binder managing the binding
    * @param columnOptions options to configure the column
    * @param parents the members building the declaration chain to this member, null if this binding's member is in controller
@@ -114,13 +112,12 @@ public interface FxBindingFactory extends BindingFactory {
    * @return the created binding
    */
   <S,T> FxTableBinding<S,T> createTableBinding(FxTableBinder<S> binder, BindingMember[] parents, BindingMember member,
-                                             TableColumnConfiguration<S,T> columnConfig, String columnOptions);
+                                               TableColumnConfiguration<S,T> columnConfig, String columnOptions);
 
   /**
    * Creates a table binder.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBinder}.
    *
    * @param <S> type of the objects contained within the table's items list
    * @param tableConfiguration the table configuration

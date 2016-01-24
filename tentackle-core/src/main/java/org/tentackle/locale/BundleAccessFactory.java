@@ -30,8 +30,7 @@ interface BundleAccessFactory$Singleton {
 
 /**
  * The bundle factory.
- * <p>
- * Used to create {@link BundleMember}s, {@link Bundle}s and {@link Binder}s.
+ * 
  *
  * @author harald
  */
@@ -52,7 +51,7 @@ public interface BundleAccessFactory {
    *
    * @param baseName the basename (usually the package name)
    * @return the bundle access
-   * @throws BundleException
+   * @throws BundleException if creating the bundle access failed
    */
   BundleAccess createBundleAccess(String baseName) throws BundleException;
 

@@ -72,7 +72,7 @@ public interface Entity {
    * Gets the table alias for joined selects.<br>
    * The alias is unique among all tables.
    *
-   * @return
+   * @return the table alias
    */
   String getTableAlias();
 

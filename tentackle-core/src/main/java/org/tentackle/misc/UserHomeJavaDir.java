@@ -46,7 +46,7 @@ public class UserHomeJavaDir {
    * Defaults to {@code ${user.home}/.java/tentackle}.<br>
    * May be configured by the system property {@code "tentackle.user.home.java.dir"}.
    *
-   * @return
+   * @return the directory
    */
   public static File getDirectory() {
     if (!initialized) {
@@ -92,7 +92,7 @@ public class UserHomeJavaDir {
   }
 
 
-  
+
   private UserHomeJavaDir() {
   }
 

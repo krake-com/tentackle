@@ -1114,7 +1114,7 @@ public class FormUtilities {
    * Gets the binding for a given component in the given container and
    * all its sub-containers.
    * <p>
-   * The method differs from {@link Binder#getBinding(org.tentackle.swing.FormComponent)}
+   * The method differs from {@link org.tentackle.bind.Binder#getBinding}
    * because the latter only finds bindings that were explicitly bound to the container.
    * This method, however, also finds bindings bound on sub containers.
    *
@@ -1136,7 +1136,7 @@ public class FormUtilities {
    * Gets the binding for a given binding path in the given container and
    * all its sub-containers.
    * <p>
-   * The method differs from {@link Binder#getBinding(java.lang.String)}
+   * The method differs from {@link org.tentackle.bind.Binder#getBinding}
    * because the latter only finds bindings that were explicitly bound to the container.
    * This method, however, also finds bindings bound on sub containers.
    *

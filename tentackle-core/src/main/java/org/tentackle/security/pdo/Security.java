@@ -79,8 +79,8 @@ import org.tentackle.security.DefaultSecurityManager;
  * The grantee is an entity like a user or a user group.<br>
  * Optionally, rules can be restricted to some context entities or context class.
  * Grantees and contexts must be of type {@link PersistentDomainObject}.<br>
- * Permissions are stored in the database as a comma separated string and convert
- * to instances of {@link SecurityPermission} mapped by the {@link SecurityFactory}.<br>
+ * Permissions are stored in the database as a comma separated strings and convert
+ * to instances of {@link org.tentackle.security.Permission} mapped by the {@link org.tentackle.security.SecurityFactory}.<br>
  * Security rules also have a priority, can explain the denial to the user
  * by means of a message text and can easily be extended by the application.
  *

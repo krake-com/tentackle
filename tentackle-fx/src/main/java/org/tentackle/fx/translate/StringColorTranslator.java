@@ -43,7 +43,7 @@ public class StringColorTranslator extends ValueTranslator<String, Color> {
   /**
    * Creates the translator.
    *
-   * @param component
+   * @param component the component
    */
   public StringColorTranslator(FxComponent component) {
     super(component);

@@ -41,12 +41,10 @@ import org.tentackle.misc.UserHomeJavaDir;
 /**
  * A file-based backup store for {@link PdoCache}.<br>
  * Serializes the cache to the filesystem to improve client startup times,
- * especially for preloading caches.
- * <p>
- * Only available for client applications, i.e. {@link Application#getRunningApplication()}
- * must be an instance of {@link AbstractApplication}.
+ * especially for preloading caches.<br>
+ * Makes only sense for remote client applications.
  *
- * @param <T> the pdo class
+ * @param <T> the PDO type
  * @author harald
  */
 public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements Serializable {
@@ -61,14 +59,14 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private static final String CACHE_FILE_EXTENSION = ".ser";  // extension for cache files
 
 
-  private transient PdoCache<T> cache;     // the cache to backup
+  private transient PdoCache<T> cache;    // the cache to backup
 
   // persisted data
-  private String applicationName;                   // the application name (null if file-backup disabled, i.e. not a client application)
-  private String serverName;                        // the name of the backend
-  private final String fileName;                    // the filename
-  private long tableSerial;                         // the serial version of the table
-  private List<T> objects;                          // the objects in the cache
+  private String applicationName;         // the application name (null if file-backup disabled, i.e. not a client application)
+  private String serverName;              // the name of the backend
+  private final String fileName;          // the filename
+  private long tableSerial;               // the serial version of the table
+  private List<T> objects;                // the objects in the cache
 
 
 
@@ -138,8 +136,9 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    * Loads a cache from persistent storage.<br>
    *
    * @param session the session
-   * @return true if loaded from persistent storage or data was missing, false if cache isn't persistable (application is not a client)
-   * @throws PdoRuntimeException
+   * @return true if loaded from persistent storage or data was missing,
+   *         false if cache isn't persistable (application is not a client)
+   * @throws PdoRuntimeException if reading failed
    */
   public boolean readFromFile(Session session) throws PdoRuntimeException {
 

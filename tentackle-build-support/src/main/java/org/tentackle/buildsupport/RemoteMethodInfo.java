@@ -20,7 +20,6 @@
 package org.tentackle.buildsupport;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -85,10 +84,9 @@ public class RemoteMethodInfo {
    *
    * @param infoFile the file to read from
    * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
-   * @throws FileNotFoundException
-   * @throws IOException
+   * @throws IOException if reading failed
    */
-  public static RemoteMethodInfo readInfo(File infoFile) throws FileNotFoundException, IOException {
+  public static RemoteMethodInfo readInfo(File infoFile) throws IOException {
     RemoteMethodInfo info;
     try (LineNumberReader reader = new LineNumberReader(new FileReader(infoFile))) {
       info = readInfo(reader);
@@ -102,7 +100,7 @@ public class RemoteMethodInfo {
    *
    * @param reader is the LineNumberReader
    * @return an RemoteMethodInfo object, null if file is empty or does not contain an RemoteMethodInfo-text
-   * @throws IOException
+   * @throws IOException if reading failed
    */
   public static RemoteMethodInfo readInfo(LineNumberReader reader) throws IOException {
     RemoteMethodInfo info = null;
@@ -294,24 +292,6 @@ public class RemoteMethodInfo {
    */
   public void setClassName(String className) {
     this.className = className;
-    // compile pattern
-    String packageName = "";
-    int ndx = className.lastIndexOf('.');
-    if (ndx > 0)  {
-      packageName = className.substring(0, ndx + 1);
-      // replace all dots with \\.
-      StringBuilder buf = new StringBuilder();
-      for (int i=0; i < packageName.length(); i++) {
-        char c = packageName.charAt(i);
-        if (c == '.') {
-          buf.append("\\.");
-        }
-        else  {
-          buf.append(c);
-        }
-      }
-      packageName = buf.toString();
-    }
   }
 
 
@@ -598,7 +578,7 @@ public class RemoteMethodInfo {
       }
     }
     else {
-      throw new IOException("unkown info type: " + type);
+      throw new IOException("unsupported info type: " + type);
     }
   }
 

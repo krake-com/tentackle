@@ -79,7 +79,7 @@ public class ValidationFailedException extends RuntimeException {
    * Creates a validation exception.
    *
    * @param cause the cause
-   * @param results
+   * @param results the validation results
    */
   public ValidationFailedException(Throwable cause, List<ValidationResult> results) {
     super(cause);

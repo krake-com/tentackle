@@ -281,7 +281,7 @@ public class IndexImpl implements Index {
    * Refers to the source line if set, otherwise just the message.
    *
    * @param message the message
-   * @return
+   * @return the exception
    */
   public ModelException createModelException(String message) {
     ModelException ex;

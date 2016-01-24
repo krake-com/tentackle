@@ -239,7 +239,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Sets the properties to configure the application.
    * <p>
-   * Must be set before starting the application.<br/>
+   * Must be set before starting the application.<br>
    * By default the following properties will be honoured:
    * <ul>
    * <li>nodbprefs: if defined disables the configuration of the DbPreferences as the Preferences backing store</li>
@@ -336,7 +336,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Updates the session info after sucessful login.<br>
    *
-   * @throws ApplicationException
+   * @throws ApplicationException if update failed
    */
   public void updateSessionInfoAfterLogin() throws ApplicationException {
     if (context != null) {
@@ -372,7 +372,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Gets the AbstractPersistentObject corresponding to the userId in {@link SessionInfo}.
    * <p>
-   * The default implementation invokes {@link #getUser(long)}.
+   * The default implementation invokes {@link #getUser(org.tentackle.pdo.DomainContext, long) }.
    *
    * @param <U> the pdo type
    * @param context the domain context
@@ -548,7 +548,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * The default creates the modification thread (but does not start it),
    * configures the preferences and security manager.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   protected void doConfigureApplication() throws ApplicationException {
     configurePdoTracker();
@@ -564,7 +564,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * The default implementation starts the modification thread, unless
    * the property {@literal "nomodthread"} is given.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if failed
    */
   protected void doFinishStartup() throws ApplicationException {
 

@@ -21,7 +21,6 @@ package org.tentackle.wurblet;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Relation;
 import org.tentackle.sql.Backend;
-import org.wurbelizer.wurbel.WurbelException;
 
 /**
  * A wurblet parameter.<br>
@@ -95,12 +94,12 @@ public class WurbletParameter implements WurbletParameterOperand {
    *
    * <pre>
    * Examples:
-   *          poolId            -> name=poolId, arg=poolId, relop="="
-   *          poolId[from]:>=   -> name=poolId, arg=from, relop=">="
-   *          code:=:'Hurrz'    -> name=code, arg=code, relop="=", value="'Hurz'"
-   *          code:=#'Hurrz'    -> name=code, arg=code, relop="=", value="'Hurz'", fixed=true
+   *          poolId            -&gt; name=poolId, arg=poolId, relop="="
+   *          poolId[from]:&gt;=   -&gt; name=poolId, arg=from, relop="&gt;="
+   *          code:=:'Hurrz'    -&gt; name=code, arg=code, relop="=", value="'Hurz'"
+   *          code:=#'Hurrz'    -&gt; name=code, arg=code, relop="=", value="'Hurz'", fixed=true
    *
-   *          +poolId -kurzname -> ORDER BY poolId ASC, kurzname DESC
+   *          +poolId -kurzname -&gt; ORDER BY poolId ASC, kurzname DESC
    * </pre>
    *
    * The <code>&lt;attribute-path&gt;</code> describes the path to the attribute and is of the following form:
@@ -121,14 +120,14 @@ public class WurbletParameter implements WurbletParameterOperand {
    * <code>.User.Address.zipCode</code>
    * </li>
    * <li>
-   * <code>.<code><br>
+   * <code>.</code><br>
    * For convenience, a leading dot is equivalent to an attribute-name without a dot.<br>
    * Parameter example:<br>
    * <code>.poolId</code>
    * </li>
+   * </ul>
    *
    * @param text the wurblet arg
-   * @throws WurbelException if parsing failed
    */
   public WurbletParameter(String text) {
     this.text = text;

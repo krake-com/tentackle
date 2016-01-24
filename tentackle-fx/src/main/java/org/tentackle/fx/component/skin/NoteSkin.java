@@ -166,7 +166,7 @@ public class NoteSkin implements Skin<Note> {
   /**
    * Creates the link.
    *
-   * @param alignment
+   * @param alignment the position
    * @return the link node
    */
   protected Node createLink(Position alignment) {

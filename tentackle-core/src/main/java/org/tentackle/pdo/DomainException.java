@@ -35,7 +35,7 @@ public class DomainException extends TentackleRuntimeException {
   /**
    * Extracts the {@link DomainException} from an exception.
    * <p>
-   * Scans the exception chain until it finds an {@link DbRuntimeException}.
+   * Scans the exception chain until it finds an {@link PersistenceException}.
    *
    * @param e the exception head
    * @return the DbRuntimeException, null if none
@@ -284,7 +284,7 @@ public class DomainException extends TentackleRuntimeException {
    * <pre>
    *   "org.tentackle.pdo.DbRuntimeException: no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
    * </pre>
-   * @return
+   * @return the message
    */
   @Override
   public String getMessage() {

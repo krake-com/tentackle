@@ -32,6 +32,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.model.Entity;
@@ -47,17 +49,16 @@ import org.tentackle.sql.metadata.TableMetaData;
 /**
  * Generate sql script to migrate the tables.
  *
- * @goal migrate
  * @author harald
  */
+@Mojo(name = "migrate")
 public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
 
   /**
    * The name of the created sql file.
-   *
-   * @parameter property="tentackle.migrateSqlFile"
-   *            default-value="migratemodel.sql"
    */
+  @Parameter(defaultValue = "migratemodel.sql",
+             property = "tentackle.migrateSqlFile")
   private String sqlFileName;
 
   /**

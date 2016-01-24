@@ -247,7 +247,7 @@ public class BackendInfo {
    * Creates a connection.
    *
    * @return the connection
-   * @throws SQLException
+   * @throws SQLException if connection could not be created
    */
   public Connection connect() throws SQLException {
     return jndiDataSource != null ? jndiDataSource.getConnection() : backend.createConnection(url, user, password);

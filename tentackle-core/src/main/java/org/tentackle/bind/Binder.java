@@ -109,7 +109,8 @@ public interface Binder extends Comparable<Binder> {
    * <p>
    * Example: context = getBindingProperty(DomainContext.class);
    *
-   * @param key the key to locate the property
+   * @param <T> the key type
+   * @param clazz the property key
    * @return the property value, null if no such key
    */
   <T> T getBindingProperty(Class<T> clazz);
@@ -254,7 +255,6 @@ public interface Binder extends Comparable<Binder> {
 
   /**
    * Sets the validation scope.<br>
-   * Default is {@link InteractiveScope}.
    *
    * @param validationScope the validation scope
    */

@@ -26,7 +26,7 @@ import org.tentackle.swing.FormTableEntry;
 /**
  * A default formtable entry for an {@link PersistentDomainObject}.
  * <p>
- * Contains only one "name" column showing the {@link PersistentDomainObject#getTreeText()}-value.
+ * Contains only one "name" column showing the {@link GuiProvider#getTreeText()}-value.
  *
  * @param <T> the PDO class
  * @author harald
@@ -34,7 +34,7 @@ import org.tentackle.swing.FormTableEntry;
 public class DefaultPdoTableEntry<T extends PersistentDomainObject<T>> extends FormTableEntry<T> {
 
 
-  private static final String[] columnNames = {
+  private static final String[] COLUMN_NAMES = {
     "Name"
   };
 
@@ -60,12 +60,12 @@ public class DefaultPdoTableEntry<T extends PersistentDomainObject<T>> extends F
 
   @Override
   public int getColumnCount() {
-    return columnNames.length;
+    return COLUMN_NAMES.length;
   }
 
   @Override
   public String getColumnName(int col) {
-    return columnNames[col];
+    return COLUMN_NAMES[col];
   }
 
   @Override

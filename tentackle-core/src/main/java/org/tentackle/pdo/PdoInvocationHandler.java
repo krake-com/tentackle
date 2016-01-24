@@ -35,7 +35,7 @@ import org.tentackle.reflect.Mixin;
  * Invocation handler for PDOs.<br>
  * Each instance of a PDO gets its own handler.
  *
- * @param <T>
+ * @param <T> the PDO type
  * @author harald
  */
 public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implements InvocationHandler, Serializable {
@@ -105,9 +105,10 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @param domainMapper the classmapper for the domain implementations
    * @param clazz the PDO declaring interface
    *
-   * @throws ClassNotFoundException
+   * @throws ClassNotFoundException if no implementation found
    */
-  public PdoInvocationHandler(ClassMapper persistenceMapper, ClassMapper domainMapper, Class<T> clazz) throws ClassNotFoundException {
+  public PdoInvocationHandler(ClassMapper persistenceMapper, ClassMapper domainMapper, Class<T> clazz)
+         throws ClassNotFoundException {
     this.clazz = clazz;
     persistenceMixin = new Mixin<>(persistenceMapper, clazz, PersistentObject.class);
     domainMixin = new Mixin<>(domainMapper, clazz, DomainObject.class);
@@ -120,14 +121,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    *
    * @param pdo the dynamic proxy instance
    * @param context the domain context
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -144,14 +146,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    *
    * @param pdo the dynamic proxy instance
    * @param session the session
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -168,14 +171,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    *
    * @param pdo the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceDelegate.setPdo(pdo);
     persistenceMixin.setDelegate(persistenceDelegate);
@@ -191,14 +195,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @param pdo the dynamic proxy instance
    * @param context the domain context
    * @param domainDelegate the domain delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -214,14 +219,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @param pdo the dynamic proxy instance
    * @param session the session
    * @param domainDelegate the domain delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -237,11 +243,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @param pdo the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
-   * @throw NoSuchMethodException
-   * @throw InstantiationException
-   * @throw IllegalAccessException
-   * @throw IllegalArgumentException
-   * @throw InvocationTargetException
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
     persistenceDelegate.setPdo(pdo);
@@ -255,14 +256,16 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * Creates the delegates for the given proxy instance without any domain context or session.
    *
    * @param pdo the dynamic proxy instance
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
+    
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class },
                                     new Object[] { pdo });
 

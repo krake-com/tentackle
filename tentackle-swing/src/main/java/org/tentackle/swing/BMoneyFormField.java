@@ -41,7 +41,8 @@ public class BMoneyFormField extends AbstractFractionNumberFormField {
 
   static {
     // register the special binding due to DMoney/BMoney dual use
-    FormUtilities.getInstance().getBindingFactory().setFormComponentBindingClass(BMoneyFormField.class, BMoneyFormFieldBinding.class);
+    FormUtilities.getInstance().getBindingFactory().setFormComponentBindingClass(
+            BMoneyFormField.class, BMoneyFormFieldBinding.class);
   }
 
   /** application-wide default setting for the auto-comma feature **/
@@ -249,7 +250,7 @@ public class BMoneyFormField extends AbstractFractionNumberFormField {
   /**
    * Sets whether getFormValue() returns BMoney or DMoney.
    *
-   * @param parseDMoney
+   * @param parseDMoney true if parse to DMoney, else BMoney
    */
   public void setParseDMoney(boolean parseDMoney) {
     this.parseDMoney = parseDMoney;
@@ -282,7 +283,8 @@ public class BMoneyFormField extends AbstractFractionNumberFormField {
    * Allows "business" keyboard input, i.e. comma is set according to the
    * property scale if no comma has been entered by the user.<br>
    * <pre>
-   * Example: "1122" --> "11.22" if scale was 2.
+   * Example: "1122" -&gt; "11.22" if scale was 2.
+   * </pre>
    *
    * @param autoComma true if automatically set the comma, false if not (default)
    * @see #defaultAutoComma

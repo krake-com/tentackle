@@ -38,7 +38,8 @@ import org.tentackle.validate.ValidationSeverity;
  * <li><code>Collection</code> (collection size is evaluated)</li>
  * <li><code>Map</code> (map size is evaluated)</li>
  * <li>Array (array length is evaluated)</li>
- *
+ * </ul>
+ * 
  * <code>null</code> elements are considered valid.
  *
  * @author harald

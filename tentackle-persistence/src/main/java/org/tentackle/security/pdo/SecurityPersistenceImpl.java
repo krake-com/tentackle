@@ -48,19 +48,7 @@ import org.tentackle.sql.Backend;
 
 
 /**
- * A security rule.
- * <p>
- * Any object, whether it is a database object ({@link PersistentDomainObject}) or any
- * other class (for example a dialog) can be secured by rules.
- * SecurityPersistenceImpl rules grant or deny a permission to a grantee object or a grantee class.
- * Optionally, rules can be restricted to some context object or context class.
- * Grantees and contexts must be of type {@link PersistentDomainObject}.
- * The permission is an integer associated to a permission type, which is
- * also an integer identifying the permission scheme. Permission types
- * can be application specific, for example "invoiceable".
- * SecurityPersistenceImpl rules also have a priority, can explain the denial to the user
- * by means of a message text and can easily be extended by the application.
- * Furthermore, rules may optionally be restricted to an application database context.
+ * Security rule persistence implementation.
  *
  * @author harald
  */

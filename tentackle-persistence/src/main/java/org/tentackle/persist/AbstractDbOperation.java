@@ -47,16 +47,16 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
   /**
    * Creates a database object.
    *
-   * @param db the logical {@link Db}-connection
+   * @param session the logical {@link Db}-connection
    */
-  public AbstractDbOperation(Db db) {
-    setSession(db);
+  public AbstractDbOperation(Db session) {
+    setSession(session);
   }
 
 
   /**
    * Creates a database object not associated to a logical {@link Db}-connection.
-   * The connection must be set via {@link #setDb} in order to use it.
+   * The connection must be set via {@link #setSession} in order to use it.
    */
   public AbstractDbOperation() {
     // nothing to do
@@ -85,7 +85,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
   /**
    * Gets the some attributes and variables common to all objects of the same class.
    * Class variables for classes derived from {@link AbstractDbOperation} are kept in an
-   * instance of {@link DbOperationClassVariable}.
+   * instance of {@link DbOperationClassVariables}.
    *
    * @return the class variables
    */
@@ -143,7 +143,7 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
   /**
    * Sets the logical db connection for this object.
    *
-   * @param db the db connection
+   * @param session the session
    */
   @Override
   public void setSession(Session session) {

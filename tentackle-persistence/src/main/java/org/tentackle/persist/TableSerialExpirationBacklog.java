@@ -103,8 +103,8 @@ public class TableSerialExpirationBacklog {
   /**
    * Adds an expiration set to the backlog.
    *
-   * @param minSerial the lower serial bound of the query (minSerial < tableSerial)
-   * @param maxSerial the upper serial bound of the query (tableSerial <= maxSerial)
+   * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
+   * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)
    * @param idSerTuples the expiration info as pairs of id/tableserial.
    */
   public void addExpiration(long minSerial, long maxSerial, List<IdSerialTuple> idSerTuples) {
@@ -126,8 +126,8 @@ public class TableSerialExpirationBacklog {
   /**
    * Gets the expiration backlog for a given range of tableserials.
    *
-   * @param minSerial the lower serial bound of the query (minSerial < tableSerial)
-   * @param maxSerial the upper serial bound of the query (tableSerial <= maxSerial)
+   * @param minSerial the lower serial bound of the query (minSerial &lt; tableSerial)
+   * @param maxSerial the upper serial bound of the query (tableSerial &le; maxSerial)
    * @return the expiration info as pairs of id/tableserial, null if given range was not found in the backlog
    */
   public List<IdSerialTuple> getExpiration(long minSerial, long maxSerial) {

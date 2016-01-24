@@ -230,7 +230,9 @@ public class BMoney extends BigDecimal implements Cloneable {
 
 
   /**
-   * Returns the smalles positive value (i.e. if scale is 2 --> 0.01 will be returned)
+   * Returns the smalles positive value.<br>
+   * Ex.: if scale is 2 --&gt; 0.01 will be returned.
+   *
    * @return the smalles positive value
    */
   public BMoney smallestPositive()  {

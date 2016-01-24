@@ -32,9 +32,7 @@ import org.tentackle.persist.MasterSerial;
 public interface ModificationTrackerRemoteDelegate extends RemoteDelegate {
 
   MasterSerial selectMasterSerial() throws RemoteException;
-
   IdSerialTuple selectIdSerialForName(String tableName) throws RemoteException;
-
   List<IdSerialTuple> selectAllSerials() throws RemoteException;
 
 }

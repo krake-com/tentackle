@@ -38,10 +38,9 @@ import org.tentackle.validate.ValidationSeverity;
  * <li><code>Collection</code> (collection size is evaluated)</li>
  * <li><code>Map</code> (map size is evaluated)</li>
  * <li><code>Array</code> (array length is evaluated)</li>
- *
- * <p>
- * Essentially the same as @Size(min=1) but implies that the field is mandatory
- * as with @NotNull. Avoids extra @Mandatory.
+ * </ul>
+ * Essentially the same as &#64;Size(min=1) but implies that the field is mandatory
+ * as with &#64;NotNull. Avoids extra &#64;Mandatory.
  *
  * @author harald
  */

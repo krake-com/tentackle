@@ -258,7 +258,7 @@ public abstract class AbstractSocketConfigurator implements Serializable {
   /**
    * Returns whether this configurator contains valid configurations.
    *
-   * @return true if options valid, false if {@link #configure} would do nothing at all
+   * @return true if options valid
    */
   public boolean isValid() {
     return reuseAddress != null || soTimeout != null || performancePreferences != null;

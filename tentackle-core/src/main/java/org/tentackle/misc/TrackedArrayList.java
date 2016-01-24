@@ -333,7 +333,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Adds an object to the list of removed objects.<br>
-   * Only objects of type &ltE&gt are added.
+   * Only objects of type &lt;E&gt; are added.
    * The method is invoked whenever an object is removed
    * from the list.
    *
@@ -356,7 +356,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Adds a list of objects to the list of removed objects.<br>
-   * Only objects of type &ltE&gt are added.
+   * Only objects of type &lt;E&gt; are added.
    * The method is invoked whenever an object is removed
    * from the list.
    *
@@ -371,7 +371,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes an object from the list of removed objects.<br>
-   * Only objects of type &ltE&gt are added.
+   * Only objects of type &lt;E&gt; are added.
    * The method is invoked whenever an object is removed
    * from the list.
    *
@@ -386,7 +386,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   /**
    * Removes a list of objects to the list of removed objects.<br>
-   * Only objects of type &ltE&gt are added.
+   * Only objects of type &lt;E&gt; are added.
    * The method is invoked whenever an object is removed
    * from the list.
    *
@@ -438,7 +438,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    *
    * @param index index at which the specified element is to be inserted
    * @param element element to be inserted
-   * @throws IndexOutOfBoundsException
    */
   @Override
   public void add(int index, E element) {
@@ -491,8 +490,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    *              specified collection
    * @param collection the collection containing elements to be added to this list
    * @return <tt>true</tt> if this list changed as a result of the call
-   * @throws IndexOutOfBoundsException
-   * @throws NullPointerException if the specified collection is null
    */
   @Override
   public boolean addAll(int index, Collection<? extends E> collection) {
@@ -529,7 +526,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    *
    * @param index the index of the element to be removed
    * @return the element that was removed from the list
-   * @throws IndexOutOfBoundsException
    */
   @Override
   public E remove(int index) {
@@ -620,9 +616,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    *
    * @param fromIndex index of first element to be removed
    * @param toIndex index after last element to be removed
-   * @throws IndexOutOfBoundsException if fromIndex or toIndex out of
-   *              range (fromIndex &lt; 0 || fromIndex &gt;= size() || toIndex
-   *              &gt; size() || toIndex &lt; fromIndex)
    */
   @Override
   protected void removeRange(int fromIndex, int toIndex) {
@@ -650,7 +643,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param index index of the element to replace
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
-   * @throws IndexOutOfBoundsException
    */
   @Override
   public E set(int index, E element) {
@@ -686,7 +678,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param index index of the element to replace
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
-   * @throws IndexOutOfBoundsException
    */
   @Override
   public E replace(int index, E element) {

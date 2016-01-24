@@ -34,7 +34,7 @@ public class DefaultPdoTreeFactory implements PdoTreeFactory {
    * If the given object is a {@link Collection} the objects of the collection
    * will be shown in the tree. If it is some other object, only that
    * object is shown.<br>
-   * Notice that the objects need not necessarily be {@link PersistentDomainObject}s.
+   * Notice that the objects need not necessarily be {@link org.tentackle.pdo.PersistentDomainObject}s.
    *
    * @param objects the objects, null if empty tree
    * @return the tree
@@ -50,7 +50,7 @@ public class DefaultPdoTreeFactory implements PdoTreeFactory {
    * If the given object is a {@link Collection} the objects of the collection
    * will be shown in the tree. If it is some other object, only that
    * object is shown.<br>
-   * Notice that the objects need not necessarily be {@link PersistentDomainObject}s.
+   * Notice that the objects need not necessarily be {@link org.tentackle.pdo.PersistentDomainObject}s.
    *
    * @param object the object or collection of objects, null if empty tree
    * @return the tree

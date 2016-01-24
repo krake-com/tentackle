@@ -88,7 +88,8 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Retrieves the value from this component.<br>
    * The value's type is that of the model.
    *
-   * @return  the value shown by the component
+   * @param <T> the value's type
+   * @return the value shown by the component
    */
   <T> T getViewValue();
 
@@ -119,7 +120,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Mandatory fields are differently visualized.
    * There is no further functional difference.
    *
-   * @param mandatory
+   * @param mandatory true if mandatory
    */
   void setMandatory(boolean mandatory);
 
@@ -144,8 +145,8 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Usually the binding path will be determined from the components declared name.
    * However, it can be set programatically as well.
    *
-   * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"<tt>, null if autobinding
-   * @see Binder
+   * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"</tt>, null if autobinding
+   * @see org.tentackle.bind.Binder
    */
   void setBindingPath(String bindingPath);
 
@@ -164,7 +165,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * <p>
    * Notice: the component path is set during binding.
    *
-   * @param componentPath
+   * @param componentPath the component path
    */
   void setComponentPath(String componentPath);
 

@@ -25,7 +25,7 @@ import javax.lang.model.element.TypeElement;
 
 
 /**
- * A handler invoked for an annotation annotated with {@link Analyze}.
+ * A handler invoked for an annotation annotated with {@link org.tentackle.common.Analyze}.
  *
  * @author harald
  */

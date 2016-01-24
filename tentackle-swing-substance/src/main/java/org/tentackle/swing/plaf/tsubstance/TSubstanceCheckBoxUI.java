@@ -26,8 +26,8 @@ import org.jvnet.substance.utils.SubstanceCoreUtilities;
 /**
  * UI for JCheckBox/FormCheckBox.
  *
- * @todo mandatory property still missing
- * 
+ * TODO: mandatory property still missing
+ *
  * @author harald
  */
 public class TSubstanceCheckBoxUI extends SubstanceCheckBoxUI {

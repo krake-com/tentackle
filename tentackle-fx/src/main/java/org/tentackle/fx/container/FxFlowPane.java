@@ -48,7 +48,7 @@ public class FxFlowPane extends FlowPane implements FxContainer {
   /**
    * Creates a FlowPane layout with the specified orientation and hgap/vgap = 0.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    */
   public FxFlowPane(Orientation orientation) {
     super(orientation);
@@ -67,7 +67,7 @@ public class FxFlowPane extends FlowPane implements FxContainer {
   /**
    * Creates a FlowPane layout with the specified orientation and hgap/vgap.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param hgap        the amount of horizontal space between each tile
    * @param vgap        the amount of vertical space between each tile
    */
@@ -89,7 +89,7 @@ public class FxFlowPane extends FlowPane implements FxContainer {
   /**
    * Creates a FlowPane layout with the specified orientation and hgap/vgap = 0.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param children    The initial set of children for this pane.
    */
   public FxFlowPane(Orientation orientation, Node... children) {
@@ -110,7 +110,7 @@ public class FxFlowPane extends FlowPane implements FxContainer {
   /**
    * Creates a FlowPane layout with the specified orientation and hgap/vgap.
    * <p>
-   * @param orientation the direction the tiles should flow & wrap
+   * @param orientation the direction the tiles should flow and wrap
    * @param hgap        the amount of horizontal space between each tile
    * @param vgap        the amount of vertical space between each tile
    * @param children    The initial set of children for this pane.

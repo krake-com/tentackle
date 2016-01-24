@@ -106,7 +106,7 @@ public class ValidationUtilities {
    * Objects simply refer to this method in order to implement {@link Validateable}.
    *
    * @param object the object to be validated
-   * @param validationPath the validation path, null if {@link #getDefaultValidationPath()}
+   * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object)}
    * @param scope the validation scope
    * @return the validation results, empty if okay, never null
    */
@@ -124,11 +124,12 @@ public class ValidationUtilities {
    * Validates a collection of objects.<br>
    *
    * @param collection the objects to validate
-   * @param validationPath the validation path, null if {@link #getDefaultValidationPath()}
+   * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param scope the validation scope
    * @return the validation results
    */
-  public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection, String validationPath, ValidationScope scope)  {
+  public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection,
+                                                   String validationPath, ValidationScope scope)  {
     List<ValidationResult> results = new ArrayList<>();
     if (collection != null) {
       int ndx = 0;
@@ -147,7 +148,8 @@ public class ValidationUtilities {
    * Gets all validators for all annotated fields or methods of given class.<br>
    * If an attribute is annotated both at the field and the (getter-)method level,
    * the method gets precedence.
-   * @param clazz
+   *
+   * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
    * @return the validators
    */
@@ -167,7 +169,7 @@ public class ValidationUtilities {
    * the method gets precedence.
    *
    * @param validatorMap the validator map (unique on attribute names)
-   * @param clazz
+   * @param clazz the class to inspect
    * @param scope optional validation scope, null = all
    */
   protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Class<?> clazz, ValidationScope scope) {
@@ -263,7 +265,8 @@ public class ValidationUtilities {
    *
    * @param validators the validators for the fields
    * @param effectiveScope the effective scope, null = all
-   * @param validationPath the validation path corresponding to <code>object</code>, null if {@link #getDefaultValidationPath()}
+   * @param validationPath the validation path corresponding to <code>object</code>,
+   *                       null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param object the parent object to verify
    * @return the list of validation results
    */
@@ -340,7 +343,8 @@ public class ValidationUtilities {
    *
    * @param validators the validators to be applied
    * @param effectiveScope the effective scope, null = all
-   * @param validationPath the validation path corresponding to <code>object</code>, null if {@link #getDefaultValidationPath()}
+   * @param validationPath the validation path corresponding to <code>object</code>,
+   *                       null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param parentObject the parent object the validated object is declared in
    * @param object the object to verify
    * @param type the type of the object
@@ -658,7 +662,7 @@ public class ValidationUtilities {
     /**
      * Creates a validator key.
      *
-     * @param validator
+     * @param validator the validator
      */
     public ValidatorKey(Validator validator) {
       this.elementName = validator.getValidatedElementName();
@@ -699,7 +703,7 @@ public class ValidationUtilities {
   /**
    * Sorts validators by priority
    *
-   * @param validators
+   * @param validators the validators
    */
   protected void sortValidatorsByPriority(List<Validator> validators) {
     Collections.sort(validators, (Validator o1, Validator o2) -> {
@@ -785,7 +789,7 @@ public class ValidationUtilities {
    *
    * @param annotation the annotation
    * @param element the annotated element
-   * @param validationIndex the validation index >= 0 if
+   * @param validationIndex the validation index &ge; 0 if
    * @param validators the list of validators
    * @param scope the validation scope
    * @param validatorClass the class to create a validator instance from

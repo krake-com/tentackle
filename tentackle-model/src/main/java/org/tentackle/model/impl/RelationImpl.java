@@ -494,7 +494,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   public String toString() {
     StringBuilder buf = new StringBuilder();
     if (!reversed) {
-      buf.append(entity).append(" -> ");
+      buf.append(entity).append(": ");
     }
     if (composite) {
       buf.append("composite ");
@@ -613,7 +613,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
    * Refers to the source line if set, otherwise just the message.
    *
    * @param message the message
-   * @return
+   * @return the exception
    */
   public ModelException createModelException(String message) {
     ModelException ex;

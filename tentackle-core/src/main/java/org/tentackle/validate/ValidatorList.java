@@ -29,7 +29,7 @@ import java.util.List;
  * <pre>
  *    &lt;Annotation&gt;.List ({
  *           &lt;Annotation&gt;(...),
- *           &lt;Annotation&gt(...)
+ *           &lt;Annotation&gt;(...)
  *        })
  * </pre>
  *
@@ -56,7 +56,7 @@ public interface ValidatorList {
   /**
    * Gets the annotations.
    *
-   * @return
+   * @return the annotations
    */
   List<? extends Annotation> getAnnotationList();
 

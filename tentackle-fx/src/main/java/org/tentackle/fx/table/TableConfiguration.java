@@ -29,7 +29,7 @@ import org.tentackle.fx.bind.FxTableBinder;
  * Configuration for a table view.<br>
  * The main purpose is to provide a single object to configure the table view.
  *
- * @param <S> type of the objects contained within the table's items list
+ * @param <S> the type of the objects contained within the table's items list
  * @author harald
  */
 public interface TableConfiguration<S> {

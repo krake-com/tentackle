@@ -59,7 +59,7 @@ import org.wurbelizer.wurbel.WurbelException;
  * </pre>
  * A complete wurblet example:
  * <pre>
- * {@}@wurblet selectUpTo PdoSelectList --remote processed:=:null or processed:>= +id *address
+ * &#64;wurblet selectUpTo PdoSelectList --remote processed:=:null or processed:&gt;= +id *address
  * </pre>
  *
  * @author harald

@@ -58,7 +58,7 @@ public class FormLayoutComparator implements Comparator<Component>, Serializable
 
   /**
    * Creates a comparator with default values.
-   * <p>
+   * 
    * <pre>
    * rowTolerance = 10
    * horizontal = true
@@ -161,18 +161,18 @@ public class FormLayoutComparator implements Comparator<Component>, Serializable
       return 1;
     }
 
-    
+
     // Row/Column algorithm only applies to siblings. If 'a' and 'b'
     // aren't siblings, then we need to find their most inferior
     // ancestors which share a parent. Compute the ancestory lists for
     // each Component and then search from the Window down until the
     // hierarchy branches.
-    
+
     if (o1.getParent() != o2.getParent()) {
 
       LinkedList<Component> aAncestory, bAncestory;
 
-      for (aAncestory = new LinkedList<Component>(); o1 != null; o1 = o1.getParent()) {
+      for (aAncestory = new LinkedList<>(); o1 != null; o1 = o1.getParent()) {
         aAncestory.add(o1);
         if (o1 instanceof Window) {
           break;
@@ -183,7 +183,7 @@ public class FormLayoutComparator implements Comparator<Component>, Serializable
         throw new ClassCastException();
       }
 
-      for (bAncestory = new LinkedList<Component>(); o2 != null; o2 = o2.getParent()) {
+      for (bAncestory = new LinkedList<>(); o2 != null; o2 = o2.getParent()) {
         bAncestory.add(o2);
         if (o2 instanceof Window) {
           break;
@@ -194,10 +194,10 @@ public class FormLayoutComparator implements Comparator<Component>, Serializable
         throw new ClassCastException();
       }
 
-      for (ListIterator aIter = aAncestory.listIterator(aAncestory.size()),
+      for (ListIterator<Component> aIter = aAncestory.listIterator(aAncestory.size()),
               bIter = bAncestory.listIterator(bAncestory.size());;) {
         if (aIter.hasPrevious()) {
-          o1 = (Component) aIter.previous();
+          o1 = aIter.previous();
         }
         else {
           // a is an ancestor of b
@@ -205,7 +205,7 @@ public class FormLayoutComparator implements Comparator<Component>, Serializable
         }
 
         if (bIter.hasPrevious()) {
-          o2 = (Component) bIter.previous();
+          o2 = bIter.previous();
         }
         else {
           // b is an ancestor of a

@@ -34,7 +34,7 @@ public interface FormChangeableComponent extends FormChangeable {
    * Whenever {@link FormContainer#setChangeable(boolean)} is invoked
    * all of the container's components get this method invoked.
    *
-   * @param allChangeable
+   * @param allChangeable true if changeable
    */
   public void updateAllChangeable(boolean allChangeable);
 

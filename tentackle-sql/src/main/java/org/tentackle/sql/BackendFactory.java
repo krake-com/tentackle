@@ -69,7 +69,7 @@ public interface BackendFactory {
    * Creates all backends in classpath.
    *
    * @return the collection of all backends
-   * @throws BackendException
+   * @throws BackendException if retrieving all configured backends failed
    */
   Collection<Backend> getAllBackends() throws BackendException;
 

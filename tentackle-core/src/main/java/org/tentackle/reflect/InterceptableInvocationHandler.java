@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Class mapping invocation handler.<br>
  *
- * @param <T>
+ * @param <T> the interceptable type
  * @author harald
  */
 public class InterceptableInvocationHandler<T extends Interceptable> implements InvocationHandler {
@@ -63,7 +63,7 @@ public class InterceptableInvocationHandler<T extends Interceptable> implements 
    * @param mapper the classmapper
    * @param clazz the PDO declaring interface
    *
-   * @throws ClassNotFoundException
+   * @throws ClassNotFoundException if no implementation found
    */
   public InterceptableInvocationHandler(ClassMapper mapper, Class<T> clazz) throws ClassNotFoundException {
     this.clazz = clazz;
@@ -77,14 +77,15 @@ public class InterceptableInvocationHandler<T extends Interceptable> implements 
    *
    * @param proxy the dynamic proxy instance
    * @param clazz the class to implement
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegate(T proxy, Class<T> clazz)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     mixin.createDelegate(new Class<?>[] { clazz }, new Object[] { proxy });
   }

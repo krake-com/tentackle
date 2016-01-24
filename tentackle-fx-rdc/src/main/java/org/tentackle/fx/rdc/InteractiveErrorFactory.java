@@ -65,6 +65,7 @@ public interface InteractiveErrorFactory {
    * @param errorCode the optional error code
    * @param validationResult the validation result
    * @param control the optional UI component related to the error, null if none
+   * @return the error
    */
   InteractiveError createInteractiveError(boolean warning, String text, String errorCode,
                                           ValidationResult validationResult, FxControl control);

@@ -34,7 +34,7 @@ public interface EffectiveClassProvider<T> {
   /**
    * Gets the effective class of given object.
    *
-   * @param object
+   * @param object the object
    * @return the effective class, null if object is null
    */
   static Class<?> getEffectiveClass(Object object) {

@@ -22,7 +22,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;

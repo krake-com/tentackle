@@ -61,10 +61,11 @@ public interface InteractiveErrorFactory {
    * Creates an interactive error explicitly.
    *
    * @param text the error text
-   * @param level the severity (usually {@link Level#WARNING} or {@link Level#SEVERE})
+   * @param level the severity (usually {@link Logger.Level#WARNING} or {@link Logger.Level#SEVERE})
    * @param errorCode the optional error code
    * @param uiComponent the optional UI component related to the error, null if none
    * @param validationResult the optional validation result
+   * @return the interactive error
    */
   InteractiveError createInteractiveError(String text, Logger.Level level, String errorCode,
                                           ValidationResult validationResult, Object uiComponent);

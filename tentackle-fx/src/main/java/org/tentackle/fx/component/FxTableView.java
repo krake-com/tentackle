@@ -23,7 +23,6 @@ import java.io.File;
 import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import org.tentackle.fx.FxComponent;
@@ -49,26 +48,12 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   /**
    * Creates a default TableView control with no content.
    * <p>
-   * <p>
    * Refer to the {@link TableView} class documentation for details on the default state of other properties.
    */
   public FxTableView() {
     super();
   }
 
-  /**
-   * Creates a TableView with the content provided in the items ObservableList. This also sets up an observer such that
-   * any changes to the items list will be immediately reflected in the TableView itself.
-   * <p>
-   * <p>
-   * Refer to the {@link TableView} class documentation for details on the default state of other properties.
-   * <p>
-   * @param items The items to insert into the TableView, and the list to watch for changes (to automatically show in
-   *              the TableView).
-   */
-  public FxTableView(ObservableList<S> items) {
-    super(items);
-  }
 
   /**
    * Gets the table configuration.

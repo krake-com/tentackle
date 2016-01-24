@@ -104,7 +104,7 @@ public @interface FxControllerService {
   /**
    * The stylesheet.<br>
    * By default, a file <code>&lt;controller-classname&gt;.css</code> is searched for. Missing is ok.
-   * @return
+   * @return the CSS string
    */
   String css() default "";
 

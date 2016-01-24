@@ -93,7 +93,7 @@ public class Login extends AbstractFxController {
   /**
    * Sets the session info.
    *
-   * @return the session info
+   * @param sessionInfo the session info
    */
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;

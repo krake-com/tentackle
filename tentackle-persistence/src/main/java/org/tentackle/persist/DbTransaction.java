@@ -35,7 +35,7 @@ import org.tentackle.pdo.PersistenceException;
 public class DbTransaction implements Serializable {
 
   // the jvm-wide transaction counter
-  private static final AtomicLong txCount = new AtomicLong();
+  private static final AtomicLong TX_COUNT = new AtomicLong();
 
   private static final String DEFAULT_TXNAME = "<unnamed>";
 
@@ -68,7 +68,7 @@ public class DbTransaction implements Serializable {
     this.db = db;
     this.txName = txName == null ? DEFAULT_TXNAME : txName;
 
-    txNumber = txCount.incrementAndGet();
+    txNumber = TX_COUNT.incrementAndGet();
     txLevel = 1;      // nesting level 1 = first begin
     creationTime = System.currentTimeMillis();
 
@@ -231,9 +231,8 @@ public class DbTransaction implements Serializable {
   /**
    * Sets the optional transaction object.<br>
    * By default, whenever a transaction is initiated by a persistence operation of
-   * a {@link AbstractDbObject} or {@link AbstractDbObject#isTxObject} returns true, that object becomes the "parent" of the
-   * transaction. The {@code txObject}
-   * is mainly used for logging and enhanced auditing (partial history) during transactions.
+   * a PDO, that object becomes the "parent" of the transaction.<br>
+   * The {@code txObject} is mainly used for logging and enhanced auditing (partial history) during transactions.
    * The {@code txObject} is cleared at the end of the transaction.
    *
    * @param txObject the transaction object, null to clear
@@ -414,7 +413,7 @@ public class DbTransaction implements Serializable {
    * @param object the persistence object
    * @param modType the modification type
    * @return true if allowed
-   * @see #registerPersistenceVisitor(org.tentackle.db.PersistenceVisitor)
+   * @see #registerPersistenceVisitor(org.tentackle.persist.PersistenceVisitor)
    */
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
     if (visitors != null) {

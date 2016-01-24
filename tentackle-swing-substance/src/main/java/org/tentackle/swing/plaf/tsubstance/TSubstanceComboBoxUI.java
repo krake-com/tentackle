@@ -21,23 +21,23 @@
 package org.tentackle.swing.plaf.tsubstance;
 
 import javax.swing.JComboBox;
-import org.jvnet.substance.SubstanceComboBoxUI;
-import org.tentackle.swing.plaf.TComboPopup;
 import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.ComboPopup;
+import org.jvnet.substance.SubstanceComboBoxUI;
+import org.tentackle.swing.plaf.TComboPopup;
 
 
 /**
  * UI for JComboBox/FormComboBox/FormFieldComboBox.
  *
- * @todo mandatory property still missing
+ * TODO: mandatory property still missing
  *
  * @author harald
  */
 public class TSubstanceComboBoxUI extends SubstanceComboBoxUI {
-  
-  
+
+
   // ********************************
   //        Create PlAF
   // ********************************
@@ -46,8 +46,8 @@ public class TSubstanceComboBoxUI extends SubstanceComboBoxUI {
     ui.comboBox = (JComboBox) c;
     return ui;
   }
-    
-  
+
+
   /**
    * Overridden to install special popup that recognizes
    * FormComboBoxRenderer.
@@ -58,5 +58,5 @@ public class TSubstanceComboBoxUI extends SubstanceComboBoxUI {
   protected ComboPopup createPopup() {
     return new TComboPopup(comboBox);
   }
-  
+
 }

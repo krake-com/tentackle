@@ -60,7 +60,7 @@ public class DefaultIconProvider implements IconProvider {
    * Loads the icon.
    * All plaf-icons by default are PNG files. If there is no PNG file,
    * a GIF-file is tried.
-   * They are located in "org/tentackle/swing/plaf/<look-and-feel-dir>/icons".
+   * They are located in "org/tentackle/swing/plaf/&lt;look-and-feel-dir&gt;/icons".
    * If the look and feel is not a TentackleLookAndFeel the icons are
    * loaded from a fallback set in "org/tentackle/swing/plaf/icons".
    *

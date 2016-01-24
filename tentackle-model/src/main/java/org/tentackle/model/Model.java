@@ -58,7 +58,7 @@ public interface Model {
    *
    * @param modelDir the directory containing the model files
    * @param defaults model defaults, null if none
-   * @throws ModelException
+   * @throws ModelException if the model is inconsistent
    */
   void loadModel(String modelDir, ModelDefaults defaults) throws ModelException;
 
@@ -84,6 +84,8 @@ public interface Model {
   /**
    * Refreshes the model.<br>
    * Checks for changes and reloads if necessary.
+   *
+   * @throws ModelException if the model is inconsistent
    */
   void refreshModel() throws ModelException;
 
@@ -91,6 +93,7 @@ public interface Model {
    * Gets all cached entities.
    *
    * @return all entities loaded so far
+   * @throws ModelException if the model is inconsistent
    */
   Collection<Entity> getAllEntitites() throws ModelException;
 
@@ -99,6 +102,7 @@ public interface Model {
    *
    * @param fileName the name of the mapfile
    * @return the entity, null if no such entity
+   * @throws ModelException if the model is inconsistent
    */
   Entity getByFileName(String fileName) throws ModelException;
 
@@ -107,6 +111,7 @@ public interface Model {
    *
    * @param entityName the name
    * @return the entity, null if no such entity
+   * @throws ModelException if the model is inconsistent
    */
   Entity getByEntityName(String entityName) throws ModelException;
 
@@ -115,6 +120,7 @@ public interface Model {
    *
    * @param classId the class id
    * @return the entity, null if no such entity
+   * @throws ModelException if the model is inconsistent
    */
   Entity getByClassId(int classId) throws ModelException;
 
@@ -125,7 +131,6 @@ public interface Model {
    * @param defaults the model defaults
    * @param fileName the name of the mapfile
    * @return the entity
-   * @see WurbUtil#openReader(java.lang.String)
    * @throws ModelException if no such mapfile or parsing error
    */
   Entity loadByFileName(ModelDefaults defaults, String fileName) throws ModelException;

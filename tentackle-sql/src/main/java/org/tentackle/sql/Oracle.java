@@ -48,20 +48,20 @@ import org.tentackle.common.TentackleRuntimeException;
  Example:
 
       if (getDb().isOracle()) {
-        query.add(" AND m." + CN_ZEITPUNKT + ">=" + OracleHelper.timestampString(par.vonZeitpunkt));
+        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=" + OracleHelper.timestampString(par.vonZeitpunkt));
       }
       else  {
-        query.add(" AND m." + CN_ZEITPUNKT + ">=?", par.vonZeitpunkt);
+        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=?", par.vonZeitpunkt);
       }
 
 
  or:
       if (getDb().isOracle()) {
-        query.add(" AND m." + CN_ZEITPUNKT + ">=TO_DATE(?,'" + OracleHelper.ORA_TIMESTAMP_FORMAT + "')",
+        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=TO_DATE(?,'" + OracleHelper.ORA_TIMESTAMP_FORMAT + "')",
                   OracleHelper.timestampFormat.format(par.vonZeitpunkt));
       }
       else  {
-        query.add(" AND m." + CN_ZEITPUNKT + ">=?", par.vonZeitpunkt);
+        query.add(" AND m." + CN_ZEITPUNKT + "&gt;=?", par.vonZeitpunkt);
       }
  </pre>
  *

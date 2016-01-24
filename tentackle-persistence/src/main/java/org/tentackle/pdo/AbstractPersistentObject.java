@@ -711,9 +711,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * {@inheritDoc}
-   * <p>
-   * The default implementation returns null.
+   * Gets the SQL code for the context condition.
+   *
+   * @return null if no condition (default)
    */
   public String getSqlContextCondition() {
     return null;
@@ -1308,7 +1308,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Adds the eager joins to the created SQL.
    *
-   * @param sql the SQL code
    * @return the processed code
    */
   public JoinedSelect<T> getEagerJoinedSelect() {
@@ -2320,7 +2319,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * the default implementation gets it from the db.
    *
    * @return the list, never null
-   * @see #selectAllInContext()
+   * @see #selectAll()
    */
   @Override
   public List<T> selectAllCached()  {
@@ -2384,6 +2383,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Adds a PDO class that is referencing this PDO clazz.<br>
    *
+   * @param <T> the PDO type
    * @param clazz the class to add
    * @param methodName a method name, null if default
    * @return true if added, false if already in map
@@ -2396,6 +2396,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Removes a PDO class that is referencing this PDO clazz.<br>
    *
+   * @param <T> the PDO type
    * @param clazz the class to add
    * @param methodName a method name, null if default
    * @return true if removed, false if not in map
@@ -2411,6 +2412,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * Throws a PersistenceException if the persistence class is not an {@link AbstractPersistentObject}.
    *
+   * @param <T> the PDO type
    * @param clazz the pdo class
    * @return the persistence class
    */
@@ -2711,7 +2713,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Configures the remotely retrieved objects.
    *
    * @param context the local domain context
-   * @param obj the object
+   * @param objects the objects to configure
    */
   public void configureRemoteObjects(DomainContext context, Collection<T> objects) {
     if (objects != null) {
@@ -2827,11 +2829,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * This method is provided to save components in PDOs only.
    * This method must not be used from within the application!
    *
+   * @param <X> the PDO type
    * @param oldCollection the list of objects stored in db
    * @param newCollection the new list of objects
    */
   protected <X extends PersistentDomainObject<X>> void deleteMissingInCollection(Collection<X> oldCollection,
-                                                                                Collection<X> newCollection) {
+                                                                                 Collection<X> newCollection) {
     if (oldCollection != null && oldCollection.size() > 0) {
       Session session = null;
       for (X pDo: oldCollection) {
@@ -3008,6 +3011,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Implementation of persist bypassing the invocation handler.
+   *
+   * @return the persisted PDO
    */
   protected T persistImpl() {
     if (getSession().isRemote())  {
@@ -3068,6 +3073,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Assumes that a transaction is already running.
    * This method must not be used from within the application!
    *
+   * @param <X> the PDO type
    * @param pdos the objects
    * @return true if modified
    */
@@ -3336,7 +3342,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Gets the object associated to the id of the editedBy-attribute.<br>
    * This is usually the id of a persistent Object implementing the concept
    * of a user, group, role or whatever. The default implementation
-   * invokes {@link Application#getUser(long)}.
+   * invokes {@link AbstractApplication#getUser}.
    *
    * @return the user object, null if no user or id was 0
    */
@@ -3378,7 +3384,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Notice: releasing an already released token is not considered to be an error.
    * This will simply update the release timestamp.
    * <p>
-   * If expiry > 0, a new token for the current user is requested.
+   * If expiry &gt; 0, a new token for the current user is requested.
    * True is returned if the token could be exclusively acquired. EditedBy and
    * editedSince are updated accordingly.
    * If false: the object is in use by another user and editedSince and editedId
@@ -3479,7 +3485,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Notice: releasing an already released token is not considered to be an error.
    * This will simply update the release timestamp.
    * <p>
-   * If expiry > 0, a new token for the current user is requested.
+   * If expiry &gt; 0, a new token for the current user is requested.
    * True is returned if the token could be exclusively acquired. EditedBy and
    * editedSince are updated accordingly.
    * If false: the object is in use by another user and editedSince and editedId

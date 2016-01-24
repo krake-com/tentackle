@@ -69,7 +69,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    *
    * @param comp the component to determine the window owner, null if none
    * @param modal true if dialog should be modal
-   * @return the dialog or null if use default (according to the {@link Hook}).
+   * @return the dialog or null if use default
    */
   PdoEditDialog<T> createDialog(Component comp, boolean modal);
 
@@ -160,7 +160,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
 
   /**
    * Gets the optional tree-view filter.<br>
-   * The filter is used in {@link PdoNaviPanel} to
+   * The filter is used in {@link PdoNavigationPanel} to
    * show only certain objects in the tree view as root nodes.
    * Nice for hierarchical data.
    *
@@ -191,7 +191,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * object is displayed in the current tree.
    *
    * @param parentObject the parent object of this object in the tree, null = no parent
-   * @return @return the childs (may be of any type, not only PDOs, and mixed!)
+   * @return the childs (may be of any type, not only PDOs, and mixed!)
    * @see PdoTree
    */
   Collection getTreeChildObjects(Object parentObject);

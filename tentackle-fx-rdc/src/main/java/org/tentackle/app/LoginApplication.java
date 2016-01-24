@@ -88,6 +88,7 @@ public class LoginApplication extends FxApplication {
    * Creates the session info to be passed to the doLogin controller.
    *
    * @return the session info
+   * @throws ApplicationException if session info could not be created
    */
   public SessionInfo createSessionInfo() throws ApplicationException {
     DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
@@ -103,7 +104,8 @@ public class LoginApplication extends FxApplication {
       sessionInfo.setUserName(props.getProperty(Constants.BACKEND_USER, sessionInfo.getUserName()));
     }
     if (password == null) {   // if not overridden by command line
-      sessionInfo.setPassword(StringHelper.toCharArray(props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPasswordAsString())));
+      sessionInfo.setPassword(StringHelper.toCharArray(
+              props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPasswordAsString())));
     }
 
     if (application.isDeployedByJNLP() && sessionPropsName != null) {

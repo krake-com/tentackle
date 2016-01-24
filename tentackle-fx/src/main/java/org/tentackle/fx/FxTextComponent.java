@@ -82,10 +82,6 @@ public interface FxTextComponent extends FxComponent {
   /**
    * Sets the maximum number of columns.<br>
    * The number of columns will be enforced by the model.
-   * <p>
-   * If {@link FormField#getColumns()} == 0 the component will resize as
-   * if setColumns has been invoked with the given maxColumns. However,
-   * getColumns() remains 0.
    *
    * @param maxColumns the maximum number of columns, 0 if unlimited (default)
    */

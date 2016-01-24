@@ -47,7 +47,7 @@ public interface FormComponentBinder extends Binder {
    * Binds with form inheritance.
    * <p>
    * The form will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited members of the form's parent classes
    * will be included as well.
    * <p>
@@ -63,7 +63,7 @@ public interface FormComponentBinder extends Binder {
    * Binds with bindable inheritance.
    * <p>
    * The form will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
+   * annotated with the {@link org.tentackle.bind.Bindable}-annotation.
    * Inherited members of all bindables will be included as well.
    * <p>
    * Notice that the object references are <em>not</em> kept in the binding.

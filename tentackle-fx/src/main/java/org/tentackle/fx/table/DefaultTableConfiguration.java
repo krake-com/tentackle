@@ -30,7 +30,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
@@ -119,7 +118,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    *
    * @param template a template object
    * @param name the table's name, null if basename from effective class of template
-   * @param columnConfig the configurations
    */
   @SuppressWarnings("unchecked")
   public DefaultTableConfiguration(S template, String name) {

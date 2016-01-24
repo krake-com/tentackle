@@ -26,7 +26,6 @@ import org.tentackle.pdo.PersistenceException;
 
 /**
  * A subset of the columns returned by a {@link ResultSetWrapper}.
- * <p>
  *
  * @author harald
  */
@@ -86,7 +85,7 @@ public class ResultSetSkipBlock {
    * Maps the given column name to its column index.
    * <p>
    * If the result set is in skip mode, the first column with that name is found
-   * after having skipped some columns according to the last invocation of {@link #skip()}.
+   * after having skipped some columns according to the last invocation of {@link ResultSetWrapper#skip()}.
    * Otherwise the standard JDBC-implementation is used.
    *
    * @param name the column name
@@ -95,7 +94,8 @@ public class ResultSetSkipBlock {
   public int findColumn(String name) {
     Integer ndx = columnMap.get(name);
     if (ndx == null) {
-      throw new PersistenceException(rs.getSession(), "no such column '" + name + "' beyond " + skippedColumns + " skipped columns in " + rs);
+      throw new PersistenceException(rs.getSession(),
+              "no such column '" + name + "' beyond " + skippedColumns + " skipped columns in " + rs);
     }
     applyColumnIndex(ndx);
     return ndx;

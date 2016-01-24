@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicLong;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.persist.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.reflect.ReflectionHelper;
@@ -39,38 +38,40 @@ import org.tentackle.reflect.ReflectionHelper;
  * All classvariables register to a static {@link Map} that can be queried by apps
  * by tablename.
  *
- * @param <P>
+ * @param <P> the persistence type
  * @author harald
  */
 public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   // all classes register here:
-  private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> clazzMap = new HashMap<>();
+  private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();
 
 
   /**
    * Gets the classvariables for a given tablename.
    *
+   * @param <P> the persistence type
    * @param tableName is the database tablename
    * @return the classvariables or null if no such tablename
    */
   @SuppressWarnings("unchecked")
   public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> getVariables(String tableName) {
-    synchronized(clazzMap) {
-      return (DbObjectClassVariables<P>) clazzMap.get(tableName);
+    synchronized(CLASSMAP) {
+      return (DbObjectClassVariables<P>) CLASSMAP.get(tableName);
     }
   }
 
   /**
    * Registers a classvariables instance.
    *
+   * @param <P> the persistence type
    * @param variables the classvariables to register
    */
   public static <P extends AbstractDbObject<P>> void putVariables(DbObjectClassVariables<P> variables) {
     if (variables.tableName != null) {
-      synchronized(clazzMap) {
+      synchronized(CLASSMAP) {
         @SuppressWarnings("unchecked")
-        DbObjectClassVariables<P> classVar = (DbObjectClassVariables<P>) clazzMap.get(variables.tableName);
+        DbObjectClassVariables<P> classVar = (DbObjectClassVariables<P>) CLASSMAP.get(variables.tableName);
         if (classVar != null) {
           /**
            * Using an extended class with the same tablename is okay.
@@ -84,7 +85,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
           }
         }
         else  {
-          clazzMap.put(variables.tableName, variables);
+          CLASSMAP.put(variables.tableName, variables);
         }
       }
     }
@@ -146,12 +147,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Referencing classes and their isReferencing-methods.
    */
   protected final Set<ForeignReference> foreignReferences = new TreeSet<>();
-
-  /**
-   * General purpose instance (or ID) counter.
-   * Use {@link #countInstance} to get a new unique number.
-   */
-  private final AtomicLong instanceCount = new AtomicLong();
 
 
   /**
@@ -337,18 +332,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     catch (Exception e) {
       // missing props is okay
     }
-  }
-
-  /**
-   * Gets a unique instance number for pseudo-objects
-   * (e.g. {@link org.tentackle.pdo.PersistentPseudoObject}
-   * to simulate a unique ID.
-   * Or for other purposes.
-   *
-   * @return the instance number
-   */
-  public long countInstance() {
-    return instanceCount.incrementAndGet();
   }
 
 

@@ -34,7 +34,7 @@ public class ColorTranslator extends IdentityTranslator<Color> {
   /**
    * Creates the translator.
    *
-   * @param component
+   * @param component the component
    */
   public ColorTranslator(FxComponent component) {
     super(component);

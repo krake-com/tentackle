@@ -52,7 +52,7 @@ import org.tentackle.sql.Backend;
  * table := $tablename
  *
  * [remote]
- * 
+ *
  * ## attributes
  * long           objectId        objectid        object id
  * int            objectClassId   classid         object class id
@@ -736,7 +736,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @param name the parameter's name
    * @return the parameter's value
-   * @throws ParseException
+   * @throws ParseException if parsing the message failed
    */
   public String getMessageParameter(String name) throws ParseException {
     return getMessageParameters().getParameter(name);
@@ -749,8 +749,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Updates the message field as well.
    *
    * @param name the parameter's name
-   * @param value the parameter's va,ue
-   * @throws ParseException
+   * @param value the parameter's value
+   * @throws ParseException if parsing the message failed
    */
   public void setMessageParameter(String name, String value) throws ParseException {
     getMessageParameters().setParameter(name, value);
@@ -762,7 +762,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   @Override
   public String toString()  {
     StringBuilder buf = new StringBuilder();
-    buf.append("<").append(getId()).append("/").append(modType).append(":");
+    buf.append('<').append(getId()).append('/').append(modType).append(':');
     if (user == null) {
       buf.append("no-user");
     }
@@ -770,12 +770,12 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       buf.append(user);
     }
     if (txId != 0) {
-      buf.append(",").append(txId);
+      buf.append(',').append(txId);
       if (txName != null) {
-        buf.append("/").append(txName);
+        buf.append('/').append(txName);
       }
     }
-    buf.append(",");
+    buf.append(',');
     if (when == null) {
       buf.append("no-time");
     }
@@ -785,7 +785,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     buf.append(">");
 
     if (objectClassId != 0 && objectId != 0) {
-      buf.append(" ").append(PdoUtilities.getInstance().getPdoClassName(objectClassId)).append("[").append(objectId).append("/").append(getSerial()).append("]");
+      buf.append(' ').append(PdoUtilities.getInstance().getPdoClassName(objectClassId))
+         .append('[').append(objectId).append('/').append(getSerial()).append(']');
     }
     if (message != null) {
       buf.append(" \"").append(message).append("\"");
@@ -801,8 +802,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * The object is lazily cached if the given db equals
    * the db of this modlog.
    * <p>
-   * If the returned object is a {@link PersistentObject}, it's getPdo() (or pdo()) method will point to the PDO.
-   * Otherwise it's a low level AbstractDbObject.
+   * If the returned object is a {@link org.tentackle.pdo.PersistentObject},
+   * it's getPdo() (or pdo()) method will point to the PDO.
+   * Otherwise it's a low level {@link AbstractDbObject}.
    *
    * @param db is the db-connection from which to load the object.
    * @return the object or null if not found.
@@ -851,8 +853,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Gets the object referenced by this ModificationLog.
    * The object is lazily cached.
    * <p>
-   * If the returned object is a {@link PersistentObject}, it's getPdo() (or pdo()) method will point to the PDO.
-   * Otherwise it's a low level AbstractDbObject.
+   * If the returned object is a {@link org.tentackle.pdo.PersistentObject},
+   * it's getPdo() (or pdo()) method will point to the PDO.
+   * Otherwise it's a low level {@link AbstractDbObject}.
    *
    * @return the object or null if not found.
    */
@@ -1183,7 +1186,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Gets the modlogs for a given object.
    *
-   * @param objectClass the object's class name
+   * @param objectClassId the object's class ID
    * @param objectId the object's ID
    * @return the list of modlogs
    * @wurblet selectByObject DbSelectList --model=$mapfile processed:=:null objectClassId objectId +id
@@ -1365,7 +1368,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Checks if there are logs for a given object.
    *
-   * @param objectClass the object's classname
+   * @param objectClassId the object's class ID
    * @param objectId the object's ID
    * @return true if there are logs
    * @wurblet isReferencingObject DbIsReferencing --model=$mapfile objectClassId objectId
@@ -1418,7 +1421,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Used to mark modlogs already processed for a given object. (poolkeeper)
    *
    * @param processed the new processing timestamp
-   * @param objectClass the object class
+   * @param objectClassId the object class ID
    * @param objectId the object id
    * @param modType the modification type
    * @param serial the object serial
@@ -1484,7 +1487,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    * Deletes by objectclass + objectid + serial less or equal than some value.<br>
    * Used to remove modlogs already processed for a given object. (poolkeeper)
    *
-   * @param objectClass the object class
+   * @param objectClassId the object class ID
    * @param objectId the object id
    * @param modType the modification type
    * @param serial the object serial
@@ -1543,7 +1546,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Selects the transaction.<br.
+   * Selects the transaction.<br>
    *
    * @param txId the transaction id
    * @return the modlogs of the transaction sorted by id
@@ -1935,7 +1938,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @param modlog the modification log to replay
    * @param toDb the db the logs will be applied to
-   * @see #replay(java.util.List, boolean, org.tentackle.db.Db)
    */
   public void replay(ModificationLog modlog, Db toDb) {
 

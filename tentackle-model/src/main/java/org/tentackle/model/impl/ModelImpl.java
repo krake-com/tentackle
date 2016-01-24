@@ -241,7 +241,6 @@ public class ModelImpl implements Model {
    * @param fileName the name of the mapfile
    * @param updateRelations true if update the related entites in the model
    * @return the entity
-   * @see WurbUtil#openReader(java.lang.String)
    * @throws ModelException if no such mapfile or parsing error
    */
   protected synchronized Entity loadByFileName(ModelDefaults defaults, String fileName, boolean updateRelations) throws ModelException {
@@ -334,8 +333,8 @@ public class ModelImpl implements Model {
    * Updates all relations.
    *
    * @param defaults the model defaults
-   * @param loadedEntity the entity that caused the update, null if none
-   * @throws ModelException
+   * @param loadedModelEntity the entity that caused the update, null if none
+   * @throws ModelException if relations or inheritance misconfigured
    */
   protected void updateRelations(ModelDefaults defaults, ModelEntity loadedModelEntity) throws ModelException {
 

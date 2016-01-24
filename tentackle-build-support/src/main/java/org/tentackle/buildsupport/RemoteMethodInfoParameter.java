@@ -106,7 +106,8 @@ public class RemoteMethodInfoParameter {
   }
 
   /**
-   * Returns whether the parameter is an instance of a {@link org.tentackle.persist.Db}.
+   * Returns whether the parameter is an instance of a session.
+   *
    * @return true if instanceof Db
    */
   public boolean isInstanceOfSession() {
@@ -153,7 +154,7 @@ public class RemoteMethodInfoParameter {
    * Writes this parameter to the infofile.
    *
    * @param writer the writer bound to the infofile
-   * @throws java.io.IOException
+   * @throws java.io.IOException if write failed
    */
   public void write(PrintWriter writer) throws IOException {
     StringBuilder buf = new StringBuilder();

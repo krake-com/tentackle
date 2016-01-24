@@ -30,7 +30,7 @@ import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * FxController to search for PDOs.<br.
+ * FxController to search for PDOs.<br>
  * Holds the view of the selection criteria and runs the query.
  *
  * @author harald

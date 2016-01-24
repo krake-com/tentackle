@@ -206,9 +206,10 @@ public abstract class ServerApplication extends AbstractApplication
    * Creates the DbServer instance (but does not start it).<br>
    * The default implementation creates a {@link DbServer}.
    *
-   * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
+   * @param connectionClass the class of the connection object to instantiate,
+   *                        null = default or from serverInfo's properties file
    * @return the created DbServer
-   * @throws ApplicationException
+   * @throws ApplicationException if creating the DbServer failed
    */
   protected DbServer createDbServer(Class<? extends RemoteDbConnectionImpl> connectionClass) throws ApplicationException  {
     return new DbServer(getSessionInfo(), connectionClass);
@@ -291,7 +292,7 @@ public abstract class ServerApplication extends AbstractApplication
   /**
    * Connects the server to the database backend.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if login failed
    */
   protected void doLogin() throws ApplicationException {
 
@@ -369,7 +370,7 @@ public abstract class ServerApplication extends AbstractApplication
    * {@code "--nomodthread"} given, creates the connection manager, the Db pool,
    * and the DbServer instance.
    *
-   * @throws org.tentackle.misc.ApplicationException
+   * @throws ApplicationException if finish failed
    */
   @Override
   protected void doFinishStartup() throws ApplicationException {
@@ -391,7 +392,7 @@ public abstract class ServerApplication extends AbstractApplication
   /**
    * Starts the RMI-server.
    * The default implementation just does {@code dbServer.start()}.
-   * @throws ApplicationException
+   * @throws ApplicationException if starting the dbServer failed
    */
   protected void doStartDbServer() throws ApplicationException {
     dbServer.start();

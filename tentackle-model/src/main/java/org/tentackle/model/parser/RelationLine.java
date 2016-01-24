@@ -27,7 +27,7 @@ import org.tentackle.model.ModelException;
  * <p>
  * Syntax:<br>
  * <pre>
- * &lt;class&gt: &lt;property&gt;=&lt;value&gt;[ &lt;value&gt; &lt;value&gt;], &lt;property&gt;=..., ...
+ * &lt;class&gt;: &lt;property&gt;=&lt;value&gt;[ &lt;value&gt; &lt;value&gt;], &lt;property&gt;=..., ...
  * </pre>
  *
  * Properties:<p>
@@ -70,11 +70,13 @@ import org.tentackle.model.ModelException;
  *
  * link = &lt;name-of-link-method&gt; [index]
  * <ul>
- *    only for composite relations: special method to set the links in composite lists or objects
+ *    <li>only for composite relations: special method to set the links in composite lists or objects
  *    in saveReferencingRelations.<br>
- *    The methods arguments are fixed to (this).<br>
+ *    The methods arguments are fixed to (this).</li>
+ *    <li>
  *    [index] is an integer attribute of the referenced entity.<br>
  *    If [index] is set, (this, ndx) is invoked with index beginning at 0 (only for lists).
+ *    </li>
  * </ul>
  *
  * args = &lt;arg1&gt; [&lt;arg2&gt; &lt;arg3&gt; ... &lt;argN&gt;]

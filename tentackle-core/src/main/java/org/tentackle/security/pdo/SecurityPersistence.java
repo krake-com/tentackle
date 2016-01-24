@@ -294,7 +294,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * This could lead to a statement being marked ready twice in the server
    * (client executes that statement remote, readFromResultSetWrapper in the server
    * checks the security and invokes initialize in the server, which in
-   * turn uses the same statement -> catch22...)
+   * turn uses the same statement -&gt; catch22...)
    */
   public void assertRemoteSecurityManagerInitialized();
 
@@ -390,6 +390,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Delete all rules for given grantee.<br>
    *
+   * @param granteeClassId the grantee's class ID
    * @param granteeId the grantee's object ID
    * @return the number of deleted rules
    */

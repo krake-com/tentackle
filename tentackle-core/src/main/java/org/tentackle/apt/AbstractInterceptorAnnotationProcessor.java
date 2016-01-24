@@ -65,7 +65,7 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
   /**
    * Creates an interception annotation processor.
    *
-   * @param onlyInterceptables true if checked annotations must reside in an interceptable interface, false if must _not_
+   * @param type the interceptor type
    */
   public AbstractInterceptorAnnotationProcessor(Type type) {
     this.type = type;

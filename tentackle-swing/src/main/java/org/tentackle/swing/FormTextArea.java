@@ -126,8 +126,8 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
    *
    * @param doc the document model, null if default {@link FormFieldDocument}.
    * @param text the text to be displayed, null if none
-   * @param rows the number of rows >= 0
-   * @param columns the number of columns >= 0
+   * @param rows the number of rows &ge; 0
+   * @param columns the number of columns &ge; 0
    */
   public FormTextArea(Document doc, String text, int rows, int columns) {
 
@@ -146,8 +146,8 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
    * Creates a {@code FormTextArea} with the default document model.
    *
    * @param text the text to be displayed, null if none
-   * @param rows the number of rows >= 0
-   * @param columns the number of columns >= 0
+   * @param rows the number of rows &ge; 0
+   * @param columns the number of columns &ge; 0
    */
   public FormTextArea (String text, int rows, int columns)  {
     this (null, text, rows, columns);
@@ -165,8 +165,8 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
   /**
    * Creates an empty {@code FormTextArea} with the default document model.
    *
-   * @param rows the number of rows >= 0
-   * @param columns the number of columns >= 0
+   * @param rows the number of rows &ge; 0
+   * @param columns the number of columns &ge; 0
    */
   public FormTextArea (int rows, int columns)  {
     this (null, null, rows, columns);

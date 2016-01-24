@@ -25,9 +25,10 @@ package org.tentackle.model.parser;
  * <li>All lines beginning with a '#' are comments. Anything following a # is comment as well.</li>
  * <li>Lines containing a '=' not containing a ':' in between the start-of-line and the '=' are configuration lines.
  *   <ul>
- *   <li>pdo = &lt;Pdo-Interface&gt;</li>
- *   <li>index &lt;name&gt; = column_1, ...</li>
- *   <li>unique index &lt;name&gt; = column1, ...</li>
+ *      <li>pdo = &lt;Pdo-Interface&gt;</li>
+ *      <li>index &lt;name&gt; = column_1, ...</li>
+ *      <li>unique index &lt;name&gt; = column1, ...</li>
+ *   </ul>
  * </li>
  * <li>Lines beginning with '[' are global options.</li>
  * <li>Lines with the first word (sep. by whitespaces) not followed by a colon are attributes.</li>

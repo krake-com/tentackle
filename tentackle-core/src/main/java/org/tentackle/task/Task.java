@@ -35,7 +35,7 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Sets the task id
-   * @param id
+   * @param id the id
    */
   void setId(long id);
 
@@ -89,7 +89,7 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
   /**
    * Sets the completed timestamp.
    *
-   * @param completed
+   * @param completed true if completed
    */
   void setCompleted(long completed);
 
@@ -101,21 +101,21 @@ public interface Task extends Runnable, Serializable, Comparable<Task> {
 
   /**
    * Sets the stated timestamp
-   * @param started
+   * @param started true if started
    */
   void setStarted(long started);
 
   /**
    * Adds a task listener.
    *
-   * @param listener
+   * @param listener the listener
    */
   void addTaskListener(TaskListener listener);
 
   /**
    * Removes a task listener.
    *
-   * @param listener
+   * @param listener the listener
    */
   void removeTaskListener(TaskListener listener);
 

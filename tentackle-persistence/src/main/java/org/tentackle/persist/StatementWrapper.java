@@ -123,7 +123,7 @@ public class StatementWrapper implements AutoCloseable {
    * to a {@link ConnectionManager}.<br>
    * This is an additional measure to enforce the programming rule that
    * a statement is being used only once after {@link Db#createStatement()}
-   * (for non-prepared statements) or after {@link Db#getPreparedStatement(int)}
+   * (for non-prepared statements) or after {@link Db#getPreparedStatement}
    * for prepared statements.<p>
    * If a statement is marked ready more than once, i.e. an open result
    * exists (which would be closed according to the JDBC specs), a PersistenceException is thrown.
@@ -395,7 +395,7 @@ public class StatementWrapper implements AutoCloseable {
    * Returns whether the statement is being executed.<br>
    * May be invoked from any thread.
    *
-   * @return
+   * @return true if statement is running
    */
   public synchronized boolean isRunning() {
     return running;

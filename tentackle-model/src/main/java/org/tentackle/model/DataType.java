@@ -52,16 +52,16 @@ public enum DataType {
   /** A {@link java.sql.Timestamp}. */
   TIMESTAMP("Timestamp", false, true, false, true, false, SqlType.TIMESTAMP),
 
-  /** A {@link org.tentackle.misc.Binary} (tentackle type). */
+  /** A {@link org.tentackle.common.Binary} (tentackle type). */
   BINARY("Binary", false, true, false, false, false, SqlType.LONGVARBINARY),
 
   /** A {@link BigDecimal}. */
   BIGDECIMAL("BigDecimal", false, false, true, false, false, SqlType.DECIMAL),
 
-  /** A {@link org.tentackle.misc.BMoney} (tentackle type). */
+  /** A {@link org.tentackle.common.BMoney} (tentackle type). */
   BMONEY("BMoney", false, false, true, false, false, SqlType.DOUBLE, SqlType.INTEGER),
 
-  /** A {@link org.tentackle.misc.DMoney} (tentackle type). */
+  /** A {@link org.tentackle.common.DMoney} (tentackle type). */
   DMONEY("DMoney", false, false, true, false, false, SqlType.DECIMAL, SqlType.INTEGER),
 
   /** A {@link Character}. */

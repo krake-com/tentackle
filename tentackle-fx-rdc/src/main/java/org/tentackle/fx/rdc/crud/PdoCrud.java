@@ -129,7 +129,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Sets whether the user can change the editor's contents.
    * <p>
    * Notice: this does not set the changeability of the view!
-   * This happens when {@link #setPdo()} is invoked.
+   * This happens when {@link #setPdo} is invoked.
    *
    * @param editable true if editable
    */

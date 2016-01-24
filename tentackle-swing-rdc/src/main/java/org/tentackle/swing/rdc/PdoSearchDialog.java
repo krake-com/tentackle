@@ -35,6 +35,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.tree.TreeSelectionModel;
+import org.tentackle.misc.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -44,7 +45,6 @@ import org.tentackle.swing.FormDialog;
 import org.tentackle.swing.FormInfo;
 import org.tentackle.swing.FormPanel;
 import org.tentackle.swing.FormUtilities;
-import org.tentackle.misc.StringHelper;
 
 
 
@@ -417,8 +417,6 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
    * Runs the search.
    * <p>
    * Depending on the search parameter the search is run in a separate thread.
-   *
-   * @see SearchParameter#searchInPdoTrackerThread
    */
   protected void runSearch() {
 

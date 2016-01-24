@@ -21,7 +21,10 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.util.List;
-
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
 
 /**
@@ -32,50 +35,45 @@ import java.util.List;
  * for being picked up by wurblets, depending on the handler implementation for
  * each annotation.
  *
- * @goal analyze
- * @phase generate-sources
- * @requiresDependencyResolution compile
- *
  * @author harald
  */
+@Mojo(name = "analyze",
+      defaultPhase = LifecyclePhase.GENERATE_SOURCES,
+      requiresDependencyResolution = ResolutionScope.COMPILE)
 public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
 
   /**
    * Directory holding the sources to be processed.<br>
    * Defaults to all java sources of the current project.
    * If this is not desired, filesets must be used.
-   *
-   * @parameter property="tentackle.sourceDir"
-   *            default-value="${project.build.sourceDirectory}"
-   * @required
    */
+  @Parameter(defaultValue = "${project.build.sourceDirectory}",
+             property = "tentackle.sourceDir",
+             required = true)
   protected File sourceDir;
 
   /**
    * Project classpath.
-   *
-   * @parameter default-value="${project.compileClasspathElements}"
-   * @required
-   * @readonly
    */
+  @Parameter(defaultValue = "${project.compileClasspathElements}",
+             readonly = true,
+             required = true)
   protected List<String> classpathElements;
 
   /**
-   * Directory analyze results.<br>
-   *
-   * @parameter property="tentackle.analyzeDir"
-   *            default-value="${project.build.directory}/analyze"
-   * @required
+   * Directory for the analyze results.
    */
+  @Parameter(defaultValue = "${project.build.directory}/analyze",
+             property = "tentackle.analyzeDir",
+             required = true)
   protected File analyzeDir;
 
   /**
-   * Directory generated services.<br>
-   *
-   * @parameter property="tentackle.serviceDir"
-   *            default-value="${project.build.directory}/generated-resources/service"
-   * @required
+   * Directory for the generated services.
    */
+  @Parameter(defaultValue = "${project.build.directory}/generated-resources/service",
+             property = "tentackle.serviceDir",
+             required = true)
   protected File servicesDir;
 
 

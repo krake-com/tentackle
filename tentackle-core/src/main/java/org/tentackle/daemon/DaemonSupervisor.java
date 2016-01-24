@@ -462,7 +462,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
   /**
    * Gets the last termination cause.<br>
-   * Only valid if daemon is a {@link Supevisable}.
+   * Only valid if daemon is a {@link Supervisable}.
    *
    * @param index the daemon's slot [0 ... daemonNum-1]
    * @return the termination cause, null if none

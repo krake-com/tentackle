@@ -37,7 +37,6 @@ import org.tentackle.misc.Immutable;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.SerialNumbered;
 import org.tentackle.pdo.NotFoundException;
-import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Persistent;
@@ -280,10 +279,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Gets the string value: "{@link #getSingleName}[id/serial]".<br>
-   * Example: "Product[344/2]"
+   * Gets the string value: "&lt;className&gt;[id/serial]".<br>
+   * Example: "de.krake.plsbl.Product[344/2]"
    *
-   * @return the string value of this AbstractDbObject
+   * @return the string value of this object
    */
   @Override
   public String toGenericString() {
@@ -345,7 +344,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Clones an object.<p>
    * Cloning an object yields a copy with id=0 and serial=0.
    * Needs to be overridden if object references, etc... have to be cloned too.
-   * Subclasses should throw a {@link DbRuntimeException} if they should not be cloned
+   * Subclasses should throw a {@link PersistenceException} if they should not be cloned
    * depending on the application logic (not CloneNotSupportedException).
    *
    * @return a clone of this object
@@ -698,7 +697,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Sets the logical db connection for this object.
    *
-   * @param db the db connection
+   * @param session the db session
    */
   @Override
   public void setSession(Session session) {
@@ -915,13 +914,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * change listeners will also be removed.
    *
    * @param modified is true if object is flagged modified, false if not.
-   * @see #readFromResultSetWrapper(org.tentackle.persist.ResultSetWrapper, boolean)
-   * @see #insertObject(boolean)
-   * @see #updateObject(boolean)
-   * @see #deleteObject(boolean)
-   * @see #delete()
-   * @see #saveObject()
-   * @see #removeAllPropertyChangeListeners()
    */
   public void setModified(boolean modified) {
     assertMutable();
@@ -1052,7 +1044,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Gets a prepared statement.<br>
-   * Uses {@link ResultSet.TYPE_FORWARD_ONLY} and {@link ResultSet.CONCUR_READ_ONLY}.
+   * Uses {@link java.sql.ResultSet#TYPE_FORWARD_ONLY} and {@link java.sql.ResultSet#CONCUR_READ_ONLY}.
    *
    * @param stmtId the statement id
    * @param sqlsupplier the sql code supplier
@@ -1076,7 +1068,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Creates a one-shot  prepared statement.<br>
-   * Uses {@link ResultSet.TYPE_FORWARD_ONLY} and {@link ResultSet.CONCUR_READ_ONLY}.
+   * Uses {@link java.sql.ResultSet#TYPE_FORWARD_ONLY} and {@link java.sql.ResultSet#CONCUR_READ_ONLY}.
    *
    * @param sql the sql code
    * @return the statement
@@ -1187,7 +1179,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Notice that isRemovable() for performance reasons is not covered
    * by its own delegate method in remote connections.
    * Hence, if classes in your application require a different implementation
-   * (!isNew && !isReferenced) you must provide such a remote method.
+   * (!isNew &amp;&amp; !isReferenced) you must provide such a remote method.
    *
    * @return true if removable
    */
@@ -1208,7 +1200,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param modType is one of the modtypes INSERT, UPDATE, DELETE, ...
    * @return true if count modification, false if not.
-   * @see ModificationCounter
    */
   public boolean isCountingModification(char modType)  {
     return isTableSerialProvided();
@@ -2217,9 +2208,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *   super.prepareSave();   // IMPORTANT!!!
    * }
    * </pre> Notice that the method is invoked outside of the transaction.
-   * <p>
-   * @see #saveObject()
-   * @see #prepareSetFields()
    */
   public void prepareSave() {
     preparePending = false;
@@ -2238,7 +2226,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Saves this object.<br>
    * This is the standard method applications should use to insert or update
-   * objects.<p>
+   * objects.<br>
    * If the ID is 0, a new ID is obtained and this object inserted.
    * Otherwise this object is updated.
    * The modified attribute gets cleared if save() was successful.
@@ -2359,10 +2347,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * </pre>
    * Notice that the method is invoked outside of the transaction and that it
    * is not invoked if the object is new or not saveable.
-   *
-   * @see #delete
-   * @see #isNew()
-   * @see #isPersistable()
    */
   public void prepareDelete() {
     preparePending = false;
@@ -2464,7 +2448,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return the table serial,
    *          -1 if isCountModificationAllowed() == false
-   * @see ModificationCounter
    */
   public long countModification ()  {
     if (getSession().isRemote())  {
@@ -2486,7 +2469,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Selects the current modification counter for the class of this object.
    *
    * @return the modification counter
-   * @see ModificationCounter
    */
   public long getModificationCount () {
     if (getSession().isRemote())  {
@@ -2509,7 +2491,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Determines the objects with a tableSerial starting at a given serial.
    * Useful to cleanup caches for example.
    *
-   * @param oldSerial non-inclusive lower bound for tableSerial (>oldSerial)
+   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
    * @return pairs of longs, the first being the ID, the second the tableserial, never null
    */
   public List<IdSerialTuple> selectExpiredTableSerials(long oldSerial) {

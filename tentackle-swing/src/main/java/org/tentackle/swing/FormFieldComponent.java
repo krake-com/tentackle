@@ -121,8 +121,7 @@ public interface FormFieldComponent extends FormComponent {
   /**
    * Sets the string converter.<br>
    * Besides the lower/uppercase conversion an optional
-   * {@link StringConverter} may be set to translate
-   * characters.
+   * converter may be set to translate characters.
    *
    * @param converter the converter, null if none (default)
    */
@@ -161,7 +160,7 @@ public interface FormFieldComponent extends FormComponent {
    * Sets the maximum number of columns.<br>
    * The number of columns will be enforced by the model.
    * <p>
-   * If {@link FormField#getColumns()} == 0 the component will resize as
+   * If {@link AbstractFormField#getColumns()} == 0 the component will resize as
    * if setColumns has been invoked with the given maxColumns. However,
    * getColumns() remains 0.
    *

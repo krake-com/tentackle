@@ -145,6 +145,7 @@ public interface SecurityFactory {
   /**
    * Gets a request permission implementation singleton by its interface.
    *
+   * @param <T> the interface type
    * @param iFace the interface
    * @return the permission, never null
    * @throws SecurityException if no instance for permission interface found

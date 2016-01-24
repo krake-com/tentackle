@@ -33,7 +33,7 @@ import org.tentackle.reflect.Mixin;
  * Invocation handler for operations.<br>
  * Each instance of a operation gets its own handler.
  *
- * @param <T>
+ * @param <T> the operation type
  * @author harald
  */
 public class OperationInvocationHandler<T extends Operation<T>> implements InvocationHandler {
@@ -91,10 +91,11 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   /**
    * Creates an invocation handler.
    *
-   * @param factory the operation factory
+   * @param persistenceMapper the persistence operation class mapper
+   * @param domainMapper the domain operation class mapper
    * @param clazz the operation declaring interface
    *
-   * @throws ClassNotFoundException
+   * @throws ClassNotFoundException if no implementations found
    */
   public OperationInvocationHandler(ClassMapper persistenceMapper, ClassMapper domainMapper, Class<T> clazz)
          throws ClassNotFoundException {
@@ -135,14 +136,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    *
    * @param operation the dynamic proxy instance
    * @param context the domain context
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, DomainContext context)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
                                     new Object[] { operation, context });
@@ -159,14 +161,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    *
    * @param operation the dynamic proxy instance
    * @param session the session
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, Session session)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
                                     new Object[] { operation, session });
@@ -183,14 +186,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    *
    * @param operation the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceDelegate.setOperation(operation);
     persistenceMixin.setDelegate(persistenceDelegate);
@@ -206,14 +210,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @param operation the dynamic proxy instance
    * @param context the domain context
    * @param domainDelegate the domain delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, DomainContext context, DomainOperation<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
                                     new Object[] { operation, context });
@@ -229,14 +234,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @param operation the dynamic proxy instance
    * @param session the session
    * @param domainDelegate the domain delegate
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, Session session, DomainOperation<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
                                     new Object[] { operation, session });
@@ -252,11 +258,6 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @param operation the dynamic proxy instance
    * @param persistenceDelegate the persistence delegate
    * @param domainDelegate the domain delegate
-   * @throw NoSuchMethodException
-   * @throw InstantiationException
-   * @throw IllegalAccessException
-   * @throw IllegalArgumentException
-   * @throw InvocationTargetException
    */
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
     persistenceDelegate.setOperation(operation);
@@ -270,14 +271,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * Creates the delegates for the given proxy instance without any domain context or session.
    *
    * @param operation the dynamic proxy instance
-   * @throws NoSuchMethodException
-   * @throws InstantiationException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws NoSuchMethodException if no matching delegate constructor found
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws IllegalAccessException if delegate could not be instantiated
+   * @throws IllegalArgumentException if delegate could not be instantiated
+   * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class },
                                     new Object[] { operation });
 

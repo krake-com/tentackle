@@ -19,8 +19,8 @@
 package org.tentackle.wurblet;
 
 /**
- * An operand within a {@link WurbletKeyExpression}.
- * 
+ * An operand within a {@link WurbletParameterExpression}.
+ *
  * @author harald
  */
 public interface WurbletParameterOperand {

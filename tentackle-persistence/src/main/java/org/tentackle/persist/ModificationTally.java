@@ -114,7 +114,7 @@ public class ModificationTally {
   /**
    * Sets the last serial.
    *
-   * @param lastSerial
+   * @param lastSerial the serial
    */
   public void setLastSerial(long lastSerial) {
     this.lastSerial = lastSerial;

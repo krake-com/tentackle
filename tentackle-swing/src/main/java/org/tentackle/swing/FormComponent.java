@@ -195,7 +195,7 @@ public interface FormComponent extends FormChangeableComponent {
    * Mandatory fields are differently visualized.
    * There is no further functional difference.
    *
-   * @param mandatory
+   * @param mandatory true if mandatory
    */
   public void setMandatory(boolean mandatory);
 
@@ -306,7 +306,7 @@ public interface FormComponent extends FormChangeableComponent {
    * and so forth.
    *
    * @param helpURL the help url
-   * @see FormHelper#openHelpURL(Component)
+   * @see FormUtilities#openHelpURL(Component)
    */
   public void setHelpURL(String helpURL);
 
@@ -417,8 +417,8 @@ public interface FormComponent extends FormChangeableComponent {
    * Usually the binding path will be determined from the components declared name.
    * However, it can be set programatically as well.
    *
-   * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"<tt>, null if autobinding
-   * @see Binder
+   * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"</tt>, null if autobinding
+   * @see org.tentackle.bind.Binder
    */
   public void setBindingPath(String bindingPath);
 
@@ -437,7 +437,7 @@ public interface FormComponent extends FormChangeableComponent {
    * <p>
    * Notice: the component path is set during binding.
    *
-   * @param componentPath
+   * @param componentPath the component path
    */
   public void setComponentPath(String componentPath);
 

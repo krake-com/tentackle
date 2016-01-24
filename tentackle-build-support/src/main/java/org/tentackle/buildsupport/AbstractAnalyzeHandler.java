@@ -21,24 +21,23 @@
 package org.tentackle.buildsupport;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.StringTokenizer;
 
 /**
+ * Base class for {@link AnalyzeHandler}.
  *
  * @author harald
  */
 abstract public class AbstractAnalyzeHandler implements AnalyzeHandler {
 
   /**
-   * creates a file writer.
+   * Creates a directory in given basedir for a classname.
    *
-   * @param baseDir 
-   * @param className
-   * @return
-   * @throws IOException
+   * @param baseDir the base directory
+   * @param className the classname
+   * @return the directory holding analyze files for the class
    */
-  protected File getDirectory(File baseDir, String className) throws IOException {
+  protected File getDirectory(File baseDir, String className) {
     File file = baseDir;
     StringTokenizer stok = new StringTokenizer(className, ".");
     while (stok.hasMoreTokens()) {

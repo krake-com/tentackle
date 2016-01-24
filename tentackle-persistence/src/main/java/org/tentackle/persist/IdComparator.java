@@ -24,12 +24,12 @@ import java.util.Comparator;
 /**
  * Compares the object ids of two {@link AbstractDbObject}s.
  *
- * @param <T>
+ * @param <P> the persistence type
  * @author harald
  */
-public class IdComparator<T extends AbstractDbObject<?>> implements Comparator<T> {
+public class IdComparator<P extends AbstractDbObject<?>> implements Comparator<P> {
   @Override
-  public int compare (T o1, T o2) {
+  public int compare (P o1, P o2) {
     if (o1 == null) {
       return o2 == null ? 0 : -1;
     }

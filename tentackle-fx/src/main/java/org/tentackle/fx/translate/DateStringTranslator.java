@@ -54,7 +54,6 @@ import static java.util.Calendar.YEAR;
 /**
  * Date translator.
  * <p>
- * <p>
  * The date can be entered in the specified format or as a shortcut.
  * The following shortcuts are defined:
  * <ul>
@@ -134,7 +133,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    * and/or when to throw an exception:
    *
    * <ul>
-   * <li>FINER: log with stacktrace and throw a {@link GUIRuntimeException}</li>
+   * <li>FINER: log with stacktrace and throw a {@link FxRuntimeException}</li>
    * <li>FINE: log with stacktrace</li>
    * <li>SEVERE: check disabled</li>
    * <li>all other levels: just log without stacktrace</li>

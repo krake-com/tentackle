@@ -52,9 +52,9 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
   private DataFlavor[] flavors;
 
   /** flavor for a single {@link PersistentDomainObject} **/
-  public static final DataFlavor pdoFlavor     = new DataFlavor(PersistentDomainObject.class, "PDO");
+  public static final DataFlavor PDO_FLAVOR = new DataFlavor(PersistentDomainObject.class, "PDO");
   /** flavor for a list of {@link PersistentDomainObject}s **/
-  public static final DataFlavor pdoListFlavor = new DataFlavor(List.class, "PDO-List");
+  public static final DataFlavor PDO_LIST_FLAVOR = new DataFlavor(List.class, "PDO-List");
 
 
   /**
@@ -77,15 +77,15 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
     objectFlavorList = new ArrayList<>();
     objectFlavorList.add(objectFlavor);
 
-    flavors = new DataFlavor[] { DataFlavor.stringFlavor, pdoFlavor, pdoListFlavor, objectFlavor };
+    flavors = new DataFlavor[] { DataFlavor.stringFlavor, PDO_FLAVOR, PDO_LIST_FLAVOR, objectFlavor };
   }
 
 
   /**
-   * Creates a transferable for a collection of objects.
+   * Creates a transferable for a collection of objects.<br>
    * Non-PDOs are skipped.
    *
-   * @param objects
+   * @param objects the items
    */
   @SuppressWarnings("unchecked")
   public PdoTransferable(Collection<?> objects) {
@@ -109,7 +109,7 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
           }
         }
       }
-      flavors = new DataFlavor[] { DataFlavor.stringFlavor, pdoFlavor, pdoListFlavor, objectFlavor };
+      flavors = new DataFlavor[] { DataFlavor.stringFlavor, PDO_FLAVOR, PDO_LIST_FLAVOR, objectFlavor };
     }
   }
 
@@ -136,12 +136,12 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
   @Override
   public Object getTransferData(DataFlavor flv)
          throws UnsupportedFlavorException {
-    if (flv.equals(pdoFlavor) ||
+    if (flv.equals(PDO_FLAVOR) ||
         flv.equals(objectFlavor)) {
       // construct the transfer data
       return new PdoTransferData<>(object);
     }
-    else if (flv.equals(pdoListFlavor))  {
+    else if (flv.equals(PDO_LIST_FLAVOR))  {
       List<PdoTransferData<T>> transferList = new ArrayList<>();
       for (T pdo: objectList)  {
         transferList.add(new PdoTransferData<>(pdo));

@@ -23,7 +23,7 @@ import org.tentackle.misc.AbstractObjectFilter;
 /**
  * Filters objects of a given class or child class.<br>
  *
- * @param <T>
+ * @param <T> the type of objects inspected
  * @author harald
  */
 public class ClassFilter<T> extends AbstractObjectFilter<T> {
@@ -33,6 +33,7 @@ public class ClassFilter<T> extends AbstractObjectFilter<T> {
 
   /**
    * Creates a class filter.
+   *
    * @param clazz the class of the result object
    * @param exactMatch true if exact class, false if instanceof
    */
