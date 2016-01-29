@@ -186,7 +186,9 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * @return the effective port, 0 if system default
    * @throws RemoteException if export failed
    */
-  public int exportRemoteObject(Remote remoteObject, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf) throws RemoteException {
+  public int exportRemoteObject(Remote remoteObject, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
+             throws RemoteException {
+
     if (remoteObject instanceof UnicastRemoteObject) {
       throw new RemoteException("delegate " + remoteObject.getClass().getName() +
               " must not extend UnicastRemoteObject!");
@@ -228,9 +230,21 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
       // export failed for all ports in range
       throw lastEx;   // cannot be null
     }
+
+    LOGGER.fine("{0} exported on port {1}", remoteObject, effectivePort);
+
     return effectivePort;
   }
 
+  /**
+   * Exports the given remote object.
+   *
+   * @param remoteObject the object to unexport
+   */
+  public void unexportRemoteObject(Remote remoteObject) throws RemoteException {
+    UnicastRemoteObject.unexportObject(remoteObject, true);
+    LOGGER.fine("{0} unexported", remoteObject);
+  }
 
   /**
    * Overridden to detect unwanted garbage collection as this

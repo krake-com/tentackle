@@ -106,6 +106,17 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
+  /**
+   * Stops the cleanup thread.
+   */
+  public static void stopCleanupThread() {
+    if (cleanupThread != null && cleanupThread.isAlive()) {
+      cleanupThread.requestTermination();
+      cleanupThread = null;
+    }
+  }
+
+
   // each session gets a unique number (only for identification in log files)
   private static final AtomicLong LAST_SESSION_NUMBER = new AtomicLong();
 
@@ -199,8 +210,9 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private int timeoutCount;                           // consecutive timeouts
   private Db db;                                      // the local Db-connection
   private long closedSince;                           // session closed since, 0 if still open
-  private final MethodStatistics methodStats;         // statistics for method invocations (managed by invocation handler, null if no stats)
-
+  private final MethodStatistics methodStats;         // statistics for method invocations
+                                                      // (managed by invocation handler, null if no stats)
+  private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
 
   /**
    * Creates a session on a given connection.
@@ -219,6 +231,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
     methodStats = new MethodStatistics();
     sessionNumber = LAST_SESSION_NUMBER.incrementAndGet();
+    exportedDelegates = new ArrayList<>();
 
     try {
       clientHost = UnicastRemoteObject.getClientHost();
@@ -254,6 +267,49 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   public void exportMe() throws RemoteException {
     port = con.exportRemoteObject(this, port, csf, ssf);
     LOGGER.info("begin {0}", this);
+  }
+
+  @Override
+  public void unexportMe() throws RemoteException {
+    con.unexportRemoteObject(this);
+  }
+
+
+  /**
+   * Exports the given delegate.
+   * <p>
+   * Notice that the delegate must not extend {@link UnicastRemoteObject}!
+   *
+   * @param delegate the delegate
+   * @throws RemoteException if export failed
+   */
+  public void exportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
+    con.exportRemoteObject(delegate, port, csf, ssf);
+    exportedDelegates.add(new WeakReference<>(delegate));
+  }
+
+  /**
+   * Unexports given remote delegate.
+   * <p>
+   * Notice: when the session is closed, all still exported objects will be unexported.
+   * This method is only necessary if a delegate must be explicitly unexported.
+   *
+   * @param delegate the delegate
+   * @throws RemoteException if object not exported
+   */
+  public void unexportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
+    con.unexportRemoteObject(delegate);
+    for (Iterator<WeakReference<RemoteDelegate>> iter = exportedDelegates.iterator(); iter.hasNext(); ) {
+      WeakReference<RemoteDelegate> ref = iter.next();
+      RemoteDelegate dg = ref.get();
+      if (dg == null) {
+        iter.remove();
+      }
+      else if (dg == delegate) {
+        iter.remove();
+        break;
+      }
+    }
   }
 
 
@@ -665,6 +721,14 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   @Override
   public void close() throws RemoteException {
     try {
+      for (WeakReference<RemoteDelegate> ref: exportedDelegates) {
+        RemoteDelegate delegate = ref.get();
+        if (delegate != null) {
+          con.unexportRemoteObject(delegate);
+        }
+      }
+      exportedDelegates.clear();
+      unexportMe();
       if (db != null) {
         LOGGER.info("end {0}", this);
         cleanup(false);
@@ -906,19 +970,6 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             new Class<?>[] { delegateClass, Remote.class },
             new RemoteDelegateInvocationHandler((RemoteDelegateImpl)
                     createRemoteDelegateInstance(delegateClass, delegateImplClass, clazz, effectiveClass, configArgs)));
-  }
-
-
-  /**
-   * Exports the given delegate.
-   * <p>
-   * Notice that the delegate must not extend {@link UnicastRemoteObject}!
-   *
-   * @param delegate
-   * @throws java.rmi.RemoteException
-   */
-  public void exportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
-    con.exportRemoteObject(delegate, port, csf, ssf);
   }
 
 

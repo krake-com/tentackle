@@ -19,6 +19,10 @@
 
 package org.tentackle.app;
 
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Enumeration;
 import java.util.Properties;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
@@ -28,7 +32,6 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
@@ -43,6 +46,7 @@ import org.tentackle.persist.DefaultDbPool;
 import org.tentackle.persist.MpxConnectionManager;
 import org.tentackle.persist.rmi.DbServer;
 import org.tentackle.persist.rmi.RemoteDbConnectionImpl;
+import org.tentackle.persist.rmi.RemoteDbSessionImpl;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 
@@ -76,12 +80,13 @@ public abstract class ServerApplication extends AbstractApplication
 
   private final Class<? extends RemoteDbConnectionImpl> connectionClass;   // the connection class
 
-  private CommandLine cmdLine;                 // command line
-  private DbServer dbServer;                   // the RMI server instance
-  private String sessionPropsName;             // db properties name
-  private SessionManager sessionManager;       // the connection manager
-  private Db serverDb;                         // the primary server db
-  private SessionPool sessionPool;             // the session pool
+  private CommandLine cmdLine;                        // command line
+  private DbServer dbServer;                          // the RMI server instance
+  private String sessionPropsName;                    // db properties name
+  private SessionManager sessionManager;              // the connection manager
+  private Db serverDb;                                // the primary server db
+  private SessionPool sessionPool;                    // the session pool
+  private boolean stopping;                           // true if server is stopping
 
 
   /**
@@ -131,10 +136,8 @@ public abstract class ServerApplication extends AbstractApplication
 
     synchronized (this) {
 
-      if (args != null) {
-        cmdLine = new CommandLine(args);
-        setProperties(cmdLine.getOptionsAsProperties());
-      }
+      cmdLine = new CommandLine(args);
+      setProperties(cmdLine.getOptionsAsProperties());
 
       try {
 
@@ -183,13 +186,18 @@ public abstract class ServerApplication extends AbstractApplication
    */
   public void stop() {
     try {
-      unregister();   // not really necessary cause of System.exit in doStop...
       doStop(0);
     }
     catch (Exception e) {
       LOGGER.logStacktrace(e);
-      // doStop with error
-      doStop(4, e);
+    }
+    finally {
+      try {
+        unregister();
+      }
+      catch (ApplicationException ex) {
+        LOGGER.logStacktrace(ex);
+      }
     }
   }
 
@@ -379,7 +387,6 @@ public abstract class ServerApplication extends AbstractApplication
 
     // add a shutdown handler in case the modthread terminates unexpectedly
     PdoTracker.getInstance().addShutdownRunnable(() -> {
-      LOGGER.severe("*** emergency shutdown ***");
       stop();
     });
 
@@ -407,20 +414,37 @@ public abstract class ServerApplication extends AbstractApplication
    */
   protected void doStop(int exitValue, Exception ex) {
 
-    if (exitValue != 0 || ex != null) {
-      LOGGER.warning("application server abnormally terminated with exit code " + exitValue);
-      if (ex != null) {
-        LoggerOutputStream.logException(ex, LOGGER);
+    synchronized(this) {
+      if (stopping) {
+        return;
       }
+      stopping = true;
     }
-    else {
-      LOGGER.info("application server terminated");
+
+    LOGGER.info("terminating server {0} with exit value {1} ...", getName(), exitValue);
+
+    if (ex != null) {
+      LoggerOutputStream.logException(ex, LOGGER);
     }
 
     try {
 
+      /**
+       * kill all sessions and GC resources.
+       */
+      for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
+        try {
+          session.close();
+        }
+        catch (RuntimeException rex) {
+          LOGGER.warning("closing pending session " + session + " failed:", rex);
+        }
+      }
+
       // terminate all helper threads
       Pdo.terminateHelperThreads();
+
+      RemoteDbSessionImpl.stopCleanupThread();
 
       if (sessionPool != null) {
         sessionPool.shutdown();
@@ -440,6 +464,27 @@ public abstract class ServerApplication extends AbstractApplication
       if (dbServer != null) {
         dbServer.stop();
         dbServer = null;
+      }
+
+      if (isRunningInContainer()) {
+        // deregister all JDBC drivers loaded by the server app's classloader
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Enumeration<Driver> drivers = DriverManager.getDrivers();
+        while (drivers.hasMoreElements()) {
+          Driver driver = drivers.nextElement();
+          if (driver.getClass().getClassLoader() == cl) {
+            try {
+              LOGGER.info("deregistering JDBC driver {0}", driver);
+              DriverManager.deregisterDriver(driver);
+            }
+            catch (SQLException sx) {
+              LOGGER.severe("failed to deregister JDBC driver {0}", driver, sx);
+            }
+          }
+          else {
+            LOGGER.fine("JDBC driver {0} skipped because it does not belong to this webapp's ClassLoader", driver);
+          }
+        }
       }
     }
     catch (Exception anyEx) {

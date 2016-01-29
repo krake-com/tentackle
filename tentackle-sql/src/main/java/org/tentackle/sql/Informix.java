@@ -61,6 +61,11 @@ public class Informix extends AbstractSql92Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "com.informix.jdbc.IfxDriver";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     // @todo
     return null;

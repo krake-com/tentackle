@@ -27,6 +27,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import org.tentackle.log.Logger;
@@ -604,7 +605,19 @@ public class DbServer {
   public void stop() throws ApplicationException {
     try {
       Naming.unbind(service);
-      // is there anything we can do to stop the registry?
+      if (connectionObject != null) {
+        connectionObject.unexportRemoteObject(connectionObject);
+        connectionObject = null;
+      }
+      if (registry != null) {
+        // if still anything left...
+        for (String name: registry.list()) {
+          LOGGER.info("unbinding {0}", name);
+          registry.unbind(name);
+        }
+        UnicastRemoteObject.unexportObject(registry, true);
+        registry = null;
+      }
     }
     catch (Exception e) {
       throw new ApplicationException("server shutdown failed", e);

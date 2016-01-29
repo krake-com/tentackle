@@ -411,27 +411,27 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Saves the current PDO.
    */
   public void save() {
-    getPdo().getSession().transaction(() -> {   // validate and save within transaction!
-      if (getEditor().validateForm()) {
-        T dup = getPdo().isUniqueDomainKeyProvided() ? getPdo().findDuplicate() : null;
-        if (dup != null) {
-          Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"), dup));
-        }
-        else {
-          try {
+    try {
+      getPdo().getSession().transaction(() -> {   // validate and save within transaction!
+        if (getEditor().validateForm()) {
+          T dup = getPdo().isUniqueDomainKeyProvided() ? getPdo().findDuplicate() : null;
+          if (dup != null) {
+            Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"), dup));
+          }
+          else {
             T pdo = getPdo().persist();
             if (!closeIfModal()) {
               setPdo(pdo);
               getEditor().requestInitialFocus();
             }
           }
-          catch (ValidationFailedException ex) {
-            showValidationResults(ex);
-          }
         }
-      }
-      return null;
-    });
+        return null;
+      });
+    }
+    catch (ValidationFailedException ex) {
+      showValidationResults(ex);
+    }
   }
 
   /**

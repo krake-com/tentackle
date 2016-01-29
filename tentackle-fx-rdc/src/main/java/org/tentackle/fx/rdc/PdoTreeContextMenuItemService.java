@@ -63,11 +63,12 @@ public @interface PdoTreeContextMenuItemService {
   int ordinal();
 
   /**
-   * Defines whether a separator should be inserted above this item.
+   * Defines the group the item belongs to.<br>
+   * Separators will be inserted between groups.
    *
-   * @return true if separator (default is false)
+   * @return the group, empty for default group
    */
-  boolean separator() default false;
+  String group() default "";
 
 }
 

@@ -50,6 +50,11 @@ public class Ingres extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "com.ingres.jdbc.IngresDriver";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     // @todo
     return null;
