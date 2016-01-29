@@ -225,6 +225,12 @@ public interface Backend {
    */
   String getName();
 
+  /**
+   * Gets the JDBC driver class name.
+   *
+   * @return the class name
+   */
+  String getDriverClassName();
 
   /**
    * Creates a jdbc connection.

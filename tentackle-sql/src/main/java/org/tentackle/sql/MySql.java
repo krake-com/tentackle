@@ -67,6 +67,11 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "com.mysql.jdbc.Driver";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     String backendId = null;
     ResultSet rs = null;

@@ -31,9 +31,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.persist.Db;
 
 import static java.lang.Thread.sleep;
-import static java.lang.Thread.sleep;
-import static java.lang.Thread.sleep;
-import static java.lang.Thread.sleep;
 
 
 /**
@@ -62,6 +59,9 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
   /** map of zombie sessions to cleanup count. */
   private final Map<RemoteDbSessionImpl,Integer> zombieSessions;
 
+  /** request termination on server shutdown. */
+  private volatile boolean terminationRequested;
+
 
   /**
    * Creates the cleanup thread.
@@ -79,6 +79,15 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     setDaemon(true);    // stop JVM if the last user process terminates
   }
 
+
+  /**
+   * Requests thread termination.
+   */
+  public void requestTermination() {
+    terminationRequested = true;
+    interrupt();
+  }
+
   @Override
   public boolean isScavenging() {
     return true;
@@ -89,7 +98,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
 
     LOGGER.info(getName() + " started with interval=" + checkInterval + ", max.retries=" + cleanupRetryMax);
 
-    for (;;) {
+    while (!terminationRequested) {
       try {
         sleep(checkInterval);
         cleanupZombieSessions();
@@ -102,6 +111,8 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
         LOGGER.severe("cleanup sessions failed", ex);
       }
     }
+
+    LOGGER.info(getName() + " terminated");
   }
 
 

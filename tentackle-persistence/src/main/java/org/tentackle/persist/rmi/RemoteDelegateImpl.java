@@ -108,9 +108,17 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    * @return the exception
    */
   public RemoteException createException(Throwable t) {
-    RemoteException rex = new RemoteException("servicedClass=" + servicedClass.getName() + ", session=" + getSession(), t);
+    RemoteException rex = new RemoteException(toString(), t);
     rex.setStackTrace(t.getStackTrace());
     return rex;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    buf.append("servicedClass=").append(servicedClass.getName())
+       .append(", session=").append(getServerSession());
+    return buf.toString();
   }
 
 }

@@ -51,6 +51,11 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "com.ibm.db2.jcc.DB2Driver";
+  }
+
+  @Override
   public boolean sqlResultSetIsClosedSupported() {
     return true;
   }

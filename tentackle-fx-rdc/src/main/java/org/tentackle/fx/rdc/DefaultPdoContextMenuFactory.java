@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import javafx.scene.control.ContextMenu;
@@ -69,7 +70,7 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
           if (anno != null) {
             MenuItem item = (MenuItem) clazz.getConstructor(PdoTreeCell.class).newInstance(cell);
             // add if not already added
-            items.add(new ItemConfig(anno.ordinal(), anno.separator(), item));
+            items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
           }
         }
       }
@@ -96,7 +97,7 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
             // create item
             MenuItem item = (MenuItem) clazz.getConstructor(PdoTableCell.class).newInstance(cell);
             // add if not already added
-            items.add(new ItemConfig(anno.ordinal(), anno.separator(), item));
+            items.add(new ItemConfig(anno.ordinal(), anno.group(), item));
           }
         }
       }
@@ -120,10 +121,12 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
     if (!items.isEmpty()) {
       // create context menu
       ContextMenu menu = new ContextMenu();
+      String group = "";    // current group
       for (ItemConfig item : items) {
         if (item.menuItem.isVisible()) {
-          if (item.separator) {
+          if (!Objects.equals(group, item.group)) {
             menu.getItems().add(new SeparatorMenuItem());
+            group = item.group;
           }
           menu.getItems().add(item.menuItem);
         }
@@ -143,12 +146,12 @@ public class DefaultPdoContextMenuFactory implements PdoContextMenuFactory {
   private static class ItemConfig implements Comparable<ItemConfig> {
 
     private final int ordinal;
-    private final boolean separator;
+    private final String group;
     private final MenuItem menuItem;
 
-    public ItemConfig(int ordinal, boolean separator, MenuItem menuItem) {
+    public ItemConfig(int ordinal, String group, MenuItem menuItem) {
       this.ordinal = ordinal;
-      this.separator = separator;
+      this.group = group;
       this.menuItem = menuItem;
     }
 

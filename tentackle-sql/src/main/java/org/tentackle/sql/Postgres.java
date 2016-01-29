@@ -69,6 +69,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "org.postgresql.Driver";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     String backendId = null;
     ResultSet rs = null;

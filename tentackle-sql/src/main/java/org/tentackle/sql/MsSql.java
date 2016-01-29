@@ -54,6 +54,11 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+  }
+
+  @Override
   public String getBackendId(Connection connection) {
     String backendId = null;
     ResultSet rs = null;
