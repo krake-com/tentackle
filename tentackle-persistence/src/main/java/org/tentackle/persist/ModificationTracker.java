@@ -919,7 +919,10 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
    * runs the shutdown runnables
    */
   private void invokeShutdownRunnables() {
-    for (Runnable r: shutdownRunnables) {
+    // run each runnable only once (in case of loops)
+    List<Runnable> tempList = new ArrayList<>(shutdownRunnables);
+    shutdownRunnables.clear();
+    for (Runnable r: tempList) {
       try {
         r.run();
       }

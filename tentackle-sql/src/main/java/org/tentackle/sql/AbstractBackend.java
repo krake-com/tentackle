@@ -102,6 +102,14 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public Connection createConnection(String url, String username, char[] password) throws SQLException {
+    // DriverManager.getConnection() doesn't work in most containers,
+    // unless the class is preloaded within the application's classloader.
+    try {
+      Class.forName(getDriverClassName());
+    }
+    catch (ClassNotFoundException e) {
+      // no logger available, will fail below anyway...
+    }
     return DriverManager.getConnection (url, username, (password == null ? "" : new String(password)));
   }
 

@@ -170,6 +170,11 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public String getDriverClassName() {
+    return "oracle.jdbc.driver.OracleDriver";
+  }
+
+  @Override
   public Connection createConnection(String url, String username, char[] password) throws SQLException {
     Properties props = new Properties();
     props.put("user", username);
@@ -177,6 +182,16 @@ public class Oracle extends AbstractSql2003Backend {
       props.put("password", new String(password));
     }
     props.put("remarksReporting","true");   // for migator
+
+    // DriverManager.getConnection() doesn't work in most containers,
+    // unless the class is preloaded within the application's classloader.
+    try {
+      Class.forName(getDriverClassName());
+    }
+    catch (ClassNotFoundException e) {
+      // no logger available, will fail below anyway...
+    }
+
     return DriverManager.getConnection (url, props);
   }
 
