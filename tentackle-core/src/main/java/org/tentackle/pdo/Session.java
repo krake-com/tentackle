@@ -55,12 +55,7 @@ public interface Session extends Comparable<Session> {
    * @param session the db
    */
   static void setCurrentSession(Session session) {
-    if (session == null) {
-      Session$ThreadLocal.TL_SESSION.remove();
-    }
-    else {
-      Session$ThreadLocal.TL_SESSION.set(session);
-    }
+    Session$ThreadLocal.TL_SESSION.set(session);
   }
 
   /**
