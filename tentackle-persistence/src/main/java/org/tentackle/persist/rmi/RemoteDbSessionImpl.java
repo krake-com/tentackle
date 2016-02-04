@@ -721,16 +721,16 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   @Override
   public void close() throws RemoteException {
     try {
-      for (WeakReference<RemoteDelegate> ref: exportedDelegates) {
-        RemoteDelegate delegate = ref.get();
-        if (delegate != null) {
-          con.unexportRemoteObject(delegate);
-        }
-      }
-      exportedDelegates.clear();
-      unexportMe();
       if (db != null) {
         LOGGER.info("end {0}", this);
+        for (WeakReference<RemoteDelegate> ref : exportedDelegates) {
+          RemoteDelegate delegate = ref.get();
+          if (delegate != null) {
+            con.unexportRemoteObject(delegate);
+          }
+        }
+        exportedDelegates.clear();
+        unexportMe();
         cleanup(false);
         closeDb(false);
       }
