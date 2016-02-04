@@ -114,7 +114,7 @@ public class BackendInfo {
                     "URL of JNDI-connection cannot be determined. Please add the backend type: " +
                     url + ":<backend-type>");
           }
-          this.backend = BackendFactory.getInstance().getBackendByUrl(url);
+          backend = BackendFactory.getInstance().getBackendByUrl(jndiURL);
         }
         catch(SQLException sqx) {
           throw new BackendException("cannot retrieve metadata of JNDI source " + jndiName, sqx);
@@ -131,16 +131,16 @@ public class BackendInfo {
         }
       }
       else  {
-        this.backend = BackendFactory.getInstance().getBackendByUrl(url);
+        backend = BackendFactory.getInstance().getBackendByUrl(url);
       }
     }
     else if (url.startsWith(Constants.BACKEND_RMI_URL_INTRO)) {
-      this.backend = null;
-      this.jndiDataSource = null;
+      backend = null;
+      jndiDataSource = null;
     }
-    else  {
-      this.backend = BackendFactory.getInstance().getBackendByUrl(url);
-      this.jndiDataSource = null;
+    else {
+      backend = BackendFactory.getInstance().getBackendByUrl(url);
+      jndiDataSource = null;
     }
   }
 
