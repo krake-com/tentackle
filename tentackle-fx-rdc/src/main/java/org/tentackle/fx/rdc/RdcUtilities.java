@@ -246,6 +246,9 @@ public class RdcUtilities {
       stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> {
         Platform.runLater(() -> search.getFinder().requestInitialFocus());
       });
+      stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
+        search.setItems(null);
+      });
     } // else: re-use stage
 
     if (configurator != null) {

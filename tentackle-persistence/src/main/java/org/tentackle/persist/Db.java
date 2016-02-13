@@ -2557,6 +2557,7 @@ public class Db implements Session, Cloneable {
     // check if delegate already fetched from RMI-server
     if (delegates[delegateId] == null) {
       // we need to prepare it
+      assertOpen();
       try {
         RemoteDelegate delegate = rses.getRemoteDelegate(remoteClasses[delegateId].getName());
         delegates[delegateId] = delegate;
