@@ -110,7 +110,7 @@ public class RdcUtilities {
   public <T extends PersistentDomainObject<T>> T displayCrudStage(
           T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
 
-    PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality);
+    PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
     if (crud != null) {   // if not aleady being edited
       Stage stage = crud.getStage();
       if (stage == null && Fx.getStage(crud.getView()) == null) {
@@ -127,7 +127,10 @@ public class RdcUtilities {
         });
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
-            e.consume();
+            e.consume();    // don't close
+          }
+          else {
+            crud.setPdoList(null);
           }
         });
       } // else: re-use stage
@@ -157,11 +160,12 @@ public class RdcUtilities {
    * @param pdoList the optional list of PDOs to navigate in the list
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
    */
   @SuppressWarnings("unchecked")
   public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-                T pdo, List<T> pdoList, boolean editable, Modality modality) {
+                T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
@@ -173,8 +177,8 @@ public class RdcUtilities {
     for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
       PdoCrud<T> crud = (PdoCrud<T>) iter.next();
       Stage stage = Fx.getStage(crud.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality)) {
-        // not showing (i.e. unused) and same modality
+      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
+        // not showing (i.e. unused) and same modality and owner
         crud.setEditable(editable);
         crud.setPdo(pdo);
         crud.setPdoList(pdoList);
@@ -230,7 +234,7 @@ public class RdcUtilities {
   public <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
                     T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<PdoSearch<T>> configurator) {
 
-    PdoSearch<T> search = getSearch(pdo, modality);
+    PdoSearch<T> search = getSearch(pdo, modality, owner);
     search.setCreatePdoAllowed(createPdoAllowed);
     Stage stage = search.getStage();
     if (stage == null && Fx.getStage(search.getView()) == null) {
@@ -272,10 +276,11 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the search controller, never null
    */
   @SuppressWarnings("unchecked")
-  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality) {
+  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality, Window owner) {
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoSearch<?>> searches = searchCache.get(pdoClass);
     if (searches == null) {
@@ -286,7 +291,7 @@ public class RdcUtilities {
     for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
       PdoSearch<T> search = (PdoSearch<T>) iter.next();
       Stage stage = Fx.getStage(search.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality)) {
+      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
         search.setPdo(pdo);
         search.setItems(null);
         search.showTable();
