@@ -184,7 +184,7 @@ public class RdcUtilities {
         crud.setPdoList(pdoList);
         return crud;
       }
-      // is showing or other modality, i.e. part of some window which is showing
+      // is showing or other modality or different owner, i.e. part of some window which is showing
       if (Objects.equals(pdo, crud.getPdo())) {
         // same PDO
         if (editable && crud.isEditable()) {
@@ -193,6 +193,12 @@ public class RdcUtilities {
           return null;
         }
         // else: being edited, being shown or requested !editable: get a fresh one
+      }
+      if (stage != null && !stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+          stage.getOwner() != null && !stage.getOwner().isShowing()) {
+        // just the wrong owner, which isnt showing:
+        // remove from cache to avoid pollution
+        iter.remove();
       }
     }
 
@@ -296,6 +302,10 @@ public class RdcUtilities {
         search.setItems(null);
         search.showTable();
         return search;
+      }
+      if (stage != null && !stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+          stage.getOwner() != null && !stage.getOwner().isShowing()) {
+        iter.remove();
       }
     }
 
