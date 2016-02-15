@@ -140,12 +140,16 @@ public class Login extends AbstractFxController {
       progressBar.setProgress(0.0);
       loginButton.setDisable(false);
       cancelButton.setDisable(false);
+      usernameField.setChangeable(true);
+      passwordField.setChangeable(true);
     }
     else {
       progressBar.setVisible(true);
       progressBar.setProgress(value);
       loginButton.setDisable(true);
       cancelButton.setDisable(true);
+      usernameField.setChangeable(false);
+      passwordField.setChangeable(false);
     }
   }
 
