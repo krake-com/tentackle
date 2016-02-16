@@ -41,14 +41,14 @@ public interface FormContainer extends FormChangeable {
    *
    * @param title the container's title, null if none
    */
-  public void setTitle(String title);
+  void setTitle(String title);
 
   /**
    * Gets the container's title.
    *
    * @return the container's title, null if none
    */
-  public String getTitle();
+  String getTitle();
 
 
   /**
@@ -56,7 +56,7 @@ public interface FormContainer extends FormChangeable {
    * sub containers.<br>
    * Used to update the view from the data according to the data binding.
    */
-  public void setFormValues();
+  void setFormValues();
 
 
   /**
@@ -64,7 +64,7 @@ public interface FormContainer extends FormChangeable {
    * all sub containers.<br>
    * Used to update the data from the view according to the data binding.
    */
-  public void getFormValues();
+  void getFormValues();
 
 
   /**
@@ -74,7 +74,7 @@ public interface FormContainer extends FormChangeable {
    *
    * @see FormComponent#isValueChanged()
    */
-  public void setFormValuesKeepChanged();
+  void setFormValuesKeepChanged();
 
 
   /**
@@ -82,7 +82,7 @@ public interface FormContainer extends FormChangeable {
    * all sub containers.
    * @see FormComponent#saveValue()
    */
-  public void saveValues();
+  void saveValues();
 
 
   /**
@@ -94,7 +94,7 @@ public interface FormContainer extends FormChangeable {
    *
    * @return true if changed
    */
-  public boolean areValuesChanged();
+  boolean areValuesChanged();
 
 
   /**
@@ -102,7 +102,7 @@ public interface FormContainer extends FormChangeable {
    * The container typically uses that to invoke areValuesChanged() and enabling/disabling
    * a button (e.g. "save", see PdoEditDialog).
    */
-  public void triggerValuesChanged();
+  void triggerValuesChanged();
 
 
   /**
@@ -111,14 +111,14 @@ public interface FormContainer extends FormChangeable {
    *
    * @param enabled true if invoke {@link #triggerValuesChanged()} on each change (default), false if not.
    */
-  public void setTriggerValuesChangedEnabled(boolean enabled);
+  void setTriggerValuesChangedEnabled(boolean enabled);
 
   /**
    * Determines whether triggering value changes is enabled.
    *
    * @return true if invoke {@link #triggerValuesChanged()} on each change (default), false if not.
    */
-  public boolean isTriggerValuesChangedEnabled();
+  boolean isTriggerValuesChangedEnabled();
 
 
   /**
@@ -127,7 +127,7 @@ public interface FormContainer extends FormChangeable {
    * @param autoUpdate true if auto update the data (default), false if not
    * @see FormComponent#setAutoUpdate(boolean)
    */
-  public void setAutoUpdate (boolean autoUpdate);
+  void setAutoUpdate (boolean autoUpdate);
 
   /**
    * Returns whether the auto-update feature is enabled.
@@ -135,7 +135,7 @@ public interface FormContainer extends FormChangeable {
    * @return true if auto update the data (default), false if not
    * @see FormComponent#isAutoUpdate()
    */
-  public boolean isAutoUpdate();
+  boolean isAutoUpdate();
 
 
   /**
@@ -143,7 +143,7 @@ public interface FormContainer extends FormChangeable {
    *
    * @return the parent window, null if none
    */
-  public Window getParentWindow();
+  Window getParentWindow();
 
 
   /**
@@ -151,7 +151,7 @@ public interface FormContainer extends FormChangeable {
    * for the hierarchy of this container's parents.<br>
    * For optimization purposes.
    */
-  public void invalidateParentInfo();
+  void invalidateParentInfo();
 
 
   /**
@@ -163,18 +163,18 @@ public interface FormContainer extends FormChangeable {
    * @param helpURL the help url
    * @see FormUtilities#openHelpURL(Component)
    */
-  public void setHelpURL(String helpURL);
+  void setHelpURL(String helpURL);
 
   /**
    * Gets the online-help URL.
    * @return the help url, default is null
    */
-  public String getHelpURL();
+  String getHelpURL();
 
   /**
    * Displays online help for this container.
    */
-  public void showHelp();
+  void showHelp();
 
 
 
@@ -185,7 +185,7 @@ public interface FormContainer extends FormChangeable {
    *
    * @return the binder, never null.
    */
-  public FormComponentBinder getBinder();
+  FormComponentBinder getBinder();
 
   /**
    * Sets whether this container is bindable, i.e. should be
@@ -195,13 +195,13 @@ public interface FormContainer extends FormChangeable {
    *
    * @param bindable true if bindable, else not eligible for the binding process
    */
-  public void setBindable(boolean bindable);
+  void setBindable(boolean bindable);
 
   /**
    * Determines whether this container is bindable.
    *
    * @return true if bindable, else not eligible for the binding process
    */
-  public boolean isBindable();
+  boolean isBindable();
 
 }

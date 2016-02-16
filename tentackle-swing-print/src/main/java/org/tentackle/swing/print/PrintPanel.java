@@ -222,7 +222,7 @@ public class PrintPanel extends JPanel implements Printable {
     for (int i=0; i < comps.length; i++)  {
       Component c = comps[i];
       if (c instanceof Container) {
-        ((Container)c).doLayout();
+        c.doLayout();
       }
     }
   }

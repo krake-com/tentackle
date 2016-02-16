@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo.pdofactorytest;
 
-import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.mock.MockPersistentOperation;
 import org.testng.Reporter;
 

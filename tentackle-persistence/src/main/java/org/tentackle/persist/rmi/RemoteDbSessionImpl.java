@@ -84,7 +84,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * not properly closing the rmi-session.
    */
   private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<RemoteDbSessionImpl>,Boolean>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
@@ -130,8 +130,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public static Collection<RemoteDbSessionImpl> getOpenSessions() {
     Collection<RemoteDbSessionImpl> openSessions = new ArrayList<>();
-    for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
-      RemoteDbSessionImpl session = iter.next().get();
+    for (WeakReference<RemoteDbSessionImpl> ref : SESSIONS) {
+      RemoteDbSessionImpl session = ref.get();
       if (session != null && session.isOpen()) {
         openSessions.add(session);
       }

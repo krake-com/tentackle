@@ -31,7 +31,7 @@ import org.tentackle.security.permissions.WritePermission;
 
 
 interface SecurityFactory$Singleton {
-  static SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
+  SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
 }
 
 

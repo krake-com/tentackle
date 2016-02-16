@@ -776,8 +776,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       AbstractPersistentObject<T,?> po = (AbstractPersistentObject) pdo.getPersistenceDelegate();
       po.configureRemoteObject(context, pdo);
     }
-    else if (pdo instanceof SessionDependable) {
-      session.applyTo((SessionDependable) pdo);
+    else if (pdo != null) {
+      session.applyTo(pdo);
     }
   }
 

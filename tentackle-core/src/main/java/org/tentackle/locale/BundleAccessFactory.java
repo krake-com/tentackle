@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface BundleAccessFactory$Singleton {
-  static BundleAccessFactory INSTANCE = ServiceFactory.createService(
+  BundleAccessFactory INSTANCE = ServiceFactory.createService(
               BundleAccessFactory.class, DefaultBundleAccessFactory.class);
 }
 

@@ -497,7 +497,7 @@ public final class BasicStringHelper {
       int len = str.length();
       for (int i=0; i < len; i++) {
         char c = str.charAt(i);
-        if (Character.isWhitespace(c) == false) {
+        if (!Character.isWhitespace(c)) {
           return false;
         }
       }

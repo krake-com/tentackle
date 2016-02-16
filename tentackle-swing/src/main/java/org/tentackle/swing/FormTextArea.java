@@ -328,7 +328,7 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
   @Override
   protected void processFocusEvent(FocusEvent e) {
     super.processFocusEvent(e);
-    if (e.isTemporary() == false) {
+    if (!e.isTemporary()) {
       if (e.getID() == FocusEvent.FOCUS_GAINED) {
         if (focusLostWasTemporary) {
           focusLostWasTemporary = false;
@@ -606,13 +606,8 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
       if (savedValue == null) {
         return value != null;
       }
-      else  {
-        if (value != null) {
-          return value.compareTo(savedValue) != 0;
-        }
-        else {
-          return true;
-        }
+      else {
+        return value == null || value.compareTo(savedValue) != 0;
       }
     }
     return false;
@@ -930,7 +925,7 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
   @Override
   public void setEraseFirst(boolean erasefirst) {
     this.eraseFirst = erasefirst;
-    if (erasefirst == false)  {
+    if (!erasefirst)  {
       Document doc = getDocument();
       if (doc instanceof FormFieldDocument) {
         ((FormFieldDocument)doc).setEraseFirst(false);

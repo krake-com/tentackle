@@ -31,7 +31,7 @@ public abstract class AbstractJSRScriptingLanguage extends AbstractScriptingLang
   /**
    * Describes the naming of a scripting language.
    */
-  public static enum Naming {
+  public enum Naming {
 
     /** name is a mimetype. */
     MIMETYPE,

@@ -167,9 +167,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
 
     if (locked) {
       // unblocking...
-      EventQueue.invokeLater(() -> {
-        prepareDialog();
-      });
+      EventQueue.invokeLater(this::prepareDialog);
 
       // wait for data entered or a button pressed
       waitLogin = true;
@@ -219,9 +217,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
   @Override
   public void showStatus(final String status)  {
     if (locked) {
-      EventQueue.invokeLater(() -> {
-        setStatus(status);
-      });
+      EventQueue.invokeLater(() -> setStatus(status));
     }
     else  {
       setStatus(status);

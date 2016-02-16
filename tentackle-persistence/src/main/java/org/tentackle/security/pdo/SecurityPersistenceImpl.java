@@ -246,7 +246,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   public void setObject(PersistentDomainObject<?> object)  {
     if (object == null) {
       setObjectId(0);
-      setObjectClassName((String) null);
+      setObjectClassName(null);
     }
     else  {
       setObjectId(object.getId());

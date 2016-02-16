@@ -57,7 +57,7 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
               protected void setup() {
                 super.setup();
                 setPdoClass(pdoClass);
-                setDomainContext(((PersistentDomainObject) getObject()).getDomainContext());
+                setDomainContext(getObject().getDomainContext());
               }
             });
           }
@@ -71,7 +71,7 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
                 setEditButtonVisible(false);
                 setSearchButtonVisible(false);
                 setInfoFieldVisible(false);
-                setLink(pdoClass, ((PersistentDomainObject) getObject()).getDomainContext(), 0);
+                setLink(pdoClass, getObject().getDomainContext(), 0);
               }
             });
           }

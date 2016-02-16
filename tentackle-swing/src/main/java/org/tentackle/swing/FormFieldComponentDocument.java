@@ -61,8 +61,8 @@ public class FormFieldComponentDocument extends PlainDocument {
 
 
     if (eraseFirst) {
-      if (field.isAutoSelect() == false ||   // if not enabled for whatever reason
-          field.hasFocus() == false)  {       // or only if autoSelect wouldn't work
+      if (!field.isAutoSelect() ||    // if not enabled for whatever reason
+          !field.hasFocus())  {       // or only if autoSelect wouldn't work
         super.remove(0, getLength());
         offs = 0;
         // this will cause selectAll to be inhibited if eraseFirst is called after
@@ -130,7 +130,7 @@ public class FormFieldComponentDocument extends PlainDocument {
       }
 
       if (valid)  {
-        if (field.isOverwrite() == true) {
+        if (!field.isOverwrite()) {
           // override mode: remove first
           int olen = getLength();
           int rlen = str.length();

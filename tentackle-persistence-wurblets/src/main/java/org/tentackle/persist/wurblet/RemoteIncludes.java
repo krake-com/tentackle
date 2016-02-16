@@ -133,7 +133,7 @@ public class RemoteIncludes {
     String fileName = name + (impl ? "Impl" : "") + ".java";
     String pathName = rmiDirName + "/" + fileName;
     File file = new File(pathName);
-    if (file.exists() == false) {
+    if (!file.exists()) {
       if (pdoClassName != null) {
         // create it
         PrintStream s = null;
@@ -236,7 +236,9 @@ public class RemoteIncludes {
         }
         finally {
           try {
-            s.close();
+            if (s != null) {
+              s.close();
+            }
           }
           catch (Exception ex) { }
         }
@@ -308,7 +310,9 @@ public class RemoteIncludes {
         }
         finally {
           try {
-            s.close();
+            if (s != null) {
+              s.close();
+            }
           }
           catch (Exception ex) { }
         }

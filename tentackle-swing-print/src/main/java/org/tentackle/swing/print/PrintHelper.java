@@ -277,9 +277,7 @@ public final class PrintHelper {
           }
           // set title
           final String title = request.title;
-          EventQueue.invokeLater(() -> {
-            getWorkerDialog().setTitle(title);
-          });
+          EventQueue.invokeLater(() -> getWorkerDialog().setTitle(title));
           // print document
           request.job.print(request.aset);
         }

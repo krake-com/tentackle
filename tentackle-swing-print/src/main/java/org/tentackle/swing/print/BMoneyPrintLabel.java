@@ -75,7 +75,7 @@ public class BMoneyPrintLabel extends NumberPrintLabel {
   @Override
   public String doFormat(Object value) {
     if (value instanceof BMoney &&
-        (isBlankZero() == false || ((BMoney)value).isZero() == false))  {
+        (!isBlankZero() || !((BMoney)value).isZero()))  {
       return format.format(((BMoney)value).doubleValue());
     }
     return null;

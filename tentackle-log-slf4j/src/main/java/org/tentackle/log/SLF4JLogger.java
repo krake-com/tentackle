@@ -272,7 +272,7 @@ public class SLF4JLogger implements Logger {
     }
     if (isLocationAware()) {
       ((org.slf4j.spi.LocationAwareLogger) logger).
-              log((Marker) null, EXCLUDE_CLASSNAME, translateLevel(level), message, null, cause);
+              log(null, EXCLUDE_CLASSNAME, translateLevel(level), message, null, cause);
     }
     else  {
       // probably the SimpleLogger...

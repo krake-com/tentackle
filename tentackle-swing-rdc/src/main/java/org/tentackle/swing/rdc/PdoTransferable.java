@@ -46,7 +46,6 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
 
   // the list of objects
   private final List<T> objectList;
-  private final List<DataFlavor>  objectFlavorList;
 
   // supported flavours
   private DataFlavor[] flavors;
@@ -74,8 +73,6 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
     // DnD. However, in fact we transfer only the Id, i.e. the class need not
     // necessarily be serializable.
     objectFlavor = new DataFlavor (pdo.getEffectiveClass(), pdo.getClassBaseName());
-    objectFlavorList = new ArrayList<>();
-    objectFlavorList.add(objectFlavor);
 
     flavors = new DataFlavor[] { DataFlavor.stringFlavor, PDO_FLAVOR, PDO_LIST_FLAVOR, objectFlavor };
   }
@@ -91,7 +88,6 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
   public PdoTransferable(Collection<?> objects) {
 
     objectList = new ArrayList<>();
-    objectFlavorList = new ArrayList<>();
 
     if (objects != null && objects.size() > 0)  {
       Iterator<?> iter = objects.iterator();
@@ -101,10 +97,9 @@ public class PdoTransferable<T extends PersistentDomainObject<T>> implements Tra
         if (obj instanceof PersistentDomainObject)  {
           objectList.add((T) obj);
           DataFlavor flavor = new DataFlavor (obj.getClass(), ((PersistentDomainObject) obj).getClassBaseName());
-          objectFlavorList.add(flavor);
           if (first)  {
-            this.object = (T) obj;
-            this.objectFlavor = flavor;
+            object = (T) obj;
+            objectFlavor = flavor;
             first = false;
           }
         }

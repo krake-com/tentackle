@@ -38,13 +38,13 @@ public interface ValueListener extends EventListener {
      *
      * @param e the value event
      */
-    public void valueChanged (ValueEvent e);
+    void valueChanged (ValueEvent e);
 
     /**
      * Updates the data according to the view of the component.
      *
      * @param e the value event
      */
-    public void valueEntered (ValueEvent e);
+    void valueEntered (ValueEvent e);
     
 }

@@ -393,7 +393,7 @@ public enum DataType {
           if (cstr.length() != 1) {
             throw new TentackleRuntimeException("character must be of length 1: " + cstr);
           }
-          return Character.valueOf(cstr.charAt(0));
+          return cstr.charAt(0);
         case BOOLEAN:
           String bstr = BasicStringHelper.parseString(str);
           switch (bstr.toLowerCase()) {

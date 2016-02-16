@@ -88,7 +88,7 @@ import org.tentackle.swing.bind.FormComponentBinding;
 
 
 interface FormUtilities$Singleton {
-  static FormUtilities INSTANCE = ServiceFactory.createService(FormUtilities.class, FormUtilities.class);
+  FormUtilities INSTANCE = ServiceFactory.createService(FormUtilities.class, FormUtilities.class);
 }
 
 
@@ -441,9 +441,7 @@ public class FormUtilities {
       /**
        * get it painted last to avoid loops
        */
-      EventQueue.invokeLater(() -> {
-        d.toFront();
-      });
+      EventQueue.invokeLater(d::toFront);
     }
   }
 
@@ -494,8 +492,8 @@ public class FormUtilities {
   public void removeWindow(Window w) {
     synchronized (windows)  {
       if (windows.remove(w))  {
-        if (w instanceof Dialog && ((Dialog)w).isModal()) {
-          modalDialogs.remove((Dialog)w);
+        if (w instanceof Dialog && ((Dialog) w).isModal()) {
+          modalDialogs.remove(w);
         }
         fireWindowActionPerformed(new ActionEvent(w, Event.ACTION_EVENT, "remove")); // NOI18N
       }
@@ -789,7 +787,7 @@ public class FormUtilities {
     if (c instanceof Container) {
       for (Component next : ((Container)c).getComponents()) {
         if (next instanceof FormComponent)  {
-          if (((FormComponent)next).isValueChanged() == false)  {
+          if (!((FormComponent)next).isValueChanged())  {
             // initialize form field with values
             ((FormComponent)next).fireValueChanged();
           }
@@ -1011,7 +1009,7 @@ public class FormUtilities {
    */
   public Window getVisibleParentOrRelatedWindow(Component comp) {
     Window w = getParentWindow(comp);
-    if (w != null && w.isVisible() == false && w instanceof FormWindow) {
+    if (w != null && !w.isVisible() && w instanceof FormWindow) {
       // try to use the related window instead
       FormWindow fw = ((FormWindow)w).getRelatedWindow();
       if (fw instanceof Window) {
@@ -1162,9 +1160,7 @@ public class FormUtilities {
    */
   public void requestFocusLater(final Component c) {
     requestFocusLaterPending = true;
-    EventQueue.invokeLater(() -> {
-      c.requestFocusInWindow();
-    });
+    EventQueue.invokeLater(c::requestFocusInWindow);
   }
 
 
@@ -1243,9 +1239,7 @@ public class FormUtilities {
   };
 
 
-  private final HierarchyListener popupHierarchyListener = (HierarchyEvent e) -> {
-    hideErrorPopup();
-  };
+  private final HierarchyListener popupHierarchyListener = (HierarchyEvent e) -> hideErrorPopup();
 
 
   /**
@@ -1451,7 +1445,7 @@ public class FormUtilities {
         }
       }
 
-      if (abort == false) {
+      if (!abort) {
         // !isWindowOverlaying
         return location;
       }
@@ -1768,7 +1762,7 @@ public class FormUtilities {
         height = sysPrefs.getInt(key,  height);
       }
       if (width > 0 && height > 0)  {
-        ((JScrollPane)comp).setPreferredSize(new Dimension(width, height));
+        comp.setPreferredSize(new Dimension(width, height));
       }
     }
     else if (comp instanceof Container) {
@@ -1925,7 +1919,7 @@ public class FormUtilities {
         if (comp != null) {
           // determine topmost window
           final Window window = getParentWindow(comp);
-          final Component parent = window == null ? comp : (Component) window;
+          final Component parent = window == null ? comp : window;
           // build menu
           JPopupMenu menu = new JPopupMenu();
           if (PersistedPreferencesFactory.getInstance().isSystemOnly()) {

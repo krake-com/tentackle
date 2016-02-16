@@ -722,7 +722,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the object, null if no such object
    * @see #select(long)
    */
-  public T selectCachedOnly(long id);
+  T selectCachedOnly(long id);
 
 
   /**

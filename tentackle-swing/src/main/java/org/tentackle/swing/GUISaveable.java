@@ -32,6 +32,6 @@ public interface GUISaveable {
   /**
    * Runs all necessary steps to save the state of some part/aspect of the application.
    */
-  public void saveState();
+  void saveState();
   
 }

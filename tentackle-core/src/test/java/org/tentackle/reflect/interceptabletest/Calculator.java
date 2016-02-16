@@ -37,6 +37,6 @@ public interface Calculator extends Interceptable {
    */
   @LogIt
   @Offset(100)
-  public int add(int op1, int op2);
+  int add(int op1, int op2);
 
 }

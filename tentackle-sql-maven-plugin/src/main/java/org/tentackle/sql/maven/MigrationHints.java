@@ -395,7 +395,9 @@ public class MigrationHints {
             }
             finally {
               try {
-                reader.close();
+                if (reader != null) {
+                  reader.close();
+                }
               }
               catch (IOException ex) {}
             }

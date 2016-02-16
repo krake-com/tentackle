@@ -50,7 +50,7 @@ public class YesNoRadioButton extends FormComponentPanel {
    * @return true if neither yes nor no selected, false otherwise
    */
   public boolean isUndetermined() {
-    return yesButton.isSelected() == false && noButton.isSelected() == false;
+    return !yesButton.isSelected() && !noButton.isSelected();
   }
 
 

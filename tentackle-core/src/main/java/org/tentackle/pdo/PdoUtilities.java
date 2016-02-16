@@ -34,7 +34,7 @@ import org.tentackle.misc.TrackedList;
 
 
 interface PdoUtilities$Singleton {
-  static PdoUtilities INSTANCE = ServiceFactory.createService(PdoUtilities.class, PdoUtilities.class);
+  PdoUtilities INSTANCE = ServiceFactory.createService(PdoUtilities.class, PdoUtilities.class);
 }
 
 /**

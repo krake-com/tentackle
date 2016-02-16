@@ -353,7 +353,7 @@ public class PersistedPreferencesXmlSupport {
       for (int i = 0; i < kidNames.length; i++) {
         Element xmlKid = (Element) elt.appendChild(doc.createElement("node"));
         xmlKid.setAttribute("name", kidNames[i]);
-        putPreferencesInXml(xmlKid, doc, kidsCopy[i], subTree);
+        putPreferencesInXml(xmlKid, doc, kidsCopy[i], true);
       }
     }
   }
@@ -362,7 +362,7 @@ public class PersistedPreferencesXmlSupport {
   /**
    * Write XML document to the specified output stream.
    */
-  private static final void writeDoc(Document doc, OutputStream out) throws IOException {
+  private static void writeDoc(Document doc, OutputStream out) throws IOException {
     try {
       Transformer t = TransformerFactory.newInstance().newTransformer();
       t.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doc.getDoctype().getSystemId());

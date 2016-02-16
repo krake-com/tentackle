@@ -142,7 +142,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
      *
      * @return the reference date, null if default (current)
      */
-    public Date getReferenceDate();
+    Date getReferenceDate();
 
   }
 
@@ -655,7 +655,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
               if (c == ':') {
                 colonCount++;
               }
-              else if (Character.isDigit(c) == false)  {
+              else if (!Character.isDigit(c))  {
                 timeOnly = false;
                 break;
               }
@@ -815,7 +815,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
     String f = fmt.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
-      if (Character.isLetterOrDigit(c) == false)  {
+      if (!Character.isLetterOrDigit(c))  {
         dateDelimiters += c;
       }
     }

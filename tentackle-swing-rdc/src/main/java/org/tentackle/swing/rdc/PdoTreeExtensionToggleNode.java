@@ -169,7 +169,7 @@ public abstract class PdoTreeExtensionToggleNode {
     // insert the toggle node
     DefaultMutableTreeNode toggleNode = showToggleNode();
     // insert the list of objects into the toggle node
-    if (list != null && list.isEmpty() == false) {
+    if (list != null && !list.isEmpty()) {
       for (Object obj: list) {
         if (tree.isObjectAppendable(obj))  {
           PdoTreeObject to = new PdoTreeObject(obj, null);

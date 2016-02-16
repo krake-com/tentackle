@@ -362,9 +362,7 @@ public abstract class DesktopApplication extends AbstractApplication {
       for (LookAndFeelInfo look : looks) {
         JRadioButtonMenuItem lnfitem = new JRadioButtonMenuItem(look.getName());
         lnfitem.setActionCommand(look.getClassName());
-        lnfitem.addActionListener((ActionEvent e) -> {
-          changeLookAndFeel(e.getActionCommand());
-        });
+        lnfitem.addActionListener((ActionEvent e) -> changeLookAndFeel(e.getActionCommand()));
         guiMenu.add(lnfitem);
       }
       guiMenu.addMenuListener(new MenuListener()  {

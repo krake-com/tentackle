@@ -329,7 +329,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   public T selectForCache(DomainContext cb, long id) throws RemoteException {
     try {
       // load via cache, if there is a cache at all
-      return ((P) newInstance(cb).getPersistenceDelegate()).selectCached(id);
+      return newInstance(cb).getPersistenceDelegate().selectCached(id);
     }
     catch (Exception e) {
       throw createException(e);

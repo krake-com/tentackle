@@ -31,7 +31,7 @@ import org.tentackle.log.LoggerFactory;
 
 
 interface ValidatorCache$Singleton {
-  static ValidatorCache INSTANCE = ServiceFactory.createService(ValidatorCache.class, ValidatorCache.class);
+  ValidatorCache INSTANCE = ServiceFactory.createService(ValidatorCache.class, ValidatorCache.class);
 }
 
 

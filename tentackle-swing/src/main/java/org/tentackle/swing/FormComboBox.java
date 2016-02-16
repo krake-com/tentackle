@@ -183,7 +183,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
       lastKeyEvent = e;
       boolean isTableCellEditor = isCellEditorUsage();
 
-      if (isEditable() == false)  {
+      if (!isEditable())  {
 
         // not editable ComboBox
         if (isTableCellEditor) {
@@ -196,7 +196,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         }
         else  {
           // not in table
-          if (isPopupVisible() == false && e.getModifiers() == 0) {
+          if (!isPopupVisible() && e.getModifiers() == 0) {
             // Popup is not shown
             if (e.getKeyCode() == KeyEvent.VK_UP) {
               e.consume();
@@ -228,7 +228,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
 
 
       // show popup if Ctrl-Enter/Down/Space or F3
-      if (isPopupVisible() == false)  {
+      if (!isPopupVisible())  {
         if (e.getKeyCode() == KeyEvent.VK_F3 ||
             ((e.getKeyCode() == KeyEvent.VK_DOWN ||
               e.getKeyCode() == KeyEvent.VK_UP ||
@@ -331,14 +331,14 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         removeFocusListener(this);
         if (editor != null && editor.getEditorComponent() instanceof AbstractFormField)  {
           // register focus event on formfield instead of combobox
-          ((AbstractFormField)editor.getEditorComponent()).addFocusListener(this);
+          editor.getEditorComponent().addFocusListener(this);
         }
       }
       else  {
         addFocusListener(this);
         if (editor != null && editor.getEditorComponent() instanceof AbstractFormField)  {
           // register focus event on formfield instead of combobox
-          ((AbstractFormField)editor.getEditorComponent()).removeFocusListener(this);
+          editor.getEditorComponent().removeFocusListener(this);
         }
       }
     }
@@ -1020,13 +1020,8 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
     if (savedValue == null) {
       return value != null;
     }
-    else  {
-      if (value != null) {
-        return !value.equals(savedValue);
-      }
-      else {
-        return true;
-      }
+    else {
+      return value == null || !value.equals(savedValue);
     }
   }
 

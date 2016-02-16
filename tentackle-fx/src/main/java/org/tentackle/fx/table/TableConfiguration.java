@@ -37,7 +37,7 @@ public interface TableConfiguration<S> {
   /**
    * Type of binding.
    */
-  public static enum BINDING {
+  enum BINDING {
 
     /** no binding. */
     NO,

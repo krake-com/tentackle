@@ -88,14 +88,12 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
 
   @Override
   public String toGenericString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append(getClass().getName());
-    buf.append('[');
-    buf.append(pdo().getId());
-    buf.append('/');
-    buf.append(pdo().getSerial());
-    buf.append(']');
-    return buf.toString();
+    return  getClass().getName() +
+            '[' +
+            pdo().getId() +
+            '/' +
+            pdo().getSerial() +
+            ']';
   }
 
 

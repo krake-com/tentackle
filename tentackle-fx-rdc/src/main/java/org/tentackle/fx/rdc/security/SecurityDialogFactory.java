@@ -30,7 +30,7 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.EditPermission;
 
 interface SecurityDialogFactory$Singleton {
-  static SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class);
+  SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class);
 }
 
 /**
@@ -45,7 +45,7 @@ public interface SecurityDialogFactory {
    *
    * @return the singleton
    */
-  public static SecurityDialogFactory getInstance() {
+  static SecurityDialogFactory getInstance() {
     return SecurityDialogFactory$Singleton.INSTANCE;
   }
 

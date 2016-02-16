@@ -29,6 +29,6 @@ public interface CollectiveInvoiceDomain extends InvoiceDomain<CollectiveInvoice
   /**
    * Sums up the invoices.
    */
-  public void sumup();
+  void sumup();
 
 }

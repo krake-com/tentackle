@@ -101,7 +101,9 @@ public class AbstractIntMap extends AbstractWurblet {
     }
     finally {
       try {
-        reader.close();
+        if (reader != null) {
+          reader.close();
+        }
       }
       catch (Exception ex) {}
     }

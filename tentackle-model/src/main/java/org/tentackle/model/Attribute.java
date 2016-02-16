@@ -199,21 +199,21 @@ public interface Attribute {
    *
    * @return the getter
    */
-  public String getGetterName();
+  String getGetterName();
 
   /**
    * Gets the setter method name.
    *
    * @return the setter
    */
-  public String getSetterName();
+  String getSetterName();
 
   /**
    * Returns the @Bindable-annotation text.
    *
    * @return the annotation text, null if none
    */
-  public String getBindableAnnotation();
+  String getBindableAnnotation();
 
 }
 

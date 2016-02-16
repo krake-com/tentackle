@@ -107,10 +107,10 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
         failed = ((BMoney) value).isZero();
       }
       else if (value instanceof BigInteger) {
-        failed = ((BigInteger) value).equals(BigInteger.ZERO);
+        failed = value.equals(BigInteger.ZERO);
       }
       else if (value instanceof BigDecimal) {
-        failed = ((BigDecimal) value).equals(BigDecimal.ZERO);
+        failed = value.equals(BigDecimal.ZERO);
       }
       else if (value instanceof Double) {
         failed = ((Double) value) == 0.0d;
@@ -119,7 +119,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
         failed = ((Float) value) == 0.0f;
       }
       else {
-        failed = ((Number) value).longValue() == 0l;
+        failed = ((Number) value).longValue() == 0;
       }
 
       if (failed) {

@@ -169,9 +169,7 @@ public class PdoNavigationDialog<T extends PersistentDomainObject<T>> extends Fo
 
   private void setup()  {
     initComponents();
-    naviPanel.addActionListener((ActionEvent e) -> {
-      naviPanel_actionPerformed(e);
-    });
+    naviPanel.addActionListener(this::naviPanel_actionPerformed);
     this.getContentPane().add(naviPanel, BorderLayout.CENTER);
 
     Class<T> clazz = naviPanel.getTableClass();

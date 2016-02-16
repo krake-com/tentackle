@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.TreeCell;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
@@ -28,7 +26,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface RdcFactory$Singleton {
-  static RdcFactory INSTANCE = ServiceFactory.createService(RdcFactory.class);
+  RdcFactory INSTANCE = ServiceFactory.createService(RdcFactory.class);
 }
 
 /**

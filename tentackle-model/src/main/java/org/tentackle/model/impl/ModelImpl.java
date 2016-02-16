@@ -117,9 +117,12 @@ public class ModelImpl implements Model {
     if (dir == null || dir.hasChanged()) {
       dir = new ModelDirectory(modelDir, defaults);
       modelDirs.put(modelDir, dir);
-      for (File file: dir.getFile().listFiles()) {
-        if (!file.isHidden()) {
-          loadByFileName(defaults, file.getPath(), false);
+      File[] files = dir.getFile().listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (!file.isHidden()) {
+            loadByFileName(defaults, file.getPath(), false);
+          }
         }
       }
       updateRelations(defaults);
@@ -273,7 +276,9 @@ public class ModelImpl implements Model {
       }
       finally {
         try {
-          reader.close();
+          if (reader != null) {
+            reader.close();
+          }
         }
         catch (IOException ex) {}
       }
@@ -580,7 +585,7 @@ public class ModelImpl implements Model {
             // this is a deep reference
             ((RelationImpl) relation).setDeepReference(true);
             ((EntityImpl) entity).setDeeplyReferenced(true);
-            ((EntityImpl) entity).getDeepReferences().add(relation);
+            entity.getDeepReferences().add(relation);
             for (List<Relation> compositePath: entity.getCompositePaths()) {
               for (Relation compositeRelation: compositePath) {
                 ((EntityImpl) compositeRelation.getEntity()).setDeeplyReferenced(true);
@@ -976,13 +981,15 @@ public class ModelImpl implements Model {
             }
 
             List<Entity> referencingEntities;
-            if (referencingEntity.getTableProvidingEntity() == null) {
+            if (referencingEntity != null && referencingEntity.getTableProvidingEntity() == null) {
               // PLAIN
               referencingEntities = referencingEntity.getLeafEntities();
             }
             else  {
               referencingEntities = new ArrayList<>();
-              referencingEntities.add(referencingEntity);
+              if (referencedEntity != null) {
+                referencingEntities.add(referencingEntity);
+              }
             }
 
             for (Entity refingEnt: referencingEntities) {

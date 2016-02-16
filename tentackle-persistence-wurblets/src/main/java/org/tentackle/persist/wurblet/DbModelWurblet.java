@@ -102,7 +102,7 @@ public class DbModelWurblet extends ModelWurblet {
       }
       else if (arg.startsWith("context="))  {
         String ctx = arg.substring(8);
-        if (ctx == null || ctx.length() == 0) {
+        if (ctx.length() == 0) {
           contextAttribute = null;
         }
         else {

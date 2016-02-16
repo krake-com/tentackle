@@ -28,7 +28,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface SLF4JMappedDiagnosticContext$Singleton {
-  static SLF4JMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
+  SLF4JMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
                 SLF4JMappedDiagnosticContext.class, SLF4JMappedDiagnosticContext.class);
 }
 

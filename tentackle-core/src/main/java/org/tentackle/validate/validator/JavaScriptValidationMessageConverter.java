@@ -36,12 +36,10 @@ public class JavaScriptValidationMessageConverter implements ScriptConverter {
   public String convert(String code, ScriptingLanguage language) {
     int ndx = code.indexOf("@(");
     if (ndx > 0) {
-      StringBuilder buf = new StringBuilder(code.substring(0, ndx));
-      buf.append("org.tentackle.validate.ValidationUtilities.getInstance().format(");
-      buf.append(language.createLocalVariableReference(CompoundValue.VAR_OBJECT));
-      buf.append(",");
-      buf.append(code.substring(ndx + 2, code.length()));
-      code = buf.toString();
+      return code.substring(0, ndx) + "org.tentackle.validate.ValidationUtilities.getInstance().format(" +
+              language.createLocalVariableReference(CompoundValue.VAR_OBJECT) +
+              "," +
+              code.substring(ndx + 2, code.length());
     }
     return code;
   }

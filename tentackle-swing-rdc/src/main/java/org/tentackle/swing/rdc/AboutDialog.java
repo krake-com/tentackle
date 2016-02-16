@@ -96,9 +96,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
           catch (InterruptedException ex) {
             return;   // stop thread
           }
-          EventQueue.invokeLater(() -> {
-            gcButton.refresh();
-          });
+          EventQueue.invokeLater(() -> gcButton.refresh());
         }
       }
     };

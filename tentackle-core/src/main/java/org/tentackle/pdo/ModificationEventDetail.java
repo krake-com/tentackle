@@ -90,7 +90,7 @@ public class ModificationEventDetail implements Serializable {
 
   @Override
   public String toString() {
-    return new StringBuilder(getName()).append(':').append(getSerial()).toString();
+    return getName() + ':' + getSerial();
   }
 
 }

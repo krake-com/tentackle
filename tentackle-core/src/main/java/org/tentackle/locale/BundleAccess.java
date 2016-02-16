@@ -37,7 +37,7 @@ public interface BundleAccess {
    *
    * @return the basename
    */
-  public String getBaseName();
+  String getBaseName();
 
   /**
    * Invalidates the bundle access.
@@ -45,7 +45,7 @@ public interface BundleAccess {
    * Invaludating a bundle may be necessary if the translations change.
    * An invalidated bundle will bre reloaded at first access.
    */
-  public void invalidate();
+  void invalidate();
 
 
   /**
@@ -56,7 +56,7 @@ public interface BundleAccess {
    * @return the translated key
    * @throws BundleException if translation failed
    */
-  public String getString(Locale locale, String key) throws BundleException;
+  String getString(Locale locale, String key) throws BundleException;
 
 
   /**
@@ -64,6 +64,6 @@ public interface BundleAccess {
    *
    * @return an <code>Enumeration</code> of the keys managed by this bundle access.
    */
-  public Enumeration<String> getKeys();
+  Enumeration<String> getKeys();
 
 }

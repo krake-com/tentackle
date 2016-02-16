@@ -22,7 +22,6 @@ package org.tentackle.fx.container.config;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
-import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;

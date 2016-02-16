@@ -415,8 +415,8 @@ public final class StringHelper {
       int len = str.length();
       for (int i=0; i < len; i++) {
         char c = str.charAt(i);
-        if (Character.isDigit(c) == false &&
-            (whitespaceAllowed == false || Character.isWhitespace(c) == false)) {
+        if (!Character.isDigit(c) &&
+            (!whitespaceAllowed || !Character.isWhitespace(c))) {
           return false;
         }
       }
@@ -802,12 +802,8 @@ public final class StringHelper {
         return buf.toString();
       }
       else if (maxLogCollectionSize > 0 && object instanceof Collection &&
-          ((Collection) object).size() > maxLogCollectionSize) {
-        StringBuilder buf = new StringBuilder();
-        buf.append('[');
-        buf.append(((Collection) object).size());
-        buf.append(" items]");
-        return buf.toString();
+               ((Collection) object).size() > maxLogCollectionSize) {
+        return "[" + ((Collection) object).size() + " items]";
       }
       else {
         return object.toString();

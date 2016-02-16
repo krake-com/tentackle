@@ -43,12 +43,13 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
 
 interface RdcUtilities$Singleton {
-  static RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
+  RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
 }
 
 /**
@@ -122,9 +123,7 @@ public class RdcUtilities {
         Scene scene = new Scene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> {
-          Platform.runLater(() -> crud.getEditor().requestInitialFocus());
-        });
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
             e.consume();    // don't close
@@ -137,6 +136,10 @@ public class RdcUtilities {
 
       if (configurator != null) {
         configurator.accept(crud);
+      }
+
+      if (stage == null) {
+        throw new FxRuntimeException("misconfigured crud stage");
       }
 
       if (modality != Modality.NONE) {
@@ -194,7 +197,7 @@ public class RdcUtilities {
         }
         // else: being edited, being shown or requested !editable: get a fresh one
       }
-      if (stage != null && !stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
           stage.getOwner() != null && !stage.getOwner().isShowing()) {
         // just the wrong owner, which isnt showing:
         // remove from cache to avoid pollution
@@ -253,16 +256,16 @@ public class RdcUtilities {
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> {
-        Platform.runLater(() -> search.getFinder().requestInitialFocus());
-      });
-      stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-        search.setItems(null);
-      });
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
+      stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> search.setItems(null));
     } // else: re-use stage
 
     if (configurator != null) {
       configurator.accept(search);
+    }
+
+    if (stage == null) {
+      throw new FxRuntimeException("misconfigured search stage");
     }
 
     if (modality != Modality.NONE) {
@@ -303,7 +306,7 @@ public class RdcUtilities {
         search.showTable();
         return search;
       }
-      if (stage != null && !stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
           stage.getOwner() != null && !stage.getOwner().isShowing()) {
         iter.remove();
       }

@@ -40,10 +40,10 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
 
   /** maximum number of characters for 'objectClassName'. */
-  public static final int CL_OBJECTCLASSNAME = 128;
+  int CL_OBJECTCLASSNAME = 128;
 
   /** maximum number of characters for 'permissions'. */
-  public static final int CL_PERMISSIONS = 128;
+  int CL_PERMISSIONS = 128;
 
   // </editor-fold>//GEN-END:fieldlengths
 
@@ -53,37 +53,37 @@ public interface SecurityPersistence extends PersistentObject<Security> {
 
 
   /** attribute name for database column 'objectclass'. */
-  public static final String AN_OBJECTCLASSNAME = "objectClassName";
+  String AN_OBJECTCLASSNAME = "objectClassName";
 
   /** attribute name for database column 'objectclassid'. */
-  public static final String AN_OBJECTCLASSID = "objectClassId";
+  String AN_OBJECTCLASSID = "objectClassId";
 
   /** attribute name for database column 'objectid'. */
-  public static final String AN_OBJECTID = "objectId";
+  String AN_OBJECTID = "objectId";
 
   /** attribute name for database column 'contextclassid'. */
-  public static final String AN_DOMAINCONTEXTCLASSID = "domainContextClassId";
+  String AN_DOMAINCONTEXTCLASSID = "domainContextClassId";
 
   /** attribute name for database column 'contextid'. */
-  public static final String AN_DOMAINCONTEXTID = "domainContextId";
+  String AN_DOMAINCONTEXTID = "domainContextId";
 
   /** attribute name for database column 'granteeclassid'. */
-  public static final String AN_GRANTEECLASSID = "granteeClassId";
+  String AN_GRANTEECLASSID = "granteeClassId";
 
   /** attribute name for database column 'granteeid'. */
-  public static final String AN_GRANTEEID = "granteeId";
+  String AN_GRANTEEID = "granteeId";
 
   /** attribute name for database column 'secprio'. */
-  public static final String AN_PRIORITY = "priority";
+  String AN_PRIORITY = "priority";
 
   /** attribute name for database column 'permissions'. */
-  public static final String AN_PERMISSIONS = "permissions";
+  String AN_PERMISSIONS = "permissions";
 
   /** attribute name for database column 'allowed'. */
-  public static final String AN_ALLOWED = "allowed";
+  String AN_ALLOWED = "allowed";
 
   /** attribute name for database column 'message'. */
-  public static final String AN_MESSAGE = "message";
+  String AN_MESSAGE = "message";
 
   // </editor-fold>//GEN-END:membernames
 
@@ -296,7 +296,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * checks the security and invokes initialize in the server, which in
    * turn uses the same statement -&gt; catch22...)
    */
-  public void assertRemoteSecurityManagerInitialized();
+  void assertRemoteSecurityManagerInitialized();
 
   /**
    * Gets the application context's object.<br>

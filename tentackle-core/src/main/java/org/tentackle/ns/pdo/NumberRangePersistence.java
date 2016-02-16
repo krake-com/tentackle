@@ -44,16 +44,16 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
 
 
   /** relation name for 'NumberRange: NumberPool numberPool via numberPoolId (numberPool)'. */
-  public static final String RN_NUMBERPOOL = "numberPool";
+  String RN_NUMBERPOOL = "numberPool";
 
   /** attribute name for database column 'poolid'. */
-  public static final String AN_NUMBERPOOLID = "numberPoolId";
+  String AN_NUMBERPOOLID = "numberPoolId";
 
   /** attribute name for database column 'rbegin'. */
-  public static final String AN_BEGIN = "begin";
+  String AN_BEGIN = "begin";
 
   /** attribute name for database column 'rend'. */
-  public static final String AN_END = "end";
+  String AN_END = "end";
 
   // </editor-fold>//GEN-END:membernames
 

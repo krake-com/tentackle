@@ -26,6 +26,7 @@ import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -253,7 +254,8 @@ public class RemoteMethodInfo {
       setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_CURSOR));
     }
 
-    setModifiers(methodElement.getModifiers().toArray(new Modifier[0]));
+    Set<Modifier> methodElementModifiers = methodElement.getModifiers();
+    setModifiers(methodElementModifiers.toArray(new Modifier[methodElementModifiers.size()]));
     varArgsMethod = methodElement.isVarArgs();
     List<? extends VariableElement> varList = methodElement.getParameters();
     for (int i=0; i < varList.size(); i++) {

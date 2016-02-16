@@ -168,7 +168,7 @@ public class FormTelnoDialog extends FormDialog {
       public void valueEntered(ValueEvent e)  {
         Telno no = new Telno();
         no.setDefaultCountry(FormTelnoDialog.this.telnoField.getDefaultCountry());
-        if (no.setTelno(newTelnoStringField.getText()) == false)  {
+        if (!no.setTelno(newTelnoStringField.getText()))  {
           FormInfo.show(no.getError());
           newTelnoStringField.requestFocusLater();
         }
@@ -289,7 +289,7 @@ public class FormTelnoDialog extends FormDialog {
         public void valueEntered(ValueEvent e)  {
           Telno no = new Telno();
           no.setDefaultCountry(telnoField.getDefaultCountry());
-          if (no.setTelno(tField.getText()) == false) {
+          if (!no.setTelno(tField.getText())) {
             FormInfo.show(no.getError());
             tField.requestFocusLater();
           }
@@ -307,7 +307,7 @@ public class FormTelnoDialog extends FormDialog {
       comments[telnoNdx] = new StringFormField(telnoField.getComment(telnoNdx), 20);
       comments[telnoNdx].setName("comment" + telnoNdx);
 
-      if (telnoField.isChangeable() == false) {
+      if (!telnoField.isChangeable()) {
         telnos[telnoNdx].setChangeable(false);
         comments[telnoNdx].setChangeable(false);
       }
@@ -341,48 +341,45 @@ public class FormTelnoDialog extends FormDialog {
       dialButtons[telnoNdx].setMargin(new Insets(0, 5, 0, 5));
       dialButtons[telnoNdx].setActionCommand("" + telnoNdx);
       dialButtons[telnoNdx].setName("dial" + telnoNdx);
-      dialButtons[telnoNdx].addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          // make sure that data is correct
-          telnoField.setText(buildTelno());
-          // actionCommand holds the index
-          String dialNumber = telnoField.getTelno(new Integer(e.getActionCommand()).intValue()).toString();
-          /**
-           * here comes the system-dependant hooks
-           */
-          String command = null;
-          switch (telnoField.getTelnoType())  {
-            case FormTelnoField.MODEM:
-              if (modemCommand != null) {
-                command = modemCommand + " " + dialNumber;
-              }
-              break;
-            case FormTelnoField.CELL:
-              if (cellCommand != null) {
-                command = cellCommand + " " + dialNumber;
-              }
-              break;
-            case FormTelnoField.FAX:
-              if (faxCommand != null) {
-                command = faxCommand + " " + dialNumber;
-              }
-              break;
-            default:
-              if (phoneCommand != null) {
-                command = phoneCommand + " " + dialNumber;
-              }
-              break;
-          }
-          if (command != null)  {
-            try {
-              LOGGER.fine(command);
-              process = Runtime.getRuntime().exec(command);
-              // don't wait for completion
-            } catch (Exception ex) {
-              // nothing to do, if dialing failes...
-              LOGGER.warning("dialing " + telnoField.getTelnoType() + ":" + dialNumber + " failed");
+      dialButtons[telnoNdx].addActionListener(e -> {
+        // make sure that data is correct
+        telnoField.setText(buildTelno());
+        // actionCommand holds the index
+        String dialNumber = telnoField.getTelno(new Integer(e.getActionCommand())).toString();
+        /**
+         * here comes the system-dependant hooks
+         */
+        String command = null;
+        switch (telnoField.getTelnoType())  {
+          case FormTelnoField.MODEM:
+            if (modemCommand != null) {
+              command = modemCommand + " " + dialNumber;
             }
+            break;
+          case FormTelnoField.CELL:
+            if (cellCommand != null) {
+              command = cellCommand + " " + dialNumber;
+            }
+            break;
+          case FormTelnoField.FAX:
+            if (faxCommand != null) {
+              command = faxCommand + " " + dialNumber;
+            }
+            break;
+          default:
+            if (phoneCommand != null) {
+              command = phoneCommand + " " + dialNumber;
+            }
+            break;
+        }
+        if (command != null)  {
+          try {
+            LOGGER.fine(command);
+            process = Runtime.getRuntime().exec(command);
+            // don't wait for completion
+          } catch (Exception ex) {
+            // nothing to do, if dialing failes...
+            LOGGER.warning("dialing " + telnoField.getTelnoType() + ":" + dialNumber + " failed");
           }
         }
       });

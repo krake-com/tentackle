@@ -267,15 +267,13 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(columnName);
-    buf.append(" TYPE ");
-    // nullable = true -> Postgres needs separate SET NOT NULL
-    buf.append(columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, defaultValue));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            columnName +
+            " TYPE " +
+            // nullable = true -> Postgres needs separate SET NOT NULL
+            columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, defaultValue) +
+            ";\n";
   }
 
   @Override

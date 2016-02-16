@@ -426,7 +426,7 @@ public class TableMigrator {
           for (DataType.SqlTypeWithPostfix sp: addAttribute.getDataType().getSqlTypesWithPostfix()) {
             String columnName = dropColumn.getColumnName() + sp.getPostfix();
             ColumnMetaData column = columnsToDrop.get(columnName);
-            if (dropColumn != null) {
+            if (column != null) {
               columns.add(column);
             }
           }

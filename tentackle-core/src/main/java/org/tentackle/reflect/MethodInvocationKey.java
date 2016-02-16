@@ -91,10 +91,7 @@ public class MethodInvocationKey {
     if (!Objects.equals(this.object, other.object)) {
       return false;
     }
-    if (!Arrays.deepEquals(this.arguments, other.arguments)) {
-      return false;
-    }
-    return true;
+    return Arrays.deepEquals(this.arguments, other.arguments);
   }
 
   @Override

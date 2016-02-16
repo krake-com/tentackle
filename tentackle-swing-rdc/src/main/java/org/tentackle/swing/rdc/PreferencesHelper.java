@@ -63,7 +63,7 @@ public class PreferencesHelper {
     });
     if (jfc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
       File outFile = jfc.getSelectedFile();
-      if (outFile.getName().toLowerCase().endsWith(FILE_EXTENSION) == false)  {
+      if (!outFile.getName().toLowerCase().endsWith(FILE_EXTENSION))  {
         outFile = new File(outFile.getPath() + FILE_EXTENSION);
       }
       final String pathname = outFile.getPath();

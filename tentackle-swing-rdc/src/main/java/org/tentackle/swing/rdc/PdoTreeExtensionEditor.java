@@ -40,6 +40,6 @@ public interface PdoTreeExtensionEditor {
    * @param modal is true if editor must not return until editing is finished 
    * @param showOnly is true if editor should not allow the object to change 
    */
-  public void showEditor(PdoTree tree, DefaultMutableTreeNode node, boolean modal, boolean showOnly);
+  void showEditor(PdoTree tree, DefaultMutableTreeNode node, boolean modal, boolean showOnly);
   
 }

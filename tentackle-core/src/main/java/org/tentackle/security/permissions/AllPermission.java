@@ -29,6 +29,6 @@ import org.tentackle.security.Permission;
 public interface AllPermission extends Permission {
 
   /** the permission's name. */
-  public static final String NAME = "ALL";
+  String NAME = "ALL";
 
 }

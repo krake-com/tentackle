@@ -79,8 +79,8 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   public PdoCacheFileStore(PdoCache<T> cache) {
     this.cache = cache;
     AbstractApplication application = AbstractApplication.getRunningApplication();
-    if (application instanceof SessionProvider) {
-      Session session = ((SessionProvider) application).getSession();
+    if (application != null) {
+      Session session = application.getSession();
       applicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
       if (session != null && session.isRemote()) {
         serverName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
@@ -223,11 +223,9 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     AbstractApplication application = AbstractApplication.getRunningApplication();
     if (application != null) {
       expectedApplicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
-      if (application instanceof SessionProvider) {
-        Session session = ((SessionProvider) application).getSession();
-        if (session.isRemote()) {
-          expectedServerName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
-        }
+      Session session = ((SessionProvider) application).getSession();
+      if (session.isRemote()) {
+        expectedServerName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
       }
     }
 

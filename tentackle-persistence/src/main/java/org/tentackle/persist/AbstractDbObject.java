@@ -286,14 +286,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @Override
   public String toGenericString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append(getClass().getName());
-    buf.append('[');
-    buf.append(id);
-    buf.append('/');
-    buf.append(serial);
-    buf.append(']');
-    return buf.toString();
+    return  getClass().getName() +
+            '[' +
+            id +
+            '/' +
+            serial +
+            ']';
   }
 
 
@@ -1184,13 +1182,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return true if removable
    */
   public boolean isRemovable() {
-    if (isNew()) {
-      return false;
-    }
-    else  {
-      // within tx: do a real check!
-      return !isReferenced();
-    }
+    return !isNew() && !isReferenced();
   }
 
 
@@ -1612,7 +1604,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectSerialStatementId,
-                                                         () -> createSelectSerialSql());
+                                                         this::createSelectSerialSql);
       st.setLong(1, id);
       try (ResultSetWrapper rs = st.executeQuery()) {
         if (rs.next()) {
@@ -1643,7 +1635,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectMaxIdStatementId,
-                                                         () -> createSelectMaxIdSql());
+                                                         this::createSelectMaxIdSql);
       try (ResultSetWrapper rs = st.executeQuery()) {
         long maxId = -1;
         if (rs.next()) {
@@ -1675,7 +1667,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectMaxTableSerialStatementId,
-                                                         () -> createSelectMaxTableSerialSql());
+                                                         this::createSelectMaxTableSerialSql);
       try (ResultSetWrapper rs = st.executeQuery()) {
         long maxTableSerial = -1;
         if (rs.next()) {
@@ -1751,7 +1743,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
-        insertImpl(getClassVariables(), () -> createInsertSql());
+        insertImpl(getClassVariables(), this::createInsertSql);
       }
     }
   }
@@ -1787,7 +1779,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
-        deleteImpl(getClassVariables(), () -> createDeleteSql());
+        deleteImpl(getClassVariables(), this::createDeleteSql);
       }
     }
   }
@@ -1824,7 +1816,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
-        updateImpl(getClassVariables(), () -> createUpdateSql());
+        updateImpl(getClassVariables(), this::createUpdateSql);
         serial++;
       }
     }
@@ -1863,7 +1855,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // for Oracle notes see selectLocked().
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().dummyUpdateStatementId,
-                                                         () -> createDummyUpdateSql());
+                                                         this::createDummyUpdateSql);
       st.setLong(1, id);
       assertThisRowAffected(st.executeUpdate());
     }
@@ -1896,7 +1888,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
-                                                           () -> createUpdateSerialSql());
+                                                           this::createUpdateSerialSql);
         st.setLong(1, id);
         st.setLong(2, serial);
         assertThisRowAffected(st.executeUpdate());
@@ -1924,7 +1916,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTableSerialStatementId,
-                                                           () -> createUpdateSerialAndTableSerialSql());
+                                                           this::createUpdateSerialAndTableSerialSql);
         st.setLong(1, tableSerial);
         st.setLong(2, id);
         st.setLong(3, serial);
@@ -2051,7 +2043,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           serial++;
 
           saveReferencedRelations(false);
-          insertImpl(getClassVariables(), () -> createInsertSql());
+          insertImpl(getClassVariables(), this::createInsertSql);
           saveReferencingRelations(false);
           finishModification(ModificationLog.INSERT);
           getSession().commit(txVoucher);
@@ -2068,7 +2060,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           id = oldId;
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
-            throw (PersistenceException) ex;
+            throw ex;
           }
           throw new PersistenceException(this, ex);
         }
@@ -2160,7 +2152,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             }
 
             saveReferencedRelations(true);
-            updateImpl(getClassVariables(), () -> createUpdateSql());
+            updateImpl(getClassVariables(), this::createUpdateSql);
             saveReferencingRelations(true);
             finishModification(ModificationLog.UPDATE);
           }
@@ -2184,7 +2176,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           serial = oldSerial;
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
-            throw (PersistenceException) ex;
+            throw ex;
           }
           throw new PersistenceException(this, ex);
         }
@@ -2285,7 +2277,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         id = oldId; // set back old Id in case it was changed
         if (ex instanceof PersistenceException) {
           ((PersistenceException) ex).updateDbObject(this);
-          throw (PersistenceException) ex;
+          throw ex;
         }
         throw new PersistenceException(this, ex);
       }
@@ -2394,7 +2386,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         try {
           initModification(ModificationLog.DELETE);
           deleteReferencingRelations();
-          deleteImpl(getClassVariables(), () -> createDeleteSql());
+          deleteImpl(getClassVariables(), this::createDeleteSql);
           deleteReferencedRelations();
           finishModification(ModificationLog.DELETE);
           getSession().commit(txVoucher);
@@ -2410,7 +2402,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           getSession().rollback(txVoucher);  // rollback if tx was begun
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
-            throw (PersistenceException) ex;
+            throw ex;
           }
           throw new PersistenceException(this, ex);
         }
@@ -2460,7 +2452,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       return getSession().isCountModificationAllowed() ?
-        ((ModificationTracker) PdoTracker.getInstance()).countModification(getTableName()) : -1;
+        PdoTracker.getInstance().countModification(getTableName()) : -1;
     }
   }
 
@@ -2506,7 +2498,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials1StatementId,
-                                                         () -> createSelectExpiredTableSerials1Sql());
+                                                         this::createSelectExpiredTableSerials1Sql);
       st.setLong(1, oldSerial);
       try (ResultSetWrapper rs = st.executeQuery()) {
         List<IdSerialTuple> expireList = new ArrayList<>();
@@ -2540,19 +2532,15 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     else  {
       // local
       PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectExpiredTableSerials2StatementId,
-                                                         () -> createSelectExpiredTableSerials2Sql());
+                                                         this::createSelectExpiredTableSerials2Sql);
       st.setLong(1, oldSerial);
       st.setLong(2, maxSerial);
-      ResultSetWrapper rs = st.executeQuery();
       List<IdSerialTuple> expireList = new ArrayList<>();
-      try {
+      try (ResultSetWrapper rs = st.executeQuery()) {
         while (rs.next()) {
           expireList.add(new IdSerialTuple(rs.getLong(1), rs.getLong(2)));
         }
         return expireList;
-      }
-      finally {
-        rs.close();
       }
     }
   }

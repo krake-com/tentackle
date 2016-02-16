@@ -113,7 +113,7 @@ public class PdoTreeObject {
    * @return the tooltip, null if none
    */
   public String getToolTipText()  {
-    if (toolTipTextLoaded == false) {
+    if (!toolTipTextLoaded) {
       toolTipText = null;
       if (pdod != null)  {
         toolTipText = pdod.getToolTipText(parentObject);
@@ -136,7 +136,7 @@ public class PdoTreeObject {
 
   @Override
   public String toString()  {
-    if (treeTextLoaded == false)  {
+    if (!treeTextLoaded)  {
       if (pdod != null) {
         treeText = pdod.getTreeText(parentObject);
       }

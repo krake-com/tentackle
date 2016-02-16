@@ -231,10 +231,7 @@ public class ForeignKeyMetaData {
     if (!Objects.equals(this.tableMetaData, other.tableMetaData)) {
       return false;
     }
-    if (!Objects.equals(this.foreignKeyName, other.foreignKeyName)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this.foreignKeyName, other.foreignKeyName);
   }
 
   @Override

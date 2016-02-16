@@ -28,7 +28,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 
 interface FxBindingFactory$Singleton {
-  static FxBindingFactory INSTANCE = ServiceFactory.createService(FxBindingFactory.class);
+  FxBindingFactory INSTANCE = ServiceFactory.createService(FxBindingFactory.class);
 }
 
 /**

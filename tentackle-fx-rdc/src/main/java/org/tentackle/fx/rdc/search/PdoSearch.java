@@ -177,16 +177,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         T firstPdo = tableView.getSelectionModel().getSelectedItem();
         if (firstPdo != null) {
           if (Fx.isModal(getStage())) {
-            if (firstPdo != null) {
-              close();
-            }
+            close();
           }
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
               Rdc.displayCrudStage(firstPdo, tableView.getItems(), true, Modality.NONE, getStage(),
-                crud -> {
-                  crud.getStage().setOnHidden(e -> tableView.refresh());
-                }
+                crud -> crud.getStage().setOnHidden(e -> tableView.refresh())
               );
             }
           }

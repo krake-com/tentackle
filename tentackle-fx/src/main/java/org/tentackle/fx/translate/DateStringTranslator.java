@@ -168,7 +168,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
   @Override
   public Function<Date, String> toViewFunction() {
-    return v -> format(v);
+    return this::format;
   }
 
   @Override
@@ -544,7 +544,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 if (c == ':') {
                   colonCount++;
                 }
-                else if (Character.isDigit(c) == false)  {
+                else if (!Character.isDigit(c))  {
                   timeOnly = false;
                   break;
                 }
@@ -656,7 +656,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     String f = format.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
-      if (Character.isLetterOrDigit(c) == false)  {
+      if (!Character.isLetterOrDigit(c))  {
         dateDelimiters += c;
       }
     }

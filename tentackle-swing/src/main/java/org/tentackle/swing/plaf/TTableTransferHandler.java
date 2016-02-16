@@ -83,8 +83,8 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
         return null;
       }
 
-      StringBuffer plainBuf = new StringBuffer();
-      StringBuffer htmlBuf = new StringBuffer();
+      StringBuilder plainBuf = new StringBuilder();
+      StringBuilder htmlBuf = new StringBuilder();
 
       htmlBuf.append("<html>\n<body>\n<table>\n");
 
@@ -93,8 +93,8 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
         for (int col = 0; col < cols.length; col++) {
           Object obj = table.getValueAt(rows[row], cols[col]);
           String val = ((obj == null) ? "" : obj.toString());
-          plainBuf.append(val + "\t");
-          htmlBuf.append("  <td>" + val + "</td>\n");
+          plainBuf.append(val).append("\t");
+          htmlBuf.append("  <td>").append(val).append("</td>\n");
         }
         // we want a newline at the end of each line and not a tab
         plainBuf.deleteCharAt(plainBuf.length() - 1).append("\n");

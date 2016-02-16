@@ -77,7 +77,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public ResultSetWrapper (StatementWrapper stmt, ResultSet rs) {
 
     this.stmt = stmt;
-    this.rs   = rs;
+    this.rs = rs;
 
     db = stmt.getSession();
     if (db == null) {
@@ -86,12 +86,7 @@ public class ResultSetWrapper implements AutoCloseable {
     }
 
     // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
-    if (stmt instanceof PreparedStatementWrapper) {
-      closeStatementOnClose = ((PreparedStatementWrapper) stmt).getStatementKey() == null;
-    }
-    else  {
-      closeStatementOnClose = true;
-    }
+    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) || ((PreparedStatementWrapper) stmt).getStatementKey() == null;
 
     columnCount = -1;
   }

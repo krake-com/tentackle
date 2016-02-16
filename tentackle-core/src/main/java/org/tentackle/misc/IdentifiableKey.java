@@ -103,10 +103,7 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
     if (this.identifiableClass != other.identifiableClass && (this.identifiableClass == null || !this.identifiableClass.equals(other.identifiableClass))) {
       return false;
     }
-    if (this.identifiableId != other.identifiableId) {
-      return false;
-    }
-    return true;
+    return this.identifiableId == other.identifiableId;
   }
 
   @Override

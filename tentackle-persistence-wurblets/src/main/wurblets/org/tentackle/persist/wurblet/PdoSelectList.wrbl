@@ -186,7 +186,7 @@
       if (cursor != null) {
 ]@
 @{to remoteOut}@
-  public RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  RemoteResultSetCursor @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -208,7 +208,7 @@
       else {
 ]@
 @{to remoteOut}@
-  public @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  @(rmiListType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override

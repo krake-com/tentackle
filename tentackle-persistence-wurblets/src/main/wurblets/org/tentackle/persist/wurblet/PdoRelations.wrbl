@@ -1577,7 +1577,7 @@
 ]@
 
   // Determines whether any @(pdoName)@ references given @(rel.getClassName())@
-  // \@wurblet @(tagName)@ PdoIsReferencing --model=@(getModelName())@ --static @(rel.getMethodArgs().get(0))@
+  // \@wurblet @(tagName)@ PdoIsReferencing --model=@(getModelName())@ @(rel.getMethodArgs().get(0))@
 @[
         }
       }

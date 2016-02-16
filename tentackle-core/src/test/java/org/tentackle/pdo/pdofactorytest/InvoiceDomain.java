@@ -34,9 +34,9 @@ public interface InvoiceDomain<T extends Invoice<T>> extends DomainObject<T> {
    * @return the sum
    */
   @LogIt
-  public String getSumAsString();
+  String getSumAsString();
 
   @Override
-  public String toString();
+  String toString();
 
 }

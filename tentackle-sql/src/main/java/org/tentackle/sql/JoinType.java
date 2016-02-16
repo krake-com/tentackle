@@ -41,7 +41,7 @@ public enum JoinType {
 
   private final String sql;
 
-  private JoinType(String sql) {
+  JoinType(String sql) {
     this.sql = sql;
   }
 

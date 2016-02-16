@@ -126,13 +126,11 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-date-string
    */
   public static String dateString(Date date)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(dateFormat.format(date));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_DATE_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+    return  ORA_TO_DATE_LEAD +
+            dateFormat.format(date) +
+            ORA_TO_DATE_SEP +
+            ORA_DATE_FORMAT +
+            ORA_TO_DATE_TAIL;
   }
 
 
@@ -143,13 +141,11 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-time-string
    */
   public static String timeString(Time time)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(timeFormat.format(time));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_TIME_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+    return  ORA_TO_DATE_LEAD +
+            timeFormat.format(time) +
+            ORA_TO_DATE_SEP +
+            ORA_TIME_FORMAT +
+            ORA_TO_DATE_TAIL;
   }
 
 
@@ -160,13 +156,11 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-timestamp-string
    */
   public static String timestampString(Timestamp timestamp)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(timestampFormat.format(timestamp));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_TIMESTAMP_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+    return  ORA_TO_DATE_LEAD +
+            timestampFormat.format(timestamp) +
+            ORA_TO_DATE_SEP +
+            ORA_TIMESTAMP_FORMAT +
+            ORA_TO_DATE_TAIL;
   }
 
   @Override
@@ -401,12 +395,10 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override
@@ -428,12 +420,10 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" MODIFY (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, true, null, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " MODIFY (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, true, null, false, false) +
+            ");\n";
   }
 
   @Override

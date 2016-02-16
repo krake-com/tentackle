@@ -1223,8 +1223,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             while (i < size) {
               T object = list.get(i); // list is an ArrayList(): get(i) is fast!
               if (object.isExpired()) {
-                object = object.reload();    // unchecked
-                if (object == null) { // vanished, i.e. object has been deleted in db
+                T reloadedObject = object.reload();
+                if (reloadedObject == null) { // vanished, i.e. object has been deleted in db
                   list.remove(i--);   // remove from list too (costly but better than loading the whole list!)
                   // notice: this will only happen for explicitly expired objects because deleted objects cannot
                   // be found by AbstractDbObject.selectExpiredTableSerials()!
@@ -1238,14 +1238,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
                 }
                 else {
                   // replace in list
-                  list.set(i, object);
+                  list.set(i, reloadedObject);
                   // replace in cache (this keeps lists in syncObject with index cache)
-                  remove(object);
-                  add(object);
-                  updateTableSerial(object);
+                  remove(reloadedObject);
+                  add(reloadedObject);
+                  updateTableSerial(reloadedObject);
                   if (!inToString && LOGGER.isFinerLoggable()) {
                     inToString = true;    // avoid recursion cause context.toString
-                    LOGGER.finer("object " + object.toGenericString() +
+                    LOGGER.finer("object " + reloadedObject.toGenericString() +
                                  " reloaded in list for context " + context.getInfo());
                     inToString = false;
                   }

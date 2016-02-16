@@ -162,7 +162,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
    * Creates a calendar panel in current locale, no time, today.
    */
   public FormCalendar() {
-    this((Date)null);
+    this(null);
   }
 
 
@@ -314,12 +314,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
           today.get(DAY_OF_YEAR) == firstCal.get(DAY_OF_YEAR))  {
         dayButton.setForeground(Color.blue);
       }
-      dayButton.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          dayButton_actionPerformed(e);
-        }
-      });
+      dayButton.addActionListener(e -> dayButton_actionPerformed(e));
       dayButtonGroup.add(dayButton);
       calendarPanel.add(dayButton, null);
 

@@ -509,7 +509,7 @@ public class FormatHelper {
     if (dotNdx <= 0 && groupingUsed)  {
       // default has been set: restore grouping pars
       format.setGroupingSize(groupingSize);
-      format.setGroupingUsed(groupingUsed);
+      format.setGroupingUsed(true);
     }
   }
 

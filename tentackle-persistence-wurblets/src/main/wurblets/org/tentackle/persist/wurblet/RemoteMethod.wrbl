@@ -202,7 +202,7 @@
       if (returningObject) {
 ]@
 @{to remoteOut}@
-  public @(className)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(className)@ @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -242,7 +242,7 @@
       if (returningCollection) {
 ]@
 @{to remoteOut}@
-  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -282,7 +282,7 @@
       else if (returningCursor) {
 ]@
 @{to remoteOut}@
-  public RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  RemoteResultSetCursor@(genType)@ @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -330,7 +330,7 @@
       else if (returningVoid) {
 ]@
 @{to remoteOut}@
-  public void @(methodName)@(@(dparms)@) throws RemoteException;
+  void @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -369,7 +369,7 @@
       else  {
 ]@
 @{to remoteOut}@
-  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

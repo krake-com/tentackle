@@ -33,7 +33,7 @@ public class NameIdComparator<T extends AbstractDbObject<?>> implements Comparat
       return o2 == null ? 0 : -1;
     }
     else if (o2 == null) {
-      return o1 == null ? 0 : 1;
+      return 1;
     }
     else  {
       int rv = o1.toString().compareToIgnoreCase(o2.toString());

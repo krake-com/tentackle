@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface ScriptFactory$Singleton {
-  static ScriptFactory INSTANCE = ServiceFactory.createService(ScriptFactory.class, DefaultScriptFactory.class);
+  ScriptFactory INSTANCE = ServiceFactory.createService(ScriptFactory.class, DefaultScriptFactory.class);
 }
 
 

@@ -81,12 +81,7 @@ public class SocketPerformancePreferences implements Serializable {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append('[').append(connectionTime).
-        append(',').append(latency).
-        append(',').append(bandwidth).
-        append(']');
-    return buf.toString();
+    return "[" + connectionTime + ',' + latency + ',' + bandwidth + ']';
   }
 
   @Override

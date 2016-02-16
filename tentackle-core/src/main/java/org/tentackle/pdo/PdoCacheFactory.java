@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface PdoCacheFactory$Singleton {
-  static PdoCacheFactory INSTANCE = ServiceFactory.createService(
+  PdoCacheFactory INSTANCE = ServiceFactory.createService(
               PdoCacheFactory.class, DefaultPdoCacheFactory.class);
 }
 

@@ -226,7 +226,7 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlCreateTableClosing(String tableName, String comment) {
     if (comment == null) {
-      return super.sqlCreateTableClosing(tableName, comment);
+      return super.sqlCreateTableClosing(tableName, null);
     }
     StringBuilder buf = new StringBuilder(super.sqlCreateTableClosing(tableName, comment));
     buf.setLength(buf.length() - 2);  // cut trailing ";\n"
@@ -290,7 +290,7 @@ public class MySql extends AbstractSql92Backend {
   public String sqlCreateColumn(String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue, boolean primaryKey, boolean withTrailingComma) {
     if (comment == null) {
-      return super.sqlCreateColumn(columnName, comment, sqlType, size, scale, nullable, defaultValue, primaryKey,
+      return super.sqlCreateColumn(columnName, null, sqlType, size, scale, nullable, defaultValue, primaryKey,
               withTrailingComma);
     }
 
@@ -345,12 +345,10 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ";\n";
   }
 
   @Override

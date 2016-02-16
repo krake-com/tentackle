@@ -89,7 +89,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * @return the transferable, null if none
    * @see PdoTransferable
    */
-  public PdoTransferable<T> getTransferable();
+  PdoTransferable<T> getTransferable();
 
 
   /**

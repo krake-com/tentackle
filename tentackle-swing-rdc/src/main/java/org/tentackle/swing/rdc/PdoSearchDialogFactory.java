@@ -25,7 +25,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface PdoSearchDialogFactory$Singleton {
-  static PdoSearchDialogFactory INSTANCE = ServiceFactory.createService(
+  PdoSearchDialogFactory INSTANCE = ServiceFactory.createService(
               PdoSearchDialogFactory.class, DefaultPdoSearchDialogFactory.class);
 }
 

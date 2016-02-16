@@ -115,10 +115,7 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append("servicedClass=").append(servicedClass.getName())
-       .append(", session=").append(getServerSession());
-    return buf.toString();
+    return "servicedClass=" + servicedClass.getName() + ", session=" + getServerSession();
   }
 
 }

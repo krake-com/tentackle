@@ -23,8 +23,13 @@
     /**
      * Generate code to define the cokumn lengths.
      *
-     * usage:  \@wurblet <somename> ColumnLengths --model=<mapfile>
+     * usage:  \@wurblet <somename> ColumnLengths [--model=<mapfile>] [--noif]
+     *
+     *         <mapfile> is the mapping description
+     *         --noif if not part of an interface (adds "public static final")
      */
+
+    String lead = getOption("noif") == null ? "" : "public static final ";
 
     for (Attribute attr: getEntity().getAttributes())  {
       if ((attr.getDataType() == DataType.STRING ||
@@ -33,7 +38,7 @@
 ]@
 
   /** maximum number of characters for '@(attr)@'. */
-  public static final int CL_@(attr.getJavaName().toUpperCase())@ = @(attr.getSize())@;
+  @(lead)@int CL_@(attr.getJavaName().toUpperCase())@ = @(attr.getSize())@;
 @[
       }
     }

@@ -34,7 +34,7 @@ public class IdComparator<P extends AbstractDbObject<?>> implements Comparator<P
       return o2 == null ? 0 : -1;
     }
     else if (o2 == null) {
-      return o1 == null ? 0 : 1;
+      return 1;
     }
     else  {
       // use getId() cause of "reserved Ids"

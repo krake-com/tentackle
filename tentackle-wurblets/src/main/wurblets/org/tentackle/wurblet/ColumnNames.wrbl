@@ -23,7 +23,9 @@
     /**
      * Generate code to define the database column names.
      *
-     * usage:  \@wurblet <somename> ColumnNames --model=<mapfile>
+     * usage:  \@wurblet <somename> ColumnNames [--model=<mapfile>]
+     *
+     *         <mapfile> is the mapping description
      */
 
     for (Attribute attr: getEntity().getAttributes())  {

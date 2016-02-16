@@ -56,10 +56,7 @@ public class FileTransferable extends Vector<File> implements Transferable  {
   }
 
   public boolean isDataFlavorSupported(DataFlavor flavor) {
-    boolean b  = false;
-    b |= flavor.equals(flavors[FILE]);
-    b |= flavor.equals(flavors[STRING]);
-    return (b);
+    return flavor.equals(flavors[FILE]) || flavor.equals(flavors[STRING]);
   }
 
   public synchronized Object getTransferData(DataFlavor flavor)

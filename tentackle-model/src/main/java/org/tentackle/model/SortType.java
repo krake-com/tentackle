@@ -29,6 +29,6 @@ public enum SortType {
   ASC,
 
   /** sort descending. */
-  DESC;
+  DESC
 
 }

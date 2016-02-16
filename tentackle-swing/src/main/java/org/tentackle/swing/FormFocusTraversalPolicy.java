@@ -371,12 +371,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
   private boolean isFirstComponentOrNonGrouped(Component comp) {
     if (comp instanceof FormComponent) {
       FocusTraversalGroup group = ((FormComponent) comp).getFocusTraversalGroup();
-      if (group != null) {
-        return comp == group.getFirstComponent();
-      }
-      else  {
-        return true;  // not grouped
-      }
+      return group == null || comp == group.getFirstComponent();
     }
     return false;
   }
@@ -389,12 +384,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
   private boolean isLastComponentOrNonGrouped(Component comp) {
     if (comp instanceof FormComponent) {
       FocusTraversalGroup group = ((FormComponent) comp).getFocusTraversalGroup();
-      if (group != null) {
-        return comp == group.getLastComponent();
-      }
-      else  {
-        return true;
-      }
+      return group == null || comp == group.getLastComponent();
     }
     return false;
   }

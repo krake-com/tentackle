@@ -118,7 +118,7 @@ public class TTinyComboBoxButton extends JButton {
     setModel(new DefaultButtonModel() {
       @Override
       public void setArmed(boolean armed) {
-        super.setArmed(isPressed() ? true : armed);
+        super.setArmed(isPressed() || armed);
       }
     });
 

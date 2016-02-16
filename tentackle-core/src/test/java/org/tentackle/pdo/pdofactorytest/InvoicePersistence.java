@@ -33,13 +33,13 @@ public interface InvoicePersistence<T extends Invoice<T>> extends PersistentObje
    *
    * @param invoiceNo the invoice number
    */
-  public void setInvoiceNo(String invoiceNo);
+  void setInvoiceNo(String invoiceNo);
 
   /**
    * Gets the invocie number.
    *
    * @return the invoice number
    */
-  public String getInvoiceNo();
+  String getInvoiceNo();
 
 }

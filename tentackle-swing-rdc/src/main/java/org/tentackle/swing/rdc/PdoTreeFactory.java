@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface PdoTreeFactory$Singleton {
-  static PdoTreeFactory INSTANCE = ServiceFactory.createService(PdoTreeFactory.class, DefaultPdoTreeFactory.class);
+  PdoTreeFactory INSTANCE = ServiceFactory.createService(PdoTreeFactory.class, DefaultPdoTreeFactory.class);
 }
 
 

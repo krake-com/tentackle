@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface PdoTracker$Singleton {
-  static PdoTracker INSTANCE = ServiceFactory.createService(PdoTracker.class);
+  PdoTracker INSTANCE = ServiceFactory.createService(PdoTracker.class);
 }
 
 

@@ -188,7 +188,7 @@ public class Db implements Session, Cloneable {
    * Global close handlers.
    */
   private static final Set<SessionCloseHandler> GLOBAL_CLOSE_HANDLERS =
-                       Collections.newSetFromMap(new ConcurrentHashMap<SessionCloseHandler,Boolean>());
+                       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   /**
    * Registers a global close handler.
@@ -217,7 +217,7 @@ public class Db implements Session, Cloneable {
    * The set of Db-sessions is used to enhance the diagnostic utilities.
    */
   private static final Set<WeakReference<Db>> DB_SET =
-          Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<Db>,Boolean>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
@@ -1816,12 +1816,12 @@ public class Db implements Session, Cloneable {
               LOGGER.warning("rollback too late: connection already detached");
               autoCommit = true;
             }
+            LOGGER.fine("{0} rolled back", transaction);
             logModificationDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
             transaction = null;
             rolledBack = true;
-            LOGGER.fine("{0} rolled back", transaction);
           }
           else {
             throw new PersistenceException(this, "transaction ended unexpectedly before rollback (valid voucher)");

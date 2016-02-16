@@ -369,7 +369,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    */
   public boolean isDaemonEnabled(int index) {
     Daemon daemon = getDaemon(index);
-    return daemon == null ? false : daemon.isEnabled();
+    return daemon != null && daemon.isEnabled();
   }
 
 
@@ -514,7 +514,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         runningThreads.add(thread);
       }
     }
-    return runningThreads.toArray(new Thread[0]);
+    return runningThreads.toArray(new Thread[runningThreads.size()]);
   }
 
   /**

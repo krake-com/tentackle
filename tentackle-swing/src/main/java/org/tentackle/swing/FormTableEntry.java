@@ -549,7 +549,7 @@ abstract public class FormTableEntry<T> implements FormTableRowObject {
    */
   public boolean isBindingChangeable(int mColumn) {
     FormTableBinding binding = getBinding(mColumn);
-    return binding == null ? false : binding.isChangeable();
+    return binding != null && binding.isChangeable();
   }
 
   /**

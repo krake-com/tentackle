@@ -49,7 +49,7 @@ public class GUIExceptionHandler {
     printWriter = new PrintWriter(writer);
   }
 
-  private static Set<GUISaveable> saveables = new HashSet<GUISaveable>();    // Set of GUISaveables
+  private static Set<GUISaveable> saveables = new HashSet<>();    // Set of GUISaveables
 
   private static final String GUIExceptionHandlerKey = "sun.awt.exception.handler";
   private static final String GUIExceptionHandler    = "org.tentackle.swing.GUIExceptionHandler";

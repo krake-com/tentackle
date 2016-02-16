@@ -579,13 +579,8 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
       if (savedValue == null) {
         return value != null;
       }
-      else  {
-        if (value != null) {
-          return !value.equals(savedValue);
-        }
-        else {
-          return true;
-        }
+      else {
+        return value == null || !value.equals(savedValue);
       }
     }
     return false;
@@ -694,7 +689,7 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
   @Override
   public void setEraseFirst(boolean erasefirst) {
     this.eraseFirst = erasefirst;
-    if (erasefirst == false)  {
+    if (!erasefirst)  {
       Document doc = getDocument();
       try {
         ((FormFieldDocument)doc).setEraseFirst(false);
@@ -752,7 +747,6 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
 
   @Override
   public void setDefaultColumns(int defaultColumns) {
-    this.defaultColumns = defaultColumns;
     if (defaultColumns < 0) {
       throw new IllegalArgumentException("defaultColumns less than zero.");
     }

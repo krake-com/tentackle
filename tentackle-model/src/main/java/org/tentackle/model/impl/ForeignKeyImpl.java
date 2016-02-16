@@ -134,17 +134,13 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
 
   @Override
   public String sqlCreateForeignKey(Backend backend) {
-    StringBuilder buf = new StringBuilder();
-
-    buf.append(backend.sqlCreateForeignKey(
-        getReferencingTableProvidingEntity().getTableName(),
-        getReferencingAttribute().getColumnName(),
-        getReferencedTableProvidingEntity().getTableName(),
-        getReferencedAttribute().getColumnName(),
-        getReferencingEntity().getTableAlias() + "_" + getReferencingAttribute().getColumnName() + "_fkey",
-        isComposite() && getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase()));
-
-    return buf.toString();
+    return backend.sqlCreateForeignKey(
+            getReferencingTableProvidingEntity().getTableName(),
+            getReferencingAttribute().getColumnName(),
+            getReferencedTableProvidingEntity().getTableName(),
+            getReferencedAttribute().getColumnName(),
+            getReferencingEntity().getTableAlias() + "_" + getReferencingAttribute().getColumnName() + "_fkey",
+            isComposite() && getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase());
   }
 
 

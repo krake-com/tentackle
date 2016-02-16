@@ -416,8 +416,8 @@ public class FormTableCellRenderer implements TableCellRenderer, Serializable {
                 blankZero = true;
               }
             }
-            else if (value instanceof Number) {
-              if (((Number) value).longValue() == 0l) {
+            else {
+              if (((Number) value).longValue() == 0) {
                 blankZero = true;
               }
             }
@@ -447,18 +447,18 @@ public class FormTableCellRenderer implements TableCellRenderer, Serializable {
                 formTable.setFormat(modelColumn, FormatHelper.getFloatingNumberPattern());
               }
             }
-            setValue(value == null ? "" : formTable.getNumberFormat(modelColumn).format((Number) value));
+            setValue(formTable.getNumberFormat(modelColumn).format(value));
           }
         }
         else {
           // not a number
           if (value instanceof Timestamp) {
             hAlign = JLabel.CENTER;
-            setValue(value == null ? "" : formTable.getDateFormat(modelColumn, true).format((Date) value));
+            setValue(formTable.getDateFormat(modelColumn, true).format((Date) value));
           }
           else if (value instanceof Date) {
             hAlign = JLabel.CENTER;
-            setValue(value == null ? "" : formTable.getDateFormat(modelColumn).format((Date) value));
+            setValue(formTable.getDateFormat(modelColumn).format((Date) value));
           }
         }
       }

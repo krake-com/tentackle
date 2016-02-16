@@ -34,7 +34,7 @@ public interface ClassMapper {
    * @return the mapped class, never null.
    * @throws ClassNotFoundException if there is no mapping.
    */
-  public Class<?> map(Class<?> clazz) throws ClassNotFoundException;
+  Class<?> map(Class<?> clazz) throws ClassNotFoundException;
 
 
   /**
@@ -44,7 +44,7 @@ public interface ClassMapper {
    * @return the mapped class, never null.
    * @throws ClassNotFoundException if there is no mapping.
    */
-  public Class<?> map(String className) throws ClassNotFoundException;
+  Class<?> map(String className) throws ClassNotFoundException;
 
 
   /**
@@ -58,7 +58,7 @@ public interface ClassMapper {
    * @return the mapped class, never null.
    * @throws ClassNotFoundException if there is no mapping.
    */
-  public Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException;
+  Class<?> mapLenient(Class<?> clazz) throws ClassNotFoundException;
 
 
   /**
@@ -68,6 +68,6 @@ public interface ClassMapper {
    * @return the mapped class, never null.
    * @throws ClassNotFoundException if there is no mapping.
    */
-  public Class<?> mapLenient(String className) throws ClassNotFoundException;
+  Class<?> mapLenient(String className) throws ClassNotFoundException;
 
 }

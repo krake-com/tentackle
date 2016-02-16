@@ -201,8 +201,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
    */
   @Override
   public FxTableBinding<S,?> removeBinding(String bindingPath) {
-    FxTableBinding<S,?> binding = boundPaths.remove(bindingPath);
-    return binding;
+    return boundPaths.remove(bindingPath);
   }
 
 

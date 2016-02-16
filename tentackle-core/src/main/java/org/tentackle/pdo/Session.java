@@ -28,7 +28,7 @@ interface Session$ThreadLocal {
   /**
    * The session of the current thread.
    */
-  static ThreadLocal<Session> TL_SESSION = new ThreadLocal<>();
+  ThreadLocal<Session> TL_SESSION = new ThreadLocal<>();
 }
 
 

@@ -804,7 +804,7 @@ public class Report implements Printable, Pageable {
 
 
 
-    if (state.lastPagePrinted == false && pageIndex >= 0 &&
+    if (!state.lastPagePrinted && pageIndex >= 0 &&
         (pages == UNKNOWN_NUMBER_OF_PAGES || pageIndex < pages))  {
 
       int pageHeight;   // size of printable area

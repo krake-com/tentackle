@@ -127,9 +127,7 @@ public class ObjectSequenceId extends AbstractIdSource {
       // get new offset from sequence
       try {
         PreparedStatementWrapper selectStatement = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
-                () -> {
-                  return db.getBackend().sqlNextFromSequene(getName());
-                }
+                () -> db.getBackend().sqlNextFromSequene(getName())
         );
         try (ResultSetWrapper rs = selectStatement.executeQuery()) {
           if (rs.next()) {
@@ -143,7 +141,7 @@ public class ObjectSequenceId extends AbstractIdSource {
       }
       catch (RuntimeException e) {
         if (e instanceof PersistenceException) {
-          throw (PersistenceException) e;
+          throw e;
         }
         throw new PersistenceException(db, e);
       }

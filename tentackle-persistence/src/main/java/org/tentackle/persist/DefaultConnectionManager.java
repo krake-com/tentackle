@@ -110,9 +110,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
     if (maxSize != 0 && maxSize < iniSize) {
       throw new IllegalArgumentException("maxSize must be 0 or >= iniSize");
     }
-    if (name == null) {
-      throw new NullPointerException("name must not be null");
-    }
+    // name != null already checked by super(name)
 
     this.name = name;
     this.iniSize = iniSize;

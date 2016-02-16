@@ -67,12 +67,7 @@ public class FormCalendarDialog extends FormDialog {
     initComponents();
     calendar.setup(locale, day, timeMode);
     // listener for double click on date
-    calendar.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e)  {
-        okButton.doClick();
-      }
-    });
+    calendar.addActionListener(e -> okButton.doClick());
   }
 
   /**

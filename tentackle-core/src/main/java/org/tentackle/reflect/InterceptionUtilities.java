@@ -31,7 +31,7 @@ import org.tentackle.common.TentackleRuntimeException;
 
 
 interface InterceptionUtilities$Singleton {
-  static InterceptionUtilities INSTANCE = ServiceFactory.createService(InterceptionUtilities.class, InterceptionUtilities.class);
+  InterceptionUtilities INSTANCE = ServiceFactory.createService(InterceptionUtilities.class, InterceptionUtilities.class);
 }
 
 

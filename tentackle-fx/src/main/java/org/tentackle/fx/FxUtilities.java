@@ -62,7 +62,7 @@ import org.tentackle.fx.component.Note;
 import org.tentackle.misc.StringHelper;
 
 interface FxUtilities$Singleton {
-  static FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
+  FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
 }
 
 /**
@@ -340,7 +340,7 @@ public class FxUtilities {
         // For numeric fields, however, (and where desired) this behaviour leads to unexpected data entry.
         FxTextComponent textComponent = (FxTextComponent) component;
         if (textComponent.isAutoSelect()) {
-          Platform.runLater(() -> ((TextInputControl) component).selectAll());
+          Platform.runLater(((TextInputControl) component)::selectAll);
         }
       }
     }

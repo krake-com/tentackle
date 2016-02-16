@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface IdSourceConfigurator$Singleton {
-  static IdSourceConfigurator INSTANCE = ServiceFactory.createService(
+  IdSourceConfigurator INSTANCE = ServiceFactory.createService(
               IdSourceConfigurator.class, DefaultIdSourceConfigurator.class);
 }
 

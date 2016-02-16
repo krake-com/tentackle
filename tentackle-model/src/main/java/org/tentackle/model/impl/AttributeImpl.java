@@ -469,7 +469,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String getSetterName() {
-    return new StringBuilder("set").append(getMethodNameSuffix()).toString();
+    return "set" + getMethodNameSuffix();
   }
 
   @Override

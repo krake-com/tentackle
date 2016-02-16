@@ -52,7 +52,7 @@ public final class ConvertibleHelper {
       try {
         method = clazz.getDeclaredMethod("toInternal", external.getClass());
         if (Modifier.isStatic(method.getModifiers())) {
-          methodMap.put((Class<? extends Convertible<?>>) clazz,method);
+          methodMap.put(clazz,method);
         }
       }
       catch (NoSuchMethodException nsm) {

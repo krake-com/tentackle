@@ -196,25 +196,21 @@ public class Db2 extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(columnName);
-    buf.append(" DATA TYPE ");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            columnName +
+            " DATA TYPE " +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ";\n";
   }
 
   /**

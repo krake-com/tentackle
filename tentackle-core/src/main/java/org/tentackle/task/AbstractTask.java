@@ -76,10 +76,7 @@ public abstract class AbstractTask implements Task {
       return false;
     }
     final AbstractTask other = (AbstractTask) obj;
-    if (this.id != other.id) {
-      return false;
-    }
-    return true;
+    return this.id == other.id;
   }
 
   @Override
@@ -220,7 +217,7 @@ public abstract class AbstractTask implements Task {
    */
   private List<TaskListener> getListeners() {
     if (listeners == null) {
-      listeners = new ArrayList<TaskListener>();
+      listeners = new ArrayList<>();
     }
     return listeners;
   }

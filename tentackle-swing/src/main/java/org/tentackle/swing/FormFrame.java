@@ -409,7 +409,7 @@ public class FormFrame extends JFrame implements FormWindow, I18nTranslatable, C
       // initial align
       location = FormUtilities.getInstance().getPreferredLocation(this, getOwner());         // position to preferred location
     }
-    if (getLocation().equals(location) == false)  {
+    if (!getLocation().equals(location))  {
       setLocation (location);   // set new location
     }
   }

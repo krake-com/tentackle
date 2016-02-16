@@ -780,7 +780,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         catch (RuntimeException re) {
           mutex.writeLock().unlock();   // must work
           if (re instanceof TaskException) {
-            throw (TaskException) re;
+            throw re;
           }
           else  {
             throw new TaskException("obtaining lock failed", re);
@@ -803,7 +803,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           catch (RuntimeException re) {
             nonMutexLockCount--;
             if (re instanceof TaskException) {
-              throw (TaskException) re;
+              throw re;
             }
             else  {
               throw new TaskException("counter lock failed", re);

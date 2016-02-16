@@ -409,7 +409,7 @@ public abstract class CompositePreferences {
       return b2 == null;
     }
     else if (b2 == null) {
-      return b1 == null;
+      return false;
     }
     else  {
       if (b1.length == b2.length) {

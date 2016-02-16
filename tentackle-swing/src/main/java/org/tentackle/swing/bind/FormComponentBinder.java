@@ -40,7 +40,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return the form
    */
-  public FormContainer getFormContainer();
+  FormContainer getFormContainer();
 
 
   /**
@@ -57,7 +57,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return number of members bound
    */
-  public int bindFormInherited();
+  int bindFormInherited();
 
   /**
    * Binds with bindable inheritance.
@@ -72,7 +72,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return number of members bound
    */
-  public int bindBindableInherited();
+  int bindBindableInherited();
 
   /**
    * Gets a binding by component.
@@ -80,7 +80,7 @@ public interface FormComponentBinder extends Binder {
    * @param component the component assigned to the binding
    * @return the binding, null if component not bound
    */
-  public FormComponentBinding getBinding(FormComponent component);
+  FormComponentBinding getBinding(FormComponent component);
 
   /**
    * {@inheritDoc}
@@ -88,7 +88,7 @@ public interface FormComponentBinder extends Binder {
    * Overridden to cast.
    */
   @Override
-  public FormComponentBinding getBinding(String bindingPath);
+  FormComponentBinding getBinding(String bindingPath);
 
 
   /**
@@ -96,13 +96,13 @@ public interface FormComponentBinder extends Binder {
    *
    * @return the list of bound components, never null
    */
-  public Collection<FormComponent> getBoundComponents();
+  Collection<FormComponent> getBoundComponents();
 
   /**
    * Gets the list of all unbound components of this form.
    * @return the list of unbound components, never null
    */
-  public Collection<FormComponent> getUnboundComponents();
+  Collection<FormComponent> getUnboundComponents();
 
 
   /**
@@ -112,7 +112,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return the removed binding, null if no such binding found
    */
-  public FormComponentBinding removeBinding(FormComponent component);
+  FormComponentBinding removeBinding(FormComponent component);
 
   /**
    * {@inheritDoc}
@@ -120,7 +120,7 @@ public interface FormComponentBinder extends Binder {
    * Overridden to cast.
    */
   @Override
-  public FormComponentBinding removeBinding(String bindingPath);
+  FormComponentBinding removeBinding(String bindingPath);
 
 
   /**
@@ -128,13 +128,13 @@ public interface FormComponentBinder extends Binder {
    *
    * @return the mandatory bindings
    */
-  public List<? extends Binding> getMandatoryBindings();
+  List<? extends Binding> getMandatoryBindings();
 
   /**
    * Request to update the mandatory attribute of all dynamically mandatory components.<br>
    * Used by {@link FormContainer#setFormValues()} and {@link FormContainer#setFormValuesKeepChanged()}.
    */
-  public void requestMandatoryUpdate();
+  void requestMandatoryUpdate();
 
 
   /**
@@ -142,12 +142,12 @@ public interface FormComponentBinder extends Binder {
    *
    * @return the changaeble bindings
    */
-  public List<? extends Binding> getChangeableBindings();
+  List<? extends Binding> getChangeableBindings();
 
   /**
    * Request to update the changeable attribute of all dynamically mandatory components.<br>
    * Used by {@link FormContainer#setFormValues()} and {@link FormContainer#setFormValuesKeepChanged()}.
    */
-  public void requestChangeableUpdate();
+  void requestChangeableUpdate();
 
 }

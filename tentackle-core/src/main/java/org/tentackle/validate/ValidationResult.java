@@ -104,7 +104,7 @@ public interface ValidationResult extends Serializable {
   /**
    * A collection index within a validation path
    */
-  public class CollectionIndex {
+  class CollectionIndex {
     /** the index within the collection */
     public int index;
     /** the leading part of the path */

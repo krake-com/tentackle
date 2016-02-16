@@ -61,7 +61,7 @@ public enum Integrity {
    * @param relatedCheckedByDatabase true if integrity of related entities is checked by the database
    * @param compositesCheckedByDatabase true if integrity of composite entities is checked by the database
    */
-  private Integrity(boolean checkedByApplication, boolean relatedCheckedByDatabase, boolean compositesCheckedByDatabase) {
+  Integrity(boolean checkedByApplication, boolean relatedCheckedByDatabase, boolean compositesCheckedByDatabase) {
     this.checkedByApplication = checkedByApplication;
     this.relatedCheckedByDatabase = relatedCheckedByDatabase;
     this.compositesCheckedByDatabase = compositesCheckedByDatabase;

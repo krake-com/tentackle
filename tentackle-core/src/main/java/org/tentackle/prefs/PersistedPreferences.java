@@ -21,7 +21,6 @@
 package org.tentackle.prefs;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;

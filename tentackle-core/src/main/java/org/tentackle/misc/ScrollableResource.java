@@ -164,7 +164,7 @@ public interface ScrollableResource<T> extends AutoCloseable {
    *
    * @return the fetchsize
    */
-  public int getFetchSize();
+  int getFetchSize();
 
   /**
    * Fetches the next objects up to the fetchsize.<br>
@@ -174,6 +174,6 @@ public interface ScrollableResource<T> extends AutoCloseable {
    *
    * @return the list of objects, null if no more objects found
    */
-  public List<T> fetch();
+  List<T> fetch();
 
 }

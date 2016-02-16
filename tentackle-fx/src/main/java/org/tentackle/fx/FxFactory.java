@@ -30,7 +30,7 @@ import org.tentackle.fx.table.TableConfiguration;
 
 
 interface FxFactory$Singleton {
-  static FxFactory INSTANCE = ServiceFactory.createService(FxFactory.class);
+  FxFactory INSTANCE = ServiceFactory.createService(FxFactory.class);
 }
 
 /**

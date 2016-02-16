@@ -34,12 +34,10 @@ public class NonStandardCommons {
    * @return the SQL code including the closing bracket
    */
   public static String sqlCreateCommentOnTable(Backend backend, String tableName, String comment) {
-    StringBuilder buf = new StringBuilder("COMMENT ON TABLE ");
-    buf.append(tableName);
-    buf.append(" IS ");
-    buf.append(backend.toQuotedString(comment));
-    buf.append(";\n");
-    return buf.toString();
+    return  "COMMENT ON TABLE " + tableName +
+            " IS " +
+            backend.toQuotedString(comment) +
+            ";\n";
   }
 
   /**

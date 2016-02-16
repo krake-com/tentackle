@@ -67,11 +67,6 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
   private ModelMetaData modelMetaData;
 
   /**
-   * Table migrators.
-   */
-  private Collection<TableMigrator> tableMigrators;
-
-  /**
    * The migration hints for current backend.
    */
   private MigrationHints backendMigrationHints;
@@ -87,7 +82,6 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
     if (backendInfo.isConnectable()) {
       super.openResources(backendInfo);
-      tableMigrators = new ArrayList<>();
       try {
         DatabaseMetaData[] metaData = backendInfo.getBackend().getMetaData(backendInfo);
         modelMetaData = new ModelMetaData(backendInfo.getBackend(), metaData, backendInfo.getSchemas());
@@ -248,13 +242,14 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
 
               // filter foreign keys
               Collection<ForeignKey> relatedForeignKeys = new ArrayList<>();
-              for (ForeignKey key: foreignKeys) {
-                if (key.getReferencingEntity().equals(entity)) {
-                  relatedForeignKeys.add(key);
+              if (foreignKeys != null) {
+                for (ForeignKey key : foreignKeys) {
+                  if (key.getReferencingEntity().equals(entity)) {
+                    relatedForeignKeys.add(key);
+                  }
                 }
               }
               TableMigrator tableMigrator = new TableMigrator(entity, relatedForeignKeys, backendInfo.getBackend(), table);
-              tableMigrators.add(tableMigrator);
               TableMigrator.Result migrationResult = tableMigrator.migrate(
                       hints.getHints(tableName), hints.getColumnMigrations(tableName));
 
@@ -274,20 +269,16 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
                 }
                 else  {
                   // run the generated migration
-                  if (migrated) {
-                    sql = backendMigrationHints.getBeforeTable(tableName);
-                    if (sql != null) {
-                      tableSql.append('\n');
-                      tableSql.append(sql);
-                    }
+                  sql = backendMigrationHints.getBeforeTable(tableName);
+                  if (sql != null) {
+                    tableSql.append('\n');
+                    tableSql.append(sql);
                   }
                   tableSql.append(migrationResult.getTableSql());
-                  if (migrated) {
-                    sql = backendMigrationHints.getAfterTable(tableName);
-                    if (sql != null) {
-                      tableSql.append(sql);
-                      tableSql.append('\n');
-                    }
+                  sql = backendMigrationHints.getAfterTable(tableName);
+                  if (sql != null) {
+                    tableSql.append(sql);
+                    tableSql.append('\n');
                   }
                 }
               }

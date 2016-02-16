@@ -36,7 +36,7 @@ public interface ShortLongText {
    * Usually implemented as {@link Object#toString()}.
    * @return the short text
    */
-  public String getShortText();
+  String getShortText();
 
 
   /**
@@ -44,7 +44,6 @@ public interface ShortLongText {
    * Usually something like {@code object.getName()}.
    * @return the long text
    */
-  public String getLongText();
-
+  String getLongText();
 
 }

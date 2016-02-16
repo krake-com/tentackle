@@ -67,7 +67,7 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
     Integer globalMultiplier = null;
 
     StringTokenizer stok = new StringTokenizer(idConfig, ":");
-    while(stok.hasMoreTokens()) {
+    while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
       if (type == null) {
         type = token;
@@ -86,12 +86,16 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
       }
     }
 
+    if (type == null) {
+      throw new PersistenceException("empty id configuration");
+    }
+
     switch (type) {
       case SEQUENCE_BASED:
-        if (sequenceMultiplier == null && globalMultiplier == null) {
+        if (sequenceMultiplier == null) {   // implies globalMultiplier == null
           return new ObjectSequenceId(name);
         }
-        else if (sequenceMultiplier != null && globalMultiplier != null) {
+        else if (globalMultiplier != null) {
           return new ObjectSequenceId(name, sequenceMultiplier, globalMultiplier);
         }
         throw new PersistenceException("sequenceMultiplier and globalMultiplier must be defined both or not at all");

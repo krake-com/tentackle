@@ -211,11 +211,8 @@ public class FormComponentCellEditor extends AbstractCellEditor implements Table
    *
    * @return true if request will succeed, false if failed
    */
-  public boolean requestFocusInWindow()  {
-    if (editor instanceof Component) {
-      return ((Component)editor).requestFocusInWindow();
-    }
-    return false;
+  public boolean requestFocusInWindow() {
+    return editor instanceof Component && ((Component) editor).requestFocusInWindow();
   }
 
 
@@ -291,13 +288,10 @@ public class FormComponentCellEditor extends AbstractCellEditor implements Table
       if (editor instanceof JComponent) {
         // invokelater necessary since 1.4.2 for whatever reason, otherwise
         // any FormInfo/Error-popup will arise twice
-        EventQueue.invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            // stay in field
-            ((JComponent)editor).requestFocusInWindow();
-          }
-        });
+        EventQueue.invokeLater(() ->
+          // stay in field
+          ((JComponent)editor).requestFocusInWindow()
+        );
       }
       return false;
     }
@@ -508,17 +502,14 @@ public class FormComponentCellEditor extends AbstractCellEditor implements Table
    */
   private void updateHeight() {
     if (table != null &&
-        ((editor instanceof JTextComponent && ((JTextComponent)editor).hasFocus()) ||
+        ((editor instanceof JTextComponent && editor.hasFocus()) ||
          !(editor instanceof JTextComponent)))  {
       // must be invoked after component got its size computed correctly
-      EventQueue.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          int preferredHeight = ((JComponent)editor).getPreferredSize().height;
-          int rowHeight = table.getRowHeight(row);
-          if (preferredHeight != rowHeight)  {
-            table.setRowHeight(row, preferredHeight);
-          }
+      EventQueue.invokeLater(() -> {
+        int preferredHeight = ((JComponent) editor).getPreferredSize().height;
+        int rowHeight = table.getRowHeight(row);
+        if (preferredHeight != rowHeight)  {
+          table.setRowHeight(row, preferredHeight);
         }
       });
     }

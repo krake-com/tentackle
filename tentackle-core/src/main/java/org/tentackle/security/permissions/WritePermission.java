@@ -26,6 +26,6 @@ package org.tentackle.security.permissions;
 public interface WritePermission extends ReadPermission {
 
   /** the permission's name. */
-  public static final String NAME = "WRITE";
+  String NAME = "WRITE";
 
 }

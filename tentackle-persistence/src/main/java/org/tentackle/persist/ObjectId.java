@@ -87,14 +87,10 @@ public class ObjectId extends AbstractIdSource {
 
         // increment by 1 (this starts isolation withing the transaction!)
         PreparedStatementWrapper incrementStatement = db.getPreparedStatement(new StatementKey(INCREMENT_ID, getClass()), false,
-          () -> {
-            return Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL + CN_ID + "+1";
-          }
+          () -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL + CN_ID + "+1"
         );
         PreparedStatementWrapper selectStatement = db.getPreparedStatement(new StatementKey(SELECT_ID, getClass()), false,
-          () -> {
-            return Backend.SQL_SELECT + CN_ID + Backend.SQL_FROM + getName();
-          }
+          () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_FROM + getName()
         );
 
         /**
@@ -129,9 +125,7 @@ public class ObjectId extends AbstractIdSource {
             @Override
             public void commit(Db db) {
               PreparedStatementWrapper updateStatement = db.getPreparedStatement(new StatementKey(UPDATE_ID, getClass()), false,
-                () -> {
-                  return Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR;
-                }
+                () -> Backend.SQL_UPDATE + getName() + Backend.SQL_SET + CN_ID + Backend.SQL_EQUAL_PAR
               );
               updateStatement.setLong(1, lastId);   // set current value of ID
               assertOneRowAffected(db, updateStatement.executeUpdate());
@@ -147,7 +141,7 @@ public class ObjectId extends AbstractIdSource {
     catch (RuntimeException e) {
       db.rollback(txVoucher);
       if (e instanceof PersistenceException) {
-        throw (PersistenceException) e;
+        throw e;
       }
       else {
         throw new PersistenceException(db, e);

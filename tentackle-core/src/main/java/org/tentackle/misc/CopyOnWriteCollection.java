@@ -168,7 +168,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
   }
 
   @Override
-  public <T> T[] toArray(T[] a) {
+  public <E> E[] toArray(E[] a) {
     return collection.toArray(a);
   }
 

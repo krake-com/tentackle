@@ -500,12 +500,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    *
    * @return true if table data has been changed by user
    */
-  public boolean isDataChanged()  {
+  public boolean isDataChanged() {
     TableModel m = getModel();
-    if (m instanceof AbstractFormTableModel)  {
-      return ((AbstractFormTableModel)m).isDataChanged();
-    }
-    return false; // no idea
+    return m instanceof AbstractFormTableModel && ((AbstractFormTableModel) m).isDataChanged();
   }
 
 
@@ -596,7 +593,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
             p = p.getParent();
             if (p instanceof JScrollPane)  {
               // usually in a scrolling region
-              ((JScrollPane)p).setPreferredSize(preferencesSize);
+              p.setPreferredSize(preferencesSize);
             }
           }
         }
@@ -713,13 +710,13 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
           for (int i = 0; i < colCount; i++) {
             if (oCols[i] != null)  {
               fcm.addColumn(oCols[i]);             // place at preferred location
-              if (oVisible[i] == false) {
+              if (!oVisible[i]) {
                 fcm.setOriginalColumnVisible(i, false);
               }
             }
             else  {
               fcm.addColumn(uCols[uColCount]);     // take from pool of unordered
-              if (uVisible[uColCount] == false) {
+              if (!uVisible[uColCount]) {
                 fcm.setOriginalColumnVisible(i, false);
               }
               uColCount++;
@@ -790,12 +787,12 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   @Override
   public void createDefaultColumnsFromModel() {
-    createDefaultColumnsFromDefaultModel();
-    if (createDefaultColumnsFromPreferences && getModel() instanceof AbstractFormTableModel &&
-        createDefaultColumnsFromPreferences(
-          getPreferencesName(), PersistedPreferencesFactory.getInstance().isSystemOnly())) {
+    boolean columnsCreated = false;
+    if (createDefaultColumnsFromPreferences && getModel() instanceof AbstractFormTableModel) {
+      columnsCreated = createDefaultColumnsFromPreferences(
+          getPreferencesName(), PersistedPreferencesFactory.getInstance().isSystemOnly());
     }
-    else  {
+    if (!columnsCreated) {
       createDefaultColumnsFromDefaultModel();
     }
   }
@@ -1007,9 +1004,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    * @param e the event
    */
   protected void queueEvent(final AWTEvent e) {
-    EventQueue.invokeLater(() -> {
-      processEvent(e);
-    });
+    EventQueue.invokeLater(() -> processEvent(e));
   }
 
 
@@ -1132,7 +1127,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
       }
       else {
         if (condition == WHEN_ANCESTOR_OF_FOCUSED_COMPONENT &&
-            !Boolean.FALSE.equals((Boolean)getClientProperty("JTable.autoStartsEdit")) &&
+            !Boolean.FALSE.equals(getClientProperty("JTable.autoStartsEdit")) &&
             e.isAltDown()) {
           /**
            * this will not start editing if an ALT-<key> is pressed
@@ -1417,7 +1412,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
   @Override
   public boolean editCellAt (int row, int column, EventObject e) {
 
-    if (isCellRectFixed() == false)  {
+    if (!isCellRectFixed())  {
       FormTableEntry<?> entry = ((AbstractFormTableModel)getModel()).getEntryAt(row);
       int refRow              = entry.getReferencedRow(row, column);
       int refColumn           = entry.getReferencedColumn(row, column);
@@ -1473,18 +1468,14 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
                                      kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
                   }
                   else  {
-                    EventQueue.invokeLater(() -> {
-                      box.selectWithKeyChar(key);
-                    });
+                    EventQueue.invokeLater(() -> box.selectWithKeyChar(key));
                   }
                 }
                 else {
-                  EventQueue.invokeLater(() -> {
-                    editor.dispatchEvent(
-                            new KeyEvent(editor, KeyEvent.KEY_PRESSED,
-                                    kevt.getWhen()+1,  // +1 to get processed!
-                                    kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
-                  });
+                  EventQueue.invokeLater(() -> editor.dispatchEvent(
+                          new KeyEvent(editor, KeyEvent.KEY_PRESSED,
+                                  kevt.getWhen()+1,  // +1 to get processed!
+                                  kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key)));
                 }
               }
             }
@@ -1497,7 +1488,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
 
               if (field instanceof FormFieldComponent && ((FormFieldComponent)field).isAutoSelect()) {
                 // clear the textfield if autoselect is turned on
-                ((FormFieldComponent)field).setFormValue(null);
+                field.setFormValue(null);
               }
 
               if (key != KeyEvent.CHAR_UNDEFINED) {
@@ -1814,7 +1805,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   @Override
   public Rectangle getCellRect(int row, int column, boolean includeSpacing) {
-    if (isCellRectFixed() == false)  {
+    if (!isCellRectFixed())  {
       @SuppressWarnings("unchecked")
       AbstractFormTableModel<T> amodel = (AbstractFormTableModel<T>) getModel();
       FormTableEntry<T> entry = amodel.getEntryAt(row);
@@ -1836,7 +1827,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
   @Override
   public void changeSelection(int rowIndex, int columnIndex, boolean toggle, boolean extend) {
 
-    if (isCellRectFixed() == false)  {
+    if (!isCellRectFixed())  {
 
       FormTableEntry<?> entry = ((AbstractFormTableModel) getModel()).getEntryAt(rowIndex);
       int refRowIndex         = entry.getReferencedRow(rowIndex, columnIndex);
@@ -1853,7 +1844,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
        * This is a bad workaround, but I don't see any alternative.
        */
 
-      if (toggle == false && extend == false &&   // if simple selection
+      if (!toggle && !extend &&   // if simple selection
           refRowIndex == rowIndex &&          // if same line
           refColumnIndex != columnIndex &&    // and mapped to another column
           getColumnModel().getSelectionModel().getLeadSelectionIndex() == refColumnIndex) { // which is already selected
@@ -2226,8 +2217,8 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   @Override
   public boolean isCellEditable(int row, int column) {
-    return row >= 0 && column >= 0 &&   // avoid -1 == no current cell
-           changeable && allChangeable ? super.isCellEditable(row, column) : false;
+    return (row >= 0 && column >= 0 &&   // avoid -1 == no current cell
+            changeable && allChangeable) && super.isCellEditable(row, column);
   }
 
 
@@ -2868,7 +2859,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
           cellTraversal = ((FormTable.CellActionEvent) e).traversal;
         }
         else if ((cellTraversal & CELLTRAVERSAL_AUTOEDIT) == CELLTRAVERSAL_AUTOEDIT &&
-                 isEditing() == false && isCellEditable(leadRow, leadCol)) {
+                 !isEditing() && isCellEditable(leadRow, leadCol)) {
           /**
            * nextCellAction is trigged because user pressed VK_ENTER while not in cell-editing.
            * We check for the special case that CELLTRAVERSAL_AUTOEDIT is enabled and the current cell
@@ -2928,9 +2919,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
               }
               if ((cellTraversal & CELLTRAVERSAL_SKIPNOEDIT) != CELLTRAVERSAL_SKIPNOEDIT ||
                   isCellEditable(row, col)) {
-                if (isCellRectFixed() == false)  {
+                if (!isCellRectFixed())  {
                   FormTableEntry<?> entry = ((AbstractFormTableModel) getModel()).getEntryAt(row);
-                  if (entry.isCellVisible(row, col) == false) {
+                  if (!entry.isCellVisible(row, col)) {
                     continue;
                   }
                 }
@@ -2981,9 +2972,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
               }
               if ((cellTraversal & CELLTRAVERSAL_SKIPNOEDIT) != CELLTRAVERSAL_SKIPNOEDIT ||
                   isCellEditable(row, col)) {
-                if (isCellRectFixed() == false)  {
+                if (!isCellRectFixed())  {
                   FormTableEntry<?> entry = ((AbstractFormTableModel)getModel()).getEntryAt(row);
-                  if (entry.isCellVisible(row, col) == false) {
+                  if (!entry.isCellVisible(row, col)) {
                     continue;
                   }
                 }
@@ -3077,9 +3068,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
               }
               if ((cellTraversal & CELLTRAVERSAL_SKIPNOEDIT) != CELLTRAVERSAL_SKIPNOEDIT ||
                   isCellEditable(row, col)) {
-                if (isCellRectFixed() == false)  {
+                if (!isCellRectFixed())  {
                   FormTableEntry<?> entry = ((AbstractFormTableModel)getModel()).getEntryAt(row);
-                  if (entry.isCellVisible(row, col) == false) {
+                  if (!entry.isCellVisible(row, col)) {
                     continue;
                   }
                 }
@@ -3130,9 +3121,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
               }
               if ((cellTraversal & CELLTRAVERSAL_SKIPNOEDIT) != CELLTRAVERSAL_SKIPNOEDIT ||
                   isCellEditable(row, col)) {
-                if (isCellRectFixed() == false)  {
+                if (!isCellRectFixed())  {
                   FormTableEntry<?> entry = ((AbstractFormTableModel)getModel()).getEntryAt(row);
-                  if (entry.isCellVisible(row, col) == false) {
+                  if (!entry.isCellVisible(row, col)) {
                     continue;
                   }
                 }
@@ -3269,7 +3260,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   @Override
   public TableCellRenderer getCellRenderer(int row, int column) {
-    if (isCellRendererFixed() == false)  {
+    if (!isCellRendererFixed())  {
       FormTableEntry<?> entry = ((AbstractFormTableModel)getModel()).getEntryAt(row);
       TableCellRenderer renderer = entry.getCellRenderer(convertColumnIndexToModel(column));
       if (renderer != null) {
@@ -3288,7 +3279,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   @Override
   public TableCellEditor getCellEditor(int row, int column) {
-    if (isCellEditorFixed() == false)  {
+    if (!isCellEditorFixed())  {
       FormTableEntry<?> entry = ((AbstractFormTableModel) getModel()).getEntryAt(row);
       TableCellEditor editor = entry.getCellEditor(convertColumnIndexToModel(column));
       if (editor != null) {

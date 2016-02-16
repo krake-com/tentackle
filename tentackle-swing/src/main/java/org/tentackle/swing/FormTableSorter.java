@@ -144,11 +144,8 @@ public class FormTableSorter<T> extends FormTableMap<T> implements MouseListener
 
 
   @Override
-  public boolean isCellEditable (int rowIndex, int columnIndex)  {
-    if (rowIndex >= 0 && rowIndex < map.length) {
-      return model.isCellEditable(map[rowIndex], columnIndex);
-    }
-    return false;
+  public boolean isCellEditable (int rowIndex, int columnIndex) {
+    return rowIndex >= 0 && rowIndex < map.length && model.isCellEditable(map[rowIndex], columnIndex);
   }
 
 
@@ -432,7 +429,7 @@ public class FormTableSorter<T> extends FormTableMap<T> implements MouseListener
    */
   public void addMouseListenerForHeaderOfTable() {
     FormTable<T> table = getTable();
-    if (table != null && mouseListenerActive == false)  {
+    if (table != null && !mouseListenerActive)  {
       table.getTableHeader().addMouseListener(this);
       mouseListenerActive = true;
     }
