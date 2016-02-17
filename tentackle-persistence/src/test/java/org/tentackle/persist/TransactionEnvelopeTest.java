@@ -44,13 +44,14 @@ public class TransactionEnvelopeTest {
     assertEquals(rv, 5);
 
     // same without lambda
-    rv = db.transaction(() -> {
-      assertEquals(db.getTxName(), "TransactionEnvelopeTest#testEnvelope");
-      return 10;
+    rv = db.transaction(new TransactionEnvelope<Integer>() {
+      @Override
+      public Integer run() {
+        assertEquals(db.getTxName(), "TransactionEnvelopeTest#testEnvelope");
+        return 10;
+      }
     });
     assertEquals(rv, 10);
-
-
 
     db.close();
   }
