@@ -39,7 +39,7 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
 
   private final SessionManager sessionManager;    // the connection manager
   private final SessionInfo sessionInfo;          // the session info
-  private Session[] dbSessions;                   // the sessions
+  private final Session[] dbSessions;             // the sessions
 
 
   /**
@@ -56,10 +56,12 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
    */
   public PooledSessionTaskDispatcher(SessionManager sessionManager, SessionInfo sessionInfo, int poolSize,
                                      String name, boolean useMutexLocking, long sleepInterval, boolean supervised, long deadInterval) {
+
     super(poolSize, name, useMutexLocking, sleepInterval, supervised, deadInterval);
+
     this.sessionManager = sessionManager;
     this.sessionInfo = sessionInfo;
-    dbSessions = new Session[poolSize];
+    this.dbSessions = new Session[poolSize];
   }
 
   /**

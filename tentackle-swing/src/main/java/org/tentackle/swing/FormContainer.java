@@ -19,7 +19,8 @@
 
 package org.tentackle.swing;
 
-import java.awt.Window;
+import java.awt.*;
+
 import org.tentackle.swing.bind.FormComponentBinder;
 
 
@@ -161,7 +162,7 @@ public interface FormContainer extends FormChangeable {
    * for the component the help was requested for.
    *
    * @param helpURL the help url
-   * @see FormUtilities#openHelpURL(Component)
+   * @see FormUtilities#openHelpURL(Component) 
    */
   void setHelpURL(String helpURL);
 

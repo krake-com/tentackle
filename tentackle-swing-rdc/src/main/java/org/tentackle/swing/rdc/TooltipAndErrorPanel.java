@@ -31,8 +31,6 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.swing.plaf.PlafUtilities;
 

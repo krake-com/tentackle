@@ -47,10 +47,10 @@ import java.util.Set;
 public class DefaultServiceFinder implements ServiceFinder {
 
 
-  private ClassLoader loader;                         // optional classloader, null = default
-  private String servicePath;                         // optional service path, null = SERVICE_PATH
-  private Map<String,Map<String,URL>> serviceMap;     // cached configs
-  private Map<String,Collection<Class<?>>> classMap;  // cached classes
+  private final ClassLoader loader;                         // optional classloader, null = default
+  private final String servicePath;                         // optional service path, null = SERVICE_PATH
+  private final Map<String,Map<String,URL>> serviceMap;     // cached configs
+  private final Map<String,Collection<Class<?>>> classMap;  // cached classes
 
 
   /**

@@ -90,22 +90,22 @@ public class FormatHelper {
     /** localized {@link DecimalFormat} for a money value. */
     private final DecimalFormat moneyFormat;
 
-    /** localized {@link DateFormat} for a timestamp. */
+    /** localized {@link java.text.DateFormat} for a timestamp. */
     private final SimpleDateFormat timestampFormat;
 
-    /** localized {@link DateFormat} for a date. */
+    /** localized {@link java.text.DateFormat} for a date. */
     private final SimpleDateFormat dateFormat;
 
-    /** localized {@link DateFormat} for a time. */
+    /** localized {@link java.text.DateFormat} for a time. */
     private final SimpleDateFormat timeFormat;
 
-    /** localized {@link DateFormat} for a short timestamp. */
+    /** localized {@link java.text.DateFormat} for a short timestamp. */
     private final SimpleDateFormat shortTimestampFormat;
 
-    /** localized {@link DateFormat} for a short date. */
+    /** localized {@link java.text.DateFormat} for a short date. */
     private final SimpleDateFormat shortDateFormat;
 
-    /** localized {@link DateFormat} for a short time. */
+    /** localized {@link java.text.DateFormat} for a short time. */
     private final SimpleDateFormat shortTimeFormat;
 
     /** short letter for "debit" (soll). */

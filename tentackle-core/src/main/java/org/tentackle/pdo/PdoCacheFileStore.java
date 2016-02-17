@@ -223,7 +223,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     AbstractApplication application = AbstractApplication.getRunningApplication();
     if (application != null) {
       expectedApplicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
-      Session session = ((SessionProvider) application).getSession();
+      Session session = application.getSession();
       if (session.isRemote()) {
         expectedServerName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
       }
@@ -250,7 +250,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   /**
    * Applies the cache data to the cache
    *
-   * @param db the database connection assumed for loaded objects
+   * @param session the database connection assumed for loaded objects
    */
   private synchronized void applyToCache(Session session) {
     cache.invalidate();   // remove all objects from cache (if any)

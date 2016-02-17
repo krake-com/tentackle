@@ -42,10 +42,10 @@ public class TaskDispatcherTest {
   private volatile int lockCount;
   private volatile int taskCount;
 
-  private String[] failMessages = new String[THREAD_NUM];
+  private final String[] failMessages = new String[THREAD_NUM];
 
   // only for counter locking: the currently pending locks
-  private ConcurrentHashMap<Integer,Integer> counterLocks = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Integer,Integer> counterLocks = new ConcurrentHashMap<>();
 
 
   @BeforeClass
@@ -97,8 +97,8 @@ public class TaskDispatcherTest {
 
   private class MutexLockThread extends Thread {
 
-    private Integer num;
-    private boolean checkLockCount;
+    private final Integer num;
+    private final boolean checkLockCount;
     private volatile boolean terminate;
     private int myLockCount;
 
@@ -161,7 +161,7 @@ public class TaskDispatcherTest {
 
   private class CounterLockThread extends Thread {
 
-    private Integer num;
+    private final Integer num;
     private volatile boolean terminate;
     private int myLockCount;
     private int lockNumber;
@@ -222,7 +222,7 @@ public class TaskDispatcherTest {
   private class CounterUnlockThread extends Thread {
 
     private final CounterLockThread lockThread;
-    private boolean checkLockCount;
+    private final boolean checkLockCount;
     private volatile boolean terminate;
     private int myUnlockCount;
 

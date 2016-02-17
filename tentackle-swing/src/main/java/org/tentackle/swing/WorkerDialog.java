@@ -37,8 +37,8 @@ import javax.swing.JProgressBar;
 @SuppressWarnings("serial")
 public class WorkerDialog extends org.tentackle.swing.FormDialog {
 
-  private WorkerThread workerThread;        // the worker thread
-  private boolean cancelAllowed;            // true if closing the dialog is allowed
+  private final WorkerThread workerThread;        // the worker thread
+  private boolean cancelAllowed;                  // true if closing the dialog is allowed
 
 
   /**

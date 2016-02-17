@@ -32,8 +32,8 @@ public class IdentifiableKey<T extends Identifiable> implements Comparable<Ident
 
   private static final long serialVersionUID = -2881185378941379031L;
 
-  private Class<T> identifiableClass;     // the identifiable class
-  private long identifiableId;            // the object id
+  private final Class<T> identifiableClass;     // the identifiable class
+  private final long identifiableId;            // the object id
 
   /**
    * Creates a key.

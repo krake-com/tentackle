@@ -2198,7 +2198,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
         linkedPdoIndex = oldIndex;
         for (int ndx = linkedPdoIndex + offset; ndx >= 0 && ndx < linkedPdoList.size(); ndx += offset) {
           T obj = linkedPdoList.get(ndx);
-          if (obj != null && setPdo((T) obj)) {
+          if (obj != null && setPdo(obj)) {
             break;  // accepted
           }
         }

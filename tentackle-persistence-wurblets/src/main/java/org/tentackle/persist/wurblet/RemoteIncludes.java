@@ -39,7 +39,7 @@ import org.wurbelizer.wurbel.Wurbler;
  */
 public class RemoteIncludes {
 
-  private Wurbler container;                  // the executing container
+  private final Wurbler container;            // the executing container
   private Entity entity;                      // the wurblet's entity
   private String className;                   // classname of persistence object
   private String pdoClassName;                // classname of the pdo interface

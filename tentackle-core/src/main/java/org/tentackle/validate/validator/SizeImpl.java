@@ -92,7 +92,7 @@ public class SizeImpl extends AbstractValidator<Size> {
       size = ((Map) object).size();
     }
     else if (object instanceof Array) {
-      size = Array.getLength((Array) object);
+      size = Array.getLength(object);
     }
     else  {
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());

@@ -65,7 +65,7 @@ public class ValidatorCache {
   /**
    * Key to lookup by field and/or method
    */
-  public static class FieldMethodKey {
+  private static class FieldMethodKey {
 
     private final Field field;
     private final Method method;
@@ -76,7 +76,7 @@ public class ValidatorCache {
      * @param field the field, null if none
      * @param method the method, null if none
      */
-    public FieldMethodKey(Field field, Method method) {
+    private FieldMethodKey(Field field, Method method) {
       this.field = field;
       this.method = method;
     }
@@ -113,17 +113,17 @@ public class ValidatorCache {
   /**
    * Map of field validators by clazz
    */
-  protected Map<Class<?>,List<Validator>> fieldMap;
+  private final Map<Class<?>,List<Validator>> fieldMap;
 
   /**
    * Map of field validators by field and/or method
    */
-  protected Map<FieldMethodKey,List<Validator>> fieldMethodMap;
+  private final Map<FieldMethodKey,List<Validator>> fieldMethodMap;
 
   /**
    * Map of object validators
    */
-  protected Map<Class<?>,List<Validator>> objectMap;
+  private final Map<Class<?>,List<Validator>> objectMap;
 
 
 

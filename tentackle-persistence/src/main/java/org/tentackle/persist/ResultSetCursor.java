@@ -29,7 +29,6 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionDependable;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
 
 /**
@@ -362,7 +361,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row++;
       }
     }
-    
+
     firstInvoked = false;
     return rv;
   }

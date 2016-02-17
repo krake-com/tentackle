@@ -34,7 +34,6 @@ public interface BindingFactory {
    * Creates a binding member.
    * <p>
    * Notice: this method must be implemented by the concrete factory.
-   * Applications use {@link #createBindingMember}.
    *
    * @param parentClass the class declaring the member
    * @param parentMember the parent member, null if root

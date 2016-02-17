@@ -39,7 +39,7 @@ import org.tentackle.swing.FormDialog;
 @SuppressWarnings("serial")
 public class PdoNavigationDialog<T extends PersistentDomainObject<T>> extends FormDialog {
 
-  private PdoNavigationPanel<T> naviPanel;            // the navigation panel
+  private final PdoNavigationPanel<T> naviPanel;      // the navigation panel
   private PersistentDomainObject<?> selectedObject;   // the selected object
 
 

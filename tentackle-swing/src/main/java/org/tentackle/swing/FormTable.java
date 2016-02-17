@@ -175,14 +175,14 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    * Notice: unlike with {@link #defaultRenderersByColumnClass} the order of interfaces is important.
    * That's why we're using a {@link LinkedHashMap} here.
    */
-  protected transient LinkedHashMap<Class<?>, TableCellRenderer> defaultRenderersByColumnInterface;
+  protected final transient LinkedHashMap<Class<?>, TableCellRenderer> defaultRenderersByColumnInterface;
 
   /**
    * Default mapping of interfaces to editors.<br>
    * Notice: unlike with {@link #defaultEditorsByColumnClass} the order of interfaces is important.
    * That's why we're using a {@link LinkedHashMap} here.
    */
-  protected transient LinkedHashMap<Class<?>, TableCellEditor> defaultEditorsByColumnInterface;
+  protected final transient LinkedHashMap<Class<?>, TableCellEditor> defaultEditorsByColumnInterface;
 
   /**
    * size from preferences (even if sizeInPreferencesIgnored = true!)
@@ -242,9 +242,9 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
   private int maxRowHeight;
 
   // additional actions for editing traversal
-  private Action nextCellAction;          // move to next cell and optionally edit
-  private Action previousCellAction;      // move to previous cell and optionally and edit
-  private Action helpAction;              // invoke Help
+  private final Action nextCellAction;          // move to next cell and optionally edit
+  private final Action previousCellAction;      // move to previous cell and optionally and edit
+  private final Action helpAction;              // invoke Help
 
 
   /**

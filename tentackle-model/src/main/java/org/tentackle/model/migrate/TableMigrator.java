@@ -240,7 +240,7 @@ public class TableMigrator {
   /**
    * Gets the migration for a new (renamed) column.
    *
-   * @param columName the new column name
+   * @param newColumName the new column name
    * @param columnMigrations the migrations
    * @return the migration, null if no explicit migration
    */

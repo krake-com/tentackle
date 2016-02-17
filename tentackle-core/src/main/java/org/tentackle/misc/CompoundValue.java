@@ -529,8 +529,8 @@ public class CompoundValue {
   /**
    * Negates a boolean value.
    *
-   * @param value
-   * @return
+   * @param value the value
+   * @return the negated boolean
    */
   private Boolean negateBoolean(Object value) {
     if (value instanceof Boolean) {

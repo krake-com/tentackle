@@ -2014,9 +2014,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().insertObject((P) this);
-        id = result.id;
-        serial = result.serial;
-        tableSerial = result.tableSerial;
+        id = result.getId();
+        serial = result.getSerial();
+        tableSerial = result.getTableSerial();
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2094,9 +2094,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().updateObject((P) this);
-        id = result.id;
-        serial = result.serial;
-        tableSerial = result.tableSerial;
+        id = result.getId();
+        serial = result.getSerial();
+        tableSerial = result.getTableSerial();
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2236,9 +2236,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().saveObject((P) this);
-        id = result.id;
-        serial = result.serial;
-        tableSerial = result.tableSerial;
+        id = result.getId();
+        serial = result.getSerial();
+        tableSerial = result.getTableSerial();
         setModified(false);
       }
       catch (RemoteException e) {
@@ -2365,9 +2365,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().deleteObject((P) this);
-        id = result.id;
-        serial = result.serial;
-        tableSerial = result.tableSerial;
+        id = result.getId();
+        serial = result.getSerial();
+        tableSerial = result.getTableSerial();
         setModified(false);
       }
       catch (RemoteException e) {

@@ -72,8 +72,8 @@ public class TableSerialExpirationBacklog {
 
 
   // the backlog
-  private ExpirationSet[] expirations;      // array of expirations
-  private int nextNdx;                      // round robin index
+  private final ExpirationSet[] expirations;      // array of expirations
+  private int nextNdx;                            // round robin index
 
   // synchronization lock
   private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

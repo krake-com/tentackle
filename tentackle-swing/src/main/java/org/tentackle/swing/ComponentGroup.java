@@ -32,8 +32,8 @@ import java.util.Set;
 @SuppressWarnings("serial")
 public abstract class ComponentGroup implements Serializable {
 
-  private String name;                    // the group name
-  protected Set<Component> components;    // the components
+  private String name;                          // the group name
+  protected final Set<Component> components;    // the components
 
 
   /**

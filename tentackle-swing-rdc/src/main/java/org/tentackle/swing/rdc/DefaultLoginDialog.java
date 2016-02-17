@@ -54,7 +54,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultLoginDialog.class);
 
 
-  private SessionInfo sessionInfo;        // returned login information
+  private final SessionInfo sessionInfo;  // returned login information
   private boolean waitLogin;              // true = login info not completed yet
   private boolean ok;                     // true if user pressed ok-Button
   private boolean promptLogin;            // prompt user for login?
@@ -63,7 +63,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
   private volatile boolean locked;        // true if sync'd using the monitor object
 
 
-  private KeyListener capsLockDetector = new KeyAdapter() {
+  private final KeyListener capsLockDetector = new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK) {

@@ -25,7 +25,7 @@ import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.persist.MasterSerial;
 
 /**
- * Remote delegate interface for {@link org.tentackle.db.ModificationTracker}.
+ * Remote delegate interface for {@link org.tentackle.persist.ModificationTracker}.
  *
  * @author  harald
  */

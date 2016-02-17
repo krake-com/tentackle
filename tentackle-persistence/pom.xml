@@ -8,7 +8,6 @@
     <version>2.0.6-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.tentackle</groupId>
   <artifactId>tentackle-persistence</artifactId>
   <version>2.0.6-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -28,11 +27,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-sql</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.testng</groupId>
-      <artifactId>testng</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -95,7 +89,7 @@
             </property>
             <property>
               <name>model</name>
-              <value>${wurbelDir}/model</value>
+              <value>${wurbel.wurbelDir}/model</value>
             </property>
             <property>
               <name>backends</name>

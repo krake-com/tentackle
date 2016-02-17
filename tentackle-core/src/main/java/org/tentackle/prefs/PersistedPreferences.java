@@ -537,7 +537,7 @@ public interface PersistedPreferences {
    * @throws BackingStoreException         if this operation cannot be completed due to a failure in the backing store,
    *                                       or inability to communicate with it.
    * @throws IllegalStateException         if this node (or an ancestor) has already been removed with the
-   *                                       {@link #removeNode()} method.
+   *                                       {@code removeNode()} method.
    * @throws UnsupportedOperationException if this method is invoked on the root node.
    * @see #flush()
    */

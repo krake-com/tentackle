@@ -22,7 +22,6 @@ package org.tentackle.log;
 import java.io.PrintStream;
 import java.text.MessageFormat;
 import java.util.HashMap;
-import org.slf4j.Marker;
 import org.tentackle.common.Service;
 
 /**
@@ -37,7 +36,7 @@ public class SLF4JLogger implements Logger {
   private static final String EXCLUDE_CLASSNAME = SLF4JLogger.class.getName();
 
   // cached loggers
-  private static final HashMap<String,SLF4JLogger> loggers = new HashMap<>();
+  private static final HashMap<String,SLF4JLogger> LOGGERS = new HashMap<>();
 
   /**
    * Gets the Log4JLogger for given name.
@@ -47,12 +46,12 @@ public class SLF4JLogger implements Logger {
    * @return the logger
    */
   public static SLF4JLogger getLogger(String name) {
-    synchronized(loggers) {
-      SLF4JLogger logger = loggers.get(name);
+    synchronized(LOGGERS) {
+      SLF4JLogger logger = LOGGERS.get(name);
       if (logger == null) {
         // create a new one
         logger = new SLF4JLogger(name);
-        loggers.put(name, logger);
+        LOGGERS.put(name, logger);
       }
       return logger;
     }

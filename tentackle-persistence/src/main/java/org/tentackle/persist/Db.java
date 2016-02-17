@@ -290,7 +290,7 @@ public class Db implements Session, Cloneable {
   private boolean autoCommit;                             // true if autocommit on, else false
   private boolean countModificationAllowed = true;        // allow modification count
   private boolean logModificationAllowed = true;          // allow modification log
-  private Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
+  private final Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
   private boolean readOnly;                               // true if database is readonly
   private IdSource defaultIdSource;                       // default ID-Source for db-connection (if not overridden in derivates)
   private int fetchSize;                                  // default fetchsize, 0 = drivers default

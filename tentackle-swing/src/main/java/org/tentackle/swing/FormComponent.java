@@ -19,7 +19,8 @@
 
 package org.tentackle.swing;
 
-import java.awt.Window;
+import java.awt.*;
+
 import org.tentackle.swing.bind.FormComponentBinding;
 
 /**

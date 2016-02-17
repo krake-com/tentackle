@@ -35,8 +35,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public abstract class PdoTreeExtensionToggleNode {
 
-  private int toggleNodeId;                     // the unique toggle-node ID
-  private PdoTree tree;                 // the tree
+  private final int toggleNodeId;               // the unique toggle-node ID
+  private PdoTree tree;                         // the tree
   private DefaultMutableTreeNode popupNode;     // the popupnode
   private TreePath popupPath;                   // path for popupnode
   private int childIndex;                       // index in child-nodes of popupNode

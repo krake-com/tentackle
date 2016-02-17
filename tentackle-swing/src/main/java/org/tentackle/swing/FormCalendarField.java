@@ -19,7 +19,6 @@
 
 package org.tentackle.swing;
 
-import java.awt.Component;
 import java.util.Date;
 import org.tentackle.swing.DateFormField.ReferenceDateProvider;
 import org.tentackle.swing.plaf.PlafUtilities;

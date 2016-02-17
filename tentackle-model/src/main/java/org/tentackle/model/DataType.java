@@ -368,10 +368,7 @@ public enum DataType {
    * @return the value
    */
   public Object parse(String str) {
-    DataType type = this;
-    if (type.isPrimitive()) {
-      type = this.toNonPrimitive();
-    }
+    DataType type = isPrimitive() ? toNonPrimitive() : this;
     try {
       switch (type) {
         case STRING:

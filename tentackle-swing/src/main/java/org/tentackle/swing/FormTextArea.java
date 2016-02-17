@@ -116,8 +116,8 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
   private PropertyGroup propertyGroup;              // the property group, null = none
 
   // default actions
-  private Action upAction;                          // action for up-key
-  private Action downAction;                        // action for down-key
+  private final Action upAction;                    // action for up-key
+  private final Action downAction;                  // action for down-key
 
 
 

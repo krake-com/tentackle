@@ -31,7 +31,7 @@ import java.awt.AWTEvent;
  */
 public class ValueEvent extends AWTEvent {
   
-  private int action;     // what to do: SET, GET
+  private final int action;     // what to do: SET, GET
 
   /** default event id **/
   public final static int FORMCN_EVENT = AWTEvent.RESERVED_ID_MAX + 7619;

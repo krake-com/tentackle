@@ -124,7 +124,7 @@ public class FormUtilities {
   /**
    * one instance of the focus traversal policy for SwingForms-Containers
    */
-  private FormFocusTraversalPolicy defaultFocusTraversalPolicy = new FormFocusTraversalPolicy();
+  private final FormFocusTraversalPolicy defaultFocusTraversalPolicy = new FormFocusTraversalPolicy();
 
   /**
    * Set containing all windows (dialogs and frames, visible or iconified)

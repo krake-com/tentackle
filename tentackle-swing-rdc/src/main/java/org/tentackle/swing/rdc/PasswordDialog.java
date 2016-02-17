@@ -39,9 +39,10 @@ public class PasswordDialog extends org.tentackle.swing.FormDialog {
 
   private static final long serialVersionUID = -4354288019954531769L;
 
-  private boolean checkOld;         // true if check old password
+  private final String oldPassword; // the old (encrypted) password
+  private final boolean checkOld;   // true if check old password
+
   private boolean okFlag;           // false if user canceled the dialog
-  private String oldPassword;       // the old (encrypted) password
   private String password;          // the new (encrypted) password
   private int passwordLength = 8;   // max. length of password (unencrypted)
 

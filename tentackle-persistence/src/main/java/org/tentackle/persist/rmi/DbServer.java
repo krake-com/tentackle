@@ -182,7 +182,7 @@ public class DbServer {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DbServer.class);
 
-  private SessionInfo sessionInfo;                        // server session info
+  private final SessionInfo sessionInfo;                  // server session info
   private String service;                                 // name of the RMI service
   private boolean createRegistry;                         // true to create a local registry
   private Class<? extends RemoteDbConnectionImpl> connectionClass;  // class for connection object

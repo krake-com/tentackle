@@ -30,7 +30,7 @@ import org.tentackle.misc.ApplicationException;
  */
 public class CSVWriter {
   
-  private Writer writer;                // where to write the csv output
+  private final Writer writer;          // where to write the csv output
   private int objectCount;              // number of converted objects
   private char fieldDelimiter = ',';    // field delimiter, default is comma
   private char quoteCharacter = '"';    // quote character, default is double-quote  

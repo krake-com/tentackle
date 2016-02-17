@@ -48,7 +48,7 @@ public final class StringHelper {
   /**
    * Limit size of collection to be logged.<br>
    * If an object is logged and it is a collection
-   * and the size exceeds {@link #maxLogCollectionSize}, only the number
+   * and the size exceeds {@code maxLogCollectionSize}, only the number
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
    */

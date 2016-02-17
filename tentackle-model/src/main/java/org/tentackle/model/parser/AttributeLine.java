@@ -261,8 +261,8 @@ public class AttributeLine extends SingleLine {
   /**
    * Parse options.
    *
-   * @param text
-   * @throws org.wurbelizer.ModelException
+   * @param text the options string
+   * @throws ModelException if parsing failed
    */
   private void parseOptions(String text) throws ModelException {
     OptionParser parser = new OptionParser(text, true);

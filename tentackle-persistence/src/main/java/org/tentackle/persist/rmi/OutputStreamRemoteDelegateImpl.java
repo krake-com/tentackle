@@ -37,10 +37,10 @@ public class OutputStreamRemoteDelegateImpl extends RemoteDelegateImpl<InputStre
   /**
    * Creates an output stream delegate.
    * <p>
-   * Note that we don't extend {@link UnicastRemoteObject} to allow
+   * Note that we don't extend {@link java.rmi.server.UnicastRemoteObject} to allow
    * adding interceptors via dynamic proxies. Therefore, the object
    * must be explicitly exported by
-   * {@link RemoteDbSessionImpl#exportRemoteDelegate(org.tentackle.db.rmi.RemoteDelegate)}.
+   * {@link RemoteDbSessionImpl#exportRemoteDelegate(org.tentackle.persist.rmi.RemoteDelegate)}.
    *
    * @param serverSession the RMI serverSession
    * @param servicedClass the class the delegate provides service for

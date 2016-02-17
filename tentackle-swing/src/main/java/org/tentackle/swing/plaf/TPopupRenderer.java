@@ -39,11 +39,11 @@ import org.tentackle.misc.ShortLongText;
 @SuppressWarnings("serial")
 public class TPopupRenderer extends JPanel implements ListCellRenderer, Serializable {
 
-  private JLabel leftLabel;       // label for short text
-  private JLabel rightLabel;      // label for long text
-  private int minLeftWidth;       // minumum width for short text
-  private int minRightWidth;      // minimum width for long text
-  private String text;            // last rendered text (for GUIDancer)
+  private final JLabel leftLabel;       // label for short text
+  private final JLabel rightLabel;      // label for long text
+  private int minLeftWidth;             // minumum width for short text
+  private int minRightWidth;            // minimum width for long text
+  private String text;                  // last rendered text (for GUIDancer)
 
 
 

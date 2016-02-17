@@ -785,7 +785,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   /**
    * Implementation with nesting level to detect loops.
    *
-   * @param <>> the Comparable class
+   * @param <C> the comparable type
    * @param index the cache index to use
    * @param context the domain context
    * @param key is the Comparable used as a key

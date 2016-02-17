@@ -37,8 +37,8 @@ public class PdoTransferData<T extends PersistentDomainObject<T>> implements Ser
 
   private static final long serialVersionUID = -3764286209206994624L;
 
-  private long   id;              // the object id
-  private String className;       // the name of the pdo class
+  private final long   id;              // the object id
+  private final String className;       // the name of the pdo class
 
 
   /**
