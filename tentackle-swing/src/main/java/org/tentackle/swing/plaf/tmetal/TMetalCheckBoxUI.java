@@ -76,9 +76,6 @@ public class TMetalCheckBoxUI extends MetalCheckBoxUI {
 
     Dimension size = c.getSize();
 
-    int w = size.width;
-    int h = size.height;
-
     Font f = c.getFont();
     g.setFont(f);
     FontMetrics fm = g.getFontMetrics();

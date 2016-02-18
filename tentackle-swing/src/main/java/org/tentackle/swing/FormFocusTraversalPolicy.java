@@ -22,10 +22,6 @@ package org.tentackle.swing;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Comparator;
 import javax.swing.InputMap;
 import javax.swing.JComboBox;
@@ -40,18 +36,18 @@ import javax.swing.SortingFocusTraversalPolicy;
  * <p>
  * Code mostly copied from {@link javax.swing.LayoutFocusTraversalPolicy} because of package-scope constructor.
  * Extended to focus only on Tentackle-components, provide form wrap events and support for {@link FocusTraversalGroup}s.
- * 
+ *
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implements Serializable {
+public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy {
 
-  private static final SwingDefaultFocusTraversalPolicy fitnessTestPolicy = new SwingDefaultFocusTraversalPolicy();
-  
+  private static final SwingDefaultFocusTraversalPolicy FITNESS_TEST_POLICY = new SwingDefaultFocusTraversalPolicy();
+
   private Component lastComp;   // last triggered component
 
 
-  
+
   /**
    * Creates a traversal policy for a given comparator.
    *
@@ -72,7 +68,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
   }
 
 
-  
+
   /**
    * Determines whether the specified <code>Component</code>
    * is an acceptable choice as the new focus owner.
@@ -117,7 +113,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
       // don't focus non-editable formfields (the default accept() would do)
       return false;
     }
-    
+
     if ((component instanceof FormComponent && ((FormComponent) component).isFormTraversable()) ||
         (component instanceof FormButton && component.isEnabled() && ((FormButton) component).isFormTraversable()) ||
         (component instanceof FormTable && component.isEnabled() && ((FormTable) component).isFormTraversable()) ||
@@ -130,7 +126,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
       }
 
       else if (component instanceof JComboBox) {
-        JComboBox box = (JComboBox) component;
+        JComboBox<?> box = (JComboBox) component;
         return box.getUI().isFocusTraversable(box);
       }
 
@@ -148,13 +144,13 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
         // case where the developer has overriden isFocusTraversable to
         // return true.
       }
-      return fitnessTestPolicy.accept(component);
+      return FITNESS_TEST_POLICY.accept(component);
     }
 
     return false;
   }
-  
-  
+
+
   /**
    * Returns the Component that should receive the focus after component.
    * container must be a focus cycle root of component.
@@ -217,14 +213,14 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
       comp = super.getComponentAfter(container, component);
     }
 
-    
+
     if (comp != null && // don't formwrap if tab changed or alike
         container instanceof FormWindow && // must be a FormWindow
         component instanceof FormComponent && // must be for FormComponent
         comp != component && lastComp != component && // don't trigger more than once if stayed in same field
         accept(component) && // don't trigger from a non-accepted field
         comp == super.getFirstComponent(container)) {
-      
+
       // next focusLost will trigger the event
       ((FormComponent) component).setFormWrapWindow((FormWindow) container);
       lastComp = component;
@@ -232,7 +228,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
     else {
       lastComp = null;
     }
-    
+
     return comp;
   }
 
@@ -353,7 +349,7 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
    * @param container the container
    */
   private void updateComparatorFromContainer(Container container) {
-    Comparator comparator = getComparator();
+    Comparator<?> comparator = getComparator();
     if (comparator instanceof FormLayoutComparator) {
       ((FormLayoutComparator) comparator).setComponentOrientation(container.getComponentOrientation());
     }
@@ -387,20 +383,6 @@ public class FormFocusTraversalPolicy extends SortingFocusTraversalPolicy implem
       return group == null || comp == group.getLastComponent();
     }
     return false;
-  }
-
-  
-
-  private void writeObject(ObjectOutputStream out) throws IOException {
-    out.writeObject(getComparator());
-    out.writeBoolean(getImplicitDownCycleTraversal());
-  }
-
-  @SuppressWarnings("unchecked")
-  private void readObject(ObjectInputStream in)
-          throws IOException, ClassNotFoundException {
-    setComparator((Comparator<? super Component>) in.readObject());
-    setImplicitDownCycleTraversal(in.readBoolean());
   }
 
 }

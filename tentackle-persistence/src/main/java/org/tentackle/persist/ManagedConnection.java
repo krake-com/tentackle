@@ -278,7 +278,7 @@ public class ManagedConnection {
    * {@link MpxConnectionManager} to re-open connections before
    * being attached next time. Notice that not all connection managers
    * honour the dead-flag (makes only sense in servers, anyway).
-   * 
+   *
    * @param dead true if marked dead, false not dead
    */
   public void setDead(boolean dead) {
@@ -303,26 +303,13 @@ public class ManagedConnection {
    * @return true if connection still valid, false if invalid
    */
   public boolean verifyConnection() {
-    Statement stmt = null;
-    try {
-      stmt = connection.createStatement();
+    try (Statement stmt = connection.createStatement()) {
       stmt.executeQuery("SELECT 1");
       return true;
     }
-    catch (Exception ex) {
+    catch (SQLException ex) {
       setDead(true);
       return false;
-    }
-    finally {
-      try {
-        if (stmt != null) {
-          stmt.close();
-        }
-      }
-      catch (Exception ex) {
-        // just log
-        LOGGER.warning("closing statement failed", ex);
-      }
     }
   }
 

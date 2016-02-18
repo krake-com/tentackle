@@ -73,29 +73,16 @@ public class MySql extends AbstractSql92Backend {
 
   @Override
   public String getBackendId(Connection connection) {
-    String backendId = null;
-    ResultSet rs = null;
-    try {
-      Statement stmt = connection.createStatement();
-      rs = stmt.executeQuery("SELECT CONNECTION_ID()");
+    try (Statement stmt = connection.createStatement()) {
+      ResultSet rs = stmt.executeQuery("SELECT CONNECTION_ID()");
       if (rs.next()) {
-        backendId = "ID-" + rs.getInt(1);
+        return "ID-" + rs.getString(1);
       }
+      return null;
     }
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
-    finally {
-      if (rs != null) {
-        try {
-          rs.close();
-        }
-        catch (SQLException ex) {
-          throw new TentackleRuntimeException("close resultset after determine backend id failed", ex);
-        }
-      }
-    }
-    return backendId;
   }
 
   @Override

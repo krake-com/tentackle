@@ -22,6 +22,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 import org.tentackle.prefs.PersistedPreferences;
@@ -73,7 +74,9 @@ public class PreferencesHelper {
                   PersistedPreferences.systemRoot() :
                   PersistedPreferences.userRoot();
           prefs.sync();
-          prefs.exportSubtree(new FileOutputStream(pathname));
+          try (OutputStream os = new FileOutputStream(pathname)) {
+            prefs.exportSubtree(os);
+          }
         }
         catch (Exception ex)  {
           FormError.showException("exporting preferences failed", ex);

@@ -143,13 +143,11 @@ public class SecurityEditor extends PdoEditor<Security> {
       checkBox.setSelected(false);
     }
     Class<?>[] permissions = SecurityFactory.getInstance().stringToPermissionInterfaces(pdo.getPermissions());
-    if (permissions != null) {
-      for (Class<?> permission : permissions) {
-        @SuppressWarnings("unchecked")
-        FxCheckBox box = permissionCheckBoxes.get(SecurityFactory.getInstance().getPermission((Class<Permission>) permission));
-        if (box != null) {
-          box.setSelected(true);
-        }
+    for (Class<?> permission : permissions) {
+      @SuppressWarnings("unchecked")
+      FxCheckBox box = permissionCheckBoxes.get(SecurityFactory.getInstance().getPermission((Class<Permission>) permission));
+      if (box != null) {
+        box.setSelected(true);
       }
     }
     getContainer().updateView();

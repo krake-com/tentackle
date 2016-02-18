@@ -102,7 +102,6 @@ class TBasicTransferable implements Transferable, UIResource {
     }
     if (nString > 0) {
       System.arraycopy(stringFlavors, 0, flavors, nDone, nString);
-      nDone += nString;
     }
     return flavors;
   }
@@ -181,10 +180,8 @@ class TBasicTransferable implements Transferable, UIResource {
 
   // --- richer subclass flavors ----------------------------------------------
   protected boolean isRicherFlavor(DataFlavor flavor) {
-    DataFlavor[] richerFlavors = getRicherFlavors();
-    int nFlavors = (richerFlavors != null) ? richerFlavors.length : 0;
-    for (int i = 0; i < nFlavors; i++) {
-      if (richerFlavors[i].equals(flavor)) {
+    for (DataFlavor richerFlavor : getRicherFlavors()) {
+      if (richerFlavor.equals(flavor)) {
         return true;
       }
     }
@@ -192,11 +189,13 @@ class TBasicTransferable implements Transferable, UIResource {
   }
 
   /**
-   * Some subclasses will have flavors that are more descriptive than HTML or plain text. If this method returns a
-   * non-null value, it will be placed at the start of the array of supported flavors.
+   * Some subclasses will have flavors that are more descriptive than HTML or plain text.<br>
+   * If this method returns a non-empty array, it will be placed at the start of the array of supported flavors.
+   *
+   * @return more flavors, empty array if none
    */
   protected DataFlavor[] getRicherFlavors() {
-    return null;
+    return new DataFlavor[0];
   }
 
   protected Object getRicherData(DataFlavor flavor) throws UnsupportedFlavorException {

@@ -331,6 +331,9 @@ public class DefaultFxFactory implements FxFactory {
           controller.getBinder().bindAllInherited();
           break;
 
+        default:
+          // NO
+
       }
 
       controller.configure();

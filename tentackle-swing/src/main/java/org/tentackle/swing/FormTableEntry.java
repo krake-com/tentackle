@@ -496,7 +496,7 @@ abstract public class FormTableEntry<T> implements FormTableRowObject {
         rv = Compare.compare(s1, s2);
       }
       if (descending) {
-        rv = -rv;
+        return -rv;
       }
     }
     return rv;

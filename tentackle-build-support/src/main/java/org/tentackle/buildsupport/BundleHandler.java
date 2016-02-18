@@ -113,7 +113,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
                 annoMirror.getElementValues().entrySet()) {
           if ("value".equals(entry.getKey().getSimpleName().toString())) {
             String name = entry.getValue().toString();
-            if (name != null && !name.isEmpty()) {
+            if (!name.isEmpty()) {
               bundleName = name;
               if (bundleName.endsWith(PROPS_EXTENSION)) {
                 // cut trailing ".properties"

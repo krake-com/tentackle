@@ -197,70 +197,68 @@ public abstract class DesktopApplication extends AbstractApplication {
    */
   public void start(String[] args) {
 
-    synchronized (this) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
 
-      cmdLine = new CommandLine(args);
-      setProperties(cmdLine.getOptionsAsProperties());
+    try {
 
-      try {
+      LOGGER.fine("register application");
+      // make sure that only one application is running at a time
+      register();
 
-        LOGGER.fine("register application");
-        // make sure that only one application is running at a time
-        register();
+      LOGGER.fine("initialize application");
+      // doInitialize environment
+      doInitialize();
 
-        LOGGER.fine("initialize application");
-        // doInitialize environment
-        doInitialize();
+      LOGGER.fine("login to backend");
+      // connect to database/application server
+      if (doLogin() == null) {
+        // no connection, doStop immediately
+        System.exit(1);
+      }
 
-        LOGGER.fine("login to backend");
-        // connect to database/application server
-        if (doLogin() == null) {
-          // no connection, doStop immediately
-          System.exit(1);
+      LOGGER.fine("configure application");
+      // configure the application
+      doConfigureApplication();
+
+      LOGGER.fine("show application");
+
+      doInitializeGUI();
+
+      final Session session = getSession();
+
+      // show the application's window
+      EventQueue.invokeAndWait(() -> {
+        try {
+          // the eventqueue will use the db as well
+          session.makeCurrent();
+          // createPdo the application window
+          window = doCreateWindow();
+          if (StringHelper.isAllWhitespace(window.getTitle())) {
+            window.setTitle(getName());
+          }
+          doShowWindow();
         }
+        catch (RuntimeException | ApplicationException e) {
+          doStop(2, e);
+        }
+      });
 
-        LOGGER.fine("configure application");
-        // configure the application
-        doConfigureApplication();
+      LOGGER.fine("waiting for all shown...");
+      // wait for application to be shown
+      FormUtilities.getInstance().waitForEmptyEventQueue();
 
-        LOGGER.fine("show application");
+      LOGGER.fine("finish startup");
+      // finish startup
+      doFinishStartup();
 
-        doInitializeGUI();
-
-        final Session session = getSession();
-
-        // show the application's window
-        EventQueue.invokeAndWait(() -> {
-          try {
-            // the eventqueue will use the db as well
-            session.makeCurrent();
-            // createPdo the application window
-            window = doCreateWindow();
-            if (StringHelper.isAllWhitespace(window.getTitle())) {
-              window.setTitle(getName());
-            }
-            doShowWindow();
-          }
-          catch (RuntimeException | ApplicationException e) {
-            doStop(2, e);
-          }
-        });
-
-        LOGGER.fine("waiting for all shown...");
-        // wait for application to be shown
-        FormUtilities.getInstance().waitForEmptyEventQueue();
-
-        LOGGER.fine("finish startup");
-        // finish startup
-        doFinishStartup();
-
-      }
-      catch (ApplicationException | InterruptedException | InvocationTargetException | RuntimeException ex) {
-        // print message to user, if GUI in window, else if headless to console
-        FormError.showException(MessageFormat.format(AppSwingRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex, false, LOGGER);
-        // doStop with error
-        doStop(3, ex);
-      }
+    }
+    catch (ApplicationException | InterruptedException | InvocationTargetException | RuntimeException ex) {
+      // print message to user, if GUI in window, else if headless to console
+      FormError.showException(MessageFormat.format(
+              AppSwingRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex, false, LOGGER);
+      // doStop with error
+      doStop(3, ex);
     }
   }
 
@@ -287,7 +285,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    *
    * @return the command line
    */
-  public CommandLine getCommandLine() {
+  public synchronized CommandLine getCommandLine() {
     return cmdLine;
   }
 
@@ -554,7 +552,7 @@ public abstract class DesktopApplication extends AbstractApplication {
       InputStream is = null;
       try {
         URL dbURL;
-        if (sessionPropsName.indexOf("://") > 0) {
+        if (sessionPropsName.indexOf("://") >= 0) {
           dbURL = new URL(sessionPropsName);
         }
         else  {

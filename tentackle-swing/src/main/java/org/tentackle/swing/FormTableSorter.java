@@ -178,7 +178,7 @@ public class FormTableSorter<T> extends FormTableMap<T> implements MouseListener
       }
       return rows;
     }
-    return null;
+    return new int[0];
   }
 
 
@@ -199,7 +199,7 @@ public class FormTableSorter<T> extends FormTableMap<T> implements MouseListener
       }
       return modelRows;
     }
-    return null;
+    return new int[0];
   }
 
 
@@ -332,31 +332,28 @@ public class FormTableSorter<T> extends FormTableMap<T> implements MouseListener
       return null;
     }
 
-    String str;
+    StringBuilder str = new StringBuilder();
     if (sorting)  {
-      str = "* ";
+      str.append("* ");
     }
-    else if (sortdone)  {
-      str = "";
-    }
-    else  {
-      str = "? ";
+    else if (!sortdone)  {
+      str.append("? ");
     }
 
     FormTableEntry<T> entry = getTemplate();
     for (int i=0; i < sortby.length; i++) {
       if (i > 0) {
-        str += ", ";
+        str.append(", ");
       }
       int ndx = sortby[i];
       if (ndx >= 0) {
-        str += entry.getDisplayedColumnName(ndx);
+        str.append(entry.getDisplayedColumnName(ndx));
       }
       else {
-        str += "-" + entry.getDisplayedColumnName(-ndx -1);
+        str.append('-').append(entry.getDisplayedColumnName(-ndx -1));
       }
     }
-    return str;
+    return str.toString();
   }
 
 

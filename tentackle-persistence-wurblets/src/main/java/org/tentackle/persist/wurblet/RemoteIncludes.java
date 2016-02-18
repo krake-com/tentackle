@@ -157,9 +157,7 @@ public class RemoteIncludes {
                 "import org.tentackle.misc.TrackedList;\n" +
                 "import org.tentackle.persist.rmi.RemoteResultSetCursor;"
             );
-          if (pdoClassName != null) {
-            s.println("import org.tentackle.pdo.DomainContext;");
-          }
+          s.println("import org.tentackle.pdo.DomainContext;");
           if (impl) {
             if (importSuperDelegate) {
               s.println("import " + remotePrefix + "RemoteDelegateImpl;");

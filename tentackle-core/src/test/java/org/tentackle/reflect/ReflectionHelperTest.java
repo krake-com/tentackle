@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  */
 public class ReflectionHelperTest {
 
-  public class MyClass {
+  public static class MyClass {
 
     public int myField = 10;
 

@@ -178,7 +178,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  public void setUsingMutexLocking(boolean usingMutexLocking) {
+  public synchronized void setUsingMutexLocking(boolean usingMutexLocking) {
     assertNotAlive();
     this.usingMutexLocking = usingMutexLocking;
     if (usingMutexLocking) {
@@ -191,7 +191,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  public String toDiagnosticString() {
+  public synchronized String toDiagnosticString() {
     StringBuilder buf = new StringBuilder(toString());
     buf.append("\n    class=");
     buf.append(getClass());
@@ -906,13 +906,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     }
 
-    if (lockingLevel == 0) {
-      LOGGER.fine("{0}: unlock succeeded for {1}", this, unlockKey);
-      return true;
-    }
-    else {
-      return false;
-    }
+    return lockingLevel == 0;
   }
 
 

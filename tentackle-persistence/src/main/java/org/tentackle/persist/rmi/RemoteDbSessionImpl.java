@@ -109,7 +109,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Stops the cleanup thread.
    */
-  public static void stopCleanupThread() {
+  public static synchronized void stopCleanupThread() {
     if (cleanupThread != null && cleanupThread.isAlive()) {
       cleanupThread.requestTermination();
       cleanupThread = null;

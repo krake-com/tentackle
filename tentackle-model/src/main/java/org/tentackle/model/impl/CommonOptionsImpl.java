@@ -219,13 +219,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
         break;
 
       case BIND_COL:
-        processBindOption(fullopt, on);
-        break;
-
       case BIND_MAXCOL:
-        processBindOption(fullopt, on);
-        break;
-
       case BIND_SCALE:
         processBindOption(fullopt, on);
         break;

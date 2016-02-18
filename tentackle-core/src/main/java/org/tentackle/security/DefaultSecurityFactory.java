@@ -273,21 +273,18 @@ public class DefaultSecurityFactory implements SecurityFactory {
       }
       return perms;
     }
-    return null;
+    return new Class<?>[0];
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Set<Permission> stringToPermissions(String str) {
     Class<?>[] permIfaces = stringToPermissionInterfaces(str);
-    if (permIfaces != null) {
-      Set<Permission> perms = new LinkedHashSet<>();
-      for (Class<?> permIface: permIfaces) {
-        perms.add(getPermission((Class<Permission>) permIface));
-      }
-      return perms;
+    Set<Permission> perms = new LinkedHashSet<>();
+    for (Class<?> permIface: permIfaces) {
+      perms.add(getPermission((Class<Permission>) permIface));
     }
-    return null;
+    return perms;
   }
 
   @Override
@@ -302,7 +299,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
       }
       return buf.toString();
     }
-    return null;
+    return "";
   }
 
 }

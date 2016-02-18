@@ -1915,7 +1915,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTableSerialStatementId,
+        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialAndTableSerialStatementId,
                                                            this::createUpdateSerialAndTableSerialSql);
         st.setLong(1, tableSerial);
         st.setLong(2, id);

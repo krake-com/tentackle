@@ -59,10 +59,10 @@ public abstract class AbstractJSRScriptingLanguage extends AbstractScriptingLang
         this.engine = new ScriptEngineManager().getEngineByMimeType(name);
         break;
       case EXTENSION:
-        this.engine = new ScriptEngineManager().getEngineByMimeType(name);
+        this.engine = new ScriptEngineManager().getEngineByExtension(name);
         break;
       default:
-        this.engine = new ScriptEngineManager().getEngineByMimeType(name);
+        this.engine = new ScriptEngineManager().getEngineByName(name);
     }
   }
 

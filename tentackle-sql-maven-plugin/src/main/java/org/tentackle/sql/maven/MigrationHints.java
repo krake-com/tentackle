@@ -89,7 +89,7 @@ public class MigrationHints {
   /**
    * Key for explicit column migration.
    */
-  private class ColumnKey {
+  private static class ColumnKey {
 
     private final String columnName;        // the (old) columnname
     private final String newColumnName;     // the new columnname (if renamed)

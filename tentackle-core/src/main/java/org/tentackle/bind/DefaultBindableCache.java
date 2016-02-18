@@ -183,12 +183,12 @@ public class DefaultBindableCache implements BindableCache {
   /**
    * The key for the cache map.
    */
-  private class Key {
+  private static class Key {
 
     private final Class<?> clazz;
     private final boolean declaredOnly;
 
-    protected Key(Class<?> clazz, boolean declaredOnly) {
+    private Key(Class<?> clazz, boolean declaredOnly) {
       this.clazz = clazz;
       this.declaredOnly = declaredOnly;
     }
@@ -217,7 +217,7 @@ public class DefaultBindableCache implements BindableCache {
     }
 
   }
-  
+
 
   /**
    * Create a cache key.

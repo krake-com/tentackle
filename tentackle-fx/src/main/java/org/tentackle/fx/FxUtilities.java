@@ -160,6 +160,9 @@ public class FxUtilities {
         case WINDOW_MODAL:
           modal = stage.getOwner() != null;
           break;
+
+        default:
+          // NONE
       }
     }
     return modal;

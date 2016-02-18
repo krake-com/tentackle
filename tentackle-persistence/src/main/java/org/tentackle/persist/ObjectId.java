@@ -57,7 +57,6 @@ public class ObjectId extends AbstractIdSource {
    */
   public ObjectId(String name) {
     super(name);
-
   }
 
 

@@ -1215,8 +1215,8 @@ public class FormUtilities {
 
 
   // there is only one popup at a time (or none)
-  private static Popup errorPopup;
-  private static JComponent popupComponent;
+  private Popup errorPopup;
+  private JComponent popupComponent;
 
   private final ComponentListener popupComponentListener = new ComponentListener() {
 
@@ -1277,7 +1277,8 @@ public class FormUtilities {
    */
   public void showErrorPopup(FormComponent formComponent, String message) {
     hideErrorPopup();
-    if (message != null && !message.isEmpty() && formComponent instanceof JComponent && ((JComponent)formComponent).isShowing()) {
+    if (message != null && !message.isEmpty() &&
+        formComponent instanceof JComponent && ((JComponent)formComponent).isShowing()) {
       JComponent comp = (JComponent) formComponent;
       ErrorToolTip toolTip = new ErrorToolTip(comp, message);
       Point loc = comp.getLocationOnScreen();

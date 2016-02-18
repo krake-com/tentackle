@@ -343,14 +343,14 @@ public class AttributeLine extends SingleLine {
       // size and scale
       try {
         String sizeStr = str.substring(0, scaleBegin).trim();
-        size = sizeStr.length() == 0 ? 0 : Integer.valueOf(sizeStr);
+        size = sizeStr.length() == 0 ? 0 : Integer.parseInt(sizeStr);
       }
       catch (NumberFormatException rex) {
         throw createModelException("cannot determine size from '" + str + "'", rex);
       }
       try {
         String scaleStr = str.substring(scaleBegin+1).trim();
-        scale = scaleStr.length() == 0 ? 0 : Integer.valueOf(scaleStr);
+        scale = scaleStr.length() == 0 ? 0 : Integer.parseInt(scaleStr);
       }
       catch (NumberFormatException rex) {
         throw createModelException("cannot determine scale from '" + str + "'", rex);

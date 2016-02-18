@@ -25,7 +25,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
@@ -374,7 +373,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         Object item = getItemAt(i);
         if (item != null) {
           String itemString = item.toString();
-          if (itemString != null && text.compareTo(itemString) == 0)  {
+          if (text.compareTo(itemString) == 0)  {
             // set selected index
             setFormValueIndex(i);
             return true;
@@ -1356,8 +1355,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    * or setMultiKeySelectionManager(true);
    * @param <E> the element type
    */
-  @SuppressWarnings("serial")
-  public class MultiKeySelectionManager<E> implements JComboBox.KeySelectionManager, Serializable {
+  public class MultiKeySelectionManager<E> implements JComboBox.KeySelectionManager {
 
     private final StringBuilder leadChars;    // leading chars for selection
     private long lastTime;                    // time last key pressed, for timeout

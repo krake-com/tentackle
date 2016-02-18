@@ -289,7 +289,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    *
    * @return the number of connections
    */
-  public int getConnectionCount() {
+  public synchronized int getConnectionCount() {
     return conList.length - freeConCount;
   }
 
@@ -317,7 +317,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   @Override
-  public int getNumConnections() {
+  public synchronized int getNumConnections() {
     return conList.length - freeConCount;
   }
 
@@ -371,31 +371,29 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   @Override
-  public void attach(Session session) {
+  public synchronized void attach(Session session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
     if (con.isDead()) {
-      synchronized (this) {
-        // try to reopen
-        LOGGER.warning(this + ": closing **DEAD** connection " + con);
-        try {
-          con.close();
-        }
-        catch (PersistenceException ex) {
-        }
-        // reopen the connection
-        con = createConnection((Db) session);
-        conList[index] = con;
-        LOGGER.warning(this + ": connection " + con + " reopened");
+      // try to reopen
+      LOGGER.warning(this + ": closing **DEAD** connection " + con);
+      try {
+        con.close();
       }
+      catch (PersistenceException ex) {
+      }
+      // reopen the connection
+      con = createConnection((Db) session);
+      conList[index] = con;
+      LOGGER.warning(this + ": connection " + con + " reopened");
     }
     con.attachSession((Db) session);
   }
 
 
   @Override
-  public void detach(Session session) {
+  public synchronized void detach(Session session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
@@ -450,7 +448,11 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
           // check for attached connections
           long curTime = System.currentTimeMillis();
 
-          for (ManagedConnection con: conList) {
+          ManagedConnection[] connections;
+          synchronized(this) {
+            connections = conList.clone();    // fast array copy!
+          }
+          for (ManagedConnection con: connections) {
             if (con != null) {
               long attachedMillis = curTime - con.getAttachedSince();
               if (con.isAttached() && attachedMillis > attachTimeout) {
@@ -459,7 +461,8 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
                   if (db.getConnection() == con && con.isAttached()) {
                     // timed out
                     try {
-                      LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() + " (" + attachedMillis + "ms)");
+                      LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
+                                     " (" + attachedMillis + "ms)");
                       con.forceDetached();
                     }
                     catch (RuntimeException rex) {
@@ -489,7 +492,8 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   protected int convertConnectionIdToIndex(int id) {
     int ndx = id - idOffset;
     if (ndx < 0 || ndx >= dbSize) {
-      throw new PersistenceException(this + ": invalid connection id=" + id + ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
+      throw new PersistenceException(this + ": invalid connection id=" + id +
+              ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
     }
     return ndx;
   }

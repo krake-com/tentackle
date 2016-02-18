@@ -852,7 +852,7 @@ public abstract class AbstractBackend implements Backend {
         break;
 
       default:
-        return null;
+        return new SqlType[0];
     }
 
     return new SqlType[] { sqlType };

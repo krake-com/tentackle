@@ -225,7 +225,7 @@ public class SecurityTableEntry extends DefaultPdoTableEntry<Security> {
    * If the object is null, the text for "all" is displayed.
    */
   @SuppressWarnings("serial")
-  private class SecurityObjectCellRenderer extends FormTableCellRenderer {
+  private static class SecurityObjectCellRenderer extends FormTableCellRenderer {
 
     public SecurityObjectCellRenderer()  {
       setHorizontalAlignment(JLabel.CENTER);

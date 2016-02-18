@@ -308,13 +308,13 @@ public class PdoPanel<T extends PersistentDomainObject<T>> extends FormPanel imp
       if (obj != null)  {
         String contextName = obj.getBaseContext().toString();
         if (obj.isNew()) {
-          title = contextName == null || contextName.length() == 0 ?
+          title = contextName.length() == 0 ?
                     obj.getPlural() :
                     obj.getPlural() + " in " + contextName;
         }
         else  {
           title = obj.getSingular() + " " +
-                    (contextName == null || contextName.length() == 0 ?
+                    (contextName.length() == 0 ?
                       obj.toString() :
                       obj.toString() + " in " + contextName);
         }

@@ -261,12 +261,12 @@ public class DbServer {
 
     val = props.getProperty(TIMEOUT);
     if (val != null) {
-      sessionTimeout = Integer.valueOf(val);
+      sessionTimeout = Integer.parseInt(val);
     }
 
     val = props.getProperty(TIMEOUT_INTERVAL);
     if (val != null) {
-      sessionTimeoutCheckInterval = Long.valueOf(val);
+      sessionTimeoutCheckInterval = Long.parseLong(val);
     }
     else  {
       sessionTimeoutCheckInterval = 1000;

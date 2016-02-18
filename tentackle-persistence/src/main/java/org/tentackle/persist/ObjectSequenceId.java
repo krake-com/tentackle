@@ -19,6 +19,8 @@
 
 package org.tentackle.persist;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.tentackle.pdo.PersistenceException;
 
 
@@ -39,12 +41,6 @@ import org.tentackle.pdo.PersistenceException;
 public class ObjectSequenceId extends AbstractIdSource {
 
   /**
-   * serialver.
-   */
-  private static final long serialVersionUID = -2463189262257268747L;
-
-
-  /**
    * Default global multiplier to allow application-specific offsets.
    */
   public static final int GLOBAL_MULTIPLIER = 1;
@@ -54,17 +50,57 @@ public class ObjectSequenceId extends AbstractIdSource {
    */
   public static final int SEQUENCE_MULTIPLIER = 100;
 
+  /**
+   * Sequences mapped by unique name.
+   */
+  private static final Map<String,ObjectSequenceId> SEQUENCES = new HashMap<>();
 
   /**
    * select statement id.
    */
   private static final StatementId SELECT_ID = new StatementId();
 
-  /**
-   * the last retrieved sequence-number.
-   */
-  private static long sequenceNo;
 
+
+  /**
+   * Gets a sequence id source.<br>
+   * Id sources are unique by name.
+   *
+   * @param name the unique sequence name
+   * @param sequenceMultiplier the sequence multiplier
+   * @param globalMultiplier the global multiplier
+   * @return the ID source
+   */
+  public static synchronized ObjectSequenceId get(String name, int sequenceMultiplier, int globalMultiplier) {
+    ObjectSequenceId seq = SEQUENCES.get(name);
+    if (seq == null) {
+      seq = new ObjectSequenceId(name, sequenceMultiplier, globalMultiplier);
+      SEQUENCES.put(name, seq);
+    }
+    else {
+      // check multipliers
+      if (seq.globalMultiplier != globalMultiplier ||
+          seq.sequenceMultiplier != sequenceMultiplier) {
+        throw new PersistenceException("attempt to configure id source with different multipliers for '" + name +
+                "', configured: " + seq.sequenceMultiplier + "/" + seq.globalMultiplier +
+                ", attempt: " + sequenceMultiplier + "/" + globalMultiplier);
+      }
+    }
+    return seq;
+  }
+
+  /**
+   * Gets a sequence id source.<br>
+   * Id sources are unique by name.
+   *
+   * @param name the unique sequence name
+   * @param sequenceMultiplier the sequence multiplier
+   * @param globalMultiplier the global multiplier
+   * @return the ID source
+   */
+  public static synchronized ObjectSequenceId get(String name) {
+    return get(name, SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
+  }
 
 
 
@@ -84,6 +120,11 @@ public class ObjectSequenceId extends AbstractIdSource {
    */
   private int idCount;
 
+  /**
+   * the last retrieved sequence-number.
+   */
+  private long sequenceNo;
+
 
   /**
    * Creates a sequence id source.
@@ -92,22 +133,12 @@ public class ObjectSequenceId extends AbstractIdSource {
    * @param sequenceMultiplier the sequence multiplier
    * @param globalMultiplier the global multiplier
    */
-  public ObjectSequenceId(String name, int sequenceMultiplier, int globalMultiplier) {
+  private ObjectSequenceId(String name, int sequenceMultiplier, int globalMultiplier) {
     super(name);
     this.sequenceMultiplier = sequenceMultiplier;
     this.globalMultiplier = globalMultiplier;
 
     idCount = sequenceMultiplier; // initially consumed -> force select
-  }
-
-
-  /**
-   * Creates a sequence id with default multipliers.
-   *
-   * @param name the source name
-   */
-  public ObjectSequenceId(String name) {
-    this(name, SEQUENCE_MULTIPLIER, GLOBAL_MULTIPLIER);
   }
 
 
@@ -147,23 +178,7 @@ public class ObjectSequenceId extends AbstractIdSource {
       }
     }
 
-    long nextId = (sequenceNo * sequenceMultiplier + idCount++) * globalMultiplier;
-
-    nextId = addGlobalOffset(nextId);
-
-    return nextId;
-  }
-
-
-  /**
-   * Adds some global offset to the id.
-   * <p>
-   * @param nextId the computed new id
-   * <p>
-   * @return the id plus offset
-   */
-  protected long addGlobalOffset(long nextId) {
-    return nextId;  // no change
+    return (sequenceNo * sequenceMultiplier + idCount++) * globalMultiplier;
   }
 
 }

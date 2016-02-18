@@ -177,6 +177,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
 
+  /**
+   * Gets the source info.
+   *
+   * @return the source info
+   */
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
 
   @Override
   public int hashCode() {
@@ -928,7 +937,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       str = BasicStringHelper.firstToUpper(str);
     }
     if (getRelationType() == RelationType.LIST && !reversed && name == null) {
-      return str += "List";
+      str += "List";
     }
     return str;
   }

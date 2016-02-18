@@ -137,7 +137,6 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
 
   @Override
   public Collection<String> getUnboundColumns() {
-    int columnCount = tableConfig.getColumnConfigurations().size();
     List<String> unboundColumns = new ArrayList<>();
     for (TableColumnConfiguration<S,?> column: tableConfig.getColumnConfigurations()) {
       if (!boundPaths.containsKey(column.getName())) {

@@ -127,7 +127,7 @@ public class PdoUtilities {
     pdoIdMap = new HashMap<>();
     idPdoMap = new HashMap<>();
     for (Map.Entry<String,String> entry: idMap.entrySet()) {
-      Integer classId = new Integer(entry.getKey());
+      Integer classId = Integer.valueOf(entry.getKey());
       sortedNames.add(entry.getValue());
       pdoIdMap.put(entry.getValue(), classId);
       idPdoMap.put(classId, entry.getValue());
@@ -319,7 +319,7 @@ public class PdoUtilities {
    *
    * @param session the session
    */
-  public void keepAliveIntervalChanged(Session session) {
+  public synchronized void keepAliveIntervalChanged(Session session) {
     startKeepAliveDaemonIfNotRunning();
     keepAliveDaemon.keepAliveIntervalChanged(session);
   }

@@ -171,16 +171,18 @@ public class WurbletParameter implements WurbletParameterOperand {
     }
     else {
       name = text;
-      if (name.charAt(0) == '-') {
-        sortMode = Backend.SQL_SORTDESC;
-        name = name.substring(1);
-      }
-      else if (name.charAt(0) == '+') {
-        sortMode = Backend.SQL_SORTASC;
-        name = name.substring(1);
-      }
-      else  {
-        relop = Backend.SQL_EQUAL;
+      switch (name.charAt(0)) {
+        case '-':
+          sortMode = Backend.SQL_SORTDESC;
+          name = name.substring(1);
+          break;
+        case '+':
+          sortMode = Backend.SQL_SORTASC;
+          name = name.substring(1);
+          break;
+        default:
+          relop = Backend.SQL_EQUAL;
+          break;
       }
     }
 
@@ -316,7 +318,7 @@ public class WurbletParameter implements WurbletParameterOperand {
     String str;
     if (value != null) {
       str = value;
-      if (attribute.getDataType().isNumeric()) {
+      if (attribute != null && attribute.getDataType().isNumeric()) {
         // check to downcast for (short) or (byte)
         switch (attribute.getDataType()) {
           case BYTE:

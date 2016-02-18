@@ -453,17 +453,15 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
             Object value = model.getValueAt(row, col);
             if (value != null)  {
               String cellText = value.toString();
-              if (cellText != null) {
-                if (!caseSensitive)  {
-                  cellText = cellText.toUpperCase();
-                }
-                if (cellText.contains(text)) {
-                  // found: set selection
-                  table.setSelectedRow(row);
-                  table.getColumnModel().getSelectionModel().setAnchorSelectionIndex(col);
-                  table.scrollToCell(row, table.convertColumnIndexToView(col));
-                  return true;
-                }
+              if (!caseSensitive)  {
+                cellText = cellText.toUpperCase();
+              }
+              if (cellText.contains(text)) {
+                // found: set selection
+                table.setSelectedRow(row);
+                table.getColumnModel().getSelectionModel().setAnchorSelectionIndex(col);
+                table.scrollToCell(row, table.convertColumnIndexToView(col));
+                return true;
               }
             }
           }
@@ -631,10 +629,11 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
 
           String fmt = "#,##0";
           if (money.scale() > 0) {
-            fmt += ".";
+            StringBuilder buf = new StringBuilder(fmt).append('.');
             for (int j=0; j < money.scale(); j++)  {
-              fmt += "0";
+              buf.append('0');
             }
+            fmt = buf.toString();
           }
           // create format
           short fmtIndex = format.getFormat(fmt);

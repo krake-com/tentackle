@@ -796,7 +796,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
    *
    * @param listener the listener to add
    */
-  public synchronized void addActionListener (ActionListener listener)  {
+  public void addActionListener (ActionListener listener)  {
     listenerList.add (ActionListener.class, listener);
   }
 
@@ -806,7 +806,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
    *
    * @param listener the listener to remove
    */
-  public synchronized void removeActionListener (ActionListener listener) {
+  public void removeActionListener (ActionListener listener) {
      listenerList.remove (ActionListener.class, listener);
   }
 
@@ -814,7 +814,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
   /**
    * Removes all Listeners.
    */
-  public synchronized void removeAllListeners ()  {
+  public void removeAllListeners ()  {
     listenerList = new EventListenerList(); // this will move all to GC
   }
 

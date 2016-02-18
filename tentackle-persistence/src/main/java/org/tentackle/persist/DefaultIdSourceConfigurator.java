@@ -93,10 +93,10 @@ public class DefaultIdSourceConfigurator implements IdSourceConfigurator {
     switch (type) {
       case SEQUENCE_BASED:
         if (sequenceMultiplier == null) {   // implies globalMultiplier == null
-          return new ObjectSequenceId(name);
+          return ObjectSequenceId.get(name);
         }
         else if (globalMultiplier != null) {
-          return new ObjectSequenceId(name, sequenceMultiplier, globalMultiplier);
+          return ObjectSequenceId.get(name, sequenceMultiplier, globalMultiplier);
         }
         throw new PersistenceException("sequenceMultiplier and globalMultiplier must be defined both or not at all");
 

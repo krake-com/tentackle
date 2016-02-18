@@ -72,13 +72,11 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
 
     super.doCreateStackDump(buf);
 
-    Collection<Db> openDb = Db.getAllOpenDb();
-
-    if (openDb != null && !openDb.isEmpty()) {
-
+    Collection<Db> openDbs = Db.getAllOpenDb();
+    if (!openDbs.isEmpty()) {
       buf.append("\n\nopen Db sessions:\n");
       // log all open Db sessions including those that have not set the current owner thread
-      for (Db db: Db.getAllOpenDb()) {
+      for (Db db: openDbs) {
         buf.append("\n    ");
         buf.append(db);
         buf.append(": ");

@@ -1607,7 +1607,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         if (js != null) {
           ndx = js.setClassIdsInStatement(st, ndx);
         }
-        st.setLong(ndx++, id);
+        st.setLong(ndx, id);
 
         obj = executeFirstPdoQuery(st, js);
       }

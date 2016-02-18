@@ -160,7 +160,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
 
 
   @Override
-  public int getRowCount() {
+  public synchronized int getRowCount() {
     return entries == null ? 0 : entries.length;
   }
 

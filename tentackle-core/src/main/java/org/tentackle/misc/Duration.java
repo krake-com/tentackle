@@ -36,12 +36,12 @@ public class Duration {
    * <p>
    * The default format prints 3 digits after the comma.
    */
-  public static DecimalFormat DURATION_FORMAT = new DecimalFormat("#0.000");
+  private static final DecimalFormat DURATION_FORMAT = new DecimalFormat("#0.000");
 
   /**
    * String for invalid duration.
    */
-  public static String INVALID_DURATION_TEXT = "?";
+  private static final String INVALID_DURATION_TEXT = "?";
 
 
   private final long start;       // starting time in nanos
@@ -187,13 +187,7 @@ public class Duration {
    * @return the microseconds with nanoseconds resolution
    */
   public String microsToString() {
-    if (isValid()) {
-      final DecimalFormat format = DURATION_FORMAT;
-      synchronized(format) {
-        return format.format(micros());
-      }
-    }
-    return INVALID_DURATION_TEXT;
+    return durationToString(micros());
   }
 
   /**
@@ -202,13 +196,7 @@ public class Duration {
    * @return the milliseconds with microseconds resolution
    */
   public String millisToString() {
-    if (isValid()) {
-      final DecimalFormat format = DURATION_FORMAT;
-      synchronized(format) {
-        return format.format(millis());
-      }
-    }
-    return INVALID_DURATION_TEXT;
+    return durationToString(millis());
   }
 
   /**
@@ -217,10 +205,20 @@ public class Duration {
    * @return the seconds with milliseconds resolution
    */
   public String secondsToString() {
+    return durationToString(seconds());
+  }
+
+
+  /**
+   * Formats a duration.
+   *
+   * @param duration the value representing a duration
+   * @return the formatted string
+   */
+  protected String durationToString(double duration) {
     if (isValid()) {
-      final DecimalFormat format = DURATION_FORMAT;
-      synchronized(format) {
-        return format.format(seconds());
+      synchronized(DURATION_FORMAT) {
+        return DURATION_FORMAT.format(duration);
       }
     }
     return INVALID_DURATION_TEXT;

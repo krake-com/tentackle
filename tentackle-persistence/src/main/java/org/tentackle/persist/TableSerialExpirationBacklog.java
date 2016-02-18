@@ -46,7 +46,7 @@ public class TableSerialExpirationBacklog {
 
 
   // holds a set of expiration info
-  private class ExpirationSet implements Cloneable {
+  private static class ExpirationSet implements Cloneable {
 
     private long minSerial;                         // > minSerial
     private long maxSerial;                         // <= maxSerial

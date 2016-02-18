@@ -149,7 +149,7 @@ public class TTinyComboBoxButton extends JButton {
 
   /**
    * Mostly taken from the swing sources.
-   * 
+   *
    * @see javax.swing.JComponent#paintComponent(Graphics)
    */
   @SuppressWarnings("unchecked")
@@ -290,8 +290,6 @@ public class TTinyComboBoxButton extends JButton {
 
     int left = insets.left;
     int top = insets.top;
-    int right = left + (width - 1);
-    int bottom = top + (height - 1);
 
     int iconWidth = COMBO_BUTTON_WIDTH;
 

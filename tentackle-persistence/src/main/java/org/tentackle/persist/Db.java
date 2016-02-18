@@ -447,8 +447,7 @@ public class Db implements Session, Cloneable {
   /**
    * Compares two db instances.
    * Implemented for trees, caches, etc... because they need a Comparable.
-   * We simply use the instanceNumber. Because the instanceNumber
-   * is unique, we don't need to override equals/hash.
+   * We simply use the unique instanceNumber.
    *
    * @param session the session to compare this db with
    * @return  a negative integer, zero, or a positive integer as this object
@@ -459,11 +458,30 @@ public class Db implements Session, Cloneable {
     return instanceNumber - ((Db) session).instanceNumber;
   }
 
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    hash = 43 * hash + this.instanceNumber;
+    return hash;
+  }
 
-  /**
-   * Notice: equals and hashcode remain default!
-   */
-
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final Db other = (Db) obj;
+    if (this.instanceNumber != other.instanceNumber) {
+      return false;
+    }
+    return true;
+  }
 
 
   /**
@@ -2126,7 +2144,7 @@ public class Db implements Session, Cloneable {
    *        <code>ResultSet.CONCUR_UPDATABLE</code>
    * @return the statement wrapper
    */
-  public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
+  public synchronized StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
     StatementWrapper stmt = con.createStatement(resultSetType, resultSetConcurrency);

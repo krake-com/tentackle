@@ -110,18 +110,53 @@ public class ResourceManager {
     this.resourceMap = new HashMap<>();
   }
 
+  /**
+   * Gets the annotation processor.
+   *
+   * @return the processor
+   */
+  public AbstractTentackleProcessor getProcessor() {
+    return processor;
+  }
+
+  /**
+   * Gets the resource location.
+   *
+   * @return the location
+   */
+  public File getLocation() {
+    return location;
+  }
 
 
+  /**
+   * Gets the writer.
+   *
+   * @param name the writer's name
+   * @return the writer
+   * @throws IOException if writer could not be created
+   */
   public PrintWriter getWriter(String name) throws IOException {
     return getResource(name).getWriter();
   }
 
-
+  /**
+   * Gets the reader.
+   *
+   * @param name the reader's name
+   * @return the reader
+   * @throws IOException if reader could not be created
+   */
   public Reader getReader(String name) throws IOException {
     return getResource(name).getReader();
   }
 
 
+  /**
+   * Closes all resources.
+   *
+   * @throws IOException if closing a resource failed
+   */
   public void close() throws IOException {
     for (Resource resource: resourceMap.values()) {
       resource.close();

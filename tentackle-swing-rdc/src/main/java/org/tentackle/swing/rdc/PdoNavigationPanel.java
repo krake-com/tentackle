@@ -1371,22 +1371,21 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
 
 
   private void naviTable_valueChanged(ListSelectionEvent e) {
-    // ausgewaehlte Elemente ermitteln
+
     int[] rows = naviTable.getSelectedRows();
 
     selectedObject  = null;
     selectedObjects = null;
     int enableCut   = 0;
 
-    if (rows != null)  {
-      for (int i=0; i < rows.length; i++)  {
-        int row = rows[i];
-        if (row >= 0 && row < list.size()) {
-          addToSelectedObjects(list.get(getModelIndex(row)));
-          enableCut++;
-        }
+    for (int i=0; i < rows.length; i++)  {
+      int row = rows[i];
+      if (row >= 0 && row < list.size()) {
+        addToSelectedObjects(list.get(getModelIndex(row)));
+        enableCut++;
       }
     }
+
     cutSelectedButton.setEnabled(enableCut > 1);
     fireValueChanged();
     selectButton.setEnabled(selectedObject != null);
@@ -1500,7 +1499,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
             DomainContext context = pdo.getBaseContext();
             if (context != null) {
               String contextName = context.toString();
-              if (contextName != null && contextName.length() > 0)  {
+              if (contextName.length() > 0)  {
                 title = MessageFormat.format(RdcSwingRdcBundle.getString("{0} IN {1}"), title, contextName);
               }
             }
@@ -1885,12 +1884,10 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     List<T> objList = new ArrayList<>();
     if (viewMode == ViewMode.TABLE) {
       int[] rows = naviTable.getSelectedRows();
-      if (rows != null)  {
-        for (int i=0; i < rows.length; i++)  {
-          int row = getModelIndex(rows[i]);
-          if (row >= 0 && row < list.size()) {
-            objList.add(list.get(row));
-          }
+      for (int i=0; i < rows.length; i++)  {
+        int row = getModelIndex(rows[i]);
+        if (row >= 0 && row < list.size()) {
+          objList.add(list.get(row));
         }
       }
     }

@@ -148,7 +148,7 @@ public class Note extends PopupControl {
 
     getStyleClass().add("note");
     rootPane = new StackPane();
-    rootPane.getStylesheets().add(getClass().getResource("note.css").toExternalForm());
+    rootPane.getStylesheets().add(Note.class.getResource("note.css").toExternalForm());
     getStyleClass().add(type.getCssClass());
     getStyleClass().add(position.getCssClass());
 

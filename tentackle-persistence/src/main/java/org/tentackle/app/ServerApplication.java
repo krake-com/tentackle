@@ -106,7 +106,7 @@ public abstract class ServerApplication extends AbstractApplication
    *
    * @return the command line
    */
-  public CommandLine getCommandLine() {
+  public synchronized CommandLine getCommandLine() {
     return cmdLine;
   }
 
@@ -134,41 +134,38 @@ public abstract class ServerApplication extends AbstractApplication
    */
   public void start(String[] args) {
 
-    synchronized (this) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
 
-      cmdLine = new CommandLine(args);
-      setProperties(cmdLine.getOptionsAsProperties());
+    try {
 
-      try {
+      LOGGER.fine("register application server");
+      // make sure that only one application is running at a time
+      register();
 
-        LOGGER.fine("register application server");
-        // make sure that only one application is running at a time
-        register();
+      LOGGER.fine("initialize application server");
+      // doInitialize environment
+      doInitialize();
 
-        LOGGER.fine("initialize application server");
-        // doInitialize environment
-        doInitialize();
+      LOGGER.fine("login to backend");
+      // login to the database server
+      doLogin();
 
-        LOGGER.fine("login to backend");
-        // login to the database server
-        doLogin();
+      LOGGER.fine("configure application server");
+      // configure the server
+      doConfigureApplication();
 
-        LOGGER.fine("configure application server");
-        // configure the server
-        doConfigureApplication();
+      LOGGER.fine("finish startup");
+      // finish startup and start the RMI service
+      doFinishStartup();
 
-        LOGGER.fine("finish startup");
-        // finish startup and start the RMI service
-        doFinishStartup();
-
-        LOGGER.fine("start services");
-        // start the RMI-server
-        doStartDbServer();
-      }
-      catch (Exception e) {
-        // doStop with error
-        doStop(3, e);
-      }
+      LOGGER.fine("start services");
+      // start the RMI-server
+      doStartDbServer();
+    }
+    catch (Exception e) {
+      // doStop with error
+      doStop(3, e);
     }
   }
 

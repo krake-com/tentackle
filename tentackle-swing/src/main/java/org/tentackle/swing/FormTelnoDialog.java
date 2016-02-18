@@ -85,7 +85,7 @@ public class FormTelnoDialog extends FormDialog {
    */
   static {
     // load configuration settings
-    InputStream in = FormTelnoDialog.class.getResourceAsStream (TELNO_PROPERTIES);
+    InputStream in = FormTelnoDialog.class.getResourceAsStream(TELNO_PROPERTIES);
     if (in != null) {
       try {
         PropertyResourceBundle rs = new PropertyResourceBundle (in);
@@ -106,10 +106,18 @@ public class FormTelnoDialog extends FormDialog {
             cellCommand = prop;
           }
         }
-        in.close();
-      } catch (IOException e) {
+      }
+      catch (IOException e) {
         // not found, leave them 'null'
         LOGGER.warning("loading " + TELNO_PROPERTIES + " failed");
+      }
+      finally {
+        try {
+          in.close();
+        }
+        catch (IOException ix) {
+          LOGGER.warning("closing " + TELNO_PROPERTIES + " failed");
+        }
       }
     }
     else  {
@@ -345,7 +353,7 @@ public class FormTelnoDialog extends FormDialog {
         // make sure that data is correct
         telnoField.setText(buildTelno());
         // actionCommand holds the index
-        String dialNumber = telnoField.getTelno(new Integer(e.getActionCommand())).toString();
+        String dialNumber = telnoField.getTelno(Integer.parseInt(e.getActionCommand())).toString();
         /**
          * here comes the system-dependant hooks
          */

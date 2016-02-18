@@ -182,16 +182,17 @@ public class DefaultServiceFinder implements ServiceFinder {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
     }
     if (services.size() > 1) {
-      String msg = "service '" + serviceName + "' defined more than once: ";
+      StringBuilder msg = new StringBuilder();
+      msg.append("service '").append(serviceName).append("' defined more than once: ");
       boolean needComma = false;
       for (Map.Entry<String,URL> entry: services.entrySet()) {
         if (needComma) {
-          msg += ", ";
+          msg.append(", ");
         }
-        msg += entry.getKey() + " in " + entry.getValue();
+        msg.append(entry.getKey()).append(" in ").append(entry.getValue());
         needComma = true;
       }
-      throw new TentackleRuntimeException(msg);
+      throw new TentackleRuntimeException(msg.toString());
     }
     return services.entrySet().iterator().next();
   }

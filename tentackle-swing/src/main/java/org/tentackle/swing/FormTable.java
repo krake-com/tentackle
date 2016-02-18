@@ -836,7 +836,6 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    */
   public void savePreferences(String prefName, boolean system) throws BackingStoreException {
 
-    TableModel m = getModel();
     PersistedPreferences prefs = system ?
             PersistedPreferences.systemRoot().node(prefName) :
             PersistedPreferences.userRoot().node(prefName);
@@ -2283,7 +2282,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
    * @return the format strings
    */
   public String[] getFormat() {
-    return format == null ? null : (String[])(format.toArray());
+    return format == null ? null : format.toArray(new String[format.size()]);
   }
 
 
@@ -2610,14 +2609,14 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
   // remove a format-flag
   private void removeFormatFlag (int index, char flag) {
     String formatFlag = formatFlags.get(index);
-    String newFlag = "";
+    StringBuilder newFlag = new StringBuilder();
     for (int i=0; i < formatFlag.length(); i++) {
       char c = formatFlag.charAt(i);
       if (c != flag) {
-        newFlag += c;
+        newFlag.append(c);
       }
     }
-    formatFlags.set(index, newFlag);
+    formatFlags.set(index, newFlag.toString());
   }
 
   // same for all columns

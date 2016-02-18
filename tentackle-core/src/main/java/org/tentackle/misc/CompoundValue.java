@@ -580,22 +580,22 @@ public class CompoundValue {
         return new BigInteger(value);
       }
       else if (Double.class == clazz) {
-        return new Double(value);
+        return Double.valueOf(value);
       }
       else if (Float.class == clazz) {
-        return new Float(value);
+        return Float.valueOf(value);
       }
       else if (Long.class == clazz) {
-        return new Long(value);
+        return Long.valueOf(value);
       }
       else if (Integer.class == clazz) {
-        return new Integer(value);
+        return Integer.valueOf(value);
       }
       else if (Short.class == clazz) {
-        return new Short(value);
+        return Short.valueOf(value);
       }
       else if (Byte.class == clazz) {
-        return new Byte(value);
+        return Byte.valueOf(value);
       }
       else if (Character.class == clazz) {
         return value.charAt(0);

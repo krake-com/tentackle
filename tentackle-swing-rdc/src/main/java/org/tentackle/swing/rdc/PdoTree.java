@@ -1574,8 +1574,6 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   @SuppressWarnings("unchecked")
   private void editItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editItemActionPerformed
 
-    PdoTreeObject treeObject = (PdoTreeObject)popupNode.getUserObject();
-
     if (popupObject instanceof PdoTreeExtension)  {
       PdoTreeExtensionEditor editor = ((PdoTreeExtension)popupObject).getEditor();
       if (editor != null) {

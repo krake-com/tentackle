@@ -162,40 +162,37 @@ public abstract class AbstractValidationResult implements ValidationResult {
   public CollectionIndex[] getValidationCollectionIndexes() throws ValidationRuntimeException {
 
     int count = StringHelper.countOccurrences(validationPath, '[');
-    if (count > 0) {
 
-      CollectionIndex[] indexes = new CollectionIndex[count];
+    CollectionIndex[] indexes = new CollectionIndex[count];
+    int ndx = 0;
 
-      int ndx = 0;
-
-      for (int i=0; i < count; i++) {
-        ndx = validationPath.indexOf('[', ndx + 1);
-        if (ndx > 0) {
-          CollectionIndex colIndex = new CollectionIndex();
-          indexes[i] = colIndex;
-          colIndex.pathPrefix = validationPath.substring(0, ndx);
-          int ndx2 = validationPath.indexOf("].", ndx);
-          if (ndx2 < 0) {
-            throw new ValidationRuntimeException("no closing bracket after '" + colIndex.pathPrefix + "' in validation path '" + validationPath + "'");
-          }
-          colIndex.pathPostfix = validationPath.substring(ndx2 + 2);
-          try {
-            colIndex.index = Integer.parseInt(validationPath.substring(ndx + 1, ndx2));
-            ndx = ndx2 + 2;
-          }
-          catch (RuntimeException ex) {
-            throw new ValidationRuntimeException("cannot decode index in validation path '" + validationPath + "' after '" + colIndex.pathPrefix + "'");
-          }
+    for (int i=0; i < count; i++) {
+      ndx = validationPath.indexOf('[', ndx + 1);
+      if (ndx > 0) {
+        CollectionIndex colIndex = new CollectionIndex();
+        indexes[i] = colIndex;
+        colIndex.pathPrefix = validationPath.substring(0, ndx);
+        int ndx2 = validationPath.indexOf("].", ndx);
+        if (ndx2 < 0) {
+          throw new ValidationRuntimeException(
+                  "no closing bracket after '" + colIndex.pathPrefix + "' in validation path '" + validationPath + "'");
         }
-        else  {
-          throw new ValidationRuntimeException("wrong number of indexes in '" + validationPath + "'. Expected=" + count + ", detected=" + (i+1));
+        colIndex.pathPostfix = validationPath.substring(ndx2 + 2);
+        try {
+          colIndex.index = Integer.parseInt(validationPath.substring(ndx + 1, ndx2));
+          ndx = ndx2 + 2;
+        }
+        catch (RuntimeException ex) {
+          throw new ValidationRuntimeException(
+                  "cannot decode index in validation path '" + validationPath + "' after '" + colIndex.pathPrefix + "'");
         }
       }
+      else  {
+        throw new ValidationRuntimeException(
+                "wrong number of indexes in '" + validationPath + "'. Expected=" + count + ", detected=" + (i+1));
+      }
+    }
 
-      return indexes;
-    }
-    else  {
-      return null;
-    }
+    return indexes;
   }
 }

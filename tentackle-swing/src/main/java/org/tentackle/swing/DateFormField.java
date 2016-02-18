@@ -182,8 +182,8 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
   public static Level defaultInformationLossLogLevel = Level.INFO;
 
 
-  private static final String legacyDateDelimiters = ".,/*=-";
-  private static final String legacyTimeDelimiters = ":;\"'";
+  private static final String LEGACY_DATE_DELIMITERS = ".,/*=-";
+  private static final String LEGACY_TIME_DELIMITERS = ":;\"'";
 
 
   private String            format;           // format set by application, null if default format
@@ -379,7 +379,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
         // only one char: check for shortcut
         char c = str.charAt(0);
         if (withDate &&
-            (legacyDateDelimiters.indexOf(c) >= 0 ||
+            (LEGACY_DATE_DELIMITERS.indexOf(c) >= 0 ||
              dateDelimiters.indexOf(c) >= 0)) {
           // current date at 0:00:00
           GregorianCalendar cal = new GregorianCalendar();
@@ -387,7 +387,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
           setFormValue(cal);
           return getFormValue();  // start over
         }
-        if (withTime && legacyTimeDelimiters.indexOf(c) >= 0) {
+        if (withTime && LEGACY_TIME_DELIMITERS.indexOf(c) >= 0) {
           // current date and time
           setFormValue(new Date());
           return getFormValue();    // start over
@@ -588,22 +588,20 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
         } // else user entered a 4-digit year
 
 
-        if (date != null) {
-          Date effMinDate = getEffectiveMinDate();
-          if (effMinDate != null) {
-            if (date.before(effMinDate)) {
-              errorOffset = 0;
-              errorMessage = MessageFormat.format(SwingSwingBundle.getString("VALUE MUST BE >= {0}"), getDateFormat().format(effMinDate));
-              date = null;
-            }
+        Date effMinDate = getEffectiveMinDate();
+        if (effMinDate != null) {
+          if (date.before(effMinDate)) {
+            errorOffset = 0;
+            errorMessage = MessageFormat.format(SwingSwingBundle.getString("VALUE MUST BE >= {0}"), getDateFormat().format(effMinDate));
+            date = null;
           }
-          Date effMaxDate = getEffectiveMaxDate();
-          if (effMaxDate != null) {
-            if (date.after(effMaxDate)) {
-              errorOffset = 0;
-              errorMessage = MessageFormat.format(SwingSwingBundle.getString("VALUE MUST BE <= {0}"), getDateFormat().format(effMaxDate));
-              date = null;
-            }
+        }
+        Date effMaxDate = getEffectiveMaxDate();
+        if (effMaxDate != null) {
+          if (date.after(effMaxDate)) {
+            errorOffset = 0;
+            errorMessage = MessageFormat.format(SwingSwingBundle.getString("VALUE MUST BE <= {0}"), getDateFormat().format(effMaxDate));
+            date = null;
           }
         }
 
@@ -620,30 +618,30 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
           setText(str + new GregorianCalendar().get(YEAR));
         }
         else { // check for user omitted the delimiters at all, e.g. 0105
-          String newstr = "";   // new generated input
+          StringBuilder nBuf = new StringBuilder();   // new generated input
           int dlen = dateDelimiters.length();         // length of delimiters
           int spos = 0;                               // index in user input
           int dpos = 0;                               // index in format
           while (spos < slen) {
             char c = str.charAt(spos);
-            if (dateDelimiters.indexOf(c) >= 0 || legacyDateDelimiters.indexOf(c) >= 0)  {
+            if (dateDelimiters.indexOf(c) >= 0 || LEGACY_DATE_DELIMITERS.indexOf(c) >= 0)  {
               break; // some delimiter, real error
             }
             if (dpos < dlen && spos > 0 && spos % 2 == 0)  {
               // insert delimiter
-              newstr += dateDelimiters.charAt(dpos++);
+              nBuf.append(dateDelimiters.charAt(dpos++));
             }
-            newstr += c;
+            nBuf.append(c);
             spos++;
           }
           if (spos == slen) {   // delimiters inserted
             if (slen % 2 == 0 && dpos < dlen) {
-              newstr += dateDelimiters.charAt(dpos);
+              nBuf.append(dateDelimiters.charAt(dpos));
             }
-            if (newstr.length() == 6) { // day + month. and year missing?
-              newstr += new GregorianCalendar().get(YEAR);
+            if (nBuf.length() == 6) { // day + month. and year missing?
+              nBuf.append(new GregorianCalendar().get(YEAR));
             }
-            setText(newstr);
+            setText(nBuf.toString());
           }
           else  {
             // try if time entered only: add current date.
@@ -681,7 +679,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
             }
             else  {
               // try appending 00:00:00 if only date entered (there is a small chance ;-)
-              newstr = str + " 00:00:00";
+              String newstr = str + " 00:00:00";
               try {
                 // just parse
                 getDateFormat().parse(newstr);
@@ -696,7 +694,7 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
                   String delimStr = dateDelimiters.substring(0, 1);
                   for (int i=0; i < buf.length(); i++) {
                     char c = buf.charAt(i);
-                    if (legacyDateDelimiters.indexOf(c) >= 0) {
+                    if (LEGACY_DATE_DELIMITERS.indexOf(c) >= 0) {
                       buf.replace(i, i+1, delimStr);
                     }
                   }

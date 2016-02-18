@@ -177,7 +177,7 @@ public class TaskDispatcherTest {
       return num;
     }
 
-    public int getLockNumber() {
+    public synchronized int getLockNumber() {
       return lockNumber;
     }
 
@@ -210,7 +210,7 @@ public class TaskDispatcherTest {
       Reporter.log("finished counter lock thread " + num + "<br/>");
     }
 
-    public void requestTermination() {
+    public synchronized void requestTermination() {
       terminate = true;
       Reporter.log("terminating counter lock thread " + num + ", " + myLockCount + " locks<br/>");
     }

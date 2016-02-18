@@ -96,7 +96,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     initComponents();
 
     if (logo == null) {
-      logo = new ImageIcon(getClass().getResource("/org/tentackle/appworx/images/loginLogo.png"));   // NOI18N
+      logo = new ImageIcon(DefaultLoginDialog.class.getResource("/org/tentackle/swing/rdc/images/loginLogo.png"));
     }
 
     // layered pane has no layout manager, so we layout explicitly

@@ -533,7 +533,7 @@ public class RemoteMethodInfo {
   }
 
   /**
-   * Gets the declaration string
+   * Gets the declaration string.
    */
   @Override
   public String toString() {
@@ -541,7 +541,7 @@ public class RemoteMethodInfo {
       return getModifiersAsString() + " " + getReturnType() + " " + getMethodName() +
              "(" + AnnotationProcessingHelper.objectArrayToString(getParameters(), ", ") + ")";
     }
-    return null;
+    return "";
   }
 
 

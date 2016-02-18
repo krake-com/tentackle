@@ -301,11 +301,12 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
                 sqlCode.append(tableSql);
 
                 // check if we can now migrate some pending table
-                for (Iterator<String> iter = pendingMigrations.keySet().iterator(); iter.hasNext(); ) {
-                  String pendingTablename = iter.next();
+                for (Iterator<Map.Entry<String,String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
+                  Map.Entry<String,String> entry = iter.next();
+                  String pendingTablename = entry.getKey();
                   if (!isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
                     migratedTablenames.add(pendingTablename);
-                    sqlCode.append(pendingMigrations.get(pendingTablename));
+                    sqlCode.append(entry.getValue());
                     iter.remove();
                   }
                 }

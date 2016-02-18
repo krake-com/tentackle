@@ -89,6 +89,7 @@ public enum LineType {
         return new GlobalOptionLine(document, offset, this);
 
       case ATTRIBUTE_OPTION:
+      case RELATION_OPTION:
         return new OptionLine(document, offset, this);
 
       case ATTRIBUTE:
@@ -96,9 +97,6 @@ public enum LineType {
 
       case RELATION:
         return new RelationLine(document, offset, this);
-
-      case RELATION_OPTION:
-        return new OptionLine(document, offset, this);
 
       default:  throw new IllegalArgumentException("unimplemented line type");
     }

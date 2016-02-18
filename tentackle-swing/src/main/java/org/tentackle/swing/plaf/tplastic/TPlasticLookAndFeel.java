@@ -36,7 +36,7 @@ import org.tentackle.swing.plaf.tmetal.TOceanLookAndFeel;
  * Kunststoff is a discontinued project, so we
  * switched to Ocean in order not to break existing applications.
  * New applications should not use TPlastic, but TLooks or TTiny instead.
- * 
+ *
  * @author harald
  */
 @SuppressWarnings("serial")
@@ -84,23 +84,21 @@ public class TPlasticLookAndFeel extends TOceanLookAndFeel {
     // DEFAULTS TABLE
     //
     OceanTheme currentTheme = (OceanTheme) MetalLookAndFeel.getCurrentTheme();
-    if (currentTheme != null) {
 
-      Object userTextValue = new FontActiveValue(currentTheme, TPlasticTheme.USER_TEXT_FONT);
-      Object controlTextValue = new FontActiveValue(currentTheme, TPlasticTheme.CONTROL_TEXT_FONT);
+    Object userTextValue = new FontActiveValue(currentTheme, TPlasticTheme.USER_TEXT_FONT);
+    Object controlTextValue = new FontActiveValue(currentTheme, TPlasticTheme.CONTROL_TEXT_FONT);
 
-      // changes the values so that all user-input fields are marked bold and
-      // background data is plain.
-      Object[] defaults = {
-        "Label.font", userTextValue,
-        "TextField.font", controlTextValue,
-        "TextArea.font", controlTextValue,
-        "PasswordField.font", controlTextValue,
-        "Table.font", controlTextValue,
-        "TitledBorder.font", userTextValue,};
+    // changes the values so that all user-input fields are marked bold and
+    // background data is plain.
+    Object[] defaults = {
+      "Label.font", userTextValue,
+      "TextField.font", controlTextValue,
+      "TextArea.font", controlTextValue,
+      "PasswordField.font", controlTextValue,
+      "Table.font", controlTextValue,
+      "TitledBorder.font", userTextValue,};
 
-      table.putDefaults(defaults);
-    }
+    table.putDefaults(defaults);
   }
 
   /**

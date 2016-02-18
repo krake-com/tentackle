@@ -127,6 +127,15 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.columnConfigurations = new ArrayList<>();
   }
 
+  /**
+   * Gets the template.
+   *
+   * @return the template
+   */
+  public S getTemplate() {
+    return template;
+  }
+
 
   @Override
   public String toString() {
@@ -375,10 +384,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
             String fmt = "#,##0";
             if (money.scale() > 0) {
-              fmt += ".";
+              StringBuilder buf = new StringBuilder(fmt).append('.');
               for (int j = 0; j < money.scale(); j++) {
-                fmt += "0";
+                buf.append('0');
               }
+              fmt = buf.toString();
             }
             // create format
             short fmtIndex = format.getFormat(fmt);

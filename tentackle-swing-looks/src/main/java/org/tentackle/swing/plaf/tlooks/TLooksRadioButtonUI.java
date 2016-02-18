@@ -41,7 +41,7 @@ import javax.swing.text.View;
 
 /**
  * UI for JRadioButton/FormRadioButton.
- * 
+ *
  * @author harald
  */
 public class TLooksRadioButtonUI extends MetalRadioButtonUI {
@@ -74,9 +74,6 @@ public class TLooksRadioButtonUI extends MetalRadioButtonUI {
     ButtonModel model = b.getModel();
 
     Dimension size = c.getSize();
-
-    int w = size.width;
-    int h = size.height;
 
     Font f = c.getFont();
     g.setFont(f);

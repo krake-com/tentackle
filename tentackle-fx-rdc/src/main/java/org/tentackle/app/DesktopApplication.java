@@ -369,35 +369,32 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    */
   public void start(String[] args) {
 
-    synchronized (this) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
 
-      cmdLine = new CommandLine(args);
-      setProperties(cmdLine.getOptionsAsProperties());
+    try {
 
+      LOGGER.fine("register application");
+      // make sure that only one application is running at a time
+      register();
+
+      LOGGER.fine("initialize application");
+      doInitialize();
+
+      LOGGER.fine("initializing FX application");
+      Application.launch(getApplicationClass(), args);
+
+    }
+    catch (ApplicationException | RuntimeException ex) {
+      // print message to user, if GUI in window, else if headless to console
       try {
-
-        LOGGER.fine("register application");
-        // make sure that only one application is running at a time
-        register();
-
-        LOGGER.fine("initialize application");
-        doInitialize();
-
-        LOGGER.fine("initializing FX application");
-        Application.launch(getApplicationClass(), args);
-
+        Fx.error(MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex);
       }
-      catch (ApplicationException | RuntimeException ex) {
-        // print message to user, if GUI in window, else if headless to console
-        try {
-          Fx.error(MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex);
-        }
-        catch (RuntimeException rex) {
-          // ignore if dialog cannot be displayed
-        }
-        // doStop with error
-        doStop(3, ex);
+      catch (RuntimeException rex) {
+        // ignore if dialog cannot be displayed
       }
+      // doStop with error
+      doStop(3, ex);
     }
   }
 
@@ -424,7 +421,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    *
    * @return the command line
    */
-  public CommandLine getCommandLine() {
+  public synchronized CommandLine getCommandLine() {
     return cmdLine;
   }
 

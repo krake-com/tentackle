@@ -54,7 +54,7 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
         for (int counter = 0; counter < rowCount; counter++) {
           rows[counter] = counter;
         }
-      } 
+      }
       else {
         rows = table.getSelectedRows();
       }
@@ -74,12 +74,12 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
             cols[counter] = counter;
           }
         }
-      } 
+      }
       else {
         cols = table.getSelectedColumns();
       }
 
-      if (rows == null || cols == null || rows.length == 0 || cols.length == 0) {
+      if (rows.length == 0 || cols.length == 0) {
         return null;
       }
 
@@ -115,5 +115,5 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
   public int getSourceActions(JComponent c) {
       return COPY;
   }
-  
+
 }

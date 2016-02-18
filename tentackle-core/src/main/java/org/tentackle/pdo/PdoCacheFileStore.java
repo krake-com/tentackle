@@ -96,16 +96,14 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    * @return true if cache has been persited, false if cache isn't persistable (application is not a client)
    * @throws PdoRuntimeException if writing failed
    */
-  public boolean writeToFile() throws PdoRuntimeException {
+  public synchronized boolean writeToFile() throws PdoRuntimeException {
 
     if (isPersistable()) {
 
       initializeForWrite();
       File file = getFile();
-      ObjectOutputStream os = null;
 
-      try {
-        os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+      try (ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
         os.writeObject(this);
         if (LOGGER.isInfoLoggable()) {
           LOGGER.info(objects.size() + " objects written to " + file.getAbsolutePath());
@@ -114,16 +112,6 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       }
       catch (IOException ioe) {
         throw new PdoRuntimeException("cannot write to file " + file.getAbsolutePath(), ioe);
-      }
-      finally {
-        try {
-          if (os != null) {
-            os.close();
-          }
-        }
-        catch (IOException ioe) {
-          throw new PdoRuntimeException("cannot close file " + file.getAbsolutePath(), ioe);
-        }
       }
     }
     else  {
@@ -140,7 +128,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    *         false if cache isn't persistable (application is not a client)
    * @throws PdoRuntimeException if reading failed
    */
-  public boolean readFromFile(Session session) throws PdoRuntimeException {
+  public synchronized boolean readFromFile(Session session) throws PdoRuntimeException {
 
     if (isPersistable()) {
 
@@ -153,16 +141,16 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
         if (object instanceof PdoCacheFileStore) {
           @SuppressWarnings("unchecked")
           PdoCacheFileStore<T> cacheFileStore = (PdoCacheFileStore<T>) object;
-          cacheFileStore.cache = cache;
           cacheFileStore.verifyAfterRead();
-          cacheFileStore.applyToCache(session);
+          cacheFileStore.applyCache(session, cache);
           if (LOGGER.isInfoLoggable()) {
             LOGGER.info(cache.getObjects().size() + " objects loaded from " + file.getAbsolutePath());
           }
           return true;
         }
         else  {
-          throw new PdoRuntimeException("file " + file.getAbsolutePath()  + " does not contain cache data! Found: " + object.getClass().getName());
+          throw new PdoRuntimeException(
+            "file " + file.getAbsolutePath()  + " does not contain cache data! Found: " + object.getClass().getName());
         }
       }
       catch (ClassNotFoundException cnfe) {
@@ -205,7 +193,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   /**
    * Initializes the cache data for being written to storage.
    */
-  private synchronized void initializeForWrite() {
+  private void initializeForWrite() {
     // build cache data (no check for key change)
     objects = cache.getObjects(false);
     // get current table serial
@@ -248,11 +236,12 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   }
 
   /**
-   * Applies the cache data to the cache
+   * Applies the cache data to the cache.
    *
    * @param session the database connection assumed for loaded objects
+   * @param cache the cache
    */
-  private synchronized void applyToCache(Session session) {
+  private void applyCache(Session session, PdoCache<T> cache) {
     cache.invalidate();   // remove all objects from cache (if any)
     for (T object : objects) {
       object.setSession(session);   // this is transient
@@ -265,6 +254,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     if (currentTableSerial != tableSerial) {
       cache.expire(currentTableSerial);
     }
+    this.cache = cache;
   }
 
 
@@ -298,6 +288,5 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     }
     return new File(file, fileName);
   }
-
 
 }

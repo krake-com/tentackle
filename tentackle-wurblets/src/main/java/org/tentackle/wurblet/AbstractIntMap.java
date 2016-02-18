@@ -31,7 +31,7 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 
 
 /**
- * extends the AbstractWurblet by methods to parse the integer mapping model.
+ * Extends the AbstractWurblet by methods to parse the integer mapping model.
  *
  * @author  harald
  */
@@ -124,9 +124,9 @@ public class AbstractIntMap extends AbstractWurblet {
 
 
   /**
-   * The mapping entry
+   * The mapping entry.
    */
-  public class MapEntry {
+  public static class MapEntry {
 
     private String name;       // the index name
     private String value;      // the mapped value
@@ -137,7 +137,7 @@ public class AbstractIntMap extends AbstractWurblet {
      *
      * @param text the source line
      */
-    MapEntry(String text) throws Exception {
+    public MapEntry(String text) throws Exception {
 
       StringTokenizer stok = new StringTokenizer(text, " \t" );
 

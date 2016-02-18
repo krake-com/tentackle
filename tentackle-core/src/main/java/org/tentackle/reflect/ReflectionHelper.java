@@ -256,18 +256,19 @@ public final class ReflectionHelper {
   public static String makeDeclareString(String classname) {
     if (classname.startsWith("["))  {
       // array
-      String arr = "";
+      StringBuilder buf = new StringBuilder();
       int len = classname.length();
       int i = 0;
       while (i < len) {
         if (classname.charAt(i) == '[') {
-          arr += "[]";
+          buf.append("[]");
           ++i;
         }
         else  {
           break;
         }
       }
+
       String type = classname.substring(i);
       if (type.endsWith(";")) {
         // object
@@ -297,8 +298,10 @@ public final class ReflectionHelper {
       else if ("S".equals(type))  {
         type = "short";
       }
+      
+      buf.insert(0, type);
 
-      classname = type + arr;
+      return buf.toString();
     }
 
     return classname;

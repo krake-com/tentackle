@@ -497,10 +497,11 @@ public class FormatHelper {
     }
 
     if (scale > 0)  {
-      fmt += '.';
+      StringBuilder buf = new StringBuilder(fmt).append('.');
       for (int i=0; i < scale; i++) {
-        fmt += "0";
+        buf.append('0');
       }
+      fmt = buf.toString();
     }
 
     // apply new format

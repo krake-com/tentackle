@@ -113,7 +113,7 @@ public class LoginApplication extends FxApplication {
       InputStream is = null;
       try {
         URL dbURL;
-        if (sessionPropsName.indexOf("://") > 0) {
+        if (sessionPropsName.indexOf("://") >= 0) {
           dbURL = new URL(sessionPropsName);
         }
         else  {

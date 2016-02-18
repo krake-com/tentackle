@@ -39,7 +39,9 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
 
   private final SessionManager sessionManager;    // the connection manager
   private final SessionInfo sessionInfo;          // the session info
-  private final Session[] dbSessions;             // the sessions
+  private final int poolSize;                     // the poolsize
+
+  private Session[] dbSessions;                   // the sessions
 
 
   /**
@@ -61,7 +63,7 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
 
     this.sessionManager = sessionManager;
     this.sessionInfo = sessionInfo;
-    this.dbSessions = new Session[poolSize];
+    this.poolSize = poolSize;
   }
 
   /**
@@ -84,7 +86,10 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
    *
    * @return the db sessions
    */
-  public Session[] getDbSessions() {
+  public synchronized Session[] getDbSessions() {
+    if (dbSessions == null) {
+      dbSessions = new Session[poolSize];
+    }
     return dbSessions;
   }
 
@@ -121,7 +126,7 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
   protected DefaultSessionTaskDispatcher createDispatcher(int index) {
     Session session;
     synchronized(this) {
-      session = dbSessions[index];
+      session = getDbSessions()[index];
       if (session == null || !session.isOpen()) {
         session = createSession();
         session.open();
@@ -158,8 +163,8 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
           getDispatchers()[dispatcherIndex].removeTaskListener(taskListener);    // for sure
           getDispatchers()[dispatcherIndex] = null;
           try {
-            dbSessions[dispatcherIndex].close();
-            dbSessions[dispatcherIndex] = null;
+            getDbSessions()[dispatcherIndex].close();
+            getDbSessions()[dispatcherIndex] = null;
           }
           catch (RuntimeException re) {
             LOGGER.warning("db session could not be closed", re);

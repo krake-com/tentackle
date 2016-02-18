@@ -1295,21 +1295,25 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    * event delivery from preference activity, greatly simplifying
    * locking and reducing opportunity for deadlock.
    */
-  private static final List<EventObject> eventQueue = new LinkedList<>();
+  private static final List<EventObject> EVENT_QUEUE = new LinkedList<>();
 
   /**
    * These two classes are used to distinguish NodeChangeEvents on
    * eventQueue so the event dispatch thread knows whether to call
    * childAdded or childRemoved.
    */
-  private class NodeAddedEvent extends NodeChangeEvent {
-    private static final long serialVersionUID = -6743557530157328528L;
+  @SuppressWarnings("serial")
+  private static class NodeAddedEvent extends NodeChangeEvent {
+
     NodeAddedEvent(Preferences parent, Preferences child) {
       super(parent, child);
     }
   }
-  private class NodeRemovedEvent extends NodeChangeEvent {
-    private static final long serialVersionUID = 8735497392918824837L;
+
+
+  @SuppressWarnings("serial")
+  private static class NodeRemovedEvent extends NodeChangeEvent {
+
     NodeRemovedEvent(Preferences parent, Preferences child) {
       super(parent, child);
     }
@@ -1326,12 +1330,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       while(true) {
         // Wait on eventQueue till an event is present
         EventObject event;
-        synchronized(eventQueue) {
+        synchronized(EVENT_QUEUE) {
           try {
-            while (eventQueue.isEmpty())  {
-              eventQueue.wait();    // wait for notify
+            while (EVENT_QUEUE.isEmpty())  {
+              EVENT_QUEUE.wait();    // wait for notify
             }
-            event = eventQueue.remove(0);
+            event = EVENT_QUEUE.remove(0);
           }
           catch (InterruptedException e) {
             return;   // terminate thread
@@ -1406,9 +1410,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    */
   void enqueuePreferenceChangeEvent(String key, String newValue) {
     if (arePreferenceListenersRegistered()) {
-      synchronized(eventQueue) {
-        eventQueue.add(new PreferenceChangeEvent(this, key, newValue));
-        eventQueue.notify();
+      synchronized(EVENT_QUEUE) {
+        EVENT_QUEUE.add(new PreferenceChangeEvent(this, key, newValue));
+        EVENT_QUEUE.notifyAll();
       }
     }
   }
@@ -1420,9 +1424,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    */
   void enqueueNodeAddedEvent(Preferences child) {
     if (areNodeListenersRegistered()) {
-      synchronized(eventQueue) {
-        eventQueue.add(new NodeAddedEvent(this, child));
-        eventQueue.notify();
+      synchronized(EVENT_QUEUE) {
+        EVENT_QUEUE.add(new NodeAddedEvent(this, child));
+        EVENT_QUEUE.notifyAll();
       }
     }
   }
@@ -1434,9 +1438,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    */
   void enqueueNodeRemovedEvent(Preferences child) {
     if (areNodeListenersRegistered()) {
-      synchronized(eventQueue) {
-        eventQueue.add(new NodeRemovedEvent(this, child));
-        eventQueue.notify();
+      synchronized(EVENT_QUEUE) {
+        EVENT_QUEUE.add(new NodeRemovedEvent(this, child));
+        EVENT_QUEUE.notifyAll();
       }
     }
   }

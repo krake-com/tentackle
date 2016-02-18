@@ -59,6 +59,8 @@ public final class StringHelper {
   private static final String NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys";
   private static char[] critMap;    // fast map built once from CRITS and NORMS
 
+  private static byte[] EMPTY_BYTES = new byte[0];
+
 
   /**
    * Converts special unicode characters (so-called diacrits) to standard ascii.<br>
@@ -685,7 +687,7 @@ public final class StringHelper {
   /**
    * Converts a char-array to a byte-array.
    * @param chars the character array
-   * @return the byte array
+   * @return the byte array, empty if chars is null
    */
   public static byte[] toBytes(char[] chars)  {
     if (chars != null) {
@@ -699,10 +701,8 @@ public final class StringHelper {
       }
       return b;
     }
-    return null;
+    return EMPTY_BYTES;
   }
-
-
 
 
 

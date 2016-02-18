@@ -33,7 +33,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   private static final long serialVersionUID = 1L;
 
   private DomainContext context;                  // application domain context
-  private Session session;                        // the session
+  private transient Session session;              // the session
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
   private transient boolean sessionImmutable;     // true if session is immutable
   private T operation;                            // the operation proxy instance this is a delegate for
@@ -76,7 +76,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
    */
   public DummyPersistentOperation() {
   }
-  
+
 
   @Override
   public DomainDelegate<T> getDomainDelegate() {

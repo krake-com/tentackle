@@ -261,16 +261,18 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * @return the stats as a string
    */
   public synchronized String printStatistics()  {
-    String stats = "selects=" + selectCount + ", missing=" + selectMissingCount +
-                   ", not cacheable=" + selectNotCacheableCount +
-                   ", selectAll=" + selectAllCount;
+    StringBuilder buf = new StringBuilder();
+    buf.append("selects=").append(selectCount)
+       .append(", missing=").append(selectMissingCount)
+       .append(", not cacheable=").append(selectNotCacheableCount)
+       .append(", selectAll=").append(selectAllCount);
     if (preloadedContexts != null) {
-      stats += ", contexts=" + preloadedContexts.size();
+      buf.append(", contexts=").append(preloadedContexts.size());
     }
     for (PdoCacheIndex<T,?> index: indexes)  {
-      stats += "\n" + index + ": " + index.printStatistics();
+      buf.append('\n').append(index).append(": ").append(index.printStatistics());
     }
-    return stats;
+    return buf.toString();
   }
 
 
@@ -610,9 +612,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * @return the highest tableSerial of objects in cache
+   * Gets the highest tableSerial of objects in cache.
+   *
+   * @return the highest tableSerial
    */
-  public long getTableSerial()  {
+  public synchronized long getTableSerial() {
     return tableSerial;
   }
 
@@ -959,10 +963,10 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
      * of this method)
      */
     if (enabled && allEnabled)  {
-      if (maxSize > 0 && getSize() > maxSize) {
-        shrinkCache();
-      }
       synchronized (this)  {
+        if (maxSize > 0 && getSize() > maxSize) {
+          shrinkCache();
+        }
         // add to indexes
         boolean uniqueViolation = false;
         int i = 0;
@@ -1144,7 +1148,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * @return the list of all PDOs
    */
   protected List<T> selectAllFromStorage(DomainContext context) {
-    selectAllCount++;
+    synchronized(this) {
+      selectAllCount++;
+    }
     return Pdo.create(clazz, context).selectAllForCache();
   }
 
@@ -1342,7 +1348,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    *
    * @return Value of property maxSize.
    */
-  public int getMaxSize() {
+  public synchronized int getMaxSize() {
     return maxSize;
   }
 
@@ -1353,7 +1359,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    *
    * @param maxSize New value of property maxSize.
    */
-  public void setMaxSize(int maxSize) {
+  public synchronized void setMaxSize(int maxSize) {
     this.maxSize = maxSize;
   }
 
