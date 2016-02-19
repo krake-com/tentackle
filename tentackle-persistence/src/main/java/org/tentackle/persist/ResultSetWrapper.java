@@ -86,7 +86,8 @@ public class ResultSetWrapper implements AutoCloseable {
     }
 
     // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
-    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) || ((PreparedStatementWrapper) stmt).getStatementKey() == null;
+    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
+                            ((PreparedStatementWrapper) stmt).getStatementKey() == null;
 
     columnCount = -1;
   }
@@ -2746,6 +2747,9 @@ public class ResultSetWrapper implements AutoCloseable {
    * Clears the configured index and sets the flag that cursor was moved.
    */
   private void clearSection() {
+    if (rs == null) {
+      throw new PersistenceException("result set already closed");
+    }
     currentSection = null;
     if (isInSkipMode()) {
       cursorMovedInSkipMode = true;
