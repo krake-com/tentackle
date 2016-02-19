@@ -24,11 +24,6 @@
       <version>${project.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>javax.jnlp</groupId>
-      <artifactId>jnlp-api</artifactId>
-    </dependency>
-
   </dependencies>
 
   <build>

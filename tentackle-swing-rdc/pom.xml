@@ -16,16 +16,10 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-    <!-- local dependencies -->
     <dependency>
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-swing</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>javax.jnlp</groupId>
-      <artifactId>jnlp-api</artifactId>
     </dependency>
   </dependencies>
 

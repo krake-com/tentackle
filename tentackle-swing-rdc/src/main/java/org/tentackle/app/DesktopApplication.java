@@ -23,16 +23,8 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Properties;
-import javax.jnlp.BasicService;
-import javax.jnlp.ServiceManager;
-import javax.jnlp.UnavailableServiceException;
 import javax.swing.Icon;
 import javax.swing.JMenu;
 import javax.swing.JRadioButtonMenuItem;
@@ -547,42 +539,6 @@ public abstract class DesktopApplication extends AbstractApplication {
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
 
-    if (isDeployedByJNLP() && sessionPropsName != null) {
-      // load the db properties relative to the JNLP codebase
-      InputStream is = null;
-      try {
-        URL dbURL;
-        if (sessionPropsName.indexOf("://") >= 0) {
-          dbURL = new URL(sessionPropsName);
-        }
-        else  {
-          URL codeBase = ((BasicService) ServiceManager.lookup(BasicService.class.getName())).getCodeBase();
-          dbURL = new URL(codeBase + "/" + sessionPropsName);
-        }
-        Properties sessionProps = new Properties();
-        is = dbURL.openStream();
-        sessionProps.load(is);
-        sessionInfo.setProperties(sessionProps);
-      }
-      catch (MalformedURLException ex) {
-        throw new ApplicationException("malformed URL for db properties", ex);
-      }
-      catch (IOException ex) {
-        throw new ApplicationException(MessageFormat.format("loading db properties {0} failed", sessionPropsName), ex);
-      }
-      catch (RuntimeException | UnavailableServiceException ex) {
-        throw new ApplicationException("cannot determine JNLP codebase", ex);
-      }
-      finally {
-        if (is != null) {
-          try {
-            is.close();
-          }
-          catch (IOException ex) {}
-        }
-      }
-    }
-
     /**
      * Reset to cross-platform laf for sure.
      * This will prevent buggy desktop lafs to irritate the user.
@@ -591,7 +547,8 @@ public abstract class DesktopApplication extends AbstractApplication {
       try {
         UIManager.setLookAndFeel(DEFAULT_LAF);
       }
-      catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException | RuntimeException ex) {
+      catch (ClassNotFoundException | InstantiationException |
+             IllegalAccessException | UnsupportedLookAndFeelException | RuntimeException ex) {
         LOGGER.warning("can not switch to default laf " + DEFAULT_LAF, ex);
       }
     }
@@ -629,14 +586,16 @@ public abstract class DesktopApplication extends AbstractApplication {
       }
       catch (LoginFailedException lfx) {
         String msg;
-        if      (retry == 2)    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)");
-        }
-        else if (retry == 1)    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED! (LAST RETRY)");
-        }
-        else                    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED!");
+        switch (retry) {
+          case 2:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)");
+            break;
+          case 1:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED! (LAST RETRY)");
+            break;
+          default:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED!");
+            break;
         }
         sessionInfo.setPassword(null);
         LOGGER.info(msg, lfx);
