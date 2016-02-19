@@ -432,19 +432,19 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    */
   @Override
   protected void configurePreferences() {
-    showApplicationStatus(AppFxRdcBundle.getString("INSTALLING PREFERENCES..."), 0.2);
+    showApplicationStatus(AppFxRdcBundle.getString("INSTALLING PREFERENCES..."), 0.3);
     super.configurePreferences();
   }
 
   @Override
   protected void configureSecurityManager() {
-    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE SECURITY..."), 0.3);
+    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE SECURITY..."), 0.4);
     super.configureSecurityManager();
   }
 
   @Override
   protected void configurePdoTracker() {
-    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE MONITORING..."), 0.4);
+    showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE MONITORING..."), 0.2);
     super.configurePdoTracker();
     Session trackerSession = getSession().clone();          // already open
     trackerSession.groupWith(getSession().getSessionId());  // build group
