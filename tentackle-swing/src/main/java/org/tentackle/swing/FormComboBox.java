@@ -439,9 +439,8 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    */
   public void addAllItems (Collection<E> items) {
     if (items != null) {
-      Iterator<E> iter = items.iterator();
-      while (iter.hasNext())  {
-        addItem(iter.next());
+      for (E item : items) {
+        addItem(item);
       }
     }
   }

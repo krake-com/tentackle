@@ -1971,7 +1971,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx++, normText);
+    st.setString(ndx, normText);
 
     return st.executeQuery();
   }
@@ -2024,7 +2024,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx++, normText);
+    st.setString(ndx, normText);
 
     return st.executeQuery();
   }
@@ -2144,7 +2144,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     long contextId = getContextId();
     if (contextId >= 0) {
-      st.setLong(ndx++, contextId);
+      st.setLong(ndx, contextId);
     }
 
     return st.executeQuery();
@@ -2186,7 +2186,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     long contextId = getContextId();
     if (contextId >= 0) {
-      st.setLong(ndx++, contextId);
+      st.setLong(ndx, contextId);
     }
 
     return st.executeQuery();

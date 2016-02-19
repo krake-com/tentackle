@@ -26,7 +26,6 @@ import java.awt.Rectangle;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import org.tentackle.swing.FormTable;

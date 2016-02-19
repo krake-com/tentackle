@@ -454,7 +454,7 @@ public class ApplicationServlet extends HttpServlet {
         throw new ServletClientException("error reading request body");
       }
 
-      DataOutputStream socketOut = null;
+      DataOutputStream socketOut;
       // send to local server in HTTP
       try {
         socketOut =

@@ -629,7 +629,7 @@ public final class ReflectionHelper {
         }
       }
 
-      Object value = null;
+      Object value;
       StringTokenizer stok = new StringTokenizer(path, ".");
 
       while (stok.hasMoreTokens()) {

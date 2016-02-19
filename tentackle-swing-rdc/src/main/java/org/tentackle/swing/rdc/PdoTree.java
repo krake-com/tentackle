@@ -727,7 +727,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   @Override
   @SuppressWarnings("unchecked")
   public void dragGestureRecognized (DragGestureEvent event) {
-    PersistentDomainObject dragObject = null;
+    PersistentDomainObject dragObject;
     TreePath path = getSelectionPath();
     if (path != null)  {
       DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
@@ -907,7 +907,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   /**
    * Hides the "in use" tree.
    *
-   * @param the child index of the node to be remove from the parent
+   * @param childIndex the child index of the node to be remove from the parent
    * @see PdoTreeExtensionUsageToggleNode
    */
   void hideInUseTree(int childIndex) {
@@ -1182,7 +1182,6 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
         makeTableItem.setVisible(false);
 
         boolean editAllowed = false;
-        boolean viewAllowed = false;
 
         if (obj instanceof PersistentDomainObject) {
 
@@ -1232,7 +1231,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
           }
 
           // check permission of object
-          viewAllowed = popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(ViewPermission.class));
+          boolean viewAllowed = popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(ViewPermission.class));
           editAllowed = viewAllowed && popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(EditPermission.class));
 
           if (Rdc.createGuiProvider(popupObject).panelExists() &&

@@ -18,7 +18,6 @@
 
 package org.tentackle.misc;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 

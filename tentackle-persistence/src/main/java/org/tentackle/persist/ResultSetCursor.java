@@ -559,7 +559,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public List<T> toList() {
-    List<T> list = null;
+    List<T> list;
     if (session.isRemote())  {
       try {
         // this is faster then a getObject()-loop because it saves rmi-roundtrips

@@ -313,7 +313,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
           today.get(DAY_OF_YEAR) == firstCal.get(DAY_OF_YEAR))  {
         dayButton.setForeground(Color.blue);
       }
-      dayButton.addActionListener(e -> dayButton_actionPerformed(e));
+      dayButton.addActionListener(this::dayButton_actionPerformed);
       dayButtonGroup.add(dayButton);
       calendarPanel.add(dayButton, null);
 

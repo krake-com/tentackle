@@ -80,7 +80,7 @@ public class SizeImpl extends AbstractValidator<Size> {
 
     int min = annotation.min();
     int max = annotation.max();
-    int size = 0;
+    int size;
 
     if (object instanceof String) {
       size = ((String) object).length();

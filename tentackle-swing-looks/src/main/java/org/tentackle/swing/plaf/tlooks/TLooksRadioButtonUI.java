@@ -90,8 +90,6 @@ public class TLooksRadioButtonUI extends MetalRadioButtonUI {
     viewRect.height -= (i.bottom + viewRect.y);
 
     Icon altIcon = b.getIcon();
-    Icon selectedIcon = null;
-    Icon disabledIcon = null;
     String text = SwingUtilities.layoutCompoundLabel(
             c, fm, b.getText(), altIcon != null ? altIcon : getDefaultIcon(),
             b.getVerticalAlignment(), b.getHorizontalAlignment(),

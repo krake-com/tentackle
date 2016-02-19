@@ -111,7 +111,7 @@ public class WorkerThread extends Thread {
       runnable.run();
     }
     // dispose from event queue
-    EventQueue.invokeLater (() -> workerDialog.dispose());
+    EventQueue.invokeLater (workerDialog::dispose);
   }
 
 

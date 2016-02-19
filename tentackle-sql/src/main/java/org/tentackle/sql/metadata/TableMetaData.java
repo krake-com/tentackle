@@ -150,7 +150,7 @@ public class TableMetaData {
     }
 
     // extract foreign keys
-    ForeignKeyMetaData foreignKeyMetaData = null;
+    ForeignKeyMetaData foreignKeyMetaData;
     resultSet = metaData.getImportedKeys(null, schemaName, tableName);
     try {
       while (resultSet.next()) {
