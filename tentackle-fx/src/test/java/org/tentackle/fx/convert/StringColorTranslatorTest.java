@@ -42,8 +42,9 @@ public class StringColorTranslatorTest {
     // test back and forth with other colors
     for (Color color : new Color[] { Color.BEIGE, Color.AQUA, Color.BURLYWOOD, Color.GREENYELLOW,
                                      new Color(0.312, 0.477, 0.555, 1.0)}) {
-      s = conv.toModel(color);
-      assertEquals(conv.toView(s), c);
+      String str = conv.toModel(color);
+      // toString() because Color.equals compares floats
+      assertEquals(conv.toView(str).toString(), color.toString());
     }
   }
 
