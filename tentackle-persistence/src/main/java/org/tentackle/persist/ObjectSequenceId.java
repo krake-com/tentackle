@@ -94,8 +94,6 @@ public class ObjectSequenceId extends AbstractIdSource {
    * Id sources are unique by name.
    *
    * @param name the unique sequence name
-   * @param sequenceMultiplier the sequence multiplier
-   * @param globalMultiplier the global multiplier
    * @return the ID source
    */
   public static synchronized ObjectSequenceId get(String name) {

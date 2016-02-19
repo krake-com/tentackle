@@ -26,7 +26,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Objects;
 import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
