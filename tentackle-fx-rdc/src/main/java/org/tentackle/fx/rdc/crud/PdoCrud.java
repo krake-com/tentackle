@@ -465,7 +465,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       ObservableList<T> items = Rdc.displaySearchStage(
               getPdo(), Modality.APPLICATION_MODAL, Fx.getStage(getView()), false);
       if (!items.isEmpty()) {
-        setPdo(items.get(0));
+        setPdo(items.get(0).reload());    // reload because may be cached
         getEditor().requestInitialFocus();
       }
     }

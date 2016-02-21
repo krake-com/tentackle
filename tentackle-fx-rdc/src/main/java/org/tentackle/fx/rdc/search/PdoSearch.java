@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -110,16 +112,17 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   private ObservableList<T> items = FXCollections.observableArrayList();
 
-  private ResourceBundle resources;   // the resources
-  private PdoFinder<T> finder;        // the finder
-  private TableView<T> tableView;     // the table showing the results
-  private TablePopup<T> tablePopup;   // the table popup context menu
-  private TreeView<T> treeView;       // the tree showing the results
-  private boolean treeShown;          // true if tree shown, else table
-  private boolean tableViewInvalid;   // true if tableview is invalid
-  private boolean treeViewInvalid;    // true if treeview is invalid
-  private boolean singleSelectMode;   // true if in (modal) single selection mode
-  private T createdPdo;               // != null if new PDO has been created in modal mode
+  private ResourceBundle resources;             // the resources
+  private PdoFinder<T> finder;                  // the finder
+  private TableView<T> tableView;               // the table showing the results
+  private TablePopup<T> tablePopup;             // the table popup context menu
+  private TreeView<T> treeView;                 // the tree showing the results
+  private boolean treeShown;                    // true if tree shown, else table
+  private boolean tableViewInvalid;             // true if tableview is invalid
+  private boolean treeViewInvalid;              // true if treeview is invalid
+  private boolean singleSelectMode;             // true if in (modal) single selection mode
+  private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
+  private T createdPdo;                         // != null if new PDO has been created in modal mode
 
 
   /**
@@ -194,6 +197,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
     treeView = Fx.createNode(TreeView.class);
     treeView.setCellFactory(p -> Rdc.createTreeCell());
+    wrongTypeSelected = new SimpleBooleanProperty();
+    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> {
+      wrongTypeSelected.set(nv == null || nv.getValue() == null ||
+                            !pdo.getClass().isAssignableFrom(nv.getValue().getClass()));
+    });
+
     StackPane stackPane = Fx.createNode(StackPane.class);
     if (treeShown) {
       stackPane.getChildren().addAll(tableView, treeView);
@@ -577,7 +586,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     okButton.disableProperty().unbind();
     if (okButton.isVisible()) {
       if (treeShown) {
-        okButton.disableProperty().bind(treeView.getSelectionModel().selectedItemProperty().isNull());
+        okButton.disableProperty().bind(treeView.getSelectionModel().selectedItemProperty().isNull()
+                                  .or(wrongTypeSelected));
       }
       else {
         okButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
