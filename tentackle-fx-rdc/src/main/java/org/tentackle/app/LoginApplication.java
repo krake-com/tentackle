@@ -19,7 +19,6 @@
 
 package org.tentackle.app;
 
-import java.util.Locale;
 import java.util.Properties;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -103,9 +102,6 @@ public class LoginApplication extends FxApplication {
     if (sessionInfo.getApplicationName() == null) {
       sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(application.getClass()));
     }
-
-    // sets the locale to be used for this user
-    sessionInfo.setLocale(Locale.getDefault());
 
     return sessionInfo;
   }
