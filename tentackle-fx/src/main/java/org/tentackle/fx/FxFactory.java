@@ -137,4 +137,14 @@ public interface FxFactory {
    */
   <S> TableConfiguration<S> createTableConfiguration(S template, String name);
 
+  /**
+   * Creates a configuration.
+   *
+   * @param <S> the type of the objects contained within the table's items list
+   * @param objectClass the object class
+   * @param name the table's name, null if basename of objectclass
+   * @return the table configuration
+   */
+  <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name);
+
 }

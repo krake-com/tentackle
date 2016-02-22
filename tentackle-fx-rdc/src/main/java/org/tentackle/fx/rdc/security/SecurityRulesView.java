@@ -259,7 +259,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       trackedClassRules = on(Security.class).selectByObject(classId, 0);
       classRules.setAll(trackedClassRules);
       classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString(
-              "Rules for {0}"), pdo.getPlural()));
+              "Rules for all {0}"), pdo.getPlural()));
       if (pdo.isNew()) {
         trackedPdoRules = null;
         pdoRules.clear();

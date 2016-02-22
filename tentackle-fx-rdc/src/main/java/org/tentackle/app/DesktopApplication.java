@@ -168,87 +168,93 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
 
           @Override
           protected Void call() throws Exception {
-            if (StringHelper.isAllWhitespace(sessionInfo.getUserName())) {
-              showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
-              return null;
-            }
-            showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.0);
-            // connect to server/backend
-            Session session = createSession(sessionInfo);
             try {
-              session.open();
-              // success!
-              session.makeCurrent();
-              setSessionInfo(sessionInfo);
-              DomainContext context = createDomainContext(session);
-              if (context == null)  {
-                // next round
-                session.getSessionInfo().clearPassword();
-                session.close();
+              if (StringHelper.isAllWhitespace(sessionInfo.getUserName())) {
+                showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
                 return null;
               }
-              setDomainContext(context);
-              updateSessionInfoAfterLogin();
-            }
-            catch (LoginFailedException lfx) {
-              if (lfh == null) {
-                lfh = createLoginFailedHandler(view, sessionInfo);
-              }
-              lfh.handle(lfx);
-              return null;
-            }
-            catch (RuntimeException rex) {
-              LOGGER.severe("login failed", rex);
-              Platform.runLater(() -> {
-                Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), rex);
-                view.getScene().getWindow().hide();
-              });
-              return null;
-            }
-
-            showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE APPLICATION..."), 0.1);
-            try {
-              doConfigureApplication();
-            }
-            catch (RuntimeException | ApplicationException ex) {
-              LOGGER.severe("configure application failed", ex);
-              return null;
-            }
-
-            showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
-            final C mainController = Fx.load(getMainControllerClass());
-
-            showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 1.0);
-            Platform.runLater(() -> {
+              showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.0);
+              // connect to server/backend
+              Session session = createSession(sessionInfo);
               try {
+                session.open();
+                // success!
                 session.makeCurrent();
-                setMainController(mainController);
-                Stage stage = Fx.createStage(Modality.NONE);
-                configureMainStage(stage);
-                Scene scene = new Scene(mainController.getView());
-                stage.setScene(scene);
-                stage.addEventHandler(WindowEvent.WINDOW_SHOWN, (e) -> {
-                  // all is fine, close the login scene, application keeps running since main window is shown
-                  try {
-                    doFinishStartup();
-                    view.getScene().getWindow().hide();
-                  }
-                  catch (RuntimeException | ApplicationException ex) {
-                    LOGGER.severe("finish startup failed", ex);
-                  }
-                });
-                stage.show();
-                // if all is shown: preload other controller singletons
-                Platform.runLater(() -> FxFactory.getInstance().preloadControllers());
+                setSessionInfo(sessionInfo);
+                DomainContext context = createDomainContext(session);
+                if (context == null)  {
+                  // next round
+                  session.getSessionInfo().clearPassword();
+                  session.close();
+                  return null;
+                }
+                setDomainContext(context);
+                updateSessionInfoAfterLogin();
+              }
+              catch (LoginFailedException lfx) {
+                if (lfh == null) {
+                  lfh = createLoginFailedHandler(view, sessionInfo);
+                }
+                lfh.handle(lfx);
+                return null;
               }
               catch (RuntimeException rex) {
-                String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
-                                                  ReflectionHelper.getClassBaseName(getMainControllerClass()));
-                LOGGER.severe(msg, rex);
-                Fx.error(msg, rex);
-                view.getScene().getWindow().hide();
+                LOGGER.severe("login failed", rex);
+                Platform.runLater(() -> {
+                  Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), rex);
+                  view.getScene().getWindow().hide();
+                });
+                return null;
               }
-            });
+
+              showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE APPLICATION..."), 0.1);
+              try {
+                doConfigureApplication();
+              }
+              catch (RuntimeException | ApplicationException ex) {
+                LOGGER.severe("configure application failed", ex);
+                return null;
+              }
+
+              showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
+              final C mainController = Fx.load(getMainControllerClass());
+
+              showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 1.0);
+              Platform.runLater(() -> {
+                try {
+                  session.makeCurrent();
+                  setMainController(mainController);
+                  Stage stage = Fx.createStage(Modality.NONE);
+                  configureMainStage(stage);
+                  Scene scene = new Scene(mainController.getView());
+                  stage.setScene(scene);
+                  stage.addEventHandler(WindowEvent.WINDOW_SHOWN, (e) -> {
+                    // all is fine, close the login scene, application keeps running since main window is shown
+                    try {
+                      doFinishStartup();
+                      view.getScene().getWindow().hide();
+                    }
+                    catch (RuntimeException | ApplicationException ex) {
+                      LOGGER.severe("finish startup failed", ex);
+                    }
+                  });
+                  stage.show();
+                  // if all is shown: preload other controller singletons
+                  Platform.runLater(() -> FxFactory.getInstance().preloadControllers());
+                }
+                catch (RuntimeException rex) {
+                  String msg = MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"),
+                                                    ReflectionHelper.getClassBaseName(getMainControllerClass()));
+                  LOGGER.severe(msg, rex);
+                  Fx.error(msg, rex);
+                  view.getScene().getWindow().hide();
+                }
+              });
+            }
+            catch (RuntimeException rex) {
+              // if anything else fails: log that
+              LOGGER.severe("login task failed", rex);
+            }
 
             return null;
           }

@@ -400,6 +400,10 @@ public class DefaultFxFactory implements FxFactory {
     return new DefaultTableConfiguration<>(template, name);
   }
 
+  @Override
+  public <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name) {
+    return new DefaultTableConfiguration<>(objectClass, name);
+  }
 
   /**
    * Creates the builder factory.

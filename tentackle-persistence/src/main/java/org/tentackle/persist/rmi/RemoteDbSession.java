@@ -108,6 +108,6 @@ public interface RemoteDbSession extends Remote {
    * @return the delegate
    * @throws RemoteException
    */
-  RemoteDelegate getRemoteDelegate(String classname) throws RemoteException;
+  <T extends RemoteDelegate> T getRemoteDelegate(String classname) throws RemoteException;
 
 }

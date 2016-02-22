@@ -765,7 +765,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @SuppressWarnings("unchecked")
   @Override
-  public RemoteDelegate getRemoteDelegate(String classname) throws RemoteException  {
+  public <T extends RemoteDelegate> T getRemoteDelegate(String classname) throws RemoteException  {
 
     try {
 
@@ -809,8 +809,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         }
       }
 
-      RemoteDelegate delegate = createRemoteDelegate(
-              delegateClasses.delegateClass, delegateClasses.delegateImplClass, delegateClasses.clazz, delegateClasses.effectiveClass);
+      T delegate = (T) createRemoteDelegate(delegateClasses.delegateClass, delegateClasses.delegateImplClass,
+                                            delegateClasses.clazz, delegateClasses.effectiveClass);
 
       exportRemoteDelegate(delegate);
 
