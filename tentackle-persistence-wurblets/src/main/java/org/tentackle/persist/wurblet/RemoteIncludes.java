@@ -136,9 +136,7 @@ public class RemoteIncludes {
     if (!file.exists()) {
       if (pdoClassName != null) {
         // create it
-        PrintStream s = null;
-        try {
-          s = new PrintStream(file);  // this is ok unbuffered for one time
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
                 "/**\n" +
                 " * " + fileName + " (generated " + new Date() + ")\n" +
@@ -232,20 +230,10 @@ public class RemoteIncludes {
         catch (IOException ex) {
           throw new WurbelException("printing to " + pathName + " failed", ex);
         }
-        finally {
-          try {
-            if (s != null) {
-              s.close();
-            }
-          }
-          catch (Exception ex) { }
-        }
       }
       else if (superClassName != null && superClassName.equals("AbstractDbObject")) {
         // primitive AbstractDbObjects
-        PrintStream s = null;
-        try {
-          s = new PrintStream(file);  // this is ok unbuffered for one time
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
                 "/**\n" +
                 " * " + fileName + "\n" +
@@ -305,14 +293,6 @@ public class RemoteIncludes {
         }
         catch (IOException ex) {
           throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
-        finally {
-          try {
-            if (s != null) {
-              s.close();
-            }
-          }
-          catch (Exception ex) { }
         }
       }
       else  {

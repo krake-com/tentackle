@@ -338,9 +338,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @param services the implementing services map
    */
   protected void parseURL(URL url, String serviceName, Map<String, URL> services) {
-    BufferedReader reader = null;
-    try {
-      reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"));
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = normalizeLine(line);
@@ -364,16 +362,6 @@ public class DefaultServiceFinder implements ServiceFinder {
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("error reading configuration from " + url, iox);
-    }
-    finally {
-      try {
-        if (reader != null) {
-          reader.close();
-        }
-      }
-      catch (IOException iox) {
-        throw new TentackleRuntimeException("error closing configuration file", iox);
-      }
     }
   }
 

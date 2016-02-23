@@ -609,6 +609,17 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
+  /**
+   * Returns an application-specific option string.<br>
+   * For diagnostic purposes only.
+   *
+   * @return null if no options
+   */
+  public String getOptions() {
+    return null;
+  }
+  
+
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();

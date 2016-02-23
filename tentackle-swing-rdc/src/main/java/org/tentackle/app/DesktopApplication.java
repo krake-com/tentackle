@@ -45,7 +45,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
@@ -601,9 +600,6 @@ public abstract class DesktopApplication extends AbstractApplication {
         LOGGER.info(msg, lfx);
         showLoginStatus(msg);
         continue;
-      }
-      catch (PersistenceException pex) {
-        throw pex;
       }
 
       session.makeCurrent();

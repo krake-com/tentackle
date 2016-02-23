@@ -32,7 +32,7 @@ public interface AdminExtension extends DomainContextDependable {
   /**
    * Provides information about a logged in client session.
    */
-  public interface SessionData {
+  interface SessionData {
 
     /**
      * Gets the user id.
@@ -145,6 +145,14 @@ public interface AdminExtension extends DomainContextDependable {
      */
     @Bindable
     long getSessionGroup();
+
+    /**
+     * Gets the session options.
+     *
+     * @return the options
+     */
+    @Bindable
+    String getOptions();
 
   }
 

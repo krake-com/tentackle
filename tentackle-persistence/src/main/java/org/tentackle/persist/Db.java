@@ -477,10 +477,7 @@ public class Db implements Session, Cloneable {
       return false;
     }
     final Db other = (Db) obj;
-    if (this.instanceNumber != other.instanceNumber) {
-      return false;
-    }
-    return true;
+    return this.instanceNumber == other.instanceNumber;
   }
 
 

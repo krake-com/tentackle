@@ -131,12 +131,8 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   public synchronized boolean readFromFile(Session session) throws PdoRuntimeException {
 
     if (isPersistable()) {
-
       File file = getFile();
-      ObjectInputStream is = null;
-
-      try {
-        is = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)));
+      try (ObjectInputStream is = new ObjectInputStream(new BufferedInputStream(new FileInputStream(file)))) {
         Object object = is.readObject();
         if (object instanceof PdoCacheFileStore) {
           @SuppressWarnings("unchecked")
@@ -162,16 +158,6 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       }
       catch (IOException ioe) {
         throw new PdoRuntimeException("cannot read from file " + file.getAbsolutePath(), ioe);
-      }
-      finally {
-         try {
-          if (is != null) {
-            is.close();
-          }
-        }
-        catch (IOException ioe) {
-          throw new PdoRuntimeException("cannot close file " + file.getAbsolutePath(), ioe);
-        }
       }
     }
     else  {

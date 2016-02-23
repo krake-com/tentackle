@@ -381,7 +381,8 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
       try {
         con.close();
       }
-      catch (PersistenceException ex) {
+      catch (RuntimeException ex) {
+        LOGGER.warning("closing DEAD connection failed: ignored...", ex);
       }
       // reopen the connection
       con = createConnection((Db) session);

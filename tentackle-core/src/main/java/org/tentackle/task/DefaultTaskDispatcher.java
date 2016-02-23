@@ -690,7 +690,9 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     try {
       sleep(sleepMs);
     }
-    catch (InterruptedException ex) { }
+    catch (InterruptedException ex) {
+      LOGGER.info("interrupted!");
+    }
   }
 
   /**

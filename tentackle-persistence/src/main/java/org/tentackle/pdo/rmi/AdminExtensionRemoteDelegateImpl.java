@@ -20,9 +20,13 @@ package org.tentackle.pdo.rmi;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.tentackle.common.Compare;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -70,6 +74,13 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
       for (RemoteDbSessionImpl remoteSession: RemoteDbSessionImpl.getOpenSessions()) {
         sessions.add(new SessionDataImpl(remoteSession));
       }
+      Collections.sort(sessions, (SessionData o1, SessionData o2) -> {
+        int rv = Compare.compare(o1.getUserName(), o2.getUserName());
+        if (rv == 0) {
+          rv = Long.compare(o1.getSessionNumber(), o2.getSessionNumber());
+        }
+        return rv;
+      });
       return sessions;
     }
     catch (RuntimeException ex) {
@@ -132,6 +143,8 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
 
     private static final long serialVersionUID = 1L;
 
+    private static final NumberFormat OFFSET_FMT = new DecimalFormat("+#0.#");
+
     private final long userId;
     private final String userName;
     private final Timestamp since;
@@ -146,6 +159,7 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
     private final String clientHost;
     private final long sessionNumber;
     private final long sessionGroup;
+    private final String options;
 
     private SessionDataImpl(RemoteDbSessionImpl remoteSession) {
       SessionInfo info = remoteSession.getClientSessionInfo();
@@ -159,10 +173,15 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
       vmInfo = info.getVmInfo();
       osInfo = info.getOsInfo();
       hostInfo = info.getHostInfo();
-      timeZone = info.getTimeZone() == null ? "?" : info.getTimeZone().getDisplayName();
+      double tzOffsetH = info.getTimeZone().getOffset(System.currentTimeMillis()) / 3600000.0;
+      synchronized(OFFSET_FMT) {
+        timeZone = info.getTimeZone() == null ?
+                          "?" : (info.getTimeZone().getID() + " (" + OFFSET_FMT.format(tzOffsetH) + "h)");
+      }
       clientHost = remoteSession.getClientHostString();
       sessionNumber = remoteSession.getSessionNumber();
       sessionGroup = remoteSession.getDb().getSessionGroupId();
+      options = remoteSession.getOptions();
     }
 
     @Override
@@ -235,6 +254,10 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
       return sessionGroup;
     }
 
+    @Override
+    public String getOptions() {
+      return options;
+    }
   }
 
 }

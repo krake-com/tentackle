@@ -151,9 +151,6 @@ public class InterceptionUtilities {
       interceptor.setAnnotation(annotation);
       return interceptor;
     }
-    catch (TentackleRuntimeException tx) {
-      throw tx;
-    }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
       throw new TentackleRuntimeException("interceptor @" + annotation + " could not be created", ex);
     }

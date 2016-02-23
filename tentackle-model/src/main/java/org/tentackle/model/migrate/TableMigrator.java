@@ -419,7 +419,6 @@ public class TableMigrator {
     if (!columnsToDrop.isEmpty() && hints != null && !hints.isEmpty()) {
       for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
         Attribute addAttribute = addAttributeIterator.next();
-        boolean attributeRemoved = false;
         for (ColumnMetaData dropColumn: new ArrayList<>(columnsToDrop.values())) {
           Collection<ColumnMetaData> columns = new ArrayList<>();
           // check multicolumn exists with same name
@@ -436,10 +435,7 @@ public class TableMigrator {
             Pattern renameHint = sqlMatchesHint(renameSql, hints);
             if (renameHint != null) {
               // remove from attributesToAdd & columnsToDrop and add to attributesToMigrate
-              if (!attributeRemoved) {
-                addAttributeIterator.remove();
-                attributeRemoved = true;
-              }
+              addAttributeIterator.remove();
               for (ColumnMetaData column: columns) {
                 columnsToDrop.remove(column.getColumnName());
               }

@@ -16,7 +16,6 @@ package org.tentackle.fx.rdc.admin;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -96,7 +95,6 @@ public class SessionsView extends AbstractFxController {
   @Override
   public void configure() {
     context = Pdo.createDomainContext();
-    sessions = FXCollections.observableArrayList();
     remoteSession = context.getSession().getRemoteSession();
     adminExt = remoteSession.getExtension(context, AdminExtension.class);
     popup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
@@ -128,7 +126,7 @@ public class SessionsView extends AbstractFxController {
    */
   private void kill() {
     SessionData session = sessionsNode.getSelectionModel().getSelectedItem();
-    if (session != null) {
+    if (session != null && Fx.question(resources.getString("really kill the session?"), false)) {
       if (adminExt.kill(session.getUserId(), session.getSessionGroup(),
                         session.getApplicationName(), session.getApplicationId()) > 0) {
         refresh();
@@ -160,6 +158,7 @@ public class SessionsView extends AbstractFxController {
     config.addColumn("since", resources.getString("since"));
     config.addColumn("sessionNumber", resources.getString("session-no."));
     config.addColumn("sessionGroup", resources.getString("group-no."));
+    config.addColumn("options", resources.getString("options"));
     return config;
   }
 

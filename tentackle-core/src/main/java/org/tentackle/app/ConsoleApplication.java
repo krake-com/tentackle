@@ -30,7 +30,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
@@ -204,9 +203,6 @@ public abstract class ConsoleApplication extends AbstractApplication {
     }
     catch (LoginFailedException ex) {
       throw new ApplicationException(AppCoreBundle.getString("LOGIN FAILED"), ex);
-    }
-    catch (PersistenceException pex) {
-      throw pex;
     }
 
     session.makeCurrent();

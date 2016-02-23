@@ -72,9 +72,7 @@ public class AbstractIntMap extends AbstractWurblet {
     }
 
     // read the model
-    BufferedReader reader = null;
-    try {
-      reader = new BufferedReader(WurbelUtilities.openReader(modelName));
+    try (BufferedReader reader = new BufferedReader(WurbelUtilities.openReader(modelName))) {
       int lineno = 0;
       for (;;)  {
         String line = reader.readLine();
@@ -98,14 +96,6 @@ public class AbstractIntMap extends AbstractWurblet {
     }
     catch (IOException ex) {
       throw new WurbelException("reading " + modelName + " failed", ex);
-    }
-    finally {
-      try {
-        if (reader != null) {
-          reader.close();
-        }
-      }
-      catch (Exception ex) {}
     }
   }
 

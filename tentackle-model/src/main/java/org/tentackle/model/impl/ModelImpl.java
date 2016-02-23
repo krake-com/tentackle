@@ -260,11 +260,9 @@ public class ModelImpl implements Model {
     if (modelEntity == null) {
 
       // load from file
-      BufferedReader reader = null;
       StringBuilder modelSource = new StringBuilder();
 
-      try {
-        reader = new BufferedReader(createFileReader(fileName));
+      try (BufferedReader reader = new BufferedReader(createFileReader(fileName))) {
         char[] buf = new char[1024];
         int len;
         while ((len = reader.read(buf)) != -1)  {
@@ -273,14 +271,6 @@ public class ModelImpl implements Model {
       }
       catch (IOException ex) {
         throw new ModelException("reading model '" + fileName + "' failed", ex);
-      }
-      finally {
-        try {
-          if (reader != null) {
-            reader.close();
-          }
-        }
-        catch (IOException ex) {}
       }
 
       // parse the model source

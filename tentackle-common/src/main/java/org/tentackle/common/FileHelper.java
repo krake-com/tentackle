@@ -71,7 +71,9 @@ public class FileHelper {
           try {
             is.close();
           }
-          catch (IOException ex) {}
+          catch (IOException ex) {
+            // ignored
+          }
         }
       }
     }

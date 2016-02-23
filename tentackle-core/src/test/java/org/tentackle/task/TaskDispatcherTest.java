@@ -124,6 +124,7 @@ public class TaskDispatcherTest {
             sleep(LOCK_DURATION);
           }
           catch(InterruptedException ex) {
+            Reporter.log("interrupted...");
           }
           int expected = count + 1;
           if (checkLockCount && lockCount != expected) {
@@ -139,6 +140,7 @@ public class TaskDispatcherTest {
               sleep(SLEEP_INTERVAL);
             }
             catch(InterruptedException ex) {
+              Reporter.log("interrupted...");
             }
           }
         }
@@ -200,6 +202,7 @@ public class TaskDispatcherTest {
             sleep(SLEEP_INTERVAL);
           }
           catch (InterruptedException ex) {
+            Reporter.log("interrupted...");
           }
         }
       }
@@ -258,6 +261,7 @@ public class TaskDispatcherTest {
                 lockThread.wait(SLEEP_INTERVAL);    // wait for lock
               }
               catch(InterruptedException ex) {
+                Reporter.log("interrupted...");
               }
             }
           }

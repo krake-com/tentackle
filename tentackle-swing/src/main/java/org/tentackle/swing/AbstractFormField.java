@@ -291,10 +291,9 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
     if (eraseFirst) {
       // trigger eraseFirst in Document after this setText
       Document doc = getDocument();
-      try {
-        ((FormFieldDocument)doc).setEraseFirst(true);
+      if (doc instanceof FormFieldDocument) {
+        ((FormFieldDocument) doc).setEraseFirst(true);
       }
-      catch (Exception e) {}
       eraseFirst = false;
     }
 
@@ -691,9 +690,9 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
     this.eraseFirst = erasefirst;
     if (!erasefirst)  {
       Document doc = getDocument();
-      try {
-        ((FormFieldDocument)doc).setEraseFirst(false);
-      } catch (Exception e) {}
+      if (doc instanceof FormFieldDocument) {
+        ((FormFieldDocument) doc).setEraseFirst(false);
+      }
     }
   }
 
@@ -1003,9 +1002,9 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
   @Override
   public void setConverter(Function<String,String> converter) {
     Document doc = getDocument();
-    try {
-      ((FormFieldDocument)doc).setConverter(converter);
-    } catch (Exception e) {}
+    if (doc instanceof FormFieldDocument) {
+      ((FormFieldDocument) doc).setConverter(converter);
+    }
   }
 
   @Override

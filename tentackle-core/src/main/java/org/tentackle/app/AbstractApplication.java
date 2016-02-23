@@ -213,7 +213,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       runsInContainer = true;
       LOGGER.info("container detected");
     }
-    catch (NamingException ex) {}
+    catch (NamingException ex) {
+      LOGGER.info("not running within a container");
+    }
   }
 
 
