@@ -29,6 +29,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
+import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxRadioButton;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
@@ -60,6 +61,10 @@ public class SecurityEditor extends PdoEditor<Security> {
   private FxTextField secGranteeField;
   @FXML
   private FxButton granteeButton;
+  @FXML
+  private FxTextField secDomainContextObjectField;
+  @FXML
+  private FxButton contextButton;
   @FXML
   private FxRadioButton allowButton;
   @FXML
@@ -121,6 +126,14 @@ public class SecurityEditor extends PdoEditor<Security> {
       permissionPane.add(entry.getValue(), 0, row);
       permissionPane.add(permissionRadioButtons.get(entry.getKey()), 1, row);
       row++;
+    }
+
+    if (!SecurityDialogFactory.getInstance().isDomainContextUsed()) {
+      contextButton.setDisable(true);
+      secDomainContextObjectField.setDisable(true);
+    }
+    else {
+      contextButton.setOnAction(e -> selectContext());
     }
   }
 
@@ -200,6 +213,12 @@ public class SecurityEditor extends PdoEditor<Security> {
   private void selectGrantee() {
     sec.setGrantee(SecurityDialogFactory.getInstance().selectGrantee(getStage(), getDomainContext()));
     secGranteeField.updateView();
+    getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+  }
+
+  private void selectContext() {
+    sec.setDomainContextObject(SecurityDialogFactory.getInstance().selectDomainContextObject(getStage(), getDomainContext()));
+    secDomainContextObjectField.updateView();
     getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
   }
 

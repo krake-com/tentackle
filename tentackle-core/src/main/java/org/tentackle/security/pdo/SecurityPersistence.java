@@ -304,6 +304,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the context object, null if no context (all)
    */
+  @Bindable
   PersistentDomainObject<?> getDomainContextObject();
 
   /**
@@ -311,6 +312,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @param contextObject the context object, null to clear (all)
    */
+  @Bindable
   void setDomainContextObject(PersistentDomainObject<?> contextObject);
 
   /**

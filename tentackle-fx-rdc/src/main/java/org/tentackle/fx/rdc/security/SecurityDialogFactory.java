@@ -75,6 +75,25 @@ public interface SecurityDialogFactory {
   <T extends PersistentDomainObject<T>> T selectGrantee(Window owner, DomainContext context);
 
   /**
+   * Returns whether the domain context is used in security rules.<br>
+   * If used, {@link #selectDomainContextObject} must be overridden by the application.
+   *
+   * @return true if used, false by default
+   */
+  boolean isDomainContextUsed();
+
+  /**
+   * Selects a domain context PDO.<br>
+   * This is usually a search dialog for PDOs describing a domain context.
+   *
+   * @param <T> the PDO type
+   * @param owner the owner window
+   * @param context the domain context
+   * @return the context PDO, null if none selected
+   */
+  <T extends PersistentDomainObject<T>> T selectDomainContextObject(Window owner, DomainContext context);
+
+  /**
    * Shows a dialog to edit security rule sets for a PDO.<br>
    *
    * @param pdo the pdo

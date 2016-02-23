@@ -111,6 +111,12 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
     return buf.toString();
   }
 
+  @Override
+  public String contextToString() {
+    PersistentDomainObject<?> contextPdo = pdo().getDomainContextObject();
+    return contextPdo == null ? null : contextPdo.toString();
+  }
+
   /**
    * Gets the permissions from the persistence object.
    *
