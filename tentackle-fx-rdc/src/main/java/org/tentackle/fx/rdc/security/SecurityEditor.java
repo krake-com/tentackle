@@ -29,7 +29,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxCheckBox;
-import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxRadioButton;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
