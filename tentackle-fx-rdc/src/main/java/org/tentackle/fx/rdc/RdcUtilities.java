@@ -188,7 +188,7 @@ public class RdcUtilities {
         return crud;
       }
       // is showing or other modality or different owner, i.e. part of some window which is showing
-      if (Objects.equals(pdo, crud.getPdo())) {
+      if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing()) {
         // same PDO
         if (editable && crud.isEditable()) {
           // already being edited

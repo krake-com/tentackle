@@ -19,8 +19,10 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
 import javafx.scene.input.MouseEvent;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -42,6 +44,41 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
     addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
       if (event.isPopupTrigger()) {
         showContextMenu(event);
+      }
+    });
+
+    setOnDragDetected(e -> {
+      if (provider != null && provider.createDragboard(this) != null) {
+        e.consume();
+      }
+    });
+
+    setOnDragOver(e -> {
+      if (e.getGestureSource() != this && provider != null && provider.isDragAccepted(e)) {
+        e.consume();
+      }
+    });
+
+    setOnDragDropped(e -> {
+      if (provider != null) {
+        provider.dropDragboard(e.getDragboard());
+        T reloadedPdo = provider.getPdo().reload();
+        TreeItem<T> root = getTreeItem().getParent();
+        if (root != null) {
+          ObservableList<TreeItem<T>> items = root.getChildren();
+          int i=0;
+          for (TreeItem<T> item: items) {
+            if (reloadedPdo.equals(item.getValue())) {
+              TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(reloadedPdo).createTreeItem();
+              items.set(i, reloadedItem);
+              getTreeView().refresh();
+              reloadedItem.setExpanded(true);
+              break;
+            }
+            i++;
+          }
+        }
+        e.consume();
       }
     });
   }

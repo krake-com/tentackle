@@ -279,19 +279,33 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Gets the string value: "&lt;className&gt;[id/serial]".<br>
-   * Example: "de.krake.plsbl.Product[344/2]"
+   * Gets the string value: "&lt;className&gt;[id/serial]".
+   * <p>
+   * Example: {@code "de.krake.plsbl.Product[344/2]"}
    *
    * @return the string value of this object
    */
   @Override
-  public String toGenericString() {
+  public final String toGenericString() {
     return  getClass().getName() +
             '[' +
             id +
             '/' +
             serial +
             ']';
+  }
+
+
+  /**
+   * Gets the ID string: "classId:id".<br>
+   * The ID string describes the PDO by its classId and object-ID.
+   * <p>
+   * Example: {@code "1022:1258474"}
+   *
+   * @return the id string
+   */
+  public final String toIdString() {
+    return getClassId() + ":" + getId();
   }
 
 

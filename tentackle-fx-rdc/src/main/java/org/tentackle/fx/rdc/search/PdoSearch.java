@@ -184,9 +184,31 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           }
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
-              Rdc.displayCrudStage(firstPdo, tableView.getItems(), true, Modality.NONE, getStage(),
-                crud -> crud.getStage().setOnHidden(e -> tableView.refresh())
-              );
+              Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
+                crud -> crud.getStage().setOnHidden(e -> {
+                  T updatedPdo = firstPdo.reload();
+                  if (!treeViewInvalid) {
+                    ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
+                    int i = 0;
+                    for (TreeItem<T> item : treeItems) {
+                      if (updatedPdo.equals(item.getValue())) {
+                        TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
+                                createTreeItem();
+                        treeItems.set(i, updatedItem);
+                        getTreeView().refresh();
+                        updatedItem.setExpanded(item.isExpanded());
+                        break;
+                      }
+                      i++;
+                    }
+                  }
+
+                  int ndx = items.indexOf(firstPdo);
+                  if (ndx >= 0) {
+                    items.set(ndx, updatedPdo);
+                  }
+                }
+              ));
             }
           }
         }
@@ -348,10 +370,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     if (items == null) {
       items = FXCollections.observableArrayList();
     }
-    if (!(items instanceof SortedList)) {
-      SortedList<T> sortedResult = new SortedList<>(items);
-      sortedResult.comparatorProperty().bind(tableView.comparatorProperty());
-      items = sortedResult;
+    SortedList<T> sortedItems;
+    if (items instanceof SortedList) {
+      sortedItems = (SortedList<T>) items;
+    }
+    else {
+      sortedItems = new SortedList<>(items);
+      sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
     }
     this.items = items;
     countLabel.setText(Integer.toString(items.size()));
@@ -369,7 +394,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableViewInvalid = true;
     }
     else {
-      tableView.setItems(items);
+      tableView.setItems(sortedItems);
       tableView.getSelectionModel().clearSelection();
       tableView.refresh();
       treeViewInvalid = true;

@@ -8,17 +8,27 @@ package org.tentackle.fx.rdc;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.StringTokenizer;
+import javafx.scene.Node;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -29,6 +39,11 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @author harald
  */
 public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements GuiProvider<T> {
+
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGuiProvider.class);
 
   private T pdo;                    // the PDO
   private ResourceBundle bundle;    // optional resource bundle
@@ -94,13 +109,77 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public Dragboard createDragboard() {
+  public Dragboard createDragboard(Node node) {
+    if (pdo.getClassId() != 0 && !pdo.isNew()) {
+      Dragboard db = node.startDragAndDrop(TransferMode.COPY);
+      ClipboardContent content = new ClipboardContent();
+      content.putString(pdo.toIdString());
+      db.setContent(content);
+      return db;
+    }
     return null;
   }
 
   @Override
-  public boolean dropDragboard(Dragboard dragbord) {
+  public boolean isDragAccepted(DragEvent event) {
     return false;
+  }
+
+  /**
+   * Gets the PDO key from the dragboard.<br>
+   * The method is provided to simplify implementing DND as only
+   * the methods {@link #isDragAccepted} and {@link #dropPdo} need to be overridden.
+   *
+   * @param dragboard the dragboard
+   * @return the key, null if invalid dragboard or no such classId
+   */
+  public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
+    String str = dragboard.getString();
+    if (str != null) {
+      StringTokenizer stok = new StringTokenizer(str, ":");
+      if (stok.hasMoreTokens()) {
+        int classId = Integer.parseInt(stok.nextToken());
+        if (stok.hasMoreTokens()) {
+          int id = Integer.parseInt(stok.nextToken());
+          String className = PdoUtilities.getInstance().getPdoClassName(classId);
+          if (className != null && id != 0) {
+            try {
+              return new IdentifiableKey<>(className, id);
+            }
+            catch (ClassNotFoundException cx) {
+              LOGGER.severe("cannot load PDO class " + className + " for classId " + classId, cx);
+            }
+          }
+          else {
+            LOGGER.warning("no PDO key for {0}:{1}", classId, id);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public void dropDragboard(Dragboard dragbord) {
+    IdentifiableKey<PersistentDomainObject<?>> key = getPdoKeyFromDragboard(dragbord);
+    if (key != null) {
+      // load the PDO
+      @SuppressWarnings("unchecked")
+      PersistentDomainObject<?> pdoToDrop =
+              Pdo.create((Class) key.getIdentifiableClass(), pdo.getDomainContext()).select(key.getIdentifiableId());
+      if (pdoToDrop != null) {
+        dropPdo(pdoToDrop);
+      }
+    }
+  }
+
+  /**
+   * Drops the given PDO on the serviced pdo.
+   *
+   * @param pdoToDrop the PDO to drop
+   */
+  public void dropPdo(PersistentDomainObject<?> pdoToDrop) {
+    throw new FxRuntimeException("dropPdo is not implemented " + pdo.getEffectiveClass().getName());
   }
 
   @Override

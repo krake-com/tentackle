@@ -121,6 +121,15 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   @Persistent("table version")
   long getTableSerial();
 
+  /**
+   * Gets the ID string: "classId:id".<br>
+   * The ID string describes the PDO by its classId and object-ID.
+   * <p>
+   * Example: {@code "1022:1258474"}
+   *
+   * @return the id string
+   */
+  String toIdString();
 
   /**
    * Defines whether attributes of the object may be changed.
