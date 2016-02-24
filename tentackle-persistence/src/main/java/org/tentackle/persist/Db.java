@@ -962,7 +962,6 @@ public class Db implements Session, Cloneable {
         // get the remote connection id
         conId = rdel.getSessionId();
       }
-
       else  {
         // direct connection to database
         conId = conMgr.login(this);
@@ -1001,13 +1000,23 @@ public class Db implements Session, Cloneable {
   }
 
 
-  @Override
+  /**
+   * Registers a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if added, false if already registered
+   */
   public boolean registerCloseHandler(SessionCloseHandler closeHandler) {
     return closeHandlers.add(closeHandler);
   }
 
 
-  @Override
+  /**
+   * Unregisters a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if removed, false if not registered
+   */
   public boolean unregisterCloseHandler(SessionCloseHandler closeHandler) {
     return closeHandlers.remove(closeHandler);
   }
@@ -1129,7 +1138,6 @@ public class Db implements Session, Cloneable {
    *
    * @return true if Db is marked as crashed
    */
-  @Override
   public synchronized boolean isCrashed() {
     return crashed;
   }
@@ -1180,7 +1188,6 @@ public class Db implements Session, Cloneable {
    *
    * @return the nesting level, 0 if no transaction in progress
    */
-  @Override
   public int getTxLevel() {
     return transaction == null ? 0 : transaction.getTxLevel();
   }
@@ -1190,7 +1197,6 @@ public class Db implements Session, Cloneable {
    * <p>
    * Will suppress any checks and warnings.
    */
-  @Override
   public void invalidateTxLevel() {
     if (transaction != null) {
       transaction.invalidateTxLevel();
@@ -1202,7 +1208,6 @@ public class Db implements Session, Cloneable {
    *
    * @return true if valid
    */
-  @Override
   public boolean isTxLevelValid() {
     return transaction != null && transaction.isTxLevelValid();
   }
@@ -1247,7 +1252,6 @@ public class Db implements Session, Cloneable {
    *
    * @return the transaction object, null if none
    */
-  @Override
   public AbstractDbObject<?> getTxObject() {
     assertTxRunning();
     return transaction.getTxObject();
