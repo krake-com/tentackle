@@ -97,8 +97,8 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * @return the parent, null if no parent or parent is no PdoTreeItem
    */
   @SuppressWarnings("unchecked")
-  public PdoTreeItem<T> getParentPdoItem() {
-    TreeItem<T> parent = getParent();
+  public <P extends PersistentDomainObject<P>> PdoTreeItem<P> getParentPdoItem() {
+    TreeItem<?> parent = getParent();
     return parent instanceof PdoTreeItem ? (PdoTreeItem) parent : null;
   }
 
