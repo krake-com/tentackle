@@ -128,9 +128,11 @@ public class RdcUtilities {
           if (!crud.releasePdo()) {
             e.consume();    // don't close
           }
-          else {
-            crud.setPdoList(null);
-          }
+        });
+        stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
+          // clear all references to avoid memleaks and side effects
+          crud.setPdoList(null);
+          crud.removeAllPdoEventListeners();
         });
       } // else: re-use stage
 

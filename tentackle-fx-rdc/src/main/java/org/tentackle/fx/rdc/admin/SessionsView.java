@@ -62,7 +62,6 @@ public class SessionsView extends AbstractFxController {
 
 
   private ResourceBundle resources;
-  private DomainContext context;
   private AdminExtension adminExt;
   private TablePopup<SessionData> popup;
 
@@ -93,7 +92,7 @@ public class SessionsView extends AbstractFxController {
 
   @Override
   public void configure() {
-    context = Pdo.createDomainContext();
+    DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check to run tests
       RemoteSession remoteSession = context.getSession().getRemoteSession();
       adminExt = remoteSession.getExtension(context, AdminExtension.class);

@@ -27,6 +27,8 @@ import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -47,11 +49,13 @@ import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.EventListenerProxy;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.InteractiveError;
 import org.tentackle.fx.rdc.InteractiveErrorFactory;
 import org.tentackle.fx.rdc.PdoEditor;
+import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
@@ -123,6 +127,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private List<T> pdoList;            // optional list of PDOs
   private int pdoListIndex;           // index in list
   private boolean editable;           // editability requested by the application
+  private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
 
 
   /**
@@ -336,6 +341,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
   @Override
   public void configure() {
+    eventProxy = new EventListenerProxy<>(getView());
+
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
               !event.isShiftDown() && !event.isShortcutDown()) {
@@ -372,6 +379,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       if (releasePdo()) {
         setPdo(pdoList.get(--pdoListIndex));
         updatePrevNextButtons();
+        eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
       }
     }
   }
@@ -384,6 +392,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       if (releasePdo()) {
         setPdo(pdoList.get(++pdoListIndex));
         updatePrevNextButtons();
+        eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
       }
     }
   }
@@ -424,6 +433,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
               setPdo(pdo);
               getEditor().requestInitialFocus();
             }
+            eventProxy.fireEvent(new PdoEvent(pdo, getView(), pdo.getSerial() == 1 ? PdoEvent.CREATE : PdoEvent.UPDATE));
           }
         }
         return null;
@@ -438,11 +448,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Deletes the current PDO.
    */
   public void delete() {
-    getPdo().delete();
+    T pdo = getPdo();
+    pdo.delete();
     if (!closeIfModal()) {
       setPdo(on());
       getEditor().requestInitialFocus();
     }
+    eventProxy.fireEvent(new PdoEvent(pdo, getView(), PdoEvent.DELETE));
   }
 
   /**
@@ -520,6 +532,58 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public FxHBox getButtonBox() {
     return buttonBox;
+  }
+
+
+  /**
+   * Removes all PDO-event handlers and filters.<br>
+   * The method is provided to avoid memleaks.
+   */
+  public void removeAllPdoEventListeners() {
+    eventProxy.removeAllEventFilters();
+    eventProxy.removeAllEventHandlers();
+  }
+
+
+  /**
+   * Adds a PDO-event filter.
+   *
+   * @param eventType   the event type
+   * @param eventFilter the filter
+   */
+  public void addPdoEventFilter(EventType<PdoEvent> eventType, EventHandler<PdoEvent> eventFilter) {
+    eventProxy.addEventFilter(eventType, eventFilter);
+  }
+
+  /**
+   * Removes a PDO-event filter.
+   *
+   * @param eventType   the event type
+   * @param eventFilter the filter
+   */
+  public void removePdoEventFilter(EventType<PdoEvent> eventType, EventHandler<PdoEvent> eventFilter) {
+    eventProxy.removeEventFilter(eventType, eventFilter);
+  }
+
+
+  /**
+   * Adds a PDO-event handler.
+   *
+   * @param eventType   the event type
+   * @param eventHandler the handler
+   */
+  public void addPdoEventHandler(EventType<PdoEvent> eventType, EventHandler<PdoEvent> eventHandler) {
+    eventProxy.addEventHandler(eventType, eventHandler);
+  }
+
+  /**
+   * Removes a PDO-event handler.
+   *
+   * @param eventType   the event type
+   * @param eventHandler the handler
+   */
+  public void removePdoEventHandler(EventType<PdoEvent> eventType, EventHandler<PdoEvent> eventHandler) {
+    eventProxy.removeEventHandler(eventType, eventHandler);
   }
 
 

@@ -57,6 +57,7 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcRuntimeException;
@@ -115,7 +116,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private ResourceBundle resources;             // the resources
   private PdoFinder<T> finder;                  // the finder
   private TableView<T> tableView;               // the table showing the results
-  private TablePopup<T> tablePopup;             // the table popup context menu
   private TreeView<T> treeView;                 // the tree showing the results
   private boolean treeShown;                    // true if tree shown, else table
   private boolean tableViewInvalid;             // true if tableview is invalid
@@ -185,28 +185,36 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
               Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
-                crud -> crud.getStage().setOnHidden(e -> {
-                  T updatedPdo = firstPdo.reload();
-                  if (!treeViewInvalid) {
-                    ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
-                    int i = 0;
-                    for (TreeItem<T> item : treeItems) {
-                      if (updatedPdo.equals(item.getValue())) {
-                        TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
-                                createTreeItem();
-                        treeItems.set(i, updatedItem);
-                        getTreeView().refresh();
-                        updatedItem.setExpanded(item.isExpanded());
-                        break;
+                crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
+                  if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
+                    T updatedPdo = firstPdo.reload();
+                    if (!treeViewInvalid) {
+                      ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
+                      int i = 0;
+                      for (TreeItem<T> item : treeItems) {
+                        if (updatedPdo.equals(item.getValue())) {
+                          TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
+                                  createTreeItem();
+                          treeItems.set(i, updatedItem);
+                          getTreeView().refresh();
+                          updatedItem.setExpanded(item.isExpanded());
+                          break;
+                        }
+                        i++;
                       }
-                      i++;
+                    }
+
+                    int ndx = items.indexOf(firstPdo);
+                    if (ndx >= 0) {
+                      items.set(ndx, updatedPdo);
                     }
                   }
-
-                  int ndx = items.indexOf(firstPdo);
-                  if (ndx >= 0) {
-                    items.set(ndx, updatedPdo);
+                  else if (e.getEventType() == PdoEvent.READ) {
+                    tableView.getSelectionModel().clearSelection();
+                    tableView.getSelectionModel().select((T) e.getPdo());
+                    tableView.scrollTo(tableView.getSelectionModel().getSelectedIndex());
                   }
+                  e.consume();
                 }
               ));
             }
@@ -214,7 +222,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         }
       }
     });
-    tablePopup = new TablePopup<>(tableView, null, false);
+    TablePopup<T> tablePopup = new TablePopup<>(tableView, null, false);
     tablePopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
 
     treeView = Fx.createNode(TreeView.class);

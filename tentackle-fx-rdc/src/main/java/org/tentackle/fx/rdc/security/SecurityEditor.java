@@ -74,7 +74,6 @@ public class SecurityEditor extends PdoEditor<Security> {
   private FxTextArea secMessageField;
 
 
-  private ResourceBundle resources;
   private Class<?> clazz;
   private Map<Permission, FxCheckBox> permissionCheckBoxes;
   private Map<Permission, FxRadioButton> permissionRadioButtons;
@@ -84,7 +83,6 @@ public class SecurityEditor extends PdoEditor<Security> {
   @Override
   @SuppressWarnings("unchecked")
   public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
     secGranteeField.setChangeable(false);
     granteeButton.setOnAction(e -> selectGrantee());
     allowButton.setBindable(false);
