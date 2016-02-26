@@ -783,13 +783,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Attribute idAttribute = null;
     Attribute serialAttribute = null;
     for (Attribute attribute: entity.getAttributes()) {
-      switch (attribute.getJavaName()) {
-        case Constants.CN_ID:
-          idAttribute = attribute;
-          break;
-        case Constants.CN_SERIAL:
-          serialAttribute = attribute;
-          break;
+      if (Constants.CN_ID.equals(attribute.getJavaName())) {
+        idAttribute = attribute;
+      }
+      else if (Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+        serialAttribute = attribute;
       }
     }
     List<Attribute> filteredList = new ArrayList<>(attributes);

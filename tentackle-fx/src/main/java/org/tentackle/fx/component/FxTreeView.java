@@ -22,7 +22,6 @@ package org.tentackle.fx.component;
 import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;

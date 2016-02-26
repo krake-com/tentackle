@@ -28,6 +28,6 @@ import org.tentackle.security.Permission;
 public interface ExecutePermission extends Permission {
 
   /** the permission's name. */
-  public static final String NAME = "EXEC";
+  String NAME = "EXEC";
 
 }

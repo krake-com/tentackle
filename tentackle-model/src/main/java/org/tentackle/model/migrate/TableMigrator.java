@@ -240,7 +240,7 @@ public class TableMigrator {
   /**
    * Gets the migration for a new (renamed) column.
    *
-   * @param columName the new column name
+   * @param newColumName the new column name
    * @param columnMigrations the migrations
    * @return the migration, null if no explicit migration
    */
@@ -419,14 +419,13 @@ public class TableMigrator {
     if (!columnsToDrop.isEmpty() && hints != null && !hints.isEmpty()) {
       for (Iterator<Attribute> addAttributeIterator = attributesToAdd.iterator(); addAttributeIterator.hasNext(); ) {
         Attribute addAttribute = addAttributeIterator.next();
-        boolean attributeRemoved = false;
         for (ColumnMetaData dropColumn: new ArrayList<>(columnsToDrop.values())) {
           Collection<ColumnMetaData> columns = new ArrayList<>();
           // check multicolumn exists with same name
           for (DataType.SqlTypeWithPostfix sp: addAttribute.getDataType().getSqlTypesWithPostfix()) {
             String columnName = dropColumn.getColumnName() + sp.getPostfix();
             ColumnMetaData column = columnsToDrop.get(columnName);
-            if (dropColumn != null) {
+            if (column != null) {
               columns.add(column);
             }
           }
@@ -436,10 +435,7 @@ public class TableMigrator {
             Pattern renameHint = sqlMatchesHint(renameSql, hints);
             if (renameHint != null) {
               // remove from attributesToAdd & columnsToDrop and add to attributesToMigrate
-              if (!attributeRemoved) {
-                addAttributeIterator.remove();
-                attributeRemoved = true;
-              }
+              addAttributeIterator.remove();
               for (ColumnMetaData column: columns) {
                 columnsToDrop.remove(column.getColumnName());
               }

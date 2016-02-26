@@ -85,7 +85,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
   static {
     // register updater for sync between jvms
-    ((ModificationTracker) PdoTracker.getInstance()).addModificationListener(new ModificationListenerAdapter(TABLENAME) {
+    PdoTracker.getInstance().addModificationListener(new ModificationListenerAdapter(TABLENAME) {
       @Override
       public void dataChanged(ModificationEvent ev) {
         DbPreferencesFactory factory = (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
@@ -205,10 +205,8 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
     }
     else  {
       PreparedStatementWrapper st = getPreparedStatement(selectChildIdsStatementId,
-        () -> {
-          return "SELECT " + CN_ID + " FROM " + TABLENAME +
-                  " WHERE " + CN_PARENTID + "=?";
-        }
+        () -> "SELECT " + CN_ID + " FROM " + TABLENAME +
+                " WHERE " + CN_PARENTID + "=?"
       );
       st.setLong(1, getId());
       Set<Long> set = new TreeSet<>();

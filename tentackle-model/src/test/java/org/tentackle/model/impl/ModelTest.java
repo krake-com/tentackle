@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.TimeZone;
 import org.tentackle.common.BasicStringHelper;
-import org.tentackle.common.Constants;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;

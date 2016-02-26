@@ -62,7 +62,7 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
 
   @Override
   public Function<String, BMoney> toModelFunction() {
-    return s -> parse(s);
+    return this::parse;
   }
 
   @Override

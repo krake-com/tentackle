@@ -41,6 +41,6 @@ public @interface MappedService {
    *
    * @return the service class
    */
-  public Class<?> value();
+  Class<?> value();
 
 }

@@ -70,7 +70,8 @@ public class ResultSetSection {
     }
     int ndx = configuredNames.size();
     if (ndx >= configuredOffsets.length) {
-      throw new PersistenceException(rs.getSession(), "more columns configured than in result set (" + configuredOffsets.length + ")");
+      throw new PersistenceException(rs.getSession(),
+              "more columns configured than in result set (" + configuredOffsets.length + ")");
     }
     configuredOffsets[ndx] = rs.findColumn(name);
     if (!configuredNames.add(name)) {

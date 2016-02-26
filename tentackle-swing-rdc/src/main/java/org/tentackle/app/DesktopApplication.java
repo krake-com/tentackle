@@ -23,16 +23,8 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.MessageFormat;
-import java.util.Properties;
-import javax.jnlp.BasicService;
-import javax.jnlp.ServiceManager;
-import javax.jnlp.UnavailableServiceException;
 import javax.swing.Icon;
 import javax.swing.JMenu;
 import javax.swing.JRadioButtonMenuItem;
@@ -53,7 +45,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
@@ -197,70 +188,68 @@ public abstract class DesktopApplication extends AbstractApplication {
    */
   public void start(String[] args) {
 
-    synchronized (this) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
 
-      cmdLine = new CommandLine(args);
-      setProperties(cmdLine.getOptionsAsProperties());
+    try {
 
-      try {
+      LOGGER.fine("register application");
+      // make sure that only one application is running at a time
+      register();
 
-        LOGGER.fine("register application");
-        // make sure that only one application is running at a time
-        register();
+      LOGGER.fine("initialize application");
+      // doInitialize environment
+      doInitialize();
 
-        LOGGER.fine("initialize application");
-        // doInitialize environment
-        doInitialize();
+      LOGGER.fine("login to backend");
+      // connect to database/application server
+      if (doLogin() == null) {
+        // no connection, doStop immediately
+        System.exit(1);
+      }
 
-        LOGGER.fine("login to backend");
-        // connect to database/application server
-        if (doLogin() == null) {
-          // no connection, doStop immediately
-          System.exit(1);
+      LOGGER.fine("configure application");
+      // configure the application
+      doConfigureApplication();
+
+      LOGGER.fine("show application");
+
+      doInitializeGUI();
+
+      final Session session = getSession();
+
+      // show the application's window
+      EventQueue.invokeAndWait(() -> {
+        try {
+          // the eventqueue will use the db as well
+          session.makeCurrent();
+          // createPdo the application window
+          window = doCreateWindow();
+          if (StringHelper.isAllWhitespace(window.getTitle())) {
+            window.setTitle(getName());
+          }
+          doShowWindow();
         }
+        catch (RuntimeException | ApplicationException e) {
+          doStop(2, e);
+        }
+      });
 
-        LOGGER.fine("configure application");
-        // configure the application
-        doConfigureApplication();
+      LOGGER.fine("waiting for all shown...");
+      // wait for application to be shown
+      FormUtilities.getInstance().waitForEmptyEventQueue();
 
-        LOGGER.fine("show application");
+      LOGGER.fine("finish startup");
+      // finish startup
+      doFinishStartup();
 
-        doInitializeGUI();
-
-        final Session session = getSession();
-
-        // show the application's window
-        EventQueue.invokeAndWait(() -> {
-          try {
-            // the eventqueue will use the db as well
-            session.makeCurrent();
-            // createPdo the application window
-            window = doCreateWindow();
-            if (StringHelper.isAllWhitespace(window.getTitle())) {
-              window.setTitle(getName());
-            }
-            doShowWindow();
-          }
-          catch (RuntimeException | ApplicationException e) {
-            doStop(2, e);
-          }
-        });
-
-        LOGGER.fine("waiting for all shown...");
-        // wait for application to be shown
-        FormUtilities.getInstance().waitForEmptyEventQueue();
-
-        LOGGER.fine("finish startup");
-        // finish startup
-        doFinishStartup();
-
-      }
-      catch (ApplicationException | InterruptedException | InvocationTargetException | RuntimeException ex) {
-        // print message to user, if GUI in window, else if headless to console
-        FormError.showException(MessageFormat.format(AppSwingRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex, false, LOGGER);
-        // doStop with error
-        doStop(3, ex);
-      }
+    }
+    catch (ApplicationException | InterruptedException | InvocationTargetException | RuntimeException ex) {
+      // print message to user, if GUI in window, else if headless to console
+      FormError.showException(MessageFormat.format(
+              AppSwingRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex, false, LOGGER);
+      // doStop with error
+      doStop(3, ex);
     }
   }
 
@@ -287,7 +276,7 @@ public abstract class DesktopApplication extends AbstractApplication {
    *
    * @return the command line
    */
-  public CommandLine getCommandLine() {
+  public synchronized CommandLine getCommandLine() {
     return cmdLine;
   }
 
@@ -362,9 +351,7 @@ public abstract class DesktopApplication extends AbstractApplication {
       for (LookAndFeelInfo look : looks) {
         JRadioButtonMenuItem lnfitem = new JRadioButtonMenuItem(look.getName());
         lnfitem.setActionCommand(look.getClassName());
-        lnfitem.addActionListener((ActionEvent e) -> {
-          changeLookAndFeel(e.getActionCommand());
-        });
+        lnfitem.addActionListener((ActionEvent e) -> changeLookAndFeel(e.getActionCommand()));
         guiMenu.add(lnfitem);
       }
       guiMenu.addMenuListener(new MenuListener()  {
@@ -551,42 +538,6 @@ public abstract class DesktopApplication extends AbstractApplication {
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
 
-    if (isDeployedByJNLP() && sessionPropsName != null) {
-      // load the db properties relative to the JNLP codebase
-      InputStream is = null;
-      try {
-        URL dbURL;
-        if (sessionPropsName.indexOf("://") > 0) {
-          dbURL = new URL(sessionPropsName);
-        }
-        else  {
-          URL codeBase = ((BasicService) ServiceManager.lookup(BasicService.class.getName())).getCodeBase();
-          dbURL = new URL(codeBase + "/" + sessionPropsName);
-        }
-        Properties sessionProps = new Properties();
-        is = dbURL.openStream();
-        sessionProps.load(is);
-        sessionInfo.setProperties(sessionProps);
-      }
-      catch (MalformedURLException ex) {
-        throw new ApplicationException("malformed URL for db properties", ex);
-      }
-      catch (IOException ex) {
-        throw new ApplicationException(MessageFormat.format("loading db properties {0} failed", sessionPropsName), ex);
-      }
-      catch (RuntimeException | UnavailableServiceException ex) {
-        throw new ApplicationException("cannot determine JNLP codebase", ex);
-      }
-      finally {
-        if (is != null) {
-          try {
-            is.close();
-          }
-          catch (IOException ex) {}
-        }
-      }
-    }
-
     /**
      * Reset to cross-platform laf for sure.
      * This will prevent buggy desktop lafs to irritate the user.
@@ -595,7 +546,8 @@ public abstract class DesktopApplication extends AbstractApplication {
       try {
         UIManager.setLookAndFeel(DEFAULT_LAF);
       }
-      catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException | RuntimeException ex) {
+      catch (ClassNotFoundException | InstantiationException |
+             IllegalAccessException | UnsupportedLookAndFeelException | RuntimeException ex) {
         LOGGER.warning("can not switch to default laf " + DEFAULT_LAF, ex);
       }
     }
@@ -633,22 +585,21 @@ public abstract class DesktopApplication extends AbstractApplication {
       }
       catch (LoginFailedException lfx) {
         String msg;
-        if      (retry == 2)    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)");
-        }
-        else if (retry == 1)    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED! (LAST RETRY)");
-        }
-        else                    {
-          msg = AppSwingRdcBundle.getString("LOGIN FAILED!");
+        switch (retry) {
+          case 2:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)");
+            break;
+          case 1:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED! (LAST RETRY)");
+            break;
+          default:
+            msg = AppSwingRdcBundle.getString("LOGIN FAILED!");
+            break;
         }
         sessionInfo.setPassword(null);
         LOGGER.info(msg, lfx);
         showLoginStatus(msg);
         continue;
-      }
-      catch (PersistenceException pex) {
-        throw pex;
       }
 
       session.makeCurrent();

@@ -165,10 +165,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /** maximum number of characters for 'txName'. */
-  public static final int CL_TXNAME = 64;
+  int CL_TXNAME = 64;
 
   /** maximum number of characters for 'user'. */
-  public static final int CL_USER = 32;
+  int CL_USER = 32;
 
   // </editor-fold>//GEN-END:fieldnames
 
@@ -1832,10 +1832,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_PROCESSES_STMTID,
-      () -> {
-        return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED + Backend.SQL_EQUAL_PAR +
-               Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
-      }
+      () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED + Backend.SQL_EQUAL_PAR +
+             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setTimestamp(1, processed, true);
     st.setLong(2, getId());
@@ -1880,11 +1878,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(UPDATE_DIAGNOSTICS_STMTID,
-      () -> {
-        return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED +
-               Backend.SQL_EQUAL_PAR_COMMA + CN_MESSAGE + Backend.SQL_EQUAL_PAR +
-               Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
-      }
+      () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_PROCESSED +
+             Backend.SQL_EQUAL_PAR_COMMA + CN_MESSAGE + Backend.SQL_EQUAL_PAR +
+             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     int ndx = 1;
     st.setTimestamp(ndx++, processed, true);
@@ -2206,7 +2202,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       toDb.rollback(state.txVoucher);
       toDb.setLogModificationAllowed(state.oldLogModificationAllowed);
       if (e instanceof PersistenceException)  {
-        throw (PersistenceException) e;
+        throw e;
       }
       else  {
         throw new PersistenceException("replay modList failed", e);

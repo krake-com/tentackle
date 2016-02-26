@@ -28,6 +28,6 @@ import org.tentackle.security.Permission;
 public interface ReadPermission extends Permission {
 
   /** the permission's name. */
-  public static final String NAME = "READ";
+  String NAME = "READ";
 
 }

@@ -54,7 +54,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     this.text = text;
     this.logo = logo;
     if (logo == null) {
-      this.logo = new ImageIcon(getClass().getResource("/org/tentackle/swing/rdc/images/loginLogo.png"));   // NOI18N
+      this.logo = new ImageIcon(AboutDialog.class.getResource("/org/tentackle/swing/rdc/images/loginLogo.png"));
     }
     setup();
   }
@@ -66,8 +66,8 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     initComponents();
 
     applicationTextArea.setText(text);
-    tentackleVersionLabel.setText("Tentackle " + org.tentackle.common.Version.RELEASE);  // NOI18N
-    javaVersionLabel.setText("Java " + System.getProperty("java.version"));  // NOI18N
+    tentackleVersionLabel.setText("Tentackle " + org.tentackle.common.Version.RELEASE);
+    javaVersionLabel.setText("Java " + System.getProperty("java.version"));
 
     Dimension size = imageLabel.getPreferredSize();
     int width = size.width;
@@ -96,9 +96,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
           catch (InterruptedException ex) {
             return;   // stop thread
           }
-          EventQueue.invokeLater(() -> {
-            gcButton.refresh();
-          });
+          EventQueue.invokeLater(() -> gcButton.refresh());
         }
       }
     };

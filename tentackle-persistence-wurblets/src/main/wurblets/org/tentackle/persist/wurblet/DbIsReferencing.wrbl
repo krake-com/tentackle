@@ -86,7 +86,7 @@
       // invoke remote method
       try {
 @{to remoteOut}@
-  public boolean @(methodName)@(@(params)@) throws RemoteException;
+  boolean @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

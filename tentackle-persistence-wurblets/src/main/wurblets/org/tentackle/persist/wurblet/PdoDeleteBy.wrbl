@@ -32,7 +32,6 @@
      *         --classvar=... name or method to classvariables for statementId, default is private static
      *
      *         the keys are java-names.
-     *         Note: --static cannot be used in conjunction with --context= !
      *
      * Example: \@wurblet deleteByArtikelNr PdoDeleteBy --model=$scripts/artikel.map --remote artikelNr
      */
@@ -100,7 +99,7 @@
       if (getContextAttribute() != null)  {
 ]@
 @{to remoteOut}@
-  public int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -120,7 +119,7 @@
       else  {
 ]@
 @{to remoteOut}@
-  public int @(methodName)@(@(params)@) throws RemoteException;
+  int @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface FormTableUtilityPopupFactory$Singleton {
-  static FormTableUtilityPopupFactory INSTANCE = ServiceFactory.createService(
+  FormTableUtilityPopupFactory INSTANCE = ServiceFactory.createService(
               FormTableUtilityPopupFactory.class, DefaultFormTableUtilityPopupFactory.class);
 }
 

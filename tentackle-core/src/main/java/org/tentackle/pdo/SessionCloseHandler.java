@@ -33,7 +33,7 @@ public interface SessionCloseHandler {
    *
    * @param session the closing session
    */
-  public void beforeClose(Session session);
+  void beforeClose(Session session);
 
 
   /**
@@ -41,6 +41,6 @@ public interface SessionCloseHandler {
    *
    * @param session the closed session
    */
-  public void afterClose(Session session);
+  void afterClose(Session session);
 
 }

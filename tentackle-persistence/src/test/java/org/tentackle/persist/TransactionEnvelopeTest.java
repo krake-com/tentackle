@@ -53,8 +53,6 @@ public class TransactionEnvelopeTest {
     });
     assertEquals(rv, 10);
 
-
-
     db.close();
   }
 

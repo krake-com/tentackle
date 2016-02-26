@@ -45,7 +45,7 @@ public class StatementHistory {
   /**
    * Format for execution starting time.
    */
-  public static DateFormat startTimeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
+  private static final DateFormat START_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
   /**
    * logger for this class.
@@ -134,9 +134,8 @@ public class StatementHistory {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    DateFormat fmt = startTimeFormat;
-    synchronized(fmt) {   // formatters are not thread-safe :(
-      buf.append(fmt.format(new Date(getExecutionStart())));
+    synchronized(START_TIME_FORMAT) {   // formatters are not thread-safe :(
+      buf.append(START_TIME_FORMAT.format(new Date(getExecutionStart())));
     }
     buf.append('(');
     if (duration.isValid()) {

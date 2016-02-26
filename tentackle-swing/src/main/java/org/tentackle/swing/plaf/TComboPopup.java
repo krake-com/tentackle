@@ -66,7 +66,7 @@ public class TComboPopup extends BasicComboPopup {
    *
    * @return the listener
    */
-  protected PropertyChangeListener createTPropertyChangeListener() {
+  protected PropertyChangeListener getTPropertyChangeListener() {
     if (tPropertyChangeListener == null)  {
       tPropertyChangeListener = new PopupRendererChangeListener();
     }
@@ -77,9 +77,7 @@ public class TComboPopup extends BasicComboPopup {
   @Override
   protected void installComboBoxListeners() {
     // create extra listener for popupRenderer
-    if ((tPropertyChangeListener = createTPropertyChangeListener()) != null) {
-      comboBox.addPropertyChangeListener(tPropertyChangeListener);
-    }
+    comboBox.addPropertyChangeListener(getTPropertyChangeListener());
     super.installComboBoxListeners();
   }
 

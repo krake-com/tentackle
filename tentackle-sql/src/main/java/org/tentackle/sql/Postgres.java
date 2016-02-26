@@ -25,6 +25,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -58,6 +60,24 @@ public class Postgres extends AbstractSql92Backend {
   public static final String SQL_OFFSET_PAR = SQL_OFFSET + SQL_PAR;
 
 
+  /** array of additional reserved words. */
+  public static final String[] RESERVED_WORDS_PG = new String[] {
+    "TEXT"
+  };
+
+  /** set of reserved words (built only once). */
+  private static Set<String> reservedWords;
+
+  @Override
+  public synchronized Set<String> getReservedWords() {
+    if (reservedWords == null) {
+      reservedWords = new HashSet<>(super.getReservedWords());
+      reservedWords.addAll(Arrays.asList(RESERVED_WORDS_PG));
+    }
+    return reservedWords;
+  }
+
+
   @Override
   public boolean isMatchingUrl(String url) {
     return url.contains(":postgresql");
@@ -75,38 +95,17 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public String getBackendId(Connection connection) {
-    String backendId = null;
-    ResultSet rs = null;
-    try {
-      Statement stmt = connection.createStatement();
-      rs = stmt.executeQuery("select pg_backend_pid()");
+    try (Statement stmt = connection.createStatement()) {
+      ResultSet rs = stmt.executeQuery("select pg_backend_pid()");
       if (rs.next()) {
-        backendId = "PID-" + rs.getInt(1);
+        return "PID-" + rs.getString(1);
       }
+      return null;
     }
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
-    finally {
-      if (rs != null) {
-        try {
-          rs.close();
-        }
-        catch (SQLException ex) {
-          throw new TentackleRuntimeException("close resultset after determine backend id failed", ex);
-        }
-      }
-    }
-    return backendId;
   }
-
-  @Override
-  public Set<String> getReservedWords() {
-    Set<String> words = super.getReservedWords();
-    words.add("TEXT");
-    return words;
-  }
-
 
   @Override
   public boolean needTxForFetchsize() {
@@ -267,15 +266,13 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(columnName);
-    buf.append(" TYPE ");
-    // nullable = true -> Postgres needs separate SET NOT NULL
-    buf.append(columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, defaultValue));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            columnName +
+            " TYPE " +
+            // nullable = true -> Postgres needs separate SET NOT NULL
+            columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, defaultValue) +
+            ";\n";
   }
 
   @Override

@@ -36,7 +36,9 @@ public class DefaultRemoteDelegateLocator implements RemoteDelegateLocator {
     private final Class<RemoteDelegate> remoteDelegate;
     private final Class<RemoteDelegateImpl<?>> remoteDelegateImpl;
 
-    private DefaultResult(Class<?> effectiveClass, Class<RemoteDelegate> remoteDelegate, Class<RemoteDelegateImpl<?>> remoteDelegateImpl) {
+    private DefaultResult(Class<?> effectiveClass,
+                          Class<RemoteDelegate> remoteDelegate,
+                          Class<RemoteDelegateImpl<?>> remoteDelegateImpl) {
       this.effectiveClass = effectiveClass;
       this.remoteDelegate = remoteDelegate;
       this.remoteDelegateImpl = remoteDelegateImpl;
@@ -90,7 +92,9 @@ public class DefaultRemoteDelegateLocator implements RemoteDelegateLocator {
       throw new PersistenceException(delegateImplClass + " does not extend " + RemoteDelegateImpl.class);
     }
 
-    return new DefaultResult(effectiveClazz, (Class<RemoteDelegate>) delegateClass, (Class<RemoteDelegateImpl<?>>) delegateImplClass);
+    return new DefaultResult(effectiveClazz,
+                             (Class<RemoteDelegate>) delegateClass,
+                             (Class<RemoteDelegateImpl<?>>) delegateImplClass);
   }
 
 

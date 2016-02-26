@@ -46,6 +46,7 @@ import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.BackendInfo;
@@ -191,9 +192,18 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
    * Gets the model defaults.
    *
    * @return the defaults, null if no defaults
+   * @throws MojoExecutionException if parsing the model defaults failed
    */
-  protected ModelDefaults getModelDefaults() {
-    return modelDefaults == null ? null : new ModelDefaults(modelDefaults);
+  protected ModelDefaults getModelDefaults() throws MojoExecutionException {
+    if (modelDefaults == null) {
+      return null;
+    }
+    try {
+      return new ModelDefaults(modelDefaults);
+    }
+    catch (ModelException mex) {
+      throw new MojoExecutionException(mex.getMessage(), mex);
+    }
   }
 
 
@@ -326,10 +336,8 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
             for (String filename : fileNames) {
               File propertiesFile = new File(new File(propertiesDirName), filename);
               Properties props = new Properties();
-              InputStream is = null;
-              try {
+              try (InputStream is = new FileInputStream(propertiesFile)) {
                 getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
-                is = new FileInputStream(propertiesFile);
                 props.load(is);
                 BackendInfo backendInfo = new BackendInfo(props);
                 // props infos will replace those loaded by name only
@@ -341,14 +349,6 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
               }
               catch (IOException iox) {
                 throw new MojoExecutionException("reading " + propertiesFile.getPath() + " failed", iox);
-              }
-              finally {
-                if (is != null) {
-                  try {
-                    is.close();
-                  }
-                  catch (IOException ex) {}
-                }
               }
             }
           }

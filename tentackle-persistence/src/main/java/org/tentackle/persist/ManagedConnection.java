@@ -64,7 +64,7 @@ public class ManagedConnection {
    * for debugging purposes.
    */
   private static final Set<WeakReference<ManagedConnection>> MANAGED_CONNECTIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<ManagedConnection>,Boolean>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
@@ -174,8 +174,8 @@ public class ManagedConnection {
     statementHistory = new ArrayList<>();
     preparedStatements = new ConcurrentHashMap<>();
     // use a threadsafe set due to concurrent cleanup of weakreferences in getOpenResultSets and cancelRunningStatements
-    openResultSets = Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<ResultSetWrapper>,Boolean>());
-    runningStatements = Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<StatementWrapper>,Boolean>());
+    openResultSets = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    runningStatements = Collections.newSetFromMap(new ConcurrentHashMap<>());
   }
 
 
@@ -278,7 +278,7 @@ public class ManagedConnection {
    * {@link MpxConnectionManager} to re-open connections before
    * being attached next time. Notice that not all connection managers
    * honour the dead-flag (makes only sense in servers, anyway).
-   * 
+   *
    * @param dead true if marked dead, false not dead
    */
   public void setDead(boolean dead) {
@@ -303,24 +303,13 @@ public class ManagedConnection {
    * @return true if connection still valid, false if invalid
    */
   public boolean verifyConnection() {
-    Statement stmt = null;
-    try {
-      stmt = connection.createStatement();
+    try (Statement stmt = connection.createStatement()) {
       stmt.executeQuery("SELECT 1");
       return true;
     }
-    catch (Exception ex) {
+    catch (SQLException ex) {
       setDead(true);
       return false;
-    }
-    finally {
-      try {
-        stmt.close();
-      }
-      catch (Exception ex) {
-        // just log
-        LOGGER.warning("closing statement failed", ex);
-      }
     }
   }
 
@@ -494,13 +483,8 @@ public class ManagedConnection {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
     Connection con = connection;  // local variable because could be closed between test and use
-    buf.append(con == null ? "<closed connection>" : con.toString());
-    buf.append('[');
-    buf.append(getName());
-    buf.append(']');
-    return buf.toString();
+    return (con == null ? "<closed connection>" : con.toString()) + '[' + getName() + ']';
   }
 
 
@@ -522,7 +506,7 @@ public class ManagedConnection {
   /**
    * Logs the execution start of a statement during a transaction.<br>
    * The execution start is the current epochal time.
-   * The execution end must be set via {@link StatementHistory#setExecutionEnd(long)}
+   * The execution end must be set via {@link StatementHistory#end()}
    *
    * @param statement the statement
    * @return the history with an execution start of now and execution end not set, never null
@@ -1086,8 +1070,7 @@ public class ManagedConnection {
   public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     try {
       Statement stmt = connection.createStatement(resultSetType, resultSetConcurrency);
-      StatementWrapper stwrp = new StatementWrapper(this, stmt);
-      return stwrp;
+      return new StatementWrapper(this, stmt);
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "creating statement failed for " + this, ex);

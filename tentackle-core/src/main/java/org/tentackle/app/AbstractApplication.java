@@ -19,10 +19,13 @@
 
 package org.tentackle.app;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.tentackle.log.Logger;
@@ -210,7 +213,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       runsInContainer = true;
       LOGGER.info("container detected");
     }
-    catch (NamingException ex) {}
+    catch (NamingException ex) {
+      LOGGER.info("not running within a container");
+    }
   }
 
 
@@ -386,7 +391,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Creates the sessionInfo.<br>
-   * If the username is null, the current system user will be used.
+   * Presets attributes like locale, timezone, vm-, os- and host-info.
    *
    * @param username is the name of the user
    * @param password is the password, null if none
@@ -394,7 +399,36 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * @return the sessionInfo
    */
   public SessionInfo createSessionInfo(String username, char[] password, String sessionPropertiesBaseName) {
-    return Pdo.createSessionInfo(username, password, sessionPropertiesBaseName);
+    SessionInfo info = Pdo.createSessionInfo(username, password, sessionPropertiesBaseName);
+
+    // sets some infos about locale, vm, etc...
+    info.setLocale(Locale.getDefault());
+    info.setTimeZone(TimeZone.getDefault());
+
+    Properties sysProps = System.getProperties();
+    info.setVmInfo(sysProps.getProperty("java.version") + " (" +
+                   sysProps.getProperty("java.vm.name") + ")");
+
+    info.setOsInfo(sysProps.getProperty("os.name") +  " (" +
+                   sysProps.getProperty("os.version") + " / " +
+                   sysProps.getProperty("os.arch") + ")");
+
+    String str = System.getenv("COMPUTERNAME"); // windoze
+    if (str == null) {
+      str = System.getenv("HOSTNAME");    // unix and derivates
+    }
+    if (str == null) {
+      // last chance
+      try {
+        str = InetAddress.getLocalHost().getHostName();
+      }
+      catch (UnknownHostException ex) {
+        str = "<unknown>";
+      }
+    }
+    info.setHostInfo(str);
+
+    return info;
   }
 
 

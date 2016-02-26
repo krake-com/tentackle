@@ -33,21 +33,21 @@ import org.tentackle.reflect.ReflectionHelper;
 public class DefaultImageProvider implements ImageProvider {
 
   /**
-   * File type extensions to try.
+   * File type EXTENSIONS to try.
    */
-  public static String[] extensions = new String[] { ".png", ".gif", ".jpg" };
+  private static final String[] EXTENSIONS = new String[] { ".png", ".gif", ".jpg" };
 
 
 
   /**
    * The image cache.
    */
-  protected final Map<String, Image> imageMap;
+  private final Map<String, Image> imageMap;
 
   /**
    * Path leading to resources.
    */
-  protected String imagePath;
+  private final String imagePath;
 
 
   /**
@@ -58,6 +58,15 @@ public class DefaultImageProvider implements ImageProvider {
     imagePath = "/" + ReflectionHelper.getPackageName(getClass()).replace('.', '/') + "/images/";
   }
 
+
+  /**
+   * Gets the file EXTENSIONS supported by this image provider.
+   *
+   * @return the EXTENSIONS
+   */
+  public String[] getExtensions() {
+    return EXTENSIONS;
+  }
 
 
   @Override
@@ -75,7 +84,7 @@ public class DefaultImageProvider implements ImageProvider {
 
     Image image = imageMap.get(name);
     if (image == null) {
-      for (String type: extensions) {
+      for (String type: getExtensions()) {
         try {
           String url = imagePath + name + type;
           image = new Image(url, true);    // always load in background

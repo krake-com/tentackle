@@ -57,11 +57,20 @@ public abstract class AbstractScript implements Script {
 
   @Override
   public String toString() {
-    String codeInfo = StringHelper.trim(code.replace('\n', ' '), 64);
-    if (codeInfo.length() < code.length()) {
-      codeInfo += " ...";
+    StringBuilder buf = new StringBuilder();
+    buf.append("#!").append(getLanguage()).append("{ ");
+    if (code != null) {
+      String codeInfo = StringHelper.trim(code.replace('\n', ' '), 64);
+      buf.append(codeInfo);
+      if (codeInfo.length() < code.length()) {
+        buf.append(" ...");
+      }
     }
-    return "#!" + getLanguage() + "{ " + codeInfo + " }";
+    else {
+      buf.append("<null>");
+    }
+    buf.append(" }");
+    return buf.toString();
   }
 
   @Override

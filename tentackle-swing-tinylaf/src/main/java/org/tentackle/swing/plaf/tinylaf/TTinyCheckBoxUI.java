@@ -72,9 +72,6 @@ public class TTinyCheckBoxUI extends TinyCheckBoxUI {
 
     Dimension size = c.getSize();
 
-    int w = size.width;
-    int h = size.height;
-
     Font f = c.getFont();
     g.setFont(f);
     FontMetrics fm = g.getFontMetrics();

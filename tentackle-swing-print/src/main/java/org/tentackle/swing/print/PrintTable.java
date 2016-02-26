@@ -26,7 +26,6 @@ import java.awt.Rectangle;
 import javax.swing.JLabel;
 import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import org.tentackle.swing.FormTable;
@@ -50,17 +49,17 @@ public class PrintTable extends FormTable {
     super();
   }
 
-  
+
   /**
    * Creates a printable formtable for a given data model.
-   * 
+   *
    * @param model the data model
    */
   public PrintTable(TableModel model) {
     super(model);
   }
-  
-  
+
+
 
   /**
    * {@inheritDoc}
@@ -118,8 +117,6 @@ public class PrintTable extends FormTable {
     g.translate(columnMargin, 0);
 
     for (int i=0; i < columns; i++)  {
-
-      TableColumn col = model.getColumn(i);
       Rectangle rect = header.getHeaderRect(i);
       rect.height = getRowHeight();
       pl.setBounds(rect);

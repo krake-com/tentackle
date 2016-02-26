@@ -229,11 +229,11 @@ public final class PrintHelper {
   // a queued printer job
   private static class JobRequest {
 
-    PrinterJob job;
-    PrintRequestAttributeSet aset;
-    String title;
+    private final PrinterJob job;
+    private final PrintRequestAttributeSet aset;
+    private String title;
 
-    JobRequest(PrinterJob job, PrintRequestAttributeSet aset) {
+    private JobRequest(PrinterJob job, PrintRequestAttributeSet aset) {
       this.job = job;
       this.aset = aset;
       title = job.getJobName();
@@ -255,7 +255,7 @@ public final class PrintHelper {
     private volatile JobRequest request;
     private volatile boolean abortRequested;
 
-    public JobThread(final boolean modal) {
+    private JobThread(final boolean modal) {
       super(null, modal, PrintSwingPrintBundle.getString("PRINTING..."));
       jobQueue = modal ? modalJobQueue : nonModalJobQueue;
     }
@@ -277,9 +277,7 @@ public final class PrintHelper {
           }
           // set title
           final String title = request.title;
-          EventQueue.invokeLater(() -> {
-            getWorkerDialog().setTitle(title);
-          });
+          EventQueue.invokeLater(() -> getWorkerDialog().setTitle(title));
           // print document
           request.job.print(request.aset);
         }

@@ -58,7 +58,7 @@ import org.tentackle.common.TentackleRuntimeException;
  or:
       if (getDb().isOracle()) {
         query.add(" AND m." + CN_ZEITPUNKT + "&gt;=TO_DATE(?,'" + OracleHelper.ORA_TIMESTAMP_FORMAT + "')",
-                  OracleHelper.timestampFormat.format(par.vonZeitpunkt));
+                  OracleHelper.TIMESTAMP_FORMAT.format(par.vonZeitpunkt));
       }
       else  {
         query.add(" AND m." + CN_ZEITPUNKT + "&gt;=?", par.vonZeitpunkt);
@@ -93,9 +93,9 @@ public class Oracle extends AbstractSql2003Backend {
 
 
   // oracle format strings
-  public static final String ORA_DATE_FORMAT      = "YYYY-MM-DD";
-  public static final String ORA_TIME_FORMAT      = "HH24:MI:SS";
-  public static final String ORA_TIMESTAMP_FORMAT = ORA_DATE_FORMAT + " " + ORA_TIME_FORMAT;
+  private static final String ORA_DATE_FORMAT      = "YYYY-MM-DD";
+  private static final String ORA_TIME_FORMAT      = "HH24:MI:SS";
+  private static final String ORA_TIMESTAMP_FORMAT = ORA_DATE_FORMAT + " " + ORA_TIME_FORMAT;
 
   private static final String ORA_TO_DATE_LEAD     = "TO_DATE('";
   private static final String ORA_TO_DATE_SEP      = "','";
@@ -107,12 +107,12 @@ public class Oracle extends AbstractSql2003Backend {
   private static final String JAVA_TIMESTAMP_FORMAT = JAVA_DATE_FORMAT + " " + JAVA_TIME_FORMAT;
 
   // java formats
-  public static final DateFormat dateFormat      = new SimpleDateFormat(JAVA_DATE_FORMAT);
-  public static final DateFormat timeFormat      = new SimpleDateFormat(JAVA_TIME_FORMAT);
-  public static final DateFormat timestampFormat = new SimpleDateFormat(JAVA_TIMESTAMP_FORMAT);
+  private static final DateFormat DATE_FORMAT      = new SimpleDateFormat(JAVA_DATE_FORMAT);
+  private static final DateFormat TIME_FORMAT      = new SimpleDateFormat(JAVA_TIME_FORMAT);
+  private static final DateFormat TIMESTAMP_FORMAT = new SimpleDateFormat(JAVA_TIMESTAMP_FORMAT);
 
   // oracle empty string (special because oracle treats "" as NULL)
-  public static final String ORACLE_EMPTY_STRING = " ";   // one blank
+  private static final String ORACLE_EMPTY_STRING = " ";   // one blank
 
   // maximum length for identifiers, names, etc...
   private static final int MAX_NAME_LENGTH = 30;
@@ -125,14 +125,14 @@ public class Oracle extends AbstractSql2003Backend {
    * @param date the date
    * @return a TO_DATE-date-string
    */
-  public static String dateString(Date date)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(dateFormat.format(date));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_DATE_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+  public static String dateString(Date date) {
+    synchronized(DATE_FORMAT) {
+      return  ORA_TO_DATE_LEAD +
+              DATE_FORMAT.format(date) +
+              ORA_TO_DATE_SEP +
+              ORA_DATE_FORMAT +
+              ORA_TO_DATE_TAIL;
+    }
   }
 
 
@@ -143,13 +143,13 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-time-string
    */
   public static String timeString(Time time)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(timeFormat.format(time));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_TIME_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+    synchronized(TIME_FORMAT) {
+      return  ORA_TO_DATE_LEAD +
+              TIME_FORMAT.format(time) +
+              ORA_TO_DATE_SEP +
+              ORA_TIME_FORMAT +
+              ORA_TO_DATE_TAIL;
+    }
   }
 
 
@@ -160,13 +160,13 @@ public class Oracle extends AbstractSql2003Backend {
    * @return a TO_DATE-timestamp-string
    */
   public static String timestampString(Timestamp timestamp)  {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ORA_TO_DATE_LEAD);
-    sb.append(timestampFormat.format(timestamp));
-    sb.append(ORA_TO_DATE_SEP);
-    sb.append(ORA_TIMESTAMP_FORMAT);
-    sb.append(ORA_TO_DATE_TAIL);
-    return sb.toString();
+    synchronized(TIMESTAMP_FORMAT) {
+      return  ORA_TO_DATE_LEAD +
+              TIMESTAMP_FORMAT.format(timestamp) +
+              ORA_TO_DATE_SEP +
+              ORA_TIMESTAMP_FORMAT +
+              ORA_TO_DATE_TAIL;
+    }
   }
 
   @Override
@@ -207,30 +207,16 @@ public class Oracle extends AbstractSql2003Backend {
 
   @Override
   public String getBackendId(Connection connection) {
-    String backendId = null;
-    ResultSet rs = null;
-    try {
-      Statement stmt = connection.createStatement();
-      // in this context 'sid' stands for "session id"
-      rs = stmt.executeQuery("select sys_context('userenv','sid') from dual");
+    try (Statement stmt = connection.createStatement()) {
+      ResultSet rs = stmt.executeQuery("select sys_context('userenv','sid') from dual");
       if (rs.next()) {
-        backendId = rs.getString(1);
+        return "SID-" + rs.getString(1);
       }
+      return null;
     }
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
-    finally {
-      if (rs != null) {
-        try {
-          rs.close();
-        }
-        catch (SQLException ex) {
-          throw new TentackleRuntimeException("close resultset after determine backend id failed", ex);
-        }
-      }
-    }
-    return backendId;
   }
 
   @Override
@@ -401,12 +387,10 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override
@@ -428,12 +412,10 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" MODIFY (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, true, null, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " MODIFY (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, true, null, false, false) +
+            ");\n";
   }
 
   @Override

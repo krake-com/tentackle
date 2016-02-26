@@ -28,7 +28,7 @@ import org.tentackle.validate.ValidationResult;
 
 
 interface InteractiveErrorFactory$Singleton {
-  static InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class);
+  InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class);
 }
 
 /**

@@ -41,163 +41,163 @@ import org.tentackle.sql.metadata.TableMetaData;
 public interface Backend {
 
   /** WHERE string. */
-  public static final String SQL_WHERE = " WHERE ";
+  String SQL_WHERE = " WHERE ";
 
   /** SELECT string. */
-  public static final String SQL_SELECT = "SELECT ";
+  String SQL_SELECT = "SELECT ";
 
   /** SELECT * FROM string. */
-  public static final String SQL_SELECT_ALL_FROM = "SELECT * FROM ";
+  String SQL_SELECT_ALL_FROM = "SELECT * FROM ";
 
   /** DELETE string. */
-  public static final String SQL_DELETE = "DELETE ";
+  String SQL_DELETE = "DELETE ";
 
   /** UPDATE string. */
-  public static final String SQL_UPDATE = "UPDATE ";
+  String SQL_UPDATE = "UPDATE ";
 
   /** INSERT INTO string. */
-  public static final String SQL_INSERT_INTO = "INSERT INTO ";
+  String SQL_INSERT_INTO = "INSERT INTO ";
 
   /** opening bracket. */
-  public static final String SQL_LEFT_PARENTHESIS = " (";
+  String SQL_LEFT_PARENTHESIS = " (";
 
   /** closing bracket. */
-  public static final String SQL_RIGHT_PARENTHESIS = ") ";
+  String SQL_RIGHT_PARENTHESIS = ") ";
 
   /** (VALUES) string for insert. */
-  public static final String SQL_INSERT_VALUES = SQL_RIGHT_PARENTHESIS + "VALUES" + SQL_LEFT_PARENTHESIS;
+  String SQL_INSERT_VALUES = SQL_RIGHT_PARENTHESIS + "VALUES" + SQL_LEFT_PARENTHESIS;
 
   /** SET string. */
-  public static final String SQL_SET = " SET ";
+  String SQL_SET = " SET ";
 
   /** FROM string. */
-  public static final String SQL_FROM = " FROM ";
+  String SQL_FROM = " FROM ";
 
   /** AND string. */
-  public static final String SQL_AND = " AND ";
+  String SQL_AND = " AND ";
 
   /** OR string. */
-  public static final String SQL_OR = " OR ";
+  String SQL_OR = " OR ";
 
   /** NOT string. */
-  public static final String SQL_NOT = "NOT ";
+  String SQL_NOT = "NOT ";
 
   /** AND NOT string. */
-  public static final String SQL_ANDNOT = SQL_AND + SQL_NOT;
+  String SQL_ANDNOT = SQL_AND + SQL_NOT;
 
   /** OR NOT string. */
-  public static final String SQL_ORNOT = SQL_OR + SQL_NOT;
+  String SQL_ORNOT = SQL_OR + SQL_NOT;
 
   /** comma separator. */
-  public static final String SQL_COMMA = ",";
+  String SQL_COMMA = ",";
 
   /** ? string. */
-  public static final String SQL_PAR = "?";
+  String SQL_PAR = "?";
 
   /** = operator string. */
-  public static final String SQL_EQUAL = "=";
+  String SQL_EQUAL = "=";
 
   /** &lt;&gt; operator string. */
-  public static final String SQL_NOTEQUAL = "<>";
+  String SQL_NOTEQUAL = "<>";
 
   /** &lt; operator string. */
-  public static final String SQL_LESS = "<";
+  String SQL_LESS = "<";
 
   /** &gt; operator string. */
-  public static final String SQL_GREATER = ">";
+  String SQL_GREATER = ">";
 
   /** &lt;= operator string. */
-  public static final String SQL_LESSOREQUAL = "<=";
+  String SQL_LESSOREQUAL = "<=";
 
   /** &gt;= operator string. */
-  public static final String SQL_GREATEROREQUAL = ">=";
+  String SQL_GREATEROREQUAL = ">=";
 
   /** LIKE operator string. */
-  public static final String SQL_LIKE = " LIKE ";
+  String SQL_LIKE = " LIKE ";
 
   /** NOT LIKE operator string. */
-  public static final String SQL_NOTLIKE = " NOT LIKE ";
+  String SQL_NOTLIKE = " NOT LIKE ";
 
   /** =0 string. */
-  public static final String SQL_EQUAL_ZERO = SQL_EQUAL + "0";
+  String SQL_EQUAL_ZERO = SQL_EQUAL + "0";
 
   /** &lt;&gt;0 string. */
-  public static final String SQL_NOTEQUAL_ZERO = SQL_NOTEQUAL + "0";
+  String SQL_NOTEQUAL_ZERO = SQL_NOTEQUAL + "0";
 
   /** Parameter ,? string. */
-  public static final String SQL_COMMA_PAR = SQL_COMMA + SQL_PAR;
+  String SQL_COMMA_PAR = SQL_COMMA + SQL_PAR;
 
   /** Parameter ?, string. */
-  public static final String SQL_PAR_COMMA = SQL_PAR + SQL_COMMA;
+  String SQL_PAR_COMMA = SQL_PAR + SQL_COMMA;
 
   /** Parameter =? string. */
-  public static final String SQL_EQUAL_PAR = SQL_EQUAL + SQL_PAR;
+  String SQL_EQUAL_PAR = SQL_EQUAL + SQL_PAR;
 
   /** Parameter =?, string. */
-  public static final String SQL_EQUAL_PAR_COMMA = SQL_EQUAL + SQL_PAR + SQL_COMMA;
+  String SQL_EQUAL_PAR_COMMA = SQL_EQUAL + SQL_PAR + SQL_COMMA;
 
   /** Parameter &lt;&gt;? string. */
-  public static final String SQL_NOTEQUAL_PAR = SQL_NOTEQUAL + SQL_PAR;
+  String SQL_NOTEQUAL_PAR = SQL_NOTEQUAL + SQL_PAR;
 
   /** Parameter &gt;? string. */
-  public static final String SQL_GREATER_PAR = SQL_GREATER + SQL_PAR;
+  String SQL_GREATER_PAR = SQL_GREATER + SQL_PAR;
 
   /** Parameter &ge;? string. */
-  public static final String SQL_GREATEROREQUAL_PAR = SQL_GREATEROREQUAL + SQL_PAR;
+  String SQL_GREATEROREQUAL_PAR = SQL_GREATEROREQUAL + SQL_PAR;
 
   /** Parameter &lt;? string. */
-  public static final String SQL_LESS_PAR = SQL_LESS + SQL_PAR;
+  String SQL_LESS_PAR = SQL_LESS + SQL_PAR;
 
   /** Parameter &lt;=? string. */
-  public static final String SQL_LESSOREQUAL_PAR = SQL_LESSOREQUAL + SQL_PAR;
+  String SQL_LESSOREQUAL_PAR = SQL_LESSOREQUAL + SQL_PAR;
 
   /** Parameter LIKE ? string. */
-  public static final String SQL_LIKE_PAR = SQL_LIKE + SQL_PAR;
+  String SQL_LIKE_PAR = SQL_LIKE + SQL_PAR;
 
   /** Parameter NOT LIKE ? string. */
-  public static final String SQL_NOTLIKE_PAR = SQL_NOTLIKE + SQL_PAR;
+  String SQL_NOTLIKE_PAR = SQL_NOTLIKE + SQL_PAR;
 
   /** '*' all string. */
-  public static final String SQL_ALLSTAR = "*";
+  String SQL_ALLSTAR = "*";
 
   /** +1 string. */
-  public static final String SQL_PLUS_ONE = "+1";
+  String SQL_PLUS_ONE = "+1";
 
   /** "WHERE 1=1" allows AND to be added. */
-  public static final String SQL_WHEREALL = SQL_WHERE + "1=1";
+  String SQL_WHEREALL = SQL_WHERE + "1=1";
 
   /** "WHERE 1=0" to select nothing. */
-  public static final String SQL_WHERENOTHING = SQL_WHERE + "1=0";
+  String SQL_WHERENOTHING = SQL_WHERE + "1=0";
 
   /** SQL_WHEREALL + AND will be replaced by... SQL_WHERE. */
-  public static final String SQL_WHEREAND = SQL_WHEREALL + SQL_AND;
+  String SQL_WHEREAND = SQL_WHEREALL + SQL_AND;
 
   /** SQL_WHEREALL + OR will be replaced by... SQL_WHERE. */
-  public static final String SQL_WHEREOR = SQL_WHEREALL + SQL_OR;
+  String SQL_WHEREOR = SQL_WHEREALL + SQL_OR;
 
   /** IS NULL string. */
-  public static final String SQL_ISNULL = " IS NULL";
+  String SQL_ISNULL = " IS NULL";
 
   /** IS NOT NULL string. */
-  public static final String SQL_ISNOTNULL = " IS NOT NULL";
+  String SQL_ISNOTNULL = " IS NOT NULL";
 
   /** ORDER BY string. */
-  public static final String SQL_ORDERBY = " ORDER BY ";
+  String SQL_ORDERBY = " ORDER BY ";
 
   /** sort ASC string. */
-  public static final String SQL_SORTASC = " ASC";
+  String SQL_SORTASC = " ASC";
 
   /** sort DESC string. */
-  public static final String SQL_SORTDESC = " DESC";
+  String SQL_SORTDESC = " DESC";
 
   /** GROUP BY string. */
-  public static final String SQL_GROUPBY = " GROUP BY ";
+  String SQL_GROUPBY = " GROUP BY ";
 
   /** MAX function name. */
-  public static final String SQL_MAX = "MAX";
+  String SQL_MAX = "MAX";
 
   /** MAX function name. */
-  public static final String SQL_MIN = "MIN";
+  String SQL_MIN = "MIN";
 
 
   /**
@@ -559,7 +559,7 @@ public interface Backend {
    * @param defaultValue the optional default value
    * @return the SQL code
    */
-  public String columnTypeNullDefaultToString(String columnName, SqlType sqlType, int size, int scale,
+  String columnTypeNullDefaultToString(String columnName, SqlType sqlType, int size, int scale,
                                               boolean nullable, Object defaultValue);
 
   /**
@@ -836,7 +836,7 @@ public interface Backend {
    * @param jdbcType the jdbc data type
    * @param size the column size
    * @param scale the column's scale
-   * @return the SqlTypes, null if no mapping available or no exact match (not generated by TT)
+   * @return the SqlTypes, empty array if no mapping available or no exact match (not generated by TT)
    * @see java.sql.Types
    */
   SqlType[] jdbcTypeToSqlType(int jdbcType, int size, int scale);

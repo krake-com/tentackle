@@ -211,46 +211,38 @@ public class Informix extends AbstractSql92Backend {
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {
-    StringBuilder buf = new StringBuilder("RENAME COLUMN ");
-    buf.append(tableName);
-    buf.append(".");
-    buf.append(oldColumnName);
-    buf.append(" TO ");
-    buf.append(newColumnName);
-    buf.append(";\n");
-    return buf.toString();
+    return  "RENAME COLUMN " + tableName +
+            "." +
+            oldColumnName +
+            " TO " +
+            newColumnName +
+            ";\n";
   }
 
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override
   public String sqlDropColumn(String tableName, String columnName) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" DROP (");
-    buf.append(columnName);
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " DROP (" +
+            columnName +
+            ");\n";
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" MODIFY (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " MODIFY (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override

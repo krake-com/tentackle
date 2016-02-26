@@ -42,7 +42,7 @@ public interface Scavenger {
    * @param thread the thread
    * @return true if thread implements Scavenger and isScavenging=true or thread is a finalizer
    */
-  public static boolean isScavenger(Thread thread) {
+  static boolean isScavenger(Thread thread) {
     return thread instanceof Scavenger && ((Scavenger) thread).isScavenging() ||
            "Finalizer".equals(thread.getName()) ||
            "Secondary finalizer".equals(thread.getName());

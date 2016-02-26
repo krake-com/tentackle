@@ -88,12 +88,10 @@ public class PermissionEditor extends FormComponentPanel implements KeyListener 
     for (FormCheckBox box: boxMap.values()) {
       box.setSelected(false);
     }
-    if (str != null) {
-      for (Permission permission: SecurityFactory.getInstance().stringToPermissions(str)) {
-        FormCheckBox box = boxMap.get(permission);
-        if (box != null) {
-          box.setSelected(true);
-        }
+    for (Permission permission: SecurityFactory.getInstance().stringToPermissions(str)) {
+      FormCheckBox box = boxMap.get(permission);
+      if (box != null) {
+        box.setSelected(true);
       }
     }
     if (firstBox != null) {

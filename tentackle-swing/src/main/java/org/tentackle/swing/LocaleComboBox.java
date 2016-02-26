@@ -77,7 +77,7 @@ public class LocaleComboBox extends FormComboBox<ShortLongText> {
    */
   private static class TLocale implements ShortLongText, Comparable<TLocale> {
 
-    private Locale locale;
+    private final Locale locale;
 
     public TLocale(Locale locale) {
       this.locale = locale;

@@ -68,10 +68,7 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Serializable
       return false;
     }
     final IdSerialTuple other = (IdSerialTuple) obj;
-    if (this.id != other.id) {
-      return false;
-    }
-    return true;
+    return this.id == other.id;
   }
 
   @Override

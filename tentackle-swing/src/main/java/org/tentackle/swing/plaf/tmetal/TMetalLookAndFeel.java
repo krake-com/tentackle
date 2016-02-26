@@ -262,9 +262,8 @@ public class TMetalLookAndFeel extends MetalLookAndFeel implements TentackleLook
    */
   private static class FontActiveValue implements UIDefaults.ActiveValue {
 
-    private int type;
-
-    private MetalTheme theme;
+    private final int type;
+    private final MetalTheme theme;
 
     FontActiveValue(MetalTheme theme, int type) {
       this.theme = theme;

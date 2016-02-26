@@ -173,7 +173,7 @@ abstract public class AbstractNumberFormField extends AbstractFormField {
           }
         }
         else if (object instanceof Number) {
-          if (((Number) object).longValue() == 0l) {
+          if (((Number) object).longValue() == 0) {
             return "";
           }
         }

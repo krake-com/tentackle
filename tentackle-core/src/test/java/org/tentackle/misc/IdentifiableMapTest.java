@@ -34,7 +34,7 @@ public class IdentifiableMapTest {
 
     private static long idCount;
 
-    private Number number;
+    private final Number number;
     private long id;
 
     private NumberIdentifiable(Number number) {

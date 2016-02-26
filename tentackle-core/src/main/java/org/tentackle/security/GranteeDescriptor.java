@@ -72,9 +72,7 @@ public class GranteeDescriptor {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append("classId=").append(granteeClassId).append(", id=").append(granteeId);
-    return buf.toString();
+    return "classId=" + granteeClassId + ", id=" + granteeId;
   }
 
   @Override

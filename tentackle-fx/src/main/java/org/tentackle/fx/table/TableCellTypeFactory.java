@@ -22,7 +22,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface TableCellTypeFactory$Singleton {
-  static TableCellTypeFactory INSTANCE = ServiceFactory.createService(TableCellTypeFactory.class);
+  TableCellTypeFactory INSTANCE = ServiceFactory.createService(TableCellTypeFactory.class);
 }
 
 
@@ -38,7 +38,7 @@ public interface TableCellTypeFactory {
    *
    * @return the singleton
    */
-  public static TableCellTypeFactory getInstance() {
+  static TableCellTypeFactory getInstance() {
     return TableCellTypeFactory$Singleton.INSTANCE;
   }
 

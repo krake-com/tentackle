@@ -135,7 +135,7 @@
       // invoke remote method
       try {
 @{to remoteOut}@
-  public @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override

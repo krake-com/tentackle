@@ -45,6 +45,6 @@ public @interface Analyze {
    *
    * @return the handler's classname
    */
-  public String value();
+  String value();
 
 }

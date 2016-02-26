@@ -21,10 +21,12 @@ package org.tentackle.fx.rdc;
 
 import java.util.Collection;
 import java.util.ResourceBundle;
+import javafx.scene.Node;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.table.TableConfiguration;
@@ -92,17 +94,25 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Creates the dragboard for the pdo.
    *
+   * @param node the drag source
    * @return the dragboard, null if PDO is not a DnD source
    */
-  Dragboard createDragboard();
+  Dragboard createDragboard(Node node);
+
+  /**
+   * Checks whether drag over the pdo is accepted.
+   *
+   * @param event the drag event
+   * @return true if accepted, false if PDO does not accept the drag
+   */
+  boolean isDragAccepted(DragEvent event);
 
   /**
    * Drops the dragboard on the pdo.
    *
    * @param dragbord the dragboard
-   * @return true if dropped, false if PDO does not accept the dragboard
    */
-  boolean dropDragboard(Dragboard dragbord);
+  void dropDragboard(Dragboard dragbord);
 
   /**
    * Gets the object to be displayed in trees in place of this object.<br>

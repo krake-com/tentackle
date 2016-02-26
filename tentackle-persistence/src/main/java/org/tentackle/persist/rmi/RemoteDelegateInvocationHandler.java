@@ -106,7 +106,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   /**
    * The delegate.
    */
-  protected RemoteDelegateImpl<?> delegate;
+  private final RemoteDelegateImpl<?> delegate;
 
 
   /**
@@ -119,6 +119,16 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   public RemoteDelegateInvocationHandler(RemoteDelegateImpl<?> delegate) {
     this.delegate = delegate;
+  }
+
+
+  /**
+   * Gets the delegate.
+   *
+   * @return the delegate
+   */
+  public RemoteDelegateImpl<?> getDelegate() {
+    return delegate;
   }
 
 

@@ -114,12 +114,13 @@ public class Rdc {
    * @param pdoList the optional list of PDOs to navigate in the list
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
    */
   @SuppressWarnings("unchecked")
   public static <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-          T pdo, List<T> pdoList, boolean editable, Modality modality) {
-    return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality);
+          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
+    return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality, owner);
   }
 
   /**
@@ -159,11 +160,12 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the search controller, never null
    */
   @SuppressWarnings("unchecked")
-  public static <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality) {
-    return RdcUtilities.getInstance().getSearch(pdo, modality);
+  public static <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality, Window owner) {
+    return RdcUtilities.getInstance().getSearch(pdo, modality, owner);
   }
 
   /**

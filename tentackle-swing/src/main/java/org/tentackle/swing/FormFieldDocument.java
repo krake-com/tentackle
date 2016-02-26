@@ -112,8 +112,8 @@ public class FormFieldDocument extends PlainDocument {
           throws BadLocationException {
 
     if (eraseFirst) {
-      if (field.isAutoSelect() == false ||   // if not enabled for whatever reason
-          field.hasFocus() == false)  {       // or only if autoSelect wouldn't work
+      if (!field.isAutoSelect() ||    // if not enabled for whatever reason
+          !field.hasFocus())  {       // or only if autoSelect wouldn't work
         super.remove(0, getLength());
         offs = 0;
         // this will cause selectAll to be inhibited if eraseFirst is called after
@@ -146,7 +146,7 @@ public class FormFieldDocument extends PlainDocument {
 
       // check max. number of chars
       if (maxColumns > 0 &&
-          override == true &&
+          override &&
           offs + str.length() > maxColumns)  {
         valid = false;
         // else: no check in insert mode because we cut at the end
@@ -202,7 +202,7 @@ public class FormFieldDocument extends PlainDocument {
 
       if (valid)  {
 
-        if (field.isOverwrite() == true) {
+        if (field.isOverwrite()) {
           // override mode: remove first
           int olen = getLength();
           int rlen = str.length();
@@ -217,7 +217,7 @@ public class FormFieldDocument extends PlainDocument {
         super.insertString(offs, str, a);
 
         // cut chars at end
-        if (override == false &&    // insert-mode
+        if (!override &&    // insert-mode
             maxColumns > 0 &&          // maxcolumns set
             getLength() > maxColumns) {
           // cut at end

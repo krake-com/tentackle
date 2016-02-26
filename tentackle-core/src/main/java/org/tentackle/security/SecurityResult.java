@@ -33,7 +33,7 @@ public interface SecurityResult {
    *
    * @return true if accepted
    */
-  public boolean isAccepted();
+  boolean isAccepted();
 
   /**
    * Formats a string for an explanation of rule that fired.<br>
@@ -42,6 +42,6 @@ public interface SecurityResult {
    * @param defaultMessage the default message if not changed by this result
    * @return the formatted localized message or defaultMessage unchanged
    */
-  public String explain(String defaultMessage);
+  String explain(String defaultMessage);
 
 }

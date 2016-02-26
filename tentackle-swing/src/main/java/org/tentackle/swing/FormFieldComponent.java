@@ -32,21 +32,21 @@ public interface FormFieldComponent extends FormComponent {
 
   // text adjustments
   /** no adjustment at all **/
-  static public final char ADJUST_NONE   = '=';
+  char ADJUST_NONE   = '=';
   /** remove leading fillers **/
-  static public final char ADJUST_LEFT   = '<';
+  char ADJUST_LEFT   = '<';
   /** remove trailing fillers **/
-  static public final char ADJUST_RIGHT  = '>';
+  char ADJUST_RIGHT  = '>';
   /** trim to both sides (default) **/
-  static public final char ADJUST_TRIM   = '|';
+  char ADJUST_TRIM   = '|';
 
   // character conversion
   /** no conversion (default) **/
-  static public final char CONVERT_NONE   = '=';
+  char CONVERT_NONE   = '=';
   /** to uppercase **/
-  static public final char CONVERT_UC     = '^';
+  char CONVERT_UC     = '^';
   /** to lowercase **/
-  static public final char CONVERT_LC     = 'v';
+  char CONVERT_LC     = 'v';
 
 
   /**
@@ -55,14 +55,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param pattern the format string
    */
-  public void setFormat (String pattern);
+  void setFormat (String pattern);
 
   /**
    * Gets the format string.
    *
    * @return the format string
    */
-  public String getFormat ();
+  String getFormat ();
 
 
   /**
@@ -73,14 +73,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param autoSelect true if autoselect enabled, false if disabled (default)
    */
-  public void setAutoSelect (boolean autoSelect);
+  void setAutoSelect (boolean autoSelect);
 
   /**
    * Returns whether the auto-select feature is enabled.
    *
    * @return true if autoselect enabled, false if disabled (default)
    */
-  public boolean isAutoSelect();
+  boolean isAutoSelect();
 
 
   /**
@@ -91,14 +91,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param autoNext true if autonext enabled, false if disabled (default)
    */
-  public void setAutoNext (boolean autoNext);
+  void setAutoNext (boolean autoNext);
 
   /**
    * Returns whether the auto-next feature is enabled.
    *
    * @return true if autonext enabled, false if disabled (default)
    */
-  public boolean isAutoNext();
+  boolean isAutoNext();
 
 
 
@@ -108,14 +108,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param convert one of {@code FormField.CONVERT_...}
    */
-  public void setConvert (char convert);
+  void setConvert (char convert);
 
   /**
    * Gets the current convesion
    *
    * @return the conversion, default is CONVERT_NONE
    */
-  public char getConvert ();
+  char getConvert ();
 
 
   /**
@@ -125,7 +125,7 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param converter the converter, null if none (default)
    */
-  public void setConverter(Function<String,String> converter);
+  void setConverter(Function<String,String> converter);
 
 
   /**
@@ -133,7 +133,7 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @return the converter.
    */
-  public Function<String,String> getConverter();
+  Function<String,String> getConverter();
 
 
   /**
@@ -146,14 +146,14 @@ public interface FormFieldComponent extends FormComponent {
    * @param adjust one of {@code FormField.ADJUST_...}
    * @see #setFiller(char)
    */
-  public void setAdjust (char adjust);
+  void setAdjust (char adjust);
 
   /**
    * Gets the current adjustment.
    *
    * @return the adjustment, default ADJUST_TRIM
    */
-  public  char  getAdjust ();
+   char  getAdjust ();
 
 
   /**
@@ -166,14 +166,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param maxColumns the maximum number of columns, 0 if unlimited (default)
    */
-  public  void  setMaxColumns (int maxColumns);
+   void  setMaxColumns (int maxColumns);
 
   /**
    * Gets the maximum number of columns.
    *
    * @return the maximum number of columns, 0 if unlimited (default)
    */
-  public int  getMaxColumns ();
+  int  getMaxColumns ();
 
 
   /**
@@ -188,14 +188,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param defaultColumns the default columns
    */
-  public void setDefaultColumns(int defaultColumns);
+  void setDefaultColumns(int defaultColumns);
 
   /**
    * Gets the default columns.
    *
    * @return the default columns.
    */
-  public int getDefaultColumns();
+  int getDefaultColumns();
 
   /**
    * Sets the fill char.<br>
@@ -203,13 +203,13 @@ public interface FormFieldComponent extends FormComponent {
    * @param filler the fill character
    * @see #setAdjust(char)
    */
-  public  void  setFiller (char filler);
+   void  setFiller (char filler);
 
   /**
    * Gets the current fill char.
    * @return the filler, default is blank (space)
    */
-  public char getFiller ();
+  char getFiller ();
 
 
   /**
@@ -217,14 +217,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param override true if override, false if insert (default)
    */
-  public  void  setOverwrite (boolean override);
+   void  setOverwrite (boolean override);
 
   /**
    * Gets the current override mode.
    *
    * @return true if override, false if insert (default)
    */
-  public boolean isOverwrite();
+  boolean isOverwrite();
 
 
   /**
@@ -232,14 +232,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param validChars the valid characters, null = all (default)
    */
-  public  void  setValidChars (String validChars);
+   void  setValidChars (String validChars);
 
   /**
    * Gets allowed characters.
    *
    * @return the valid characters, null = all (default)
    */
-  public String getValidChars();
+  String getValidChars();
 
 
   /**
@@ -247,14 +247,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param invalidChars the invalid characters, null = none (default)
    */
-  public  void  setInvalidChars (String invalidChars);
+   void  setInvalidChars (String invalidChars);
 
   /**
    * Gets invalid characters.
    *
    * @return the invalid characters, null = none (default)
    */
-  public String getInvalidChars ();
+  String getInvalidChars ();
 
 
   /**
@@ -262,35 +262,35 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @return true if caret is at leftmost position
    */
-  public boolean isCaretLeft();
+  boolean isCaretLeft();
 
   /**
    * Returns whether caret is at rightmost position.
    *
    * @return true if caret is at rightmost position
    */
-  public boolean isCaretRight();
+  boolean isCaretRight();
 
   /**
    * Sets the caret to leftmost position.
    */
-  public void setCaretLeft();
+  void setCaretLeft();
 
   /**
    * Sets the caret to rightmost position.
    */
-  public void setCaretRight();
+  void setCaretRight();
 
 
   /**
    * Move caret to the left side of field and if already there move to previous field.
    */
-  public void upLeft();
+  void upLeft();
 
   /**
    * Move the caret to the right side of field and if already there move to next field.
    */
-  public void downRight();
+  void downRight();
 
 
   /**
@@ -298,14 +298,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param eraseFirst true to clear after first setText
    */
-  public void setEraseFirst(boolean eraseFirst);
+  void setEraseFirst(boolean eraseFirst);
 
   /**
    * Returns whether to erase the field after first setText().<br>
    *
    * @return true to clear after first setText
    */
-  public boolean isEraseFirst();
+  boolean isEraseFirst();
 
 
   /**
@@ -313,19 +313,19 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param inhibitAutoSelect true if inhibited
    */
-  public void setInhibitAutoSelect(boolean inhibitAutoSelect);
+  void setInhibitAutoSelect(boolean inhibitAutoSelect);
 
   /**
    * Returns whether auto-select is inhibited (once).
    * @return true if inhibited
    */
-  public boolean isInhibitAutoSelect();
+  boolean isInhibitAutoSelect();
 
 
   /**
    * Clears the contents of this component.
    */
-  public void clearText();
+  void clearText();
 
 
   /**
@@ -335,7 +335,7 @@ public interface FormFieldComponent extends FormComponent {
    * @param object the object
    * @return the formatted object as a string
    */
-  public String doFormat(Object object);
+  String doFormat(Object object);
 
 
   /**
@@ -343,7 +343,7 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @return true if empty
    */
-  public boolean isEmpty();
+  boolean isEmpty();
 
 
   /**
@@ -351,14 +351,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param startEditLeftmost true if start edit leftmost
    */
-  public void setStartEditLeftmost(boolean startEditLeftmost);
+  void setStartEditLeftmost(boolean startEditLeftmost);
 
   /**
    * Returns whether to start edit leftmost in this component (once).
    *
    * @return true if start edit leftmost
    */
-  public boolean isStartEditLeftmost();
+  boolean isStartEditLeftmost();
 
 
   /**
@@ -366,14 +366,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @return the error offset, -1 if no error
    */
-  public int getErrorOffset();
+  int getErrorOffset();
 
   /**
    * Sets the error offset.
    *
    * @param errorOffset the error offset in the text component, -1 to clear
    */
-  public void setErrorOffset(int errorOffset);
+  void setErrorOffset(int errorOffset);
 
 
   /**
@@ -381,20 +381,20 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @return the error message (may be null)
    */
-  public String getErrorMessage();
+  String getErrorMessage();
 
   /**
    * Sets the error message.
    *
    * @param errorMessage the message, null to clear
    */
-  public void setErrorMessage(String errorMessage);
+  void setErrorMessage(String errorMessage);
 
 
   /**
    * Invokes the action performed handler.
    */
-  public void postActionEvent();
+  void postActionEvent();
 
 
 
@@ -406,14 +406,14 @@ public interface FormFieldComponent extends FormComponent {
    * Sets the given text in the view of this component.
    * @param str the text
    */
-  public void setText(String str);
+  void setText(String str);
 
   /**
    * Gets the text from the view of this component.
    *
    * @return the text
    */
-  public String getText();
+  String getText();
 
 
   /**
@@ -422,14 +422,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param columns the number of columns &ge; 0
    */
-  public void setColumns (int columns);
+  void setColumns (int columns);
 
   /**
    * Gets the columns.
    *
    * @return the columns
    */
-  public int getColumns ();
+  int getColumns ();
 
 
   /**
@@ -437,14 +437,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param text the tooltip text, null = none
    */
-  public void setToolTipText(String text);
+  void setToolTipText(String text);
 
   /**
    * Gets the tooltip text for this component.
    *
    * @return the tooltip text, null = none
    */
-  public String getToolTipText();
+  String getToolTipText();
 
 
   /**
@@ -453,7 +453,7 @@ public interface FormFieldComponent extends FormComponent {
    * @param alignment the alignment
    * @see java.awt.Component
    */
-  public void setHorizontalAlignment(int alignment);
+  void setHorizontalAlignment(int alignment);
 
   /**
    * Gets the horizontal alignment.
@@ -461,7 +461,7 @@ public interface FormFieldComponent extends FormComponent {
    * @return the horizontal alignment
    * @see java.awt.Component
    */
-  public int  getHorizontalAlignment();
+  int  getHorizontalAlignment();
 
 
   /**
@@ -470,14 +470,14 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param alignment the vertical alignment
    */
-  public void setVerticalAlignment(int alignment);
+  void setVerticalAlignment(int alignment);
 
   /**
    * Gets the vertical alignment.
    *
    * @return the vertical alignment
    */
-  public int  getVerticalAlignment();
+  int  getVerticalAlignment();
 
 
   /**
@@ -485,13 +485,13 @@ public interface FormFieldComponent extends FormComponent {
    *
    * @param pos the caret position, 0 = start of field
    */
-  public void setCaretPosition(int pos);
+  void setCaretPosition(int pos);
 
   /**
    * Gets the caret position.
    *
    * @return the caret position, 0 = start of field
    */
-  public int getCaretPosition();
+  int getCaretPosition();
 
 }

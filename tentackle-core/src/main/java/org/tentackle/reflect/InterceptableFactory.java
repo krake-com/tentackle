@@ -22,7 +22,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface InterceptableFactory$Singleton {
-  static InterceptableFactory INSTANCE = ServiceFactory.createService(
+  InterceptableFactory INSTANCE = ServiceFactory.createService(
               InterceptableFactory.class, DefaultInterceptableFactory.class);
 }
 

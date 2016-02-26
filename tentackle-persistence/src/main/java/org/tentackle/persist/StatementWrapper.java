@@ -139,7 +139,7 @@ public class StatementWrapper implements AutoCloseable {
    * JDBC-driver on the next usage of the first resultset and you wouldn't have any clue which
    * resultset forced the closing.
    */
-  public void markReady() {
+  public synchronized void markReady() {
     if (isMarkedReady()) {
       String msg = "statement " + this + " marked ready and not consumed yet";
       forceDetached();
@@ -152,7 +152,7 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Unmarks (consumes) this statement previously marked ready.
    */
-  public void unmarkReady() {
+  public synchronized void unmarkReady() {
     if (!isClosed() && !isMarkedReady()) {
       String msg = "statement " + this + " already consumed";
       forceDetached();
@@ -169,7 +169,7 @@ public class StatementWrapper implements AutoCloseable {
    * dead sessions.
    * @return true if pending
    */
-  public boolean isMarkedReady() {
+  public synchronized boolean isMarkedReady() {
     return ready;
   }
 
@@ -380,7 +380,7 @@ public class StatementWrapper implements AutoCloseable {
    *
    * @param running true if running, false if finished
    */
-  protected void setRunning(boolean running) {
+  protected synchronized void setRunning(boolean running) {
     this.running = running;
     if (running) {
       con.addRunningStatement(this);

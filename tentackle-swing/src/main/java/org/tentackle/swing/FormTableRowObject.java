@@ -35,7 +35,7 @@ public interface FormTableRowObject {
    * @param mColumn the datamodel-column
    * @return the column data object
    */
-  public Object getValueAt (int mColumn);
+  Object getValueAt (int mColumn);
 
 
   /**
@@ -44,7 +44,7 @@ public interface FormTableRowObject {
    * @param mColumn the datamodel-column
    * @param value the cell value
    */
-  public void setValueAt (int mColumn, Object value);
+  void setValueAt (int mColumn, Object value);
 
 
   /**
@@ -52,7 +52,7 @@ public interface FormTableRowObject {
    *
    * @return the table, null if model not known to a table
    */
-  public FormTable getTable();
+  FormTable getTable();
 
   
   /**
@@ -60,7 +60,7 @@ public interface FormTableRowObject {
    *
    * @return the data-model
    */
-  public TableModel getModel();
+  TableModel getModel();
 
   
   /**
@@ -68,6 +68,6 @@ public interface FormTableRowObject {
    *
    * @return the data-model row
    */
-  public int getRow();
+  int getRow();
 
 }

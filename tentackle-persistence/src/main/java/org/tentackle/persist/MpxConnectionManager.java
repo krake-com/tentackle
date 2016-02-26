@@ -462,7 +462,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           LOGGER.warning(this + ": Running out of connections! Putting " + session + " to sleep for " + ms + " ms, loop " + loopCount);
           Thread.sleep(ms);
         }
-        catch (InterruptedException ex) {}
+        catch (InterruptedException ex) {
+          LOGGER.fine("interrupted!");
+        }
       }
 
       if (request) {
@@ -566,7 +568,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       LOGGER.warning(this + ": closing **DEAD** connection " + con);
       con.close();
     }
-    catch (PersistenceException ex) { }
+    catch (PersistenceException ex) {
+      LOGGER.warning("closing **DEAD** connection failed -> ignored", ex);
+    }
   }
 
 
@@ -617,7 +621,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             connectGoMutex.wait(1000);
           }
           catch (InterruptedException ex) {
+            LOGGER.fine("interrupted!");
           }
+
           if (!shutdownRequested && conRequestCount > 0) {
             /**
              * Bring up connections.

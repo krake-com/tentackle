@@ -483,7 +483,7 @@ public interface Entity {
    *
    * @return the number of super entities, 0 if this is not a subclass
    */
-  public int getInheritanceLevel();
+  int getInheritanceLevel();
 
   /**
    * Gets the direct sub entities.

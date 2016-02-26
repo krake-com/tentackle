@@ -12,7 +12,6 @@ import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.AbstractFormField;

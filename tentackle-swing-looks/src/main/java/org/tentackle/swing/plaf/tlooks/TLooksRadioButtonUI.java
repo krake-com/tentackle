@@ -41,7 +41,7 @@ import javax.swing.text.View;
 
 /**
  * UI for JRadioButton/FormRadioButton.
- * 
+ *
  * @author harald
  */
 public class TLooksRadioButtonUI extends MetalRadioButtonUI {
@@ -75,9 +75,6 @@ public class TLooksRadioButtonUI extends MetalRadioButtonUI {
 
     Dimension size = c.getSize();
 
-    int w = size.width;
-    int h = size.height;
-
     Font f = c.getFont();
     g.setFont(f);
     FontMetrics fm = g.getFontMetrics();
@@ -93,8 +90,6 @@ public class TLooksRadioButtonUI extends MetalRadioButtonUI {
     viewRect.height -= (i.bottom + viewRect.y);
 
     Icon altIcon = b.getIcon();
-    Icon selectedIcon = null;
-    Icon disabledIcon = null;
     String text = SwingUtilities.layoutCompoundLabel(
             c, fm, b.getText(), altIcon != null ? altIcon : getDefaultIcon(),
             b.getVerticalAlignment(), b.getHorizontalAlignment(),

@@ -241,7 +241,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
       target.setDefaultActions(DnDConstants.ACTION_COPY_OR_MOVE);
 
       // createPdo accepted data flavour
-      dndFlavor = new DataFlavor(pdo.getEffectiveClass(), pdo.getClassBaseName());
+      dndFlavor = pdo == null ? null : new DataFlavor(pdo.getEffectiveClass(), pdo.getClassBaseName());
 
       buttonPanel.addMouseListener(new MouseAdapter() {
         @Override
@@ -257,7 +257,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     else  {
       // no PdoPanel?
-      if (panel instanceof FormPanel) {
+      if (panel != null) {
         // panel just shows the data, no editing possible
         dataPanel.add((FormPanel) panel, DATA_PANEL);
         ((CardLayout)dataPanel.getLayout()).show(dataPanel, DATA_PANEL);
@@ -585,9 +585,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
           final PdoEditDialog<T> otherDialog = PdoEditDialogPool.getInstance().isObjectBeingEdited(pdo, this);
           if (otherDialog != null)  {  // writeallowed means possibly softlock-token set!
             FormInfo.show(RdcSwingRdcBundle.getString("OBJECT IS USED IN ANOTHER DIALOG. PLEASE FINISH THAT DIALOG FIRST!"));
-            EventQueue.invokeLater(() -> {
-              otherDialog.toFront();
-            });
+            EventQueue.invokeLater(otherDialog::toFront);
             editable = false;
           }
         }
@@ -648,9 +646,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
         pdoPanel.setInitialFocus();
       }
 
-      EventQueue.invokeLater(() -> {
-        saveValues(); // remember values for check for change
-      });
+      EventQueue.invokeLater(this::saveValues);
 
       tipAndErrorPanel.clearErrors();   // clear any errors in tip-panel
 
@@ -800,7 +796,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
    *
    * @param listener the listener to add
    */
-  public synchronized void addActionListener (ActionListener listener)  {
+  public void addActionListener (ActionListener listener)  {
     listenerList.add (ActionListener.class, listener);
   }
 
@@ -810,7 +806,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
    *
    * @param listener the listener to remove
    */
-  public synchronized void removeActionListener (ActionListener listener) {
+  public void removeActionListener (ActionListener listener) {
      listenerList.remove (ActionListener.class, listener);
   }
 
@@ -818,7 +814,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
   /**
    * Removes all Listeners.
    */
-  public synchronized void removeAllListeners ()  {
+  public void removeAllListeners ()  {
     listenerList = new EventListenerList(); // this will move all to GC
   }
 
@@ -1253,7 +1249,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
   protected Throwable determineRealCause(Throwable ex) {
     RemoteException remEx = ExceptionHelper.extractException(RemoteException.class, true, ex);
     if (remEx != null && remEx.getCause() instanceof Exception) {
-      ex = (Exception) remEx.getCause();
+      ex = remEx.getCause();
     }
     @SuppressWarnings("unchecked")
     Throwable t = ExceptionHelper.extractException(true, ex, ValidationFailedException.class, PersistenceException.class);
@@ -1655,7 +1651,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
      * user enters search criteria *before* pressing the search button (see preset... in PersistentDomainObject).
      * If you don't like that, override prepareSearch()!)
      */
-    if (pdoPanel.prepareSearch() == true)  {
+    if (pdoPanel.prepareSearch())  {
       try {
         PdoSearchDialog<T> sd = Rdc.createPdoSearchDialog(this, context, pdoClass,
                                                           (o) -> pdoClass.isAssignableFrom(o.getClass()),
@@ -2201,8 +2197,8 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
       if (linkedPdoList != null) {
         linkedPdoIndex = oldIndex;
         for (int ndx = linkedPdoIndex + offset; ndx >= 0 && ndx < linkedPdoList.size(); ndx += offset) {
-          Object obj = linkedPdoList.get(ndx);
-          if (obj instanceof PersistentDomainObject && setPdo((T) obj)) {
+          T obj = linkedPdoList.get(ndx);
+          if (obj != null && setPdo(obj)) {
             break;  // accepted
           }
         }

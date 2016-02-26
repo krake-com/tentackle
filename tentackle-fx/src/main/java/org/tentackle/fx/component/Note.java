@@ -21,7 +21,6 @@ package org.tentackle.fx.component;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.css.PseudoClass;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.PopupControl;
@@ -113,7 +112,7 @@ public class Note extends PopupControl {
 
     private final String cssClass;
 
-    private Position(String cssClass) {
+    Position(String cssClass) {
       this.cssClass = cssClass;
     }
 
@@ -149,7 +148,7 @@ public class Note extends PopupControl {
 
     getStyleClass().add("note");
     rootPane = new StackPane();
-    rootPane.getStylesheets().add(getClass().getResource("note.css").toExternalForm());
+    rootPane.getStylesheets().add(Note.class.getResource("note.css").toExternalForm());
     getStyleClass().add(type.getCssClass());
     getStyleClass().add(position.getCssClass());
 

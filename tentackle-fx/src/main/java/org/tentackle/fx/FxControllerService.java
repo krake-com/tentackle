@@ -43,13 +43,13 @@ public @interface FxControllerService {
   /**
    * set <code>resources=FxControllerService.RESOURCES_NONE</code> to disable resources.
    */
-  public static final String RESOURCES_NONE = Constants.NAME_NONE;
+  String RESOURCES_NONE = Constants.NAME_NONE;
 
 
   /**
    * Type of controller caching.
    */
-  public static enum CACHING {
+  enum CACHING {
 
     /** no caching. */
     NO,
@@ -66,7 +66,7 @@ public @interface FxControllerService {
   /**
    * Type of binding.
    */
-  public static enum BINDING {
+  enum BINDING {
 
     /** no binding. */
     NO,

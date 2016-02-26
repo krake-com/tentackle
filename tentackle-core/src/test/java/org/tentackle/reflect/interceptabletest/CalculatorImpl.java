@@ -28,10 +28,7 @@ import org.tentackle.reflect.InterceptionService;
 @InterceptionService(Calculator.class)
 public class CalculatorImpl implements Calculator {
 
-  private final Calculator calc;    // the dynamic proxy object
-
   public CalculatorImpl(Calculator calc) {
-    this.calc = calc;
   }
 
   @Override

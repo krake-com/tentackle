@@ -133,22 +133,30 @@ public class ApplicationException extends Exception {
    * @return the message string
    */
   public String getAllMessages()  {
+    StringBuilder buf = new StringBuilder();
     String message = getMessage();
-    if (message == null) {
-      message = "";
+    if (message != null) {
+      buf.append(message);
     }
-    String closing = "";
+    int closeCount = 0;
     Throwable cause = getCause();
     while (cause != null)  {
-      message += " [" + cause.getMessage();
+      buf.append(" [");
+      message = cause.getMessage();
+      if (message != null) {
+        buf.append(message);
+      }
       if (!(cause instanceof ApplicationException)) {
         // some severe programming error
-        message += "\n" + getStackTraceAsString();
+        buf.append('\n').append(getStackTraceAsString());
       }
-      closing += "]";
+      closeCount++;
       cause = cause.getCause();
     }
-    return message + closing;
+    for (int i = 0; i < closeCount; i++) {
+      buf.append("]");
+    }
+    return buf.toString();
   }
 
 }

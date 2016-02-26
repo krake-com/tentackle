@@ -39,7 +39,7 @@ import org.wurbelizer.wurbel.Wurbler;
  */
 public class RemoteIncludes {
 
-  private Wurbler container;                  // the executing container
+  private final Wurbler container;            // the executing container
   private Entity entity;                      // the wurblet's entity
   private String className;                   // classname of persistence object
   private String pdoClassName;                // classname of the pdo interface
@@ -133,12 +133,10 @@ public class RemoteIncludes {
     String fileName = name + (impl ? "Impl" : "") + ".java";
     String pathName = rmiDirName + "/" + fileName;
     File file = new File(pathName);
-    if (file.exists() == false) {
+    if (!file.exists()) {
       if (pdoClassName != null) {
         // create it
-        PrintStream s = null;
-        try {
-          s = new PrintStream(file);  // this is ok unbuffered for one time
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
                 "/**\n" +
                 " * " + fileName + " (generated " + new Date() + ")\n" +
@@ -157,9 +155,7 @@ public class RemoteIncludes {
                 "import org.tentackle.misc.TrackedList;\n" +
                 "import org.tentackle.persist.rmi.RemoteResultSetCursor;"
             );
-          if (pdoClassName != null) {
-            s.println("import org.tentackle.pdo.DomainContext;");
-          }
+          s.println("import org.tentackle.pdo.DomainContext;");
           if (impl) {
             if (importSuperDelegate) {
               s.println("import " + remotePrefix + "RemoteDelegateImpl;");
@@ -234,18 +230,10 @@ public class RemoteIncludes {
         catch (IOException ex) {
           throw new WurbelException("printing to " + pathName + " failed", ex);
         }
-        finally {
-          try {
-            s.close();
-          }
-          catch (Exception ex) { }
-        }
       }
       else if (superClassName != null && superClassName.equals("AbstractDbObject")) {
         // primitive AbstractDbObjects
-        PrintStream s = null;
-        try {
-          s = new PrintStream(file);  // this is ok unbuffered for one time
+        try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
                 "/**\n" +
                 " * " + fileName + "\n" +
@@ -305,12 +293,6 @@ public class RemoteIncludes {
         }
         catch (IOException ex) {
           throw new WurbelException("printing to " + pathName + " failed", ex);
-        }
-        finally {
-          try {
-            s.close();
-          }
-          catch (Exception ex) { }
         }
       }
       else  {

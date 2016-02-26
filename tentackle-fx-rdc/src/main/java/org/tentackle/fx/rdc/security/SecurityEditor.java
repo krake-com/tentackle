@@ -61,6 +61,10 @@ public class SecurityEditor extends PdoEditor<Security> {
   @FXML
   private FxButton granteeButton;
   @FXML
+  private FxTextField secDomainContextObjectField;
+  @FXML
+  private FxButton contextButton;
+  @FXML
   private FxRadioButton allowButton;
   @FXML
   private FxRadioButton denyButton;
@@ -70,7 +74,6 @@ public class SecurityEditor extends PdoEditor<Security> {
   private FxTextArea secMessageField;
 
 
-  private ResourceBundle resources;
   private Class<?> clazz;
   private Map<Permission, FxCheckBox> permissionCheckBoxes;
   private Map<Permission, FxRadioButton> permissionRadioButtons;
@@ -80,7 +83,6 @@ public class SecurityEditor extends PdoEditor<Security> {
   @Override
   @SuppressWarnings("unchecked")
   public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
     secGranteeField.setChangeable(false);
     granteeButton.setOnAction(e -> selectGrantee());
     allowButton.setBindable(false);
@@ -122,6 +124,14 @@ public class SecurityEditor extends PdoEditor<Security> {
       permissionPane.add(permissionRadioButtons.get(entry.getKey()), 1, row);
       row++;
     }
+
+    if (!SecurityDialogFactory.getInstance().isDomainContextUsed()) {
+      contextButton.setDisable(true);
+      secDomainContextObjectField.setDisable(true);
+    }
+    else {
+      contextButton.setOnAction(e -> selectContext());
+    }
   }
 
   @Override
@@ -143,13 +153,11 @@ public class SecurityEditor extends PdoEditor<Security> {
       checkBox.setSelected(false);
     }
     Class<?>[] permissions = SecurityFactory.getInstance().stringToPermissionInterfaces(pdo.getPermissions());
-    if (permissions != null) {
-      for (Class<?> permission : permissions) {
-        @SuppressWarnings("unchecked")
-        FxCheckBox box = permissionCheckBoxes.get(SecurityFactory.getInstance().getPermission((Class<Permission>) permission));
-        if (box != null) {
-          box.setSelected(true);
-        }
+    for (Class<?> permission : permissions) {
+      @SuppressWarnings("unchecked")
+      FxCheckBox box = permissionCheckBoxes.get(SecurityFactory.getInstance().getPermission((Class<Permission>) permission));
+      if (box != null) {
+        box.setSelected(true);
       }
     }
     getContainer().updateView();
@@ -202,6 +210,12 @@ public class SecurityEditor extends PdoEditor<Security> {
   private void selectGrantee() {
     sec.setGrantee(SecurityDialogFactory.getInstance().selectGrantee(getStage(), getDomainContext()));
     secGranteeField.updateView();
+    getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+  }
+
+  private void selectContext() {
+    sec.setDomainContextObject(SecurityDialogFactory.getInstance().selectDomainContextObject(getStage(), getDomainContext()));
+    secDomainContextObjectField.updateView();
     getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
   }
 

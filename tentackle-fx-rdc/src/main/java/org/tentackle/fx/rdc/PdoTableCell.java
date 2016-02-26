@@ -33,7 +33,6 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends TableCell<S,T> {
 
-  private T pdo;
   private ContextMenu contextMenu;    // != null if menu shown
 
   /**
@@ -50,12 +49,10 @@ public class PdoTableCell<S,T extends PersistentDomainObject<T>> extends TableCe
   @Override
   public void updateItem(T pdo, boolean empty) {
     super.updateItem(pdo, empty);
-    this.pdo = pdo;
 
     if (empty) {
       setText(null);
       setGraphic(null);
-      this.pdo = null;
     }
     else {
       setText(pdo.toString());

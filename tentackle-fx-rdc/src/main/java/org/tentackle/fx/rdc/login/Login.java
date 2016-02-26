@@ -20,11 +20,9 @@
 package org.tentackle.fx.rdc.login;
 
 import java.net.URL;
-import java.util.Locale;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.Parent;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
@@ -37,6 +35,8 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.SessionInfo;
 
 /**
@@ -46,6 +46,11 @@ import org.tentackle.pdo.SessionInfo;
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class Login extends AbstractFxController {
+
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(Login.class);
 
   private ResourceBundle resources;     // localization bundle
   private SessionInfo sessionInfo;      // the session info
@@ -76,19 +81,24 @@ public class Login extends AbstractFxController {
     progressBar.setVisible(false);
     setCapsLockMessage(isCapsLock());
     cancelButton.setOnAction(e -> cancel());
+    cancelButton.setGraphic(Fx.createImageView("close"));
     loginButton.setOnAction(e -> login());
+    loginButton.setGraphic(Fx.createImageView("ok"));
     passwordField.setOnAction(e -> login());
   }
 
   @Override
-  public void setView(Parent view) {
-    super.setView(view);
-    view.addEventFilter(KeyEvent.KEY_RELEASED, (event) -> {
+  public void configure() {
+    getView().addEventFilter(KeyEvent.KEY_RELEASED, (KeyEvent event) -> {
+      if (event.getCode() == KeyCode.ESCAPE) {
+        cancel();
+      }
       if (event.getCode() == KeyCode.CAPS) {
         Platform.runLater(() -> setCapsLockMessage(isCapsLock()));
       }
     });
   }
+
 
   /**
    * Sets the session info.
@@ -102,11 +112,16 @@ public class Login extends AbstractFxController {
   }
 
   private void login() {
-    sessionInfo.setUserName(usernameField.getText());
-    String pwd = passwordField.getText();
-    sessionInfo.setPassword(pwd == null ? null : pwd.toCharArray());
-
-    ((DesktopApplication) AbstractApplication.getRunningApplication()).doLogin(getView(), sessionInfo);
+    if (progressBar.getProgress() <= 0.0) {
+      sessionInfo.setUserName(usernameField.getText());
+      String pwd = passwordField.getText();
+      sessionInfo.setPassword(pwd == null ? null : pwd.toCharArray());
+      setProgress(0.01);
+      ((DesktopApplication) AbstractApplication.getRunningApplication()).doLogin(getView(), sessionInfo);
+    }
+    else {
+      LOGGER.warning("login already in progress...");
+    }
   }
 
   private void cancel() {
@@ -120,12 +135,21 @@ public class Login extends AbstractFxController {
    * @param value negative to infinite, 0 to hide progress bar, else up to 1 for 100%
    */
   public void setProgress(double value) {
-    if (value == 0.0) {
+    if (value <= 0.0) {
       progressBar.setVisible(false);
+      progressBar.setProgress(0.0);
+      loginButton.setDisable(false);
+      cancelButton.setDisable(false);
+      usernameField.setChangeable(true);
+      passwordField.setChangeable(true);
     }
     else {
       progressBar.setVisible(true);
       progressBar.setProgress(value);
+      loginButton.setDisable(true);
+      cancelButton.setDisable(true);
+      usernameField.setChangeable(false);
+      passwordField.setChangeable(false);
     }
   }
 

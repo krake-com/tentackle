@@ -63,4 +63,17 @@ public interface RemoteSession {
    */
   void logStatistics(Logger.Level level, boolean clear);
 
+  /**
+   * Gets an extension object.<br>
+   * Extensions are used to provide additional services.
+   * The given interface is checked against execution permission
+   * within the requested domain context. If refused, a SecurityException is thrown.
+   *
+   * @param <T> the extension type
+   * @param context the domain context
+   * @param extIf the extension interface
+   * @return the extension
+   */
+  <T extends DomainContextDependable> T getExtension(DomainContext context, Class<T> extIf);
+
 }

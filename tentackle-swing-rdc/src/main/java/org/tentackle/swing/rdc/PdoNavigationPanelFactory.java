@@ -24,7 +24,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface PdoNavigationPanelFactory$Singleton {
-  static PdoNavigationPanelFactory INSTANCE = ServiceFactory.createService(
+  PdoNavigationPanelFactory INSTANCE = ServiceFactory.createService(
               PdoNavigationPanelFactory.class, DefaultPdoNavigationPanelFactory.class);
 }
 

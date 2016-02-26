@@ -20,7 +20,6 @@
 package org.tentackle.pdo;
 
 import java.util.Collection;
-import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.TrackedList;
 
 
@@ -28,7 +27,7 @@ interface Session$ThreadLocal {
   /**
    * The session of the current thread.
    */
-  static ThreadLocal<Session> TL_SESSION = new ThreadLocal<>();
+  ThreadLocal<Session> TL_SESSION = new ThreadLocal<>();
 }
 
 
@@ -264,14 +263,6 @@ public interface Session extends Comparable<Session> {
   String getTxName();
 
   /**
-   * Gets the optional transaction object.
-   *
-   * @return the transaction object, null if none
-   * @throws PersistenceException if no transaction running
-   */
-  Identifiable getTxObject();
-
-  /**
    * Runs a transaction provided by a transaction envelope.
    *
    * @param <T> the return type
@@ -296,22 +287,6 @@ public interface Session extends Comparable<Session> {
    * @return the instance number
    */
   int getInstanceNumber();
-
-  /**
-   * Registers a close handler.
-   *
-   * @param closeHandler the handler
-   * @return true if added, false if already registered
-   */
-  boolean registerCloseHandler(SessionCloseHandler closeHandler);
-
-  /**
-   * Unregisters a close handler.
-   *
-   * @param closeHandler the handler
-   * @return true if removed, false if not registered
-   */
-  boolean unregisterCloseHandler(SessionCloseHandler closeHandler);
 
   /**
    * Sets the exclusive owner thread. <p> Allows to detect other threads
@@ -390,32 +365,6 @@ public interface Session extends Comparable<Session> {
    * @return true if session is open, else false
    */
   boolean isOpen();
-
-  /**
-   * Gets the crash flag.<br> May be invoked from any thread.
-   *
-   * @return true if session is marked as crashed
-   */
-  boolean isCrashed();
-
-  /**
-   * Gets the transaction nesting level.
-   *
-   * @return the nesting level, 0 if no transaction in progress
-   */
-  int getTxLevel();
-
-  /**
-   * Marks the txLevel invalid for the rest of the transaction.
-   */
-  void invalidateTxLevel();
-
-  /**
-   * Returns whether the txLevel is valid.
-   *
-   * @return true if valid
-   */
-  boolean isTxLevelValid();
 
   /**
    * Gets the persistence locality of this session.<br>

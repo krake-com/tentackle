@@ -30,9 +30,9 @@ import org.tentackle.reflect.EffectiveClassProvider;
  */
 public class PdoTreeObject {
 
+  private final Object  parentObject;   // the parent object in the tree
   private Object  object;               // the node's object
-  private Object  parentObject;         // the parent object in the tree
-  private GuiProvider pdod;         // != null if object is a PDO
+  private GuiProvider<?> pdod;          // != null if object is a PDO
   private boolean isPdoTreeExtension;   // true if object is a PdoTreeExtension
   private boolean expanded;             // true if all referenced objects loaded
   private boolean stopTreeWillExpand;   // true = stop expanding the tree at this node (in expansionlistener)
@@ -113,7 +113,7 @@ public class PdoTreeObject {
    * @return the tooltip, null if none
    */
   public String getToolTipText()  {
-    if (toolTipTextLoaded == false) {
+    if (!toolTipTextLoaded) {
       toolTipText = null;
       if (pdod != null)  {
         toolTipText = pdod.getToolTipText(parentObject);
@@ -136,7 +136,7 @@ public class PdoTreeObject {
 
   @Override
   public String toString()  {
-    if (treeTextLoaded == false)  {
+    if (!treeTextLoaded)  {
       if (pdod != null) {
         treeText = pdod.getTreeText(parentObject);
       }
@@ -256,7 +256,7 @@ public class PdoTreeObject {
    * The user will still be able to expand the node by clicking on it!
    *
    * @param stopExpandPath true if stop expansion
-   * @see PdoTree#doExpandPath(int, int, org.tentackle.pdo.PersistentDomainObject, javax.swing.tree.TreePath) 
+   * @see PdoTree#doExpandPath(int, int, org.tentackle.pdo.PersistentDomainObject, javax.swing.tree.TreePath)
    */
   public void setStopExpandPath(boolean stopExpandPath) {
     this.stopExpandPath = stopExpandPath;

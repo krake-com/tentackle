@@ -35,7 +35,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T> {
 
-  private final T pdo;
+  private T pdo;
   private GuiProvider<T> provider;
   private boolean childrenLoaded;
 
@@ -56,6 +56,18 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    */
   public T getPdo() {
     return pdo;
+  }
+
+  /**
+   * Sets the pdo.<br>
+   * Can be used to reload the pdo, for example.
+   *
+   * @param pdo the pdo
+   */
+  public void setPdo(T pdo) {
+    setValue(pdo);
+    this.pdo = pdo;
+    provider = null;    // force reload
   }
 
   @Override
@@ -85,8 +97,8 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * @return the parent, null if no parent or parent is no PdoTreeItem
    */
   @SuppressWarnings("unchecked")
-  public PdoTreeItem<T> getParentPdoItem() {
-    TreeItem<T> parent = getParent();
+  public <P extends PersistentDomainObject<P>> PdoTreeItem<P> getParentPdoItem() {
+    TreeItem<?> parent = getParent();
     return parent instanceof PdoTreeItem ? (PdoTreeItem) parent : null;
   }
 

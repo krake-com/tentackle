@@ -36,6 +36,6 @@ public interface FormWrapListener extends EventListener {
      * 
      * @param e the form wrap event
      */
-    public void formWrapped(FormWrapEvent e);
+    void formWrapped(FormWrapEvent e);
 
 }  

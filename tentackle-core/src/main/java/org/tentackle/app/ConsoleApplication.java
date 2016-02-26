@@ -30,7 +30,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
@@ -113,41 +112,38 @@ public abstract class ConsoleApplication extends AbstractApplication {
    */
   public void start(String[] args) {
 
-    synchronized (this) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
 
-      cmdLine = new CommandLine(args);
-      setProperties(cmdLine.getOptionsAsProperties());
+    try {
+      LOGGER.fine("register application");
+      // make sure that only one application is running at a time
+      register();
 
-      try {
-        LOGGER.fine("register application");
-        // make sure that only one application is running at a time
-        register();
+      LOGGER.fine("initialize application");
+      // doInitialize environment
+      doInitialize();
 
-        LOGGER.fine("initialize application");
-        // doInitialize environment
-        doInitialize();
-
-        LOGGER.fine("login to backend");
-        // connect to database/application server
-        if (doLogin() == null) {
-          // no connection, immediately
-          System.exit(1);
-        }
-
-        LOGGER.fine("configure application");
-        // configure the application
-        doConfigureApplication();
-
-        LOGGER.fine("finish startup");
-        // finish startup
-        doFinishStartup();
+      LOGGER.fine("login to backend");
+      // connect to database/application server
+      if (doLogin() == null) {
+        // no connection, immediately
+        System.exit(1);
       }
-      catch (Exception e) {
-        // print message to user, if GUI in window, else if headless to console
-        LOGGER.logStacktrace(e);
-        // doStop with error
-        doStop(3, e);
-      }
+
+      LOGGER.fine("configure application");
+      // configure the application
+      doConfigureApplication();
+
+      LOGGER.fine("finish startup");
+      // finish startup
+      doFinishStartup();
+    }
+    catch (Exception e) {
+      // print message to user, if GUI in window, else if headless to console
+      LOGGER.logStacktrace(e);
+      // doStop with error
+      doStop(3, e);
     }
   }
 
@@ -207,9 +203,6 @@ public abstract class ConsoleApplication extends AbstractApplication {
     }
     catch (LoginFailedException ex) {
       throw new ApplicationException(AppCoreBundle.getString("LOGIN FAILED"), ex);
-    }
-    catch (PersistenceException pex) {
-      throw pex;
     }
 
     session.makeCurrent();

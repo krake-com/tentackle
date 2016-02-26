@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface DomainContextFactory$Singleton {
-  static DomainContextFactory INSTANCE = ServiceFactory.createService(
+  DomainContextFactory INSTANCE = ServiceFactory.createService(
               DomainContextFactory.class, DefaultDomainContextFactory.class);
 }
 

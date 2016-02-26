@@ -22,6 +22,7 @@ package org.tentackle.pdo;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.TimeZone;
 import org.tentackle.misc.Immutable;
 
 /**
@@ -236,6 +237,62 @@ public interface SessionInfo extends Immutable {
    * @param locale the locale, null to use JVM's locale
    */
   void setLocale(Locale locale);
+
+  /**
+   * Gets the info string describing the JVM.
+   *
+   * @return the jvm info
+   */
+  String getVmInfo();
+
+  /**
+   * Sets the info string describing the JVM.
+   *
+   * @param vmInfo the jvm info
+   */
+  void setVmInfo(String vmInfo);
+
+  /**
+   * Gets the operating system info.
+   *
+   * @return the OS info
+   */
+  String getOsInfo();
+
+  /**
+   * Sets the operating system info.
+   *
+   * @param osInfo the OS info
+   */
+  void setOsInfo(String osInfo);
+
+  /**
+   * Gets the host info.
+   *
+   * @return the hostname or similar info
+   */
+  String getHostInfo();
+
+  /**
+   * Sets the host info.
+   *
+   * @param hostInfo the info
+   */
+  void setHostInfo(String hostInfo);
+
+  /**
+   * Gets the timezone.
+   *
+   * @return the timezone
+   */
+  TimeZone getTimeZone();
+
+  /**
+   * Sets the timezone.
+   *
+   * @param timeZone the timezone
+   */
+  void setTimeZone(TimeZone timeZone);
 
   /**
    * Checks the version information (of the server).

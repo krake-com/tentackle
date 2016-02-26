@@ -20,7 +20,6 @@
 package org.tentackle.persist.rmi;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.Socket;
 import java.util.Objects;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
@@ -34,7 +33,7 @@ import org.tentackle.io.SocketConfiguratorHolder;
  *
  * @author harald
  */
-public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory implements Serializable, SocketConfiguratorHolder {
+public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory implements SocketConfiguratorHolder {
 
   private static final long serialVersionUID = 3906670971029103850L;
 

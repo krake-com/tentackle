@@ -26,7 +26,7 @@ import org.tentackle.security.pdo.Security;
 
 
 interface SecurityDialogFactory$Singleton {
-  static SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class, SecurityDialogFactory.class);
+  SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class, SecurityDialogFactory.class);
 }
 
 

@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-build-support</artifactId>
-  <groupId>org.tentackle</groupId>
   <version>2.0.6</version>
   <packaging>jar</packaging>
   <name>Tentackle Build Support</name>
@@ -23,5 +22,5 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-  
+
 </project>

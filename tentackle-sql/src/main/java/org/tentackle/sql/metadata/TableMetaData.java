@@ -150,7 +150,7 @@ public class TableMetaData {
     }
 
     // extract foreign keys
-    ForeignKeyMetaData foreignKeyMetaData = null;
+    ForeignKeyMetaData foreignKeyMetaData;
     resultSet = metaData.getImportedKeys(null, schemaName, tableName);
     try {
       while (resultSet.next()) {
@@ -164,8 +164,8 @@ public class TableMetaData {
             foreignKeys.put(foreignKeyMetaData.getForeignKeyName(), foreignKeyMetaData);
           }
         }
-        else if (foreignKeyMetaData == null) {
-          throw new BackendException("unexpected KEY_SEQ " + keySeq + " in " + foreignKeyMetaData);
+        else {
+          throw new BackendException("unexpected KEY_SEQ " + keySeq + " in foreign key meta data");
         }
         ForeignKeyColumnMetaData column = new ForeignKeyColumnMetaData(foreignKeyMetaData);
         column.setupForeignKeyColumnFromMetaData(resultSet);

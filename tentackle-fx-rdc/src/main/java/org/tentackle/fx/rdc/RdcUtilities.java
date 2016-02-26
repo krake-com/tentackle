@@ -43,12 +43,13 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
 
 interface RdcUtilities$Singleton {
-  static RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
+  RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
 }
 
 /**
@@ -108,9 +109,10 @@ public class RdcUtilities {
    * @return the possibly changed pdo if modal
    */
   public <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
+          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner,
+          Consumer<PdoCrud<T>> configurator) {
 
-    PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality);
+    PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
     if (crud != null) {   // if not aleady being edited
       Stage stage = crud.getStage();
       if (stage == null && Fx.getStage(crud.getView()) == null) {
@@ -122,18 +124,26 @@ public class RdcUtilities {
         Scene scene = new Scene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> {
-          Platform.runLater(() -> crud.getEditor().requestInitialFocus());
-        });
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
+                e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
-            e.consume();
+            e.consume();    // don't close
           }
+        });
+        stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
+          // clear all references to avoid memleaks and side effects
+          crud.setPdoList(null);
+          crud.removeAllPdoEventListeners();
         });
       } // else: re-use stage
 
       if (configurator != null) {
         configurator.accept(crud);
+      }
+
+      if (stage == null) {
+        throw new FxRuntimeException("misconfigured crud stage");
       }
 
       if (modality != Modality.NONE) {
@@ -157,11 +167,12 @@ public class RdcUtilities {
    * @param pdoList the optional list of PDOs to navigate in the list
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the CRUD, null if there is already a CRUD editing this PDO.
    */
   @SuppressWarnings("unchecked")
   public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-                T pdo, List<T> pdoList, boolean editable, Modality modality) {
+                T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
@@ -173,15 +184,15 @@ public class RdcUtilities {
     for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
       PdoCrud<T> crud = (PdoCrud<T>) iter.next();
       Stage stage = Fx.getStage(crud.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality)) {
-        // not showing (i.e. unused) and same modality
+      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
+        // not showing (i.e. unused) and same modality and owner
         crud.setEditable(editable);
         crud.setPdo(pdo);
         crud.setPdoList(pdoList);
         return crud;
       }
-      // is showing or other modality, i.e. part of some window which is showing
-      if (Objects.equals(pdo, crud.getPdo())) {
+      // is showing or other modality or different owner, i.e. part of some window which is showing
+      if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing()) {
         // same PDO
         if (editable && crud.isEditable()) {
           // already being edited
@@ -189,6 +200,12 @@ public class RdcUtilities {
           return null;
         }
         // else: being edited, being shown or requested !editable: get a fresh one
+      }
+      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+          stage.getOwner() != null && !stage.getOwner().isShowing()) {
+        // just the wrong owner, which isnt showing:
+        // remove from cache to avoid pollution
+        iter.remove();
       }
     }
 
@@ -228,9 +245,10 @@ public class RdcUtilities {
    * @return the selected PDOs if modal, null if not modal
    */
   public <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
-                    T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<PdoSearch<T>> configurator) {
+                    T pdo, Modality modality, Window owner, boolean createPdoAllowed,
+                    Consumer<PdoSearch<T>> configurator) {
 
-    PdoSearch<T> search = getSearch(pdo, modality);
+    PdoSearch<T> search = getSearch(pdo, modality, owner);
     search.setCreatePdoAllowed(createPdoAllowed);
     Stage stage = search.getStage();
     if (stage == null && Fx.getStage(search.getView()) == null) {
@@ -243,13 +261,19 @@ public class RdcUtilities {
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> {
-        Platform.runLater(() -> search.getFinder().requestInitialFocus());
-      });
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
+              e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
+      stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
+              // runlater to avoid clearing the modal return value
+              e -> Platform.runLater(() -> search.setItems(null)));
     } // else: re-use stage
 
     if (configurator != null) {
       configurator.accept(search);
+    }
+
+    if (stage == null) {
+      throw new FxRuntimeException("misconfigured search stage");
     }
 
     if (modality != Modality.NONE) {
@@ -269,10 +293,13 @@ public class RdcUtilities {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param modality the modality
+   * @param owner the owner, null if none
    * @return the search controller, never null
    */
   @SuppressWarnings("unchecked")
-  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality) {
+  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T>
+         getSearch(T pdo, Modality modality, Window owner) {
+
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoSearch<?>> searches = searchCache.get(pdoClass);
     if (searches == null) {
@@ -283,11 +310,15 @@ public class RdcUtilities {
     for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
       PdoSearch<T> search = (PdoSearch<T>) iter.next();
       Stage stage = Fx.getStage(search.getView());
-      if (stage == null || (!stage.isShowing() && stage.getModality() == modality)) {
+      if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
         search.setPdo(pdo);
         search.setItems(null);
         search.showTable();
         return search;
+      }
+      if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
+          stage.getOwner() != null && !stage.getOwner().isShowing()) {
+        iter.remove();
       }
     }
 

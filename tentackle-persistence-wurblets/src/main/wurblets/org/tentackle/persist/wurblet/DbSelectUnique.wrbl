@@ -113,7 +113,7 @@
       // invoke remote method
       try {
 @{to remoteOut}@
-  public @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException;
+  @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

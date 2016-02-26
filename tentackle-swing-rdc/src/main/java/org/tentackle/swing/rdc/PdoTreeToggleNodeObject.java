@@ -29,7 +29,7 @@ import javax.swing.ImageIcon;
  */
 public class PdoTreeToggleNodeObject extends PdoTreeObject {
 
-  private int toggleNodeId;   // the unique toggle node id
+  private final int toggleNodeId;   // the unique toggle node id
   
   
   /**

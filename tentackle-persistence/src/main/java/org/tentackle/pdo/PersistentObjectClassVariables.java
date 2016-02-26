@@ -279,13 +279,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   protected void loadMoreProperties() {
     String prop = getProperty(PROPERTY_CHECKSECURITY);
-    if (prop != null) {
-      checkSecurity = !(prop.equals("no") || prop.equals("off") || prop.equals("false") ||
-                        prop.equals("disabled") || prop.equals("0"));
-    }
-    else  {
-      checkSecurity = true;
-    }
+    checkSecurity = prop == null ||
+            !(prop.equals("no") || prop.equals("off") || prop.equals("false") || prop.equals("disabled") || prop.equals("0"));
   }
 
 

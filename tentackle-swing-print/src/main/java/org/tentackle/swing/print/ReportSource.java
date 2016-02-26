@@ -32,44 +32,44 @@ public interface ReportSource {
 
   // returnvalues from advance()
   /** some error, abort! **/
-  public static final int ERROR   = -1;
+  int ERROR   = -1;
   /** end of data: print "trailer" **/
-  public static final int EOF     = 0;
+  int EOF     = 0;
   /** print "data" **/
-  public static final int PRINT   = 1;
+  int PRINT   = 1;
   /** increment "level", print subheader **/
-  public static final int PUSH    = 2;
+  int PUSH    = 2;
   /** print subfooter, decrement level **/
-  public static final int POP     = 3;
+  int POP     = 3;
 
 
 
   /**
    * Opens this report source.
    */
-  public void open();
+  void open();
 
   /**
    * Closes this report source and do any necessary cleanup.
    */
-  public void close();
+  void close();
 
   /**
    * Rewinds this report source.
    */
-  public void rewind();
+  void rewind();
 
   /**
    * Saves the current state.
    * @see #restore()
    */
-  public void save();
+  void save();
 
   /**
    * Restores the last saved state.
    * @see #save()
    */
-  public void restore();
+  void restore();
 
 
   /**
@@ -82,7 +82,7 @@ public interface ReportSource {
    * @return true if there is more data
    * @see #advance
    */
-  public boolean hasNext();
+  boolean hasNext();
 
 
   /**
@@ -94,7 +94,7 @@ public interface ReportSource {
    * @return  the new state
    * @see #hasNext()
    */
-  public int advance(Report report);
+  int advance(Report report);
 
 
   /**
@@ -104,7 +104,7 @@ public interface ReportSource {
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareIntro(Report report);
+  int prepareIntro(Report report);
 
 
   /**
@@ -114,7 +114,7 @@ public interface ReportSource {
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareTrailer(Report report);
+  int prepareTrailer(Report report);
 
 
   /**
@@ -125,7 +125,7 @@ public interface ReportSource {
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareHeader(Report report);
+  int prepareHeader(Report report);
 
 
   /**
@@ -136,7 +136,7 @@ public interface ReportSource {
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareFooter(Report report);
+  int prepareFooter(Report report);
 
 
   /**
@@ -146,7 +146,7 @@ public interface ReportSource {
    * @param report the report
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareLine(Report report);
+  int prepareLine(Report report);
 
 
   /**
@@ -157,7 +157,7 @@ public interface ReportSource {
    * @param level the logical group level (starting at 1)
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareSubHeader(Report report, int level);
+  int prepareSubHeader(Report report, int level);
 
 
   /**
@@ -168,6 +168,6 @@ public interface ReportSource {
    * @param level the logical group level (starting at 1)
    * @return the pixels +/- to start printing relative to current vertical offset (usually 0)
    */
-  public int prepareSubFooter(Report report, int level);
+  int prepareSubFooter(Report report, int level);
 
 }

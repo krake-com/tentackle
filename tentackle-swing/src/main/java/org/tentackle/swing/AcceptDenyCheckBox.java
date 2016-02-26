@@ -152,7 +152,7 @@ public class AcceptDenyCheckBox extends FormCheckBox {
       setValue(null);
       setHorizontalAlignment(JLabel.CENTER);
       setVerticalAlignment(JLabel.CENTER);
-      ((JLabel) getComponent()).setIcon((value != null && ((Boolean)value).booleanValue()) ^ invert ? okIcon : cancelIcon);
+      ((JLabel) getComponent()).setIcon((value != null && (Boolean) value) ^ invert ? okIcon : cancelIcon);
       return comp;
     }
 

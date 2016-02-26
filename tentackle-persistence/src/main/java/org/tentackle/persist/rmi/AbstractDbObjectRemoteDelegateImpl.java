@@ -92,7 +92,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    * Validates the object before it is saved.<br>
    * The default implementation does nothing.
    *
-   * @param object
+   * @param object the persistent object
    * @throws java.rmi.RemoteException
    */
   protected void validate(P object) throws RemoteException {
@@ -135,7 +135,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   @SuppressWarnings("unchecked")
   public List<? extends P> selectAllObjects() throws RemoteException {
     try {
-      return (List<? extends P>) dbObject.selectAllObjects();
+      return dbObject.selectAllObjects();
     }
     catch (RuntimeException e) {
       throw createException(e);

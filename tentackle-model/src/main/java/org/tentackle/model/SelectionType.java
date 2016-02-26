@@ -33,6 +33,6 @@ public enum SelectionType {
   EAGER,
 
   /** select only once on first access. */
-  LAZY;
+  LAZY
 
 }

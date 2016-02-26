@@ -52,13 +52,13 @@ public interface Interceptor extends InvocationHandler {
    *
    * @param chainedInterceptor the chained interceptor
    */
-  public void setChainedInterceptor(Interceptor chainedInterceptor);
+  void setChainedInterceptor(Interceptor chainedInterceptor);
 
   /**
    * Gets the chainded interceptor.
    *
    * @return the interceptor, null if end of chain
    */
-  public Interceptor getChainedInterceptor();
+  Interceptor getChainedInterceptor();
 
 }

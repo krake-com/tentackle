@@ -105,7 +105,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   /**
    * The view mode.
    */
-  public static enum ViewMode {
+  public enum ViewMode {
 
     /** tree view */
     TREE,
@@ -684,12 +684,10 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     table.setDefaultRenderer(PersistentDomainObject.class, new PdoTableCellRenderer());
 
     // add Listeners
-    table.addActionListener((ActionEvent e) -> {
-      naviTable_actionPerformed(e);
-    });
+    table.addActionListener(this::naviTable_actionPerformed);
 
     table.addListSelectionListener((ListSelectionEvent e) -> {
-      if (e.getValueIsAdjusting() == false) {
+      if (!e.getValueIsAdjusting()) {
         naviTable_valueChanged(e);
       }
     });
@@ -761,14 +759,10 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   public PdoTree createTree() {
     // create empty tree
     PdoTree tree = Rdc.createPdoTree();
-    tree.addActionListener((ActionEvent e) -> {
-      naviTree_actionPerformed(e);
-    });
+    tree.addActionListener(this::naviTree_actionPerformed);
 
     // add listeners
-    tree.addTreeSelectionListener((TreeSelectionEvent e) -> {
-      naviTree_valueChanged(e);
-    });
+    tree.addTreeSelectionListener(this::naviTree_valueChanged);
 
     tree.getSelectionModel().setSelectionMode(treeSelectionMode);
 
@@ -1039,12 +1033,12 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
    */
   public void setDisposeKeyEnabled(boolean enabled)  {
     if (enabled != disposeKeyEnabled)  {
-      if (!enabled && disposeKeyEnabled)  {
+      if (!enabled)  {
         // unregister
         naviTree.removeKeyListener(this);
         naviTable.removeKeyListener(this);
       }
-      else if (enabled) {
+      else {
         // register new listener
         naviTree.addKeyListener(this);
         naviTable.addKeyListener(this);
@@ -1123,7 +1117,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
             tableClass = pdo.getEffectiveClass();
           }
           else  {
-            if (tableClass.equals(pdo.getClass()) == false)  {
+            if (!tableClass.equals(pdo.getClass()))  {
               tableClass = null;
               break;
             }
@@ -1377,22 +1371,21 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
 
 
   private void naviTable_valueChanged(ListSelectionEvent e) {
-    // ausgewaehlte Elemente ermitteln
+
     int[] rows = naviTable.getSelectedRows();
 
     selectedObject  = null;
     selectedObjects = null;
     int enableCut   = 0;
 
-    if (rows != null)  {
-      for (int i=0; i < rows.length; i++)  {
-        int row = rows[i];
-        if (row >= 0 && row < list.size()) {
-          addToSelectedObjects(list.get(getModelIndex(row)));
-          enableCut++;
-        }
+    for (int i=0; i < rows.length; i++)  {
+      int row = rows[i];
+      if (row >= 0 && row < list.size()) {
+        addToSelectedObjects(list.get(getModelIndex(row)));
+        enableCut++;
       }
     }
+
     cutSelectedButton.setEnabled(enableCut > 1);
     fireValueChanged();
     selectButton.setEnabled(selectedObject != null);
@@ -1403,7 +1396,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   private void updateSumButton()  {
     // check if at least one column can be numeric
     boolean sumUpEnabled = false;
-    if (list != null && list.isEmpty() == false) {
+    if (list != null && !list.isEmpty()) {
       if (naviModel != null)  {
         FormTableEntry<T> template = naviModel.getTemplate();
         int cols = template.getColumnCount();
@@ -1506,7 +1499,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
             DomainContext context = pdo.getBaseContext();
             if (context != null) {
               String contextName = context.toString();
-              if (contextName != null && contextName.length() > 0)  {
+              if (contextName.length() > 0)  {
                 title = MessageFormat.format(RdcSwingRdcBundle.getString("{0} IN {1}"), title, contextName);
               }
             }
@@ -1553,7 +1546,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
 
         else  {
            // switch to table view
-          if (naviTableUpdated == false)  {
+          if (!naviTableUpdated)  {
             naviModel.listChanged(list);
             naviTableUpdated = true;
             naviTreeUpdated = false;
@@ -1610,7 +1603,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
         selectedObject  = null;
         selectedObjects = null;
 
-        if (naviTreeUpdated == false || rebuildView) {
+        if (!naviTreeUpdated || rebuildView) {
           treeFilter = Rdc.createGuiProvider(pdo).getTreeFilter();
           buildTree();
           naviTreeUpdated = true;
@@ -1891,12 +1884,10 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     List<T> objList = new ArrayList<>();
     if (viewMode == ViewMode.TABLE) {
       int[] rows = naviTable.getSelectedRows();
-      if (rows != null)  {
-        for (int i=0; i < rows.length; i++)  {
-          int row = getModelIndex(rows[i]);
-          if (row >= 0 && row < list.size()) {
-            objList.add(list.get(row));
-          }
+      for (int i=0; i < rows.length; i++)  {
+        int row = getModelIndex(rows[i]);
+        if (row >= 0 && row < list.size()) {
+          objList.add(list.get(row));
         }
       }
     }
@@ -1921,7 +1912,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   }//GEN-LAST:event_cutSelectedButtonActionPerformed
 
   private void sortBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sortBoxActionPerformed
-    if (sortBox.isSelected() == false) {
+    if (!sortBox.isSelected()) {
       if (naviSorter != null) {
         naviSorter.clearSorting();
         naviSorter.sort();

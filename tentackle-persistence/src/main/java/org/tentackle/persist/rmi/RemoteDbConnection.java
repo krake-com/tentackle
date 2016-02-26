@@ -46,7 +46,7 @@ public interface RemoteDbConnection extends Remote {
    * @return the version info
    * @throws RemoteException
    */
-  public Serializable getServerVersionInfo() throws RemoteException;
+  Serializable getServerVersionInfo() throws RemoteException;
 
 
   /**
@@ -56,7 +56,7 @@ public interface RemoteDbConnection extends Remote {
    * @return the session
    * @throws RemoteException if some error, for example wrong passord
    */
-  public RemoteDbSession login(SessionInfo clientInfo) throws RemoteException;
+  RemoteDbSession login(SessionInfo clientInfo) throws RemoteException;
 
 
   /**
@@ -65,6 +65,6 @@ public interface RemoteDbConnection extends Remote {
    * @param session to be closed
    * @throws RemoteException if some error
    */
-  public void logout(RemoteDbSession session) throws RemoteException;
+  void logout(RemoteDbSession session) throws RemoteException;
 
 }

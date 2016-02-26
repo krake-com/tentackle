@@ -29,7 +29,6 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionDependable;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
 
 /**
@@ -362,7 +361,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         row++;
       }
     }
-    
+
     firstInvoked = false;
     return rv;
   }
@@ -560,7 +559,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public List<T> toList() {
-    List<T> list = null;
+    List<T> list;
     if (session.isRemote())  {
       try {
         // this is faster then a getObject()-loop because it saves rmi-roundtrips
@@ -776,8 +775,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       AbstractPersistentObject<T,?> po = (AbstractPersistentObject) pdo.getPersistenceDelegate();
       po.configureRemoteObject(context, pdo);
     }
-    else if (pdo instanceof SessionDependable) {
-      session.applyTo((SessionDependable) pdo);
+    else if (pdo != null) {
+      session.applyTo(pdo);
     }
   }
 

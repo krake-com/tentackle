@@ -37,7 +37,7 @@ import org.tentackle.swing.GUIRuntimeException;
 
 
 interface PlafUtilities$Singleton {
-  static PlafUtilities INSTANCE = ServiceFactory.createService(PlafUtilities.class, PlafUtilities.class);
+  PlafUtilities INSTANCE = ServiceFactory.createService(PlafUtilities.class, PlafUtilities.class);
 }
 
 
@@ -212,8 +212,7 @@ public class PlafUtilities {
    */
   public boolean isFocusAnimated() {
     LookAndFeel plaf = UIManager.getLookAndFeel();
-    return plaf instanceof TentackleLookAndFeel ?
-          ((TentackleLookAndFeel)plaf).isFocusAnimated() : false;
+    return plaf instanceof TentackleLookAndFeel && ((TentackleLookAndFeel) plaf).isFocusAnimated();
   }
 
 

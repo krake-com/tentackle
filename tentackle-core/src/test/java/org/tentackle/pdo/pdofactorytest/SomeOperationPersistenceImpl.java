@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo.pdofactorytest;
 
-import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.mock.MockPersistentOperation;
 import org.testng.Reporter;
 
@@ -35,7 +34,6 @@ public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOp
    * Creates an operation persistence object.
    *
    * @param operation the operation
-   * @param context the domain context
    */
   public SomeOperationPersistenceImpl(SomeOperation operation) {
     super(operation);

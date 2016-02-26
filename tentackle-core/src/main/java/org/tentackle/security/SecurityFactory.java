@@ -31,7 +31,7 @@ import org.tentackle.security.permissions.WritePermission;
 
 
 interface SecurityFactory$Singleton {
-  static SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
+  SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
 }
 
 
@@ -156,7 +156,7 @@ public interface SecurityFactory {
    * Converts a comma separated string to a set of permission interfaces.
    *
    * @param str the string
-   * @return the permission interfaces in the same order as in str, null if string is null
+   * @return the permission interfaces in the same order as in str, empty array if string is null
    * @throws SecurityException if conversion failed
    */
   Class<?>[] stringToPermissionInterfaces(String str);
@@ -165,7 +165,7 @@ public interface SecurityFactory {
    * Converts a comma separated string to a set of permissions.
    *
    * @param str the string
-   * @return the permissions in the same order as in str, null if string is null
+   * @return the permissions in the same order as in str, empty set if string is null
    * @throws SecurityException if conversion failed
    */
   Set<Permission> stringToPermissions(String str);
@@ -174,7 +174,7 @@ public interface SecurityFactory {
    * Converts a set of permissions to a comma seperated string.
    *
    * @param permissions the permissions
-   * @return the string, null if permissions is null
+   * @return the string, empty string if permissions is null
    */
   String permissionsToString(Set<Permission> permissions);
 

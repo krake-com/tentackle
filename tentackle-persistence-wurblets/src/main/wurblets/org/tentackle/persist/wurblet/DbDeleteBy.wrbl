@@ -79,7 +79,7 @@
     if (getSession().isRemote())  {
       try {
 @{to remoteOut}@
-  public int @(methodName)@(@(params)@) throws RemoteException;
+  int @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

@@ -142,8 +142,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   @Override
   public DbTransaction begin(String txName) throws RemoteException {
     try {
-      DbTransaction transaction = (DbTransaction) beginMethod.invoke(getSession(), txName, true);
-      return transaction;
+      return (DbTransaction) beginMethod.invoke(getSession(), txName, true);
     }
     catch (Exception ex)  {
       throw createException(ex);

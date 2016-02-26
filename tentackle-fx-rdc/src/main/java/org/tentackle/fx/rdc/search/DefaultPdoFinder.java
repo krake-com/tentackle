@@ -52,7 +52,7 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
 
   @Override
   public ObservableList<T> runSearch() {
-    if (pdo.isNormTextProvided()) {
+    if (pdo != null && pdo.isNormTextProvided()) {
       String pattern = StringHelper.toLikeString(StringHelper.normalize(patternField.getText()));
       return FXCollections.observableArrayList(getPdo().selectByNormText(pattern));
     }
@@ -78,12 +78,12 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
 
   @Override
   public boolean isVisible() {
-    return super.isVisible() && pdo.isNormTextProvided() && !isSearchRunningImmediately();
+    return super.isVisible() && pdo != null && pdo.isNormTextProvided() && !isSearchRunningImmediately();
   }
 
   @Override
   public void requestInitialFocus() {
-    if (pdo.isNormTextProvided()) {
+    if (pdo != null && pdo.isNormTextProvided()) {
       patternField.requestFocus();
     }
   }

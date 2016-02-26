@@ -54,7 +54,7 @@ public class FormTableColumnModel extends DefaultTableColumnModel {
    */
   public FormTableColumnModel() {
     super();
-    originalColumns = new Vector<TableColumn>();
+    originalColumns = new Vector<>();
   }
 
   
@@ -292,7 +292,7 @@ public class FormTableColumnModel extends DefaultTableColumnModel {
       super.removeColumn(tableColumns.firstElement());
     }
     // build a new internal vector of columns in the order given by modelIndexes
-    Vector<TableColumn> columns = new Vector<TableColumn>();
+    Vector<TableColumn> columns = new Vector<>();
     for (int i=0; i < modelIndexes.length; i++) {
       columns.add(getColumnByModelIndex(modelIndexes[i]));
     }

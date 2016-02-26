@@ -39,10 +39,10 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
 
 
   /** maximum number of characters for 'name'. */
-  public static final int CL_NAME = 30;
+  int CL_NAME = 30;
 
   /** maximum number of characters for 'realm'. */
-  public static final int CL_REALM = 80;
+  int CL_REALM = 80;
 
   // </editor-fold>//GEN-END:fieldlengths
 
@@ -52,28 +52,28 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
 
 
   /** relation name for 'NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)'. */
-  public static final String RN_NUMBERRANGELIST = "numberRangeList";
+  String RN_NUMBERRANGELIST = "numberRangeList";
 
   /** attribute name for database column 'name'. */
-  public static final String AN_NAME = "name";
+  String AN_NAME = "name";
 
   /** attribute name for database column 'realm'. */
-  public static final String AN_REALM = "realm";
+  String AN_REALM = "realm";
 
   /** attribute name for database column 'description'. */
-  public static final String AN_DESCRIPTION = "description";
+  String AN_DESCRIPTION = "description";
 
   /** attribute name for database column 'poolonline'. */
-  public static final String AN_ONLINE = "online";
+  String AN_ONLINE = "online";
 
   /** attribute name for database column 'lowmark'. */
-  public static final String AN_LOWWATERMARK = "lowWaterMark";
+  String AN_LOWWATERMARK = "lowWaterMark";
 
   /** attribute name for database column 'reqsize'. */
-  public static final String AN_REQUESTSIZE = "requestSize";
+  String AN_REQUESTSIZE = "requestSize";
 
   /** attribute name for database column 'uplink'. */
-  public static final String AN_UPLINK = "uplink";
+  String AN_UPLINK = "uplink";
 
   // </editor-fold>//GEN-END:membernames
 

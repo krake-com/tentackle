@@ -131,7 +131,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
   /**
    * Process all files in a fileset.
    *
-   * @param fileSet
+   * @param fileSet the set of files
    * @throws MojoExecutionException
    */
   private void processFileSet(FileSet fileSet, PrintStream ps) throws MojoExecutionException {

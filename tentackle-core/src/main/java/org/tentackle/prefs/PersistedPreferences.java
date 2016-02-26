@@ -21,7 +21,6 @@
 package org.tentackle.prefs;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
@@ -538,7 +537,7 @@ public interface PersistedPreferences {
    * @throws BackingStoreException         if this operation cannot be completed due to a failure in the backing store,
    *                                       or inability to communicate with it.
    * @throws IllegalStateException         if this node (or an ancestor) has already been removed with the
-   *                                       {@link #removeNode()} method.
+   *                                       {@code removeNode()} method.
    * @throws UnsupportedOperationException if this method is invoked on the root node.
    * @see #flush()
    */

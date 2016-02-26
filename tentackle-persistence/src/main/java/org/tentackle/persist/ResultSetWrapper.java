@@ -77,7 +77,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public ResultSetWrapper (StatementWrapper stmt, ResultSet rs) {
 
     this.stmt = stmt;
-    this.rs   = rs;
+    this.rs = rs;
 
     db = stmt.getSession();
     if (db == null) {
@@ -86,12 +86,8 @@ public class ResultSetWrapper implements AutoCloseable {
     }
 
     // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
-    if (stmt instanceof PreparedStatementWrapper) {
-      closeStatementOnClose = ((PreparedStatementWrapper) stmt).getStatementKey() == null;
-    }
-    else  {
-      closeStatementOnClose = true;
-    }
+    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
+                            ((PreparedStatementWrapper) stmt).getStatementKey() == null;
 
     columnCount = -1;
   }
@@ -498,7 +494,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * by section configuration instead of the traditional way by position or by name.<br>
    * A section may span the whole result set or there may be more than one section,
    * for example one for each joined table. It's up to the application.<br>
-   * If {@link #configureSection} returns true, a new section was created and
+   * If {@code configureSection} returns true, a new section was created and
    * the columns of this section must be configured once via {@link #configureColumn} in
    * the order of their retrieval.<br>
    * Otherwise the section is already configured.<br>
@@ -2751,6 +2747,9 @@ public class ResultSetWrapper implements AutoCloseable {
    * Clears the configured index and sets the flag that cursor was moved.
    */
   private void clearSection() {
+    if (rs == null) {
+      throw new PersistenceException("result set already closed");
+    }
     currentSection = null;
     if (isInSkipMode()) {
       cursorMovedInSkipMode = true;

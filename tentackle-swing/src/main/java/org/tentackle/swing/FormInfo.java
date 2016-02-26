@@ -86,10 +86,8 @@ public class FormInfo extends FormDialog {
           catch (InterruptedException ex) {
             LOGGER.warning("interrupted -> ignored", ex);
           }
-          EventQueue.invokeLater(() -> {
-            FormInfo.this.dispose();
-          });
-        };
+          EventQueue.invokeLater(FormInfo.this::dispose);
+        }
       }.start();
     }
 

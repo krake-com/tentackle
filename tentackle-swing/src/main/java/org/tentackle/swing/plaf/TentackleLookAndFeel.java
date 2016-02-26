@@ -52,7 +52,7 @@ public interface TentackleLookAndFeel {
    * @return the loaded image icon
    * @throws MissingResourceException if no such icon
    */
-  public ImageIcon loadImageIcon(String name) throws MissingResourceException;
+  ImageIcon loadImageIcon(String name) throws MissingResourceException;
 
 
   /**
@@ -62,7 +62,7 @@ public interface TentackleLookAndFeel {
    *
    * @param flag the boolean value which is true to enable the animation, false to turn it off
    */
-  public void setFocusAnimated(boolean flag);
+  void setFocusAnimated(boolean flag);
 
 
   /**
@@ -70,13 +70,13 @@ public interface TentackleLookAndFeel {
    *
    * @return true if focus is animated
    */
-  public boolean isFocusAnimated();
+  boolean isFocusAnimated();
 
 
   /**
    * Loads all tentackle-laf specific colors.
    */
-  public void loadTentackleExtraColors();
+  void loadTentackleExtraColors();
 
 
   /**
@@ -84,7 +84,7 @@ public interface TentackleLookAndFeel {
    *
    * @return the mandatory color
    */
-  public Color getMandatoryColor();
+  Color getMandatoryColor();
 
 
   /**
@@ -92,7 +92,7 @@ public interface TentackleLookAndFeel {
    *
    * @param mandatoryColor the mandatory color
    */
-  public void setMandatoryColor(Color mandatoryColor);
+  void setMandatoryColor(Color mandatoryColor);
 
 
   /**
@@ -100,7 +100,7 @@ public interface TentackleLookAndFeel {
    *
    * @return the mandatory color
    */
-  public Color getUnselectedMandatoryColor();
+  Color getUnselectedMandatoryColor();
 
 
   /**
@@ -108,6 +108,6 @@ public interface TentackleLookAndFeel {
    *
    * @param unselectedMandatoryColor the mandatory color
    */
-  public void setUnselectedMandatoryColor(Color unselectedMandatoryColor);
+  void setUnselectedMandatoryColor(Color unselectedMandatoryColor);
 
 }

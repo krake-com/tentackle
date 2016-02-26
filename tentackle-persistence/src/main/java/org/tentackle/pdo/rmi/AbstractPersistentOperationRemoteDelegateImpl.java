@@ -96,7 +96,6 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    *
    * @param context the domain context
    * @return the created object
-   * @throws java.rmi.RemoteException
    */
   protected P newInstance(DomainContext context) {
     try {

@@ -21,8 +21,6 @@ package org.tentackle.swing;
 
 import java.awt.Component;
 import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Date;
 import java.util.Locale;
 import org.tentackle.swing.plaf.PlafUtilities;
@@ -67,12 +65,7 @@ public class FormCalendarDialog extends FormDialog {
     initComponents();
     calendar.setup(locale, day, timeMode);
     // listener for double click on date
-    calendar.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e)  {
-        okButton.doClick();
-      }
-    });
+    calendar.addActionListener(e -> okButton.doClick());
   }
 
   /**

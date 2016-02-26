@@ -102,13 +102,11 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
           return;
         }
 
-        switch (event.getCode()) {
-          case ENTER:
-            KeyEvent newEvent = remap(event, KeyCode.TAB);
-            mappedEvents.add(newEvent);
-            event.consume();
-            Event.fireEvent(event.getTarget(), newEvent);
-            break;
+        if (KeyCode.ENTER == event.getCode()) {
+          KeyEvent newEvent = remap(event, KeyCode.TAB);
+          mappedEvents.add(newEvent);
+          event.consume();
+          Event.fireEvent(event.getTarget(), newEvent);
         }
       }
 

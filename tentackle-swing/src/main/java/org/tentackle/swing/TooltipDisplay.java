@@ -37,6 +37,6 @@ public interface TooltipDisplay {
    *
    * @param text the tooltip text
    */
-  public void setTooltip(String text);
+  void setTooltip(String text);
 
 }

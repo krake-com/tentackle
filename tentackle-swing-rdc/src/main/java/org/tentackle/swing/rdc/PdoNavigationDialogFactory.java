@@ -25,7 +25,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface PdoNavigationDialogFactory$Singleton {
-  static PdoNavigationDialogFactory INSTANCE = ServiceFactory.createService(
+  PdoNavigationDialogFactory INSTANCE = ServiceFactory.createService(
               PdoNavigationDialogFactory.class, DefaultPdoNavigationDialogFactory.class);
 }
 

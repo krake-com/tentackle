@@ -21,7 +21,7 @@ package org.tentackle.ns;
 import org.tentackle.common.ServiceFactory;
 
 interface NumberSourceFactory$Singleton {
-  static NumberSourceFactory INSTANCE = ServiceFactory.createService(NumberSourceFactory.class);
+  NumberSourceFactory INSTANCE = ServiceFactory.createService(NumberSourceFactory.class);
 }
 
 /**

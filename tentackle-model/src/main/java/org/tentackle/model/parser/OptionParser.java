@@ -27,8 +27,8 @@ package org.tentackle.model.parser;
  */
 public class OptionParser {
 
-  private String text;          // text to parse
-  private int max;              // length of text
+  private final String text;    // text to parse
+  private final int max;        // length of text
   private int pos;              // current offset in text
   private int optionLevel;      // nesting level of [...]
   private int braceLevel;       // number of () within [...], i.e. braces within option, for example @Annotation(blah=jksf, hsdf=...)

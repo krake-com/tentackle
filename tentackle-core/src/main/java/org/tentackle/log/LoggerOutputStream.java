@@ -37,8 +37,8 @@ public class LoggerOutputStream extends ByteArrayOutputStream {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(LoggerOutputStream.class);
 
-  private Logger logger;    // the logger
-  private Level  level;     // one of LogLevel
+  private final Logger logger;    // the logger
+  private final Level  level;     // one of LogLevel
   
   
   /**

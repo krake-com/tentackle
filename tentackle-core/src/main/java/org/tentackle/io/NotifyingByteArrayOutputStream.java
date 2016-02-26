@@ -49,19 +49,19 @@ public class NotifyingByteArrayOutputStream extends ByteArrayOutputStream {
   @Override
   public synchronized void reset() {
     super.reset();
-    notify();   // there is only one listener at a time
+    notifyAll();   // there is only one listener at a time
   }
 
   @Override
   public synchronized void write(int b) {
     super.write(b);
-    notify();
+    notifyAll();
   }
 
   @Override
   public synchronized void write(byte[] b, int off, int len) {
     super.write(b, off, len);
-    notify();
+    notifyAll();
   }
 
 }

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.TimeZone;
 import org.tentackle.common.Constants;
 import org.tentackle.common.FileHelper;
 import org.tentackle.log.Logger;
@@ -46,20 +47,24 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSessionInfo.class);
 
 
-  private String username;                  // name of the user
-  private char[] password;                  // user's password
-  private long userId;                      // the user id
-  private int userClassId;                  // the user class id
-  private String applicationName;           // an optional application name
-  private long applicationId;               // application instance id
-  private Serializable clientVersionInfo;   // the version info of the client
-  private long since;                       // logged in since
-  private String propertiesName;            // filename of backend properties
-  private Properties properties;            // db properties (send over via RMI)
-  private boolean immutable;                // true if session info is immutable
-  private Logger.Level immutableLoggingLevel;      // optional logging for immutable violations instead of exception
-  private Locale locale;                    // the user's locale
-  private boolean cloned;                   // true if session info is cloned
+  private String userName;                      // name of the user
+  private char[] password;                      // user's password
+  private long userId;                          // the user id
+  private int userClassId;                      // the user class id
+  private String applicationName;               // an optional application name
+  private long applicationId;                   // application instance id
+  private Serializable clientVersionInfo;       // the version info of the client
+  private long since;                           // logged in since
+  private String propertiesName;                // filename of backend properties
+  private Properties properties;                // db properties (send over via RMI)
+  private boolean immutable;                    // true if session info is immutable
+  private Logger.Level immutableLoggingLevel;   // optional logging for immutable violations instead of exception
+  private Locale locale;                        // the user's locale
+  private String vmInfo;                        // info about the JVM
+  private String osInfo;                        // info about the operating system
+  private String hostInfo;                      // info about the host(name)
+  private TimeZone timeZone;                    // the timezone
+  private boolean cloned;                       // true if session info is cloned
 
 
   /**
@@ -71,7 +76,7 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
    * @param propertiesName name of the db-properties, null if {@code "Db"}
    */
   public DefaultSessionInfo(String username, char[] password, String propertiesName)  {
-    this.username       = username == null ? System.getProperty("user.name") : username;
+    this.userName       = username == null ? System.getProperty("user.name") : username;
     this.password       = password;
     this.propertiesName = propertiesName == null ? Constants.BACKEND_PROPS : propertiesName;
   }
@@ -94,7 +99,7 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
   @Override
   public int hashCode() {
     int hash = 3;
-    hash = 97 * hash + (this.username != null ? this.username.hashCode() : 0);
+    hash = 97 * hash + (this.userName != null ? this.userName.hashCode() : 0);
     return hash;
   }
 
@@ -159,12 +164,12 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
   /**
    * Sets the username
    *
-   * @param username the username
+   * @param userName the username
    */
   @Override
-  public void setUserName (String username)  {
+  public void setUserName (String userName)  {
     assertMutable();
-    this.username = username;
+    this.userName = userName;
   }
 
 
@@ -175,7 +180,7 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
    */
   @Override
   public String getUserName ()  {
-    return username;
+    return userName;
   }
 
 
@@ -267,12 +272,51 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
     this.locale = locale;
   }
 
+  @Override
+  public String getVmInfo() {
+    return vmInfo;
+  }
+
+  @Override
+  public void setVmInfo(String vmInfo) {
+    this.vmInfo = vmInfo;
+  }
+
+  @Override
+  public TimeZone getTimeZone() {
+    return timeZone;
+  }
+
+  @Override
+  public void setTimeZone(TimeZone timeZone) {
+    this.timeZone = timeZone;
+  }
+
+  @Override
+  public String getOsInfo() {
+    return osInfo;
+  }
+
+  @Override
+  public void setOsInfo(String osInfo) {
+    this.osInfo = osInfo;
+  }
+
+  @Override
+  public String getHostInfo() {
+    return hostInfo;
+  }
+
+  @Override
+  public void setHostInfo(String hostInfo) {
+    this.hostInfo = hostInfo;
+  }
 
 
   @Override
   public String toString()  {
     StringBuilder buf = new StringBuilder();
-    buf.append(username);
+    buf.append(userName);
     buf.append('[');
     buf.append(userId);
     buf.append("]/");

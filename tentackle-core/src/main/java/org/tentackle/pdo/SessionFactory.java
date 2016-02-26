@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface SessionFactory$Singleton {
-  static SessionFactory INSTANCE = ServiceFactory.createService(SessionFactory.class);
+  SessionFactory INSTANCE = ServiceFactory.createService(SessionFactory.class);
 }
 
 

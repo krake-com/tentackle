@@ -19,6 +19,7 @@
 
 package org.tentackle.persist;
 
+import java.util.concurrent.atomic.AtomicLong;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
@@ -47,8 +48,8 @@ public class ModificationTally {
   private DbObjectClassVariables<?> clazzVar;         // the classvariables if tablename belongs to a PDO, null if just a name
   private Boolean isTableSerialProvided;              // true if table serial is managed by table, null if not known yet
   private String tableSerialTableName;                // if tableSerialValid holds the tableserial's tablename
-  private volatile long lastSerial;                   // last (known) serial for the table
-  private volatile long pendingCount;                 // number of pending counts
+  private final AtomicLong lastSerial;                // last (known) serial for the table
+  private final AtomicLong pendingCount;              // number of pending counts
 
 
   /**
@@ -58,6 +59,8 @@ public class ModificationTally {
    * @param trackedName the tracked name
    */
   public ModificationTally(Db db, String trackedName) {
+    lastSerial = new AtomicLong();
+    pendingCount = new AtomicLong();
     dbModification = new DbModification(db, trackedName);
     clazzVar = DbObjectClassVariables.getVariables(trackedName);
     if (clazzVar == null) {
@@ -94,9 +97,11 @@ public class ModificationTally {
 
    /**
    * Adds a pending count.
+   *
+   * @return the new pending count
    */
-  public void countPending() {
-    pendingCount++;
+  public long countPending() {
+    return pendingCount.incrementAndGet();
   }
 
 
@@ -106,7 +111,7 @@ public class ModificationTally {
    * @return the pending count, 0 if none
    */
   public long getPendingCount() {
-    return pendingCount;
+    return pendingCount.get();
   }
 
 
@@ -117,7 +122,7 @@ public class ModificationTally {
    * @param lastSerial the serial
    */
   public void setLastSerial(long lastSerial) {
-    this.lastSerial = lastSerial;
+    this.lastSerial.set(lastSerial);
   }
 
   /**
@@ -126,28 +131,27 @@ public class ModificationTally {
    * @return the latest serial from last update plus pending count
    */
   public long getLatestSerial() {
-    return lastSerial + pendingCount;
+    return lastSerial.get() + pendingCount.get();
   }
 
 
 
   /**
-   * Performs the physical pending count.<br>
-   * Does nothing if pendingCount less or equal 0.
+   * Performs the physical pending count if pending count &gt; 0.
    */
   public void performPendingCount() {
-    if (pendingCount > 0) {
-      LOGGER.fine("increment serial for {0} by {1}", dbModification, pendingCount);
-      if (dbModification.countModification(pendingCount) != 2)  {
+    long count = pendingCount.getAndSet(0);
+    if (count > 0) {
+      lastSerial.addAndGet(count);
+      LOGGER.fine("increment serial for {0} by {1}", dbModification, count);
+      if (dbModification.countModification(count) != 2)  {
         // probably the record doesn't exist? create it!
         dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
         // try again
-        if (dbModification.countModification(pendingCount) != 2)  {
+        if (dbModification.countModification(count) != 2)  {
           throw new PersistenceException(dbModification, "updating modification count failed");
         }
       }
-      lastSerial += pendingCount;
-      pendingCount = 0;
     }
   }
 
@@ -157,7 +161,7 @@ public class ModificationTally {
    */
   public void addToModificationTable()  {
     dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
-    lastSerial = getModificationCount();
+    lastSerial.set(getModificationCount());
   }
 
   /**

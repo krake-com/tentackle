@@ -19,12 +19,8 @@
 
 package org.tentackle.swing.bind;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
+
 import org.tentackle.bind.AbstractBinder;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
@@ -139,9 +135,9 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    */
   @Override
   public Integer[] getBoundColumns() {
-    return boundColumns.keySet().toArray(new Integer[0]);
+    Set<Integer> integers = boundColumns.keySet();
+    return integers.toArray(new Integer[integers.size()]);
   }
-
 
   /**
    * Gets the list of all unbound components of this form.
@@ -156,7 +152,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
         unboundColumns.add(mColumn);
       }
     }
-    return unboundColumns.toArray(new Integer[0]);
+    return unboundColumns.toArray(new Integer[unboundColumns.size()]);
   }
 
 

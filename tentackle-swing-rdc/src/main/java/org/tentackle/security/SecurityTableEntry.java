@@ -164,7 +164,9 @@ public class SecurityTableEntry extends DefaultPdoTableEntry<Security> {
         case ALLOW:
           return getObject().isAllowed();
       }
-    } catch (Exception e) {}
+    } catch (Exception e) {
+      LOGGER.warning("cannot retrieve value for column " + col, e);
+    }
     return null;
   }
 
@@ -225,7 +227,7 @@ public class SecurityTableEntry extends DefaultPdoTableEntry<Security> {
    * If the object is null, the text for "all" is displayed.
    */
   @SuppressWarnings("serial")
-  private class SecurityObjectCellRenderer extends FormTableCellRenderer {
+  private static class SecurityObjectCellRenderer extends FormTableCellRenderer {
 
     public SecurityObjectCellRenderer()  {
       setHorizontalAlignment(JLabel.CENTER);

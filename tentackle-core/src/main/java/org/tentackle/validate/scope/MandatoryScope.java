@@ -30,6 +30,6 @@ import org.tentackle.validate.ValidationScope;
 public interface MandatoryScope extends ValidationScope {
 
   /** the scope's name. */
-  public static final String NAME = "MANDATORY";
+  String NAME = "MANDATORY";
 
 }

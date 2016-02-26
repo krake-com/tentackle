@@ -82,7 +82,7 @@ public class CompoundValue {
    *
    * Notice: a backslash quotes the special meaning of characters, for ex. <code>"\$string"</code> is treated as the constant "$string".<br>
    */
-  public static enum Type {
+  public enum Type {
     /** a fixed value (constant) */
     CONSTANT,
     /** a reference relative to the parent object */
@@ -255,7 +255,7 @@ public class CompoundValue {
             }
             reference = str.substring(1);
           }
-          else if (c == '!') {
+          else {  // == '!'
             if (length < 3) {
               throw new IllegalArgumentException("negated boolean reference must not be empty");
             }
@@ -529,8 +529,8 @@ public class CompoundValue {
   /**
    * Negates a boolean value.
    *
-   * @param value
-   * @return
+   * @param value the value
+   * @return the negated boolean
    */
   private Boolean negateBoolean(Object value) {
     if (value instanceof Boolean) {
@@ -580,22 +580,22 @@ public class CompoundValue {
         return new BigInteger(value);
       }
       else if (Double.class == clazz) {
-        return new Double(value);
+        return Double.valueOf(value);
       }
       else if (Float.class == clazz) {
-        return new Float(value);
+        return Float.valueOf(value);
       }
       else if (Long.class == clazz) {
-        return new Long(value);
+        return Long.valueOf(value);
       }
       else if (Integer.class == clazz) {
-        return new Integer(value);
+        return Integer.valueOf(value);
       }
       else if (Short.class == clazz) {
-        return new Short(value);
+        return Short.valueOf(value);
       }
       else if (Byte.class == clazz) {
-        return new Byte(value);
+        return Byte.valueOf(value);
       }
       else if (Character.class == clazz) {
         return value.charAt(0);
@@ -668,13 +668,8 @@ public class CompoundValue {
         if (value instanceof BigDecimal) {
           return value;
         }
-        else  {
-          if (value instanceof BigDecimal) {
-            return new BMoney((BigDecimal) value);
-          }
-          else if (value instanceof String) {
-            return new BMoney((String) value, FormatHelper.determineScale((String) value));
-          }
+        else if (value instanceof String) {
+          return new BMoney((String) value, FormatHelper.determineScale((String) value));
         }
       }
       else if (BigInteger.class.isAssignableFrom(clazz)) {
@@ -793,7 +788,7 @@ public class CompoundValue {
         if (value instanceof Timestamp) {
           return value;
         }
-        else  {
+        else if (value instanceof String) {
           return FormatHelper.parseTimestamp(((String) value));
         }
       }
@@ -801,7 +796,7 @@ public class CompoundValue {
         if (value instanceof Time) {
           return value;
         }
-        else  {
+        else if (value instanceof String) {
           return FormatHelper.parseTime(((String) value));
         }
       }
@@ -809,7 +804,7 @@ public class CompoundValue {
         if (value instanceof Date) {
           return value;
         }
-        else  {
+        else if (value instanceof String) {
           return FormatHelper.parseDate(((String) value));
         }
       }

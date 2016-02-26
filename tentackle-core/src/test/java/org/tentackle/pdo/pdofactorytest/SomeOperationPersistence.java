@@ -34,6 +34,6 @@ public interface SomeOperationPersistence extends PersistentOperation<SomeOperat
    * @param str the string
    * @return the string
    */
-  public String echo(String str);
+  String echo(String str);
 
 }

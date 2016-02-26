@@ -160,7 +160,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
 
 
   @Override
-  public int getRowCount() {
+  public synchronized int getRowCount() {
     return entries == null ? 0 : entries.length;
   }
 
@@ -349,7 +349,7 @@ public class FormTableModel<T> extends AbstractFormTableModel<T> implements Bind
   @Override
   public boolean isCellEditable (int rowIndex, int columnIndex)  {
     FormTableEntry<T> entry = getEntryAt(rowIndex);
-    return entry != null ? entry.isCellEditable(columnIndex) : false;
+    return entry != null && entry.isCellEditable(columnIndex);
   }
 
 

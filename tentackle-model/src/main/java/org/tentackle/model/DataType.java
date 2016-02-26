@@ -368,10 +368,7 @@ public enum DataType {
    * @return the value
    */
   public Object parse(String str) {
-    DataType type = this;
-    if (type.isPrimitive()) {
-      type = this.toNonPrimitive();
-    }
+    DataType type = isPrimitive() ? toNonPrimitive() : this;
     try {
       switch (type) {
         case STRING:
@@ -393,7 +390,7 @@ public enum DataType {
           if (cstr.length() != 1) {
             throw new TentackleRuntimeException("character must be of length 1: " + cstr);
           }
-          return Character.valueOf(cstr.charAt(0));
+          return cstr.charAt(0);
         case BOOLEAN:
           String bstr = BasicStringHelper.parseString(str);
           switch (bstr.toLowerCase()) {

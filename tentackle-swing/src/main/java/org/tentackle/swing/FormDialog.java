@@ -472,7 +472,7 @@ public class FormDialog extends JDialog implements FormWindow, I18nTranslatable,
       // initial align
       location = FormUtilities.getInstance().getPreferredLocation(this, getOwner());         // position to preferred location
     }
-    if (getLocation().equals(location) == false)  {
+    if (!getLocation().equals(location))  {
       setLocation (location);   // set new location
     }
   }

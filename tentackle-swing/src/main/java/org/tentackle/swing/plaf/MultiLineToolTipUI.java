@@ -39,8 +39,8 @@ import javax.swing.plaf.basic.BasicToolTipUI;
  */
 public class MultiLineToolTipUI extends BasicToolTipUI {
 
-  static MultiLineToolTipUI sharedInstance = new MultiLineToolTipUI();
-  static final int MARGIN = 2;
+  private static final MultiLineToolTipUI sharedInstance = new MultiLineToolTipUI();
+  private static final int MARGIN = 2;
 
 
   /**

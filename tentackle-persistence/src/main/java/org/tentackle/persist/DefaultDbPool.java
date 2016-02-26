@@ -504,9 +504,7 @@ public class DefaultDbPool implements SessionPool {
     for (int i=0; i < unusedCount; i++) {
       if (unusedList[i] == index) {
         // found:
-        for (int j=i+1; j < unusedCount; j++) {
-          unusedList[j-1] = unusedList[j];
-        }
+        System.arraycopy(unusedList, i + 1, unusedList, i, unusedCount - (i + 1));
         unusedCount--;
         break;
       }

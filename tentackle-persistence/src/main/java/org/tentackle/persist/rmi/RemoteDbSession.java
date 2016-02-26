@@ -52,7 +52,7 @@ public interface RemoteDbSession extends Remote {
    * @return the application name
    * @throws RemoteException
    */
-  public String getServerName() throws RemoteException;
+  String getServerName() throws RemoteException;
 
 
   /**
@@ -60,17 +60,17 @@ public interface RemoteDbSession extends Remote {
    *
    * @throws RemoteException
    */
-  public void close() throws RemoteException;
+  void close() throws RemoteException;
 
 
   /**
    * Sends text based logging infos to the RMI-Server.
    *
-   * @param level
-   * @param message
+   * @param level the logging level
+   * @param message the message
    * @throws RemoteException
    */
-  public void log(Level level, String message) throws RemoteException;
+  void log(Level level, String message) throws RemoteException;
 
 
   /**
@@ -90,7 +90,7 @@ public interface RemoteDbSession extends Remote {
    * @return the delegate
    * @throws RemoteException
    */
-  public DbRemoteDelegate getDbRemoteDelegate() throws RemoteException;
+  DbRemoteDelegate getDbRemoteDelegate() throws RemoteException;
 
   /**
    * Gets the delegate for a given classname.<br>
@@ -108,6 +108,6 @@ public interface RemoteDbSession extends Remote {
    * @return the delegate
    * @throws RemoteException
    */
-  public RemoteDelegate getRemoteDelegate(String classname) throws RemoteException;
+  <T extends RemoteDelegate> T getRemoteDelegate(String classname) throws RemoteException;
 
 }

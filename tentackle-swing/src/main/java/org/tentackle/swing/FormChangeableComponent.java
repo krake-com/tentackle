@@ -36,6 +36,6 @@ public interface FormChangeableComponent extends FormChangeable {
    *
    * @param allChangeable true if changeable
    */
-  public void updateAllChangeable(boolean allChangeable);
+  void updateAllChangeable(boolean allChangeable);
 
 }

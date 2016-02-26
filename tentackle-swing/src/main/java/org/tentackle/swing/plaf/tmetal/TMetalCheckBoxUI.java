@@ -27,7 +27,6 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
-import java.util.Locale;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
 import javax.swing.Icon;
@@ -42,7 +41,7 @@ import javax.swing.text.View;
 
 /**
  * UI for JCheckBox/FormCheckBox.
- * 
+ *
  * @author harald
  */
 public class TMetalCheckBoxUI extends MetalCheckBoxUI {
@@ -76,9 +75,6 @@ public class TMetalCheckBoxUI extends MetalCheckBoxUI {
     ButtonModel model = b.getModel();
 
     Dimension size = c.getSize();
-
-    int w = size.width;
-    int h = size.height;
 
     Font f = c.getFont();
     g.setFont(f);

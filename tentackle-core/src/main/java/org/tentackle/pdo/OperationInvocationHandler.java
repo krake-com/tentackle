@@ -66,7 +66,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   static {
     try {
       HASHCODE_METHOD = Object.class.getMethod("hashCode");
-      EQUALS_METHOD = Object.class.getMethod("equals", new Class<?>[]{Object.class});
+      EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
       TOSTRING_METHOD = Object.class.getMethod("toString");
       CLONE_METHOD = Operation.class.getMethod("clone");
       GETDOMAINDELEGATE_METHOD = Operation.class.getMethod("getDomainDelegate");
@@ -344,7 +344,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     }
     else if (declaringClass == OperationHolder.class) {
       if (method.equals(GETOPERATION_METHOD)) {
-        return (T) proxy;
+        return proxy;
       }
       else if (method.equals(SETOPERATION_METHOD)) {
         throw new PdoRuntimeException("method " + SETOPERATION_METHOD + " not allowed on operation " + clazz);

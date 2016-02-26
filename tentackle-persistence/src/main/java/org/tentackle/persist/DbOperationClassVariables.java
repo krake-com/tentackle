@@ -31,16 +31,15 @@ import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
  */
 public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
+  /**
+   * the class.
+   */
+  public final Class<P> clazz;
 
   /**
-   * the class
+   * the full classname.
    */
-  public Class<P> clazz;
-
-  /**
-   * the full classname
-   */
-  public String className;
+  public final String className;
 
   /**
    * ID for the remote delegate for this class.

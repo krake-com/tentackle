@@ -45,10 +45,7 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append(pdo().getNumberPool());
-    buf.append('[').append(pdo().getBegin()).append(',').append(pdo().getEnd()).append(']');
-    return buf.toString();
+    return String.valueOf(pdo().getNumberPool()) + '[' + pdo().getBegin() + ',' + pdo().getEnd() + ']';
   }
 
   @Override

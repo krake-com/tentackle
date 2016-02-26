@@ -46,6 +46,16 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   }
 
   @Override
+  public boolean isDomainContextUsed() {
+    return false;
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> T selectDomainContextObject(Window owner, DomainContext context) {
+    throw new RdcRuntimeException("context selection not implemented for this application");
+  }
+
+  @Override
   public void showDialog(PersistentDomainObject<?> pdo) {
     SecurityRulesView.show(null, pdo);
   }

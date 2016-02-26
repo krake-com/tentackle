@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.tentackle.log.Logger;
@@ -104,6 +105,41 @@ public class DefaultSecurityManager implements SecurityManager {
       }
       return rv;
     }
+
+    @Override
+    public int hashCode() {
+      int hash = 3;
+      hash = 67 * hash + this.granteeClassId;
+      hash = 67 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
+      hash = 67 * hash + Objects.hashCode(this.className);
+      hash = 67 * hash + this.priority;
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final ClassKey other = (ClassKey) obj;
+      if (this.granteeClassId != other.granteeClassId) {
+        return false;
+      }
+      if (this.granteeId != other.granteeId) {
+        return false;
+      }
+      if (this.priority != other.priority) {
+        return false;
+      }
+      return Objects.equals(this.className, other.className);
+    }
+
   }
 
   // key for a pdo rule
@@ -150,6 +186,45 @@ public class DefaultSecurityManager implements SecurityManager {
       }
       return rv;
     }
+
+    @Override
+    public int hashCode() {
+      int hash = 7;
+      hash = 73 * hash + this.granteeClassId;
+      hash = 73 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
+      hash = 73 * hash + this.objectClassId;
+      hash = 73 * hash + (int) (this.objectId ^ (this.objectId >>> 32));
+      hash = 73 * hash + this.priority;
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final PdoKey other = (PdoKey) obj;
+      if (this.granteeClassId != other.granteeClassId) {
+        return false;
+      }
+      if (this.granteeId != other.granteeId) {
+        return false;
+      }
+      if (this.objectClassId != other.objectClassId) {
+        return false;
+      }
+      if (this.objectId != other.objectId) {
+        return false;
+      }
+      return this.priority == other.priority;
+    }
+
   }
 
 
@@ -191,6 +266,41 @@ public class DefaultSecurityManager implements SecurityManager {
       }
       return rv;
     }
+
+    @Override
+    public int hashCode() {
+      int hash = 5;
+      hash = 37 * hash + this.granteeClassId;
+      hash = 37 * hash + (int) (this.granteeId ^ (this.granteeId >>> 32));
+      hash = 37 * hash + this.objectClassId;
+      hash = 37 * hash + this.priority;
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final PdoClassKey other = (PdoClassKey) obj;
+      if (this.granteeClassId != other.granteeClassId) {
+        return false;
+      }
+      if (this.granteeId != other.granteeId) {
+        return false;
+      }
+      if (this.objectClassId != other.objectClassId) {
+        return false;
+      }
+      return this.priority == other.priority;
+    }
+
   }
 
 
@@ -557,9 +667,7 @@ public class DefaultSecurityManager implements SecurityManager {
     if (securityListener == null) {
       // register listener once
       securityListener = createModificationListener();
-      if (securityListener != null) {
-        PdoTracker.getInstance().addModificationListener(securityListener);
-      }
+      PdoTracker.getInstance().addModificationListener(securityListener);
     }
 
     LOGGER.fine("security manager initialized");

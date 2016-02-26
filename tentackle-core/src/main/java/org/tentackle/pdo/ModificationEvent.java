@@ -43,7 +43,7 @@ public class ModificationEvent implements Serializable {
 
 
   /** the session. */
-  private final Session session;
+  private final transient Session session;
 
   /** the modification details. */
   private final Map<String,ModificationEventDetail> details;    //  null if master event

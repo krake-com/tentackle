@@ -188,7 +188,7 @@ public class Db implements Session, Cloneable {
    * Global close handlers.
    */
   private static final Set<SessionCloseHandler> GLOBAL_CLOSE_HANDLERS =
-                       Collections.newSetFromMap(new ConcurrentHashMap<SessionCloseHandler,Boolean>());
+                       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   /**
    * Registers a global close handler.
@@ -217,7 +217,7 @@ public class Db implements Session, Cloneable {
    * The set of Db-sessions is used to enhance the diagnostic utilities.
    */
   private static final Set<WeakReference<Db>> DB_SET =
-          Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<Db>,Boolean>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
@@ -290,7 +290,7 @@ public class Db implements Session, Cloneable {
   private boolean autoCommit;                             // true if autocommit on, else false
   private boolean countModificationAllowed = true;        // allow modification count
   private boolean logModificationAllowed = true;          // allow modification log
-  private Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
+  private final Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
   private boolean readOnly;                               // true if database is readonly
   private IdSource defaultIdSource;                       // default ID-Source for db-connection (if not overridden in derivates)
   private int fetchSize;                                  // default fetchsize, 0 = drivers default
@@ -447,8 +447,7 @@ public class Db implements Session, Cloneable {
   /**
    * Compares two db instances.
    * Implemented for trees, caches, etc... because they need a Comparable.
-   * We simply use the instanceNumber. Because the instanceNumber
-   * is unique, we don't need to override equals/hash.
+   * We simply use the unique instanceNumber.
    *
    * @param session the session to compare this db with
    * @return  a negative integer, zero, or a positive integer as this object
@@ -459,11 +458,27 @@ public class Db implements Session, Cloneable {
     return instanceNumber - ((Db) session).instanceNumber;
   }
 
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    hash = 43 * hash + this.instanceNumber;
+    return hash;
+  }
 
-  /**
-   * Notice: equals and hashcode remain default!
-   */
-
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final Db other = (Db) obj;
+    return this.instanceNumber == other.instanceNumber;
+  }
 
 
   /**
@@ -947,7 +962,6 @@ public class Db implements Session, Cloneable {
         // get the remote connection id
         conId = rdel.getSessionId();
       }
-
       else  {
         // direct connection to database
         conId = conMgr.login(this);
@@ -986,13 +1000,23 @@ public class Db implements Session, Cloneable {
   }
 
 
-  @Override
+  /**
+   * Registers a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if added, false if already registered
+   */
   public boolean registerCloseHandler(SessionCloseHandler closeHandler) {
     return closeHandlers.add(closeHandler);
   }
 
 
-  @Override
+  /**
+   * Unregisters a close handler.
+   *
+   * @param closeHandler the handler
+   * @return true if removed, false if not registered
+   */
   public boolean unregisterCloseHandler(SessionCloseHandler closeHandler) {
     return closeHandlers.remove(closeHandler);
   }
@@ -1114,7 +1138,6 @@ public class Db implements Session, Cloneable {
    *
    * @return true if Db is marked as crashed
    */
-  @Override
   public synchronized boolean isCrashed() {
     return crashed;
   }
@@ -1165,7 +1188,6 @@ public class Db implements Session, Cloneable {
    *
    * @return the nesting level, 0 if no transaction in progress
    */
-  @Override
   public int getTxLevel() {
     return transaction == null ? 0 : transaction.getTxLevel();
   }
@@ -1175,7 +1197,6 @@ public class Db implements Session, Cloneable {
    * <p>
    * Will suppress any checks and warnings.
    */
-  @Override
   public void invalidateTxLevel() {
     if (transaction != null) {
       transaction.invalidateTxLevel();
@@ -1187,7 +1208,6 @@ public class Db implements Session, Cloneable {
    *
    * @return true if valid
    */
-  @Override
   public boolean isTxLevelValid() {
     return transaction != null && transaction.isTxLevelValid();
   }
@@ -1232,7 +1252,6 @@ public class Db implements Session, Cloneable {
    *
    * @return the transaction object, null if none
    */
-  @Override
   public AbstractDbObject<?> getTxObject() {
     assertTxRunning();
     return transaction.getTxObject();
@@ -1816,12 +1835,12 @@ public class Db implements Session, Cloneable {
               LOGGER.warning("rollback too late: connection already detached");
               autoCommit = true;
             }
+            LOGGER.fine("{0} rolled back", transaction);
             logModificationDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
             transaction = null;
             rolledBack = true;
-            LOGGER.fine("{0} rolled back", transaction);
           }
           else {
             throw new PersistenceException(this, "transaction ended unexpectedly before rollback (valid voucher)");
@@ -2126,7 +2145,7 @@ public class Db implements Session, Cloneable {
    *        <code>ResultSet.CONCUR_UPDATABLE</code>
    * @return the statement wrapper
    */
-  public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
+  public synchronized StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
     StatementWrapper stmt = con.createStatement(resultSetType, resultSetConcurrency);
@@ -2557,6 +2576,7 @@ public class Db implements Session, Cloneable {
     // check if delegate already fetched from RMI-server
     if (delegates[delegateId] == null) {
       // we need to prepare it
+      assertOpen();
       try {
         RemoteDelegate delegate = rses.getRemoteDelegate(remoteClasses[delegateId].getName());
         delegates[delegateId] = delegate;

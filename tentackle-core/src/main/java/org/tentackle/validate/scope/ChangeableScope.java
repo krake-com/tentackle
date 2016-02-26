@@ -30,6 +30,6 @@ import org.tentackle.validate.ValidationScope;
 public interface ChangeableScope extends ValidationScope {
 
   /** the scope's name. */
-  public static final String NAME = "CHANGEABLE";
+  String NAME = "CHANGEABLE";
 
 }

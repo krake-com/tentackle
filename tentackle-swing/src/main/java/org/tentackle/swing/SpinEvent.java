@@ -44,7 +44,7 @@ public class SpinEvent extends AWTEvent {
 
 
   
-  private int action;     // what to do: INCREMENT or DECREMENT
+  private final int action;     // what to do: INCREMENT or DECREMENT
 
 
   

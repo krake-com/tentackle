@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface UIFactory$Singleton {
-  static UIFactory INSTANCE = ServiceFactory.createService(UIFactory.class, DefaultUIFactory.class);
+  UIFactory INSTANCE = ServiceFactory.createService(UIFactory.class, DefaultUIFactory.class);
 }
 
 

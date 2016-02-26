@@ -32,7 +32,7 @@ import org.tentackle.task.TaskDispatcher;
 
 
 interface DiagnosticUtilities$Singleton {
-  static DiagnosticUtilities INSTANCE = ServiceFactory.createService(
+  DiagnosticUtilities INSTANCE = ServiceFactory.createService(
               DiagnosticUtilities.class, DiagnosticUtilities.class);
 }
 

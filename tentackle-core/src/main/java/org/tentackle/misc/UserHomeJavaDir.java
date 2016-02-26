@@ -86,7 +86,7 @@ public class UserHomeJavaDir {
         throw new TentackleRuntimeException("couldn't create directory " + dir.getAbsolutePath());
       }
     }
-    if (dir != null && !dir.canWrite()) {
+    if (!dir.canWrite()) {
       throw new TentackleRuntimeException("directory " + dir.getAbsolutePath() + " is not writable");
     }
   }

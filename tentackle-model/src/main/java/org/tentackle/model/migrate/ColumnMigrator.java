@@ -286,8 +286,6 @@ public class ColumnMigrator {
   /**
    * Alters the null constraint only.
    *
-   * @param columnName the column name
-   * @param nullable true if nullable
    * @return sql code
    * @throws ModelException
    */

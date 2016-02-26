@@ -23,7 +23,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface GuiProviderFactory$Singleton {
-  static GuiProviderFactory INSTANCE = ServiceFactory.createService(GuiProviderFactory.class);
+  GuiProviderFactory INSTANCE = ServiceFactory.createService(GuiProviderFactory.class);
 }
 
 
@@ -39,7 +39,7 @@ public interface GuiProviderFactory {
    *
    * @return the singleton
    */
-  public static GuiProviderFactory getInstance() {
+  static GuiProviderFactory getInstance() {
     return GuiProviderFactory$Singleton.INSTANCE;
   }
 

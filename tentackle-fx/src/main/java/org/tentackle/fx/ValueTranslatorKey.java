@@ -81,10 +81,7 @@ public class ValueTranslatorKey<M,V> {
     if (!Objects.equals(this.modelClass, other.modelClass)) {
       return false;
     }
-    if (!Objects.equals(this.viewClass, other.viewClass)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this.viewClass, other.viewClass);
   }
 
 }
