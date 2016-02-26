@@ -109,7 +109,8 @@ public class RdcUtilities {
    * @return the possibly changed pdo if modal
    */
   public <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
+          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner,
+          Consumer<PdoCrud<T>> configurator) {
 
     PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
     if (crud != null) {   // if not aleady being edited
@@ -123,7 +124,8 @@ public class RdcUtilities {
         Scene scene = new Scene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
+                e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
             e.consume();    // don't close
@@ -243,7 +245,8 @@ public class RdcUtilities {
    * @return the selected PDOs if modal, null if not modal
    */
   public <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
-                    T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<PdoSearch<T>> configurator) {
+                    T pdo, Modality modality, Window owner, boolean createPdoAllowed,
+                    Consumer<PdoSearch<T>> configurator) {
 
     PdoSearch<T> search = getSearch(pdo, modality, owner);
     search.setCreatePdoAllowed(createPdoAllowed);
@@ -258,8 +261,11 @@ public class RdcUtilities {
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
-      stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> search.setItems(null));
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
+              e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
+      stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
+              // runlater to avoid clearing the modal return value
+              e -> Platform.runLater(() -> search.setItems(null)));
     } // else: re-use stage
 
     if (configurator != null) {
@@ -291,7 +297,9 @@ public class RdcUtilities {
    * @return the search controller, never null
    */
   @SuppressWarnings("unchecked")
-  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T> getSearch(T pdo, Modality modality, Window owner) {
+  public synchronized <T extends PersistentDomainObject<T>> PdoSearch<T>
+         getSearch(T pdo, Modality modality, Window owner) {
+
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoSearch<?>> searches = searchCache.get(pdoClass);
     if (searches == null) {

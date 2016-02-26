@@ -63,6 +63,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LockException;
+import org.tentackle.pdo.NotFoundException;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.validate.ValidationFailedException;
@@ -442,6 +443,15 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     catch (ValidationFailedException ex) {
       showValidationResults(ex);
     }
+    catch (NotFoundException nfe) {
+      // lock timed out and another user updated the PDO or lock was transferred to another user or removed
+      LOGGER.info("saving " + getPdo().toGenericString() + " failed: " + nfe.getLocalizedMessage());
+      Fx.error(MessageFormat.format(RdcFxRdcBundle.getString("{0} MODIFIED BY_ANOTHER USER MEANWHILE"), getPdo()));
+      T pdo = getPdo().reload();
+      if (pdo != null) {
+        setPdo(pdo);
+      }
+    }
   }
 
   /**
@@ -509,7 +519,14 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       }
       else {
         if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
-          oldPdo.releaseTokenLock();
+          try {
+            oldPdo.releaseTokenLock();
+          }
+          catch (LockException lex) {
+            // probably locked by another user meanwhile.
+            // just log it and don't bother the user
+            LOGGER.info("token unlock failed (ignored): " + lex.getLocalizedMessage());
+          }
         }
       }
     }
