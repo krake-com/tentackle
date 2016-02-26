@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface BackendFactory$Singleton {
-  static BackendFactory INSTANCE = ServiceFactory.createService(BackendFactory.class, DefaultBackendFactory.class);
+  BackendFactory INSTANCE = ServiceFactory.createService(BackendFactory.class, DefaultBackendFactory.class);
 }
 
 

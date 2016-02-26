@@ -19,19 +19,10 @@
 
 package org.tentackle.app;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.Locale;
 import java.util.Properties;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import javax.jnlp.BasicService;
-import javax.jnlp.ServiceManager;
-import javax.jnlp.UnavailableServiceException;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.login.Login;
@@ -108,48 +99,9 @@ public class LoginApplication extends FxApplication {
               props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPasswordAsString())));
     }
 
-    if (application.isDeployedByJNLP() && sessionPropsName != null) {
-      // load the db properties relative to the JNLP codebase
-      InputStream is = null;
-      try {
-        URL dbURL;
-        if (sessionPropsName.indexOf("://") > 0) {
-          dbURL = new URL(sessionPropsName);
-        }
-        else  {
-          URL codeBase = ((BasicService) ServiceManager.lookup(BasicService.class.getName())).getCodeBase();
-          dbURL = new URL(codeBase + "/" + sessionPropsName);
-        }
-        Properties sessionProps = new Properties();
-        is = dbURL.openStream();
-        sessionProps.load(is);
-        sessionInfo.setProperties(sessionProps);
-      }
-      catch (MalformedURLException ex) {
-        throw new ApplicationException("malformed URL for db properties", ex);
-      }
-      catch (IOException ex) {
-        throw new ApplicationException(MessageFormat.format("loading db properties {0} failed", sessionPropsName), ex);
-      }
-      catch (RuntimeException | UnavailableServiceException ex) {
-        throw new ApplicationException("cannot determine JNLP codebase", ex);
-      }
-      finally {
-        if (is != null) {
-          try {
-            is.close();
-          }
-          catch (IOException ex) {}
-        }
-      }
-    }
-
     if (sessionInfo.getApplicationName() == null) {
       sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(application.getClass()));
     }
-
-    // sets the locale to be used for this user
-    sessionInfo.setLocale(Locale.getDefault());
 
     return sessionInfo;
   }

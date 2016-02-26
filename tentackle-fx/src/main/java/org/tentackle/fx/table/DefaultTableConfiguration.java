@@ -127,6 +127,29 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.columnConfigurations = new ArrayList<>();
   }
 
+  /**
+   * Creates a configuration.
+   *
+   * @param objectClass the object class
+   * @param name the table's name, null if basename from effective class of template
+   */
+  @SuppressWarnings("unchecked")
+  public DefaultTableConfiguration(Class<S> objectClass, String name) {
+    this.template = null;
+    this.objectClass = objectClass;
+    this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
+    this.columnConfigurations = new ArrayList<>();
+  }
+
+  /**
+   * Gets the template.
+   *
+   * @return the template, null if only class given
+   */
+  public S getTemplate() {
+    return template;
+  }
+
 
   @Override
   public String toString() {
@@ -375,10 +398,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
             String fmt = "#,##0";
             if (money.scale() > 0) {
-              fmt += ".";
+              StringBuilder buf = new StringBuilder(fmt).append('.');
               for (int j = 0; j < money.scale(); j++) {
-                fmt += "0";
+                buf.append('0');
               }
+              fmt = buf.toString();
             }
             // create format
             short fmtIndex = format.getFormat(fmt);

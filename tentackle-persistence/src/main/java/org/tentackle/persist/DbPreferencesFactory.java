@@ -356,7 +356,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (pref.areNodeListenersRegistered()) {
             // check for added nodes
             for (DbPreferencesNode node: currentNodes)  {
-              if (pref.getChildIds().contains(node.getId()) == false)  {
+              if (!pref.getChildIds().contains(node.getId()))  {
                 try {
                   // node has been added
                   DbPreferences child = createPreferences(pref, node);

@@ -78,7 +78,7 @@ public enum ForeignKeyAction {
    * @param action the numeric code
    * @param sql the SQL snippet
    */
-  private ForeignKeyAction(int action, String sql) {
+  ForeignKeyAction(int action, String sql) {
     this.action = action;
     this.sql = sql;
   }

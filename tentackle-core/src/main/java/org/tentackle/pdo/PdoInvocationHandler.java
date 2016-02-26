@@ -73,8 +73,8 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   static {
     try {
       HASHCODE_METHOD = Object.class.getMethod("hashCode");
-      EQUALS_METHOD = Object.class.getMethod("equals", new Class<?>[]{Object.class});
-      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", new Class<?>[]{Object.class});
+      EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
+      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
       TOSTRING_METHOD = Object.class.getMethod("toString");
       CLONE_METHOD = PersistentDomainObject.class.getMethod("clonePdo");
       GETDOMAINOBJECT_METHOD = PersistentDomainObject.class.getMethod("getDomainDelegate");
@@ -343,17 +343,10 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
              !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
       if (method.equals(TOGENERICSTRING_METHOD)) {
         T pdo = (T) proxy;
-        StringBuilder buf = new StringBuilder();
-        buf.append(clazz.getName());
-        buf.append('[');
-        buf.append(pdo.getId());
-        buf.append('/');
-        buf.append(pdo.getSerial());
-        buf.append(']');
-        return buf.toString();
+        return clazz.getName() + '[' + pdo.getId() + '/' + pdo.getSerial() + ']';
       }
       else if (method.equals(GETPDO_METHOD)) {
-        return (T) proxy;
+        return proxy;
       }
       else if (method.equals(SETPDO_METHOD)) {
         throw new PdoRuntimeException("method " + SETPDO_METHOD + " not allowed on PDO " + clazz);

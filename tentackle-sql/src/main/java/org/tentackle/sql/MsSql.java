@@ -60,29 +60,16 @@ public class MsSql extends AbstractSql2003Backend {
 
   @Override
   public String getBackendId(Connection connection) {
-    String backendId = null;
-    ResultSet rs = null;
-    try {
-      Statement stmt = connection.createStatement();
-      rs = stmt.executeQuery("SELECT @@SPID");
+    try (Statement stmt = connection.createStatement()) {
+      ResultSet rs = stmt.executeQuery("SELECT @@SPID");
       if (rs.next()) {
-        backendId = rs.getString(1);
+        return "ID-" + rs.getString(1);
       }
+      return null;
     }
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
-    finally {
-      if (rs != null) {
-        try {
-          rs.close();
-        }
-        catch (SQLException ex) {
-          throw new TentackleRuntimeException("close resultset after determine backend id failed", ex);
-        }
-      }
-    }
-    return backendId;
   }
 
   @Override

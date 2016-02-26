@@ -106,7 +106,7 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
       empty = ((Map) object).isEmpty();
     }
     else if (object instanceof Array) {
-      empty = Array.getLength((Array) object) == 0;
+      empty = Array.getLength(object) == 0;
     }
     else  {
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());

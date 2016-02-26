@@ -102,7 +102,7 @@
       if (getContextAttribute() != null)  {
 ]@
 @{to remoteOut}@
-  public int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  int @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -122,7 +122,7 @@
       else  {
 ]@
 @{to remoteOut}@
-  public int @(methodName)@(@(params)@) throws RemoteException;
+  int @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

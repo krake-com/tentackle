@@ -21,6 +21,7 @@ package org.tentackle.buildsupport;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Set;
 import java.util.StringTokenizer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
@@ -53,17 +54,13 @@ public class RemoteMethodInfoParameter {
     TypeMirror tm = var.asType();
     name = var.toString();
     type = tm.toString();
-    modifiers = var.getModifiers().toArray(new Modifier[0]);
+    Set<Modifier> varModifiers = var.getModifiers();
+    modifiers = varModifiers.toArray(new Modifier[varModifiers.size()]);
     // determine special types
     instanceOfSession = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_SESSION);
     instanceOfContext = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_CONTEXT);
     instanceOfPdo = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_PDO);
-    if (instanceOfPdo) {
-      instanceOfDbObject = true;
-    }
-    else {
-      instanceOfDbObject = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_DBOBJECT);
-    }
+    instanceOfDbObject = instanceOfPdo || AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_DBOBJECT);
   }
 
   public RemoteMethodInfoParameter(StringTokenizer stok) {

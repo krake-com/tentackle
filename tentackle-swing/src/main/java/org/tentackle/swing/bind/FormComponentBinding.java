@@ -35,6 +35,6 @@ public interface FormComponentBinding extends Binding {
    *
    * @return the component
    */
-  public FormComponent getFormComponent();
+  FormComponent getFormComponent();
 
 }

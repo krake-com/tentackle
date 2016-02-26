@@ -50,7 +50,7 @@ public class TTableUI extends BasicTableUI {
   public void installUI(JComponent c) {
     super.installUI(c);
     if (c instanceof FormTable) {
-      ((FormTable)c).setTransferHandler(defaultTransferHandler);
+      c.setTransferHandler(defaultTransferHandler);
     }
   }
     
@@ -120,7 +120,7 @@ public class TTableUI extends BasicTableUI {
   private boolean cellRectFixed = true;
 
   private boolean isCellRectFixed() {
-    if (tableChecked == false)  {
+    if (!tableChecked)  {
       if (table instanceof FormTable) {
         cellRectFixed = ((FormTable)table).isCellRectFixed();
       }
@@ -181,7 +181,7 @@ public class TTableUI extends BasicTableUI {
         int y = damagedArea.y;
         FormTableEntry entry;
         int rowHeight;
-        AbstractFormTableModel model = (AbstractFormTableModel)((FormTable)table).getModel();
+        AbstractFormTableModel model = (AbstractFormTableModel) table.getModel();
         for (int row = rMin; row <= rMax; row++) {
           entry = model.getEntryAt(row);
           rowHeight = table.getRowHeight(row);
@@ -269,7 +269,7 @@ public class TTableUI extends BasicTableUI {
         // determine cellrect for every cell
         for(int row = rMin; row <= rMax; row++) {
           boolean isRowSelected = table.getRowSelectionAllowed() && table.isRowSelected(row);
-          FormTableEntry entry = ((AbstractFormTableModel)((FormTable)table).getModel()).getEntryAt(row);
+          FormTableEntry entry = ((AbstractFormTableModel) table.getModel()).getEntryAt(row);
           for(int column = cMin; column <= cMax; column++) {
             boolean isColumnSelected = table.getColumnSelectionAllowed() && table.isColumnSelected(column);
             aColumn = cm.getColumn(column);
@@ -295,7 +295,7 @@ public class TTableUI extends BasicTableUI {
       for(int row = rMin; row <= rMax; row++) {
         boolean isRowSelected = table.getRowSelectionAllowed() && table.isRowSelected(row);
         FormTableEntry entry = isCellRectFixed() ? 
-                               null : ((AbstractFormTableModel)((FormTable)table).getModel()).getEntryAt(row);
+                               null : ((AbstractFormTableModel) table.getModel()).getEntryAt(row);
         cellRect = table.getCellRect(row, cMin, false);
         aColumn = cm.getColumn(cMin);
         boolean isColumnSelected = table.getColumnSelectionAllowed() && table.isColumnSelected(cMin);

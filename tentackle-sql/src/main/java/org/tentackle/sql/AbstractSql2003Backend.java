@@ -42,19 +42,25 @@ public abstract class AbstractSql2003Backend extends AbstractSql92Backend {
   /** condition for limit and offset. */
   public static final String SQL_WINDOW_OFFSET = "R_O_W > ?";
 
+
+  /** array of additional reserved words. */
+  public static final String[] RESERVED_WORDS_SQL2003 = new String[] {
+    "ARRAY", "ASENSITIVE", "ATOMIC", "BIGINT", "BLOB", "BOOLEAN", "CALLED",
+    "CLOB", "CUBE", "CYCLE", "DEREF", "DYNAMIC", "EACH", "ELEMENT", "FILTER", "ITERATE", "LARGE",
+    "LATERAL", "LOCALTIME", "LOCALTIMESTAMP", "MEMBER", "MERGE", "MULTISET", "NCLOB", "NEW",
+    "NONE", "OVER", "PARTITION", "RANGE", "RECURSIVE", "REF", "REFERENCING", "RELEASE", "RESULT",
+    "ROLLUP", "ROW", "SAVEPOINT", "SCOPE", "SEARCH", "SENSITIVE", "SIMILAR", "SPECIFICTYPE",
+    "START", "SYMMETRIC", "SYSTEM", "TABLESAMPLE", "TREAT", "TRIGGER", "UNNEST", "WINDOW", "WITHOUT"
+  };
+
   /** set of reserved words (built only once). */
   private static Set<String> reservedWords;
 
   @Override
-  public Set<String> getReservedWords() {
+  public synchronized Set<String> getReservedWords() {
     if (reservedWords == null) {
       reservedWords = new HashSet<>(super.getReservedWords());
-      reservedWords.addAll(Arrays.asList("ARRAY", "ASENSITIVE", "ATOMIC", "BIGINT", "BLOB", "BOOLEAN", "CALLED",
-              "CLOB", "CUBE", "CYCLE", "DEREF", "DYNAMIC", "EACH", "ELEMENT", "FILTER", "ITERATE", "LARGE",
-              "LATERAL", "LOCALTIME", "LOCALTIMESTAMP", "MEMBER", "MERGE", "MULTISET", "NCLOB", "NEW",
-              "NONE", "OVER", "PARTITION", "RANGE", "RECURSIVE", "REF", "REFERENCING", "RELEASE", "RESULT",
-              "ROLLUP", "ROW", "SAVEPOINT", "SCOPE", "SEARCH", "SENSITIVE", "SIMILAR", "SPECIFICTYPE",
-              "START", "SYMMETRIC", "SYSTEM", "TABLESAMPLE", "TREAT", "TRIGGER", "UNNEST", "WINDOW", "WITHOUT"));
+      reservedWords.addAll(Arrays.asList(RESERVED_WORDS_SQL2003));
     }
     return reservedWords;
   }

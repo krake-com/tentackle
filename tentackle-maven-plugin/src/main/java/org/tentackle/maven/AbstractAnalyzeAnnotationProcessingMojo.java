@@ -136,10 +136,13 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
       if (outputDir.exists()) {
         // get the oldest timestamp
         minOutputLastModified = outputDir.lastModified();
-        for (File file: outputDir.listFiles()) {
-          long lastModified = file.lastModified();
-          if (lastModified < minOutputLastModified) {
-            minOutputLastModified = lastModified;
+        File[] files = outputDir.listFiles();
+        if (files != null) {
+          for (File file : files) {
+            long lastModified = file.lastModified();
+            if (lastModified < minOutputLastModified) {
+              minOutputLastModified = lastModified;
+            }
           }
         }
       }
@@ -155,7 +158,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
       }
     }
 
-    return filteredNames.toArray(new String[0]);
+    return filteredNames.toArray(new String[filteredNames.size()]);
   }
 
 }

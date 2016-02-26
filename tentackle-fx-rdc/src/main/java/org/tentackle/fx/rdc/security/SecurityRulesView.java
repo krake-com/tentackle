@@ -124,14 +124,11 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   private ObservableList<Security> pdoRules;        // the security rules for the PDO
   private TrackedList<Security> trackedPdoRules;    // to track the changes
 
-  private ResourceBundle resources;                 // the resources
   private DomainContext context;                    // the domain context
   private PersistentDomainObject<?> pdo;            // the PDO, null if application class
   private int classId;                              // the class id, 0 if non-PDO class
   private Class<?> clazz;                           // the application class, null if PDO
   private SecurityEditor editor;                    // the editor for a rule
-  private TablePopup<Security> classRulesPopup;     // popup menu for the class rules table
-  private TablePopup<Security> pdoRulesPopup;       // popup menu for the pdo rules table
   private boolean withinSetupSecuredObject;         // true if selection changes must not trigger setRule
 
   @Override
@@ -141,7 +138,6 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
   @Override
   public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
 
     pdoRules = FXCollections.observableArrayList();
     classRules = FXCollections.observableArrayList();
@@ -193,10 +189,10 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
 
   @Override
   public void configure() {
-    classRulesPopup = new TablePopup<>(classRulesNode, "classRules", false);
+    TablePopup<Security> classRulesPopup = new TablePopup<>(classRulesNode, "classRules", false);
     classRulesPopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
     classRulesNode.setSortable(false);
-    pdoRulesPopup = new TablePopup<>(pdoRulesNode, "pdoRules", false);
+    TablePopup<Security> pdoRulesPopup = new TablePopup<>(pdoRulesNode, "pdoRules", false);
     pdoRulesPopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
     pdoRulesNode.setSortable(false);
   }
@@ -259,7 +255,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       trackedClassRules = on(Security.class).selectByObject(classId, 0);
       classRules.setAll(trackedClassRules);
       classTab.setText(MessageFormat.format(RdcFxRdcBundle.getString(
-              "Rules for {0}"), pdo.getPlural()));
+              "Rules for all {0}"), pdo.getPlural()));
       if (pdo.isNew()) {
         trackedPdoRules = null;
         pdoRules.clear();

@@ -38,8 +38,8 @@ import javax.swing.JDialog;
  */
 public class WorkerThread extends Thread {
 
-  private Runnable      runnable;       // what's to do?
-  private JDialog       workerDialog;   // worker dialog
+  private final Runnable runnable;       // what's to do?
+  private final JDialog workerDialog;    // worker dialog
 
   /**
    * Creates a worker thread.
@@ -111,9 +111,7 @@ public class WorkerThread extends Thread {
       runnable.run();
     }
     // dispose from event queue
-    EventQueue.invokeLater (() -> {
-      workerDialog.dispose();
-    });
+    EventQueue.invokeLater (workerDialog::dispose);
   }
 
 

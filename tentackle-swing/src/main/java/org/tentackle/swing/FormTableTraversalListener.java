@@ -35,6 +35,6 @@ public interface FormTableTraversalListener extends EventListener {
    * @param event is the FormTraversalEvent
    * @throws FormTableTraversalVetoException if traversal veto
    */
-  public void traversalRequested(FormTableTraversalEvent event) throws FormTableTraversalVetoException;
+  void traversalRequested(FormTableTraversalEvent event) throws FormTableTraversalVetoException;
   
 }

@@ -19,7 +19,8 @@
 
 package org.tentackle.swing;
 
-import java.awt.Window;
+import java.awt.*;
+
 import org.tentackle.swing.bind.FormComponentBinding;
 
 /**
@@ -41,7 +42,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param object is the object to set
    */
-  public void setFormValue (Object object);
+  void setFormValue (Object object);
 
   /**
    * Retrieves the value from this component.<br>
@@ -50,7 +51,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @return  the object from the form
    */
-  public Object getFormValue();
+  Object getFormValue();
 
 
   /**
@@ -60,7 +61,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @return the value visible to the user
    */
-  public Object getValueShown();
+  Object getValueShown();
 
   /**
    * Checks whether the currently shown value differs
@@ -69,14 +70,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @return true if user changed the visual representation
    */
-  public boolean isValueShownModified();
+  boolean isValueShownModified();
 
   /**
    * Clears the value shown status.<br>
    * May be used by components that update the value shown
    * programmatically.
    */
-  public void clearValueShownModified();
+  void clearValueShownModified();
 
   /**
    * Sets whether the model should only be updated
@@ -85,7 +86,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param smartValueEntered true if optimize, false if always update the model
    */
-  public void setSmartValueEntered(boolean smartValueEntered);
+  void setSmartValueEntered(boolean smartValueEntered);
 
   /**
    * Returns whether the model should only be updated
@@ -94,7 +95,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @return true if optimize, false if always update the model
    */
-  public boolean isSmartValueEntered();
+  boolean isSmartValueEntered();
 
 
 
@@ -104,7 +105,7 @@ public interface FormComponent extends FormChangeableComponent {
    * with this component or not.
    * @see #isValueChanged()
    */
-  public void saveValue();
+  void saveValue();
 
 
   /**
@@ -113,14 +114,14 @@ public interface FormComponent extends FormChangeableComponent {
    * @return true if changed
    * @see #saveValue()
    */
-  public boolean isValueChanged();
+  boolean isValueChanged();
 
 
   /**
    * Promotes the fact that value changed to all {@link FormContainer}s this
    * component is a child of.
    */
-  public void triggerValueChanged();
+  void triggerValueChanged();
 
 
   /**
@@ -129,14 +130,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param enabled true if invoke {@link #triggerValueChanged()} on each change (default), false if not.
    */
-  public void setTriggerValueChangedEnabled(boolean enabled);
+  void setTriggerValueChangedEnabled(boolean enabled);
 
   /**
    * Determines whether triggering value changes is enabled.
    *
    * @return true if invoke {@link #triggerValueChanged()} on each change (default), false if not.
    */
-  public boolean isTriggerValueChangedEnabled();
+  boolean isTriggerValueChangedEnabled();
 
 
   /**
@@ -146,14 +147,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param autoUpdate true if auto update the data (default), false if not
    */
-  public void setAutoUpdate (boolean autoUpdate);
+  void setAutoUpdate (boolean autoUpdate);
 
   /**
    * Returns whether the auto-update feature is enabled.
    *
    * @return true if auto update the data (default), false if not
    */
-  public boolean isAutoUpdate();
+  boolean isAutoUpdate();
 
 
   /**
@@ -162,14 +163,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param listener the value listener to add
    */
-  public void addValueListener (ValueListener listener);
+  void addValueListener (ValueListener listener);
 
   /**
    * Remove a value listener.
    *
    * @param listener the value listener to remove
    */
-  public void removeValueListener (ValueListener listener);
+  void removeValueListener (ValueListener listener);
 
 
   /**
@@ -178,7 +179,7 @@ public interface FormComponent extends FormChangeableComponent {
    * This method is invoked whenever the data has been changed
    * and that change should be reflected in the view.
    */
-  public void fireValueChanged();
+  void fireValueChanged();
 
 
   /**
@@ -187,7 +188,7 @@ public interface FormComponent extends FormChangeableComponent {
    * This method is invoked whenever the user edited the view
    * and that change should be reflected in the data.
    */
-  public void fireValueEntered();
+  void fireValueEntered();
 
 
   /**
@@ -197,13 +198,13 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param mandatory true if mandatory
    */
-  public void setMandatory(boolean mandatory);
+  void setMandatory(boolean mandatory);
 
   /**
    * Gets the mandatory option.
    * @return true if mandatory
    */
-  public boolean isMandatory();
+  boolean isMandatory();
 
 
   /**
@@ -212,35 +213,35 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param fireRunning true if some fire-method is running
    */
-  public void setFireRunning(boolean fireRunning);
+  void setFireRunning(boolean fireRunning);
 
   /**
    * Checks whether a fire-method is running.
    *
    * @return true if some fire-method is running
    */
-  public boolean isFireRunning();
+  boolean isFireRunning();
 
 
   /**
    * Returns whether this component lost the keyboard focus due to {@link #transferFocus()}.
    * @return true if focus lost due to transferFocus
    */
-  public boolean wasTransferFocus();
+  boolean wasTransferFocus();
 
 
   /**
    * Returns whether this component lost the keyboard focus due to {@link #transferFocusBackward()}.
    * @return true if focus lost due to transferFocusBackward
    */
-  public boolean wasTransferFocusBackward();
+  boolean wasTransferFocusBackward();
 
 
   /**
    * Returns whether this component lost the keyboard focus due to {@link java.awt.event.KeyEvent#VK_ENTER}.
    * @return true if pressing the Enter/Return key caused a focus lost
    */
-  public boolean wasTransferFocusByEnter();
+  boolean wasTransferFocusByEnter();
 
 
   /**
@@ -249,7 +250,7 @@ public interface FormComponent extends FormChangeableComponent {
    * @return true if this component gained the focus from the logically previous component
    * @see FormFocusTraversalPolicy
    */
-  public boolean wasFocusGainedFromTransfer();
+  boolean wasFocusGainedFromTransfer();
 
   /**
    * Returns whether the keyboard focus was gained due to {@link #transferFocusBackward()}
@@ -258,7 +259,7 @@ public interface FormComponent extends FormChangeableComponent {
    * @return true if this component gained the focus from the logically next component
    * @see FormFocusTraversalPolicy
    */
-  public boolean wasFocusGainedFromTransferBackward();
+  boolean wasFocusGainedFromTransferBackward();
 
 
   /**
@@ -269,7 +270,7 @@ public interface FormComponent extends FormChangeableComponent {
    * This method guarantees that this component gets the focus when
    * all events queued so far have been processed.
    */
-  public void requestFocusLater();
+  void requestFocusLater();
 
 
   /**
@@ -279,7 +280,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param window the window (usually the parent window of this component).
    */
-  public void setFormWrapWindow(FormWindow window);
+  void setFormWrapWindow(FormWindow window);
 
 
   /**
@@ -287,7 +288,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @return the parent window, null if none
    */
-  public Window getParentWindow();
+  Window getParentWindow();
 
 
   /**
@@ -295,7 +296,7 @@ public interface FormComponent extends FormChangeableComponent {
    * for the hierarchy of this component's parents.<br>
    * For optimization purposes.
    */
-  public void invalidateParentInfo();
+  void invalidateParentInfo();
 
 
   /**
@@ -308,13 +309,13 @@ public interface FormComponent extends FormChangeableComponent {
    * @param helpURL the help url
    * @see FormUtilities#openHelpURL(Component)
    */
-  public void setHelpURL(String helpURL);
+  void setHelpURL(String helpURL);
 
   /**
    * Gets the online-help URL.
    * @return the help url, default is null
    */
-  public String getHelpURL();
+  String getHelpURL();
 
 
   /**
@@ -323,7 +324,7 @@ public interface FormComponent extends FormChangeableComponent {
    * If help is not configured for this component, the parent's
    * help is used.
    */
-  public void showHelp();
+  void showHelp();
 
 
   /**
@@ -332,7 +333,7 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param message the message to be displayed, null to remove
    */
-  public void showErrorPopup(String message);
+  void showErrorPopup(String message);
 
 
   /**
@@ -341,14 +342,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param cellEditorUsage true if component is a cell editor, false if not.
    */
-  public void setCellEditorUsage(boolean cellEditorUsage);
+  void setCellEditorUsage(boolean cellEditorUsage);
 
   /**
    * Returns whether this component is used as a cell editor.
    *
    * @return true true if component is a cell editor, false if not.
    */
-  public boolean isCellEditorUsage();
+  boolean isCellEditorUsage();
 
 
   /**
@@ -359,7 +360,7 @@ public interface FormComponent extends FormChangeableComponent {
    * changes the focusability of the next component, the focus policy would
    * probably pick the wrong component otherwise.
    */
-  public void prepareFocusLost();
+  void prepareFocusLost();
 
 
   /**
@@ -368,14 +369,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param formTraversable true if traversable, false if not
    */
-  public void setFormTraversable(boolean formTraversable);
+  void setFormTraversable(boolean formTraversable);
 
   /**
    * Returns whether this component is form traversable or not.
    *
    * @return the focus traversable flag
    */
-  public boolean isFormTraversable();
+  boolean isFormTraversable();
 
 
   /**
@@ -383,14 +384,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param group the focus traversal group
    */
-  public void setFocusTraversalGroup(FocusTraversalGroup group);
+  void setFocusTraversalGroup(FocusTraversalGroup group);
 
   /**
    * Gets the focus traversal group for this component.
    *
    * @return the focus traversal group
    */
-  public FocusTraversalGroup getFocusTraversalGroup();
+  FocusTraversalGroup getFocusTraversalGroup();
 
 
   /**
@@ -398,14 +399,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param group the property group
    */
-  public void setPropertyGroup(PropertyGroup group);
+  void setPropertyGroup(PropertyGroup group);
 
   /**
    * Gets the property group for this component.
    *
    * @return the property group
    */
-  public PropertyGroup getPropertyGroup();
+  PropertyGroup getPropertyGroup();
 
 
 
@@ -420,14 +421,14 @@ public interface FormComponent extends FormChangeableComponent {
    * @param bindingPath the binding path, for ex. <tt>"invoiceNumber"</tt>, null if autobinding
    * @see org.tentackle.bind.Binder
    */
-  public void setBindingPath(String bindingPath);
+  void setBindingPath(String bindingPath);
 
   /**
    * Gets the binding path.
    *
    * @return the field path, null if autobinding (default)
    */
-  public String getBindingPath();
+  String getBindingPath();
 
   /**
    * Sets the component path.
@@ -439,13 +440,13 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param componentPath the component path
    */
-  public void setComponentPath(String componentPath);
+  void setComponentPath(String componentPath);
 
   /**
    * Gets the component path.
    * @return the component path, null if not bound
    */
-  public String getComponentPath();
+  String getComponentPath();
 
 
   /**
@@ -453,14 +454,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param binding the binding, null if none.
    */
-  public void setBinding(FormComponentBinding binding);
+  void setBinding(FormComponentBinding binding);
 
   /**
    * Gets the binding.
    *
    * @return the binding, null if none
    */
-  public FormComponentBinding getBinding();
+  FormComponentBinding getBinding();
 
   /**
    * Sets whether this component is bindable.
@@ -469,14 +470,14 @@ public interface FormComponent extends FormChangeableComponent {
    *
    * @param bindable true if bindable, else not eligible for the binding process
    */
-  public void setBindable(boolean bindable);
+  void setBindable(boolean bindable);
 
   /**
    * Determines whether this component is bindable.
    *
    * @return true if bindable, else not eligible for the binding process
    */
-  public boolean isBindable();
+  boolean isBindable();
 
 
   // ------------------- Swing standard methods ----------------------
@@ -486,21 +487,21 @@ public interface FormComponent extends FormChangeableComponent {
    * Returns whether this component has the keyboard focus.
    * @return true if has focus
    */
-  public boolean hasFocus();
+  boolean hasFocus();
 
 
   /**
    * Transfers keyboard focus forward to the logically next component.
    * @see FormFocusTraversalPolicy
    */
-  public void transferFocus();
+  void transferFocus();
 
 
   /**
    * Transfers keyboard focus forward to the logically previous component.
    * @see FormFocusTraversalPolicy
    */
-  public void transferFocusBackward();
+  void transferFocusBackward();
 
 
   /**
@@ -511,6 +512,6 @@ public interface FormComponent extends FormChangeableComponent {
    * @return the baseline
    * @since 1.6
    */
-  public int getBaseline(int width, int height);
+  int getBaseline(int width, int height);
 
 }

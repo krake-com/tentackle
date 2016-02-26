@@ -33,9 +33,9 @@ import java.util.TimeZone;
 public class TimeZoneComboBox extends FormFieldComboBox<String> {
   
   
-  private static String[] zones;    // the timezones
+  private static final String[] zones;    // the timezones
   
-  {
+  static {
     zones = TimeZone.getAvailableIDs();
     Arrays.sort(zones);
   }

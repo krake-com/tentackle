@@ -47,7 +47,7 @@ public class ConvertibleTest {
     Assert.assertEquals(twoEnum.toExternal(), twoInt);
     Assert.assertEquals(threeEnum.toExternal(), threeInt);
     try {
-      TestConvertible fourEnum = ConvertibleHelper.toInternal(TestConvertible.class, 400);
+      ConvertibleHelper.toInternal(TestConvertible.class, 400);
       Assert.fail("creating internal value for external 400 should not be possible");
     }
     catch (RuntimeException e) {

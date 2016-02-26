@@ -18,12 +18,20 @@
 
 package org.tentackle.persist;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.rmi.RemoteException;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainContextDependable;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.RemoteSession;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.persist.rmi.RemoteDbSession;
+import org.tentackle.security.SecurityFactory;
+import org.tentackle.security.SecurityManager;
+import org.tentackle.security.SecurityResult;
 
 /**
  * Adapter for a remote session.<br>
@@ -93,6 +101,31 @@ public class RemoteSessionAdapter implements RemoteSession {
     }
     catch (RemoteException rex) {
       throw PersistenceException.createFromRemoteException(this, rex);
+    }
+  }
+
+  @Override
+  public <T extends DomainContextDependable> T getExtension(DomainContext context, Class<T> extIf) {
+    // Important: the server should its own checks for each method invocation!
+    SecurityFactory sf = SecurityFactory.getInstance();
+    SecurityManager sm = sf.getSecurityManager();
+    SecurityResult sr = sm.evaluate(context, sf.getExecutePermission(), extIf);
+    if (!sr.isAccepted()) {
+      throw new SecurityException(sr.explain("no execute permission for " + extIf.getName()));
+    }
+    T adapter = ServiceFactory.createService(extIf);
+    try {
+      /**
+       * The adapter must implement DomainContextDependable and thus provides the method:
+       * void setDomainContext(DomainContext context)
+       */
+      Method m = adapter.getClass().getMethod("setDomainContext", DomainContext.class);
+      m.invoke(adapter, context);
+      return adapter;
+    }
+    catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException |
+            InvocationTargetException ex) {
+      throw new PersistenceException("could not create adapter for " + extIf, ex);
     }
   }
 

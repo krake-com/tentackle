@@ -24,7 +24,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 
 interface PdoEditDialogFactory$Singleton {
-  static PdoEditDialogFactory INSTANCE = ServiceFactory.createService(
+  PdoEditDialogFactory INSTANCE = ServiceFactory.createService(
               PdoEditDialogFactory.class, DefaultPdoEditDialogFactory.class);
 }
 

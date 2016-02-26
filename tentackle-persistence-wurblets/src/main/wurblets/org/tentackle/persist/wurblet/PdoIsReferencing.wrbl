@@ -120,7 +120,7 @@
       if (getContextAttribute() != null)  {
 ]@
 @{to remoteOut}@
-  public boolean @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
+  boolean @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
 @{to implOut}@
 
   \@Override
@@ -140,7 +140,7 @@
       else  {
 ]@
 @{to remoteOut}@
-  public boolean @(methodName)@(@(params)@) throws RemoteException;
+  boolean @(methodName)@(@(params)@) throws RemoteException;
 @{to implOut}@
 
   \@Override

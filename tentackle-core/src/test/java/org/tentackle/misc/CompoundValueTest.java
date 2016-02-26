@@ -50,7 +50,7 @@ public class CompoundValueTest {
     par = new CompoundValue("$sayHello");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(((String) result).equals(sayHello()));
+    Assert.assertTrue(result.equals(sayHello()));
 
     result = new CompoundValue("$org.tentackle.misc.DateHelper.now").getValue();
     Assert.assertTrue(result instanceof Timestamp);
@@ -63,12 +63,12 @@ public class CompoundValueTest {
     result = new CompoundValue("#!{ 123.0 + 101.0 }", String.class).getValue();
     Reporter.log(result.toString() + "<br/>");
     Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(((String) result).equals("224.0"));
+    Assert.assertTrue(result.equals("224.0"));
 
     par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(((String) result).equals("the method says " + sayHello()));
+    Assert.assertTrue(result.equals("the method says " + sayHello()));
 
     par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
     result = par.getValue(this);

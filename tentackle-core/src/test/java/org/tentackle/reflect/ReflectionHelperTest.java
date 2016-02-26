@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
  */
 public class ReflectionHelperTest {
 
-  public class MyClass {
+  public static class MyClass {
 
     public int myField = 10;
 
@@ -67,7 +67,7 @@ public class ReflectionHelperTest {
     }
 
     try {
-      Assert.assertTrue(ReflectionHelper.getValueByPath(this, "myClass.myField").equals(new Integer(10)));
+      Assert.assertTrue(ReflectionHelper.getValueByPath(this, "myClass.myField").equals(10));
     }
     catch (ApplicationException ex) {
       Assert.fail(ex.getAllMessages());

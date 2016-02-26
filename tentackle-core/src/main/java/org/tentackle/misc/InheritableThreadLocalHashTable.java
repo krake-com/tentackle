@@ -36,17 +36,14 @@ public class InheritableThreadLocalHashTable<K, V> extends InheritableThreadLoca
   @Override
   @SuppressWarnings("unchecked")
   protected Hashtable<K, V> childValue(Hashtable<K, V> parentValue) {
-    Hashtable<K, V> table = parentValue;
-    if (table != null) {
-      return (Hashtable<K, V>) table.clone();
+    if (parentValue != null) {
+      return (Hashtable<K, V>) parentValue.clone();
     }
-    else {
-      return null;
-    }
+    return null;
   }
 
   @Override
   protected Hashtable<K, V> initialValue() {
-    return new Hashtable<K, V>();
+    return new Hashtable<>();
   }
 }

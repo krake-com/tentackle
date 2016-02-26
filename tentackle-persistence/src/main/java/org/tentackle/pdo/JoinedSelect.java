@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.text.StyleConstants;
 import org.tentackle.persist.PreparedStatementWrapper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;

@@ -62,7 +62,7 @@ public class DefaultScriptFactory implements ScriptFactory {
 
 
   @Override
-  public ScriptingLanguage getDefaultLanguage() {
+  public synchronized ScriptingLanguage getDefaultLanguage() {
     if (loggedDefaultLanguage != defaultLanguage) {
       // log default language once
       LOGGER.info("default scripting language is {0}", defaultLanguage);

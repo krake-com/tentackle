@@ -30,6 +30,6 @@ import org.tentackle.validate.ValidationScope;
 public interface InteractiveScope extends ValidationScope {
 
   /** the scope's name. */
-  public static final String NAME = "INTERACTIVE";
+  String NAME = "INTERACTIVE";
 
 }

@@ -34,7 +34,7 @@ public interface BindableTableModel<T> extends TableModel {
    * The binding type.<br>
    * Determines the kind of binding, or none at all.
    */
-  public static enum BindType {
+  enum BindType {
     /** don't bind */
     NONE,
     /** bind declared only */
@@ -50,7 +50,7 @@ public interface BindableTableModel<T> extends TableModel {
    *
    * @return the binder, never null.
    */
-  public FormTableBinder getBinder();
+  FormTableBinder getBinder();
 
 
   /**
@@ -59,7 +59,7 @@ public interface BindableTableModel<T> extends TableModel {
    * @param columnIndex the model column
    * @return the binding, null if column not bound
    */
-  public FormTableBinding getBinding(int columnIndex);
+  FormTableBinding getBinding(int columnIndex);
 
 
   /**
@@ -67,7 +67,7 @@ public interface BindableTableModel<T> extends TableModel {
    *
    * @return the binding type
    */
-  public BindType getBindType();
+  BindType getBindType();
 
 
   /**
@@ -77,7 +77,7 @@ public interface BindableTableModel<T> extends TableModel {
    * @param mColumn the datamodel-column
    * @return the binding path, null if not bound
    */
-  public String getBindingPath(int mColumn);
+  String getBindingPath(int mColumn);
 
 
   /**
@@ -88,7 +88,7 @@ public interface BindableTableModel<T> extends TableModel {
    *
    * @return the class to start the scan
    */
-  public Class<?> getBindingRootClass();
+  Class<?> getBindingRootClass();
 
 
   /**
@@ -96,7 +96,7 @@ public interface BindableTableModel<T> extends TableModel {
    *
    * @return the form table or null if this model is not the direct data model for the table
    */
-  public FormTable<T> getTable();
+  FormTable<T> getTable();
 
 
   /**
@@ -104,6 +104,6 @@ public interface BindableTableModel<T> extends TableModel {
    *
    * @param table the form table
    */
-  public void setTable(FormTable<T> table);
+  void setTable(FormTable<T> table);
 
 }

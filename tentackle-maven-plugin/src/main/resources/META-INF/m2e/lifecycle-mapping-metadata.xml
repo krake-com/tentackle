@@ -1,0 +1,18 @@
+<!-- lifecycle mapping for eclipse -->
+<lifecycleMappingMetadata>
+  <pluginExecutions>
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <goals>
+          <goal>analyze</goal>
+          <goal>testAnalyze</goal>
+          <goal>beaninfo</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <ignore/>
+      </action>
+    </pluginExecution>
+  </pluginExecutions>
+</lifecycleMappingMetadata>
+

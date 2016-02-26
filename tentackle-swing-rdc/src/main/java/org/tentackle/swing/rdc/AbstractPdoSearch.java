@@ -180,7 +180,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
                   EventQueue.invokeLater(() -> cursorDialog.updateRowCount(count));
                 }
                 else if (count > warnRowCount) {
-                  EventQueue.invokeLater(() -> cursorDialog.showDialog());
+                  EventQueue.invokeLater(cursorDialog::showDialog);
                 }
               }
 
@@ -197,7 +197,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
           }
 
           if (cursorDialog != null && cursorDialog.isShowing()) {
-            EventQueue.invokeLater(() -> cursorDialog.dispose());
+            EventQueue.invokeLater(cursorDialog::dispose);
           }
 
           // show results

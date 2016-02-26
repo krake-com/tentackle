@@ -237,7 +237,7 @@ public class DefaultFxFactory implements FxFactory {
   public Stage createStage(StageStyle stageStyle, Modality modality) {
     Stage stage = new Stage(stageStyle);
     stage.initModality(modality);
-    getConfigurator(Window.class).configure((Window) stage);
+    getConfigurator(Window.class).configure(stage);
     return stage;
   }
 
@@ -331,6 +331,9 @@ public class DefaultFxFactory implements FxFactory {
           controller.getBinder().bindAllInherited();
           break;
 
+        default:
+          // NO
+
       }
 
       controller.configure();
@@ -397,6 +400,10 @@ public class DefaultFxFactory implements FxFactory {
     return new DefaultTableConfiguration<>(template, name);
   }
 
+  @Override
+  public <S> TableConfiguration<S> createTableConfiguration(Class<S> objectClass, String name) {
+    return new DefaultTableConfiguration<>(objectClass, name);
+  }
 
   /**
    * Creates the builder factory.

@@ -645,9 +645,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
     searchPanel = pdoSearch.getSearchPanel();
     searchCriteriaPanel.add(searchPanel, BorderLayout.CENTER);
 
-    searchPanel.addActionListener((ActionEvent e) -> {
-      searchButton.doClick();
-    });
+    searchPanel.addActionListener((ActionEvent e) -> searchButton.doClick());
 
     String fmtClass   = null;
     String fmtContext = null;
@@ -833,7 +831,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
   }// </editor-fold>//GEN-END:initComponents
 
   private void formFormWrapped(org.tentackle.swing.FormWrapEvent evt) {//GEN-FIRST:event_formFormWrapped
-    if (moreButton.isVisible() && moreButton.isSelected() == false) {
+    if (moreButton.isVisible() && !moreButton.isSelected()) {
       moreButton.doClick();
     }
     else if (searchButton.isVisible())  {

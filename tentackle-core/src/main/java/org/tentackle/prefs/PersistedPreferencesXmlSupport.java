@@ -135,7 +135,7 @@ public class PersistedPreferencesXmlSupport {
       PersistedPreferences prefsRoot = (xmlRoot.getAttribute("type").equals("user") ?
               PersistedPreferences.userRoot() : PersistedPreferences.systemRoot());
 
-      ImportSubtree(prefsRoot, xmlRoot);
+      importSubtree(prefsRoot, xmlRoot);
     }
     catch (SAXException e) {
       throw new InvalidPreferencesFormatException(e);
@@ -205,7 +205,7 @@ public class PersistedPreferencesXmlSupport {
    * the described preferences into the system or current user
    * preferences tree, as appropriate.
    */
-  private static void ImportSubtree(PersistedPreferences prefsNode, Element xmlNode) {
+  private static void importSubtree(PersistedPreferences prefsNode, Element xmlNode) {
     NodeList xmlKids = xmlNode.getChildNodes();
     int numXmlKids = xmlKids.getLength();
     /*
@@ -219,7 +219,7 @@ public class PersistedPreferencesXmlSupport {
     synchronized (prefsNode) {
       // Import any preferences at this node
       Element firstXmlKid = (Element) xmlKids.item(0);
-      ImportPrefs(prefsNode, firstXmlKid);
+      importPrefs(prefsNode, firstXmlKid);
       prefsKids = new PersistedPreferences[numXmlKids - 1];
 
       // Get involved children
@@ -230,7 +230,7 @@ public class PersistedPreferencesXmlSupport {
     } // unlocked the node
     // import children
     for (int i = 1; i < numXmlKids; i++) {
-      ImportSubtree(prefsKids[i - 1], (Element) xmlKids.item(i));
+      importSubtree(prefsKids[i - 1], (Element) xmlKids.item(i));
     }
   }
 
@@ -239,7 +239,7 @@ public class PersistedPreferencesXmlSupport {
    * (a map from a preferences document) into the specified
    * preferences node.
    */
-  private static void ImportPrefs(PersistedPreferences prefsNode, Element map) {
+  private static void importPrefs(PersistedPreferences prefsNode, Element map) {
     NodeList entries = map.getChildNodes();
     for (int i = 0, numEntries = entries.getLength(); i < numEntries; i++) {
       Element entry = (Element) entries.item(i);
@@ -353,7 +353,7 @@ public class PersistedPreferencesXmlSupport {
       for (int i = 0; i < kidNames.length; i++) {
         Element xmlKid = (Element) elt.appendChild(doc.createElement("node"));
         xmlKid.setAttribute("name", kidNames[i]);
-        putPreferencesInXml(xmlKid, doc, kidsCopy[i], subTree);
+        putPreferencesInXml(xmlKid, doc, kidsCopy[i], true);
       }
     }
   }
@@ -362,7 +362,7 @@ public class PersistedPreferencesXmlSupport {
   /**
    * Write XML document to the specified output stream.
    */
-  private static final void writeDoc(Document doc, OutputStream out) throws IOException {
+  private static void writeDoc(Document doc, OutputStream out) throws IOException {
     try {
       Transformer t = TransformerFactory.newInstance().newTransformer();
       t.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doc.getDoctype().getSystemId());

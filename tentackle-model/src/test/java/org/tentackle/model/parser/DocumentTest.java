@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
  */
 public class DocumentTest {
 
-  private final String modelText =
+  private static final String MODEL_TEXT =
 
 "# model for invoice headers\n" +
 "name := Invoice\n" +
@@ -78,7 +78,7 @@ public class DocumentTest {
   @Test
   public void parseModel() {
 
-    Document document = new Document(modelText);
+    Document document = new Document(MODEL_TEXT);
 
     try {
       List<Line> lines = document.getLines();

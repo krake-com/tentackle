@@ -177,6 +177,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
 
+  /**
+   * Gets the source info.
+   *
+   * @return the source info
+   */
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
 
   @Override
   public int hashCode() {
@@ -461,7 +470,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   public String getGetterSetterComment() {
     StringBuilder buf = new StringBuilder();
     if (reversed) {
-      buf.append("reversed as 1:1 from " + entity);
+      buf.append("reversed as 1:1 from ").append(entity);
     }
     else {
       buf.append(getVariableName());
@@ -928,7 +937,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       str = BasicStringHelper.firstToUpper(str);
     }
     if (getRelationType() == RelationType.LIST && !reversed && name == null) {
-      return str += "List";
+      str += "List";
     }
     return str;
   }
@@ -960,12 +969,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public String getGetterName() {
-    return new StringBuilder("get").append(getMethodNameSuffix()).toString();
+    return "get" + getMethodNameSuffix();
   }
 
   @Override
   public String getSetterName() {
-    return new StringBuilder("set").append(getMethodNameSuffix()).toString();
+    return "set" + getMethodNameSuffix();
   }
 
   @Override

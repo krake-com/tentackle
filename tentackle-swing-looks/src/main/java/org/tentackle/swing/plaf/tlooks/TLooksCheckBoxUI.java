@@ -41,7 +41,7 @@ import javax.swing.text.View;
 
 /**
  * UI for JCheckBox/FormCheckBox.
- * 
+ *
  * @author harald
  */
 public class TLooksCheckBoxUI extends MetalCheckBoxUI {
@@ -74,9 +74,6 @@ public class TLooksCheckBoxUI extends MetalCheckBoxUI {
     ButtonModel model = b.getModel();
 
     Dimension size = c.getSize();
-
-    int w = size.width;
-    int h = size.height;
 
     Font f = c.getFont();
     g.setFont(f);

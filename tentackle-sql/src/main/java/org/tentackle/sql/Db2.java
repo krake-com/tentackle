@@ -77,29 +77,16 @@ public class Db2 extends AbstractSql2003Backend {
 
   @Override
   public String getBackendId(Connection connection) {
-    String backendId = null;
-    ResultSet rs = null;
-    try {
-      Statement stmt = connection.createStatement();
-      rs = stmt.executeQuery("SELECT application_id() AS appid FROM SYSIBM.SYSDUMMY1");
+    try (Statement stmt = connection.createStatement()) {
+      ResultSet rs = stmt.executeQuery("SELECT application_id() AS appid FROM SYSIBM.SYSDUMMY1");
       if (rs.next()) {
-        backendId = rs.getString(1);
+        return rs.getString(1);
       }
+      return null;
     }
     catch (SQLException ex) {
       throw new TentackleRuntimeException("cannot determine backend id", ex);
     }
-    finally {
-      if (rs != null) {
-        try {
-          rs.close();
-        }
-        catch (SQLException ex) {
-          throw new TentackleRuntimeException("close resultset after determine backend id failed", ex);
-        }
-      }
-    }
-    return backendId;
   }
 
   @Override
@@ -196,25 +183,21 @@ public class Db2 extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD (");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(");\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD (" +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ");\n";
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(columnName);
-    buf.append(" DATA TYPE ");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            columnName +
+            " DATA TYPE " +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ";\n";
   }
 
   /**

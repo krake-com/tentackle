@@ -37,7 +37,7 @@ public class PersistentOperationClassVariables<T extends Operation<T>, P extends
   /**
    * The associated operation class (i.e. the interface)
    */
-  public Class<T> operationClass;
+  public final Class<T> operationClass;
 
 
   /**

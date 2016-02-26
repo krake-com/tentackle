@@ -39,7 +39,7 @@ public interface Logger {
    *  <li>SEVERE</li>
    * </ul>
    */
-  public static enum Level {
+  enum Level {
 
     /**
      * FINEST indicates a highly detailed tracing message.
@@ -71,7 +71,7 @@ public interface Logger {
      */
     SEVERE
 
-  };
+  }
 
 
 
@@ -83,7 +83,7 @@ public interface Logger {
    * @param level the logging level
    * @return true if the given logging level is currently being logged
    */
-  public boolean isLoggable(Level level);
+  boolean isLoggable(Level level);
 
 
 
@@ -92,42 +92,42 @@ public interface Logger {
    *
    * @return true if logger will log this level
    */
-  public boolean isFinestLoggable();
+  boolean isFinestLoggable();
 
   /**
    * Checks if logger logs level FINER.
    *
    * @return true if logger will log this level
    */
-  public boolean isFinerLoggable();
+  boolean isFinerLoggable();
 
   /**
    * Checks if logger logs level FINE.
    *
    * @return true if logger will log this level
    */
-  public boolean isFineLoggable();
+  boolean isFineLoggable();
 
   /**
    * Checks if logger logs level INFO.
    *
    * @return true if logger will log this level
    */
-  public boolean isInfoLoggable();
+  boolean isInfoLoggable();
 
   /**
    * Checks if logger logs level WARNING.
    *
    * @return true if logger will log this level
    */
-  public boolean isWarningLoggable();
+  boolean isWarningLoggable();
 
   /**
    * Checks if logger logs level SEVERE.
    *
    * @return true if logger will log this level
    */
-  public boolean isSevereLoggable();
+  boolean isSevereLoggable();
 
 
 
@@ -139,7 +139,7 @@ public interface Logger {
    * @param message the message
    * @param cause   the Throwable associated with log message, null if none
    */
-  public void log(Level level, String message, Throwable cause);
+  void log(Level level, String message, Throwable cause);
 
 
   /**
@@ -148,7 +148,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void finest(String message, Object... params);
+  void finest(String message, Object... params);
 
   /**
    * Logs a message with level FINER.
@@ -156,7 +156,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void finer(String message, Object... params);
+  void finer(String message, Object... params);
 
   /**
    * Logs a message with level FINE.
@@ -164,7 +164,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void fine(String message, Object... params);
+  void fine(String message, Object... params);
 
   /**
    * Logs a message with level INFO.
@@ -172,7 +172,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void info(String message, Object... params);
+  void info(String message, Object... params);
 
   /**
    * Logs a message with level WARNING.
@@ -180,7 +180,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void warning(String message, Object... params);
+  void warning(String message, Object... params);
 
   /**
    * Logs a message with level SEVERE.
@@ -188,7 +188,7 @@ public interface Logger {
    * @param message the message
    * @param params optional parameters
    */
-  public void severe(String message, Object... params);
+  void severe(String message, Object... params);
 
 
   /**
@@ -197,7 +197,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void finest(String message, Throwable cause);
+  void finest(String message, Throwable cause);
 
   /**
    * Logs a message with level FINER.
@@ -205,7 +205,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void finer(String message, Throwable cause);
+  void finer(String message, Throwable cause);
 
   /**
    * Logs a message with level FINE.
@@ -213,7 +213,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void fine(String message, Throwable cause);
+  void fine(String message, Throwable cause);
 
   /**
    * Logs a message with level INFO.
@@ -221,7 +221,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void info(String message, Throwable cause);
+  void info(String message, Throwable cause);
 
   /**
    * Logs a message with level WARNING.
@@ -229,7 +229,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void warning(String message, Throwable cause);
+  void warning(String message, Throwable cause);
 
   /**
    * Logs a message with level SEVERE.
@@ -237,7 +237,7 @@ public interface Logger {
    * @param message the message
    * @param cause the throwable
    */
-  public void severe(String message, Throwable cause);
+  void severe(String message, Throwable cause);
 
 
 
@@ -248,14 +248,14 @@ public interface Logger {
    * @param level   the logging level
    * @param cause   the Throwable to log the stacktrace for
    */
-  public void logStacktrace(Level level, Throwable cause);
+  void logStacktrace(Level level, Throwable cause);
 
   /**
    * Logs the stacktrace of a throwable with a logging level of SEVERE.
    *
    * @param cause   the Throwable to log the stacktrace for
    */
-  public void logStacktrace(Throwable cause);
+  void logStacktrace(Throwable cause);
 
 
   /**
@@ -264,7 +264,7 @@ public interface Logger {
    *
    * @return the logger object
    */
-  public Object getLoggerImpl();
+  Object getLoggerImpl();
 
 
   /**
@@ -273,6 +273,6 @@ public interface Logger {
    *
    * @return the MDC
    */
-  public MappedDiagnosticContext getMappedDiagnosticContext();
+  MappedDiagnosticContext getMappedDiagnosticContext();
 
 }

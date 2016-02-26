@@ -38,7 +38,7 @@ import org.tentackle.swing.FormUtilities;
 
 
 interface PdoEditDialogPool$Singleton {
-  static PdoEditDialogPool INSTANCE = ServiceFactory.createService(PdoEditDialogPool.class, PdoEditDialogPool.class);
+  PdoEditDialogPool INSTANCE = ServiceFactory.createService(PdoEditDialogPool.class, PdoEditDialogPool.class);
 }
 
 
@@ -198,7 +198,7 @@ public class PdoEditDialogPool {
     if (enabled) {
       // check if dialog already created, not visible and of correct modal-type
       for (PdoEditDialog<?> d: dialogList) {
-        if (d != null && d.isModal() == modal && d.isVisible() == false &&
+        if (d != null && d.isModal() == modal && !d.isVisible() &&
             d.isChangeable() == changeable && d.getPdoClass().equals(objectClass))  {
           return (PdoEditDialog<T>) d;
         }
@@ -303,7 +303,7 @@ public class PdoEditDialogPool {
         // if only one dialog at a time for editing the object
         d = isObjectBeingEdited(object);
         if (d != null)  {
-          if (d.isModal() == false) {
+          if (!d.isModal()) {
             d.dispose();        // close it first.
             d.setModal(true);   // make it modal.
           }
@@ -321,7 +321,7 @@ public class PdoEditDialogPool {
       if (d == null)  {
         // no such dialog: create new one
         d = createPdoEditDialog(comp, object, true);
-        if (changeable == false) {
+        if (!changeable) {
           d.setChangeable(false);
         }
         addDialog(d);
@@ -410,7 +410,7 @@ public class PdoEditDialogPool {
       if (d == null)  {
         // no such dialog: create new one
         d = createPdoEditDialog(comp, pdo, false);
-        if (changeable == false) {
+        if (!changeable) {
           d.setChangeable(false);
         }
         addDialog(d);
@@ -422,7 +422,7 @@ public class PdoEditDialogPool {
 
       // show Dialog
       d.setDisposeOnDeleteOrSave(disposeOnDeleteOrSave);
-      if (d.isVisible() == false) {
+      if (!d.isVisible()) {
         d.showDialog(noPersistence); // non-modal
       }
       return d;

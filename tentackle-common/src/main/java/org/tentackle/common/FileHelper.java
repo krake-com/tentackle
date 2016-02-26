@@ -38,10 +38,9 @@ public class FileHelper {
    * @param filename the filename, null if return empty properties
    * @param asResource true if load from the classpath, false if from filesystem
    * @return the properties, empty if filename is null
-   * @throws FileNotFoundException if no such property file
-   * @throws IOException if reading the property file failed
+   * @throws IOException if reading the property file failed or no such property file
    */
-  public static Properties loadProperties(String filename, boolean asResource) throws FileNotFoundException, IOException {
+  public static Properties loadProperties(String filename, boolean asResource) throws IOException {
     Properties dbProps = new Properties();
     if (filename != null) {
       if (filename.indexOf('.') < 0) {
@@ -72,7 +71,9 @@ public class FileHelper {
           try {
             is.close();
           }
-          catch (IOException ex) {}
+          catch (IOException ex) {
+            // ignored
+          }
         }
       }
     }

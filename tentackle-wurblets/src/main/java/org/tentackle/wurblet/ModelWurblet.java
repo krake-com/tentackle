@@ -207,7 +207,7 @@ public class ModelWurblet extends AbstractWurblet {
   public boolean isPdo() {
     if (isPdo == null) {
       try {
-        getPdoClassName();
+        getPdoClassName();    // sets isPdo!
       }
       catch (WurbelException wex) {
         // ignore
@@ -574,7 +574,12 @@ public class ModelWurblet extends AbstractWurblet {
     ModelDefaults modelDefaults = null;
     String modelDefaultsStr = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "modelDefaults");
     if (modelDefaultsStr != null) {
-      modelDefaults = new ModelDefaults(modelDefaultsStr);
+      try {
+        modelDefaults = new ModelDefaults(modelDefaultsStr);
+      }
+      catch (ModelException mex) {
+        throw new WurbelException(mex.getMessage(), mex);
+      }
     }
 
     // load the model (if not yet done)
@@ -756,26 +761,23 @@ public class ModelWurblet extends AbstractWurblet {
        * don't need a contextAttribute as well. However, in that case, we need
        * to makeValidContext in selects.
        */
-      if (contextIdAttributeValid) {
-
-        int uniqueAttributeCount = 0;
-        for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getOptions().isDomainKey()) {
-            uniqueAttributeCount++;
-          }
+      int uniqueAttributeCount = 0;
+      for (Attribute attribute: entity.getAttributes()) {
+        if (attribute.getOptions().isDomainKey()) {
+          uniqueAttributeCount++;
         }
+      }
 
-        int uniqueKeyCount = 0;
-        for (WurbletParameter key: getExpressionParameters()) {
-          Attribute attribute = key.getAttribute();
-          if (attribute != null && attribute.getOptions().isDomainKey()) {
-            uniqueKeyCount++;
-          }
+      int uniqueKeyCount = 0;
+      for (WurbletParameter key: getExpressionParameters()) {
+        Attribute attribute = key.getAttribute();
+        if (attribute != null && attribute.getOptions().isDomainKey()) {
+          uniqueKeyCount++;
         }
+      }
 
-        if (uniqueAttributeCount > 0 && uniqueAttributeCount == uniqueKeyCount) {
-          contextIdAttributeValid = false;
-        }
+      if (uniqueAttributeCount > 0 && uniqueAttributeCount == uniqueKeyCount) {
+        contextIdAttributeValid = false;
       }
     }
 

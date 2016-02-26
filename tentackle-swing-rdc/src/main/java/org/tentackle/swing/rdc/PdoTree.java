@@ -40,8 +40,6 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -320,7 +318,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
    * Creates an empty tree.
    */
   public PdoTree()  {
-    this((Collection<?>) null);
+    this(null);
   }
 
 
@@ -627,7 +625,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
     int depth = path.getPathCount();
     for (int i = 1; i < depth; i++) {
       DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getPathComponent(i);
-      if ((((PdoTreeObject)node.getUserObject()).getObject() instanceof PersistentDomainObject) == false) {
+      if (!(((PdoTreeObject)node.getUserObject()).getObject() instanceof PersistentDomainObject)) {
         return false;
       }
     }
@@ -659,7 +657,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
 
       PdoTreeObject tobj = (PdoTreeObject)(node.getUserObject());
 
-      if (tobj != null && tobj.isExpanded() == false) {
+      if (tobj != null && !tobj.isExpanded()) {
 
         if (tobj.isStopTreeWillExpand()) {
           tobj.setStopTreeWillExpand(false);
@@ -729,7 +727,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   @Override
   @SuppressWarnings("unchecked")
   public void dragGestureRecognized (DragGestureEvent event) {
-    PersistentDomainObject dragObject = null;
+    PersistentDomainObject dragObject;
     TreePath path = getSelectionPath();
     if (path != null)  {
       DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
@@ -839,7 +837,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
       Object obj = mto.getObject();
       if (obj instanceof PersistentDomainObject)  {
         Object transData = ((PersistentDomainObject)obj).getTransientData();
-        if (((PersistentDomainObject)obj).isNew() == false)  {
+        if (!((PersistentDomainObject)obj).isNew())  {
           obj = ((PersistentDomainObject)obj).reload();   // reload it to check whether deleted in the meantime
         }
         if (obj != null)  {
@@ -909,7 +907,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   /**
    * Hides the "in use" tree.
    *
-   * @param the child index of the node to be remove from the parent
+   * @param childIndex the child index of the node to be remove from the parent
    * @see PdoTreeExtensionUsageToggleNode
    */
   void hideInUseTree(int childIndex) {
@@ -1032,7 +1030,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
       tobj.setExpanded(true);
       DefaultMutableTreeNode parentNode = new DefaultMutableTreeNode(tobj);
       parentNode.add(childNode);
-      if (isObjectInChilds(parentObj, childNode) == false)  {
+      if (!isObjectInChilds(parentObj, childNode))  {
         @SuppressWarnings("unchecked")
         Collection p = Rdc.createGuiProvider(parentObj).getTreeParentObjects(tobj.getParentObject());
         if (p != null && !p.isEmpty())  {
@@ -1184,7 +1182,6 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
         makeTableItem.setVisible(false);
 
         boolean editAllowed = false;
-        boolean viewAllowed = false;
 
         if (obj instanceof PersistentDomainObject) {
 
@@ -1234,7 +1231,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
           }
 
           // check permission of object
-          viewAllowed = popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(ViewPermission.class));
+          boolean viewAllowed = popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(ViewPermission.class));
           editAllowed = viewAllowed && popupObject.isPermissionAccepted(SecurityFactory.getInstance().getPermission(EditPermission.class));
 
           if (Rdc.createGuiProvider(popupObject).panelExists() &&
@@ -1265,7 +1262,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
         // enable delete?
         boolean deleteAllowed = editAllowed;
         if (deleteAllowed) {
-          if (obj instanceof PersistentDomainObject && !((PersistentDomainObject) obj).isRemovable() ||
+          if (obj != null && !((PersistentDomainObject) obj).isRemovable() ||
               obj instanceof PdoTreeExtension && !((PdoTreeExtension) obj).isRemovable()) {
             deleteAllowed = false;
           }
@@ -1513,7 +1510,7 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
         list.add((PersistentDomainObject)to.getObject());
       }
     }
-    if (list.isEmpty() == false) {
+    if (!list.isEmpty()) {
       @SuppressWarnings("unchecked")
       PdoNavigationDialog d = Rdc.createPdoNavigationDialog(list, null, true);
       d.setTitle(popupObject.getPlural());
@@ -1576,8 +1573,6 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
   @SuppressWarnings("unchecked")
   private void editItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editItemActionPerformed
 
-    PdoTreeObject treeObject = (PdoTreeObject)popupNode.getUserObject();
-
     if (popupObject instanceof PdoTreeExtension)  {
       PdoTreeExtensionEditor editor = ((PdoTreeExtension)popupObject).getEditor();
       if (editor != null) {
@@ -1602,50 +1597,45 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
         d.setLinkedPdoList((List) objCollection);
       }
 
-      d.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          switch (e.getActionCommand()) {
-            case PdoEditDialog.ACTION_SAVE:
-              {
-                PersistentDomainObject obj = d.getLastPdo();
-                // reload to get the real data stored in DB (in case of CANCEL)
-                if (!obj.isNew()) {
-                  obj = obj.reload();
-                }
-                if (obj != null)  {
-                  DefaultMutableTreeNode node = findNodeInCollection(obj);
-                  if (node != null) {
-                    ((PdoTreeObject)node.getUserObject()).setObject(obj);
-                    ((DefaultTreeModel)treeModel).nodeChanged(node);  // refresh display
-                  }
-                }
-                break;
+      d.addActionListener(e -> {
+        switch (e.getActionCommand()) {
+          case PdoEditDialog.ACTION_SAVE:
+            {
+              PersistentDomainObject obj = d.getLastPdo();
+              // reload to get the real data stored in DB (in case of CANCEL)
+              if (!obj.isNew()) {
+                obj = obj.reload();
               }
-            case PdoEditDialog.ACTION_DELETE:
-              {
-                PersistentDomainObject obj = d.getLastPdo();
-                if (obj != null)  {
-                  DefaultMutableTreeNode node = findNodeInCollection(obj);
-                  if (node != null) {
-                    ((DefaultTreeModel)treeModel).removeNodeFromParent(node);  // remove node
-                  }
+              if (obj != null)  {
+                DefaultMutableTreeNode node = findNodeInCollection(obj);
+                if (node != null) {
+                  ((PdoTreeObject)node.getUserObject()).setObject(obj);
+                  ((DefaultTreeModel)treeModel).nodeChanged(node);  // refresh display
                 }
-                break;
-              }
-            case PdoEditDialog.ACTION_PREVIOUS:
-            case PdoEditDialog.ACTION_NEXT:
-              TreePath path = findPathInCollection(d.getPdo());
-              if (path != null) {
-                scrollPathToVisible(path);
-                setSelectionPath(path);
               }
               break;
-          }
+            }
+          case PdoEditDialog.ACTION_DELETE:
+            {
+              PersistentDomainObject obj = d.getLastPdo();
+              if (obj != null)  {
+                DefaultMutableTreeNode node = findNodeInCollection(obj);
+                if (node != null) {
+                  ((DefaultTreeModel)treeModel).removeNodeFromParent(node);  // remove node
+                }
+              }
+              break;
+            }
+          case PdoEditDialog.ACTION_PREVIOUS:
+          case PdoEditDialog.ACTION_NEXT:
+            TreePath path = findPathInCollection(d.getPdo());
+            if (path != null) {
+              scrollPathToVisible(path);
+              setSelectionPath(path);
+            }
+            break;
         }
       });
-
-      return;
     }
   }//GEN-LAST:event_editItemActionPerformed
 
@@ -1672,16 +1662,13 @@ public class PdoTree extends FormTree implements TreeWillExpandListener, DragSou
 
       collapseAll();
 
-      d.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          if (PdoEditDialog.ACTION_PREVIOUS.equals(e.getActionCommand()) ||
-              PdoEditDialog.ACTION_NEXT.equals(e.getActionCommand())) {
-            TreePath path = findPathInCollection(d.getPdo());
-            if (path != null) {
-              scrollPathToVisible(path);
-              setSelectionPath(path);
-            }
+      d.addActionListener(e -> {
+        if (PdoEditDialog.ACTION_PREVIOUS.equals(e.getActionCommand()) ||
+            PdoEditDialog.ACTION_NEXT.equals(e.getActionCommand())) {
+          TreePath path = findPathInCollection(d.getPdo());
+          if (path != null) {
+            scrollPathToVisible(path);
+            setSelectionPath(path);
           }
         }
       });

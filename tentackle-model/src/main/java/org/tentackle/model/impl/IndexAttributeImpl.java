@@ -49,6 +49,24 @@ public class IndexAttributeImpl implements IndexAttribute {
     this.sourceInfo = sourceInfo;
   }
 
+  /**
+   * Gets the index this attribute belongs to.
+   *
+   * @return the index
+   */
+  public Index getIndex() {
+    return index;
+  }
+
+  /**
+   * Gets the source info.
+   *
+   * @return the source info
+   */
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
 
   @Override
   public Attribute getAttribute() {

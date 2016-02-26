@@ -30,7 +30,7 @@ public class BindingEvent extends EventObject {
 
   private static final long serialVersionUID = 6094806807648243537L;
 
-  public static enum Type {
+  public enum Type {
 
     /**
      * from model via getter to view.
@@ -54,7 +54,7 @@ public class BindingEvent extends EventObject {
      */
     TO_MODEL_VIA_FIELD
 
-  };
+  }
 
 
   private final Type type;      // the event type

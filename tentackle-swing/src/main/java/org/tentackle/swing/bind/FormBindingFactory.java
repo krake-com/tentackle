@@ -42,7 +42,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param bindingClass the binding class
    * @return the old binding class if replaced, else null
    */
-  public Class<? extends FormComponentBinding> setFormComponentBindingClass(Class<? extends FormComponent> componentClass,
+  Class<? extends FormComponentBinding> setFormComponentBindingClass(Class<? extends FormComponent> componentClass,
                                                                             Class<? extends FormComponentBinding> bindingClass);
 
 
@@ -52,7 +52,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param componentClass the component class
    * @return the binding class, null if no specific one, i.e. use a default binding
    */
-  public Class<? extends FormComponentBinding> getFormComponentBindingClass(final Class<? extends FormComponent> componentClass);
+  Class<? extends FormComponentBinding> getFormComponentBindingClass(final Class<? extends FormComponent> componentClass);
 
 
 
@@ -63,7 +63,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param bindingClass the binding class
    * @return the old binding class if replaced, else null
    */
-  public Class<? extends FormTableBinding> setFormTableBindingClass(Class<?> modelClass,
+  Class<? extends FormTableBinding> setFormTableBindingClass(Class<?> modelClass,
                                                                     Class<? extends FormTableBinding> bindingClass);
 
 
@@ -73,7 +73,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param modelClass the model class
    * @return the binding class, null if no specific one, i.e. use a default binding
    */
-  public Class<? extends FormTableBinding> getFormTableBindingClass(final Class<?> modelClass);
+  Class<? extends FormTableBinding> getFormTableBindingClass(final Class<?> modelClass);
 
 
 
@@ -90,7 +90,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param member the member field to bind
    * @return the created binding
    */
-  public FormComponentBinding createFormComponentBinding(
+  FormComponentBinding createFormComponentBinding(
                                 FormComponentBinder binder, BindingMember[] parents, BindingMember member,
                                 FormComponent component, String componentOptions);
 
@@ -102,7 +102,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param container the container for the created binder
    * @return the binder
    */
-  public FormComponentBinder createFormComponentBinder(FormContainer container);
+  FormComponentBinder createFormComponentBinder(FormContainer container);
 
 
   /**
@@ -117,7 +117,7 @@ public interface FormBindingFactory extends BindingFactory {
    * @param member the member field to bind
    * @return the created binding
    */
-  public FormTableBinding createFormTableBinding(
+  FormTableBinding createFormTableBinding(
                                 FormTableBinder binder, BindingMember[] parents, BindingMember member,
                                 int mColumn, String columnOptions);
 
@@ -129,6 +129,6 @@ public interface FormBindingFactory extends BindingFactory {
    * @param model the table model
    * @return the binder
    */
-  public FormTableBinder createFormTableBinder(BindableTableModel<?> model);
+  FormTableBinder createFormTableBinder(BindableTableModel<?> model);
 
 }

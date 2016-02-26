@@ -681,7 +681,7 @@
   \@Override
   protected void updateImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
                             \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, () -> createUpdateSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -689,7 +689,7 @@
   \@Override
   protected void insertImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
                             \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, () -> createInsertSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -697,7 +697,7 @@
   \@Override
   protected void deleteImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
                             \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, () -> createDeleteSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
     st.setLong(1, getId());
     st.setLong(2, getSerial());
     assertThisRowAffected(st.executeUpdate());
@@ -711,7 +711,7 @@
   protected void updateImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
                             Supplier<String> sqlsupplier) {
     super.updateImpl(classVariables, sqlsupplier);
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, () -> createUpdateSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -720,7 +720,7 @@
   protected void insertImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
                             Supplier<String> sqlsupplier) {
     super.insertImpl(classVariables, sqlsupplier);
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, () -> createInsertSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
@@ -728,7 +728,7 @@
   \@Override
   protected void deleteImpl(DbObjectClassVariables<@(getEntity().isAbstract()?"P":mainClass)@> classVariables,
                             Supplier<String> sqlsupplier) {
-    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, () -> createDeleteSql@(pdoClass)@());
+    PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
     st.setLong(1, getId());
     assertThisRowAffected(st.executeUpdate());
     super.deleteImpl(classVariables, sqlsupplier);

@@ -143,28 +143,28 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
         if (mi.getAnnotationType().toString().equals(ANALYZE_CLASSNAME)) {
           Map<? extends ExecutableElement, ? extends AnnotationValue> annotationParameters = mi.getElementValues();
-          for (ExecutableElement elem : annotationParameters.keySet()) {
+          for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationParameters.entrySet()) {
+            ExecutableElement elem = entry.getKey();
+            AnnotationValue anno = entry.getValue();
             if (elem.toString().equals("value()")) {
-              String handlerClassName = annotationParameters.get(elem).getValue().toString();
-              if (handlerClassName != null) {
-                // cut trailing .class, if any
-                int ndx = handlerClassName.lastIndexOf(".class");
-                if (ndx > 0) {
-                  handlerClassName = handlerClassName.substring(0, ndx);
+              String handlerClassName = anno.getValue().toString();
+              // cut trailing .class, if any
+              int ndx = handlerClassName.lastIndexOf(".class");
+              if (ndx > 0) {
+                handlerClassName = handlerClassName.substring(0, ndx);
+              }
+              try {
+                @SuppressWarnings("unchecked")
+                Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName);
+                AnalyzeHandler handler = handlerClass.newInstance();
+                handler.setProcessor(this);
+                handlers.add(handler);
+                if (handlers.size() > MAX_HANDLERS) {
+                  throw new TentackleRuntimeException("endless-loop detected while processing " + handlerClass);
                 }
-                try {
-                  @SuppressWarnings("unchecked")
-                  Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName);
-                  AnalyzeHandler handler = handlerClass.newInstance();
-                  handler.setProcessor(this);
-                  handlers.add(handler);
-                  if (handlers.size() > MAX_HANDLERS) {
-                    throw new TentackleRuntimeException("endless-loop detected while processing " + handlerClass);
-                  }
-                }
-                catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
-                  throw new TentackleRuntimeException("cannot instantiate AnalyzeHandler " + handlerClassName, ex);
-                }
+              }
+              catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+                throw new TentackleRuntimeException("cannot instantiate AnalyzeHandler " + handlerClassName, ex);
               }
             }
           }

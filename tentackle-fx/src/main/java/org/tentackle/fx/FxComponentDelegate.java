@@ -268,9 +268,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
             LOGGER.warning("no message in exception", rex);
           }
         }
-        Platform.runLater(() -> {
-          ((Node) getComponent()).requestFocus();
-        });
+        Platform.runLater(() -> ((Node) getComponent()).requestFocus());
       }
       triggerViewModified();
     }

@@ -19,7 +19,6 @@
 
 package org.tentackle.swing;
 
-import java.awt.Component;
 import java.util.Date;
 import org.tentackle.swing.DateFormField.ReferenceDateProvider;
 import org.tentackle.swing.plaf.PlafUtilities;
@@ -73,11 +72,11 @@ public class FormCalendarField extends FormFieldComponentPanel implements SqlDat
   public void setName(String name) {
     super.setName(name);
     if (name != null) {
-      ((Component) getFormComponent()).setName(name + "/date");
+      getFormComponent().setName(name + "/date");
       calButton.setName(name + "/calendar");
     }
     else  {
-      ((Component) getFormComponent()).setName("date");
+      getFormComponent().setName("date");
       calButton.setName("calendar");
     }
   }
@@ -276,7 +275,7 @@ public class FormCalendarField extends FormFieldComponentPanel implements SqlDat
   private void initComponents() {
     java.awt.GridBagConstraints gridBagConstraints;
 
-    dateField = (DateFormField)getFormComponent();
+    dateField = getFormComponent();
     calButton = new org.tentackle.swing.FormButton();
 
     setLayout(new java.awt.GridBagLayout());

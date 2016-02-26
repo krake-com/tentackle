@@ -36,16 +36,14 @@ public interface SpinListener extends EventListener {
      * @param evt the spin event
      * @param comp is the form component
      */
-
-    public void increment (SpinEvent evt, FormComponent comp);
+    void increment (SpinEvent evt, FormComponent comp);
 
     /**
      * Decrements the data of the spinfield.
      *
      * @param evt the spin event
      * @param comp is the form component
-     *
      */
-    public void decrement (SpinEvent evt, FormComponent comp);
+    void decrement (SpinEvent evt, FormComponent comp);
 
 }

@@ -58,6 +58,7 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   public TableConfiguration<Security> createTableConfiguration() {
     TableConfiguration<Security> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
     config.addColumn("granteeToString", getBundle().getString("grantee"));
+    config.addColumn("contextToString", getBundle().getString("context"));
     // priority not displayed because it corresponds to the sorting order
     config.addColumn(Security.AN_PERMISSIONS, getBundle().getString(Security.AN_PERMISSIONS));
     config.addColumn(Security.AN_ALLOWED, getBundle().getString(Security.AN_ALLOWED));

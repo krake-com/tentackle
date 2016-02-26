@@ -26,7 +26,7 @@ import org.tentackle.fx.FxControl;
  * Configures a ComboBoxBase.
  *
  * @author harald
- * @param T the combobox type
+ * @param <T> the combobox type
  */
 public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends ComponentConfigurator<T> {
 

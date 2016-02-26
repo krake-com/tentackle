@@ -39,7 +39,7 @@ import org.tentackle.swing.FormDialog;
 @SuppressWarnings("serial")
 public class PdoNavigationDialog<T extends PersistentDomainObject<T>> extends FormDialog {
 
-  private PdoNavigationPanel<T> naviPanel;            // the navigation panel
+  private final PdoNavigationPanel<T> naviPanel;      // the navigation panel
   private PersistentDomainObject<?> selectedObject;   // the selected object
 
 
@@ -169,9 +169,7 @@ public class PdoNavigationDialog<T extends PersistentDomainObject<T>> extends Fo
 
   private void setup()  {
     initComponents();
-    naviPanel.addActionListener((ActionEvent e) -> {
-      naviPanel_actionPerformed(e);
-    });
+    naviPanel.addActionListener(this::naviPanel_actionPerformed);
     this.getContentPane().add(naviPanel, BorderLayout.CENTER);
 
     Class<T> clazz = naviPanel.getTableClass();

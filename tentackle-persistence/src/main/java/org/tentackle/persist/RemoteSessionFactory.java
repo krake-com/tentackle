@@ -23,7 +23,7 @@ import org.tentackle.pdo.RemoteSession;
 import org.tentackle.persist.rmi.RemoteDbSession;
 
 interface RemoteSessionFactory$Singleton {
-  static RemoteSessionFactory INSTANCE = ServiceFactory.createService(RemoteSessionFactory.class);
+  RemoteSessionFactory INSTANCE = ServiceFactory.createService(RemoteSessionFactory.class);
 }
 
 /**

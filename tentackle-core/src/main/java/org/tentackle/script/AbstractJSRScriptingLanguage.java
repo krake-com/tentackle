@@ -31,7 +31,7 @@ public abstract class AbstractJSRScriptingLanguage extends AbstractScriptingLang
   /**
    * Describes the naming of a scripting language.
    */
-  public static enum Naming {
+  public enum Naming {
 
     /** name is a mimetype. */
     MIMETYPE,
@@ -59,10 +59,10 @@ public abstract class AbstractJSRScriptingLanguage extends AbstractScriptingLang
         this.engine = new ScriptEngineManager().getEngineByMimeType(name);
         break;
       case EXTENSION:
-        this.engine = new ScriptEngineManager().getEngineByMimeType(name);
+        this.engine = new ScriptEngineManager().getEngineByExtension(name);
         break;
       default:
-        this.engine = new ScriptEngineManager().getEngineByMimeType(name);
+        this.engine = new ScriptEngineManager().getEngineByName(name);
     }
   }
 

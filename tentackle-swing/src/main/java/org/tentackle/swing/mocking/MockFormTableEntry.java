@@ -62,7 +62,7 @@ public class MockFormTableEntry extends FormTableEntry {
   private static final int TWO = 1;
   private static final int THREE = 2;
 
-  private MockObject object;
+  private final MockObject object;
 
   /**
    * Creates a form table entry.

@@ -47,10 +47,10 @@ import java.util.Set;
 public class DefaultServiceFinder implements ServiceFinder {
 
 
-  private ClassLoader loader;                         // optional classloader, null = default
-  private String servicePath;                         // optional service path, null = SERVICE_PATH
-  private Map<String,Map<String,URL>> serviceMap;     // cached configs
-  private Map<String,Collection<Class<?>>> classMap;  // cached classes
+  private final ClassLoader loader;                         // optional classloader, null = default
+  private final String servicePath;                         // optional service path, null = SERVICE_PATH
+  private final Map<String,Map<String,URL>> serviceMap;     // cached configs
+  private final Map<String,Collection<Class<?>>> classMap;  // cached classes
 
 
   /**
@@ -182,16 +182,17 @@ public class DefaultServiceFinder implements ServiceFinder {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
     }
     if (services.size() > 1) {
-      String msg = "service '" + serviceName + "' defined more than once: ";
+      StringBuilder msg = new StringBuilder();
+      msg.append("service '").append(serviceName).append("' defined more than once: ");
       boolean needComma = false;
       for (Map.Entry<String,URL> entry: services.entrySet()) {
         if (needComma) {
-          msg += ", ";
+          msg.append(", ");
         }
-        msg += entry.getKey() + " in " + entry.getValue();
+        msg.append(entry.getKey()).append(" in ").append(entry.getValue());
         needComma = true;
       }
-      throw new TentackleRuntimeException(msg);
+      throw new TentackleRuntimeException(msg.toString());
     }
     return services.entrySet().iterator().next();
   }
@@ -337,9 +338,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @param services the implementing services map
    */
   protected void parseURL(URL url, String serviceName, Map<String, URL> services) {
-    BufferedReader reader = null;
-    try {
-      reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"));
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = normalizeLine(line);
@@ -363,16 +362,6 @@ public class DefaultServiceFinder implements ServiceFinder {
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("error reading configuration from " + url, iox);
-    }
-    finally {
-      try {
-        if (reader != null) {
-          reader.close();
-        }
-      }
-      catch (IOException iox) {
-        throw new TentackleRuntimeException("error closing configuration file", iox);
-      }
     }
   }
 

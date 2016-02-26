@@ -21,7 +21,7 @@ package org.tentackle.common;
 import java.util.Locale;
 
 interface LocaleProvider$Singleton {
-  static LocaleProvider INSTANCE = ServiceFactory.createService(LocaleProvider.class, LocaleProvider.class);
+  LocaleProvider INSTANCE = ServiceFactory.createService(LocaleProvider.class, LocaleProvider.class);
 }
 
 /**

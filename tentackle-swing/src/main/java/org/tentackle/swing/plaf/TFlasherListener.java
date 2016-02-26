@@ -64,10 +64,11 @@ public class TFlasherListener implements FocusListener, ActionListener {
   
   
   
-  /** true if flasher visible **/
+  /** true if flasher visible. */
   protected static boolean flasherVisible;
-  /** the component having the focus **/
-  protected JComponent comp;
+
+  /** the component having the focus. */
+  protected final JComponent comp;
 
   
   /**

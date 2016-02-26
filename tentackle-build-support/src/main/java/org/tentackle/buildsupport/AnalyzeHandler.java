@@ -36,7 +36,7 @@ public interface AnalyzeHandler {
    *
    * @param processor the annotation processor
    */
-  public void setProcessor(AbstractTentackleProcessor processor);
+  void setProcessor(AbstractTentackleProcessor processor);
 
 
   /**
@@ -44,7 +44,7 @@ public interface AnalyzeHandler {
    *
    * @return the annotation processor
    */
-  public AbstractTentackleProcessor getProcessor();
+  AbstractTentackleProcessor getProcessor();
 
 
   /**
@@ -53,6 +53,6 @@ public interface AnalyzeHandler {
    * @param annotationType the annotation type
    * @param roundEnv the processing environment
    */
-  public void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv);
+  void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv);
 
 }

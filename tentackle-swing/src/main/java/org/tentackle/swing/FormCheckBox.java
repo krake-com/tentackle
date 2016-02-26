@@ -329,7 +329,7 @@ public class FormCheckBox extends JCheckBox implements FormComponent, I18nTransl
   @Override
   protected void processFocusEvent(FocusEvent e) {
     super.processFocusEvent(e);
-    if (e.isTemporary() == false) {
+    if (!e.isTemporary()) {
       if (e.getID() == FocusEvent.FOCUS_GAINED) {
         performFocusGained(e.getOppositeComponent());
       }
@@ -543,7 +543,7 @@ public class FormCheckBox extends JCheckBox implements FormComponent, I18nTransl
 
   @Override
   public void prepareFocusLost()  {
-    if (tableCellEditorUsage == false) {
+    if (!tableCellEditorUsage) {
       performFocusLost();
       skipNextFocusLost = true;
     }

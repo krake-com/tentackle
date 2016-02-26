@@ -153,7 +153,7 @@ public abstract class AbstractPooledTaskDispatcher implements TaskDispatcher {
   @Override
   public boolean isTaskPending(Task task) {
     TaskDispatcher dispatcher = getDispatcherForTask(task);
-    return dispatcher == null ? false : dispatcher.isTaskPending(task);
+    return dispatcher != null && dispatcher.isTaskPending(task);
   }
 
   @Override
@@ -191,7 +191,7 @@ public abstract class AbstractPooledTaskDispatcher implements TaskDispatcher {
   @Override
   public boolean removeTask(Task task) {
     TaskDispatcher dispatcher = getDispatcherForTask(task);
-    return dispatcher == null ? false : dispatcher.removeTask(task);
+    return dispatcher != null && dispatcher.removeTask(task);
   }
 
 

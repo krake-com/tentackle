@@ -30,6 +30,6 @@ package org.tentackle.security.permissions;
 public interface ViewPermission extends ReadPermission {
 
   /** the permission's name. */
-  public static final String NAME = "VIEW";
+  String NAME = "VIEW";
 
 }

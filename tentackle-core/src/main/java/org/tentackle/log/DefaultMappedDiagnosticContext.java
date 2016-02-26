@@ -28,7 +28,7 @@ import org.tentackle.misc.InheritableThreadLocalHashTable;
 
 
 interface DefaultMappedDiagnosticContext$Singleton {
-  static DefaultMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
+  DefaultMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
               DefaultMappedDiagnosticContext.class, DefaultMappedDiagnosticContext.class);
 }
 

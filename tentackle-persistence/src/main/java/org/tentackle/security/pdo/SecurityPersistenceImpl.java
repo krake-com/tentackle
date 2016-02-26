@@ -246,7 +246,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   public void setObject(PersistentDomainObject<?> object)  {
     if (object == null) {
       setObjectId(0);
-      setObjectClassName((String) null);
+      setObjectClassName(null);
     }
     else  {
       setObjectId(object.getId());
@@ -262,7 +262,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
    */
   @Override
   public PersistentDomainObject<?> getGrantee() {
-    return granteeId == 0 ? null : Pdo.create(PdoUtilities.getInstance().getPdoClassName(granteeClassId), getDomainContext()).selectCached(granteeId);
+    return granteeId == 0 ? null : Pdo.create(PdoUtilities.getInstance().getPdoClassName(
+            granteeClassId), getDomainContext()).selectCached(granteeId);
   }
 
 
@@ -293,7 +294,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public PersistentDomainObject<?> getDomainContextObject()  {
     return domainContextId == 0 ? null :
-           Pdo.create(PdoUtilities.getInstance().getPdoClassName(domainContextClassId), getDomainContext()).selectCached(domainContextId);
+           Pdo.create(PdoUtilities.getInstance().getPdoClassName(
+                   domainContextClassId), getDomainContext()).selectCached(domainContextId);
   }
 
 
@@ -320,7 +322,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
    */
   @Override
   public String toString()  {
-    return "Security ID=" + getId() + ", objectClass=" + objectClassName + ", objectId=" + objectId + ", contextId=" + domainContextId +
+    return "Security ID=" + getId() + ", objectClass=" + objectClassName +
+           ", objectId=" + objectId + ", contextId=" + domainContextId +
            ", contextClassId=" + domainContextClassId + ", granteeId=" + granteeId + ", granteeClass=" + granteeClassId +
            ", priority=" + priority + ", permissions='" + permissions +
            "', allowed=" + allowed + ", message='" + message + "'";

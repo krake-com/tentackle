@@ -48,7 +48,7 @@ public class Binary<T> implements Serializable, Cloneable {
   /**
    * initial default buffersize when reading from the database.
    */
-  public static int BUF_SIZE = 1024;
+  private static int BUF_SIZE = 1024;
 
 
   private byte[] data;                   // byte array of arbitrary data or serialized object
@@ -178,15 +178,8 @@ public class Binary<T> implements Serializable, Cloneable {
   public T getObject() throws IOException, ClassNotFoundException {
     if (object == null && data != null) {
       // try to treat data as a serialized object
-      ObjectInputStream is = null;
-      try {
-        is = new ObjectInputStream(getInputStream());
+      try (ObjectInputStream is = new ObjectInputStream(getInputStream())) {
         object = (T) is.readObject();
-      }
-      finally {
-        if (is != null) {
-          is.close();
-        }
       }
     }
     return object;

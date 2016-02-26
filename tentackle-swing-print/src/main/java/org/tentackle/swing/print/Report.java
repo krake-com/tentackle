@@ -804,7 +804,7 @@ public class Report implements Printable, Pageable {
 
 
 
-    if (state.lastPagePrinted == false && pageIndex >= 0 &&
+    if (!state.lastPagePrinted && pageIndex >= 0 &&
         (pages == UNKNOWN_NUMBER_OF_PAGES || pageIndex < pages))  {
 
       int pageHeight;   // size of printable area
@@ -1373,7 +1373,7 @@ public class Report implements Printable, Pageable {
   /**
    * Represents the state of this state machine.
    */
-  private class State implements Cloneable {
+  private static class State implements Cloneable {
     // printing state of report
     int       lastPageIndex   = -1;                 // last printed page
     int       level           = 0;                  // current level (0=top, ... , subLevels)

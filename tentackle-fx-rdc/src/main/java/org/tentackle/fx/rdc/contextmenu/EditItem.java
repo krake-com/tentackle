@@ -19,9 +19,12 @@
 
 package org.tentackle.fx.rdc.contextmenu;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import javafx.stage.Modality;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoTreeCell;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItem;
 import org.tentackle.fx.rdc.PdoTreeContextMenuItemService;
@@ -47,8 +50,26 @@ public class EditItem<T extends PersistentDomainObject<T>> extends MenuItem impl
     super(RdcFxRdcBundle.getString("EDIT"), Fx.createImageView("edit"));
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().editorExists() && pdo.isWriteAllowed()) {
-      T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
-      setOnAction(e -> Rdc.displayCrudStage(pDo, true, Modality.APPLICATION_MODAL, Fx.getStage(cell)));
+      T pDo = pdo.reload();
+      setOnAction(e -> {
+        T updatedPdo = Rdc.displayCrudStage(pDo, true, Modality.APPLICATION_MODAL, Fx.getStage(cell));
+        TreeItem<T> root = cell.getTreeItem().getParent();
+        if (root != null) {
+          ObservableList<TreeItem<T>> items = root.getChildren();
+          int i=0;
+          for (TreeItem<T> item: items) {
+            if (updatedPdo.equals(item.getValue())) {
+              boolean expanded = item.isExpanded();
+              TreeItem<T> reloadedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
+              items.set(i, reloadedItem);
+              cell.getTreeView().refresh();
+              reloadedItem.setExpanded(expanded);
+              break;
+            }
+            i++;
+          }
+        }
+      });
     }
     else {
       setDisable(true);

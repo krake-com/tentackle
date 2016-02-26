@@ -35,6 +35,6 @@ public interface BindableCache {
    * @param declaredOnly true if only declared elements, else inherited as well
    * @return the tree map (camelName -&gt; bindable element).
    */
-  public SortedMap<String,BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly);
+  SortedMap<String,BindableElement> getBindableMap(Class<?> clazz, boolean declaredOnly);
 
 }

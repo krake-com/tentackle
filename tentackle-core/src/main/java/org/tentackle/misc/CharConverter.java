@@ -33,6 +33,6 @@ public interface CharConverter {
    * @param in the array to convert
    * @return the converted array
    */
-  public char[] convert(char[] in);
+  char[] convert(char[] in);
   
 }

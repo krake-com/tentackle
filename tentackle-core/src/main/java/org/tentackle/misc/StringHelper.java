@@ -48,7 +48,7 @@ public final class StringHelper {
   /**
    * Limit size of collection to be logged.<br>
    * If an object is logged and it is a collection
-   * and the size exceeds {@link #maxLogCollectionSize}, only the number
+   * and the size exceeds {@code maxLogCollectionSize}, only the number
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
    */
@@ -58,6 +58,8 @@ public final class StringHelper {
   private static final String CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß";
   private static final String NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys";
   private static char[] critMap;    // fast map built once from CRITS and NORMS
+
+  private static byte[] EMPTY_BYTES = new byte[0];
 
 
   /**
@@ -415,8 +417,8 @@ public final class StringHelper {
       int len = str.length();
       for (int i=0; i < len; i++) {
         char c = str.charAt(i);
-        if (Character.isDigit(c) == false &&
-            (whitespaceAllowed == false || Character.isWhitespace(c) == false)) {
+        if (!Character.isDigit(c) &&
+            (!whitespaceAllowed || !Character.isWhitespace(c))) {
           return false;
         }
       }
@@ -685,7 +687,7 @@ public final class StringHelper {
   /**
    * Converts a char-array to a byte-array.
    * @param chars the character array
-   * @return the byte array
+   * @return the byte array, empty if chars is null
    */
   public static byte[] toBytes(char[] chars)  {
     if (chars != null) {
@@ -699,10 +701,8 @@ public final class StringHelper {
       }
       return b;
     }
-    return null;
+    return EMPTY_BYTES;
   }
-
-
 
 
 
@@ -802,12 +802,8 @@ public final class StringHelper {
         return buf.toString();
       }
       else if (maxLogCollectionSize > 0 && object instanceof Collection &&
-          ((Collection) object).size() > maxLogCollectionSize) {
-        StringBuilder buf = new StringBuilder();
-        buf.append('[');
-        buf.append(((Collection) object).size());
-        buf.append(" items]");
-        return buf.toString();
+               ((Collection) object).size() > maxLogCollectionSize) {
+        return "[" + ((Collection) object).size() + " items]";
       }
       else {
         return object.toString();

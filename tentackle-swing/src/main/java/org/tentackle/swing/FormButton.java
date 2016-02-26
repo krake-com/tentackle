@@ -183,12 +183,7 @@ public class FormButton extends JButton implements FormChangeableComponent, I18n
   @Override
   protected void fireActionPerformed(final ActionEvent event) {
     if (isActionPerformedDelayed()) {
-      EventQueue.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          FormButton.super.fireActionPerformed(event);
-        }
-      });
+      EventQueue.invokeLater(() -> FormButton.super.fireActionPerformed(event));
     }
     else  {
       super.fireActionPerformed(event);
@@ -434,7 +429,7 @@ public class FormButton extends JButton implements FormChangeableComponent, I18n
    * @param flag true if cell editor
    */
   public void setCellEditorUsage(boolean flag) {
-      putClientProperty(TABLECELLEDITOR_PROPERTY, Boolean.valueOf(flag));
+      putClientProperty(TABLECELLEDITOR_PROPERTY, flag);
   }
 
   /**
@@ -446,7 +441,7 @@ public class FormButton extends JButton implements FormChangeableComponent, I18n
     try {
       Object obj = getClientProperty(TABLECELLEDITOR_PROPERTY);
       if (obj != null) {
-        return ((Boolean) obj).booleanValue();
+        return (Boolean) obj;
       }
     }
     catch (Exception ex) {

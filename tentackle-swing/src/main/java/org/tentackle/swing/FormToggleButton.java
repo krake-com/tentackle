@@ -159,12 +159,7 @@ public class FormToggleButton extends JToggleButton implements FormComponent, Ac
   @Override
   protected void fireActionPerformed(final ActionEvent event) {
     if (isActionPerformedDelayed()) {
-      EventQueue.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          FormToggleButton.super.fireActionPerformed(event);
-        }
-      });
+      EventQueue.invokeLater(() -> FormToggleButton.super.fireActionPerformed(event));
     }
     else  {
       super.fireActionPerformed(event);
@@ -330,7 +325,7 @@ public class FormToggleButton extends JToggleButton implements FormComponent, Ac
   @Override
   protected void processFocusEvent(FocusEvent e) {
     super.processFocusEvent(e);
-    if (e.isTemporary() == false) {
+    if (!e.isTemporary()) {
       if (e.getID() == FocusEvent.FOCUS_GAINED) {
         performFocusGained(e.getOppositeComponent());
       }
@@ -447,7 +442,7 @@ public class FormToggleButton extends JToggleButton implements FormComponent, Ac
    */
   @Override
   public void setFormValue (Object selected)  {
-    setSelected (selected instanceof Boolean && ((Boolean)selected).booleanValue());
+    setSelected (selected instanceof Boolean && (Boolean) selected);
   }
 
   /**
@@ -544,7 +539,7 @@ public class FormToggleButton extends JToggleButton implements FormComponent, Ac
 
   @Override
   public void prepareFocusLost()  {
-    if (tableCellEditorUsage == false) {
+    if (!tableCellEditorUsage) {
       performFocusLost();
       skipNextFocusLost = true;
     }

@@ -52,7 +52,7 @@ public class FxControllerBundleHandler extends BundleHandler {
             if (Constants.NAME_NONE.equals(name)) {
               return null;    // explicitly no bundle
             }
-            if (name != null && !name.isEmpty()) {
+            if (!name.isEmpty()) {
               bundleName = name;
               if (bundleName.endsWith(PROPS_EXTENSION)) {
                 // cut trailing ".properties"

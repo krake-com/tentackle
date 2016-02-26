@@ -38,8 +38,8 @@ public class FileTransferable extends Vector<File> implements Transferable  {
   private final static int FILE   = 0;
   private final static int STRING = 1;
 
-  private DataFlavor flavors[] = {DataFlavor.javaFileListFlavor,
-                                  DataFlavor.stringFlavor};
+  private final DataFlavor flavors[] = {DataFlavor.javaFileListFlavor,
+                                        DataFlavor.stringFlavor};
 
 
   /**
@@ -56,10 +56,7 @@ public class FileTransferable extends Vector<File> implements Transferable  {
   }
 
   public boolean isDataFlavorSupported(DataFlavor flavor) {
-    boolean b  = false;
-    b |= flavor.equals(flavors[FILE]);
-    b |= flavor.equals(flavors[STRING]);
-    return (b);
+    return flavor.equals(flavors[FILE]) || flavor.equals(flavors[STRING]);
   }
 
   public synchronized Object getTransferData(DataFlavor flavor)

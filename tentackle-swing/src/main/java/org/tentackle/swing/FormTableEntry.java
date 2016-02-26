@@ -496,7 +496,7 @@ abstract public class FormTableEntry<T> implements FormTableRowObject {
         rv = Compare.compare(s1, s2);
       }
       if (descending) {
-        rv = -rv;
+        return -rv;
       }
     }
     return rv;
@@ -549,7 +549,7 @@ abstract public class FormTableEntry<T> implements FormTableRowObject {
    */
   public boolean isBindingChangeable(int mColumn) {
     FormTableBinding binding = getBinding(mColumn);
-    return binding == null ? false : binding.isChangeable();
+    return binding != null && binding.isChangeable();
   }
 
   /**

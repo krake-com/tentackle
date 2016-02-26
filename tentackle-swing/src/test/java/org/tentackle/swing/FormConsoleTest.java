@@ -93,6 +93,7 @@ public class FormConsoleTest extends org.tentackle.swing.FormFrame {
           console.getOutputStream().write(c);
         }
         catch (IOException iox) {
+          break;
         }
       }
     }

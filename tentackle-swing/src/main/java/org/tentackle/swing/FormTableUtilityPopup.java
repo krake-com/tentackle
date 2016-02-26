@@ -262,59 +262,45 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
     JMenuItem autoWidthItem = new JMenuItem();
     autoWidthItem.setName(POPUP_AUTOWIDTH);
     autoWidthItem.setText(SwingSwingBundle.getString("AUTO WIDTH"));
-    autoWidthItem.addActionListener((ActionEvent e) -> {
-      table.autoResizeColumnWidths();
-    });
+    autoWidthItem.addActionListener((ActionEvent e) -> table.autoResizeColumnWidths());
     menu.add(autoWidthItem);
 
     JMenuItem searchItem = new JMenuItem();
     searchItem.setName(POPUP_SEARCH);
     searchItem.setText(SwingSwingBundle.getString("SEARCH"));
-    searchItem.addActionListener((ActionEvent e) -> {
-      showSearchDialog();
-    });
+    searchItem.addActionListener((ActionEvent e) -> showSearchDialog());
     searchItem.setEnabled(someRowSelected && someColumnSelected);
     menu.add(searchItem);
 
     JMenuItem printItem = new JMenuItem();
     printItem.setName(POPUP_PRINT);
     printItem.setText(SwingSwingBundle.getString("PRINT"));
-    printItem.addActionListener((ActionEvent e) -> {
-      showPrintDialog();
-    });
+    printItem.addActionListener((ActionEvent e) -> showPrintDialog());
     menu.add(printItem);
 
     JMenuItem excelItem = new JMenuItem();
     excelItem.setName(POPUP_EXPORT_EXCEL);
     excelItem.setText(SwingSwingBundle.getString("EXPORT TO EXCEL"));
-    excelItem.addActionListener((ActionEvent e) -> {
-      showExcelDialog(false);
-    });
+    excelItem.addActionListener((ActionEvent e) -> showExcelDialog(false));
     menu.add(excelItem);
 
     JMenuItem selectedExcelItem = new JMenuItem();
     selectedExcelItem.setName(POPUP_EXPORT_EXCEL_SELECTED);
     selectedExcelItem.setText(SwingSwingBundle.getString("EXPORT TO EXCEL (ONLY SELECTED)"));
-    selectedExcelItem.addActionListener((ActionEvent e) -> {
-      showExcelDialog(true);
-    });
+    selectedExcelItem.addActionListener((ActionEvent e) -> showExcelDialog(true));
     selectedExcelItem.setEnabled(someRowSelected);
     menu.add(selectedExcelItem);
 
     JMenuItem xmlItem = new JMenuItem();
     xmlItem.setName(POPUP_EXPORT_XML);
     xmlItem.setText(SwingSwingBundle.getString("EXPORT TO XML"));
-    xmlItem.addActionListener((ActionEvent e) -> {
-      showXmlDialog(false);
-    });
+    xmlItem.addActionListener((ActionEvent e) -> showXmlDialog(false));
     menu.add(xmlItem);
 
     JMenuItem selectedXmlItem = new JMenuItem();
     selectedXmlItem.setName(POPUP_EXPORT_XML_SELECTED);
     selectedXmlItem.setText(SwingSwingBundle.getString("EXPORT TO XML (ONLY SELECTED)"));
-    selectedXmlItem.addActionListener((ActionEvent e) -> {
-      showXmlDialog(true);
-    });
+    selectedXmlItem.addActionListener((ActionEvent e) -> showXmlDialog(true));
     selectedXmlItem.setEnabled(someRowSelected);
     menu.add(selectedXmlItem);
 
@@ -336,9 +322,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         JMenuItem restoreItem = new JMenuItem();
         restoreItem.setName(POPUP_LOAD_SYSTEM_PREFS);
         restoreItem.setText(SwingSwingBundle.getString("LOAD SYSTEM PREFERENCES"));
-        restoreItem.addActionListener((ActionEvent e) -> {
-          restoreSettings(true);
-        });
+        restoreItem.addActionListener((ActionEvent e) -> restoreSettings(true));
         menu.add(restoreItem);
       }
       else  {
@@ -357,26 +341,20 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         JMenuItem restoreItem = new JMenuItem();
         restoreItem.setName(POPUP_LOAD_USER_PREFS);
         restoreItem.setText(SwingSwingBundle.getString("LOAD USER PREFERENCES"));
-        restoreItem.addActionListener((ActionEvent e) -> {
-          restoreSettings(false);
-        });
+        restoreItem.addActionListener((ActionEvent e) -> restoreSettings(false));
         menu.add(restoreItem);
 
         JMenuItem restoreSysItem = new JMenuItem();
         restoreSysItem.setName(POPUP_LOAD_SYSTEM_PREFS);
         restoreSysItem.setText(SwingSwingBundle.getString("LOAD SYSTEM PREFERENCES"));
-        restoreSysItem.addActionListener((ActionEvent e) -> {
-          restoreSettings(true);
-        });
+        restoreSysItem.addActionListener((ActionEvent e) -> restoreSettings(true));
         menu.add(restoreSysItem);
       }
 
       JMenuItem defaultItem = new JMenuItem();
       defaultItem.setName(POPUP_LOAD_DEFAULTS);
       defaultItem.setText(SwingSwingBundle.getString("LOAD DEFAULT PREFERENCES"));
-      defaultItem.addActionListener((ActionEvent e) -> {
-        FormTableUtilityPopup.this.table.createDefaultColumnsFromDefaultModel();
-      });
+      defaultItem.addActionListener((ActionEvent e) -> FormTableUtilityPopup.this.table.createDefaultColumnsFromDefaultModel());
       menu.add(defaultItem);
     }
 
@@ -475,17 +453,15 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
             Object value = model.getValueAt(row, col);
             if (value != null)  {
               String cellText = value.toString();
-              if (cellText != null) {
-                if (!caseSensitive)  {
-                  cellText = cellText.toUpperCase();
-                }
-                if (cellText.contains(text)) {
-                  // found: set selection
-                  table.setSelectedRow(row);
-                  table.getColumnModel().getSelectionModel().setAnchorSelectionIndex(col);
-                  table.scrollToCell(row, table.convertColumnIndexToView(col));
-                  return true;
-                }
+              if (!caseSensitive)  {
+                cellText = cellText.toUpperCase();
+              }
+              if (cellText.contains(text)) {
+                // found: set selection
+                table.setSelectedRow(row);
+                table.getColumnModel().getSelectionModel().setAnchorSelectionIndex(col);
+                table.scrollToCell(row, table.convertColumnIndexToView(col));
+                return true;
               }
             }
           }
@@ -653,10 +629,11 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
 
           String fmt = "#,##0";
           if (money.scale() > 0) {
-            fmt += ".";
+            StringBuilder buf = new StringBuilder(fmt).append('.');
             for (int j=0; j < money.scale(); j++)  {
-              fmt += "0";
+              buf.append('0');
             }
+            fmt = buf.toString();
           }
           // create format
           short fmtIndex = format.getFormat(fmt);
@@ -754,7 +731,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
       });
       if (jfc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
         File outFile = jfc.getSelectedFile();
-        if (outFile.getName().toLowerCase().endsWith(EXCEL_EXTENSION) == false)  {
+        if (!outFile.getName().toLowerCase().endsWith(EXCEL_EXTENSION))  {
           outFile = new File(outFile.getPath() + EXCEL_EXTENSION);
         }
         toExcel(outFile, onlySelected);
@@ -927,7 +904,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
       });
       if (jfc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
         File outFile = jfc.getSelectedFile();
-        if (outFile.getName().toLowerCase().endsWith(XML_EXTENSION) == false)  {
+        if (!outFile.getName().toLowerCase().endsWith(XML_EXTENSION))  {
           outFile = new File(outFile.getPath() + XML_EXTENSION);
         }
         toXml(outFile, onlySelected);

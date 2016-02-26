@@ -99,18 +99,22 @@ public abstract class AbstractClassMapper<S> {
    */
   private S mapInterfaces(Class<?> clazz) throws ClassNotFoundException {
     // check all super interfaces
+    S result = null;
     for (Class<?> interfaze: clazz.getInterfaces()) {
-      S result = getNameMap().get(interfaze.getName());
+      result = getNameMap().get(interfaze.getName());
       if (result != null) {
         // mapping found
-        return result;
+        break;
       }
       else {
         // no mapping: recursively check superinterface
-        return mapInterfaces(interfaze);
+        result = mapInterfaces(interfaze);
+        if (result != null) {
+          break;
+        }
       }
     }
-    return null;
+    return result;
   }
 
 

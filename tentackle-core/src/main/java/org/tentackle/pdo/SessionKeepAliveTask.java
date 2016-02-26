@@ -34,7 +34,6 @@ import org.tentackle.task.AbstractTask;
  * This is necessary because a remote session
  * may block on slow or bad communication lines which should not block the whole task dispatcher.
  */
-@SuppressWarnings("serial")
 public class SessionKeepAliveTask extends AbstractTask {
 
   /**
@@ -44,10 +43,12 @@ public class SessionKeepAliveTask extends AbstractTask {
 
   private static final int MAX_FAILURES = 10;     // max. 10 failures -> then close the db
 
-  private final SessionKeepAliveDaemon daemon;    // the keep alive daemon
-  private final Session session;                  // the session to keep alive
-  private final long timeOut;                     // execution timeout in milliseconds
-  private final Callable<Boolean> aliveCallable;  // the worker to setAlive
+  private static final long serialVersionUID = 1L;
+
+  private final transient SessionKeepAliveDaemon daemon;    // the keep alive daemon
+  private final transient Session session;                  // the session to keep alive
+  private final long timeOut;                               // execution timeout in milliseconds
+  private final transient Callable<Boolean> aliveCallable;  // the worker to setAlive
 
   private Future<Boolean> future;                 // pending future, null = finished
   private int failCount;                          // number of failures in setAlive()

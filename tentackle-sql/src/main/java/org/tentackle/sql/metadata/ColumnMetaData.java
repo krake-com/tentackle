@@ -32,7 +32,7 @@ import org.tentackle.sql.SqlType;
  *
  * @author harald
  */
-public class ColumnMetaData implements Cloneable {
+public class ColumnMetaData {
 
   protected final TableMetaData tableMetaData;    // the table this column belongs to
   protected String columnName;                    // the column columnName
@@ -194,11 +194,9 @@ public class ColumnMetaData implements Cloneable {
   public boolean matchesSqlType(SqlType sqlType) {
     Backend backend = tableMetaData.getModelMetaData().getBackend();
     SqlType[] possibleSqlTypes = backend.jdbcTypeToSqlType(type, size, scale);
-    if (possibleSqlTypes != null) {
-      for (SqlType possibleType: possibleSqlTypes) {
-        if (sqlType == possibleType) {
-          return true;
-        }
+    for (SqlType possibleType: possibleSqlTypes) {
+      if (sqlType == possibleType) {
+        return true;
       }
     }
     return false;

@@ -42,10 +42,10 @@ public class TaskDispatcherTest {
   private volatile int lockCount;
   private volatile int taskCount;
 
-  private String[] failMessages = new String[THREAD_NUM];
+  private final String[] failMessages = new String[THREAD_NUM];
 
   // only for counter locking: the currently pending locks
-  private ConcurrentHashMap<Integer,Integer> counterLocks = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<Integer,Integer> counterLocks = new ConcurrentHashMap<>();
 
 
   @BeforeClass
@@ -97,8 +97,8 @@ public class TaskDispatcherTest {
 
   private class MutexLockThread extends Thread {
 
-    private Integer num;
-    private boolean checkLockCount;
+    private final Integer num;
+    private final boolean checkLockCount;
     private volatile boolean terminate;
     private int myLockCount;
 
@@ -124,6 +124,7 @@ public class TaskDispatcherTest {
             sleep(LOCK_DURATION);
           }
           catch(InterruptedException ex) {
+            Reporter.log("interrupted...");
           }
           int expected = count + 1;
           if (checkLockCount && lockCount != expected) {
@@ -139,6 +140,7 @@ public class TaskDispatcherTest {
               sleep(SLEEP_INTERVAL);
             }
             catch(InterruptedException ex) {
+              Reporter.log("interrupted...");
             }
           }
         }
@@ -161,7 +163,7 @@ public class TaskDispatcherTest {
 
   private class CounterLockThread extends Thread {
 
-    private Integer num;
+    private final Integer num;
     private volatile boolean terminate;
     private int myLockCount;
     private int lockNumber;
@@ -177,7 +179,7 @@ public class TaskDispatcherTest {
       return num;
     }
 
-    public int getLockNumber() {
+    public synchronized int getLockNumber() {
       return lockNumber;
     }
 
@@ -200,6 +202,7 @@ public class TaskDispatcherTest {
             sleep(SLEEP_INTERVAL);
           }
           catch (InterruptedException ex) {
+            Reporter.log("interrupted...");
           }
         }
       }
@@ -210,7 +213,7 @@ public class TaskDispatcherTest {
       Reporter.log("finished counter lock thread " + num + "<br/>");
     }
 
-    public void requestTermination() {
+    public synchronized void requestTermination() {
       terminate = true;
       Reporter.log("terminating counter lock thread " + num + ", " + myLockCount + " locks<br/>");
     }
@@ -222,7 +225,7 @@ public class TaskDispatcherTest {
   private class CounterUnlockThread extends Thread {
 
     private final CounterLockThread lockThread;
-    private boolean checkLockCount;
+    private final boolean checkLockCount;
     private volatile boolean terminate;
     private int myUnlockCount;
 
@@ -258,6 +261,7 @@ public class TaskDispatcherTest {
                 lockThread.wait(SLEEP_INTERVAL);    // wait for lock
               }
               catch(InterruptedException ex) {
+                Reporter.log("interrupted...");
               }
             }
           }

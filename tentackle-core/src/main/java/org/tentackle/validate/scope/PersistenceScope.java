@@ -30,6 +30,6 @@ import org.tentackle.validate.ValidationScope;
 public interface PersistenceScope extends ValidationScope {
 
   /** the scope's name. */
-  public static final String NAME = "PERSISTENCE";
+  String NAME = "PERSISTENCE";
 
 }

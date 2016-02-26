@@ -22,7 +22,6 @@ package org.tentackle.swing.plaf;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.io.Serializable;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -37,13 +36,13 @@ import org.tentackle.misc.ShortLongText;
  * @see org.tentackle.swing.FormComboBox#setShortLongPopupEnabled(boolean)
  */
 @SuppressWarnings("serial")
-public class TPopupRenderer extends JPanel implements ListCellRenderer, Serializable {
+public class TPopupRenderer extends JPanel implements ListCellRenderer {
 
-  private JLabel leftLabel;       // label for short text
-  private JLabel rightLabel;      // label for long text
-  private int minLeftWidth;       // minumum width for short text
-  private int minRightWidth;      // minimum width for long text
-  private String text;            // last rendered text (for GUIDancer)
+  private final JLabel leftLabel;       // label for short text
+  private final JLabel rightLabel;      // label for long text
+  private int minLeftWidth;             // minumum width for short text
+  private int minRightWidth;            // minimum width for long text
+  private String text;                  // last rendered text (for GUIDancer)
 
 
 

@@ -157,7 +157,7 @@ public class CompressedInputStream extends FilterInputStream {
           // all data from infBuf has been decompressed
           if (readPending == 0) {
             // read header of next packet
-            if (readHeader() == false) {
+            if (!readHeader()) {
               return -1;    // end of stream reached
             }
             if (!compressed) {
@@ -188,7 +188,7 @@ public class CompressedInputStream extends FilterInputStream {
         // uncompressed
         if (readPending == 0) {
           // read header of next packet
-          if (readHeader() == false) {
+          if (!readHeader()) {
             return -1;
           }
           if (compressed) {

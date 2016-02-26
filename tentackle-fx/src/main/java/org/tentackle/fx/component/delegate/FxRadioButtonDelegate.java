@@ -10,7 +10,6 @@ import javafx.scene.Parent;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxRadioButton;
 

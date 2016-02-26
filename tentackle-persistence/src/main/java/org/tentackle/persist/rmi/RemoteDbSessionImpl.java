@@ -84,7 +84,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * not properly closing the rmi-session.
    */
   private static final Set<WeakReference<RemoteDbSessionImpl>> SESSIONS =
-          Collections.newSetFromMap(new ConcurrentHashMap<WeakReference<RemoteDbSessionImpl>,Boolean>());
+          Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
@@ -109,7 +109,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Stops the cleanup thread.
    */
-  public static void stopCleanupThread() {
+  public static synchronized void stopCleanupThread() {
     if (cleanupThread != null && cleanupThread.isAlive()) {
       cleanupThread.requestTermination();
       cleanupThread = null;
@@ -130,8 +130,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public static Collection<RemoteDbSessionImpl> getOpenSessions() {
     Collection<RemoteDbSessionImpl> openSessions = new ArrayList<>();
-    for (Iterator<WeakReference<RemoteDbSessionImpl>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
-      RemoteDbSessionImpl session = iter.next().get();
+    for (WeakReference<RemoteDbSessionImpl> ref : SESSIONS) {
+      RemoteDbSessionImpl session = ref.get();
       if (session != null && session.isOpen()) {
         openSessions.add(session);
       }
@@ -609,6 +609,17 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
+  /**
+   * Returns an application-specific option string.<br>
+   * For diagnostic purposes only.
+   *
+   * @return null if no options
+   */
+  public String getOptions() {
+    return null;
+  }
+  
+
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
@@ -765,7 +776,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @SuppressWarnings("unchecked")
   @Override
-  public RemoteDelegate getRemoteDelegate(String classname) throws RemoteException  {
+  public <T extends RemoteDelegate> T getRemoteDelegate(String classname) throws RemoteException  {
 
     try {
 
@@ -809,8 +820,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         }
       }
 
-      RemoteDelegate delegate = createRemoteDelegate(
-              delegateClasses.delegateClass, delegateClasses.delegateImplClass, delegateClasses.clazz, delegateClasses.effectiveClass);
+      T delegate = (T) createRemoteDelegate(delegateClasses.delegateClass, delegateClasses.delegateImplClass,
+                                            delegateClasses.clazz, delegateClasses.effectiveClass);
 
       exportRemoteDelegate(delegate);
 

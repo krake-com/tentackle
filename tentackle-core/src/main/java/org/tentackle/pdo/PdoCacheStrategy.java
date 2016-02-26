@@ -32,6 +32,6 @@ public enum PdoCacheStrategy {
   LRU,
 
   /** least frequently used **/
-  LFU;
+  LFU
 
 }

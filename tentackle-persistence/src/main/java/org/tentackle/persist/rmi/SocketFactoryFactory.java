@@ -26,7 +26,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface SocketFactoryFactory$Singleton {
-  static SocketFactoryFactory INSTANCE = ServiceFactory.createService(SocketFactoryFactory.class, SocketFactoryFactory.class);
+  SocketFactoryFactory INSTANCE = ServiceFactory.createService(SocketFactoryFactory.class, SocketFactoryFactory.class);
 }
 
 

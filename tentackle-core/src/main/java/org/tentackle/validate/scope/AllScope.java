@@ -30,6 +30,6 @@ import org.tentackle.validate.ValidationScope;
 public interface AllScope extends ValidationScope {
 
   /** the scope's name. */
-  public static final String NAME = "ALL";
+  String NAME = "ALL";
 
 }

@@ -90,7 +90,7 @@ public class SumFormTableEntry<T> extends FormTableEntry<T> {
     FormTable table = model.getTable();
     // initialize to "unknown", to "ignore" if column is not visible
     for (int col=0; col < cols; col++) {
-      types[col] = (table != null && table.isColumnVisible(col) == false) || template.isColumnNotSummable(col) ? NAN : UNKNOWN;
+      types[col] = (table != null && !table.isColumnVisible(col)) || template.isColumnNotSummable(col) ? NAN : UNKNOWN;
     }
 
     int rows = model.getRowCount();
@@ -183,25 +183,25 @@ public class SumFormTableEntry<T> extends FormTableEntry<T> {
 
         case DOUBLE:
           if (classes[col] == Double.class) {
-            sums[col] = new Double(doubles[col]);
+            sums[col] = doubles[col];
           }
           else  {
-            sums[col] = new Float((float)doubles[col]);
+            sums[col] = (float) doubles[col];
           }
           break;
 
         case LONG:
           if (classes[col] == Byte.class) {
-            sums[col] = new Byte((byte)longs[col]);
+            sums[col] = (byte) longs[col];
           }
           else if (classes[col] == Short.class) {
-            sums[col] = new Short((short)longs[col]);
+            sums[col] = (short) longs[col];
           }
           else if (classes[col] == Integer.class) {
-            sums[col] = new Integer((int)longs[col]);
+            sums[col] = (int) longs[col];
           }
           else {
-            sums[col] = new Long(longs[col]);
+            sums[col] = longs[col];
           }
           break;
 

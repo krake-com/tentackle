@@ -44,46 +44,16 @@ public class DefaultBindableCache implements BindableCache {
 
 
   /**
-   * The key for the cache map.
+   * The binding factory.
    */
-  protected class Key {
-
-    protected Class<?> clazz;
-    protected boolean declaredOnly;
-
-    protected Key(Class<?> clazz, boolean declaredOnly) {
-      this.clazz = clazz;
-      this.declaredOnly = declaredOnly;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final Key other = (Key) obj;
-      if (this.clazz != other.clazz && (this.clazz == null || !this.clazz.equals(other.clazz))) {
-        return false;
-      }
-      return this.declaredOnly == other.declaredOnly;
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 3;
-      hash = 29 * hash + (this.clazz != null ? this.clazz.hashCode() : 0);
-      hash = 29 * hash + (this.declaredOnly ? 1 : 0);
-      return hash;
-    }
-
-  }
-
-
-
   private final BindingFactory bindingFactory;
+
+  /**
+   * The cached list of bindables by key.
+   * <p>
+   * The map is sorted by the camelcase name of the bindable element.
+   */
+  private final Map<Key,SortedMap<String,BindableElement>> clazzMap = new ConcurrentHashMap<>();
 
 
   /**
@@ -94,28 +64,6 @@ public class DefaultBindableCache implements BindableCache {
   public DefaultBindableCache(BindingFactory bindingFactory) {
     this.bindingFactory = bindingFactory;
   }
-
-
-  /**
-   * Create a cache key.
-   *
-   * @param clazz the class to inspect
-   * @param declaredOnly true if only declared elements, else inherited as well
-   * @return the created key
-   */
-  protected Key createKey(Class<?> clazz, boolean declaredOnly) {
-    return new Key(clazz, declaredOnly);
-  }
-
-
-
-  /**
-   * The cached list of bindables by key.
-   * <p>
-   * The map is sorted by the camelcase name of the bindable element.
-   */
-  protected Map<Key,SortedMap<String,BindableElement>> clazzMap = new ConcurrentHashMap<>();
-
 
 
   /**
@@ -231,5 +179,55 @@ public class DefaultBindableCache implements BindableCache {
     return bindableMap;
   }
 
+
+  /**
+   * The key for the cache map.
+   */
+  private static class Key {
+
+    private final Class<?> clazz;
+    private final boolean declaredOnly;
+
+    private Key(Class<?> clazz, boolean declaredOnly) {
+      this.clazz = clazz;
+      this.declaredOnly = declaredOnly;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final Key other = (Key) obj;
+      if (this.clazz != other.clazz && (this.clazz == null || !this.clazz.equals(other.clazz))) {
+        return false;
+      }
+      return this.declaredOnly == other.declaredOnly;
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 3;
+      hash = 29 * hash + (this.clazz != null ? this.clazz.hashCode() : 0);
+      hash = 29 * hash + (this.declaredOnly ? 1 : 0);
+      return hash;
+    }
+
+  }
+
+
+  /**
+   * Create a cache key.
+   *
+   * @param clazz the class to inspect
+   * @param declaredOnly true if only declared elements, else inherited as well
+   * @return the created key
+   */
+  private Key createKey(Class<?> clazz, boolean declaredOnly) {
+    return new Key(clazz, declaredOnly);
+  }
 
 }

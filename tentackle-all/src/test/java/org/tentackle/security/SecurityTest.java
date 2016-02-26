@@ -34,8 +34,6 @@ public class SecurityTest {
   @Test
   public void testPermissions() {
 
-    SecurityManager sm = SecurityFactory.getInstance().getSecurityManager();
-
     // configured permissions
     @SuppressWarnings("unchecked")
     Class<AllPermission> all = (Class<AllPermission>) SecurityFactory.getInstance().getPermissionInterface(AllPermission.NAME);

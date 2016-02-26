@@ -25,9 +25,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
-import java.io.Serializable;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Objects;
 import javax.swing.ComboBoxModel;
 import javax.swing.JComboBox;
@@ -183,7 +181,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
       lastKeyEvent = e;
       boolean isTableCellEditor = isCellEditorUsage();
 
-      if (isEditable() == false)  {
+      if (!isEditable())  {
 
         // not editable ComboBox
         if (isTableCellEditor) {
@@ -196,7 +194,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         }
         else  {
           // not in table
-          if (isPopupVisible() == false && e.getModifiers() == 0) {
+          if (!isPopupVisible() && e.getModifiers() == 0) {
             // Popup is not shown
             if (e.getKeyCode() == KeyEvent.VK_UP) {
               e.consume();
@@ -228,7 +226,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
 
 
       // show popup if Ctrl-Enter/Down/Space or F3
-      if (isPopupVisible() == false)  {
+      if (!isPopupVisible())  {
         if (e.getKeyCode() == KeyEvent.VK_F3 ||
             ((e.getKeyCode() == KeyEvent.VK_DOWN ||
               e.getKeyCode() == KeyEvent.VK_UP ||
@@ -331,14 +329,14 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         removeFocusListener(this);
         if (editor != null && editor.getEditorComponent() instanceof AbstractFormField)  {
           // register focus event on formfield instead of combobox
-          ((AbstractFormField)editor.getEditorComponent()).addFocusListener(this);
+          editor.getEditorComponent().addFocusListener(this);
         }
       }
       else  {
         addFocusListener(this);
         if (editor != null && editor.getEditorComponent() instanceof AbstractFormField)  {
           // register focus event on formfield instead of combobox
-          ((AbstractFormField)editor.getEditorComponent()).removeFocusListener(this);
+          editor.getEditorComponent().removeFocusListener(this);
         }
       }
     }
@@ -374,7 +372,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
         Object item = getItemAt(i);
         if (item != null) {
           String itemString = item.toString();
-          if (itemString != null && text.compareTo(itemString) == 0)  {
+          if (text.compareTo(itemString) == 0)  {
             // set selected index
             setFormValueIndex(i);
             return true;
@@ -440,9 +438,8 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    */
   public void addAllItems (Collection<E> items) {
     if (items != null) {
-      Iterator<E> iter = items.iterator();
-      while (iter.hasNext())  {
-        addItem(iter.next());
+      for (E item : items) {
+        addItem(item);
       }
     }
   }
@@ -1020,13 +1017,8 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
     if (savedValue == null) {
       return value != null;
     }
-    else  {
-      if (value != null) {
-        return !value.equals(savedValue);
-      }
-      else {
-        return true;
-      }
+    else {
+      return value == null || !value.equals(savedValue);
     }
   }
 
@@ -1361,8 +1353,7 @@ public class FormComboBox<E> extends JComboBox<E> implements FormComponent, Focu
    * or setMultiKeySelectionManager(true);
    * @param <E> the element type
    */
-  @SuppressWarnings("serial")
-  public class MultiKeySelectionManager<E> implements JComboBox.KeySelectionManager, Serializable {
+  public class MultiKeySelectionManager<E> implements JComboBox.KeySelectionManager {
 
     private final StringBuilder leadChars;    // leading chars for selection
     private long lastTime;                    // time last key pressed, for timeout

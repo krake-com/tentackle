@@ -57,7 +57,7 @@ public class TMetalComboBoxUI extends MetalComboBoxUI {
   }
 
 
-  private boolean usingOcean;
+  private final boolean usingOcean;
   
   public TMetalComboBoxUI() {
     super();

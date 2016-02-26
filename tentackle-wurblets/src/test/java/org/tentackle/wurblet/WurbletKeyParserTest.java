@@ -33,29 +33,17 @@ public class WurbletKeyParserTest {
 
   @Test
   public void testParser() {
-    List<String> args1 = Arrays.asList(new String[]{
-      "processed:=:null", "AND", "(", "user", "OR" , "modType", ")"
-    });
+    List<String> args1 = Arrays.asList("processed:=:null", "AND", "(", "user", "OR", "modType", ")");
 
-    List<String> args2 = Arrays.asList(new String[]{
-      "(", "processed:=:null", "AND", "(", "user", "OR" , "modType", ")", ")"
-    });
+    List<String> args2 = Arrays.asList("(", "processed:=:null", "AND", "(", "user", "OR", "modType", ")", ")");
 
-    List<String> args3 = Arrays.asList(new String[]{
-      "processed:=:null", "(", "user", "OR" , "modType", ")"
-    });
+    List<String> args3 = Arrays.asList("processed:=:null", "(", "user", "OR", "modType", ")");
 
-    List<String> args4 = Arrays.asList(new String[]{
-      "NOT(", "processed:=:null", "OR", "user)AND", "NOT(processed:=:null", "OR" , "modType", ") +id extra"
-    });
+    List<String> args4 = Arrays.asList("NOT(", "processed:=:null", "OR", "user)AND", "NOT(processed:=:null", "OR", "modType", ") +id extra");
 
-    List<String> args5 = Arrays.asList(new String[]{
-      "processed:=:null", "user", "modType"
-    });
+    List<String> args5 = Arrays.asList("processed:=:null", "user", "modType");
 
-    List<String> args6 = Arrays.asList(new String[]{
-      "NOT", "processed:=:5", "|", "upd1", "upd2"
-    });
+    List<String> args6 = Arrays.asList("NOT", "processed:=:5", "|", "upd1", "upd2");
 
 
     try {

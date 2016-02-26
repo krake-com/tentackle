@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -55,6 +57,7 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcRuntimeException;
@@ -110,16 +113,16 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   private ObservableList<T> items = FXCollections.observableArrayList();
 
-  private ResourceBundle resources;   // the resources
-  private PdoFinder<T> finder;        // the finder
-  private TableView<T> tableView;     // the table showing the results
-  private TablePopup<T> tablePopup;   // the table popup context menu
-  private TreeView<T> treeView;       // the tree showing the results
-  private boolean treeShown;          // true if tree shown, else table
-  private boolean tableViewInvalid;   // true if tableview is invalid
-  private boolean treeViewInvalid;    // true if treeview is invalid
-  private boolean singleSelectMode;   // true if in (modal) single selection mode
-  private T createdPdo;               // != null if new PDO has been created in modal mode
+  private ResourceBundle resources;             // the resources
+  private PdoFinder<T> finder;                  // the finder
+  private TableView<T> tableView;               // the table showing the results
+  private TreeView<T> treeView;                 // the tree showing the results
+  private boolean treeShown;                    // true if tree shown, else table
+  private boolean tableViewInvalid;             // true if tableview is invalid
+  private boolean treeViewInvalid;              // true if treeview is invalid
+  private boolean singleSelectMode;             // true if in (modal) single selection mode
+  private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
+  private T createdPdo;                         // != null if new PDO has been created in modal mode
 
 
   /**
@@ -177,27 +180,75 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         T firstPdo = tableView.getSelectionModel().getSelectedItem();
         if (firstPdo != null) {
           if (Fx.isModal(getStage())) {
-            if (firstPdo != null) {
-              close();
-            }
+            close();
           }
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
-              Rdc.displayCrudStage(firstPdo, tableView.getItems(), true, Modality.NONE, getStage(),
-                crud -> {
-                  crud.getStage().setOnHidden(e -> tableView.refresh());
+              Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
+                // event filter will removed when stage is hidden (see RdcUtilities)
+                crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
+                  if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
+                    T updatedPdo = firstPdo.reload();
+                    if (!treeViewInvalid) {
+                      ObservableList<TreeItem<T>> treeItems = treeView.getRoot().getChildren();
+                      int i = 0;
+                      for (TreeItem<T> item : treeItems) {
+                        if (updatedPdo.equals(item.getValue())) {
+                          TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
+                                  createTreeItem();
+                          treeItems.set(i, updatedItem);
+                          getTreeView().refresh();
+                          updatedItem.setExpanded(item.isExpanded());
+                          break;
+                        }
+                        i++;
+                      }
+                    }
+
+                    int ndx = items.indexOf(firstPdo);
+                    if (ndx >= 0) {
+                      items.set(ndx, updatedPdo);
+                    }
+                  }
+                  else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
+                    // do fast checks first (assumed the user did not change the selection)
+                    int ndx = tableView.getSelectionModel().getSelectedIndex();
+                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx-1))) {
+                      ndx--;
+                    }
+                    else if (ndx < tableView.getItems().size() - 1 &&
+                             e.getPdo().equals(tableView.getItems().get(ndx+1))) {
+                      ndx++;
+                    }
+                    else {
+                      // full scan
+                      ndx = tableView.getItems().indexOf(e.getPdo());
+                    }
+                    if (ndx >= 0) {
+                      tableView.getSelectionModel().clearSelection();
+                      tableView.getSelectionModel().select(ndx);
+                      tableView.scrollTo(ndx);
+                    }
+                  }
+                  e.consume();
                 }
-              );
+              ));
             }
           }
         }
       }
     });
-    tablePopup = new TablePopup<>(tableView, null, false);
+    TablePopup<T> tablePopup = new TablePopup<>(tableView, null, false);
     tablePopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
 
     treeView = Fx.createNode(TreeView.class);
     treeView.setCellFactory(p -> Rdc.createTreeCell());
+    wrongTypeSelected = new SimpleBooleanProperty();
+    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> {
+      wrongTypeSelected.set(nv == null || nv.getValue() == null ||
+                            !pdo.getClass().isAssignableFrom(nv.getValue().getClass()));
+    });
+
     StackPane stackPane = Fx.createNode(StackPane.class);
     if (treeShown) {
       stackPane.getChildren().addAll(tableView, treeView);
@@ -330,7 +381,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     else {
       setItems(finder.runSearch());
     }
-    cancelButton.setText(Fx.isModal(getStage()) ? "cancel" : "close");
+    cancelButton.setText(resources.getString(Fx.isModal(getStage()) ? "cancel" : "close"));
   }
 
 
@@ -343,10 +394,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     if (items == null) {
       items = FXCollections.observableArrayList();
     }
-    if (!(items instanceof SortedList)) {
-      SortedList<T> sortedResult = new SortedList<>(items);
-      sortedResult.comparatorProperty().bind(tableView.comparatorProperty());
-      items = sortedResult;
+    SortedList<T> sortedItems;
+    if (items instanceof SortedList) {
+      sortedItems = (SortedList<T>) items;
+    }
+    else {
+      sortedItems = new SortedList<>(items);
+      sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
     }
     this.items = items;
     countLabel.setText(Integer.toString(items.size()));
@@ -364,7 +418,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableViewInvalid = true;
     }
     else {
-      tableView.setItems(items);
+      tableView.setItems(sortedItems);
       tableView.getSelectionModel().clearSelection();
       tableView.refresh();
       treeViewInvalid = true;
@@ -581,7 +635,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     okButton.disableProperty().unbind();
     if (okButton.isVisible()) {
       if (treeShown) {
-        okButton.disableProperty().bind(treeView.getSelectionModel().selectedItemProperty().isNull());
+        okButton.disableProperty().bind(treeView.getSelectionModel().selectedItemProperty().isNull()
+                                  .or(wrongTypeSelected));
       }
       else {
         okButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());

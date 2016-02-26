@@ -32,15 +32,15 @@ import java.util.Set;
 @SuppressWarnings("serial")
 public abstract class ComponentGroup implements Serializable {
 
-  private String name;                    // the group name
-  protected Set<Component> components;    // the components
+  private String name;                          // the group name
+  protected final Set<Component> components;    // the components
 
 
   /**
    * Creates a component group.
    */
   public ComponentGroup() {
-    components = new HashSet<Component>();
+    components = new HashSet<>();
   }
 
 
@@ -69,7 +69,7 @@ public abstract class ComponentGroup implements Serializable {
    * @return the component array
    */
   public Component[] getComponents() {
-    return components.toArray(new Component[0]);
+    return components.toArray(new Component[components.size()]);
   }
 
 

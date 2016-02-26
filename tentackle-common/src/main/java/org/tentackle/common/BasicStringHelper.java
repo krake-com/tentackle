@@ -454,18 +454,16 @@ public final class BasicStringHelper {
    */
   public static String readTextFromResource(String resourceName) throws IOException {
 
-    InputStream is = null;
-
-    try {
-      is = BasicStringHelper.class.getResourceAsStream(resourceName);
+    InputStream is = BasicStringHelper.class.getResourceAsStream(resourceName);
+    if (is == null) {
+      // try other variant
+      is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
       if (is == null) {
-        // try other variant
-        is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
-        if (is == null) {
-          throw new FileNotFoundException("no such resource: " + resourceName);
-        }
+        throw new FileNotFoundException("no such resource: " + resourceName);
       }
-      BufferedReader br = new BufferedReader(new InputStreamReader(is));
+    }
+
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
       StringBuilder buf = new StringBuilder();
       String line;
       while ((line = br.readLine()) != null) {
@@ -473,15 +471,6 @@ public final class BasicStringHelper {
         buf.append('\n');
       }
       return buf.toString();
-    }
-    finally {
-      if (is != null) {
-        try {
-          is.close();
-        }
-        catch (IOException ex) {
-        }
-      }
     }
   }
 
@@ -497,7 +486,7 @@ public final class BasicStringHelper {
       int len = str.length();
       for (int i=0; i < len; i++) {
         char c = str.charAt(i);
-        if (Character.isWhitespace(c) == false) {
+        if (!Character.isWhitespace(c)) {
           return false;
         }
       }
@@ -511,7 +500,7 @@ public final class BasicStringHelper {
   /**
    * All java reserved words.
    */
-  public static final String[] javaReservedWords = {
+  public static final String[] JAVA_RESERVED_WORDS = {
     "abstract",
     "assert",
     "boolean",
@@ -576,7 +565,7 @@ public final class BasicStringHelper {
    */
   public static boolean isReservedWord(String word) {
     if (word != null) {
-      for (String rw: javaReservedWords) {
+      for (String rw: JAVA_RESERVED_WORDS) {
         if (rw.equals(word)) {
           return true;
         }

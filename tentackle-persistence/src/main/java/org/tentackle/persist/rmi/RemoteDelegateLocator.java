@@ -22,7 +22,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface RemoteDelegateLocator$Singleton {
-  static RemoteDelegateLocator INSTANCE = ServiceFactory.createService(
+  RemoteDelegateLocator INSTANCE = ServiceFactory.createService(
               RemoteDelegateLocator.class, DefaultRemoteDelegateLocator.class);
 }
 
@@ -47,7 +47,7 @@ public interface RemoteDelegateLocator {
   /**
    * The result.
    */
-  public static interface Result {
+  interface Result {
 
     /**
      * Gets the effectively serviced class.

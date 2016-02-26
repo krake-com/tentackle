@@ -34,14 +34,14 @@ public interface FormChangeable {
    *
    * @param changeable true the user can edit the data, false if show only
    */
-  public void setChangeable(boolean changeable);
+  void setChangeable(boolean changeable);
 
   /**
    * Returns if this component is changeable.
    *
    * @return true the user can edit the data, false if show only
    */
-  public boolean isChangeable();
+  boolean isChangeable();
 
   /**
    * Sets whether this component should honour the changeable-attribute or not.<br>
@@ -51,12 +51,12 @@ public interface FormChangeable {
    *
    * @param honourChangeable true if honour the changeable attribute, false if not
    */
-  public void setHonourChangeable(boolean honourChangeable);
+  void setHonourChangeable(boolean honourChangeable);
 
   /**
    * Returns whether this component should honour the changeable-attribute or not.
    * @return true if honour the changeable attribute, false if not
    */
-  public boolean isHonourChangeable();
+  boolean isHonourChangeable();
   
 }

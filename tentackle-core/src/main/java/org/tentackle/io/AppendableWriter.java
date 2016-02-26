@@ -37,7 +37,7 @@ import java.io.Writer;
  */
 public class AppendableWriter extends Writer {
 
-  private final String NULL_STRING = "null";    // replacement for null
+  private static final String NULL_STRING = "null";    // replacement for null
 
 
   private final Appendable appendable;     // the appendable

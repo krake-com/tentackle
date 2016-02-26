@@ -32,12 +32,12 @@ public enum TestConvertible implements Convertible<Integer> {
   TWO(200),
   THREE(300);
 
-  private Integer whatsoever;
+  private final Integer whatsoever;
 
   /**
    * Creates a convertible enum.
    *
-   * @param whatsoever
+   * @param whatsoever the integer
    */
   TestConvertible(Integer whatsoever) {
     this.whatsoever = whatsoever;

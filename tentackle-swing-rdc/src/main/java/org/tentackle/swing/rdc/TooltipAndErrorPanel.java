@@ -31,8 +31,6 @@ import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.swing.plaf.PlafUtilities;
 
@@ -63,14 +61,11 @@ public class TooltipAndErrorPanel extends org.tentackle.swing.FormPanel implemen
     errorList.setModel(model);
     errorList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     errorList.setCellRenderer(new TooltipAndErrorPanel.ErrorCellRenderer());
-    errorList.addListSelectionListener(new ListSelectionListener()  {
-      @Override
-      public void valueChanged(ListSelectionEvent e) {
-        if (!e.getValueIsAdjusting()) {
-          InteractiveError error = errorList.getSelectedValue();
-          if (error != null) {
-            error.showComponent();
-          }
+    errorList.addListSelectionListener(e -> {
+      if (!e.getValueIsAdjusting()) {
+        InteractiveError error = errorList.getSelectedValue();
+        if (error != null) {
+          error.showComponent();
         }
       }
     });

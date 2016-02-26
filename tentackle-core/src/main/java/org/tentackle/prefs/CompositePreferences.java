@@ -168,7 +168,7 @@ public abstract class CompositePreferences {
    */
   public Integer getInteger(String key) {
     String val = getString(key);
-    return val == null ? null : new Integer(val);
+    return val == null ? null : Integer.valueOf(val);
   }
 
   /**
@@ -204,7 +204,7 @@ public abstract class CompositePreferences {
    */
   public Long getALong(String key) {
     String val = getString(key);
-    return val == null ? null : new Long(val);
+    return val == null ? null : Long.valueOf(val);
   }
 
   /**
@@ -241,7 +241,7 @@ public abstract class CompositePreferences {
    */
   public Float getAFloat(String key) {
     String val = getString(key);
-    return val == null ? null : new Float(val);
+    return val == null ? null : Float.valueOf(val);
   }
 
   /**
@@ -278,7 +278,7 @@ public abstract class CompositePreferences {
    */
   public Double getADouble(String key) {
     String val = getString(key);
-    return val == null ? null : new Double(val);
+    return val == null ? null : Double.valueOf(val);
   }
 
   /**
@@ -409,7 +409,7 @@ public abstract class CompositePreferences {
       return b2 == null;
     }
     else if (b2 == null) {
-      return b1 == null;
+      return false;
     }
     else  {
       if (b1.length == b2.length) {

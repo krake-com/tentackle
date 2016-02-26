@@ -41,9 +41,8 @@ public class PostgresTest {
 
     select = new StringBuilder("SELECT ou.*,mr.* FROM md.orgunit ou,md.mitarbeiter mr WHERE 1=1 AND ou.id=mr.id AND ou.id=555");
     joinSelect = "SELECT kt.* FROM md.kontakt kt WHERE kt.classid=112";
-    joinSelectIdAlias = null;
     join = "ou_id=kt.id";
-    pg.sqlJoinSelects(JoinType.LEFT, true, select, joinSelect, joinSelectIdAlias, joinAlias, join);
+    pg.sqlJoinSelects(JoinType.LEFT, true, select, joinSelect, null, joinAlias, join);
     Assert.assertEquals(select.toString(),
             "SELECT DISTINCT ou.*,mr.*,_j1.* FROM md.orgunit ou,md.mitarbeiter mr LEFT JOIN (SELECT kt.* FROM md.kontakt kt WHERE kt.classid=112) _j1 ON ou_id=kt.id WHERE 1=1 AND ou.id=mr.id AND ou.id=555");
   }

@@ -360,10 +360,7 @@ public abstract class AbstractBackend implements Backend {
    * @return the SQL code including the opening bracket
    */
   protected String sqlCreateTableIntroWithoutComment(String tableName) {
-    StringBuilder buf = new StringBuilder("CREATE TABLE ");
-    buf.append(tableName);
-    buf.append(" (");
-    return buf.toString();
+    return "CREATE TABLE " + tableName + " (";
   }
 
   @Override
@@ -500,14 +497,12 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" RENAME COLUMN ");
-    buf.append(oldColumnName);
-    buf.append(" TO ");
-    buf.append(newColumnName);
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " RENAME COLUMN " +
+            oldColumnName +
+            " TO " +
+            newColumnName +
+            ";\n";
   }
 
   @Override
@@ -521,35 +516,29 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ADD COLUMN ");
-    buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ADD COLUMN " +
+            sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
+            ";\n";
   }
 
   @Override
   public String sqlDropColumn(String tableName, String columnName) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" DROP COLUMN ");
-    buf.append(columnName);
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " DROP COLUMN " +
+            columnName +
+            ";\n";
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
-    buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
-    buf.append(columnName);
-    buf.append(" ");
-    buf.append(columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue));
-    buf.append(";\n");
-    return buf.toString();
+    return  "ALTER TABLE " + tableName +
+            " ALTER COLUMN " +
+            columnName +
+            " " +
+            columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue) +
+            ";\n";
   }
 
   @Override
@@ -559,16 +548,14 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType) {
-    StringBuilder buf = new StringBuilder("UPDATE ");
-    buf.append(tableName);
-    buf.append(" SET ");
-    buf.append(columnName);
-    buf.append("=");
-    buf.append(valueToLiteral(sqlType, sqlType.getDefaultValue()));
-    buf.append(" WHERE ");
-    buf.append(columnName);
-    buf.append(" IS NULL;\n");
-    return buf.toString();
+    return  "UPDATE " + tableName +
+            " SET " +
+            columnName +
+            "=" +
+            valueToLiteral(sqlType, sqlType.getDefaultValue()) +
+            " WHERE " +
+            columnName +
+            " IS NULL;\n";
   }
 
   @Override
@@ -865,7 +852,7 @@ public abstract class AbstractBackend implements Backend {
         break;
 
       default:
-        return null;
+        return new SqlType[0];
     }
 
     return new SqlType[] { sqlType };

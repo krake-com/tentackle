@@ -54,7 +54,7 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
         for (int counter = 0; counter < rowCount; counter++) {
           rows[counter] = counter;
         }
-      } 
+      }
       else {
         rows = table.getSelectedRows();
       }
@@ -74,17 +74,17 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
             cols[counter] = counter;
           }
         }
-      } 
+      }
       else {
         cols = table.getSelectedColumns();
       }
 
-      if (rows == null || cols == null || rows.length == 0 || cols.length == 0) {
+      if (rows.length == 0 || cols.length == 0) {
         return null;
       }
 
-      StringBuffer plainBuf = new StringBuffer();
-      StringBuffer htmlBuf = new StringBuffer();
+      StringBuilder plainBuf = new StringBuilder();
+      StringBuilder htmlBuf = new StringBuilder();
 
       htmlBuf.append("<html>\n<body>\n<table>\n");
 
@@ -93,8 +93,8 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
         for (int col = 0; col < cols.length; col++) {
           Object obj = table.getValueAt(rows[row], cols[col]);
           String val = ((obj == null) ? "" : obj.toString());
-          plainBuf.append(val + "\t");
-          htmlBuf.append("  <td>" + val + "</td>\n");
+          plainBuf.append(val).append("\t");
+          htmlBuf.append("  <td>").append(val).append("</td>\n");
         }
         // we want a newline at the end of each line and not a tab
         plainBuf.deleteCharAt(plainBuf.length() - 1).append("\n");
@@ -115,5 +115,5 @@ public class TTableTransferHandler extends TransferHandler implements UIResource
   public int getSourceActions(JComponent c) {
       return COPY;
   }
-  
+
 }

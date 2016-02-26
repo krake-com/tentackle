@@ -90,8 +90,9 @@ public class ModelDefaults {
   /**
    * Creates the defaults from a string.
    * @param str the string
+   * @throws ModelException if parsing failed
    */
-  public ModelDefaults(String str) {
+  public ModelDefaults(String str) throws ModelException {
     parse(str);
   }
 
@@ -99,8 +100,9 @@ public class ModelDefaults {
    * Parses the defaults from a string.
    *
    * @param str the string
+   * @throws ModelException if parsing failed
    */
-  public void parse(String str) {
+  public void parse(String str) throws ModelException {
     clear();
     StringTokenizer stok = new StringTokenizer(str, " ,\t\n\r");
     while (stok.hasMoreTokens()) {
@@ -143,7 +145,8 @@ public class ModelDefaults {
           remote = true;
           break;
 
-        // more to come...
+        default:
+          throw new ModelException("unknown model default: " + token);
       }
     }
   }

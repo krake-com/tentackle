@@ -31,7 +31,7 @@ import java.util.GregorianCalendar;
 @SuppressWarnings("serial")
 public class YearSpinField extends FormSpinField implements SpinListener {
   
-  private IntegerFormField  yearField = new IntegerFormField();
+  private final IntegerFormField  yearField = new IntegerFormField();
 
   
   /**

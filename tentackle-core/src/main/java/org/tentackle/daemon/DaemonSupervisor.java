@@ -166,13 +166,13 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
 
-  private long checkInterval;               // checking interval in milliseconds
-  private int maxStartCount;                // max. number of restarts, 0 = unlimited
-  private Daemon[] daemons;                 // the daemons under supervision
-  private final List<Thread> killedDaemons; // daemons killed but still alive
+  private long checkInterval;                 // checking interval in milliseconds
+  private int maxStartCount;                  // max. number of restarts, 0 = unlimited
+  private Daemon[] daemons;                   // the daemons under supervision
+  private final List<Thread> killedDaemons;   // daemons killed but still alive
 
-  private transient boolean stopRequested;  // true if stop has been requested
-  private ReentrantReadWriteLock lock;      // to lock supervisor when number of daemons is changed
+  private transient boolean stopRequested;    // true if stop has been requested
+  private final ReentrantReadWriteLock lock;  // to lock supervisor when number of daemons is changed
 
 
   /**
@@ -369,7 +369,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    */
   public boolean isDaemonEnabled(int index) {
     Daemon daemon = getDaemon(index);
-    return daemon == null ? false : daemon.isEnabled();
+    return daemon != null && daemon.isEnabled();
   }
 
 
@@ -514,7 +514,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         runningThreads.add(thread);
       }
     }
-    return runningThreads.toArray(new Thread[0]);
+    return runningThreads.toArray(new Thread[runningThreads.size()]);
   }
 
   /**

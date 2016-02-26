@@ -103,7 +103,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   protected String getPathRelativeToBasedir(String path) {
     String basePath = mavenProject.getBasedir().getAbsolutePath();
-    while (basePath != null && basePath.length() > 0) {
+    while (basePath.length() > 0) {
       if (path.startsWith(basePath)) {
         int len = basePath.lastIndexOf(File.separatorChar);
         if (len > 0) {

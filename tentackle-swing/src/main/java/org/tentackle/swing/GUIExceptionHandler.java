@@ -21,8 +21,6 @@
 
 package org.tentackle.swing;
 
-import java.io.CharArrayWriter;
-import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import org.tentackle.log.Logger;
@@ -41,18 +39,11 @@ public class GUIExceptionHandler {
 
   private static boolean exitOnException = true;
 
-  private static CharArrayWriter  writer;
-  private static PrintWriter      printWriter;
 
-  static  {
-    writer      = new CharArrayWriter();
-    printWriter = new PrintWriter(writer);
-  }
+  private static final Set<GUISaveable> SAVEABLES = new HashSet<>();    // Set of GUISaveables
 
-  private static Set<GUISaveable> saveables = new HashSet<GUISaveable>();    // Set of GUISaveables
-
-  private static final String GUIExceptionHandlerKey = "sun.awt.exception.handler";
-  private static final String GUIExceptionHandler    = "org.tentackle.swing.GUIExceptionHandler";
+  private static final String HANDLER_KEY   = "sun.awt.exception.handler";
+  private static final String HANDLER_CLASS = "org.tentackle.swing.GUIExceptionHandler";
 
 
   /**
@@ -61,8 +52,8 @@ public class GUIExceptionHandler {
    * @param override is true if override existing handler, false if not set yet.
    */
   public static void install(boolean override) {
-    if (override || System.getProperty(GUIExceptionHandlerKey) == null) {
-      System.setProperty(GUIExceptionHandlerKey, GUIExceptionHandler);
+    if (override || System.getProperty(HANDLER_KEY) == null) {
+      System.setProperty(HANDLER_KEY, HANDLER_CLASS);
     }
   }
 
@@ -93,7 +84,7 @@ public class GUIExceptionHandler {
    * @param saveable the object to save on exit
    */
   public static void registerSaveable(GUISaveable saveable) {
-    saveables.add(saveable);
+    SAVEABLES.add(saveable);
   }
 
   /**
@@ -102,7 +93,7 @@ public class GUIExceptionHandler {
    * @param saveable the object to save on exit
    */
   public static void unregisterSaveable(GUISaveable saveable) {
-    saveables.remove(saveable);
+    SAVEABLES.remove(saveable);
   }
 
 
@@ -110,7 +101,7 @@ public class GUIExceptionHandler {
    * Invokes all registered saveables.
    */
   public static void runSaveState() {
-    for (GUISaveable s: saveables)  {
+    for (GUISaveable s: SAVEABLES)  {
       s.saveState();
     }
   }
@@ -122,26 +113,24 @@ public class GUIExceptionHandler {
    * and optionally terminates the application
    * with exit code 1.
    *
-   * @param thrown is the Throwable to be handled.
+   * @param t the Throwable to be handled.
    */
-  public void handle(Throwable thrown)  {
+  public void handle(Throwable t)  {
 
-    // log message into writer memory
-    printWriter.println(thrown.getMessage());
-    thrown.printStackTrace(printWriter);
-    printWriter.flush();
-    // log message to default logger
-    LOGGER.severe(writer.toString());
-    // clear data in writer
-    writer.reset();
+    try {
+      LOGGER.severe("unhandled GUI exception", t);
+    }
+    catch (Throwable t2) {
+      // ignore in case logging failed
+    }
 
     // close all GUIsaveables
     try {
       runSaveState();    // save all states before
     }
-    catch (Exception e) {
+    catch (Exception ex) {
       // log any exceptions while saving but don't stop
-      LoggerOutputStream.logException(e, LOGGER);
+      LoggerOutputStream.logException(ex, LOGGER);
     }
 
     // terminate application

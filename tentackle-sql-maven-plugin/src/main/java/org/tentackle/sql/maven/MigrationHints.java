@@ -89,7 +89,7 @@ public class MigrationHints {
   /**
    * Key for explicit column migration.
    */
-  private class ColumnKey {
+  private static class ColumnKey {
 
     private final String columnName;        // the (old) columnname
     private final String newColumnName;     // the new columnname (if renamed)
@@ -380,10 +380,8 @@ public class MigrationHints {
           for (String filename : fileNames) {
             File hintFile = new File(new File(propertiesDirName), filename);
             logger.debug("loading migration hints from " + hintFile);
-            BufferedReader reader = null;
             StringBuilder buf = new StringBuilder();
-            try {
-              reader = new BufferedReader(new FileReader(hintFile));
+            try (BufferedReader reader = new BufferedReader(new FileReader(hintFile))) {
               char[] readBuf = new char[1024];
               int len;
               while ((len = reader.read(readBuf)) != -1)  {
@@ -392,12 +390,6 @@ public class MigrationHints {
             }
             catch (IOException ex) {
               throw new MojoExecutionException("reading migration hints from '" + hintFile + "' failed", ex);
-            }
-            finally {
-              try {
-                reader.close();
-              }
-              catch (IOException ex) {}
             }
 
             String delims = "\n\r";

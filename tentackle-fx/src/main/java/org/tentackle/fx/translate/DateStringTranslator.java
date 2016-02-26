@@ -168,7 +168,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
   @Override
   public Function<Date, String> toViewFunction() {
-    return v -> format(v);
+    return this::format;
   }
 
   @Override
@@ -287,6 +287,14 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               slen = 2;
             }
           }
+          else {
+            referenceDate = null;
+          }
+        }
+        if (str.charAt(0) == '$') {
+          str = str.substring(1, slen);
+          slen--;
+          referenceDate = lastDate;
         }
 
         getFormat();    // make sure format is initialized and up to date
@@ -335,10 +343,6 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             GregorianCalendar cal = new GregorianCalendar();
             if (referenceDate != null)  {
               cal.setTime(referenceDate);
-            }
-            else if (!setValue && lastDate != null)  {
-              // relative to current setting
-              cal.setTime(lastDate);
             }
 
             char type = str.charAt(slen-1);
@@ -509,7 +513,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             str += new GregorianCalendar().get(YEAR);
           }
           else { // check for user omitted the delimiters at all, e.g. 0105
-            String newstr = "";                         // new generated input
+            StringBuilder nBuf = new StringBuilder();    // new generated input
             int dlen = dateDelimiters.length();         // length of delimiters
             int spos = 0;                               // index in user input
             int dpos = 0;                               // index in format
@@ -520,19 +524,19 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               }
               if (dpos < dlen && spos > 0 && spos % 2 == 0)  {
                 // insert delimiter
-                newstr += dateDelimiters.charAt(dpos++);
+                nBuf.append(dateDelimiters.charAt(dpos++));
               }
-              newstr += c;
+              nBuf.append(c);
               spos++;
             }
             if (spos == slen) {   // delimiters inserted
               if (slen % 2 == 0 && dpos < dlen) {
-                newstr += dateDelimiters.charAt(dpos);
+                nBuf.append(dateDelimiters.charAt(dpos));
               }
-              if (newstr.length() == 6) { // day + month. and year missing?
-                newstr += new GregorianCalendar().get(YEAR);
+              if (nBuf.length() == 6) { // day + month. and year missing?
+                nBuf.append(new GregorianCalendar().get(YEAR));
               }
-              str = newstr;
+              str = nBuf.toString();
             }
             else  {
               // try if time entered only: add current date.
@@ -544,7 +548,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                 if (c == ':') {
                   colonCount++;
                 }
-                else if (Character.isDigit(c) == false)  {
+                else if (!Character.isDigit(c))  {
                   timeOnly = false;
                   break;
                 }
@@ -570,7 +574,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
               }
               else  {
                 // try appending 00:00:00 if only date entered (there is a small chance ;-)
-                newstr = str + " 00:00:00";
+                String newstr = str + " 00:00:00";
                 try {
                   // just parse
                   format.parse(newstr);
@@ -656,7 +660,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     String f = format.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
-      if (Character.isLetterOrDigit(c) == false)  {
+      if (!Character.isLetterOrDigit(c))  {
         dateDelimiters += c;
       }
     }

@@ -34,13 +34,13 @@ public interface PrintComponent {
    * 
    * @param value the value object
    */
-  public void setPrintValue(Object value);
+  void setPrintValue(Object value);
   
   /**
    * Gets the value to be printed
    * 
    * @return the value object
    */
-  public Object getPrintValue();
+  Object getPrintValue();
   
 }

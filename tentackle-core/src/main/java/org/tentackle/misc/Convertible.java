@@ -91,6 +91,6 @@ public interface Convertible<T> {
    *
    * @return the external value
    */
-  public T toExternal();
+  T toExternal();
 
 }

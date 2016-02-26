@@ -83,7 +83,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   static {
     // register updater for sync between jvms
-    ((ModificationTracker) PdoTracker.getInstance()).addModificationListener(new ModificationListenerAdapter(TABLENAME) {
+    PdoTracker.getInstance().addModificationListener(new ModificationListenerAdapter(TABLENAME) {
       @Override
       public void dataChanged(ModificationEvent ev) {
         DbPreferencesFactory factory = (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();

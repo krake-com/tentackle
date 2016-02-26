@@ -31,7 +31,7 @@ import org.tentackle.misc.ApplicationException;
  */
 public class CSVReader {
 
-  private Reader reader;                // the reader with proper charset
+  private final Reader reader;          // the reader with proper charset
   private int state;                    // parsing state
   private int objectCount;              // object counter
   private int lineCount;                // current line-number

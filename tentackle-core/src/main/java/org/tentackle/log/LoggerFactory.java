@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 interface LoggerFactory$Singleton {
-  static LoggerFactory INSTANCE = ServiceFactory.createService(LoggerFactory.class, DefaultLoggerFactory.class);
+  LoggerFactory INSTANCE = ServiceFactory.createService(LoggerFactory.class, DefaultLoggerFactory.class);
 }
 
 

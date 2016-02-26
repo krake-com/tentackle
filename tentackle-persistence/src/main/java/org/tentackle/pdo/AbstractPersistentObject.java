@@ -729,10 +729,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public String getSqlClassIdCondition() {
     if (isClassIdRequiredInWhereClause()) {
-      StringBuilder buf = new StringBuilder(Backend.SQL_AND);
-      buf.append(getTopSuperTableAlias()).append('.').append(CN_CLASSID);
-      buf.append(Backend.SQL_EQUAL_PAR);
-      return buf.toString();
+      return Backend.SQL_AND + getTopSuperTableAlias() + '.' + CN_CLASSID + Backend.SQL_EQUAL_PAR;
     }
     return null;
   }
@@ -1246,7 +1243,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       getSession().rollback(txVoucher);
       if (ex instanceof PersistenceException) {
         ((PersistenceException) ex).updateDbObject(this);
-        throw (PersistenceException) ex;
+        throw ex;
       }
       else  {
         throw new PersistenceException(this, ex);
@@ -1520,7 +1517,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           }
         }
         // skip to next join
-        int columnCount = joinedPo.getColumnCount();
+        int columnCount = joinedPo != null ? joinedPo.getColumnCount() : 0;
         if (join.isExplicitIdAliasRequired()) {
           columnCount++;
         }
@@ -1610,7 +1607,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         if (js != null) {
           ndx = js.setClassIdsInStatement(st, ndx);
         }
-        st.setLong(ndx++, id);
+        st.setLong(ndx, id);
 
         obj = executeFirstPdoQuery(st, js);
       }
@@ -1974,7 +1971,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx++, normText);
+    st.setString(ndx, normText);
 
     return st.executeQuery();
   }
@@ -2027,7 +2024,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx++, normText);
+    st.setString(ndx, normText);
 
     return st.executeQuery();
   }
@@ -2147,7 +2144,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     long contextId = getContextId();
     if (contextId >= 0) {
-      st.setLong(ndx++, contextId);
+      st.setLong(ndx, contextId);
     }
 
     return st.executeQuery();
@@ -2189,7 +2186,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
     long contextId = getContextId();
     if (contextId >= 0) {
-      st.setLong(ndx++, contextId);
+      st.setLong(ndx, contextId);
     }
 
     return st.executeQuery();
@@ -2466,10 +2463,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public boolean containsPattern (String pattern) {
-    if (getNormText() != null && pattern != null)  {
-      return getNormText().contains(pattern);
-    }
-    return false;
+    return getNormText() != null && pattern != null && getNormText().contains(pattern);
   }
 
 
@@ -3427,7 +3421,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
 
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
-                                                           () -> createUpdateTokenLockSql());
+                                                           this::createUpdateTokenLockSql);
 
         long newUser = tokenExpiry != null ? userId : 0;
 
@@ -3446,8 +3440,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
         else {
           // no success: another user is currently holding the token
-          st = getPreparedStatement(getClassVariables().selectTokenLockStatementId,
-                  () -> createSelectTokenLockSql());
+          st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, this::createSelectTokenLockSql);
           st.setLong(1, getId());
           try (ResultSetWrapper rs = st.executeQuery()) {
             if (rs.next()) {
@@ -3521,7 +3514,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertWritePermission();
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
-                                                           () -> createUpdateTokenLockOnlySql());
+                                                           this::createUpdateTokenLockOnlySql);
         st.setLong(1, getEditedBy());
         st.setTimestamp(2, getEditedSince());
         st.setTimestamp(3, getEditedExpiry());
@@ -3557,11 +3550,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         try {
           boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
-                  () -> {
-                    return withTableSerial ?
-                            createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql();
-                  }
-          );
+                  () -> withTableSerial ? createTransferTokenLockWithTableSerialSql() : createTransferTokenLockSql());
           long newTableSerial = countModification();    // this will rollback and terminate on error
           if (withTableSerial) {
             setTableSerial(newTableSerial);
@@ -3588,7 +3577,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           getSession().rollback(txVoucher);
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
-            throw (PersistenceException) ex;
+            throw ex;
           }
           else  {
             throw new PersistenceException(this, ex);

@@ -21,21 +21,23 @@
 
 
     /**
-     * Generate code to define the java attribute names.
+     * Generate code to define the java attribute and relation names.
      *
-     * usage:  \@wurblet <somename> AttributeNames --model=<mapfile>
+     * usage:  \@wurblet <somename> AttributeNames [--model=<mapfile>] [--noif]
      *
      *         <mapfile> is the mapping description
+     *         --noif if not part of an interface (adds "public static final")
      */
 
     String mainClass = getClassName();
+    String lead = getOption("noif") == null ? "" : "public static final ";
 
     for (Relation rel: getEntity().getRelations()) {
       String var = rel.getVariableName();
 ]@
 
   /** relation name for '@(rel)@'. */
-  public static final String RN_@(var.toUpperCase())@ = "@(var)@";
+  @(lead)@String RN_@(var.toUpperCase())@ = "@(var)@";
 @[
     }
 
@@ -45,7 +47,7 @@
 ]@
 
   /** attribute name for database column '@(attr.getColumnName())@'. */
-  public static final String AN_@(name)@ = "@(attr.getJavaName())@";
+  @(lead)@String AN_@(name)@ = "@(attr.getJavaName())@";
 @[
       }
     }

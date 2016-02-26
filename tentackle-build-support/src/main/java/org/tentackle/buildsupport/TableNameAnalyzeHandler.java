@@ -33,7 +33,7 @@ import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 
 /**
- * Handler for the @TableName annotation.
+ * Handler for the {@code @TableName} annotation.
  * <p>
  * Although a mapped service, we need an extra implementation because of mapSchema=true|false.
  *
@@ -76,7 +76,8 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                     annoMirror.getElementValues().entrySet()) {
 
-              switch (entry.getKey().getSimpleName().toString()) {
+              String methodName = entry.getKey().getSimpleName().toString();
+              switch (methodName) {
 
                 case "value":
                   tableName = entry.getValue().toString();
@@ -87,14 +88,16 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   break;
 
                 case "prefix":
-                  prefix = entry.getValue().toString();
-                  if (prefix != null) {
-                    prefix = BasicStringHelper.parseString(prefix);
-                    if (BasicStringHelper.isAllWhitespace(prefix)) {
-                      prefix = null;
-                    }
+                  prefix = BasicStringHelper.parseString(entry.getValue().toString());
+                  if (BasicStringHelper.isAllWhitespace(prefix)) {
+                    prefix = null;
                   }
                   break;
+
+                default:
+                  processor.getProcessingEnvironment().getMessager().printMessage(
+                          Diagnostic.Kind.WARNING,
+                          "unknown method '" + methodName + "' in annotation " + annotationType, element);
               }
             }
 

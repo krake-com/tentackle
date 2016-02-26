@@ -91,10 +91,10 @@ public class ZeroImpl extends AbstractValidator<Zero> {
         ok = ((BMoney) value).isZero();
       }
       else if (value instanceof BigInteger) {
-        ok = ((BigInteger) value).equals(BigInteger.ZERO);
+        ok = value.equals(BigInteger.ZERO);
       }
       else if (value instanceof BigDecimal) {
-        ok = ((BigDecimal) value).equals(BigDecimal.ZERO);
+        ok = value.equals(BigDecimal.ZERO);
       }
       else if (value instanceof Double) {
         ok = ((Double) value) == 0.0d;
@@ -103,7 +103,7 @@ public class ZeroImpl extends AbstractValidator<Zero> {
         ok = ((Float) value) == 0.0f;
       }
       else {
-        ok = ((Number) value).longValue() == 0l;
+        ok = ((Number) value).longValue() == 0;
       }
 
       if (!ok) {

@@ -247,7 +247,7 @@ public class FormTelnoField extends FormFieldComponentPanel {
             continue;   // skip
           }
           if (inTelno &&
-              Character.isDigit(c) == false && c != '+' && c != '-' && c != ' ') {
+              !Character.isDigit(c) && c != '+' && c != '-' && c != ' ') {
             inTelno = false;
           }
           if (inTelno) {
@@ -261,7 +261,7 @@ public class FormTelnoField extends FormFieldComponentPanel {
         telnos[ndx]   = new Telno();
         telnos[ndx].setDefaultCountry(defaultCountry);
         comments[ndx] = comment.toString().trim();
-        if (telnos[ndx].setTelno(unparsed[ndx]) == false) {
+        if (!telnos[ndx].setTelno(unparsed[ndx])) {
           errors[ndx] = telnos[ndx].getError();
           errorCount++;
         }

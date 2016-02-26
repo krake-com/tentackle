@@ -97,10 +97,10 @@
       strategy = arg.substring(9).toUpperCase();
     }
     else if (arg.startsWith("maxsize=")) {
-      maxSize = new Integer(arg.substring(8));
+      maxSize = Integer.valueOf(arg.substring(8));
     }
     else if (arg.startsWith("keepquota=")) {
-      keepQuota = new Integer(arg.substring(10));
+      keepQuota = Integer.valueOf(arg.substring(10));
     }
     else if (arg.startsWith("configure=")) {
       configure = arg.substring(10);

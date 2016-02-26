@@ -90,22 +90,22 @@ public class FormatHelper {
     /** localized {@link DecimalFormat} for a money value. */
     private final DecimalFormat moneyFormat;
 
-    /** localized {@link DateFormat} for a timestamp. */
+    /** localized {@link java.text.DateFormat} for a timestamp. */
     private final SimpleDateFormat timestampFormat;
 
-    /** localized {@link DateFormat} for a date. */
+    /** localized {@link java.text.DateFormat} for a date. */
     private final SimpleDateFormat dateFormat;
 
-    /** localized {@link DateFormat} for a time. */
+    /** localized {@link java.text.DateFormat} for a time. */
     private final SimpleDateFormat timeFormat;
 
-    /** localized {@link DateFormat} for a short timestamp. */
+    /** localized {@link java.text.DateFormat} for a short timestamp. */
     private final SimpleDateFormat shortTimestampFormat;
 
-    /** localized {@link DateFormat} for a short date. */
+    /** localized {@link java.text.DateFormat} for a short date. */
     private final SimpleDateFormat shortDateFormat;
 
-    /** localized {@link DateFormat} for a short time. */
+    /** localized {@link java.text.DateFormat} for a short time. */
     private final SimpleDateFormat shortTimeFormat;
 
     /** short letter for "debit" (soll). */
@@ -497,10 +497,11 @@ public class FormatHelper {
     }
 
     if (scale > 0)  {
-      fmt += '.';
+      StringBuilder buf = new StringBuilder(fmt).append('.');
       for (int i=0; i < scale; i++) {
-        fmt += "0";
+        buf.append('0');
       }
+      fmt = buf.toString();
     }
 
     // apply new format
@@ -509,7 +510,7 @@ public class FormatHelper {
     if (dotNdx <= 0 && groupingUsed)  {
       // default has been set: restore grouping pars
       format.setGroupingSize(groupingSize);
-      format.setGroupingUsed(groupingUsed);
+      format.setGroupingUsed(true);
     }
   }
 

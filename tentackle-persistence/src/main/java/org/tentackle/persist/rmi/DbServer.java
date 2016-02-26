@@ -182,7 +182,7 @@ public class DbServer {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DbServer.class);
 
-  private SessionInfo sessionInfo;                        // server session info
+  private final SessionInfo sessionInfo;                  // server session info
   private String service;                                 // name of the RMI service
   private boolean createRegistry;                         // true to create a local registry
   private Class<? extends RemoteDbConnectionImpl> connectionClass;  // class for connection object
@@ -261,12 +261,12 @@ public class DbServer {
 
     val = props.getProperty(TIMEOUT);
     if (val != null) {
-      sessionTimeout = Integer.valueOf(val);
+      sessionTimeout = Integer.parseInt(val);
     }
 
     val = props.getProperty(TIMEOUT_INTERVAL);
     if (val != null) {
-      sessionTimeoutCheckInterval = Long.valueOf(val);
+      sessionTimeoutCheckInterval = Long.parseLong(val);
     }
     else  {
       sessionTimeoutCheckInterval = 1000;

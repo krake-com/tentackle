@@ -36,7 +36,7 @@ public interface FormTableBinder extends Binder {
    *
    * @return the bound table model
    */
-  public BindableTableModel getModel();
+  BindableTableModel getModel();
 
 
   /**
@@ -45,7 +45,7 @@ public interface FormTableBinder extends Binder {
    * @param mColumn the model column
    * @return the binding, null if column not bound
    */
-  public FormTableBinding getBinding(int mColumn);
+  FormTableBinding getBinding(int mColumn);
 
   /**
    * {@inheritDoc}
@@ -53,7 +53,7 @@ public interface FormTableBinder extends Binder {
    * Overridden to cast.
    */
   @Override
-  public FormTableBinding getBinding(String bindingPath);
+  FormTableBinding getBinding(String bindingPath);
 
 
   /**
@@ -61,14 +61,14 @@ public interface FormTableBinder extends Binder {
    *
    * @return the list of bound components, never null
    */
-  public Integer[] getBoundColumns();
+  Integer[] getBoundColumns();
 
 
   /**
    * Gets the list of all unbound components of the table.
    * @return the list of unbound components, never null
    */
-  public Integer[] getUnboundColumns();
+  Integer[] getUnboundColumns();
 
 
   /**
@@ -78,7 +78,7 @@ public interface FormTableBinder extends Binder {
    *
    * @return the removed binding, null if no such binding found
    */
-  public FormTableBinding removeBinding(int mColumn);
+  FormTableBinding removeBinding(int mColumn);
 
   /**
    * {@inheritDoc}
@@ -86,6 +86,6 @@ public interface FormTableBinder extends Binder {
    * Overridden to cast.
    */
   @Override
-  public FormTableBinding removeBinding(String bindingPath);
+  FormTableBinding removeBinding(String bindingPath);
 
 }

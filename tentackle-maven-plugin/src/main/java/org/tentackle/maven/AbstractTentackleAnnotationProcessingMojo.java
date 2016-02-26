@@ -143,14 +143,17 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     }
     else {
       // all from source dir with default java-extension
-      if (sourceDir.isDirectory() && sourceDir.list().length > 0) {
+      if (sourceDir == null) {
+        getLog().warn("no sourceDir");
+      }
+      else if (sourceDir.isDirectory() && sourceDir.list().length > 0) {
         final FileSet fs = new FileSet();
         fs.setDirectory(sourceDir.getPath());
         fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
         processFileSet(fs);
       }
       else {
-        getLog().warn("no or empty sourceDir " + sourceDir.getAbsolutePath());
+        getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
       }
     }
 
@@ -224,12 +227,12 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Process all files in a fileset.
    *
-   * @param fileSet
+   * @param fileSet the set of files
    * @throws MojoExecutionException
    */
   private void processFileSet(FileSet fileSet) throws MojoExecutionException {
 
-    if (fileSet.getDirectory() == null) {
+    if (fileSet.getDirectory() == null && sourceDir != null) {
       // directory missing: use sourceDir as default
       fileSet.setDirectory(sourceDir.getAbsolutePath());
     }
@@ -270,11 +273,13 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       options.add("-proc:only");    // run only the annotation processing
       options.add("-classpath");
       StringBuilder buf = new StringBuilder();
-      for (String element: classpathElements) {
-        if (buf.length() > 0) {
-          buf.append(File.pathSeparatorChar);
+      if (classpathElements != null) {
+        for (String element: classpathElements) {
+          if (buf.length() > 0) {
+            buf.append(File.pathSeparatorChar);
+          }
+          buf.append(element);
         }
-        buf.append(element);
       }
       options.add(buf.toString());
       // options started with -A are passed to the annotation processors (without leading -A)

@@ -351,7 +351,7 @@ public class SecurityDialog extends FormDialog {
    * Dispose if save ok.
    */
   private void doSave() {
-    if (saveRules() == false) {
+    if (!saveRules()) {
       FormError.show(SecuritySwingRdcBundle.getString("ERROR SAVING RULES"));
     }
     else  {

@@ -24,7 +24,6 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.text.DateFormatSymbols;
 import java.text.DecimalFormat;
@@ -162,7 +161,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
    * Creates a calendar panel in current locale, no time, today.
    */
   public FormCalendar() {
-    this((Date)null);
+    this(null);
   }
 
 
@@ -314,12 +313,7 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
           today.get(DAY_OF_YEAR) == firstCal.get(DAY_OF_YEAR))  {
         dayButton.setForeground(Color.blue);
       }
-      dayButton.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-          dayButton_actionPerformed(e);
-        }
-      });
+      dayButton.addActionListener(this::dayButton_actionPerformed);
       dayButtonGroup.add(dayButton);
       calendarPanel.add(dayButton, null);
 
@@ -335,16 +329,16 @@ public class FormCalendar extends org.tentackle.swing.FormPanel {
     int buttonCount = 1;
     int day = calendar.get(DAY_OF_MONTH);
     Border border = BorderFactory.createLineBorder(PlafUtilities.getInstance().getAlarmColor());
-    for (int i=0; i < comps.length; i++)  {
-      if (comps[i] instanceof JToggleButton)  {
-        JToggleButton button = (JToggleButton)(comps[i]);
-        if (ACTION_THISMONTH.equals(button.getActionCommand()))  {
+    for (Component comp : comps) {
+      if (comp instanceof JToggleButton) {
+        JToggleButton button = (JToggleButton) comp;
+        if (ACTION_THISMONTH.equals(button.getActionCommand())) {
           if (buttonCount == day) {
             button.setSelected(true);
             button.setBorder(border);
             button.setBorderPainted(true);
           }
-          else  {
+          else {
             button.setBorder(null);
             button.setBorderPainted(false);
           }

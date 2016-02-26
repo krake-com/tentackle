@@ -31,7 +31,7 @@ public class BindingVetoException extends Exception {
   private static final long serialVersionUID = -2817529018969629515L;
 
 
-  private boolean resyncRequested;     // true if model/view should be resync'd
+  private final boolean resyncRequested;     // true if model/view should be resync'd
 
 
   /**

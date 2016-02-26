@@ -30,6 +30,6 @@ package org.tentackle.security.permissions;
 public interface EditPermission extends WritePermission, ViewPermission {
 
   /** the permission's name. */
-  public static final String NAME = "EDIT";
+  String NAME = "EDIT";
 
 }

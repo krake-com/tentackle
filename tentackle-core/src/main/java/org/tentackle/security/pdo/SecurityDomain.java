@@ -61,4 +61,12 @@ public interface SecurityDomain extends DomainObject<Security> {
   @Bindable
   String securableToString();
 
+  /**
+   * Gets the domain context as a string.
+   *
+   * @return the context string
+   */
+  @Bindable
+  String contextToString();
+
 }

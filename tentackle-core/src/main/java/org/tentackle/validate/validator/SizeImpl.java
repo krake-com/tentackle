@@ -77,30 +77,31 @@ public class SizeImpl extends AbstractValidator<Size> {
     if (object == null) {
       return null;
     }
-    if (object instanceof Comparable) {
-      int min = annotation.min();
-      int max = annotation.max();
-      int size = 0;
-      if (object instanceof String) {
-        size = ((String) object).length();
-      }
-      else if (object instanceof Collection) {
-        size = ((Collection) object).size();
-      }
-      else if (object instanceof Map) {
-        size = ((Map) object).size();
-      }
-      else if (object instanceof Array) {
-        size = Array.getLength((Array) object);
-      }
-      if (size >= min && size <= max) {
-        return null;
-      }
-      return createFailedValidationResult("size = " + size + " (expected " + min + " <= size <= " + max + ")", validationContext);
+
+    int min = annotation.min();
+    int max = annotation.max();
+    int size;
+
+    if (object instanceof String) {
+      size = ((String) object).length();
+    }
+    else if (object instanceof Collection) {
+      size = ((Collection) object).size();
+    }
+    else if (object instanceof Map) {
+      size = ((Map) object).size();
+    }
+    else if (object instanceof Array) {
+      size = Array.getLength(object);
     }
     else  {
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());
     }
+
+    if (size >= min && size <= max) {
+      return null;
+    }
+    return createFailedValidationResult("size = " + size + " (expected " + min + " <= size <= " + max + ")", validationContext);
   }
 
 }

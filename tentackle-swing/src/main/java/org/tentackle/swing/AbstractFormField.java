@@ -291,10 +291,9 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
     if (eraseFirst) {
       // trigger eraseFirst in Document after this setText
       Document doc = getDocument();
-      try {
-        ((FormFieldDocument)doc).setEraseFirst(true);
+      if (doc instanceof FormFieldDocument) {
+        ((FormFieldDocument) doc).setEraseFirst(true);
       }
-      catch (Exception e) {}
       eraseFirst = false;
     }
 
@@ -579,13 +578,8 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
       if (savedValue == null) {
         return value != null;
       }
-      else  {
-        if (value != null) {
-          return !value.equals(savedValue);
-        }
-        else {
-          return true;
-        }
+      else {
+        return value == null || !value.equals(savedValue);
       }
     }
     return false;
@@ -694,11 +688,11 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
   @Override
   public void setEraseFirst(boolean erasefirst) {
     this.eraseFirst = erasefirst;
-    if (erasefirst == false)  {
+    if (!erasefirst)  {
       Document doc = getDocument();
-      try {
-        ((FormFieldDocument)doc).setEraseFirst(false);
-      } catch (Exception e) {}
+      if (doc instanceof FormFieldDocument) {
+        ((FormFieldDocument) doc).setEraseFirst(false);
+      }
     }
   }
 
@@ -752,7 +746,6 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
 
   @Override
   public void setDefaultColumns(int defaultColumns) {
-    this.defaultColumns = defaultColumns;
     if (defaultColumns < 0) {
       throw new IllegalArgumentException("defaultColumns less than zero.");
     }
@@ -1009,9 +1002,9 @@ public abstract class AbstractFormField extends JTextField implements FormFieldC
   @Override
   public void setConverter(Function<String,String> converter) {
     Document doc = getDocument();
-    try {
-      ((FormFieldDocument)doc).setConverter(converter);
-    } catch (Exception e) {}
+    if (doc instanceof FormFieldDocument) {
+      ((FormFieldDocument) doc).setConverter(converter);
+    }
   }
 
   @Override

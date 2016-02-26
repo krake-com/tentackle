@@ -35,8 +35,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public abstract class PdoTreeExtensionToggleNode {
 
-  private int toggleNodeId;                     // the unique toggle-node ID
-  private PdoTree tree;                 // the tree
+  private final int toggleNodeId;               // the unique toggle-node ID
+  private PdoTree tree;                         // the tree
   private DefaultMutableTreeNode popupNode;     // the popupnode
   private TreePath popupPath;                   // path for popupnode
   private int childIndex;                       // index in child-nodes of popupNode
@@ -169,7 +169,7 @@ public abstract class PdoTreeExtensionToggleNode {
     // insert the toggle node
     DefaultMutableTreeNode toggleNode = showToggleNode();
     // insert the list of objects into the toggle node
-    if (list != null && list.isEmpty() == false) {
+    if (list != null && !list.isEmpty()) {
       for (Object obj: list) {
         if (tree.isObjectAppendable(obj))  {
           PdoTreeObject to = new PdoTreeObject(obj, null);

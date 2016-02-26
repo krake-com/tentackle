@@ -36,7 +36,7 @@ public interface ObjectFilter<T> {
    * @param object the object to apply the filter criteria to
    * @return true if filter rules apply, else object does not fit
    */
-  public abstract boolean isValid(T object);
+  boolean isValid(T object);
 
 
   /**
@@ -45,6 +45,6 @@ public interface ObjectFilter<T> {
    * @param objects the original objects
    * @return the filtered objects
    */
-  public abstract Collection<T> filter(Collection<T> objects);
+  Collection<T> filter(Collection<T> objects);
 
 }

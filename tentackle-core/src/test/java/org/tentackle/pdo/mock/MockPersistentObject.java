@@ -716,4 +716,9 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return !isModified();
   }
 
+  @Override
+  public String toIdString() {
+    return getClassId() + ":" + getId();
+  }
+
 }

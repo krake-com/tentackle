@@ -61,9 +61,7 @@ public class DbPoolTest {
         Db db = (Db) pool.getSession();
         db.setOwnerThread(Thread.currentThread());
         PreparedStatementWrapper st = db.getPreparedStatement(new StatementKey(selectOneStatementId, getClass()), false,
-          () -> {
-            return "SELECT 1";
-          }
+          () -> "SELECT 1"
         );
         try (ResultSetWrapper rs = st.executeQuery()) {
           if (rs.next()) {

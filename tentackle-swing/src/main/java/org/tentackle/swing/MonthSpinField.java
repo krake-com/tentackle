@@ -31,7 +31,7 @@ import java.util.Locale;
 @SuppressWarnings("serial")
 public class MonthSpinField extends FormSpinField implements SpinListener {
 
-  private MonthComboBox monthCombo;
+  private final MonthComboBox monthCombo;
 
 
   /**

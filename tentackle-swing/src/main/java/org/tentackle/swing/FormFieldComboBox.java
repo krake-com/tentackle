@@ -222,7 +222,7 @@ public class FormFieldComboBox<E> extends FormComboBox<E> implements FormFieldCo
    * @param items the array of items
    */
   public FormFieldComboBox (E[] items) {
-    this ((AbstractFormField) null, items);
+    this (null, items);
   }
 
 
