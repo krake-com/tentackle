@@ -185,6 +185,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
               Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
+                // event filter will removed when stage is hidden (see RdcUtilities)
                 crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                   if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
                     T updatedPdo = firstPdo.reload();
@@ -209,10 +210,25 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       items.set(ndx, updatedPdo);
                     }
                   }
-                  else if (e.getEventType() == PdoEvent.READ) {
-                    tableView.getSelectionModel().clearSelection();
-                    tableView.getSelectionModel().select((T) e.getPdo());
-                    tableView.scrollTo(tableView.getSelectionModel().getSelectedIndex());
+                  else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
+                    // do fast checks first (assumed the user did not change the selection)
+                    int ndx = tableView.getSelectionModel().getSelectedIndex();
+                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx-1))) {
+                      ndx--;
+                    }
+                    else if (ndx < tableView.getItems().size() - 1 &&
+                             e.getPdo().equals(tableView.getItems().get(ndx+1))) {
+                      ndx++;
+                    }
+                    else {
+                      // full scan
+                      ndx = tableView.getItems().indexOf(e.getPdo());
+                    }
+                    if (ndx >= 0) {
+                      tableView.getSelectionModel().clearSelection();
+                      tableView.getSelectionModel().select(ndx);
+                      tableView.scrollTo(ndx);
+                    }
                   }
                   e.consume();
                 }

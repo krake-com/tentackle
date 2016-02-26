@@ -259,7 +259,7 @@ public class RdcUtilities {
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
       stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
-      stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> search.setItems(null));
+      stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> search.setItems(null));
     } // else: re-use stage
 
     if (configurator != null) {
