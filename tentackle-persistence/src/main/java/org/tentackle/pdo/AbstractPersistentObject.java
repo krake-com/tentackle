@@ -346,6 +346,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   protected void createAttributesInSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
+    super.createAttributesInSnapshot(snapshot);
     snapshot.objectIsSnapshot = true;
     if (editedSince != null) {
       snapshot.editedSinceSnapshot = (Timestamp) editedSince.clone();

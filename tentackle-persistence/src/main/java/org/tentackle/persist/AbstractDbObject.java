@@ -371,11 +371,23 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     catch (CloneNotSupportedException ex) {
       throw new InternalError();    // should never happen
     }
-    obj.setId(0);
-    obj.setSerial(0);
+    // don't use setters bec. obj might be immutable
+    ((AbstractDbObject) obj).id = 0;
+    ((AbstractDbObject) obj).serial = 0;
     return obj;
   }
 
+
+  /**
+   * Updates the attributes in snapshot object.<br>
+   * The snapshot object is assumed to be a clone of this object.
+   *
+   * @param snapshot the snapshot
+   */
+  protected void createAttributesInSnapshot(AbstractDbObject snapshot) {
+    snapshot.id = id;   // was cleared in clone()
+    snapshot.serial = serial;
+  }
 
 
   /**

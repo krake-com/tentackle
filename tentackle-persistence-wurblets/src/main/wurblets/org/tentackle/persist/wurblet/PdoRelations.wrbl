@@ -1528,6 +1528,16 @@
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
         if (rel.isComposite()) {
+          Relation nmRel = rel.getNmRelation();
+          String nmVar = null;
+          if (nmRel != null) {
+            if (rel.getNmMethodName() != null) {
+              nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+            }
+            else  {
+              nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+            }
+          }
 ]@
     // @(rel)@. @(rel.getComment())@
     @(var)@ = snapshot.@(var)@;
@@ -1536,8 +1546,7 @@
             if (rel.isTracked()) {
 ]@
     if (@(var)@ != null) {
-      @(var)@.clear();
-      @(var)@.addAll(snapshot.@(var)@Snapshot);
+      @(var)@.revertToSnapshot(snapshot.@(var)@Snapshot);
     }
 @[
             }
@@ -1557,6 +1566,11 @@
           if (rel.getRelationType() == RelationType.OBJECT) {
 ]@
     @(var)@RemovedId = snapshot.@(var)@RemovedId;
+@[
+          }
+          if (nmVar != null) {
+]@
+    @(nmVar)@ = null;
 @[
           }
         }

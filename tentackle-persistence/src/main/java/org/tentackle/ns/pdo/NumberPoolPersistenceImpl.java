@@ -1014,8 +1014,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     numberRangeList = snapshot.numberRangeList;
     if (numberRangeList != null) {
-      numberRangeList.clear();
-      numberRangeList.addAll(snapshot.numberRangeListSnapshot);
+      numberRangeList.revertToSnapshot(snapshot.numberRangeListSnapshot);
     }
     numberRangeListLoaded = snapshot.numberRangeListLoaded;
   }
