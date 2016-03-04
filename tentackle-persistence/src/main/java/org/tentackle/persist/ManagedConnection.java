@@ -616,7 +616,7 @@ public class ManagedConnection {
         buf.append(lDb.getOwnerThread());
       }
       for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
-        if (session.getDb() == lDb) {
+        if (session.getSession() == lDb) {
           // this is my session!
           buf.append(", ");
           buf.append(session);

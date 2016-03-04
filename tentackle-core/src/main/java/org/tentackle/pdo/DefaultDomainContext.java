@@ -81,7 +81,7 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * Creates a default context.
    *
-   * @param session the session
+   * @param session the session, null if thread-local
    * @param sessionImmutable true if session cannot be changed anymore
    */
   public DefaultDomainContext(Session session, boolean sessionImmutable) {
@@ -95,18 +95,12 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * Creates a mutable default context.
    *
-   * @param session the session
+   * @param session the session, null if thread-local
    */
   public DefaultDomainContext(Session session) {
     this(session, false);
   }
 
-  /**
-   * Creates a mutable default context with a thread-local session.
-   */
-  public DefaultDomainContext() {
-    this(null, false);
-  }
 
 
   @Override

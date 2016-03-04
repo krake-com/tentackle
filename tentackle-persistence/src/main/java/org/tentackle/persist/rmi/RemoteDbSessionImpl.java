@@ -357,7 +357,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Gets the session db connection
    * @return the db connection
    */
-  public Db getDb() {
+  public Db getSession() {
     return db;
   }
 
