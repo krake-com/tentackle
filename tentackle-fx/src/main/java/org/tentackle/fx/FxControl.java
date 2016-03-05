@@ -89,8 +89,6 @@ public interface FxControl {
 
   /**
    * Updates the view according to the model.
-   * <p>
-   * For containers this method will skip focused components.
    */
   void updateView();
 

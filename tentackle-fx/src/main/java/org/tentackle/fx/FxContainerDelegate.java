@@ -106,13 +106,25 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
   }
 
   @Override
-  public void updateView() {
-    for (Object obj: getContainer().getComponents()) {
-      if (obj instanceof FxControl) {
+  public void updateViewNonFocused() {
+    for (Object obj : getContainer().getComponents()) {
+      if (obj instanceof FxContainer) {
+        ((FxContainer) obj).updateViewNonFocused();
+      }
+      else if (obj instanceof FxControl) {
         if (!(obj instanceof Node) || !((Node) obj).isFocused()) {
           // only if not focused (user might currently be typing...)
           ((FxControl) obj).updateView();
         }
+      }
+    }
+  }
+
+  @Override
+  public void updateView() {
+    for (Object obj: getContainer().getComponents()) {
+      if (obj instanceof FxControl) {
+        ((FxControl) obj).updateView();
       }
     }
   }
