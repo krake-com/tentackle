@@ -26,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.StackPane;
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.skin.NoteSkin;
 
 /**
@@ -235,7 +236,9 @@ public class Note extends PopupControl {
    * @param ownerNode the owner node
    */
   public void show(Node ownerNode) {
-    super.show(ownerNode, 0.0, 0.0);
+    if (ownerNode != null && Fx.getStage(ownerNode) != null) {
+      super.show(ownerNode, 0.0, 0.0);
+    }
   }
 
   /**
