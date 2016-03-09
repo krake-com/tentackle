@@ -107,12 +107,26 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Gets the currently attached session.
    *
-   * @return the db
+   * @return the db, null if statement not attached
    */
   public Db getSession() {
     Db db = con.getSession();
     if (db == null) {
-      LOGGER.warning("statement wrapper " + this + " not attached to connection " + con);
+      LOGGER.warning("statement " + this + " not attached to connection " + con);
+    }
+    return db;
+  }
+
+  /**
+   * Same as {@link #getSession()} but nullsafe.<br>
+   * Throws PersistenceException if statement no more attached to connection.
+   *
+   * @return the session, never null
+   */
+  public Db getAttachedSession() {
+    Db db = getSession();
+    if (db == null) {
+      throw new PersistenceException("connection " + con + " already detached from statement " + this);
     }
     return db;
   }
@@ -243,22 +257,24 @@ public class StatementWrapper implements AutoCloseable {
       assertOpen();
       assertNotReadOnly();
       unmarkReady(); // check for being marked ready and mark it consumed again
-      getSession().setAlive(true);
+      Db db = getAttachedSession();
+      db.setAlive(true);
       setRunning(true);
       StatementHistory history = con.logStatementHistory(this);
       int count = executeUpdateImpl(sql);
       history.end();
       setRunning(false);
       if (count > 0) {
-        getSession().addToUpdateCount(count);
+        db.addToUpdateCount(count);
       }
       detachSession();
       return count;
     }
     catch (SQLException e)  {
-      if (!getSession().checkForDeadLink(e) &&
-          getSession().getBackend().isConstraintException(e)) {
-        throw new ConstraintException(getSession(), this.toString(), e);
+      Db db = getAttachedSession();
+      if (!db.checkForDeadLink(e) &&
+          db.getBackend().isConstraintException(e)) {
+        throw new ConstraintException(db, this.toString(), e);
       }
       else  {
         /**
@@ -268,7 +284,7 @@ public class StatementWrapper implements AutoCloseable {
          * Hence, it doesn't make sense to check for an access violation in order to
          * give the user a more detailed error message.
          */
-        throw new PersistenceException(getSession(), this.toString(), e);
+        throw new PersistenceException(db, this.toString(), e);
       }
     }
   }
@@ -329,10 +345,11 @@ public class StatementWrapper implements AutoCloseable {
     try {
       con.countForClearWarnings();
       assertOpen();
-      getSession().setAlive(true);
+      Db db = getAttachedSession();
+      db.setAlive(true);
       setRunning(true);   // will be cleared when the result set is closed
       if (withinTx) {
-        txVoucher = getSession().begin("executeQuery");  // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
+        txVoucher = db.begin("executeQuery");  // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
       }
       StatementHistory history = con.logStatementHistory(this);
       ResultSetWrapper resultSet = createResultSetWrapper(executeQueryImpl(sql));
@@ -343,19 +360,20 @@ public class StatementWrapper implements AutoCloseable {
       return resultSet;
     }
     catch (SQLException e)  {
-      getSession().checkForDeadLink(e);
+      Db db = getAttachedSession();
+      db.checkForDeadLink(e);
       if (withinTx) {
         try {
-          getSession().rollback(txVoucher);
+          db.rollback(txVoucher);
         }
         catch (RuntimeException rex) {
           // just log
-          getSession().logException(LOGGER, Level.SEVERE, "statement failed", e);
+          db.logException(LOGGER, Level.SEVERE, "statement failed", e);
         }
       }
       else  {
         // not within a transaction: application cannot rollback -> force cleanup
-        getSession().forceDetached();
+        db.forceDetached();
       }
       throw new PersistenceException(getSession(), this.toString(), e);
     }

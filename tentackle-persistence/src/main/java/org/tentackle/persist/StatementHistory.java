@@ -66,7 +66,7 @@ public class StatementHistory {
     */
   public StatementHistory(StatementWrapper statement) {
     this.parameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getParameters() : null;
-    this.txName = statement.getSession().getTxName();
+    this.txName = statement.getAttachedSession().getTxName();
     this.executionStart = System.currentTimeMillis();
     this.duration = new Duration();
     this.sql = statement.getSql();

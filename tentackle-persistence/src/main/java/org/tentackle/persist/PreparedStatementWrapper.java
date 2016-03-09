@@ -70,7 +70,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     this.statementKey = statementKey;
     this.sql = sql;
 
-    Db db = getSession();
+    Db db = getAttachedSession();
     // if not a one-shot statement
     if (db.getFetchSize() != 0) {
       // set fixed fetchsize (0 = use drivers default)
@@ -288,7 +288,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (s == null) {
         if (mapNull)  {
-          s = getSession().getBackend().getEmptyString();
+          s = getAttachedSession().getBackend().getEmptyString();
           getStatement().setString(ep, s);
         }
         else  {
@@ -439,7 +439,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public void setLong (int p, long l) {
-    if (getSession().getBackend().needSetLongWorkaround()) {
+    if (getAttachedSession().getBackend().needSetLongWorkaround()) {
       /**
        * long is translated to varchar in update statements by the Ingres JDBC-driver for some obscure reason.
        * Insert statements, however, work with long.
