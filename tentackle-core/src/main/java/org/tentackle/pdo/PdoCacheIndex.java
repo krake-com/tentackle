@@ -371,6 +371,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     DomainContext context = pdo.getDomainContext();
     DomainContext processedContext = cache.processContext(context);
     if (processedContext != context) {
+      pdo.setDomainContextImmutable(false);   // for sure
       pdo.setDomainContext(processedContext);
     }
     if (isReadOnly()) {
