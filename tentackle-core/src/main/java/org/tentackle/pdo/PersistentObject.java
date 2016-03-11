@@ -293,11 +293,9 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
 
   /**
-   * Checks whether object is deleted (or got a reserved ID).
-   * A deleted object with a reserved ID can be distinguished from
-   * an object with a reserved ID by its serial. See also {@link #isVirgin}.
+   * Checks whether object is deleted.
    *
-   * @return true if object has been deleted
+   * @return true if object has been removed from the database
    */
   boolean isDeleted();
 

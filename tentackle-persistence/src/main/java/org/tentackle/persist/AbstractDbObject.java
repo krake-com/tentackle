@@ -899,14 +899,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Checks whether object is deleted (or got a reserved ID).
-    * A deleted object with a reserved ID can be distinguished from
-   * an object with a reserved ID by its serial. See also {@link #isVirgin}.
+   * Checks whether object is deleted.
    *
    * @return true if object has been deleted
    */
   public boolean isDeleted()  {
-    return id < 0;
+    return id < 0 && serial > 0;
   }
 
 
