@@ -269,6 +269,22 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     }
   }
 
+  /**
+   * Overridden cause of "--fulltracked".
+   */
+  @Override
+  public boolean differsPersisted() {
+    return super.differsPersisted()
+           || !Objects.equals(namePersisted, name)
+           || !Objects.equals(realmPersisted, realm)
+           || !Objects.equals(descriptionPersisted, description)
+           || onlinePersisted != online
+           || lowWaterMarkPersisted != lowWaterMark
+           || requestSizePersisted != requestSize
+           || !Objects.equals(uplinkPersisted, uplink)
+           ;
+  }
+
   @Override
   public void getFields(ResultSetWrapper rs) {
     super.getFields(rs);

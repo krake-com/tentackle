@@ -1029,7 +1029,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Determines whether this object got some of its attributes modified.<br>
    * It does not check whether some of its components are modified!
-   * This method can also be used for non-tracked objects.
+   * This method can also be used for non-tracked entities.
    *
    * @return true if this object
    */
@@ -1039,10 +1039,21 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
+   * Returns whether any of the attributes differs from the values persisted in the database.<br>
+   * This method is only applicable to fulltracked entities and returns false if not fulltracked.
+   *
+   * @return true if differs, false if no change or entity isn't fulltracked
+   */
+  public boolean differsPersisted() {
+    return false;
+  }
+
+
+  /**
    * Determines whether this object is allowed to be stored in DB.<br>
    * By default all mutable objects are allowed to be saved.
    * Objects not allowed to be saved will force saveObject(), insert() and update()
- to return 'false' and silently skipped in saveCollection().
+   * to return 'false' and silently skipped in saveCollection().
    *
    * @return true if saveable
    */

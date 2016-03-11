@@ -330,11 +330,19 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Determines whether this object got some of its attributes modified.<br>
    * It does not check whether some of its components are modified!
-   * This method can also be used for non-tracked objects.
+   * This method can also be used for non-tracked entities.
    *
    * @return true if this object
    */
   boolean attributesModified();
+
+  /**
+   * Returns whether any of the attributes differs from the values persisted in the database.<br>
+   * This method is only applicable to fulltracked entities and returns false if not fulltracked.
+   *
+   * @return true if differs, false if no change or entity isn't fulltracked
+   */
+  boolean differsPersisted();
 
   /**
    * Determines whether this object is allowed to be stored in DB.<br>

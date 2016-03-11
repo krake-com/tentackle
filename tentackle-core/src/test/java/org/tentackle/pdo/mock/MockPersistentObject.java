@@ -236,6 +236,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public boolean differsPersisted() {
+    throw new UnsupportedOperationException("Not supported yet.");
+  }
+
+  @Override
   public boolean isPersistable() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
