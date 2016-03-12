@@ -182,7 +182,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * @param parent the parent object of this object in the tree, null = no parent
    * @return the childs
    */
-  <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeChildObjects(P parent);
+  <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeChildObjects(P parent);
 
   /**
    * Gets the maximum level of expansion allowed in a navigatable object tree.<br>
@@ -213,7 +213,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    * @param parent the parent object, null if no parent
    * @return the parents
    */
-  <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeParentObjects(P parent);
+  <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent);
 
   /**
    * Gets the tablename used in to initialize the table's gui.<br>

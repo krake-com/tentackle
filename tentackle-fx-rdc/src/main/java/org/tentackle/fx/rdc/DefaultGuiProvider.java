@@ -217,7 +217,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeChildObjects(P parent) {
+  public <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeChildObjects(P parent) {
     return new ArrayList<>();
   }
 
@@ -232,7 +232,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeParentObjects(P parent) {
+  public <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent) {
     return new ArrayList<>();
   }
 
