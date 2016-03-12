@@ -217,13 +217,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects() {
+  public <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeChildObjects(P parent) {
     return new ArrayList<>();
-  }
-
-  @Override
-  public <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects(Object parentObject) {
-    return getTreeChildObjects();
   }
 
   @Override
@@ -237,13 +232,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects() {
+  public <P extends PersistentDomainObject<P>> Collection<PersistentDomainObject<?>> getTreeParentObjects(P parent) {
     return new ArrayList<>();
-  }
-
-  @Override
-  public <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects(Object parentObject) {
-    return getTreeParentObjects();
   }
 
   @Override
@@ -252,7 +242,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public String getTreeText() {
+  public <P extends PersistentDomainObject<P>> String getTreeText(P parent) {
     if (getPdo() instanceof ShortLongText) {
       return ((ShortLongText) getPdo()).getShortText() + " : " + ((ShortLongText) getPdo()).getLongText();
     }
@@ -260,18 +250,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public String getTreeText(Object parent) {
-    return getTreeText();
-  }
-
-  @Override
-  public String getToolTipText() {
-    return getTreeText();
-  }
-
-  @Override
-  public String getToolTipText(Object parent) {
-    return getToolTipText();
+  public <P extends PersistentDomainObject<P>> String getToolTipText(P parent) {
+    return getTreeText(parent);
   }
 
   @Override

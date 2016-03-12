@@ -80,7 +80,9 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
     if (!childrenLoaded) {
       childrenLoaded = true;
       List<TreeItem<T>> childList = new ArrayList<>();
-      for (PersistentDomainObject child: getGuiProvider().getTreeChildObjects()) {
+      PdoTreeItem<T> parentItem = getParentPdoItem();
+      for (PersistentDomainObject child:
+              getGuiProvider().getTreeChildObjects(parentItem == null ? null : parentItem.getPdo())) {
         @SuppressWarnings("unchecked")
         TreeItem<T> treeItem = GuiProviderFactory.getInstance().createGuiProvider(child).createTreeItem();
         childList.add(treeItem);
