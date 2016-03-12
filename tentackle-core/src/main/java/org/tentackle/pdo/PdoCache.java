@@ -1432,20 +1432,20 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
   /**
    * Process the domain context.<br>
-   * If cache is readonly, the context will be replaced
-   * by a session-thread-local context.<br>
    * If the context is a root context it will be replaced
    * by the corresponding non-root context.
+   * If cache is readonly, the context will be replaced
+   * by a session-thread-local context.<br>
    *
    * @param context the original domain context
    * @return the context to for cache retrieval
    */
   protected DomainContext processContext(DomainContext context) {
-    if (isReadOnly()) {
-      context = context.getThreadLocalSessionContext();
-    }
     if (context.isRootContext()) {
       context = context.getNonRootContext();
+    }
+    if (isReadOnly()) {
+      context = context.getThreadLocalSessionContext();
     }
     return context;
   }

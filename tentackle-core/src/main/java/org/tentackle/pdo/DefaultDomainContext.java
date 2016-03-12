@@ -235,7 +235,7 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public String getInfo() {
-    return getSession() + ":{" + this + "}'";
+    return getSession() + ":{" + this + "}";
   }
 
 
