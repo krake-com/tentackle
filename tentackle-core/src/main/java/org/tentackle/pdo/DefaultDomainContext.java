@@ -234,8 +234,20 @@ public class DefaultDomainContext implements DomainContext {
 
 
   @Override
-  public String getInfo() {
-    return getSession() + ":{" + this + "}";
+  public String toDiagnosticString() {
+    StringBuilder buf = new StringBuilder();
+    if (isRootContext()) {
+      buf.append("root ");
+    }
+    buf.append("context '").append(this).append("' using ");
+    if (isSessionThreadLocal()) {
+      buf.append("thread-local ");
+    } // thread-local implicitly means immutable
+    else if (isSessionImmutable()) {
+      buf.append("immutable ");
+    }
+    buf.append("session ").append(getSession().getName());
+    return buf.toString();
   }
 
 

@@ -172,12 +172,12 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
 
 
   /**
-   * Get the long description of this context.
+   * Get the long diagnostic string of this context.<br>
    * Used for logging, for example.
    *
    * @return the long info
    */
-  String getInfo();
+  String toDiagnosticString();
 
   /**
    * Creates a root context for a given root entity.<br>

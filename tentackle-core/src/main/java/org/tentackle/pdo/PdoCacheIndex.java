@@ -561,13 +561,12 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     public synchronized String toString()  {
       if (!inToString)  {
         inToString = true;
-        String str = context.getInfo() + ":<" + key + ">";
+        String str = context.toDiagnosticString() + ", key '" + key + "'";
         inToString = false;
         return str;
       }
       return "?";
     }
   }
-
 
 }

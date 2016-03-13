@@ -406,7 +406,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         if (!inToString && LOGGER.isFinerLoggable()) {
           inToString = true;    // avoid recursion cause context.toString
           LOGGER.finer(object.toGenericString() + " context=" +
-                       object.getDomainContext().getInfo() + " expired in " + this);
+                       object.getDomainContext().toDiagnosticString() + " expired in " + this);
           inToString = false;
         }
       }
@@ -835,7 +835,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             if (!inToString && LOGGER.isFinerLoggable()) {
               inToString = true;    // avoid recursion cause context.toString
               LOGGER.finer("expired object " + obj.toGenericString() +
-                           " context=" + obj.getDomainContext().getInfo() + " removed from " + this);
+                           " context=" + obj.getDomainContext().toDiagnosticString() + " removed from " + this);
               inToString = false;
             }
             obj = null;   // treat as if not in cache
@@ -857,7 +857,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
               if (!inToString && LOGGER.isFinerLoggable()) {
                 inToString = true;    // avoid recursion cause of context.toString
                 LOGGER.finer("added object " + obj.toGenericString() +
-                             " context=" + obj.getDomainContext().getInfo() + " to " + this);
+                             " context=" + obj.getDomainContext().toDiagnosticString() + " to " + this);
                 inToString = false;
               }
             }
@@ -1238,7 +1238,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
                   if (!inToString && LOGGER.isFinerLoggable()) {
                     inToString = true;    // avoid recursion cause context.toString
                     LOGGER.finer("object " + object.toGenericString() +
-                                 " removed from list for context " + context.getInfo());
+                                 " removed from list for context " + context.toDiagnosticString());
                     inToString = false;
                   }
                 }
@@ -1252,7 +1252,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
                   if (!inToString && LOGGER.isFinerLoggable()) {
                     inToString = true;    // avoid recursion cause context.toString
                     LOGGER.finer("object " + reloadedObject.toGenericString() +
-                                 " reloaded in list for context " + context.getInfo());
+                                 " reloaded in list for context " + context.toDiagnosticString());
                     inToString = false;
                   }
                 }
