@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.AbstractInterceptor;
@@ -71,7 +72,13 @@ public class TransactionInterceptor extends AbstractInterceptor {
       }
       catch (Throwable ex) {
         try {
-          session.rollback(txVoucher);
+          if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
+            // log on server side if cause is a PersistenceException
+            session.rollback(txVoucher);
+          }
+          else {
+            session.rollbackSilently(txVoucher);
+          }
         }
         catch (RuntimeException rex) {
           LOGGER.severe("rollback failed", rex);

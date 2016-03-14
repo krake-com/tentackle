@@ -53,7 +53,7 @@ public interface DbRemoteDelegate extends RemoteDelegate {
 
   boolean commit(long txVoucher) throws RemoteException;
 
-  boolean rollback(long txVoucher) throws RemoteException;
+  boolean rollback(long txVoucher, boolean withLog) throws RemoteException;
 
   void setReadOnly(boolean flag) throws RemoteException;
 

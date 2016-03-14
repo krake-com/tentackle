@@ -1770,16 +1770,25 @@ public class Db implements Session, Cloneable {
   }
 
 
+  @Override
+  public boolean rollback(long txVoucher) {
+    return rollback(txVoucher, true);
+  }
+
+  @Override
+  public boolean rollbackSilently(long txVoucher) {
+    return rollback(txVoucher, false);
+  }
+
 
   /**
    * Rolls back a transaction if the corresponding begin() has started it.
    *
-   * @param txVoucher the transaction voucher, 0 if do nothing (nested tx)
-   *
+   * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
+   * @param withLog true if log via INFO
    * @return true if tx was really rolled back, false if not.
    */
-  @Override
-  public boolean rollback(long txVoucher)  {
+  public boolean rollback(long txVoucher, boolean withLog)  {
 
     LOGGER.finer("rolling back {0}", transaction);
 
@@ -1790,7 +1799,7 @@ public class Db implements Session, Cloneable {
 
     if (isRemote()) {
       try {
-        rolledBack = rdel.rollback(txVoucher);
+        rolledBack = rdel.rollback(txVoucher, withLog);
         if (rolledBack) {
           transaction = null;
           autoCommit = true;   // now outside tx again
@@ -1828,7 +1837,7 @@ public class Db implements Session, Cloneable {
             }
             transaction.invokeRollbackTxRunnables();
             if (con != null) {
-              con.rollback();         // avoid a commit ...
+              con.rollback(withLog);  // avoid a commit ...
               setAutoCommit(true);    // ... in setAutoCommit
             }
             else {
