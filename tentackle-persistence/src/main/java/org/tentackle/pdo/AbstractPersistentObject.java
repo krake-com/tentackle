@@ -1685,19 +1685,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     DomainContext context = getDomainContext();
 
     if (po.isRootEntity()) {
-      DomainContext rootContext = context.getRootContext(derivedPdo);   // already checked in assertRootContextIsAccepted!
-      if (rootContext.getRootClassId() != po.getClassId() ||
-          rootContext.getRootId() != po.getId()) {
-        // forge attempt or wrong context: check permission
-        if (!po.isReadAllowed()) {
-          return null;
-        }
+      // set the root-context for sure
+      po.setSessionHolder(context.getRootContext(derivedPdo));   // no setDomainContext!
+      // check always because context wasn't checked by assertRootContextIsAccepted
+      // but simply created along with the PDO!
+      if (!po.isReadAllowed()) {
+        return null;
       }
-      // set its own root context
-      po.setSessionHolder(rootContext);   // no setDomainContext!
     }
     else {
-      // optional security checks for components (the root context is already checked before the select)
+      // optional security checks for components (the root context is already checked by assertRootContextIsAccepted)
       if (po.getRootId() != 0 && po.getRootId() != context.getRootId() ||
           po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
         // fast check failed!
@@ -1709,8 +1706,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           if (sr.isAccepted()) {
             return derivedPdo;
           }
-          throw new SecurityException(po, sr.explain("no read permission for root entity " +
-                  po.getRootClassId() + "[" + po.getRootId() + "]"));
+          // no permission for root-entity -> component does not exist as the root does for this user
+          return null;
         }
         throw new SecurityException(po, "unexpected root context " +
                 context.getRootClassId() + "[" + context.getRootId() + "], expected " +
@@ -3515,7 +3512,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertPersistable();
       assertRootEntity();
       assertWritePermission();
-      
+
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
                                                            this::createUpdateTokenLockOnlySql);
