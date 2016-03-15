@@ -1284,7 +1284,13 @@ public class Db implements Session, Cloneable {
     }
     catch (RuntimeException ex) {
       try {
-        rollback(txVoucher);
+        if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
+          // log only if cause is a PersistenceException
+          rollback(txVoucher);
+        }
+        else {
+          rollbackSilently(txVoucher);
+        }
       }
       catch (RuntimeException rex) {
         LOGGER.severe("rollback failed", rex);

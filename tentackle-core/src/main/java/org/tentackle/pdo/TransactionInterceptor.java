@@ -73,7 +73,7 @@ public class TransactionInterceptor extends AbstractInterceptor {
       catch (Throwable ex) {
         try {
           if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
-            // log on server side if cause is a PersistenceException
+            // log only if cause is a PersistenceException
             session.rollback(txVoucher);
           }
           else {

@@ -28,6 +28,7 @@ import org.tentackle.persist.StatementId;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
+import org.tentackle.security.SecurityResult;
 import org.tentackle.security.pdo.SecurityPersistenceImpl;
 
 
@@ -399,28 +400,32 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
   /**
-   * Check the view security for a single object.
+   * Check the view security for a PDO.
    * <p>
    * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Components are viewable if their root-entity is viewable.
    *
    * @param object the object to check the security rules for.
    *
    * @return false if operation is denied
    */
   public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
-    return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getViewPermission());
+    if (checkSecurity) {
+      Permission viewPermission = SecurityFactory.getInstance().getViewPermission();
+      if (object.isRootEntity()) {
+        return object.isPermissionAccepted(viewPermission);
+      }
+      return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                object.getBaseContext(), viewPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+    }
+    return true;
   }
 
   /**
-   * Check the edit security for a single object.
+   * Check the edit security for a PDO.
    * <p>
-   * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Only root-entities are editable.
+   * Components are not editable by default (because only the root can be persisted).
    *
    * @param object the object to check the security rules for.
    *
@@ -428,8 +433,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
     return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission());
+           (object.isRootEntity() &&
+            object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission()));
   }
 
 

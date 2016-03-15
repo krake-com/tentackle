@@ -46,7 +46,7 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
   public ViewItem(PdoTreeCell<T> cell) {
     super(RdcFxRdcBundle.getString("VIEW"), Fx.createImageView("view"));
     T pdo = cell.getItem();
-    if (cell.getPdoTreeItem().getGuiProvider().editorExists()) {
+    if (cell.getPdoTreeItem().getGuiProvider().editorExists() && pdo.isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
       setOnAction(e -> Rdc.displayCrudStage(pDo, false, Modality.NONE, Fx.getStage(cell)));
     }
