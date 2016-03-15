@@ -681,8 +681,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         }
         catch (RuntimeException e)  {
           // unique violation detected: log that and invalidate cache
-          LOGGER.warning("shrinking failed -> cache invalidated", e);
-          printStatistics();
+          LOGGER.warning("shrinking cache " + this + " failed -> invalidated!\n" + printStatistics(), e);
           invalidateImpl();
         }
       }
