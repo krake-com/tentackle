@@ -1354,7 +1354,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Reads the values from a result-set into this object.
    *
    * @param rs is the result set (wrapper)
-   * @return the persistent object if valid, null if this object should be invisible to the user
+   * @return the persistent object, never null
    */
   @SuppressWarnings("unchecked")
   public P readFromResultSetWrapper(ResultSetWrapper rs)  {

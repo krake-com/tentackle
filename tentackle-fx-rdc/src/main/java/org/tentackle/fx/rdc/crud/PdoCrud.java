@@ -123,11 +123,12 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private FxButton cancelButton;
 
 
-  private ResourceBundle resources;   // the resources
-  private PdoEditor<T> editor;        // the editor
-  private List<T> pdoList;            // optional list of PDOs
-  private int pdoListIndex;           // index in list
-  private boolean editable;           // editability requested by the application
+  private ResourceBundle resources;                 // the resources
+  private PdoEditor<T> editor;                      // the editor
+  private SimpleBooleanProperty editAllowed;        // is editing allowed effectively
+  private List<T> pdoList;                          // optional list of PDOs
+  private int pdoListIndex;                         // index in list
+  private boolean editable;                         // editability requested by the application
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
 
 
@@ -234,13 +235,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     editor.getContainer().clearErrors();          // clears any pending error messages
     editor.getContainer().invalidateSavedView();  // don't triggerViewModified via updateView
     editor.getContainer().updateView();           // map model to view
-    SimpleBooleanProperty editAllowed = new SimpleBooleanProperty();
+    editAllowed = new SimpleBooleanProperty();
     if (editor.isViewAllowed()) {
       noViewLabel.setVisible(false);
       editor.getView().setVisible(true);
-      editAllowed.set(editor.isEditAllowed());
+      editAllowed.set(isEditable() && editor.isEditAllowed());
       // make contents editable if application requested it and the pdo is editable
-      editor.setChangeable(isEditable() && editAllowed.get());
+      editor.setChangeable(editAllowed.get());
     }
     else {
       noViewLabel.setVisible(true);
@@ -251,12 +252,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     updateTitle();
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     treeButton.setDisable(pdo.isNew() || !guiProvider.providesTreeChildObjects());
-    deleteButton.setDisable(!editor.isRemoveAllowed());
-    newButton.setDisable(!editAllowed.get());
+    deleteButton.setDisable(!editAllowed.get() || !editor.isRemoveAllowed());
+    newButton.setDisable(!editAllowed.get() || !editor.isNewAllowed());
     saveButton.disableProperty().bind(getContainer().viewModifiedProperty().and(editAllowed).not());
-    securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(pdo.getDomainContext()));
+    securityButton.setDisable(!pdo.isRootEntity() ||
+                              !SecurityDialogFactory.getInstance().isDialogAllowed(pdo.getDomainContext()));
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
-    if (pdo.isWriteAllowed() && !pdo.isNew() && pdo.isTokenLockProvided()) {
+    if (editAllowed.get() && !pdo.isNew() && pdo.isTokenLockProvided()) {
       try {
         pdo.requestTokenLock();
       }
@@ -501,7 +503,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public boolean releasePdo() {
     T oldPdo = getPdo();
-    if (oldPdo != null && oldPdo.isWriteAllowed()) {
+    if (oldPdo != null && editAllowed.get()) {
       if (getContainer().isViewModified()) {
         Boolean answer = Rdc.showSaveDiscardCancelDialog();
         if (Boolean.TRUE.equals(answer)) {
