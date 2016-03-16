@@ -701,9 +701,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       }
     }
     if (errors.length() > 0) {
+      LOGGER.info("validation errors:\n{0}", errors.toString());
       Fx.error(errors.toString());
     }
     if (warnings.length() > 0) {
+      LOGGER.info("validation warnings:\n{0}", warnings.toString());
       Fx.info(warnings.toString());
     }
 
