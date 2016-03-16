@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo;
 
-import java.util.Collection;
 import java.util.List;
 import org.tentackle.persist.AbstractDbObject;
 import org.tentackle.persist.Db;
@@ -28,7 +27,6 @@ import org.tentackle.persist.StatementId;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
-import org.tentackle.security.SecurityResult;
 import org.tentackle.security.pdo.SecurityPersistenceImpl;
 
 
@@ -380,8 +378,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       if (object.isRootEntity()) {
         return object.isPermissionAccepted(readPermission);
       }
-      return SecurityFactory.getInstance().getSecurityManager().evaluate(
-                object.getBaseContext(), readPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), readPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
     }
     return true;
   }
@@ -391,6 +391,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * <p>
    * Only root-entities are writable.
    * Components are not writable by default (because only the root can be persisted).
+   * <p>
+   * Notice that the persistence layer will not invoke isWriteAllowed on components,
+   * because the root is already checked when saving or deleting a PDO. Remember that
+   * only root entities can be persisted by the application!
    *
    * @param object the object to check the security rules for.
    *
@@ -417,8 +421,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       if (object.isRootEntity()) {
         return object.isPermissionAccepted(viewPermission);
       }
-      return SecurityFactory.getInstance().getSecurityManager().evaluate(
-                object.getBaseContext(), viewPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), viewPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
     }
     return true;
   }
