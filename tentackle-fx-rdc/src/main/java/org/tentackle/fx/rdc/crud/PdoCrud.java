@@ -30,14 +30,19 @@ import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
+import javafx.stage.Popup;
 import javafx.stage.Stage;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.AbstractFxController;
@@ -345,6 +350,24 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   @Override
   public void configure() {
     eventProxy = new EventListenerProxy<>(getView());
+
+    treeButton.addEventHandler(MouseEvent.ANY, (MouseEvent event) -> {
+      if (event.isPopupTrigger()) {
+        T pdo = getPdo();
+        if (pdo != null && !pdo.isNew()) {
+          // show object ID in a popup
+          Popup popup = new Popup();
+          TextField field = new TextField(Long.toString(pdo.getId()));
+          field.setPrefColumnCount(field.getText().length());
+          field.setEditable(false);
+          popup.getContent().add(field);
+          popup.setAutoHide(true);
+          Bounds bounds = treeButton.localToScreen(treeButton.getBoundsInLocal());
+          popup.show(treeButton, bounds.getMinX() + bounds.getWidth()/2, bounds.getMinY() + bounds.getHeight() / 2);
+        }
+        event.consume();
+      }
+    });
 
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
