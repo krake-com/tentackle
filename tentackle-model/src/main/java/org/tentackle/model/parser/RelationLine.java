@@ -33,7 +33,7 @@ import org.tentackle.model.ModelException;
  * Properties:<p>
  *
  * relation = &lt;object|list|reversed&gt; [composite] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
- *            [serialized] [transientonsave] [reversed]
+ *            [serialized] [remoteclear] [reversed]
  * <ul>
  *    <li>object: single object association. This is the default.</li>
  *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
@@ -46,7 +46,7 @@ import org.tentackle.model.ModelException;
  *    <li>writeonly: don't generate get-method</li>
  *    <li>nomethod: don't generate set- and get-method (shorthand for readonly writeonly)</li>
  *    <li>serialized (only if lazy and not composite): lazy non-composite references are transient by default. "serialized" makes them non-transient.</li>
- *    <li>transientonsave: clear serialized relation before save (i.e. sending to server)</li>
+ *    <li>remoteclear: clear serialized relation before save (i.e. sending to server)</li>
  * </ul>
  * If the relation is associated to an attribute the readonly and writeonly flags are overwritten
  * by the attribute.
