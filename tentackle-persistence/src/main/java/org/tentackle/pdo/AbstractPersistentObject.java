@@ -407,7 +407,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     super.revertAttributesToSnapshot(snapshot);
 
     contextImmutable = snapshot.contextImmutable;
-    pdo = (T) snapshot.pdo;
     copiedObject = (T) snapshot.copiedObject;
     editedBy = snapshot.editedBy;
     editedSince = snapshot.editedSince;
@@ -425,6 +424,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     snapshots = snapshot.snapshots;
     normText = snapshot.normText;
     validated = snapshot.validated;
+    persistable = snapshot.persistable;
   }
 
 
@@ -468,8 +468,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
-    if (snapshots.contains(snapshot)) {
-      throw new PersistenceException(this, "snapshot already added");
+    for (T sh: snapshots) {
+      // we cannot use contains() because all snaphots have the same object ID
+      if (sh == snapshot) {
+        throw new PersistenceException(this, "snapshot already added");
+      }
     }
     snapshots.add(snapshot);
   }
@@ -484,9 +487,15 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (!snapshot.isSnapshot()) {
       throw new PersistenceException(this, "not a snapshot");
     }
-    if (snapshots == null || !snapshots.contains(snapshot)) {
-      throw new PersistenceException(this, "invalid snapshot");
+    if (snapshots != null) {
+      for (T sh : snapshots) {
+        // we cannot use contains() because all snaphots have the same object ID
+        if (sh == snapshot) {
+          return;
+        }
+      }
     }
+    throw new PersistenceException(this, "invalid snapshot");
   }
 
 

@@ -59,9 +59,9 @@ import org.tentackle.security.DefaultSecurityManager;
  * index grantee := granteeid, granteeclassid
  *
  * ## validations
- * objectClassName: @NotNull(condition="{object.objectClassId==0}")
- * objectClassId: @NotNull(condition="{object.objectClassName==null}")
- * permissions: @NotNull
+ * objectClassName: @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
+ * objectClassId: @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
+ * permissions: @NotNull(message="{ @('missing permissions') }")
  *
  * @<
  */
