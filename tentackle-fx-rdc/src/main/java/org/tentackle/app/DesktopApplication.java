@@ -310,7 +310,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
       Platform.runLater(() -> fxApplication.showApplicationStatus(msg, progress));
       try {
         // wait some time to show...
-        Thread.sleep(100);
+        Thread.sleep(50);
       }
       catch (InterruptedException ix) {
         // ignore
