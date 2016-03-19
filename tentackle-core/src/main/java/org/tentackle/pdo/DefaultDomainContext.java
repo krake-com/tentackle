@@ -293,7 +293,7 @@ public class DefaultDomainContext implements DomainContext {
   @Override
   public int hashCode() {
     int hash = 7 + (int) getContextId() + (getClass().hashCode() & 0xffff);
-    hash = 53 * hash + (getSession() != null ? getSession().hashCode() : 0);
+    hash = 53 * hash + (session != null ? session.hashCode() : 0);    // not getSession() bec. of thread-local!
     return hash;
   }
 
