@@ -82,7 +82,12 @@ public class ColumnMetaData {
     type = resultSet.getInt("DATA_TYPE");
     typeName = resultSet.getString("TYPE_NAME");
     defaultValue = resultSet.getString("COLUMN_DEF");
-    autoIncrement = Objects.equals("YES", resultSet.getString("IS_AUTOINCREMENT"));
+    try {
+      autoIncrement = Objects.equals("YES", resultSet.getString("IS_AUTOINCREMENT"));
+    }
+    catch (SQLException sqx) {
+      // backend does not support this, since JDBC 4.1 (Java7)
+    }
     try {
       generated = Objects.equals("YES", resultSet.getString("IS_GENERATEDCOLUMN"));
     }
