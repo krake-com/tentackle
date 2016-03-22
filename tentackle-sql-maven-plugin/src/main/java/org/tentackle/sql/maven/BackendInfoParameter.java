@@ -18,9 +18,15 @@
 
 package org.tentackle.sql.maven;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Predicate;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.model.fileset.FileSet;
@@ -78,13 +84,24 @@ public class BackendInfoParameter {
   /** optional migration hints. */
   public List<FileSet> migrationHints;
 
+  /**
+   * Optional file version filter.<br>
+   * There are 2 kinds of filters:
+   * <ol>
+   * <li>Strings holding a version number</li>
+   * <li>String starting with 'SELECT' which is an SQL-select returning a version number (the current database version)</li>
+   * </ol>
+   */
+  public String versionFilter;
+
 
   /**
    * Creates a backend info from this parameter.
    *
+   * @param logger the maven logger
    * @return the backend info
    */
-  public BackendInfo createBackendInfo() {
+  public BackendInfo createBackendInfo(Log logger) {
     if (schemaNames != null) {
       schemas = new ArrayList<>();
       StringTokenizer stok = new StringTokenizer(schemaNames, ",");
@@ -104,16 +121,86 @@ public class BackendInfoParameter {
   /**
    * Load the migration hints.
    *
+   * @param backendInfo the backend info
    * @param logger the maven logger
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @return the hints the migration hints
    * @throws MojoExecutionException if failed
    */
-  public MigrationHints loadMigrationHints(Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public MigrationHints loadMigrationHints(BackendInfo backendInfo, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
     MigrationHints hints = new MigrationHints();
-    hints.load(migrationHints, logger, verbose, resourceDirs);
+    if (versionFilter != null && versionFilter.toUpperCase().startsWith("SELECT ")) {
+      String effectiveFilter = null;
+      try (Connection con = backendInfo.connect()) {
+        try (Statement stmt = con.createStatement()) {
+          ResultSet rs = stmt.executeQuery(versionFilter);
+          if (rs.next()) {
+            effectiveFilter = rs.getString(1);
+          }
+        }
+        if (effectiveFilter == null) {
+          throw new MojoExecutionException(versionFilter + " returned no results!");
+        }
+        versionFilter = effectiveFilter;
+      }
+      catch (SQLException sx) {
+        throw new MojoExecutionException("cannot retrieve filter from database", sx);
+      }
+    }
+    if (versionFilter != null) {
+      logger.debug("applying filter '" + versionFilter + "'");
+    }
+    hints.load(migrationHints, versionFilter == null ? null : new FileFilter(), logger, verbose, resourceDirs);
     return hints;
+  }
+
+
+  /**
+   * Skips all hints with an older version than given.
+   */
+  private class FileFilter implements Predicate<File> {
+
+    @Override
+    public boolean test(File t) {
+      // versionFilter directory of file
+      File dir = t.getParentFile();
+      if (dir != null) {
+        String name = dir.getName();
+        int ndx = name.indexOf('-');    // cut -SNAPSHOT and things like that
+        if (ndx > 0) {
+          name = name.substring(0, ndx);
+        }
+        // split version major/minor/hotfix
+        StringTokenizer filterTok = new StringTokenizer(versionFilter, ".");
+        StringTokenizer nameTok = new StringTokenizer(name, ".");
+        while (filterTok.hasMoreTokens() && nameTok.hasMoreTokens()) {
+          String f = filterTok.nextToken();
+          String n = nameTok.nextToken();
+          try {
+            int fNum = Integer.valueOf(f);
+            try {
+              int nNum = Integer.valueOf(n);
+              if (fNum > nNum) {
+                return false;
+              }
+            }
+            catch (NumberFormatException nfx) {
+              // not a number
+              return false;
+            }
+          }
+          catch (NumberFormatException nfx) {
+            // not a number: compare as strings
+            if (f.compareTo(n) > 0) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+
   }
 
 }
