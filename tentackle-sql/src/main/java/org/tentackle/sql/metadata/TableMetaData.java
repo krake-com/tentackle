@@ -35,14 +35,14 @@ import org.tentackle.sql.BackendException;
  */
 public class TableMetaData {
 
-  protected final ModelMetaData modelMetaData;                  // the model containing this table
-  protected final String modelTableName;                        // the full table name including optional schema
-  protected String schemaName;                                  // the schema name, null if default or none
-  protected String tableName;                                   // the tablename without schema
-  protected String comment;                                     // the comment
-  protected final Collection<ColumnMetaData> columns;           // the columns
-  protected final Map<String,IndexMetaData> indexes;            // the indexes
-  protected final Map<String,ForeignKeyMetaData> foreignKeys;   // the foreign keys
+  private final ModelMetaData modelMetaData;                  // the model containing this table
+  private final String modelTableName;                        // the full table name including optional schema
+  private String schemaName;                                  // the schema name, null if default or none
+  private String tableName;                                   // the tablename without schema
+  private String comment;                                     // the comment
+  private final Collection<ColumnMetaData> columns;           // the columns
+  private final Map<String,IndexMetaData> indexes;            // the indexes
+  private final Map<String,ForeignKeyMetaData> foreignKeys;   // the foreign keys
 
 
   /**
@@ -233,10 +233,20 @@ public class TableMetaData {
 
   /**
    * Gets the comment.
+   *
    * @return the comment, null if none
    */
   public String getComment() {
     return comment;
+  }
+
+  /**
+   * Sets the comment.
+   *
+   * @param comment the comment, null if none
+   */
+  public void setComment(String comment) {
+    this.comment = comment;
   }
 
   /**

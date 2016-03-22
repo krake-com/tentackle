@@ -33,12 +33,12 @@ import org.tentackle.common.Constants;
  */
 public class IndexMetaData {
 
-  protected final TableMetaData tableMetaData;                // the table the index belongs to
-  protected final List<IndexColumnMetaData> columns;          // the index columns
+  private final TableMetaData tableMetaData;                // the table the index belongs to
+  private final List<IndexColumnMetaData> columns;          // the index columns
 
-  protected String indexName;                                 // the index name (without schema)
-  protected boolean unique;                                   // true if unique index
-  protected String filterCondition;                           // filter condition
+  private String indexName;                                 // the index name (without schema)
+  private boolean unique;                                   // true if unique index
+  private String filterCondition;                           // filter condition
 
 
   /**
@@ -113,10 +113,30 @@ public class IndexMetaData {
   }
 
   /**
-   * @return the unique
+   * Sets the index name.
+   *
+   * @param indexName the name in lowercase without schema
+   */
+  public void setIndexName(String indexName) {
+    this.indexName = indexName;
+  }
+
+  /**
+   * Returns whether index is unique.
+   *
+   * @return true if unique
    */
   public boolean isUnique() {
     return unique;
+  }
+
+  /**
+   * Sets whether index is unique.
+   *
+   * @param unique true if unique
+   */
+  public void setUnique(boolean unique) {
+    this.unique = unique;
   }
 
   /**
@@ -126,6 +146,15 @@ public class IndexMetaData {
    */
   public String getFilterCondition() {
     return filterCondition;
+  }
+
+  /**
+   * Sets the filter condition.
+   *
+   * @param filterCondition the filter, null if none
+   */
+  public void setFilterCondition(String filterCondition) {
+    this.filterCondition = filterCondition;
   }
 
   /**

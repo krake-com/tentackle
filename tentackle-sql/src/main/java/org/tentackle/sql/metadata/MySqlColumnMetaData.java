@@ -36,8 +36,8 @@ public class MySqlColumnMetaData extends ColumnMetaData {
 
   @Override
   public void validate() {
-    if (comment != null && comment.isEmpty()) {
-      comment = null;
+    if (getComment() != null && getComment().isEmpty()) {
+      setComment(null);
     }
     // leave defaultValue as is (see MySql.isDefaultEqual)
   }
