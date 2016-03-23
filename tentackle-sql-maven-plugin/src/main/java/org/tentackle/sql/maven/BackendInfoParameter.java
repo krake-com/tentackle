@@ -85,14 +85,17 @@ public class BackendInfoParameter {
   public List<FileSet> migrationHints;
 
   /**
-   * Optional file version filter.<br>
+   * Optional minimum version number.<br>
+   * This is usually the version of the database model.
+   * <p>
    * There are 2 kinds of filters:
    * <ol>
-   * <li>Strings holding a version number</li>
+   * <li>Strings holding a fixed version number, e.g. 3.1.0</li>
    * <li>String starting with 'SELECT' which is an SQL-select returning a version number (the current database version)</li>
    * </ol>
+   * If given, the version number will be applied to the <em>directories</em> of the hint-files.
    */
-  public String versionFilter;
+  public String minVersion;
 
 
   /**
@@ -130,77 +133,40 @@ public class BackendInfoParameter {
    */
   public MigrationHints loadMigrationHints(BackendInfo backendInfo, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
     MigrationHints hints = new MigrationHints();
-    if (versionFilter != null && versionFilter.toUpperCase().startsWith("SELECT ")) {
+    if (minVersion != null && minVersion.toUpperCase().startsWith("SELECT ")) {
       String effectiveFilter = null;
       try (Connection con = backendInfo.connect()) {
         try (Statement stmt = con.createStatement()) {
-          ResultSet rs = stmt.executeQuery(versionFilter);
+          ResultSet rs = stmt.executeQuery(minVersion);
           if (rs.next()) {
             effectiveFilter = rs.getString(1);
           }
         }
         if (effectiveFilter == null) {
-          throw new MojoExecutionException(versionFilter + " returned no results!");
+          throw new MojoExecutionException(minVersion + " returned no results!");
         }
-        versionFilter = effectiveFilter;
+        minVersion = effectiveFilter;
       }
       catch (SQLException sx) {
         throw new MojoExecutionException("cannot retrieve filter from database", sx);
       }
     }
-    if (versionFilter != null) {
-      logger.debug("applying filter '" + versionFilter + "'");
+    if (minVersion != null) {
+      logger.debug("applying filter '" + minVersion + "'");
     }
-    hints.load(migrationHints, versionFilter == null ? null : new FileFilter(), logger, verbose, resourceDirs);
+    hints.load(migrationHints, createFilter(minVersion), logger, verbose, resourceDirs);
     return hints;
   }
 
 
   /**
-   * Skips all hints with an older version than given.
+   * Creates a filter according to the version.
+   *
+   * @param version the minimum version, null if none
+   * @return the filter, null if version is null
    */
-  private class FileFilter implements Predicate<File> {
-
-    @Override
-    public boolean test(File t) {
-      // versionFilter directory of file
-      File dir = t.getParentFile();
-      if (dir != null) {
-        String name = dir.getName();
-        int ndx = name.indexOf('-');    // cut -SNAPSHOT and things like that
-        if (ndx > 0) {
-          name = name.substring(0, ndx);
-        }
-        // split version major/minor/hotfix
-        StringTokenizer filterTok = new StringTokenizer(versionFilter, ".");
-        StringTokenizer nameTok = new StringTokenizer(name, ".");
-        while (filterTok.hasMoreTokens() && nameTok.hasMoreTokens()) {
-          String f = filterTok.nextToken();
-          String n = nameTok.nextToken();
-          try {
-            int fNum = Integer.valueOf(f);
-            try {
-              int nNum = Integer.valueOf(n);
-              if (fNum > nNum) {
-                return false;
-              }
-            }
-            catch (NumberFormatException nfx) {
-              // not a number
-              return false;
-            }
-          }
-          catch (NumberFormatException nfx) {
-            // not a number: compare as strings
-            if (f.compareTo(n) > 0) {
-              return false;
-            }
-          }
-        }
-      }
-      return true;
-    }
-
+  public Predicate<File> createFilter(String version) {
+    return version == null ? null : new VersionFileFilter(version);
   }
 
 }
