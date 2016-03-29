@@ -96,6 +96,7 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
   /**
    * Gets the parent PdoTreeItem.
    *
+   * @param <P> the parent PDO type
    * @return the parent, null if no parent or parent is no PdoTreeItem
    */
   @SuppressWarnings("unchecked")
