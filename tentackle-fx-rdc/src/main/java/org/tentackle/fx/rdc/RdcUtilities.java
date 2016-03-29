@@ -311,8 +311,8 @@ public class RdcUtilities {
       PdoSearch<T> search = (PdoSearch<T>) iter.next();
       Stage stage = Fx.getStage(search.getView());
       if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-        search.setPdo(pdo);
         search.setItems(null);
+        search.setPdo(pdo);
         search.showTable();
         return search;
       }
