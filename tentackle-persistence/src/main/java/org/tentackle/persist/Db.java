@@ -24,8 +24,13 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.RMIClientSocketFactory;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -44,6 +49,8 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
 import org.tentackle.daemon.Scavenger;
+import org.tentackle.io.SocketFactoryFactory;
+import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
@@ -173,8 +180,25 @@ public class Db implements Session, Cloneable {
 
 
 
-  /** property key for IdSource */
+  /**
+   * property key for IdSource.
+   */
   public static final String PROPERTY_IDSOURCE = "idsource";
+
+  /**
+   * The property key for the socket factory.
+   */
+  public static final String SOCKET_FACTORY = "socketfactory";
+
+  /**
+   * The property key for the SSL cipher suites.
+   */
+  public static final String CIPHER_SUITES = "ciphersuites";
+
+  /**
+   * The property key for the SSL protocols.
+   */
+  public static final String PROTOCOLS = "protocols";
 
 
   /**
@@ -295,8 +319,8 @@ public class Db implements Session, Cloneable {
   private IdSource defaultIdSource;                       // default ID-Source for db-connection (if not overridden in derivates)
   private int fetchSize;                                  // default fetchsize, 0 = drivers default
   private int maxRows;                                    // maximum rows per resultset, 0 = no limit
-  private boolean logModificationTxEnabled;               // true if log transaction begin/commit in modification log, default is false
-  private long    logModificationTxId;                    // transaction id. !=0 if 'commit' is pending in modification log
+  private boolean logModificationTxEnabled;               // true if log transaction begin/commit in modification log
+  private long logModificationTxId;                       // transaction id. !=0 if 'commit' is pending in modification log
   private boolean logModificationDeferred;                // true if log to memory rather than dbms
   private List<ModificationLog> modificationLogList;      // in-memory modification-log for current transaction
   private DbTransaction transaction;                      // the running transaction
@@ -308,11 +332,12 @@ public class Db implements Session, Cloneable {
   private volatile Thread ownerThread;                    // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
 
-  // for RMI remote connections (per Db)
-  private RemoteDbConnection        rcon;                 // != null if remote connection established to RMI-server
-  private RemoteDbSession           rses;                 // remote database session if logged in to RMI-server
-  private DbRemoteDelegate          rdel;                 // remote database delegate
-  private RemoteDelegate[]          delegates;            // the delegates per session
+  // for RMI remote connections
+  private RMIClientSocketFactory csf;                     // client socket factory, null if system default
+  private RemoteDbConnection rcon;                        // != null if remote connection established to RMI-server
+  private RemoteDbSession rses;                           // remote database session if logged in to RMI-server
+  private DbRemoteDelegate rdel;                          // remote database delegate
+  private RemoteDelegate[] delegates;                     // the delegates per session
 
 
 
@@ -361,8 +386,10 @@ public class Db implements Session, Cloneable {
 
       if (backendInfo.isRemote()) {
         this.conMgr = null;                         // no connection manager for remote connections
+        SocketFactoryType factoryType = SocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
+        csf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+        LOGGER.info("using client socket factory {0}", csf);
       }
-
       else  {
         if (conMgr == null) {
           throw new NullPointerException("connection manager required for local connections");
@@ -940,11 +967,40 @@ public class Db implements Session, Cloneable {
 
     try {
 
-      if (isRemote())  {
-        // database is remote!
+      if (isRemote()) {
 
         // get connection to RMI-server
-        rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());   // throws exception if failes
+        if (csf != null) {
+            String rmiUrl = backendInfo.getUrl();
+            URI uri = new URI(rmiUrl);
+            String host = uri.getHost();
+            int port = uri.getPort();
+            String path = uri.getPath();
+            if (path.startsWith("/")) {
+              path = path.substring(1);
+            }
+            LOGGER.info("connecting to {0}:{1}/{2} using {3}", host, port, path, csf);
+            Registry registry = LocateRegistry.getRegistry(host, port, csf);
+            try {
+              rcon = (RemoteDbConnection) registry.lookup(path);
+            }
+            catch (NotBoundException nx) {
+              StringBuilder buf = new StringBuilder();
+              buf.append("bound services =");
+              String[] services = registry.list();
+              if (services != null) {
+                for (String service: services) {
+                  buf.append(" '").append(service).append("'");
+                }
+              }
+              LOGGER.warning(buf.toString());
+              throw nx;
+            }
+        }
+        else {
+          rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());
+        }
+
 
         /**
          * Check that server matches expected version.

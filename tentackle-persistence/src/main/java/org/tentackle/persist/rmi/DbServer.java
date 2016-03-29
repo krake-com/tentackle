@@ -19,6 +19,8 @@
 
 package org.tentackle.persist.rmi;
 
+import org.tentackle.io.SocketFactoryFactory;
+import org.tentackle.io.SocketFactoryType;
 import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,6 +38,8 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
 
+import static org.tentackle.persist.Db.SOCKET_FACTORY;
+
 
 /**
  * A generic db-RMI-DbServer.<br>
@@ -48,13 +52,17 @@ import org.tentackle.reflect.ReflectionHelper;
  * </li>
  *
  * <li>
- * <tt>createregistry</tt>:
- *  creates a local registry (on the port according to service, defaulting to 1099)
+ * <tt>createregistry[=default|plain|ssl|compressed]</tt>:
+ *  creates a local registry (on the port according to service, defaulting to 1099).
+ *  By default, the created registry uses the system-default socket factories.
+ *  However, it may be forced to use another one, for example ssl. (see socketfactory=... below).
+ *  If set, the connection and session object will use the same factories as the registry.
+ *  All other delegates will be created using the factories given by socketfactory=.. or the systen default.
  * </li>
  *
  * <li>
  * <tt>connectionclass=connection-class</tt>:
- *  defaults to org.tentackle.db.rmi.RemoteConnectionImpl (which is only for testing. Real apps need another class)
+ *  defaults to org.tentackle.persist.rmi.RemoteDbConnectionImpl
  * </li>
  *
  *
@@ -71,7 +79,7 @@ import org.tentackle.reflect.ReflectionHelper;
  * </li>
  *
  * <li>
- * <tt>port=port</tt>: for the connection object>
+ * <tt>port=port</tt>: for the connection object.
  *  default is 0, i.e. system default (or from fixed ports)
  * </li>
  *
@@ -145,11 +153,6 @@ public class DbServer {
   public static final String TIMEOUT_INTERVAL = "timeoutinterval";
 
   /**
-   * The property key for the socket factory.
-   */
-  public static final String SOCKET_FACTORY = "socketfactory";
-
-  /**
    * The property key for the RMI ports.
    */
   public static final String PORTS = "ports";
@@ -188,11 +191,13 @@ public class DbServer {
   private Class<? extends RemoteDbConnectionImpl> connectionClass;  // class for connection object
   private RemoteDbConnectionImpl connectionObject;        // the connection object (and to keep the object referenced!)
   private int sessionTimeout;                             // default session timeout in seconds
-  private long sessionTimeoutCheckInterval;               // check interval for session timeout in milliseconds, 0 = no polling at all
+  private long sessionTimeoutCheckInterval;               // check interval for session timeout in milliseconds, 0 = none
   private int port;                                       // port of connection object
-  private RMIClientSocketFactory csf;                     // client socket factory for connection object
-  private RMIServerSocketFactory ssf;                     // server socket factory for connection object
-  private Registry registry;                              // local registry
+  private Registry registry;                              // local registry, if createRegistry = true
+  private RMIClientSocketFactory loginCsf;                // client socket factory for the registry and login phase
+  private RMIServerSocketFactory loginSsf;                // server socket factory for the registry and login phase
+  private RMIClientSocketFactory csf;                     // client socket factory for the connection object
+  private RMIServerSocketFactory ssf;                     // server socket factory for the connection object
 
 
   // fixed ports. 0 = no limitation
@@ -256,7 +261,12 @@ public class DbServer {
 
     val = props.getProperty(CREATE_REGISTRY);
     if (val != null) {
-      createRegistry = val.isEmpty() || Boolean.valueOf(val);
+      createRegistry = true;
+      if (!val.isEmpty()) {
+        SocketFactoryType factoryType = SocketFactoryType.parse(val);
+        loginCsf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+        loginSsf = SocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
+      }
     }
 
     val = props.getProperty(TIMEOUT);
@@ -507,6 +517,24 @@ public class DbServer {
     return ssf;
   }
 
+  /**
+   * Gets the server's csf for the login phase.
+   *
+   * @return the client socket factory
+   */
+  public RMIClientSocketFactory getLoginClientSocketFactory() {
+    return loginCsf;
+  }
+
+  /**
+   * Gets the server's ssf for the login phase.
+   *
+   * @return the server socket factory
+   */
+  public RMIServerSocketFactory getLoginServerSocketFactory() {
+    return loginSsf;
+  }
+
 
   /**
    * Gets the default session timeout.
@@ -538,14 +566,16 @@ public class DbServer {
     try {
 
       int registryPort = 0;
+      boolean useRegSF = false;
       if (createRegistry) {
         URI uri = new URI(service);
         registryPort = uri.getPort();
         if (registryPort <= 0)  {
           registryPort = Registry.REGISTRY_PORT;  // default port (1099)
         }
-        if (csf != null && ssf != null) {
-          registry = LocateRegistry.createRegistry(registryPort, csf, ssf);
+        if (loginCsf != null && loginSsf != null) {
+          registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
+          useRegSF = true;
         }
         else {
           registry = LocateRegistry.createRegistry(registryPort);
@@ -555,20 +585,28 @@ public class DbServer {
       // instantiate connection object
       Constructor<? extends RemoteDbConnectionImpl> constructor = this.connectionClass.getConstructor(
               DbServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
-      connectionObject = constructor.newInstance(this, port, csf, ssf);
+      connectionObject = constructor.newInstance(this, port, useRegSF ? loginCsf: csf, useRegSF ? loginSsf: ssf);
 
       // log
       LOGGER.info("\nTentackle RMI-server " + getClass().getName() +
-                  "\nclient socket factory = " + (csf == null ? "<system default>" : csf.getClass().getName()) +
-                  "\nserver socket factory = " + (ssf == null ? "<system default>" : ssf.getClass().getName()) +
-                  "\nservice = " + service + (createRegistry ? (", registry created on port " + registryPort) : "") +
+                  "\ndefault client socket factory = " + (csf == null ? "<system default>" : csf.getClass().getName()) +
+                  "\ndefault server socket factory = " + (ssf == null ? "<system default>" : ssf.getClass().getName()) +
+                  "\nservice = " + service + (createRegistry ? (", registry created on port " + registryPort) +
+                    "\nlogin client socket factory = " + (loginCsf == null ? "<system default>" : loginCsf.getClass().getName()) +
+                    "\nlogin server socket factory = " + (loginSsf == null ? "<system default>" : loginSsf.getClass().getName())
+                    : "") +
                   "\nlogin port = " + (port == 0 ? "<system default>" : port) +
                   ", session timeout = " + sessionTimeout + "*" + sessionTimeoutCheckInterval + "ms");
 
       // bind to service
       if (createRegistry) {
+        URI uri = new URI(service);
+        String path = uri.getPath();
+        if (path.startsWith("/")) {
+          path = path.substring(1);
+        }
         // must be new
-        Naming.bind(service, connectionObject);
+        registry.bind(path, connectionObject);
       }
       else  {
         // rebind if already bound

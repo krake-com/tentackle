@@ -618,7 +618,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   public String getOptions() {
     return null;
   }
-  
+
 
   @Override
   public String toString() {

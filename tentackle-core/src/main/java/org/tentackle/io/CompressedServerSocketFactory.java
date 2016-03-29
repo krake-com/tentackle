@@ -17,29 +17,21 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
-import java.net.Socket;
-import org.tentackle.io.CompressedSocket;
+import java.net.ServerSocket;
 
 /**
- * ZIP-compressed client socket factory.
+ * Zip-compressed server socket factory.
  *
  * @author harald
  */
-public class CompressedClientSocketFactory extends ClientSocketFactory {
-
-  private static final long serialVersionUID = 2357672465175511279L;
-
+public class CompressedServerSocketFactory extends ServerSocketFactory {
 
   @Override
-  public Socket createSocket(String host, int port) throws IOException {
-    Socket socket = new CompressedSocket(host, port);
-    if (socketConfigurator != null) {
-      socketConfigurator.configure(socket);
-    }
-    return socket;
+  public ServerSocket createUnconfiguredServerSocket(int port) throws IOException {
+    return new CompressedServerSocket(port);
   }
 
 }

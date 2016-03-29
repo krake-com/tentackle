@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.util.StringTokenizer;
 
