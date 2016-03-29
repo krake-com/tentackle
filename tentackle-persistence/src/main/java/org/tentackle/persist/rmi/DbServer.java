@@ -99,12 +99,16 @@ import static org.tentackle.persist.Db.SOCKET_FACTORY;
  *  <ul>
  *    <li><tt>system</tt>: use system default factories (this is the default)</li>
  *    <li><tt>default</tt>: same as system</li>
- *    <li><tt>plain</tt>: plain sockets (see {@link ClientSocketFactory}, {@link ServerSocketFactory}</li>
- *    <li><tt>ssl</tt>: use SSL (see {@link SslClientSocketFactory}, {@link SslServerSocketFactory}</li>
- *    <li><tt>compressed</tt>: use compression (see {@link CompressedClientSocketFactory}, {@link CompressedServerSocketFactory}</li>
+ *    <li><tt>plain</tt>: plain sockets (see {@link org.tentackle.io.ClientSocketFactory},
+ *              {@link org.tentackle.io.ServerSocketFactory}</li>
+ *    <li><tt>ssl</tt>: use SSL (see {@link org.tentackle.io.SslClientSocketFactory},
+ *              {@link org.tentackle.io.SslServerSocketFactory}</li>
+ *    <li><tt>compressed</tt>: use compression (see {@link org.tentackle.io.CompressedClientSocketFactory},
+ *              {@link org.tentackle.io.CompressedServerSocketFactory}</li>
  *  </ul>
- *  If both <tt>ssl</tt> and <tt>compressed</tt> is given, the factories used are {@link CompressedSslClientSocketFactory} and
- *  {@link CompressedSslServerSocketFactory}.
+ *  If both <tt>ssl</tt> and <tt>compressed</tt> is given, the factories used are
+ *              {@link org.tentackle.io.CompressedSslClientSocketFactory} and
+ *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.
  * </li>
  * <p>
  * For SSL only:
