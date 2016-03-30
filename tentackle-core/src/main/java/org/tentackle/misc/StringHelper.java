@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -705,26 +706,20 @@ public final class StringHelper {
   }
 
 
-
-
   /**
-   * Builds an MD5-sum from an array of chars as used in password-fields.<br>
+   * Builds a hash from an array of chars.<br>
    * Note that this method converts the characters to bytes via {@link #toBytes(char[])}
-   * before applying the md5 hash.
-   * By this we achieve an enhanced security against md5 crackers, which assume
-   * ordinary strings. In order to enhance security even more, however, you should
-   * add some application-specific salt.
+   * before applying the hash.
    *
-   * @param salt the "salt", null if plain MD5.
+   * @param algorithm the hashing algorithm (MD5, SHA-1, SHA-256 are supported by all java runtimes, at least)
+   * @param salt the "salt", null if plain hash
    * @param input is the input array of chars
-   * @return the md5sum as a string, null if input == null or conversion failed (error is logged)
-   * @see #md5sum(char[])
-   * @see #MD5SALT
+   * @return the hash as a string, null if input == null
    */
-  public static String md5sum(char[] salt, char[] input) {
+  public static String hash(String algorithm, char[] salt, char[] input) {
     if (input != null) {
       try {
-        MessageDigest md5Helper = MessageDigest.getInstance("MD5");
+        MessageDigest md = MessageDigest.getInstance(algorithm);
         byte[] inputBytes = toBytes(input);
         if (salt != null && salt.length > 0 && input.length > 0) {
           byte[] saltyBytes = toBytes(salt);
@@ -733,15 +728,31 @@ public final class StringHelper {
           System.arraycopy(inputBytes, 0, saltyInputBytes, saltyBytes.length, inputBytes.length);
           inputBytes = saltyInputBytes;
         }
-        return toHexString(md5Helper.digest(inputBytes));
+        return toHexString(md.digest(inputBytes));
       }
       catch (NoSuchAlgorithmException e)  {
-        LOGGER.severe(e.toString());
+        throw new TentackleRuntimeException("hashing failed", e);
       }
     }
     return null;
   }
 
+
+
+  /**
+   * Builds an MD5-sum from an array of chars as used in password-fields.<br>
+   * Note that this method converts the characters to bytes via {@link #toBytes(char[])}
+   * before applying the md5 hash.
+   *
+   * @param salt the "salt", null if plain MD5.
+   * @param input is the input array of chars
+   * @return the md5sum as a string, null if input == null or conversion failed (error is logged)
+   * @see #md5sum(char[])
+   * @see #MD5SALT
+   */
+  public static String md5sum(char[] salt, char[] input) {
+    return hash("MD5", salt, input);
+  }
 
 
   /**
