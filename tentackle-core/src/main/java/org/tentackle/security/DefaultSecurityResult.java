@@ -27,6 +27,7 @@ package org.tentackle.security;
 public class DefaultSecurityResult implements SecurityResult {
 
   private final boolean accepted;   // true if accepted
+  private final boolean byDefault;  // true if default result
   private final String message;     // further explanation
 
 
@@ -35,10 +36,12 @@ public class DefaultSecurityResult implements SecurityResult {
    *
    * @param message the message, null if none
    * @param accepted true if accepted, else denied
+   * @param byDefault true if result was created by default
    */
-  public DefaultSecurityResult(String message, boolean accepted) {
+  public DefaultSecurityResult(String message, boolean accepted, boolean byDefault) {
     this.message = message;
     this.accepted = accepted;
+    this.byDefault = byDefault;
   }
 
 
@@ -50,6 +53,11 @@ public class DefaultSecurityResult implements SecurityResult {
   @Override
   public boolean isAccepted() {
     return accepted;
+  }
+
+  @Override
+  public boolean isDefault() {
+    return byDefault;
   }
 
 }

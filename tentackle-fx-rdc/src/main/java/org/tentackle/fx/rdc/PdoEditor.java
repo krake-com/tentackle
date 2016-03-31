@@ -78,6 +78,15 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
+   * Returns whether the user is allowed to create a new PDO.
+   *
+   * @return true if creation allowed
+   */
+  public boolean isNewAllowed() {
+    return isEditAllowed();
+  }
+
+  /**
    * Gets the validation mappers to map the validation results to the controls.
    *
    * @return the mappers, null if none

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -59,7 +60,7 @@ public final class StringHelper {
   private static final String NORMS = "AAAAAAACEEEEIIIIDNOOOOOXOUUUUYBaaaaaaaceeeeiiiinooooooouuuuybys";
   private static char[] critMap;    // fast map built once from CRITS and NORMS
 
-  private static byte[] EMPTY_BYTES = new byte[0];
+  private static final byte[] EMPTY_BYTES = new byte[0];
 
 
   /**
@@ -646,7 +647,7 @@ public final class StringHelper {
   }
 
 
-  private static final char[] hexDigits = {
+  private static final char[] HEX_DIGITS = {
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
       'a', 'b', 'c', 'd', 'e', 'f'
   };
@@ -665,8 +666,8 @@ public final class StringHelper {
 
       for (int i=0; i < binaryData.length; ++i) {
         b = binaryData[i];
-        text[j++] = hexDigits[(b & 0xf0) >> 4];
-        text[j++] = hexDigits[b & 0x0f];
+        text[j++] = HEX_DIGITS[(b & 0xf0) >> 4];
+        text[j++] = HEX_DIGITS[b & 0x0f];
       }
       return new String(text);
     }
@@ -705,26 +706,20 @@ public final class StringHelper {
   }
 
 
-
-
   /**
-   * Builds an MD5-sum from an array of chars as used in password-fields.<br>
+   * Builds a hash from an array of chars.<br>
    * Note that this method converts the characters to bytes via {@link #toBytes(char[])}
-   * before applying the md5 hash.
-   * By this we achieve an enhanced security against md5 crackers, which assume
-   * ordinary strings. In order to enhance security even more, however, you should
-   * add some application-specific salt.
+   * before applying the hash.
    *
-   * @param salt the "salt", null if plain MD5.
+   * @param algorithm the hashing algorithm (MD5, SHA-1, SHA-256 are supported by all java runtimes, at least)
+   * @param salt the "salt", null if plain hash
    * @param input is the input array of chars
-   * @return the md5sum as a string, null if input == null or conversion failed (error is logged)
-   * @see #md5sum(char[])
-   * @see #MD5SALT
+   * @return the hash as a string, null if input == null
    */
-  public static String md5sum(char[] salt, char[] input) {
+  public static String hash(String algorithm, char[] salt, char[] input) {
     if (input != null) {
       try {
-        MessageDigest md5Helper = MessageDigest.getInstance("MD5");
+        MessageDigest md = MessageDigest.getInstance(algorithm);
         byte[] inputBytes = toBytes(input);
         if (salt != null && salt.length > 0 && input.length > 0) {
           byte[] saltyBytes = toBytes(salt);
@@ -733,45 +728,13 @@ public final class StringHelper {
           System.arraycopy(inputBytes, 0, saltyInputBytes, saltyBytes.length, inputBytes.length);
           inputBytes = saltyInputBytes;
         }
-        return toHexString(md5Helper.digest(inputBytes));
+        return toHexString(md.digest(inputBytes));
       }
       catch (NoSuchAlgorithmException e)  {
-        LOGGER.severe(e.toString());
+        throw new TentackleRuntimeException("hashing failed", e);
       }
     }
     return null;
-  }
-
-
-
-  /**
-   * Salt for {@link #md5sum(char[])}.<br>
-   * The default is null, i.e. no salt.
-   * Applications should set an individual salt to enhance security.
-   */
-  public static char[] MD5SALT = null;
-
-  /**
-   * Builds an MD5-sum from an array of chars with a default salt
-   * given by {@link #MD5SALT}.
-   *
-   * @param input is the input array of chars
-   * @return the md5sum as a string, null if input == null or conversion failed (error is logged)
-   */
-  public static String md5sum(char[] input) {
-    return md5sum(MD5SALT, input);
-  }
-
-
-
-  /**
-   * Maps null to the empty string.
-   * Simple but essential ;)
-   * @param str the string to test against null
-   * @return str or the emptystring if str is null
-   */
-  public static String toString(String str) {
-    return str == null ? "" : str;
   }
 
 

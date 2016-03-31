@@ -63,4 +63,10 @@ public interface FxContainer extends FxControl {
    */
   <C extends FxController> C getController(Class<C> clazz);
 
+  /**
+   * Updates the view according to the model.<br>
+   * The method is the same as {@link #updateView()} but skips any focused component.
+   */
+  void updateViewNonFocused();
+
 }

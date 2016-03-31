@@ -203,6 +203,9 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
     }
 
     Level loggingLevel = Level.SEVERE;
+    boolean withStacktrace = true;
+    Throwable realCause = cause;
+
     try {
       if (cause instanceof RemoteException) {
         /**
@@ -210,9 +213,11 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
          * We use the info level because this exception
          * is meant for the client.
          */
-        Throwable realCause = cause.getCause();
+        realCause = cause.getCause();
         if (realCause instanceof Loggable) {
-          loggingLevel = ((Loggable) realCause).getLogLevel();
+          Loggable loggable = (Loggable) realCause;
+          loggingLevel = loggable.getLogLevel();
+          withStacktrace = loggable.withStacktrace();
         }
         else {
           loggingLevel = Level.INFO;
@@ -224,18 +229,21 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       }
     }
     finally {
-      String message = "delegate method " + method + " failed";
-
       Db db = delegate.getSession();
       boolean crashed = db != null && db.isCrashed();
 
       if (crashed) {
         loggingLevel = Level.WARNING;
-        message += " due to session cleanup";
       }
 
       if (loggingLevel != null) {
-        LOGGER.log(loggingLevel, message, cause);
+        StringBuilder message = new StringBuilder();
+        message.append("delegate method ").append(method).append(" failed");
+        if (crashed) {
+          message.append(" due to session cleanup");
+        }
+        message.append(":\n").append(realCause.getMessage());
+        LOGGER.log(loggingLevel, message.toString(), withStacktrace ? realCause : null);
       }
 
       cleanupDbAfterException();

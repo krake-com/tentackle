@@ -358,12 +358,12 @@ public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
 
     if (backends != null && !backends.isEmpty()) {
       for (BackendInfoParameter backendParameter: backends) {
-        BackendInfo backendInfo = backendParameter.createBackendInfo();
+        BackendInfo backendInfo = backendParameter.createBackendInfo(getLog());
         backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
         if (backendInfo.isConnectable()) {
           connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
           migrationHints.put(backendInfo.getUrl(),
-                             backendParameter.loadMigrationHints(getLog(), verbosityLevel.isDebug(), resourceDirs));
+                             backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs));
         }
       }
     }

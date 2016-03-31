@@ -37,11 +37,11 @@ public class PostgresColumnMetaData extends ColumnMetaData {
   @Override
   public void validate() {
     super.validate();
-    if (defaultValue != null) {
+    if (getDefaultValue() != null) {
       // postgres appends ::<type> to the default value, which must be removed
-      int ndx = defaultValue.lastIndexOf("::");
+      int ndx = getDefaultValue().lastIndexOf("::");
       if (ndx > 0) {
-        defaultValue = defaultValue.substring(0, ndx);
+        setDefaultValue(getDefaultValue().substring(0, ndx));
       }
     }
   }

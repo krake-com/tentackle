@@ -17,15 +17,13 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 import java.util.Objects;
-import org.tentackle.io.SocketConfigurator;
-import org.tentackle.io.SocketConfiguratorHolder;
 
 /**
  * Standard client socket factory.

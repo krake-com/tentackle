@@ -98,7 +98,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected classname, null if an entity
    */
   @Persistent("the protected classname, null if an entity")
-  @NotNull(condition="{object.objectClassId==0}")
+  @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
   @Bindable
   String getObjectClassName();
 
@@ -116,7 +116,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the protected object's class id, 0 if not an entity
    */
   @Persistent("the protected object's class id, 0 if not an entity")
-  @NotNull(condition="{object.objectClassName==null}")
+  @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
   @Bindable
   int getObjectClassId();
 
@@ -236,7 +236,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    * @return the permissions as a comma-separated list
    */
   @Persistent("the permissions as a comma-separated list")
-  @NotNull
+  @NotNull(message="{ @('missing permissions') }")
   @Bindable
   String getPermissions();
 

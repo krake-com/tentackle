@@ -122,36 +122,24 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   T getTreeRoot();
 
   /**
-   * Gets the text to be displayed in trees for this object.
-   *
-   * @return the tree text
-   */
-  String getTreeText();
-
-  /**
    * Gets the tree text with respect to the parent object this
    * object is displayed in a tree.<br>
    *
+   * @param <P> the parent PDO type
    * @param parent is the parent object, null if no parent
    * @return the tree text
    */
-  String getTreeText(Object parent);
-
-  /**
-   * Gets the tooltip to be displayed for an object in a tree.
-   *
-   * @return the tooltip text
-   */
-  String getToolTipText();
+  <P extends PersistentDomainObject<P>> String getTreeText(P parent);
 
   /**
    * Gets the tooltip text with respect to the parent object this
    * object is displayed in a tree.<br>
    *
+   * @param <P> the parent PDO type
    * @param parent is the parent object, null if no parent
    * @return the tooltip text
    */
-  String getToolTipText(Object parent);
+  <P extends PersistentDomainObject<P>> String getToolTipText(P parent);
 
   /**
    * Creates the tree item for this pdo.
@@ -187,23 +175,14 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   boolean providesTreeChildObjects();
 
   /**
-   * Gets all childs of this objects that should be visible to the user
-   * in a navigatable object tree.
-   *
-   * @param <S> the item type
-   * @return the childs
-   */
-  <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects();
-
-  /**
    * Gets the childs with respect to the parent object this
    * object is displayed in the current tree.
    *
-   * @param <S> the item type
-   * @param parentObject the parent object of this object in the tree, null = no parent
+   * @param <P> the parent PDO type
+   * @param parent the parent object of this object in the tree, null = no parent
    * @return the childs
    */
-  <S extends PersistentDomainObject<S>> Collection<S> getTreeChildObjects(Object parentObject);
+  <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeChildObjects(P parent);
 
   /**
    * Gets the maximum level of expansion allowed in a navigatable object tree.<br>
@@ -227,23 +206,14 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   boolean providesTreeParentObjects();
 
   /**
-   * Gets the parents of this object.
-   *
-   * @param <S> the item type
-   * @return the parents
-   * @see #providesTreeParentObjects
-   */
-  <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects();
-
-  /**
    * Gets the parents with respect to the parent object this
    * object is displayed in the current tree.
    *
-   * @param <S> the item type
-   * @param parentObject the parent object, null if no parent
+   * @param <P> the parent PDO type
+   * @param parent the parent object, null if no parent
    * @return the parents
    */
-  <S extends PersistentDomainObject<S>> Collection<S> getTreeParentObjects(Object parentObject);
+  <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent);
 
   /**
    * Gets the tablename used in to initialize the table's gui.<br>

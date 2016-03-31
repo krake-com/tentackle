@@ -35,6 +35,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.pdo.DefaultDomainContext;
+import org.tentackle.pdo.DomainContextFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionHolder;
@@ -126,7 +127,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     keyIdMap = new TreeMap<>();
     prefNameMap = new TreeMap<>();
     // preset tableserials
-    sessionHolder = new DefaultDomainContext();
+    sessionHolder = DomainContextFactory.getInstance().create(null);
     nodeTableSerial = createNode().getModificationCount();
     keyTableSerial = createKey().getModificationCount();
   }

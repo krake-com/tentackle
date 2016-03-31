@@ -128,6 +128,11 @@ public class FxVBox extends VBox implements FxContainer {
   }
 
   @Override
+  public void updateViewNonFocused() {
+    getDelegate().updateViewNonFocused();
+  }
+
+  @Override
   public void updateView() {
     getDelegate().updateView();
   }

@@ -17,28 +17,49 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.rmi.server.RMIServerSocketFactory;
 import java.util.Objects;
-import org.tentackle.io.ServerSocketConfigurator;
-import org.tentackle.io.ServerSocketConfiguratorHolder;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 /**
- * Standard server socket factory.
+ * SSL server socket factory.
  *
  * @author harald
  */
-public class ServerSocketFactory implements RMIServerSocketFactory, ServerSocketConfiguratorHolder {
+public class SslServerSocketFactory extends SslRMIServerSocketFactory implements ServerSocketConfiguratorHolder {
 
-  protected volatile ServerSocketConfigurator socketConfigurator;   // the optional socket configurator
+  private volatile ServerSocketConfigurator socketConfigurator;   // the optional socket configurator
 
+
+  /**
+   * Creates a new ServerSocketFactory.
+   *
+   * @param enabledCipherSuites the enabled cipher suites, null for default
+   * @param enabledProtocols the enabled protocols, null for default
+   * @param needClientAuth true if server request SSL-client-authentication
+   */
+  public SslServerSocketFactory(String[] enabledCipherSuites,
+                                String[] enabledProtocols,
+                                boolean needClientAuth) {
+
+    super(enabledCipherSuites, enabledProtocols, needClientAuth);
+  }
+
+
+  /**
+   * Creates a ServerSocketFactory with default cipher suites,
+   * protocols and without client authentication.
+   */
+  public SslServerSocketFactory() {
+    this(null, null, false);
+  }
 
   @Override
   public ServerSocket createUnconfiguredServerSocket(int port) throws IOException {
-    return new ServerSocket(port);
+    return super.createServerSocket(port);
   }
 
   @Override
@@ -49,20 +70,17 @@ public class ServerSocketFactory implements RMIServerSocketFactory, ServerSocket
   @Override
   public int hashCode() {
     int hash = 5;
-    hash = 11 * hash + getClass().hashCode();
+    hash = 11 * hash + super.hashCode();
     hash = 11 * hash + Objects.hashCode(socketConfigurator);
     return hash;
   }
 
   @Override
   public boolean equals(Object obj) {
-    if (obj == null) {
+    if (!super.equals(obj)) {
       return false;
     }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final ServerSocketFactory other = (ServerSocketFactory) obj;
+    final SslServerSocketFactory other = (SslServerSocketFactory) obj;
     return ServerSocketConfigurator.equals(this.socketConfigurator, other.socketConfigurator);
   }
 

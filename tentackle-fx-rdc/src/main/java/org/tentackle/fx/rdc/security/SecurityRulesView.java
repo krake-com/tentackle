@@ -53,6 +53,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.validate.ValidationFailedException;
 
 /**
  * CRUD controller for PDOs.
@@ -412,35 +413,54 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   }
 
   private void save() {
-    getDomainContext().getSession().transaction(() -> {
-      if (trackedClassRules != null) {
-        PdoUtilities.getInstance().deleteCollection(trackedClassRules.getRemovedObjects());
-        int ndx = 0;
-        for (Security sec: trackedClassRules) {
-          sec.setPriority(ndx);
-          if (classId != 0) {
+    // take a snapshot in case of rollback
+    TrackedList<Security> trackedClassRulesSnapshot =
+            trackedClassRules == null ? null : trackedClassRules.createSnapshot();
+    TrackedList<Security> trackedPdoRulesSnapshot =
+            trackedPdoRules == null ? null : trackedPdoRules.createSnapshot();
+    try {
+      getDomainContext().getSession().transaction(() -> {
+        if (trackedClassRules != null) {
+          PdoUtilities.getInstance().deleteCollection(trackedClassRules.getRemovedObjects());
+          int ndx = 0;
+          for (Security sec: trackedClassRules) {
+            sec.setPriority(ndx);
+            if (classId != 0) {
+              sec.setObjectClassId(classId);
+            }
+            else {
+              sec.setObjectClassName(clazz.getName());
+            }
+            ndx++;
+          }
+          PdoUtilities.getInstance().saveCollection(trackedClassRules);
+        }
+        if (trackedPdoRules != null) {
+          PdoUtilities.getInstance().deleteCollection(trackedPdoRules.getRemovedObjects());
+          int ndx = 0;
+          for (Security sec: trackedPdoRules) {
+            sec.setPriority(ndx);
             sec.setObjectClassId(classId);
+            sec.setObjectId(pdo.getId());
+            ndx++;
           }
-          else {
-            sec.setObjectClassName(clazz.getName());
-          }
-          ndx++;
+          PdoUtilities.getInstance().saveCollection(trackedPdoRules);
         }
-        PdoUtilities.getInstance().saveCollection(trackedClassRules);
+        return null;
+      });
+    }
+    catch (ValidationFailedException vx) {
+      Fx.info(vx.resultsToMessage());
+      if (trackedClassRulesSnapshot != null) {
+        trackedClassRules.revertToSnapshot(trackedClassRulesSnapshot);
+        classRules.setAll(trackedClassRules);
       }
-      if (trackedPdoRules != null) {
-        PdoUtilities.getInstance().deleteCollection(trackedPdoRules.getRemovedObjects());
-        int ndx = 0;
-        for (Security sec: trackedPdoRules) {
-          sec.setPriority(ndx);
-          sec.setObjectClassId(classId);
-          sec.setObjectId(pdo.getId());
-          ndx++;
-        }
-        PdoUtilities.getInstance().saveCollection(trackedPdoRules);
+      if (trackedPdoRulesSnapshot != null) {
+        trackedPdoRules.revertToSnapshot(trackedPdoRulesSnapshot);
+        pdoRules.setAll(trackedPdoRules);
       }
-      return null;
-    });
+      return;
+    }
 
     getStage().hide();
   }

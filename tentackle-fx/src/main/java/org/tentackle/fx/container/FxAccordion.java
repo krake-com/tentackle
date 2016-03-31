@@ -109,6 +109,11 @@ public class FxAccordion extends Accordion implements FxContainer {
   }
 
   @Override
+  public void updateViewNonFocused() {
+    getDelegate().updateViewNonFocused();
+  }
+
+  @Override
   public void updateView() {
     getDelegate().updateView();
   }

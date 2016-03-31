@@ -36,6 +36,13 @@ public interface SecurityResult {
   boolean isAccepted();
 
   /**
+   * Returns whether the result was created by default.<br>
+   *
+   * @return true if no rules applied
+   */
+  boolean isDefault();
+
+  /**
    * Formats a string for an explanation of rule that fired.<br>
    * The default explanation will be returned unchanged if there is no message in the rule.
    *

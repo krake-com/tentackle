@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -26,11 +26,6 @@ import java.util.Objects;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
-import org.tentackle.io.CompressedSocketWrapper;
-import org.tentackle.io.ServerSocketConfigurator;
-import org.tentackle.io.ServerSocketConfiguratorHolder;
-import org.tentackle.io.SocketConfigurator;
-import org.tentackle.io.SocketConfiguratorHolder;
 
 /**
  * Zip-compressed server socket factory.

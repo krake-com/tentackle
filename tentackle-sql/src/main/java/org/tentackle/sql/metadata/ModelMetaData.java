@@ -21,6 +21,7 @@ package org.tentackle.sql.metadata;
 import java.sql.DatabaseMetaData;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendInfo;
@@ -32,10 +33,11 @@ import org.tentackle.sql.BackendInfo;
  */
 public class ModelMetaData {
 
-  protected final Backend backend;                      // the backend
-  protected final DatabaseMetaData[] metaData;          // the connection's meta data
-  protected final Map<String,TableMetaData> tableMap;   // the tables
-  protected final String[] schemas;                     // optional schemas
+  private final Backend backend;                      // the backend
+  private final DatabaseMetaData[] metaData;          // the connection's meta data
+  private final Map<String,TableMetaData> tableMap;   // the tables
+  private final String[] schemas;                     // optional schemas
+  private final Properties properties;                // migration properties
 
   /**
    * Creates a database meta instance.
@@ -47,8 +49,20 @@ public class ModelMetaData {
   public ModelMetaData(Backend backend, DatabaseMetaData[] metaData, String[] schemas) {
     this.backend = backend;
     this.metaData = metaData;
-    this.tableMap = new TreeMap<>();
     this.schemas = schemas;
+
+    tableMap = new TreeMap<>();
+    properties = new Properties();
+  }
+
+  /**
+   * Gets the migration properties.<br>
+   * Used to remember settings of the migration process.
+   *
+   * @return the properties
+   */
+  public Properties getProperties() {
+    return properties;
   }
 
   /**

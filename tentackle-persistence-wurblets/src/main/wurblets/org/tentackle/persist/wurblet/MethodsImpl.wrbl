@@ -231,7 +231,10 @@
     return true;    // invoking isModified() is ok
   }
 @[
-        if (isAttracked()) {
+        }
+      }
+
+      if (isAttracked()) {
 ]@
 
   /**
@@ -258,8 +261,39 @@
     }
   }
 @[
+    }
+
+
+    if (isFullTracked()) {
+]@
+
+  /**
+   * Overridden cause of "--fulltracked".
+   */
+  \@Override
+  public boolean differsPersisted() {
+    return super.differsPersisted()
+@[
+      for (Attribute attr: getEntity().getAttributes())  {
+        if (!attr.getOptions().isNoMethod() && !attr.getOptions().isDerived() &&
+            !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
+          if (attr.getDataType().isPrimitive()) {
+]@
+           || @(attr.getJavaName())@Persisted != @(attr.getJavaName())@
+@[
+          }
+          else {
+]@
+           || !Objects.equals(@(attr.getJavaName())@Persisted, @(attr.getJavaName())@)
+@[
+          }
         }
       }
+]@
+           ;
+  }
+@[
+
     }
 
     if (!getEntity().getInheritanceType().isMappingToNoTable()) {

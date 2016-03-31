@@ -23,6 +23,7 @@ import java.text.MessageFormat;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import org.tentackle.fx.Fx;
+import org.tentackle.pdo.AlreadyLoggedInException;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.pdo.VersionInfoIncompatibleException;
@@ -87,7 +88,10 @@ public class LoginFailedHandler {
    * @param ex the login failed exception
    */
   public void handle(LoginFailedException ex) {
-    if (ex instanceof VersionInfoIncompatibleException) {
+    if (ex instanceof AlreadyLoggedInException) {
+      application.showApplicationStatus(ex.getLocalizedMessage(), 0.0);
+    }
+    else if (ex instanceof VersionInfoIncompatibleException) {
       VersionInfoIncompatibleException vx = (VersionInfoIncompatibleException) ex;
       Platform.runLater(() -> {
         Fx.info(MessageFormat.format(AppFxRdcBundle.getString(

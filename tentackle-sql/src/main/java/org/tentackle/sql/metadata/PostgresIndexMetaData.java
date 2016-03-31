@@ -38,9 +38,9 @@ public class PostgresIndexMetaData extends IndexMetaData {
   @Override
   public void validate() {
     super.validate();
-    if (filterCondition != null) {
+    if (getFilterCondition() != null) {
       // postgres appends ::<type> to all values which must be removed
-      filterCondition = filterCondition.replaceAll("::[a-z|A-Z]*", "");
+      setFilterCondition(getFilterCondition().replaceAll("::[a-z|A-Z]*", ""));
     }
   }
 

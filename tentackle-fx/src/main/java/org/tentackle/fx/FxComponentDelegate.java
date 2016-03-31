@@ -29,6 +29,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.stage.PopupWindow;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -255,20 +256,29 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
         modelUpdated = true;
       }
       catch (RuntimeException rex) {
-        if (!(rex instanceof ValidationFailedException)) {
-          LOGGER.severe("update model failed for " + getComponent(), rex);
-        }
-        // some conversion/mapping failed (usually parse-exception):
-        // -> show error popup and stay in component
         if (getError() == null) {
-          // get from exception
-          setError(rex.getLocalizedMessage());
-          if (getError() == null) {
-            setError(rex.getClass().getName());
-            LOGGER.warning("no message in exception", rex);
+          ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
+          String msg;
+          if (vx == null) {
+            LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
+            msg = rex.getLocalizedMessage();
+            if (msg == null) {
+              msg = rex.getClass().getName();
+            }
+          }
+          else {
+            msg = vx.resultsToMessage();
+          }
+          // some conversion/mapping failed (usually parse-exception):
+          // -> show error popup and stay in component
+          setError(msg);
+          Node node = getNode().getScene().getFocusOwner();
+          if (node != getNode() &&
+              (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+            // only if other component currently holding the focus has no error (would loop otherwise)
+            Platform.runLater(() -> ((Node) getComponent()).requestFocus());
           }
         }
-        Platform.runLater(() -> ((Node) getComponent()).requestFocus());
       }
       triggerViewModified();
     }

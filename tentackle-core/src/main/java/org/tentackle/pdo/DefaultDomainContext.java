@@ -81,7 +81,7 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * Creates a default context.
    *
-   * @param session the session
+   * @param session the session, null if thread-local
    * @param sessionImmutable true if session cannot be changed anymore
    */
   public DefaultDomainContext(Session session, boolean sessionImmutable) {
@@ -95,18 +95,12 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * Creates a mutable default context.
    *
-   * @param session the session
+   * @param session the session, null if thread-local
    */
   public DefaultDomainContext(Session session) {
     this(session, false);
   }
 
-  /**
-   * Creates a mutable default context with a thread-local session.
-   */
-  public DefaultDomainContext() {
-    this(null, false);
-  }
 
 
   @Override
@@ -240,8 +234,20 @@ public class DefaultDomainContext implements DomainContext {
 
 
   @Override
-  public String getInfo() {
-    return getSession() + ":{" + this + "}'";
+  public String toDiagnosticString() {
+    StringBuilder buf = new StringBuilder();
+    if (isRootContext()) {
+      buf.append("root ");
+    }
+    buf.append("context '").append(this).append("' using ");
+    if (isSessionThreadLocal()) {
+      buf.append("thread-local ");
+    } // thread-local implicitly means immutable
+    else if (isSessionImmutable()) {
+      buf.append("immutable ");
+    }
+    buf.append("session ").append(getSession().getName());
+    return buf.toString();
   }
 
 
@@ -287,7 +293,7 @@ public class DefaultDomainContext implements DomainContext {
   @Override
   public int hashCode() {
     int hash = 7 + (int) getContextId() + (getClass().hashCode() & 0xffff);
-    hash = 53 * hash + (getSession() != null ? getSession().hashCode() : 0);
+    hash = 53 * hash + (session != null ? session.hashCode() : 0);    // not getSession() bec. of thread-local!
     return hash;
   }
 

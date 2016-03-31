@@ -36,15 +36,15 @@ import org.tentackle.common.BasicStringHelper;
  */
 public class ForeignKeyMetaData {
 
-  protected final TableMetaData tableMetaData;                  // the table the key belongs to
-  protected String foreignKeySchema;                            // the schema of the fk
-  protected String foreignKeyTable;                             // the table of the fk
-  protected String foreignKeyName;                              // the name of the foreign key (all TT-fk are named!)
-  protected String primaryKeySchema;                            // the schema of the pk
-  protected String primaryKeyTable;                             // the table of the pk
-  protected ForeignKeyAction updateRule;                        // the update rule
-  protected ForeignKeyAction deleteRule;                        // the delete rule
-  protected final Set<ForeignKeyColumnMetaData> columns;        // fk columns
+  private final TableMetaData tableMetaData;                  // the table the key belongs to
+  private String foreignKeySchema;                            // the schema of the fk
+  private String foreignKeyTable;                             // the table of the fk
+  private String foreignKeyName;                              // the name of the foreign key (all TT-fk are named!)
+  private String primaryKeySchema;                            // the schema of the pk
+  private String primaryKeyTable;                             // the table of the pk
+  private ForeignKeyAction updateRule;                        // the update rule
+  private ForeignKeyAction deleteRule;                        // the delete rule
+  private final Set<ForeignKeyColumnMetaData> columns;        // fk columns
 
 
   /**

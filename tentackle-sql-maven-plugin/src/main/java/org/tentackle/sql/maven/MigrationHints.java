@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -353,12 +354,13 @@ public class MigrationHints {
    * Load the migration hints.
    *
    * @param filesets the filesets to load hints from
+   * @param filter file filter, null if none
    * @param logger the maven logger
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @throws MojoExecutionException if failed
    */
-  public void load(List<FileSet> filesets, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public void load(List<FileSet> filesets, Predicate<File> filter, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
 
     for (FileSet fileset: filesets) {
       FileSetManager fileSetManager = new FileSetManager(logger, verbose);
@@ -379,57 +381,62 @@ public class MigrationHints {
         if (fileNames.length > 0) {
           for (String filename : fileNames) {
             File hintFile = new File(new File(propertiesDirName), filename);
-            logger.debug("loading migration hints from " + hintFile);
-            StringBuilder buf = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new FileReader(hintFile))) {
-              char[] readBuf = new char[1024];
-              int len;
-              while ((len = reader.read(readBuf)) != -1)  {
-                buf.append(readBuf, 0, len);
+            if (filter == null || filter.test(hintFile)) {
+              logger.debug("loading migration hints from " + hintFile);
+              StringBuilder buf = new StringBuilder();
+              try (BufferedReader reader = new BufferedReader(new FileReader(hintFile))) {
+                char[] readBuf = new char[1024];
+                int len;
+                while ((len = reader.read(readBuf)) != -1) {
+                  buf.append(readBuf, 0, len);
+                }
               }
-            }
-            catch (IOException ex) {
-              throw new MojoExecutionException("reading migration hints from '" + hintFile + "' failed", ex);
-            }
+              catch (IOException ex) {
+                throw new MojoExecutionException("reading migration hints from '" + hintFile + "' failed", ex);
+              }
 
-            String delims = "\n\r";
-            StringTokenizer lineTokenizer = new StringTokenizer(buf.toString(), delims, true);
-            int lineNumber = 1;
-            Section section = null;       // current section
-            try {
-              while (lineTokenizer.hasMoreTokens()) {
-                String line = lineTokenizer.nextToken();
-                if (line.length() == 1) {
-                  if (delims.contains(line)) {
-                    // delimiter
-                    if (line.equals("\n")) {
-                      lineNumber++;
+              String delims = "\n\r";
+              StringTokenizer lineTokenizer = new StringTokenizer(buf.toString(), delims, true);
+              int lineNumber = 1;
+              Section section = null;       // current section
+              try {
+                while (lineTokenizer.hasMoreTokens()) {
+                  String line = lineTokenizer.nextToken();
+                  if (line.length() == 1) {
+                    if (delims.contains(line)) {
+                      // delimiter
+                      if (line.equals("\n")) {
+                        lineNumber++;
+                      }
+                      continue;
                     }
-                    continue;
+                  }
+                  Section newSection = nextSection(line);
+                  if (newSection != null) {
+                    if (section != null) {
+                      section.finish();
+                    }
+                    section = newSection;
+                  }
+                  else if (section != null) {
+                    section.text.append('\n');
+                    section.text.append(line);
                   }
                 }
-                Section newSection = nextSection(line);
-                if (newSection != null) {
-                  if (section != null) {
-                    section.finish();
-                  }
-                  section = newSection;
-                }
-                else if (section != null) {
-                  section.text.append('\n');
-                  section.text.append(line);
+                if (section != null) {
+                  section.finish();
                 }
               }
-              if (section != null) {
-                section.finish();
+              catch (MojoExecutionException mox) {
+                String msg = mox.getMessage() + " in " + hintFile + ", line " + lineNumber;
+                if (mox.getCause() != null) {
+                  throw new MojoExecutionException(msg);
+                }
+                throw new MojoExecutionException(msg, mox.getCause());
               }
             }
-            catch (MojoExecutionException mox) {
-              String msg = mox.getMessage() + " in " + hintFile + ", line " + lineNumber;
-              if (mox.getCause() != null) {
-                throw new MojoExecutionException(msg);
-              }
-              throw new MojoExecutionException(msg, mox.getCause());
+            else {
+              logger.debug(hintFile + " skipped");
             }
           }
         }

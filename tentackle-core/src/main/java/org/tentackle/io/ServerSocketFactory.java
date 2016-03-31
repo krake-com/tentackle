@@ -17,38 +17,32 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
-import java.net.Socket;
+import java.net.ServerSocket;
+import java.rmi.server.RMIServerSocketFactory;
 import java.util.Objects;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import org.tentackle.io.CompressedSocketWrapper;
-import org.tentackle.io.SocketConfigurator;
-import org.tentackle.io.SocketConfiguratorHolder;
-
 
 /**
- * ZIP-compressed client socket factory
+ * Standard server socket factory.
  *
  * @author harald
  */
-public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory implements SocketConfiguratorHolder {
+public class ServerSocketFactory implements RMIServerSocketFactory, ServerSocketConfiguratorHolder {
 
-  private static final long serialVersionUID = 3906670971029103850L;
-
-  private volatile SocketConfigurator socketConfigurator;   // the optional socket configurator
+  protected volatile ServerSocketConfigurator socketConfigurator;   // the optional socket configurator
 
 
   @Override
-  public Socket createSocket(String host, int port) throws IOException {
-    Socket socket = new CompressedSocketWrapper(super.createSocket(host, port));
-    if (socketConfigurator != null) {
-      socketConfigurator.configure(socket);
-    }
-    return socket;
+  public ServerSocket createUnconfiguredServerSocket(int port) throws IOException {
+    return new ServerSocket(port);
   }
 
+  @Override
+  public ServerSocket createServerSocket(int port) throws IOException {
+    return createConfiguredServerSocket(port);
+  }
 
   @Override
   public int hashCode() {
@@ -66,17 +60,17 @@ public class CompressedSslClientSocketFactory extends SslRMIClientSocketFactory 
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final CompressedSslClientSocketFactory other = (CompressedSslClientSocketFactory) obj;
-    return SocketConfigurator.equals(this.socketConfigurator, other.socketConfigurator);
+    final ServerSocketFactory other = (ServerSocketFactory) obj;
+    return ServerSocketConfigurator.equals(this.socketConfigurator, other.socketConfigurator);
   }
 
   @Override
-  public SocketConfigurator getSocketConfigurator() {
+  public ServerSocketConfigurator getSocketConfigurator() {
     return socketConfigurator;
   }
 
   @Override
-  public void setSocketConfigurator(SocketConfigurator socketConfigurator) {
+  public void setSocketConfigurator(ServerSocketConfigurator socketConfigurator) {
     this.socketConfigurator = socketConfigurator;
   }
 

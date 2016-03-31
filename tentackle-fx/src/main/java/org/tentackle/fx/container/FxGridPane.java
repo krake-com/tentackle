@@ -99,6 +99,11 @@ public class FxGridPane extends GridPane implements FxContainer {
   }
 
   @Override
+  public void updateViewNonFocused() {
+    getDelegate().updateViewNonFocused();
+  }
+
+  @Override
   public void updateView() {
     getDelegate().updateView();
   }

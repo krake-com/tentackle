@@ -371,6 +371,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     DomainContext context = pdo.getDomainContext();
     DomainContext processedContext = cache.processContext(context);
     if (processedContext != context) {
+      pdo.setDomainContextImmutable(false);   // for sure
       pdo.setDomainContext(processedContext);
     }
     if (isReadOnly()) {
@@ -423,7 +424,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     if (cacheMap.put(ck, object) != null) {
       throw new PdoCacheException(object,
                                   "unique cache violation detected in " + this + " for " + object.toGenericString() +
-                                  ", key='" + ck + "'");
+                                  ", key = " + ck);
     }
   }
 
@@ -560,13 +561,12 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     public synchronized String toString()  {
       if (!inToString)  {
         inToString = true;
-        String str = context.getInfo() + ":<" + key + ">";
+        String str = context.toDiagnosticString() + ", value '" + key + "'";
         inToString = false;
         return str;
       }
       return "?";
     }
   }
-
 
 }

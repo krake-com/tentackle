@@ -16,10 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
-import org.tentackle.io.DefaultServerSocketConfigurator;
-import org.tentackle.io.DefaultSocketConfigurator;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;

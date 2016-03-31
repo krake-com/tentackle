@@ -30,10 +30,10 @@ import org.tentackle.common.BasicStringHelper;
  */
 public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
 
-  protected final IndexMetaData indexMetaData;    // index column belongs to
-  protected String columnName;                    // column columnName
-  protected boolean descending;                   // true = DESC, false = ASC
-  protected int position;                         // ordinal position within index
+  private final IndexMetaData indexMetaData;    // index column belongs to
+  private String columnName;                    // column columnName
+  private boolean descending;                   // true = DESC, false = ASC
+  private int position;                         // ordinal position within index
 
 
   /**

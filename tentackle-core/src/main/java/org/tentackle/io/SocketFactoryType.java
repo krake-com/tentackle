@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.util.StringTokenizer;
 
@@ -69,7 +69,7 @@ public enum SocketFactoryType {
    * <tt>socketfactory=[system|default|plain|ssl|compressed]</tt>: the socket factory type:
    * <ul>
    * <li><tt>system</tt>: use system factories (this is the default)</li>
-   * <li><tt>default</tt>: same factories as the {@link RemoteDbConnection} object</li>
+   * <li><tt>default</tt>: same factories as some provided default</li>
    * <li><tt>plain</tt>: plain sockets (see {@link ClientSocketFactory}, {@link ServerSocketFactory}</li>
    * <li><tt>ssl</tt>: use SSL (see {@link SslClientSocketFactory}, {@link SslServerSocketFactory}</li>
    * <li><tt>compressed</tt>: use compression (see

@@ -18,9 +18,15 @@
 
 package org.tentackle.sql.maven;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Predicate;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.model.fileset.FileSet;
@@ -78,13 +84,27 @@ public class BackendInfoParameter {
   /** optional migration hints. */
   public List<FileSet> migrationHints;
 
+  /**
+   * Optional minimum version number.<br>
+   * This is usually the version of the database model.
+   * <p>
+   * There are 2 kinds of filters:
+   * <ol>
+   * <li>Strings holding a fixed version number, e.g. 3.1.0</li>
+   * <li>String starting with 'SELECT' which is an SQL-select returning a version number (the current database version)</li>
+   * </ol>
+   * If given, the version number will be applied to the <em>directories</em> of the hint-files.
+   */
+  public String minVersion;
+
 
   /**
    * Creates a backend info from this parameter.
    *
+   * @param logger the maven logger
    * @return the backend info
    */
-  public BackendInfo createBackendInfo() {
+  public BackendInfo createBackendInfo(Log logger) {
     if (schemaNames != null) {
       schemas = new ArrayList<>();
       StringTokenizer stok = new StringTokenizer(schemaNames, ",");
@@ -104,16 +124,49 @@ public class BackendInfoParameter {
   /**
    * Load the migration hints.
    *
+   * @param backendInfo the backend info
    * @param logger the maven logger
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @return the hints the migration hints
    * @throws MojoExecutionException if failed
    */
-  public MigrationHints loadMigrationHints(Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public MigrationHints loadMigrationHints(BackendInfo backendInfo, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
     MigrationHints hints = new MigrationHints();
-    hints.load(migrationHints, logger, verbose, resourceDirs);
+    if (minVersion != null && minVersion.toUpperCase().startsWith("SELECT ")) {
+      String effectiveFilter = null;
+      try (Connection con = backendInfo.connect()) {
+        try (Statement stmt = con.createStatement()) {
+          ResultSet rs = stmt.executeQuery(minVersion);
+          if (rs.next()) {
+            effectiveFilter = rs.getString(1);
+          }
+        }
+        if (effectiveFilter == null) {
+          throw new MojoExecutionException(minVersion + " returned no results!");
+        }
+        minVersion = effectiveFilter;
+      }
+      catch (SQLException sx) {
+        throw new MojoExecutionException("cannot retrieve filter from database", sx);
+      }
+    }
+    if (minVersion != null) {
+      logger.debug("applying filter '" + minVersion + "'");
+    }
+    hints.load(migrationHints, createFilter(minVersion), logger, verbose, resourceDirs);
     return hints;
+  }
+
+
+  /**
+   * Creates a filter according to the version.
+   *
+   * @param version the minimum version, null if none
+   * @return the filter, null if version is null
+   */
+  public Predicate<File> createFilter(String version) {
+    return version == null ? null : new VersionFileFilter(version);
   }
 
 }

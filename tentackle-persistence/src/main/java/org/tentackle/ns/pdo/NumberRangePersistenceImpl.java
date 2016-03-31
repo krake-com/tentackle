@@ -219,6 +219,18 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     }
   }
 
+  /**
+   * Overridden cause of "--fulltracked".
+   */
+  @Override
+  public boolean differsPersisted() {
+    return super.differsPersisted()
+           || numberPoolIdPersisted != numberPoolId
+           || beginPersisted != begin
+           || endPersisted != end
+           ;
+  }
+
   @Override
   public void getFields(ResultSetWrapper rs) {
     super.getFields(rs);

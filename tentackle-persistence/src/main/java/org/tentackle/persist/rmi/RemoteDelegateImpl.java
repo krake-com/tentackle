@@ -77,7 +77,7 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    * @return the db
    */
   public Db getSession() {
-    return serverSession.getDb();
+    return serverSession.getSession();
   }
 
 
@@ -86,6 +86,7 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    *
    * @return the class
    */
+  @Override
   public Class<T> getServicedClass() {
     return servicedClass;
   }
