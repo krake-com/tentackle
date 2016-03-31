@@ -42,6 +42,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.migrate.TableMigrator;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
@@ -313,8 +314,8 @@ public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
               }
             }
 
-            catch (ModelException wex) {
-              getLog().error("parsing model failed for " + filename, wex);
+            catch (BackendException | ModelException ex) {
+              getLog().error("parsing model failed for " + filename, ex);
               errorCount++;
             }
           }

@@ -130,9 +130,9 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   }
 
   @Override
-  public boolean rollback(long txVoucher) throws RemoteException {
+  public boolean rollback(long txVoucher, boolean withLog) throws RemoteException {
     try {
-      return getSession().rollback(txVoucher);
+      return getSession().rollback(txVoucher, withLog);
     }
     catch (Exception ex)  {
       throw createException(ex);

@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo;
 
-import java.util.Collection;
 import java.util.List;
 import org.tentackle.persist.AbstractDbObject;
 import org.tentackle.persist.Db;
@@ -365,28 +364,37 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
-   * Check the read security for a single object.
+   * Check the read permission for a PDO.
    * <p>
-   * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Components are readable if their root-entity is readable.
    *
    * @param object the object to check the security rules for.
    *
    * @return false if operation (select) is denied.
    */
   public boolean isReadAllowed(AbstractPersistentObject<?,?> object) {
-    return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission());
+    if (checkSecurity) {
+      Permission readPermission = SecurityFactory.getInstance().getReadPermission();
+      if (object.isRootEntity()) {
+        return object.isPermissionAccepted(readPermission);
+      }
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), readPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
+    }
+    return true;
   }
 
   /**
-   * Check the write security for a single object.
+   * Check the write permission for a PDO.
    * <p>
-   * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Only root-entities are writable.
+   * Components are not writable by default (because only the root can be persisted).
+   * <p>
+   * Notice that the persistence layer will not invoke isWriteAllowed on components,
+   * because the root is already checked when saving or deleting a PDO. Remember that
+   * only root entities can be persisted by the application!
    *
    * @param object the object to check the security rules for.
    *
@@ -394,33 +402,38 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public boolean isWriteAllowed(AbstractPersistentObject<?,?> object) {
     return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getWritePermission());
+           (object.isRootEntity() &&
+            object.isPermissionAccepted(SecurityFactory.getInstance().getWritePermission()));
   }
 
   /**
-   * Check the view security for a single object.
+   * Check the view permission for a PDO.
    * <p>
-   * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Components are viewable if their root-entity is viewable.
    *
    * @param object the object to check the security rules for.
    *
    * @return false if operation is denied
    */
   public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
-    return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getViewPermission());
+    if (checkSecurity) {
+      Permission viewPermission = SecurityFactory.getInstance().getViewPermission();
+      if (object.isRootEntity()) {
+        return object.isPermissionAccepted(viewPermission);
+      }
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), viewPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
+    }
+    return true;
   }
 
   /**
-   * Check the edit security for a single object.
+   * Check the edit permission for a PDO.
    * <p>
-   * This is a low-level method.
-   * Only root entities are checked.
-   * Components must check their root-entity!
+   * Only root-entities are editable.
+   * Components are not editable by default (because only the root can be persisted).
    *
    * @param object the object to check the security rules for.
    *
@@ -428,78 +441,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
     return !checkSecurity ||
-           !object.isRootEntity() ||
-           object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission());
-  }
-
-
-  /**
-   * Checks the read security for a collection of objects of this class.<br>
-   * The returned collection is of the same type as the original collection.
-   * Notice that this method is provided for applications that circumvent
-   * readFromResultsetWrapper() somehow (which checks the read permission).
-   * Tentackle is not using this method.
-   * <p>
-   * Notice that {@link SecurityPersistenceImpl} objects are always readable!
-   *
-   * @param <T> AbstractPersistentObject class
-   * @param <C> Collection class
-   * @param objects the collection to check the security rules for.
-   *
-   * @return the objects with permission accepted.
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends AbstractPersistentObject<?,?>, C extends Collection<T>> C isReadAllowed(C objects) {
-    if (checkSecurity && objects != null && !clazz.isAssignableFrom(SecurityPersistenceImpl.class))  {
-      try {
-        C newObjects = (C)objects.getClass().newInstance();
-        for (T object: objects) {
-          if (object.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission())) {
-            newObjects.add(object);
-          }
-        }
-        objects = newObjects;
-      }
-      catch (Exception ex) {
-        throw new PersistenceException("can't instantiate collection for checking read security rules", ex);
-      }
-    }
-    return objects;
-  }
-
-
-  /**
-   * Checks the write security for a collection of objects of this class.<br>
-   * The returned collection is of the same type as the original collection.
-   * Notice that this method is provided for applications that circumvent
-   * deleteObject, updateObject or insertObject somehow (all of them check the write permission).
-   * Tentackle is not using this method.
-   * Furthermore, special care must be taken for "deleteBy..." methods that
-   * delete objects by an sql-statement via "DELETE ...".
-   *
-   * @param <T> AbstractPersistentObject class
-   * @param <C> Collection class
-   * @param objects the collection to check the security rules for.
-   *
-   * @return the objects with permission accepted.
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends AbstractPersistentObject<?,?>, C extends Collection<T>> C isWriteAllowed(C objects) {
-    if (checkSecurity && objects != null)  {
-      try {
-        C newObjects = (C)objects.getClass().newInstance();
-        for (T object: objects) {
-          if (object.isPermissionAccepted(SecurityFactory.getInstance().getWritePermission())) {
-            newObjects.add(object);
-          }
-        }
-        objects = newObjects;
-      }
-      catch (Exception ex) {
-        throw new PersistenceException("can't instantiate collection for checking write security rules", ex);
-      }
-    }
-    return objects;
+           (object.isRootEntity() &&
+            object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission()));
   }
 
 

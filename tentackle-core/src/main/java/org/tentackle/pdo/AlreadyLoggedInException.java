@@ -64,8 +64,8 @@ public class AlreadyLoggedInException extends LoginFailedException {
    */
   @Override
   public String getMessage() {
-    return MessageFormat.format(PdoCoreBundle.getString("YOU ARE ALREADY LOGGED INTO {0} SINCE {1}"),
-                                loginInfo.getApplicationName(),
+    return MessageFormat.format(PdoCoreBundle.getString("YOU ARE ALREADY LOGGED IN AT {0} SINCE {1}"),
+                                loginInfo.getHostInfo(),
                                 FormatHelper.formatShortTimestamp(new Date(loginInfo.getSince())));
   }
 }

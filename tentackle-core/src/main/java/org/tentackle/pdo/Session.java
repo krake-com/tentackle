@@ -239,13 +239,25 @@ public interface Session extends Comparable<Session> {
   boolean commit(long txVoucher);
 
   /**
-   * Rolls back a transaction if the corresponding begin() has started it.
+   * Rolls back a transaction if the corresponding begin() has started it.<br>
+   * The rollback is logged as INFO along with all statements.
    *
    * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
    *
    * @return true if tx was really rolled back, false if not.
    */
   boolean rollback(long txVoucher);
+
+  /**
+   * Rolls back a transaction if the corresponding begin() has started it.<br>
+   * Same as {@link #rollback} but without logging. Used for expected rollbacks
+   * or rollbacks not related to persistence exceptions.
+   *
+   * @param txVoucher the transaction voucher, 0 if ignore (nested tx)
+   *
+   * @return true if tx was really rolled back, false if not.
+   */
+  boolean rollbackSilently(long txVoucher);
 
   /**
    * Determines whether a tx is currently running.

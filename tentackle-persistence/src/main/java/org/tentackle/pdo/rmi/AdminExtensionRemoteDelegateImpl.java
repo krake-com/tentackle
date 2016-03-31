@@ -99,12 +99,12 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
       int count = 0;
       for (RemoteDbSessionImpl openSession : RemoteDbSessionImpl.getOpenSessions()) {
         if (openSession.getClientSessionInfo().getUserId() == userId &&
-            (sessionGroupId == 0 || openSession.getDb().getSessionGroupId() == sessionGroupId) &&
+            (sessionGroupId == 0 || openSession.getSession().getSessionGroupId() == sessionGroupId) &&
             (applicationName == null ||
             Objects.equals(openSession.getClientSessionInfo().getApplicationName(), applicationName)) &&
             (applicationId == 0 || openSession.getClientSessionInfo().getApplicationId() == applicationId)) {
 
-          Db db = openSession.getDb();
+          Db db = openSession.getSession();
           if (db != null) {
             // switch owner to prevent any further use and allow close by me
             db.setOwnerThread(Thread.currentThread());
@@ -180,7 +180,7 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
       }
       clientHost = remoteSession.getClientHostString();
       sessionNumber = remoteSession.getSessionNumber();
-      sessionGroup = remoteSession.getDb().getSessionGroupId();
+      sessionGroup = remoteSession.getSession().getSessionGroupId();
       options = remoteSession.getOptions();
     }
 

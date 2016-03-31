@@ -21,6 +21,7 @@
 package org.tentackle.persist.rmi;
 
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 /**
  * Tag interface for Remote delegates provided by getRemoteDelegate() in Db.<br>
@@ -33,9 +34,16 @@ import java.rmi.Remote;
  *
  * while session is the remote DB-session and clazz is the Class the delegate implements
  * the remote methods.
- * 
+ *
  * @author harald
  */
 public interface RemoteDelegate extends Remote {
-  
+
+  /**
+   * Gets the serviced class.
+   *
+   * @return the class
+   */
+  Class<?> getServicedClass() throws RemoteException;
+
 }

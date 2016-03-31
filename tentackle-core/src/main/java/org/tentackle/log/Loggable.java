@@ -24,6 +24,7 @@ import org.tentackle.log.Logger.Level;
 /**
  * An interface telling whether an object is loggable or not.
  * <p>
+ * Used by the RemoteDelegateInvocationHandler, for example.<br>
  * If used with exceptions, it usually tells whether the stacktrace should be logged or not.
  *
  * @author harald
@@ -35,6 +36,17 @@ public interface Loggable {
    *
    * @return the log level, null if no logging at all
    */
-  Level getLogLevel();
+  default Level getLogLevel() {
+    return Level.INFO;
+  }
+
+  /**
+   * Returns whether to log the stacktrace.
+   *
+   * @return true if with stacktrace, false if message only
+   */
+  default boolean withStacktrace() {
+    return true;
+  }
 
 }

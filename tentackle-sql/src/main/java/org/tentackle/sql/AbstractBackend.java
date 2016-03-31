@@ -290,30 +290,35 @@ public abstract class AbstractBackend implements Backend {
     boolean found = false;
     for (DatabaseMetaData metaData: modelMetaData.getMetaData()) {
       try {
-        table.setupTableFromMetaData(metaData, schemaPattern, tablePattern);
-        found = true;
-        break;
-      }
-      catch (Exception ex1) { // "Exception" is ok because drivers may fail with NPEs and other weird exceptions
         try {
-          table.setupTableFromMetaData(metaData,
-                                       schemaPattern == null ? null : schemaPattern.toUpperCase(),
-                                       tablePattern.toUpperCase());
+          table.setupTableFromMetaData(metaData, schemaPattern, tablePattern);
           found = true;
           break;
         }
-        catch (Exception ex2) {
+        catch (BackendException ex1) {
           try {
             table.setupTableFromMetaData(metaData,
-                                         schemaPattern == null ? null : schemaPattern.toLowerCase(),
-                                         tablePattern.toLowerCase());
+                                         schemaPattern == null ? null : schemaPattern.toUpperCase(),
+                                         tablePattern.toUpperCase());
             found = true;
             break;
           }
-          catch (Exception ex3) {
-            // no such table
+          catch (BackendException ex2) {
+            try {
+              table.setupTableFromMetaData(metaData,
+                                           schemaPattern == null ? null : schemaPattern.toLowerCase(),
+                                           tablePattern.toLowerCase());
+              found = true;
+              break;
+            }
+            catch (Exception ex3) {
+              // no such table
+            }
           }
         }
+      }
+      catch (SQLException sqx) {
+        throw new BackendException("backend lacks essential meta data support", sqx);
       }
     }
 

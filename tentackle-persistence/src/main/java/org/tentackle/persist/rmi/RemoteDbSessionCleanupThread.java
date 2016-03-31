@@ -31,6 +31,7 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.persist.Db;
 
 import static java.lang.Thread.sleep;
+import static java.lang.Thread.sleep;
 
 
 /**
@@ -139,7 +140,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       else  {
         if (session.isOpen()) {
 
-          Db db = session.getDb();
+          Db db = session.getSession();
           if (db == null || !db.isOpen()) {
             if (db != null) {
               LOGGER.warning("session Db " + db + " already closed in " + session + " -> cleanup forced and removed from session list");
@@ -200,7 +201,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       }
       else  {
         if (session.isOpen()) {
-          int group = session.getDb().getSessionGroupId();
+          int group = session.getSession().getSessionGroupId();
           if (group > 0) {
             boolean deadInTransaction = deadTxGroups.contains(group);
             boolean notAlive = !aliveGroups.contains(group);
@@ -208,7 +209,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
               // close the db of the group
               if (deadInTransaction) {
                 LOGGER.info("disconnect dead {0}, group={1}, due to hanging transaction on {2}",
-                            session, group, session.getDb());
+                            session, group, session.getSession());
               }
               else  {
                 LOGGER.info("disconnect dead {0}, group={1}", session, group);

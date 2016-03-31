@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;

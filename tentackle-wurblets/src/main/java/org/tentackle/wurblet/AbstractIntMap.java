@@ -22,6 +22,7 @@ package org.tentackle.wurblet;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -88,7 +89,7 @@ public class AbstractIntMap extends AbstractWurblet {
           try {
             mapEntryList.add(new MapEntry(line));
           }
-          catch (Exception ex)  {
+          catch (ParseException ex)  {
             throw new WurbelException(ex.getMessage() + " in line " + lineno + " of " + modelName, ex);
           }
         }
@@ -126,8 +127,9 @@ public class AbstractIntMap extends AbstractWurblet {
      * The first word is the name. The rest (trimmed) forms the value.
      *
      * @param text the source line
+     * @throws ParseException if syntax error
      */
-    public MapEntry(String text) throws Exception {
+    public MapEntry(String text) throws ParseException {
 
       StringTokenizer stok = new StringTokenizer(text, " \t" );
 
@@ -142,7 +144,7 @@ public class AbstractIntMap extends AbstractWurblet {
       }
 
       if (name == null || value == null) {
-        throw new Exception ("syntax error");
+        throw new ParseException ("syntax error", 0);
       }
     }
 

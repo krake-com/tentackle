@@ -371,11 +371,23 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     catch (CloneNotSupportedException ex) {
       throw new InternalError();    // should never happen
     }
-    obj.setId(0);
-    obj.setSerial(0);
+    // don't use setters bec. obj might be immutable
+    ((AbstractDbObject) obj).id = 0;
+    ((AbstractDbObject) obj).serial = 0;
     return obj;
   }
 
+
+  /**
+   * Updates the attributes in snapshot object.<br>
+   * The snapshot object is assumed to be a clone of this object.
+   *
+   * @param snapshot the snapshot
+   */
+  protected void createAttributesInSnapshot(AbstractDbObject snapshot) {
+    snapshot.id = id;   // was cleared in clone()
+    snapshot.serial = serial;
+  }
 
 
   /**
@@ -887,14 +899,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Checks whether object is deleted (or got a reserved ID).
-    * A deleted object with a reserved ID can be distinguished from
-   * an object with a reserved ID by its serial. See also {@link #isVirgin}.
+   * Checks whether object is deleted.
    *
    * @return true if object has been deleted
    */
   public boolean isDeleted()  {
-    return id < 0;
+    return id < 0 && serial > 0;
   }
 
 
@@ -1017,7 +1027,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Determines whether this object got some of its attributes modified.<br>
    * It does not check whether some of its components are modified!
-   * This method can also be used for non-tracked objects.
+   * This method can also be used for non-tracked entities.
    *
    * @return true if this object
    */
@@ -1027,10 +1037,21 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
+   * Returns whether any of the attributes differs from the values persisted in the database.<br>
+   * This method is only applicable to fulltracked entities and returns false if not fulltracked.
+   *
+   * @return true if differs, false if no change or entity isn't fulltracked
+   */
+  public boolean differsPersisted() {
+    return false;
+  }
+
+
+  /**
    * Determines whether this object is allowed to be stored in DB.<br>
    * By default all mutable objects are allowed to be saved.
    * Objects not allowed to be saved will force saveObject(), insert() and update()
- to return 'false' and silently skipped in saveCollection().
+   * to return 'false' and silently skipped in saveCollection().
    *
    * @return true if saveable
    */
@@ -1333,7 +1354,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Reads the values from a result-set into this object.
    *
    * @param rs is the result set (wrapper)
-   * @return the persistent object if valid, null if this object should be invisible to the user
+   * @return the persistent object, never null
    */
   @SuppressWarnings("unchecked")
   public P readFromResultSetWrapper(ResultSetWrapper rs)  {

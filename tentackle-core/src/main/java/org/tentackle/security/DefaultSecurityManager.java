@@ -447,29 +447,31 @@ public class DefaultSecurityManager implements SecurityManager {
    */
   protected SecurityResult createDefaultSecurityResult(String message) {
     if (isAcceptByDefault()) {
-      return createdAcceptedSecurityResult(message);
+      return createdAcceptedSecurityResult(message, true);
     }
-    return createDeniedSecurityResult(message);
+    return createDeniedSecurityResult(message, true);
   }
 
   /**
    * Creates an accepting security result.
    *
    * @param message the message
+   * @param byDefault true if accepted by default
    * @return the result
    */
-  protected SecurityResult createdAcceptedSecurityResult(String message) {
-    return new DefaultSecurityResult(message, true);
+  protected SecurityResult createdAcceptedSecurityResult(String message, boolean byDefault) {
+    return new DefaultSecurityResult(message, true, byDefault);
   }
 
   /**
    * Creates a denying security result.
    *
    * @param message the message
+   * @param byDefault true if denied by default
    * @return the result
    */
-  protected SecurityResult createDeniedSecurityResult(String message) {
-    return new DefaultSecurityResult(message, false);
+  protected SecurityResult createDeniedSecurityResult(String message, boolean byDefault) {
+    return new DefaultSecurityResult(message, false, byDefault);
   }
 
 
@@ -555,7 +557,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
     GranteeDescriptor sessionGrantee = determineGrantee(context);
     if (sessionGrantee == null) {
-      return createdAcceptedSecurityResult(null);
+      return createdAcceptedSecurityResult(null, true);
     }
 
     synchronized(this) {
@@ -599,10 +601,10 @@ public class DefaultSecurityManager implements SecurityManager {
             // rule applies!
             LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
             if (sec.isAllowed()) {
-              return createdAcceptedSecurityResult(sec.getMessage());
+              return createdAcceptedSecurityResult(sec.getMessage(), false);
             }
             else {
-              return createDeniedSecurityResult(sec.getMessage());
+              return createDeniedSecurityResult(sec.getMessage(), false);
             }
           }
         }

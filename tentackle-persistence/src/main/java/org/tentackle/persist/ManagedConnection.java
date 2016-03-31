@@ -616,7 +616,7 @@ public class ManagedConnection {
         buf.append(lDb.getOwnerThread());
       }
       for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
-        if (session.getDb() == lDb) {
+        if (session.getSession() == lDb) {
           // this is my session!
           buf.append(", ");
           buf.append(session);
@@ -727,11 +727,13 @@ public class ManagedConnection {
 
   /**
    * Performs a rollback.
+   *
+   * @param withLog true if log via INFO
    */
-  public void rollback() {
+  public void rollback(boolean withLog) {
     assertAttached();
     try {
-      if (LOGGER.isInfoLoggable()) {
+      if (withLog && LOGGER.isInfoLoggable()) {
         LOGGER.info(toDiagnosticString());
       }
       connection.rollback();
@@ -739,7 +741,7 @@ public class ManagedConnection {
       unmarkPreparedStatements();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "rollback failed", ex);
+      throw new PersistenceException(db, "rollback failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -903,7 +905,7 @@ public class ManagedConnection {
           if (!getAutoCommit()) {
             // in transaction!!! rollback
             LOGGER.severe("rolling back pending transaction for " + db);
-            rollback();
+            rollback(true);
           }
         }
         catch (PersistenceException pex) {

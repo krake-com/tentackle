@@ -346,6 +346,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   protected void createAttributesInSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
+    super.createAttributesInSnapshot(snapshot);
     snapshot.objectIsSnapshot = true;
     if (editedSince != null) {
       snapshot.editedSinceSnapshot = (Timestamp) editedSince.clone();
@@ -406,7 +407,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     super.revertAttributesToSnapshot(snapshot);
 
     contextImmutable = snapshot.contextImmutable;
-    pdo = (T) snapshot.pdo;
     copiedObject = (T) snapshot.copiedObject;
     editedBy = snapshot.editedBy;
     editedSince = snapshot.editedSince;
@@ -424,6 +424,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     snapshots = snapshot.snapshots;
     normText = snapshot.normText;
     validated = snapshot.validated;
+    persistable = snapshot.persistable;
   }
 
 
@@ -467,8 +468,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
-    if (snapshots.contains(snapshot)) {
-      throw new PersistenceException(this, "snapshot already added");
+    for (T sh: snapshots) {
+      // we cannot use contains() because all snaphots have the same object ID
+      if (sh == snapshot) {
+        throw new PersistenceException(this, "snapshot already added");
+      }
     }
     snapshots.add(snapshot);
   }
@@ -483,9 +487,15 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (!snapshot.isSnapshot()) {
       throw new PersistenceException(this, "not a snapshot");
     }
-    if (snapshots == null || !snapshots.contains(snapshot)) {
-      throw new PersistenceException(this, "invalid snapshot");
+    if (snapshots != null) {
+      for (T sh : snapshots) {
+        // we cannot use contains() because all snaphots have the same object ID
+        if (sh == snapshot) {
+          return;
+        }
+      }
     }
+    throw new PersistenceException(this, "invalid snapshot");
   }
 
 
@@ -1316,39 +1326,31 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to implement inheritance and security.
-   * If read access is denied, null is returned as if there was no such object.
+   * Overridden to implement inheritance and adjust the domain context.
    */
   @Override
   @SuppressWarnings("unchecked")
   public P readFromResultSetWrapper(ResultSetWrapper rs)  {
     P po = super.readFromResultSetWrapper(rs);
-    if (po != null) {
-      if (po.isAbstract()) {
-        // create the concrete persistence implementation according to the class id
-        int classId = po.getClassId();
-        if (classId == 0) {
-          throw new PersistenceException(po, "class id is 0 in " + po.toGenericString());
-        }
-        String className = PdoUtilities.getInstance().getPdoClassName(classId);
-        if (className == null) {
-          throw new PersistenceException(po, "no such PDO class for classId " + classId + " in " + po.toGenericString());
-        }
-        po = (P) Pdo.create(className, getDomainContext()).getPersistenceDelegate();
-        po = po.readFromResultSetWrapper(rs);   // invoke the concrete implementation
+    if (po.isAbstract()) {
+      // create the concrete persistence implementation according to the class id
+      int classId = po.getClassId();
+      if (classId == 0) {
+        throw new PersistenceException(po, "class id is 0 in " + po.toGenericString());
       }
-      if (po != null) {
-        if (po.getContextId() >= 0 || po.getDomainContext() == null) {
-          // pdo depends on a valid context id or no context at all
-          long domainContextId = po.getDomainContext() == null ? -1 : po.getDomainContext().getContextId();
-          if (domainContextId != po.getContextId()) {
-            // create valid context if context-IDs don't match or there is no domaincontext at all
-            po.setDomainContext(po.createValidContext());
-          }
-        }
-        if (!po.isReadAllowed()) {
-          po = null;
-        }
+      String className = PdoUtilities.getInstance().getPdoClassName(classId);
+      if (className == null) {
+        throw new PersistenceException(po, "no such PDO class for classId " + classId + " in " + po.toGenericString());
+      }
+      po = (P) Pdo.create(className, getDomainContext()).getPersistenceDelegate();
+      po = po.readFromResultSetWrapper(rs);   // invoke the concrete implementation
+    }
+    if (po.getContextId() >= 0 || po.getDomainContext() == null) {
+      // pdo depends on a valid context id or no context at all
+      long domainContextId = po.getDomainContext() == null ? -1 : po.getDomainContext().getContextId();
+      if (domainContextId != po.getContextId()) {
+        // create valid context if context-IDs don't match or there is no domaincontext at all
+        po.setDomainContext(po.createValidContext());
       }
     }
     return po;
@@ -1382,12 +1384,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       while (rs.next()) {
         P nextPo = newInstance();
         nextPo = nextPo.readFromResultSetWrapper(rs);
-        if (nextPo != null)  {
-          T nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
-          nextPdo = derivePdoFromPo(nextPdo, nextPo);
-          if (nextPdo != null) {
-            list.add(nextPdo);
-          }
+        T nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
+        nextPdo = derivePdoFromPo(nextPdo, nextPo);
+        if (nextPdo != null) {
+          list.add(nextPdo);
         }
       }
     }
@@ -1674,66 +1674,68 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param pdo the original persistent domain object
    * @param po the effective persistent object from readFromResultSetWrapper
-   * @return the persistent domain object, null if po is null
+   * @return the persistent domain object, null if no read permission
    */
   public T derivePdoFromPo(T pdo, P po) {
-    if (po != null) {
-      T derivedPdo;
-      if (po == pdo.getPersistenceDelegate()) {
-        derivedPdo = pdo;    // same type
-      }
-      else {
-        if (pdo.isAbstract()) {
-          // some subtype
-          derivedPdo = po.getPdo();
-        }
-        else {
-          throw new PersistenceException(this, "misconfigured PDO inheritance");
-        }
-      }
-
-      DomainContext context = getDomainContext();
-
-      if (po.isRootEntity()) {
-        // if this is a root entity: set its own root context (security already checked)
-        po.setSessionHolder(context.getRootContext(derivedPdo));   // no setDomainContext!
-      }
-      else {
-        // optional security checks for components (the root context is already checked before the select)
-        if (po.getRootId() != 0 && po.getRootId() != context.getRootId() ||
-            po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
-          // fast check failed!
-          if (po.getRootId() != 0 && po.getRootClassId() != 0) {
-            // po provides both the rootClassId and the rootId -> check that explicitly
-            // (useful for deep links)
-            SecurityResult sr = SecurityFactory.getInstance().getSecurityManager().evaluate(
-                    context, SecurityFactory.getInstance().getReadPermission(), po.getRootClassId(), po.getRootId());
-            if (sr.isAccepted()) {
-              return derivedPdo;
-            }
-            throw new SecurityException(po, sr.explain("no read permission for root entity " +
-                    po.getRootClassId() + "[" + po.getRootId() + "]"));
-          }
-          throw new SecurityException(po, "unexpected root context " +
-                  context.getRootClassId() + "[" + context.getRootId() + "], expected " +
-                  po.getRootClassId() + "[" + po.getRootId() + "]");
-        }
-      }
-      return derivedPdo;
+    T derivedPdo;
+    if (po == pdo.getPersistenceDelegate()) {
+      derivedPdo = pdo;    // same type
     }
-    return null;
+    else {
+      if (pdo.isAbstract()) {
+        // some subtype
+        derivedPdo = po.getPdo();
+      }
+      else {
+        throw new PersistenceException(this, "misconfigured PDO inheritance");
+      }
+    }
+
+    DomainContext context = getDomainContext();
+
+    if (po.isRootEntity()) {
+      // set the root-context for sure
+      po.setSessionHolder(context.getRootContext(derivedPdo));   // no setDomainContext!
+      // check always because context wasn't checked by assertRootContextIsAccepted
+      // but simply created along with the PDO!
+      if (!po.isReadAllowed()) {
+        return null;
+      }
+    }
+    else {
+      // optional security checks for components (the root context is already checked by assertRootContextIsAccepted)
+      if (po.getRootId() != 0 && po.getRootId() != context.getRootId() ||
+          po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
+        // fast check failed!
+        if (po.getRootId() != 0 && po.getRootClassId() != 0) {
+          // po provides both the rootClassId and the rootId -> check that explicitly
+          // (useful for deep links)
+          SecurityResult sr = SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  context, SecurityFactory.getInstance().getReadPermission(), po.getRootClassId(), po.getRootId());
+          if (sr.isAccepted()) {
+            return derivedPdo;
+          }
+          // no permission for root-entity -> component does not exist as the root does for this user
+          return null;
+        }
+        throw new SecurityException(po, "unexpected root context " +
+                context.getRootClassId() + "[" + context.getRootId() + "], expected " +
+                po.getRootClassId() + "[" + po.getRootId() + "]");
+      }
+    }
+    return derivedPdo;
   }
 
 
   /**
    * Checks the root context agains the security rules.
-   *
    */
   public void assertRootContextIsAccepted() {
     DomainContext context = getDomainContext();
     if (context.isRootContext()) {
       SecurityResult result = SecurityFactory.getInstance().getSecurityManager().
-              evaluate(context, SecurityFactory.getInstance().getReadPermission(), context.getRootClassId(), context.getRootId());
+              evaluate(context, SecurityFactory.getInstance().getReadPermission(),
+                       context.getRootClassId(), context.getRootId());
       if (!result.isAccepted()) {
         throw new SecurityException(this, result.explain(
                 "no read permission for root-entity " + context.getRootClassId() + "[" + context.getRootId() + "]"));
@@ -2492,7 +2494,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public void initModification(char modType) {
     super.initModification(modType);
-    assertWritePermission();
     clearTokenLock();
   }
 
@@ -2867,7 +2868,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public void delete() {
     assertRootEntity();
-    assertWritePermission();
+    if (!getSession().isRemote()) {
+      assertWritePermission();  // check only once at server side
+    }
     deleteImpl();
   }
 
@@ -2880,7 +2883,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       preparePending = true;
       try {
         prepareDelete();
-        getRemoteDelegate().deleteImpl(pdo);
+        getRemoteDelegate().deleteImpl(pdo);    // this will do delete() in server, i.e. all checks
         setPersistable(false);    // pdo cannot be used anymore
       }
       catch (RemoteException e) {
@@ -2896,6 +2899,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public void save() {
     assertRootEntity();
+    if (!getSession().isRemote()) {
+      assertWritePermission();  // check only once at server side
+    }
     saveImpl();
   }
 
@@ -2920,7 +2926,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
     else  {
-      assertWritePermission();
       if (!isValidated()) {
         validate();
       }
@@ -2993,6 +2998,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T persist() {
     assertRootEntity();
+    if (!getSession().isRemote()) {
+      assertWritePermission();  // check only once at server side
+    }
     return persistImpl();
   }
 
@@ -3032,7 +3040,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
     else  {
-      assertWritePermission();
       if (!isValidated()) {
         validate();
       }
@@ -3416,6 +3423,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
       assertNotCached();
       assertPersistable();
+      assertRootEntity();
       assertWritePermission();
 
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
@@ -3511,7 +3519,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     else  {
       assertNotCached();
       assertPersistable();
+      assertRootEntity();
       assertWritePermission();
+
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
                                                            this::createUpdateTokenLockOnlySql);
@@ -3542,6 +3552,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     else  {
       assertNotCached();
       assertPersistable();
+      assertRootEntity();
       assertWritePermission();
 
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {

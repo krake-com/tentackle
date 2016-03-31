@@ -19,8 +19,10 @@
 
 package org.tentackle.fx.rdc;
 
+import java.util.Objects;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.input.MouseEvent;
@@ -96,10 +98,18 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
       provider = pdo == null ? null : GuiProviderFactory.getInstance().createGuiProvider(pdo);
       if (provider == null) {
         setText(null);
+        setTooltip(null);
         setGraphic(getTreeItem().getGraphic());
       }
       else {
-        setText(provider.getTreeText());
+        PdoTreeItem<T> parentItem = getPdoTreeItem().getParentPdoItem();
+        String treeText = provider.getTreeText(parentItem == null ? null : parentItem.getPdo());
+        setText(treeText);
+        String tooltipText = provider.getToolTipText(parentItem == null ? null : parentItem.getPdo());
+        if (Objects.equals(treeText, tooltipText)) {
+          tooltipText = null; // same as treetext -> no tooltip (default)
+        }
+        setTooltip(tooltipText == null ? null : new Tooltip(tooltipText));
         setGraphic(provider.createIcon());
       }
     }

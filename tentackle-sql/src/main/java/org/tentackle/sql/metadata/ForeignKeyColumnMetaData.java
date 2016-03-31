@@ -32,10 +32,10 @@ import org.tentackle.sql.BackendException;
  */
 public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMetaData> {
 
-  protected final ForeignKeyMetaData foreignKeyMetaData;    // foreign key column belongs to
-  protected int position;                                   // ordinal position within the foreign key
-  protected String foreignKeyColumn;                        // the column name of the fk
-  protected String primaryKeyColumn;                        // the column name of the pk
+  private final ForeignKeyMetaData foreignKeyMetaData;    // foreign key column belongs to
+  private int position;                                   // ordinal position within the foreign key
+  private String foreignKeyColumn;                        // the column name of the fk
+  private String primaryKeyColumn;                        // the column name of the pk
 
 
   /**
@@ -66,6 +66,15 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   }
 
   /**
+   * Sets the ordinal position within the index.
+   *
+   * @param position the position
+   */
+  public void setPosition(int position) {
+    this.position = position;
+  }
+
+  /**
    * Gets the referencing column.
    *
    * @return the column name
@@ -75,15 +84,29 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   }
 
   /**
-   * Gets the referenced column.
+   * Sets the referencing column.
+   * @param foreignKeyColumn the column name
+   */
+  public void setForeignKeyColumn(String foreignKeyColumn) {
+    this.foreignKeyColumn = foreignKeyColumn;
+  }
+
+  /**
+   * Gets the primary key column.
    *
-   * @return the column
+   * @return the column name
    */
   public String getPrimaryKeyColumn() {
     return primaryKeyColumn;
   }
 
-
+  /**
+   * Sets the primary key column.
+   * @param primaryKeyColumn the column name
+   */
+  public void setPrimaryKeyColumn(String primaryKeyColumn) {
+    this.primaryKeyColumn = primaryKeyColumn;
+  }
 
   /**
    * Sets up the foreign key column from the database meta data result.

@@ -17,14 +17,12 @@
  */
 
 
-package org.tentackle.persist.rmi;
+package org.tentackle.io;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Objects;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import org.tentackle.io.SocketConfigurator;
-import org.tentackle.io.SocketConfiguratorHolder;
 
 /**
  * SSL client socket factory.
