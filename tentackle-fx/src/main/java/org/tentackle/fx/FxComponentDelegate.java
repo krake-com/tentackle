@@ -260,7 +260,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
           ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
           String msg;
           if (vx == null) {
-            LOGGER.severe("update model failed for " + getComponent(), rex);
+            LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
             msg = rex.getLocalizedMessage();
             if (msg == null) {
               msg = rex.getClass().getName();
