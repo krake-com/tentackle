@@ -121,15 +121,15 @@ public class PasswordDialog extends org.tentackle.swing.FormDialog {
 
 
   /**
-   * Encrypts the password.
+   * Encrypts the password.<br>
    * The default implementation calculates an MD5-hash.
    *
    * @param password the password to be encrypted (may be null)
    * @return the encrypted password, null if password was null
-   * @see StringHelper#md5sum(char[])
+   * @see StringHelper#hash(java.lang.String, char[], char[])
    */
   public String encryptPassword(char[] password) {
-    return StringHelper.md5sum(password);
+    return StringHelper.hash("MD5", null, password);
   }
 
 
