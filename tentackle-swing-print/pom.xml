@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.0.7-SNAPSHOT</version>
+    <version>2.0.7</version>
   </parent>
 
   <artifactId>tentackle-swing-print</artifactId>
-  <version>2.0.7-SNAPSHOT</version>
+  <version>2.0.7</version>
   <packaging>jar</packaging>
   <name>Tentackle Swing Printing</name>
   <description>Printing Components based on Tentackle-Swing</description>
