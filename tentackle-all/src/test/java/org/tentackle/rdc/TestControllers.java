@@ -92,12 +92,16 @@ public class TestControllers extends AbstractApplication {
   public void testControllers() {
 
     if (session == null) {
-      Reporter.log("no backend found -> no FX tests<br>");
+      String msg = "no backend found -> no FX tests";
+      LOGGER.warning(msg);
+      Reporter.log(msg + "<br>");
       return;
     }
 
     if (GraphicsEnvironment.isHeadless()) {
-      Reporter.log("JVM is headless -> no FX tests<br>");
+      String msg = "JVM is headless -> no FX tests";
+      LOGGER.warning(msg);
+      Reporter.log(msg + "<br>");
       return;
     }
 
@@ -105,7 +109,9 @@ public class TestControllers extends AbstractApplication {
       PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
     }
     catch(RuntimeException rex) {
-      Reporter.log("FX not supported -> no FX tests<br>");
+      String msg = "FX not supported -> no FX tests<br>";
+      LOGGER.warning(msg);
+      Reporter.log(msg + "<br>");
       return;
     }
 
