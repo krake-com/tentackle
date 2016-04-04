@@ -98,13 +98,6 @@ public class TestControllers extends AbstractApplication {
       return;
     }
 
-    if (GraphicsEnvironment.isHeadless()) {
-      String msg = "JVM is headless -> no FX tests";
-      LOGGER.warning(msg);
-      Reporter.log(msg + "<br>");
-      return;
-    }
-
     try {
       PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
     }
