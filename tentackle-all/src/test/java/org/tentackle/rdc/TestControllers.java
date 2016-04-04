@@ -20,6 +20,8 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
@@ -41,6 +43,11 @@ import org.testng.annotations.Test;
  */
 public class TestControllers extends AbstractApplication {
 
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestControllers.class);
+
   private Session session;
   private DomainContext context;
 
@@ -56,7 +63,7 @@ public class TestControllers extends AbstractApplication {
       session.open();
     }
     catch (PersistenceException ex) {
-      Reporter.log("cannot connect to backend: " + ex);
+      LOGGER.warning("cannot connect to backend: ", ex);
       // no database? wrong database? whatever: testing environment incomplete
       session = null;
       return;
