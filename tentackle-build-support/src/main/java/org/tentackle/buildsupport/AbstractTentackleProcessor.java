@@ -36,7 +36,7 @@ import javax.annotation.processing.ProcessingEnvironment;
  */
 public abstract class AbstractTentackleProcessor extends AbstractProcessor {
 
-  private File   sourceDir;                                   // source directory for java files
+  private File sourceDir;                                     // source directory for java files
   private final Map<File,ResourceManager> resourceManagers;   // manager for generated resources
   private boolean debugLogging;                               // true if info logging
   private boolean infoLogging;                                // true if debug logging
