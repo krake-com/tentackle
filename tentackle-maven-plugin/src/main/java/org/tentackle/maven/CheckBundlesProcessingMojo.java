@@ -56,7 +56,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  *
  * @author harald
  */
-@Mojo(name = "checkBundles",
+@Mojo(name = "check-bundles",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {
