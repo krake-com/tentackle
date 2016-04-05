@@ -75,6 +75,8 @@ public class BundleKey {
   /**
    * Checks that the bundle and key exists.
    *
+   * @param locale the locale
+   * @param cls the classloaded
    * @return true if exists, false if missing resource
    */
   public boolean exists(Locale locale, ClassLoader cls) {
