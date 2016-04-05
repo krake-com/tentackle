@@ -19,6 +19,7 @@
 
 package org.tentackle.maven;
 
+import com.sun.tools.javac.api.JavacTool;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -116,7 +116,16 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * Prepares the execution.<br>
    * Invoked before validate().
    */
-  public abstract void prepareExecute();
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
+
+  /**
+   * Finishes the execution.
+   */
+  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
 
 
 
@@ -156,6 +165,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
       }
     }
+
+    finishExecute();
 
     if (processors != null) {
       for (AbstractTentackleProcessor processor: processors) {
@@ -261,7 +272,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
       }
 
-      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      // JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();   // picks the wrong classloader :(
+      JavaCompiler compiler = JavacTool.create();
+
       if (compiler == null) {
         throw new MojoExecutionException(
                 "No Java compiler! Make sure you're using the JDK or tools.jar is in your classpath.");

@@ -82,4 +82,5 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
   public void prepareExecute() {
     setMojoParameters(sourceDir, analyzeDir, servicesDir, classpathElements);
   }
+  
 }

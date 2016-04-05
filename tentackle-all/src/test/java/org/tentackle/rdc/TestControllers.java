@@ -14,7 +14,6 @@
 package org.tentackle.rdc;
 
 import com.sun.javafx.application.PlatformImpl;
-import java.awt.GraphicsEnvironment;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
