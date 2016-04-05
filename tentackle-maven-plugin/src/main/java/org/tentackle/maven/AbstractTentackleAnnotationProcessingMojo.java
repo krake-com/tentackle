@@ -115,6 +115,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Prepares the execution.<br>
    * Invoked before validate().
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
    */
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     // default does nothing
@@ -122,6 +125,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
   /**
    * Finishes the execution.
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
    */
   public void finishExecute() throws MojoExecutionException, MojoFailureException {
     // default does nothing
