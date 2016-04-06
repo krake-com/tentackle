@@ -33,7 +33,7 @@ public class Constants {
   public static final String DEFAULT_SERVICE_PATH = "META-INF/services/";
 
   /** the directory for resource bundle names. */
-  public static final String DEFAULT_BUNDLE_PATH = "META-INF/bundles/";
+  public static final String BUNDLE_SERVICE_PATH = "META-INF/bundles/";
 
   /** suppress warnings for suspicious stateful domain logic. */
   public static final String SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC = "stateful-domain-logic";

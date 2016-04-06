@@ -18,9 +18,6 @@
 
 package org.tentackle.maven;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
-
 /**
  * Bundle key.
  *
@@ -72,18 +69,12 @@ public class BundleKey {
     return key;
   }
 
-  /**
-   * Checks that the bundle and key exists.
-   *
-   * @param locale the locale
-   * @param cls the classloaded
-   * @return true if exists, false if missing resource
-   */
-  public boolean exists(Locale locale, ClassLoader cls) {
-    String resourceName = name;
+
+  public String getBundleName() {
+    String bundleName = name;
     if (name.endsWith("()")) {
       // method invocation such as getBundle()
-      resourceName = path;    // assume the same as the classname
+      bundleName = path;    // assume the same as the classname
     }
     else {
       int ndx = name.lastIndexOf('.');
@@ -92,20 +83,11 @@ public class BundleKey {
         if (Character.isLowerCase(lastName.charAt(0)) ||    // first char lowercase (variable)
             lastName.toUpperCase().equals(lastName)) {      // or all uppercase (final constant)
           // variable reference such as "resources"
-          resourceName = path;    // assume the same as the classname
+          bundleName = path;    // assume the same as the classname
         }
       }
     }
-
-    try {
-      ResourceBundle bundle = ResourceBundle.getBundle(resourceName, locale, cls);
-      bundle.getString(key);
-    }
-    catch (RuntimeException rex) {
-      return false;
-    }
-
-    return true;
+    return bundleName;
   }
 
   @Override

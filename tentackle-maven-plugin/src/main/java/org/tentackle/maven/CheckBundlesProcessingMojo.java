@@ -23,13 +23,26 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Objects;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.Constants;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -50,8 +63,6 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  * <ul>
  * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural</li>
  * <li>ValidationBundles, i.e. translations in validators (message=...)</li>
- * <li>&#64;FxControllerService with resource=...</li>
- * <li>&#64;Bundle with value=...</li>
  * </ul>
  *
  * @author harald
@@ -84,12 +95,12 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
 
 
   /**
-   * The locale to check the bundles against.<br>
-   * Defaults to the current locale.
+   * The locales to check the bundles against.<br>
+   * Defaults to the current locale.<br>
+   * The fallback locale should come first.
    */
   @Parameter
-  protected String locale;
-
+  protected String locales;
 
   /**
    * Classloader for ResourceBundle.getBundle().
@@ -121,34 +132,185 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
   @Override
   public void finishExecute() throws MojoExecutionException {
 
-    Locale bundleLocale;
-    if (locale != null) {
-      bundleLocale = Locale.forLanguageTag(locale);
+    List<Locale> bundleLocales = new ArrayList<>();
+    if (locales != null) {
+      StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
+      while (stok.hasMoreTokens()) {
+        String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
+        Locale bundleLocale = Locale.forLanguageTag(localeName);
+        if (bundleLocale != null && !bundleLocale.toString().isEmpty()) {
+          bundleLocales.add(bundleLocale);
+        }
+        else {
+          getLog().warn("no such locale: " + localeName);
+        }
+      }
     }
-    else {
-      bundleLocale = Locale.getDefault();
+    if (bundleLocales.isEmpty()) {
+      Locale bundleLocale = Locale.getDefault();
+      getLog().warn("fallback to default locale " + bundleLocale);
+      bundleLocales.add(bundleLocale);
     }
 
-    int errors = 0;
-    int count = 0;
-    for (BundleKey key: bundleScanner.getBundleKeys()) {
-      count++;
-      if (!key.exists(bundleLocale, bundleLoader)) {
-        getLog().error("missing resource " + key);
-        errors++;
+
+    Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
+
+    for (String serviceName: new String[] {"org.tentackle.common.Bundle",
+                                           "org.tentackle.fx.FxControllerService"} ) {
+
+      for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(bundleLoader, Constants.BUNDLE_SERVICE_PATH).
+              findServiceConfigurations(serviceName).entrySet()) {
+
+        String configuration = entry.getKey();
+        List<String> parts = BasicStringHelper.split(configuration, ":= ");
+        String bundleName = parts.get(0);
+        for (Locale bundleLocale: bundleLocales) {
+          try {
+            ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, bundleLoader);
+            switch (parts.size()) {
+              case 1:
+                bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
+                break;
+              case 2:
+                bundleMap.putIfAbsent(new NameKey(bundleLocale, parts.get(1)), bundle);
+                break;
+              default:
+                throw new TentackleRuntimeException("invalid bundle configuration '" + configuration + "' in " + entry.
+                        getValue());
+            }
+          }
+          catch (RuntimeException rex) {
+            getLog().error("could not load bundle " + bundleName);
+          }
+        }
       }
     }
 
+    int errors = 0;           // total errors
+
+    Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
+
+    int keyCount = 0;
+    for (BundleKey key: bundleScanner.getBundleKeys()) {
+      keyCount++;
+      String bundleName = key.getBundleName();
+      for (Locale bundleLocale: bundleLocales) {
+        ResourceBundle bundle = bundleMap.get(new NameKey(bundleLocale, bundleName));
+        if (bundle == null) {
+          getLog().error("bundle " + bundleName + " not registered by annotation");
+          errors++;
+        }
+        else {
+          usedBundleNames.add(bundleName);
+          try {
+            bundle.getString(key.getKey());
+          }
+          catch (MissingResourceException mx) {
+            getLog().error("missing resource " + key);
+            errors++;
+          }
+        }
+      }
+    }
+
+    // find diffs in bundles
+    for (String bundleName: usedBundleNames) {
+      Set<String> keys = null;
+      for (Locale bundleLocale: bundleLocales) {
+        NameKey nameKey = new NameKey(bundleLocale, bundleName);
+        ResourceBundle bundle = bundleMap.get(nameKey);
+        if (bundle == null) {
+          getLog().error("no bundle " + bundleName + " for " + bundleLocale);
+          errors++;
+        }
+        else {
+          if (keys == null) {
+            keys = bundle.keySet();
+          }
+          else {
+            Set<String> bundleKeys = bundle.keySet();
+            for (String key: keys) {
+              if (!bundleKeys.contains(key)) {
+                getLog().error("key '" + key + "' missing in " + nameKey);
+                errors++;
+              }
+            }
+            for (String key: bundle.keySet()) {
+              if (!keys.contains(key)) {
+                getLog().error("key '" + key + "' for " + bundleLocale + " not defined in all locales of " + bundleName);
+                errors++;
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+    StringBuilder localestr = new StringBuilder();
+    for (Locale bundleLocale : bundleLocales) {
+      if (localestr.length() > 0) {
+        localestr.append(", ");
+      }
+      localestr.append(bundleLocale);
+    }
+    String msg = keyCount + " key" + (keyCount > 1 ? "s" : "") + " checked for " + localestr + " in " +
+                 usedBundleNames.size() + " bundle" + (usedBundleNames.size() > 1 ? "s" : "") + ", ";
+
     if (errors > 0) {
-      String msg = errors + " errors";
-      getLog().error(count + " keys checked (" + bundleLocale + "), " + msg);
+      msg += errors + " errors";
+      getLog().error(msg);
       throw new MojoExecutionException(msg);
     }
     else {
-      getLog().info(count + " keys checked (" + bundleLocale + "), no errors");
+      getLog().info(msg + "no errors");
     }
   }
 
+
+
+  private static class NameKey {
+
+    private final Locale locale;
+    private final String name;
+
+    private NameKey(Locale locale, String name) {
+      this.locale = locale;
+      this.name = name;
+    }
+
+    @Override
+    public String toString() {
+      return name + "(" + locale + ")";
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 5;
+      hash = 59 * hash + Objects.hashCode(this.locale);
+      hash = 59 * hash + Objects.hashCode(this.name);
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final NameKey other = (NameKey) obj;
+      if (!Objects.equals(this.name, other.name)) {
+        return false;
+      }
+      return Objects.equals(this.locale, other.locale);
+    }
+
+  }
 
 
   /**
