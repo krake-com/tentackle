@@ -59,9 +59,9 @@ import org.tentackle.common.TentackleRuntimeException;
  *
  * If a class must not be checked for bundle keys, it needs to be excluded from the fileset.
  * <p>
- * Currently, the following bundles are not covered by this mojo: (TODO)
+ * The following bundles are not covered by this mojo: (TODO)
  * <ul>
- * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural</li>
+ * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural: must be covered by a test. See PdoUtilitiesTest.</li>
  * <li>ValidationBundles, i.e. translations in validators (message=...)</li>
  * </ul>
  *

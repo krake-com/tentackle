@@ -21,6 +21,8 @@ package org.tentackle.ns.pdo;
 
 import org.tentackle.pdo.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.Plural;
+import org.tentackle.pdo.Singular;
 import org.tentackle.pdo.TableName;
 
 
@@ -60,6 +62,8 @@ import org.tentackle.pdo.TableName;
  */
 @TableName(/**/"numrange"/**/) // @wurblet < Inject --string $tablename
 @ClassId(/**/7/**/) // @wurblet < Inject $classid
+@Singular("number range")
+@Plural("number ranges")
 public interface NumberRange extends PersistentDomainObject<NumberRange>, NumberRangeDomain, NumberRangePersistence {
 
 }
