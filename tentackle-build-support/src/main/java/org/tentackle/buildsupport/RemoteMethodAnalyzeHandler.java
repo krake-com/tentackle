@@ -43,8 +43,8 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
-  public void setProcessor(AbstractTentackleProcessor processor) {
-    this.processor = (AnalyzeProcessor) processor;
+  public void setProcessor(AnalyzeProcessor processor) {
+    this.processor = processor;
   }
 
   @Override

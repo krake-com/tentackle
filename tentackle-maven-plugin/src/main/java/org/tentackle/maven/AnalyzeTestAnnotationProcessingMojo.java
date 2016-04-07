@@ -21,6 +21,7 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.util.List;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -38,7 +39,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  *
  * @author harald
  */
-@Mojo(name = "testAnalyze",
+@Mojo(name = "test-analyze",
       defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
       requiresDependencyResolution = ResolutionScope.TEST)
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
@@ -79,8 +80,8 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
 
 
   @Override
-  public void prepareExecute() {
+  public void prepareExecute() throws MojoFailureException {
     setMojoParameters(sourceDir, analyzeDir, servicesDir, classpathElements);
   }
-  
+
 }

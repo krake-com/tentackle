@@ -24,7 +24,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.Analyze;
 
 
 /**
@@ -37,7 +36,6 @@ import org.tentackle.common.Analyze;
 @Documented
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Analyze("org.tentackle.buildsupport.ValidationAnalyzeHandler")
 public @interface Validation {
 
   /**

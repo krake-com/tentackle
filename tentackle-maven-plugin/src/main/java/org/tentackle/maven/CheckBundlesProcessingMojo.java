@@ -20,9 +20,7 @@
 package org.tentackle.maven;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +33,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -103,9 +102,10 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
   protected String locales;
 
   /**
-   * Classloader for ResourceBundle.getBundle().
+   * True whether to skip this test.
    */
-  private BundleClassLoader bundleLoader;
+  @Parameter(defaultValue = "${skipTests}")
+  protected boolean skipTests;
 
 
   /**
@@ -117,16 +117,19 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
     addProcessor(processor);
   }
 
+  @Override
+  public void execute() throws MojoExecutionException, MojoFailureException {
+    if (skipTests) {
+      getLog().info("Tests are skipped.");
+    }
+    else {
+      super.execute();
+    }
+  }
 
   @Override
-  public void prepareExecute() {
+  public void prepareExecute() throws MojoFailureException {
     setMojoParameters(sourceDir, classpathElements);
-    try {
-      bundleLoader = new BundleClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
-    }
-    catch (MalformedURLException mx) {
-      getLog().error("cannot create bundle classloader", mx);
-    }
   }
 
   @Override
@@ -164,13 +167,15 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
     Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
 
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-    for (Map.Entry<String, URL> providerEntry : ServiceFactory.getServiceFinder(bundleLoader, Constants.DEFAULT_SERVICE_PATH).
+    for (Map.Entry<String, URL> providerEntry :
+            ServiceFactory.getServiceFinder(getProcessingClassloader(), Constants.DEFAULT_SERVICE_PATH).
               findServiceConfigurations(getClass().getName()).entrySet()) {
       String serviceName = providerEntry.getKey();
 
       // for all bundles annotated with such an annotation
-      for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(bundleLoader, Constants.BUNDLE_SERVICE_PATH).
-              findServiceConfigurations(serviceName).entrySet()) {
+      for (Map.Entry<String, URL> entry :
+              ServiceFactory.getServiceFinder(getProcessingClassloader(), Constants.BUNDLE_SERVICE_PATH).
+                findServiceConfigurations(serviceName).entrySet()) {
 
         String configuration = entry.getKey();
         List<String> parts = BasicStringHelper.split(configuration, ":= ");
@@ -178,7 +183,7 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
         if (usedBundleNames.contains(bundleName)) {
           for (Locale bundleLocale: bundleLocales) {
             try {
-              ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, bundleLoader);
+              ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
               switch (parts.size()) {
                 case 1:
                   bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
@@ -328,35 +333,6 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
       return Objects.equals(this.locale, other.locale);
     }
 
-  }
-
-
-  /**
-   * Classloader to load the bundles.<br>
-   * Necessary since the compliler's classpath options don't change the task's classloader.
-   */
-  private static class BundleClassLoader extends URLClassLoader {
-
-    /**
-     * Create from another classloader.
-     *
-     * @param classLoader the task's classloader
-     */
-    private BundleClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
-      super(classLoader.getURLs());
-      if (classpathElements != null) {
-        for (String classpathElement : classpathElements) {
-          File classPathFile = new File(classpathElement);
-          URL url = classPathFile.toURI().toURL();
-          addURL(url);
-        }
-      }
-    }
-
-    @Override
-    public void addURL(URL url) {
-      super.addURL(url);
-    }
   }
 
 }

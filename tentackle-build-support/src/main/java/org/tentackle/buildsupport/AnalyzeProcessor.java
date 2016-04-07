@@ -56,12 +56,25 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
   private File analyzeDir;
   private File serviceDir;
+  private ClassLoader processingClassLoader;
+
 
   /**
-   * Creates the annotation processor for the {@link Analyze} annotation.
+   * Gets the classloader to be used instead of the default.
+   *
+   * @return the classloader, never null (fallback to current classloader)
    */
-  public AnalyzeProcessor() {
-    super();
+  public ClassLoader getProcessingClassLoader() {
+    return processingClassLoader == null ? getClass().getClassLoader() : processingClassLoader;
+  }
+
+  /**
+   * Sets the classloader to be used instead of the default.
+   *
+   * @param processingClassLoader the classloader, null if default
+   */
+  public void setProcessingClassLoader(ClassLoader processingClassLoader) {
+    this.processingClassLoader = processingClassLoader;
   }
 
   /**
@@ -112,13 +125,13 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
     boolean claimed = false;
     if (!roundEnv.processingOver()) {
       for (TypeElement annotationType: annotationTypes) {
+        if (isDebugLogging()) {
+          processingEnv.getMessager().printMessage(
+                  Kind.NOTE, "processing annotation " + annotationType);
+        }
         List<AnalyzeHandler> handlers = new ArrayList<>();
         findHandlers(annotationType, handlers);
         for (AnalyzeHandler handler: handlers) {
-          if (isDebugLogging()) {
-            processingEnv.getMessager().printMessage(
-                  Kind.NOTE, "processing annotation " + annotationType);
-          }
           handler.processAnnotation(annotationType, roundEnv);
           claimed = true;
         }

@@ -22,6 +22,9 @@ package org.tentackle.maven;
 import com.sun.tools.javac.api.JavacTool;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import javax.tools.Diagnostic;
@@ -77,6 +80,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   private List<AbstractTentackleProcessor> processors;
 
+  /**
+   * A class loader that searches also the classpath elements.
+   */
+  private ClassLoader processingClassloader;
 
 
   /**
@@ -84,12 +91,27 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    *
    * @param sourceDir the directory holding the sources to be processed
    * @param classpathElements the mavenProject classpath
+   * @throws MojoFailureException if classloader could not be created
    */
-  public void setMojoParameters(File sourceDir, List<String> classpathElements) {
+  public void setMojoParameters(File sourceDir, List<String> classpathElements) throws MojoFailureException {
     this.sourceDir = sourceDir;
     this.classpathElements = classpathElements;
+    try {
+      processingClassloader = new ProcessingClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+    }
+    catch (MalformedURLException mx) {
+      throw new MojoFailureException("cannot create bundle classloader", mx);
+    }
   }
 
+  /**
+   * Gets a classloader that searches also in the classpath elements of the project.
+   *
+   * @return the classloader
+   */
+  public ClassLoader getProcessingClassloader() {
+    return processingClassloader;
+  }
 
   /**
    * Adds an annotation processor.
@@ -348,6 +370,36 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     }
 
     totalErrors += errorCount;
+  }
+
+
+
+  /**
+   * Classloader to load from the classpath elements as well.<br>
+   * Necessary since the compliler's classpath options don't change the task's classloader.
+   */
+  private static class ProcessingClassLoader extends URLClassLoader {
+
+    /**
+     * Create from another classloader.
+     *
+     * @param classLoader the task's classloader
+     */
+    private ProcessingClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
+      super(classLoader.getURLs());
+      if (classpathElements != null) {
+        for (String classpathElement : classpathElements) {
+          File classPathFile = new File(classpathElement);
+          URL url = classPathFile.toURI().toURL();
+          addURL(url);
+        }
+      }
+    }
+
+    @Override
+    public void addURL(URL url) {
+      super.addURL(url);
+    }
   }
 
 }

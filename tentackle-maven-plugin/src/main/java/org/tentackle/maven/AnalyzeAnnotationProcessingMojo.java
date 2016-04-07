@@ -21,6 +21,7 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.util.List;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -78,7 +79,7 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
 
 
   @Override
-  public void prepareExecute() {
+  public void prepareExecute() throws MojoFailureException {
     setMojoParameters(sourceDir, analyzeDir, servicesDir, classpathElements);
   }
 

@@ -36,7 +36,7 @@ public interface AnalyzeHandler {
    *
    * @param processor the annotation processor
    */
-  void setProcessor(AbstractTentackleProcessor processor);
+  void setProcessor(AnalyzeProcessor processor);
 
 
   /**
@@ -44,7 +44,7 @@ public interface AnalyzeHandler {
    *
    * @return the annotation processor
    */
-  AbstractTentackleProcessor getProcessor();
+  AnalyzeProcessor getProcessor();
 
 
   /**

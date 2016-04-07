@@ -44,7 +44,7 @@
           <execution>
             <id>test-analyze</id>
             <goals>
-              <goal>testAnalyze</goal>
+              <goal>test-analyze</goal>
             </goals>
           </execution>
         </executions>

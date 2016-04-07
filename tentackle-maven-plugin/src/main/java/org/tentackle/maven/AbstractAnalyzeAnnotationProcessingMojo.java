@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.tentackle.buildsupport.AnalyzeProcessor;
 
@@ -66,7 +67,8 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * @param servicesDir the directory holding the generated services
    * @param classpathElements the mavenProject classpath
    */
-  public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements) {
+  public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements)
+         throws MojoFailureException {
     super.setMojoParameters(sourceDir, classpathElements);
     this.analyzeDir = analyzeDir;
     this.servicesDir = servicesDir;
@@ -114,6 +116,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     AnalyzeProcessor p = (AnalyzeProcessor) processor;
     p.setAnalyzeDir(analyzeDir);
     p.setServiceDir(servicesDir);
+    p.setProcessingClassLoader(getProcessingClassloader());
   }
 
 
