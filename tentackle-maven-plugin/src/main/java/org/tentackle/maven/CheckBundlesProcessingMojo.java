@@ -132,6 +132,7 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
   @Override
   public void finishExecute() throws MojoExecutionException {
 
+    // grab the locales
     List<Locale> bundleLocales = new ArrayList<>();
     if (locales != null) {
       StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
@@ -152,45 +153,56 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
       bundleLocales.add(bundleLocale);
     }
 
+    // find referenced bundle names (avoids unnecessary loading of all bundles in the classpath)
+    Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
+    for (BundleKey key: bundleScanner.getBundleKeys()) {
+      usedBundleNames.add(key.getBundleName());
+    }
 
+
+    // load referenced bundles in given locales
     Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
 
-    for (String serviceName: new String[] {"org.tentackle.common.Bundle",
-                                           "org.tentackle.fx.FxControllerService"} ) {
+    // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
+    for (Map.Entry<String, URL> providerEntry : ServiceFactory.getServiceFinder(bundleLoader, Constants.DEFAULT_SERVICE_PATH).
+              findServiceConfigurations(getClass().getName()).entrySet()) {
+      String serviceName = providerEntry.getKey();
 
+      // for all bundles annotated with such an annotation
       for (Map.Entry<String, URL> entry : ServiceFactory.getServiceFinder(bundleLoader, Constants.BUNDLE_SERVICE_PATH).
               findServiceConfigurations(serviceName).entrySet()) {
 
         String configuration = entry.getKey();
         List<String> parts = BasicStringHelper.split(configuration, ":= ");
         String bundleName = parts.get(0);
-        for (Locale bundleLocale: bundleLocales) {
-          try {
-            ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, bundleLoader);
-            switch (parts.size()) {
-              case 1:
-                bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
-                break;
-              case 2:
-                bundleMap.putIfAbsent(new NameKey(bundleLocale, parts.get(1)), bundle);
-                break;
-              default:
-                throw new TentackleRuntimeException("invalid bundle configuration '" + configuration + "' in " + entry.
-                        getValue());
+        if (usedBundleNames.contains(bundleName)) {
+          for (Locale bundleLocale: bundleLocales) {
+            try {
+              ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, bundleLoader);
+              switch (parts.size()) {
+                case 1:
+                  bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
+                  break;
+                case 2:
+                  bundleMap.putIfAbsent(new NameKey(bundleLocale, parts.get(1)), bundle);
+                  break;
+                default:
+                  throw new TentackleRuntimeException("invalid bundle configuration '" + configuration + "' in " + entry.
+                          getValue());
+              }
             }
-          }
-          catch (RuntimeException rex) {
-            getLog().error("could not load bundle " + bundleName);
+            catch (RuntimeException rex) {
+              getLog().error("could not load bundle " + bundleName);
+            }
           }
         }
       }
     }
 
     int errors = 0;           // total errors
+    int keyCount = 0;         // number of keys checked
 
-    Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
-
-    int keyCount = 0;
+    // check that each key finds a resource
     for (BundleKey key: bundleScanner.getBundleKeys()) {
       keyCount++;
       String bundleName = key.getBundleName();
@@ -201,7 +213,6 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
           errors++;
         }
         else {
-          usedBundleNames.add(bundleName);
           try {
             bundle.getString(key.getKey());
           }
@@ -213,7 +224,10 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
       }
     }
 
-    // find diffs in bundles
+    // find diffs in bundles.
+    // Notice: due to the nature of bundles, missing keys are not detected if provided
+    // by a parent bundle (for ex. bundle_de.properties misses a key provided by the fallback bundle.properties).
+    // However, this check will detect missing keys that would cause a MissingResourceException at runtime.
     for (String bundleName: usedBundleNames) {
       Set<String> keys = null;
       for (Locale bundleLocale: bundleLocales) {
@@ -247,6 +261,7 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
     }
 
 
+    // show results
     StringBuilder localestr = new StringBuilder();
     for (Locale bundleLocale : bundleLocales) {
       if (localestr.length() > 0) {
@@ -269,6 +284,9 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
 
 
 
+  /**
+   * Key locale:bundlename.
+   */
   private static class NameKey {
 
     private final Locale locale;
