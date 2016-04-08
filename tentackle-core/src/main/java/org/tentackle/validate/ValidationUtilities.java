@@ -74,6 +74,29 @@ public class ValidationUtilities {
 
 
   /**
+   * special classloader if used in tools (for example tentackle-test maven plugin).
+   */
+  private ClassLoader validationBundleClassLoader;
+
+  /**
+   * Gets the classloader to load the validation bundle class.
+   *
+   * @return the classloader, never null (default to this classes classloader)
+   */
+  public ClassLoader getValidationBundleClassLoader() {
+    return validationBundleClassLoader == null ? getClass().getClassLoader() : validationBundleClassLoader;
+  }
+
+  /**
+   * Sets the classloader to load the validation bundle class.
+   *
+   * @param validationBundleClassLoader the classloader, null to use the default
+   */
+  public void setValidationBundleClassLoader(ClassLoader validationBundleClassLoader) {
+    this.validationBundleClassLoader = validationBundleClassLoader;
+  }
+
+  /**
    * Gets the default validation path.<br>
    * The default implementation just returns the object's class basename
    * with the first letter in lowercase (according to variable name rules).
@@ -596,17 +619,11 @@ public class ValidationUtilities {
       }
 
       // go up the package hierarchy until a class ValidationBundle is found
-      while (!packageName.isEmpty()) {
+      for(;;) {
         Class<?> bundleClass = null;
         try {
-          String bundleName = packageName + ".ValidationBundle";
-          try {
-            bundleClass = Class.forName(bundleName);
-          }
-          catch (ClassNotFoundException cx1) {
-            // try contect class loader
-            bundleClass = Thread.currentThread().getContextClassLoader().loadClass(bundleName);
-          }
+          String bundleName = packageName + (packageName.isEmpty() ? "" : ".") + "ValidationBundle";
+          bundleClass = getValidationBundleClassLoader().loadClass(bundleName);
           // class must contain a public static attribute named "bundle" which must be a ResourceBundle
           Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
           if (!bundleMethod.getReturnType().equals(String.class)) {
@@ -635,8 +652,11 @@ public class ValidationUtilities {
           if (ndx > 0) {
             packageName = packageName.substring(0, ndx);
           }
-          else {
+          else if (!packageName.isEmpty()) {
             packageName = "";
+          }
+          else {
+            break;
           }
         }
         catch (NoSuchMethodException e2) {

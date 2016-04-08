@@ -36,6 +36,7 @@ import org.tentackle.misc.CompoundValue;
 import org.tentackle.misc.StringHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
+import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.validator.MessageScriptConverter;
 
@@ -51,6 +52,9 @@ import org.tentackle.validate.validator.MessageScriptConverter;
 public class CheckValidationsMojo extends AbstractTestMojo {
 
   private final CheckValidationsProcessor processor;
+  private final Map<String, ScriptConverter> messageConverterMap;
+  private int errors;
+  private int scriptCount;
 
   /**
    * Creates a mojo.
@@ -58,6 +62,7 @@ public class CheckValidationsMojo extends AbstractTestMojo {
   public CheckValidationsMojo() {
     processor = new CheckValidationsProcessor();
     addProcessor(processor);
+    messageConverterMap = new HashMap<>();
   }
 
 
@@ -70,13 +75,13 @@ public class CheckValidationsMojo extends AbstractTestMojo {
   @Override
   public void finishExecute() throws MojoExecutionException, MojoFailureException {
 
-    Thread.currentThread().setContextClassLoader(getProcessingClassloader());
+    // set the classloader (otherwise ValidationUtilities doesn't know the classpath)
+    ValidationUtilities.getInstance().setValidationBundleClassLoader(getProcessingClassloader());
 
     int count = processor.getValidators().size();
-    int errors = processor.getErrors();
+    errors = processor.getErrors();
 
     // load converters
-    Map<String, ScriptConverter> messageConverterMap = new HashMap<>();
     for (Map.Entry<String,String> entry:
          ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
       try {
@@ -94,28 +99,8 @@ public class CheckValidationsMojo extends AbstractTestMojo {
       LocaleProvider.getInstance().setCurrentLocale(bundleLocale);
 
       for (ValidatorEntry validatorEntry: processor.getValidators()) {
-        try {
-          Validator validator = validatorEntry.getValidator();
-          Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
-          String message = validator.getMessage();
-          if (message != null && !message.isEmpty()) {
-            CompoundValue cv = new CompoundValue(message, String.class);
-            Script script = cv.getScript();
-            if (script != null) {
-              // set the translator
-              ScriptConverter converter = messageConverterMap.get(script.getLanguage().getName());
-              if (converter == null) {
-                throw new MojoFailureException("missing message script converter for " + script.getLanguage());
-              }
-              script.setConverter(converter);
-            }
-            cv.getValue(enclosingClass);
-          }
-        }
-        catch (ClassNotFoundException | RuntimeException ex) {
-          getLog().error("validation message creation failed", ex);
-          errors++;
-        }
+        checkMessage(validatorEntry);
+        checkCondition(validatorEntry);
       }
     }
 
@@ -128,7 +113,8 @@ public class CheckValidationsMojo extends AbstractTestMojo {
       localestr.append(bundleLocale);
     }
 
-    String msg = count + " annotation" + (count == 1 ? "" : "s") + " checked for " + localestr + ", ";
+    String msg = count + " annotation" + (count == 1 ? "" : "s") + ", " +
+                 scriptCount + " script" + (scriptCount == 1 ? "" : "s") + " checked for " + localestr + ", ";
 
     if (errors > 0) {
       msg += errors + " errors";
@@ -137,6 +123,74 @@ public class CheckValidationsMojo extends AbstractTestMojo {
     }
     else {
       getLog().info(msg + "no errors");
+    }
+  }
+
+
+  /**
+   * Checks the message script.
+   *
+   * @param validatorEntry the validator
+   * @throws MojoFailureException if no message script converter for the scripting language
+   */
+  private void checkMessage(ValidatorEntry validatorEntry) throws MojoFailureException {
+    try {
+      Validator validator = validatorEntry.getValidator();
+      Class<?> enclosingClass = getProcessingClassloader().loadClass(validatorEntry.getClassName());
+      String message = validator.getMessage();
+      if (message != null && !message.isEmpty()) {
+        CompoundValue cv = new CompoundValue(message, String.class);
+        if (cv.getType() == CompoundValue.Type.SCRIPT) {
+          Script script = cv.getScript();
+          if (script != null) {
+            scriptCount++;
+            if (message.contains("@(")) {   // i18n script
+              // set the translator
+              ScriptConverter converter = messageConverterMap.get(script.getLanguage().getName());
+              if (converter == null) {
+                throw new MojoFailureException("missing message script converter for " + script.getLanguage());
+              }
+              script.setConverter(converter);
+              cv.getValue(enclosingClass);
+            }
+            else {
+              // some other script: just compile
+              script.parse();
+            }
+          }
+        }
+      }
+    }
+    catch (ClassNotFoundException | RuntimeException ex) {
+      getLog().error("validation message check failed for validator " + validatorEntry, ex);
+      errors++;
+    }
+  }
+
+
+  /**
+   * Checks the condition script.
+   *
+   * @param validatorEntry the validator
+   */
+  private void checkCondition(ValidatorEntry validatorEntry) {
+    try {
+      Validator validator = validatorEntry.getValidator();
+      String condition = validator.getCondition();
+      if (condition != null && !condition.isEmpty()) {
+        CompoundValue cv = new CompoundValue(condition, Boolean.class);
+        if (cv.getType() == CompoundValue.Type.SCRIPT) {
+          Script script = cv.getScript();
+          if (script != null) {
+            scriptCount++;
+            script.parse();
+          }
+        }
+      }
+    }
+    catch (RuntimeException ex) {
+      getLog().error("validation condition check failed for validator " + validatorEntry, ex);
+      errors++;
     }
   }
 

@@ -20,7 +20,6 @@ package org.tentackle.maven;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +37,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
+import org.tentackle.validate.Validation;
 import org.tentackle.validate.Validator;
 
 
@@ -51,30 +51,65 @@ import org.tentackle.validate.Validator;
 @SupportedAnnotationTypes("*")
 public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
+  /**
+   * Validator entry.<br>
+   * Hold the validator and the class where the annotation was found.
+   */
   public static class ValidatorEntry {
 
-    private final Validator validator;
-    private final String className;
+    private final Validator validator;    // the validator instance
+    private final String className;       // the enclosing class of the annotation
 
+    /**
+     * Creates an entry.
+     *
+     * @param validator the validator instance
+     * @param className the enclosing class of the annotation
+     */
     public ValidatorEntry(Validator validator, String className) {
       this.validator = validator;
       this.className = className;
     }
 
+    /**
+     * Gets the validator instance.
+     *
+     * @return the validator
+     */
     public Validator getValidator() {
       return validator;
     }
 
+    /**
+     * Gets the enclosing class of the annotation.
+     *
+     * @return the classname
+     */
     public String getClassName() {
       return className;
     }
+
+    @Override
+    public String toString() {
+      return validator.getClass().getName() + " in " + className;
+    }
   }
 
-  private static final String VALIDATION_CLASSNAME = "org.tentackle.validate.Validation";
+
+  private static final String VALIDATION_CLASSNAME = Validation.class.getName();
 
   private ClassLoader processingClassLoader;
   private int errors;
-  private List<ValidatorEntry> validators;
+  private final List<ValidatorEntry> validators;
+
+
+  /**
+   * Creates the processor.
+   */
+  public CheckValidationsProcessor() {
+    validators = new ArrayList<>();
+  }
+
 
   /**
    * Gets the error count.
@@ -116,8 +151,6 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
   @Override
   public synchronized void init(ProcessingEnvironment processingEnvironment) {
     super.init(processingEnvironment);
-    errors = 0;
-    validators = new ArrayList<>();
   }
 
   @Override

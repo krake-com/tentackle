@@ -155,13 +155,6 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     return validationIndex;
   }
 
-  /**
-   * Gets the condition.
-   *
-   * @return the condition
-   */
-  public abstract String getCondition();
-
 
   /**
    * {@inheritDoc}
