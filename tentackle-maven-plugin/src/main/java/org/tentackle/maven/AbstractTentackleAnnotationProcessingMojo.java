@@ -373,7 +373,6 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   }
 
 
-
   /**
    * Classloader to load from the classpath elements as well.<br>
    * Necessary since the compliler's classpath options don't change the task's classloader.
@@ -386,7 +385,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
      * @param classLoader the task's classloader
      */
     private ProcessingClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
-      super(classLoader.getURLs());
+      super(new URL[0], classLoader);
       if (classpathElements != null) {
         for (String classpathElement : classpathElements) {
           File classPathFile = new File(classpathElement);

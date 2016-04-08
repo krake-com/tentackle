@@ -240,7 +240,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    */
   protected CompoundValue createMessageParameter(String message) {
     CompoundValue compVal = createCompoundValue(message, String.class);
-    final Script script = compVal.getScript();
+    Script script = compVal.getScript();
     if (script != null) {
       // set the translator
       ScriptConverter converter = MESSAGE_CONVERTER_MAP.get(script.getLanguage().getName());

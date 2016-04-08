@@ -19,9 +19,7 @@
 
 package org.tentackle.maven;
 
-import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,12 +29,9 @@ import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
@@ -69,92 +64,25 @@ import org.tentackle.common.TentackleRuntimeException;
 @Mojo(name = "bundles",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
       requiresDependencyResolution = ResolutionScope.COMPILE)
-public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {
+public class CheckBundlesMojo extends AbstractTestMojo {
 
   private final CheckBundlesScanner bundleScanner;
 	private final CheckBundlesProcessor processor;
-
-  /**
-   * Directory holding the sources to be processed.<br>
-   * Defaults to all java sources of the current project.
-   * If this is not desired, filesets must be used.
-   */
-  @Parameter(defaultValue = "${project.build.sourceDirectory}",
-             property = "tentackle.sourceDir",
-             required = true)
-  protected File sourceDir;
-
-  /**
-   * Project classpath.
-   */
-  @Parameter(defaultValue = "${project.compileClasspathElements}",
-             readonly = true,
-             required = true)
-  protected List<String> classpathElements;
-
-
-  /**
-   * The locales to check the bundles against.<br>
-   * Defaults to the current locale.<br>
-   * The fallback locale should come first.
-   */
-  @Parameter
-  protected String locales;
-
-  /**
-   * True whether to skip this test.
-   */
-  @Parameter(defaultValue = "${skipTests}")
-  protected boolean skipTests;
 
 
   /**
    * Creates a mojo.
    */
-  public CheckBundlesProcessingMojo() {
+  public CheckBundlesMojo() {
     bundleScanner = new CheckBundlesScanner();
     processor = new CheckBundlesProcessor(bundleScanner);
     addProcessor(processor);
   }
 
-  @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    if (skipTests) {
-      getLog().info("Tests are skipped.");
-    }
-    else {
-      super.execute();
-    }
-  }
 
-  @Override
-  public void prepareExecute() throws MojoFailureException {
-    setMojoParameters(sourceDir, classpathElements);
-  }
 
   @Override
   public void finishExecute() throws MojoExecutionException {
-
-    // grab the locales
-    List<Locale> bundleLocales = new ArrayList<>();
-    if (locales != null) {
-      StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
-      while (stok.hasMoreTokens()) {
-        String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
-        Locale bundleLocale = Locale.forLanguageTag(localeName);
-        if (bundleLocale != null && !bundleLocale.toString().isEmpty()) {
-          bundleLocales.add(bundleLocale);
-        }
-        else {
-          getLog().warn("no such locale: " + localeName);
-        }
-      }
-    }
-    if (bundleLocales.isEmpty()) {
-      Locale bundleLocale = Locale.getDefault();
-      getLog().warn("fallback to default locale " + bundleLocale);
-      bundleLocales.add(bundleLocale);
-    }
 
     // find referenced bundle names (avoids unnecessary loading of all bundles in the classpath)
     Set<String> usedBundleNames = new HashSet<>();   // bundles used by the application
@@ -274,8 +202,8 @@ public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProce
       }
       localestr.append(bundleLocale);
     }
-    String msg = keyCount + " key" + (keyCount > 1 ? "s" : "") + " checked for " + localestr + " in " +
-                 usedBundleNames.size() + " bundle" + (usedBundleNames.size() > 1 ? "s" : "") + ", ";
+    String msg = keyCount + " key" + (keyCount == 1 ? "" : "s") + " checked for " + localestr + " in " +
+                 usedBundleNames.size() + " bundle" + (usedBundleNames.size() == 1 ? "" : "s") + ", ";
 
     if (errors > 0) {
       msg += errors + " errors";

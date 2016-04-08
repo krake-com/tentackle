@@ -66,6 +66,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * @param analyzeDir the directory holding the analyze results
    * @param servicesDir the directory holding the generated services
    * @param classpathElements the mavenProject classpath
+   * @throws MojoFailureException if classloader could not be created
    */
   public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements)
          throws MojoFailureException {

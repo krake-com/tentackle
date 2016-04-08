@@ -19,6 +19,9 @@
 package org.tentackle.maven;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -30,10 +33,12 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
+import org.tentackle.validate.Validator;
 
 
 /**
@@ -46,19 +51,49 @@ import org.tentackle.buildsupport.AbstractTentackleProcessor;
 @SupportedAnnotationTypes("*")
 public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
+  public static class ValidatorEntry {
+
+    private final Validator validator;
+    private final String className;
+
+    public ValidatorEntry(Validator validator, String className) {
+      this.validator = validator;
+      this.className = className;
+    }
+
+    public Validator getValidator() {
+      return validator;
+    }
+
+    public String getClassName() {
+      return className;
+    }
+  }
+
   private static final String VALIDATION_CLASSNAME = "org.tentackle.validate.Validation";
 
   private ClassLoader processingClassLoader;
   private int errors;
+  private List<ValidatorEntry> validators;
 
   /**
    * Gets the error count.
    *
-   * @return the errors
+   * @return the error count
    */
   public int getErrors() {
     return errors;
   }
+
+  /**
+   * Gets the validators found.
+   *
+   * @return the validators
+   */
+  public List<ValidatorEntry> getValidators() {
+    return validators;
+  }
+
 
   /**
    * Gets the classloader to be used instead of the default.
@@ -82,6 +117,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
   public synchronized void init(ProcessingEnvironment processingEnvironment) {
     super.init(processingEnvironment);
     errors = 0;
+    validators = new ArrayList<>();
   }
 
   @Override
@@ -111,6 +147,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
    * Processes the annotation.
    *
    * @param annotationType the annotation type
+   * @param mirror the annotation mirror
    * @param roundEnv the processing environment
    */
   @SuppressWarnings("unchecked")
@@ -134,7 +171,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
       }
 
       for (Annotation annotation: element.getAnnotationsByType(annotationClass)) {
-        Object validator = null;
+        Class<?> validatorClass = null;
 
         Map<? extends ExecutableElement, ? extends AnnotationValue> annotationParameters = mirror.getElementValues();
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationParameters.entrySet()) {
@@ -146,23 +183,47 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
           }
 
           try {
-            validator = getProcessingClassLoader().loadClass(implName);
+            validatorClass = getProcessingClassLoader().loadClass(implName);
             break;
           }
           catch (ClassNotFoundException nx) {
             getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "cannot create validator " + implName);
+                  Diagnostic.Kind.ERROR, "cannot load validator implementation class " + implName);
             errors++;
           }
         }
 
-        if (validator != null) {
-            // todo: we need tentackle-core in the mojo's classpath
-            // --> new tentackle-plugin (tentackle-test ? tentackle-check?
+        if (validatorClass != null) {
+          try {
+            Validator validator = (Validator) validatorClass.newInstance();
+            validator.setAnnotation(annotation);
+            Element enclosingClass = element;
+            while (enclosingClass != null &&
+                   enclosingClass.getKind() != ElementKind.INTERFACE &&
+                   enclosingClass.getKind() != ElementKind.CLASS) {
+              enclosingClass = enclosingClass.getEnclosingElement();
+            }
+            String enclosingName = enclosingClass == null ? "java.lang.Object" : enclosingClass.asType().toString();
+            // cut generics
+            int ndx = enclosingName.indexOf('<');
+            if (ndx > 0) {
+              enclosingName = enclosingName.substring(0, ndx);
+            }
+            validators.add(new ValidatorEntry(validator, enclosingName));
+          }
+          catch (ClassCastException cx) {
+            getProcessingEnvironment().getMessager().printMessage(
+                  Diagnostic.Kind.ERROR, validatorClass + " is not a validator");
+            errors++;
+          }
+          catch (IllegalAccessException | InstantiationException ex) {
+            getProcessingEnvironment().getMessager().printMessage(
+                  Diagnostic.Kind.ERROR, "cannot create validator for " + validatorClass);
+            errors++;
+          }
         }
       }
-
     }
-
   }
+
 }

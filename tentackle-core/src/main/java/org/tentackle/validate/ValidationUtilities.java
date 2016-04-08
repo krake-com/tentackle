@@ -573,7 +573,7 @@ public class ValidationUtilities {
    * Or much shorter directly as a message parameter in the validator:
    * <pre>message={ @('{0}_is_wrong', value) }</pre>
    * <p>
-   * This method will lookup a class ValidationBundle in the package of where the validator is used
+   * This method will lookup a class ValidationBundle in the package or super-packages of where the validator is used
    * and invokes the static method getString().
    *
    * @param clazz the class to look for <code>ValidationBundle</code> in the same package
@@ -587,7 +587,7 @@ public class ValidationUtilities {
 
     if (pattern != null) {
       if (clazz == null) {
-        throw new IllegalArgumentException("clazz is necessary to determine package");
+        throw new ValidationRuntimeException("clazz is necessary to determine package");
       }
       // find package of given object
       String packageName = ReflectionHelper.getPackageName(clazz);
@@ -595,39 +595,56 @@ public class ValidationUtilities {
         throw new IllegalArgumentException(clazz + " is not within a package");
       }
 
-      // find a class in the same package with the name 'Locales'
-      Class<?> bundleClass = null;
-
-      try {
-        bundleClass = Class.forName(packageName + ".ValidationBundle");
-        // class must contain a public static attribute named "bundle" which must be a ResourceBundle
-        Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
-        if (!bundleMethod.getReturnType().equals(String.class)) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
-        }
-        if (!Modifier.isStatic(bundleMethod.getModifiers())) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");
-        }
-        if (!Modifier.isPublic(bundleMethod.getModifiers())) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not public");
-        }
-        // okay, here we go...
+      // go up the package hierarchy until a class ValidationBundle is found
+      while (!packageName.isEmpty()) {
+        Class<?> bundleClass = null;
         try {
-          String localizedPattern = (String) bundleMethod.invoke(null, pattern);
-          return MessageFormat.format(localizedPattern, args);
+          String bundleName = packageName + ".ValidationBundle";
+          try {
+            bundleClass = Class.forName(bundleName);
+          }
+          catch (ClassNotFoundException cx1) {
+            // try contect class loader
+            bundleClass = Thread.currentThread().getContextClassLoader().loadClass(bundleName);
+          }
+          // class must contain a public static attribute named "bundle" which must be a ResourceBundle
+          Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
+          if (!bundleMethod.getReturnType().equals(String.class)) {
+            throw new ValidationRuntimeException(
+                    bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
+          }
+          if (!Modifier.isStatic(bundleMethod.getModifiers())) {
+            throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");
+          }
+          if (!Modifier.isPublic(bundleMethod.getModifiers())) {
+            throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " is not public");
+          }
+          // okay, here we go...
+          try {
+            String localizedPattern = (String) bundleMethod.invoke(null, pattern);
+            return MessageFormat.format(localizedPattern, args);
+          }
+          catch (Exception ex) {
+            // could not translate: format without translation and write a log
+            LOGGER.warning("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
+            return MessageFormat.format(pattern, args);
+          }
         }
-        catch (Exception ex) {
-          // could not translate: format without translation and write a log
-          LOGGER.warning("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
-          return MessageFormat.format(pattern, args);
+        catch (ClassNotFoundException e1) {
+          int ndx = packageName.lastIndexOf('.');
+          if (ndx > 0) {
+            packageName = packageName.substring(0, ndx);
+          }
+          else {
+            packageName = "";
+          }
+        }
+        catch (NoSuchMethodException e2) {
+          throw new ValidationRuntimeException(bundleClass.getName() + " does not provide the method getString()");
         }
       }
-      catch (ClassNotFoundException e1) {
-        throw new IllegalArgumentException("no ValidationBundle found in " + packageName);
-      }
-      catch (NoSuchMethodException e2) {
-        throw new IllegalArgumentException(bundleClass.getName() + " does not provide the method getString()");
-      }
+
+      throw new ValidationRuntimeException("no ValidationBundle found for " + clazz);
     }
 
     return null;
@@ -645,7 +662,18 @@ public class ValidationUtilities {
    * @see #format(java.lang.Class, java.lang.String, java.lang.Object...)
    */
   public String format(Object object, String pattern, Object... args) {
-    return format(object instanceof EffectiveClassProvider ? ((EffectiveClassProvider) object).getEffectiveClass() : object.getClass(), pattern, args);
+    Class<?> clazz;
+    if (object instanceof Class) {
+      // object itself is a class
+      clazz = (Class<?>) object;
+    }
+    else if (object instanceof EffectiveClassProvider) {
+      clazz = ((EffectiveClassProvider) object).getEffectiveClass();
+    }
+    else {
+      clazz = object.getClass();
+    }
+    return format(clazz, pattern, args);
   }
 
 
