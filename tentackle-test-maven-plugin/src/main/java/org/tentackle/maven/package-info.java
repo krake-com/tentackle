@@ -17,6 +17,6 @@
  */
 
 /**
- * Tentackle SQL backend maven plugin.
+ * Tentackle application testing maven plugin.
  */
-package org.tentackle.sql.maven;
+package org.tentackle.maven;

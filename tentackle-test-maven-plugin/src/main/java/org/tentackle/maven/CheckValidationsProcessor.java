@@ -158,7 +158,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
         if (validator != null) {
             // todo: we need tentackle-core in the mojo's classpath
-            // --> new tentackle-plugin (tentackle-test ?)
+            // --> new tentackle-plugin (tentackle-test ? tentackle-check?
         }
       }
 

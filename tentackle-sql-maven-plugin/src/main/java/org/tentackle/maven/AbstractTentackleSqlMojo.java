@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.sql.maven;
+package org.tentackle.maven;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -44,7 +44,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;

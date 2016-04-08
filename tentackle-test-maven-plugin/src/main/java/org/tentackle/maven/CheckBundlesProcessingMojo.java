@@ -66,7 +66,7 @@ import org.tentackle.common.TentackleRuntimeException;
  *
  * @author harald
  */
-@Mojo(name = "check-bundles",
+@Mojo(name = "bundles",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class CheckBundlesProcessingMojo extends AbstractTentackleAnnotationProcessingMojo {

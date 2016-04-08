@@ -35,7 +35,7 @@ import org.tentackle.buildsupport.AbstractTentackleProcessor;
  *
  * @author harald
  */
-@Mojo(name = "check-validations",
+@Mojo(name = "validations",
       defaultPhase = LifecyclePhase.PROCESS_CLASSES,
       requiresDependencyResolution = ResolutionScope.COMPILE)
 public class CheckValidationsMojo extends AbstractTentackleAnnotationProcessingMojo {
