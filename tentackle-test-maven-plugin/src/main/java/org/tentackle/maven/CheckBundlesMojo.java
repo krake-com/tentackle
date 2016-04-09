@@ -40,23 +40,25 @@ import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
- * Processor to verify all bundle getString() invocations.
+ * Mojo to verify all bundle getString() invocations.
  * <p>
  * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>.<br>
  * Where <code>&lt;reference&gt;</code> is:
  * <ul>
- * <li>a classname: is treated as a bundle classname (e.g. AppFxRdcBundle)</li>
- * <li>a method: it is assumed to be a method like getBundle() that refers to a bundle
- * with the same name as the class containing the method invocation</li>
- * <li>a variable or constant: same as method, i.e. the bundle name is that of the containing class</li>
+ * <li>a bundle classname, e.g. BlahBundle.getString("foo") checked against BlahBundle properties.</li>
+ * <li>a method that refers to a bundle with the same name as the class containing the method invocation,
+ * e.g. getBundle().getString("foo") in class Blah corresponds to the key "foo" in Blah.properties.</li>
+ * <li>a variable or constant: same as method, i.e. the bundle name is that of the containing class,
+ * e.g. resources.getString("foo").</li>
  * </ul>
  *
  * If a class must not be checked for bundle keys, it needs to be excluded from the fileset.
  * <p>
- * The following bundles are not covered by this mojo: (TODO)
+ * The following cases are not covered by this mojo:
  * <ul>
- * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural: must be covered by a test. See PdoUtilitiesTest.</li>
- * <li>ValidationBundles, i.e. translations in validators (message=...)</li>
+ * <li>all non-literals, e.g. getBundle().getString(text) as often found in enums. Needs explicit tests.</li>
+ * <li>PdoBundles, i.e. translations for &#64;Singular, &#64;Plural. See PdoUtilitiesTest.</li>
+ * <li>ValidationBundles, i.e. translations in validators, are covered by the mojo tentackle-test:validations.</li>
  * </ul>
  *
  * @author harald

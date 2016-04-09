@@ -42,7 +42,11 @@ import org.tentackle.validate.validator.MessageScriptConverter;
 
 
 /**
- * Mojo to verify all validations.
+ * Mojo to verify all annotation-based validations.<br>
+ * Scans for validator annotations (annotated with &#64;Validation), creates the validators and
+ * their compound values for message and condition. If the compound values are scripts,
+ * the scripts will be compiled. If a message-script is an i18n-script (see &#64;MessageScriptConverter),
+ * the script will be evaluated for each configured locale.
  *
  * @author harald
  */
@@ -55,6 +59,7 @@ public class CheckValidationsMojo extends AbstractTestMojo {
   private final Map<String, ScriptConverter> messageConverterMap;
   private int errors;
   private int scriptCount;
+
 
   /**
    * Creates a mojo.
