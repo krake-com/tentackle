@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import java.util.MissingResourceException;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -39,6 +40,9 @@ public class PdoUtilitiesTest {
         Assert.assertNotNull(name, "no @Singular for " + clazz.getName());
         name = PdoUtilities.getInstance().getPlural(clazz);
         Assert.assertNotNull(name, "no @Plural for " + clazz.getName());
+      }
+      catch (MissingResourceException mx) {
+        Assert.fail("in PDO class " + pdoName + ": " + mx.getMessage());
       }
       catch (ClassNotFoundException cx) {
         Assert.fail("no such PDO class: " + pdoName);
