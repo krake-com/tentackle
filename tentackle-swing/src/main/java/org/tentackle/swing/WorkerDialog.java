@@ -185,7 +185,7 @@ public class WorkerDialog extends org.tentackle.swing.FormDialog {
     getContentPane().add(progressBar, gridBagConstraints);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
-    cancelButton.setText(SwingSwingBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(SwingSwingBundle.getString("CANCEL")); // NOI18N
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {

@@ -1819,7 +1819,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     add(naviScroll, java.awt.BorderLayout.CENTER);
 
     selectButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
-    selectButton.setText(RdcSwingRdcBundle.getTranslation("SELECT")); // NOI18N
+    selectButton.setText(RdcSwingRdcBundle.getString("SELECT")); // NOI18N
     selectButton.setActionCommand(ACTION_SELECT);
     selectButton.setName("select"); // NOI18N
     selectButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1830,7 +1830,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     buttonPanel.add(selectButton);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setActionCommand(ACTION_CANCEL);
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1841,7 +1841,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     buttonPanel.add(cancelButton);
 
     closeButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("close"));
-    closeButton.setText(RdcSwingRdcBundle.getTranslation("CLOSE")); // NOI18N
+    closeButton.setText(RdcSwingRdcBundle.getString("CLOSE")); // NOI18N
     closeButton.setActionCommand(ACTION_CLOSE);
     closeButton.setName("close"); // NOI18N
     closeButton.addActionListener(new java.awt.event.ActionListener() {

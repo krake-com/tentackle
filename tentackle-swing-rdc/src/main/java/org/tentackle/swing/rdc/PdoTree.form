@@ -20,7 +20,7 @@
               <KeyStroke key="Ctrl+X"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="EXPAND" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="EXPAND" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="expand" noResource="true"/>
           </Properties>
@@ -37,7 +37,7 @@
               <KeyStroke key="Ctrl+Z"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="COLLAPSE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="COLLAPSE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="collapse" noResource="true"/>
           </Properties>
@@ -54,7 +54,7 @@
               <KeyStroke key="Ctrl+S"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="SUBTREE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="SUBTREE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="subTree" noResource="true"/>
           </Properties>
@@ -86,7 +86,7 @@
               <KeyStroke key="Ctrl+N"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="VIEW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="VIEW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="show" noResource="true"/>
           </Properties>
@@ -103,7 +103,7 @@
               <KeyStroke key="Ctrl+E"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="EDIT" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="EDIT" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="edit" noResource="true"/>
           </Properties>
@@ -120,7 +120,7 @@
               <KeyStroke key="Ctrl+O"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="OPEN" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="OPEN" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="open" noResource="true"/>
           </Properties>
@@ -137,7 +137,7 @@
               <KeyStroke key="Ctrl+D"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="DELETE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="DELETE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="delete" noResource="true"/>
           </Properties>
@@ -154,7 +154,7 @@
               <KeyStroke key="Ctrl+C"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="COPY" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="COPY" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="copy" noResource="true"/>
           </Properties>
@@ -171,7 +171,7 @@
               <KeyStroke key="Ctrl+A"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="SELECT ALL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="SELECT ALL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="select" noResource="true"/>
           </Properties>
@@ -188,7 +188,7 @@
               <KeyStroke key="Ctrl+V"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="INSERT" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="INSERT" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="insert" noResource="true"/>
           </Properties>

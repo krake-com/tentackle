@@ -28,8 +28,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import javax.swing.JPanel;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.swing.bind.FormComponentBinder;
 
 
@@ -42,11 +40,10 @@ import org.tentackle.swing.bind.FormComponentBinder;
  */
 
 @SuppressWarnings("serial")
-public class FormPanel extends JPanel implements FormContainer, I18nTranslatable, ContainerListener {
+public class FormPanel extends JPanel implements FormContainer, ContainerListener {
 
   private String helpURL;                             // default help for this container
   private String  title;                              // title is null by default
-  private I18nTranslation i18nTranslation;            // the I18N translated title
   private boolean honourChangeable = true;            // honour the changeable-request
   private boolean triggerValuesChangedEnabled = true; // true if trigger value changed is enabled
   private boolean changeable = true;                  // last operation from setChangeable()
@@ -101,29 +98,6 @@ public class FormPanel extends JPanel implements FormContainer, I18nTranslatable
    */
   public FormPanel()  {
     this(true);
-  }
-
-
-  /**
-   * Sets the translated title.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setTitle(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setTitle(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
   }
 
 

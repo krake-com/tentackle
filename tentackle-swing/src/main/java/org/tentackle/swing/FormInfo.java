@@ -24,7 +24,7 @@ import java.awt.Component;
 import java.awt.EventQueue;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.Toolkit;
+import org.tentackle.misc.Toolkit; 
 
 
 
@@ -218,7 +218,7 @@ public class FormInfo extends FormDialog {
     okButton = new org.tentackle.swing.FormButton();
 
     setAutoPosition(true);
-    setTitle(SwingSwingBundle.getTranslation("INFORMATION")); // NOI18N
+    setTitle(SwingSwingBundle.getString("INFORMATION")); // NOI18N
     setModal(true);
 
     messagePanel.setLayout(new java.awt.GridBagLayout());

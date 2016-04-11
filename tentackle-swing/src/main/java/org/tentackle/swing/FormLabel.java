@@ -21,8 +21,6 @@ package org.tentackle.swing;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 
 /**
  * A form label.
@@ -30,11 +28,9 @@ import org.tentackle.locale.I18nTranslation;
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormLabel extends JLabel implements I18nTranslatable {
+public class FormLabel extends JLabel {
 
   private PropertyGroup propertyGroup;              // the property group, null = none
-  private I18nTranslation i18nTranslation;          // the I18N translated text
-
 
 
   /**
@@ -126,32 +122,6 @@ public class FormLabel extends JLabel implements I18nTranslatable {
   public FormLabel() {
     super();
   }
-
-
-
-
-  /**
-   * Sets the translated text.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setText(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setText(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
-  }
-
 
 
   /**

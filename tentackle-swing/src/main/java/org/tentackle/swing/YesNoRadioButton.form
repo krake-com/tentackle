@@ -18,7 +18,7 @@
     <Component class="org.tentackle.swing.FormRadioButton" name="yesButton">
       <Properties>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="YES" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+          <ResourceString bundle="org/tentackle/swing/SwingSwingBundle.properties" key="YES" replaceFormat="SwingSwingBundle.getString(&quot;{key}&quot;)"/>
         </Property>
         <Property name="name" type="java.lang.String" value="yes" noResource="true"/>
       </Properties>
@@ -34,7 +34,7 @@
     <Component class="org.tentackle.swing.FormRadioButton" name="noButton">
       <Properties>
         <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-          <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="NO" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+          <ResourceString bundle="org/tentackle/swing/SwingSwingBundle.properties" key="NO" replaceFormat="SwingSwingBundle.getString(&quot;{key}&quot;)"/>
         </Property>
         <Property name="name" type="java.lang.String" value="no" noResource="true"/>
       </Properties>

@@ -18,11 +18,9 @@
 
 package org.tentackle.swing;
 
-import java.util.Locale;
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
-import org.tentackle.locale.I18nFactory;
-import org.tentackle.locale.I18nTranslation;
+import org.tentackle.common.LocaleProvider;
 
 /**
  * Bundle for ui-package in tentackle-swing.
@@ -33,18 +31,12 @@ import org.tentackle.locale.I18nTranslation;
 public class SwingSwingBundle {
 
   /**
-   * Gets the translation for a given key.
+   * Gets the bundle.
    *
-   * @param key the key
-   * @return the translation, never null
-   * @throws NullPointerException if <code>key</code> is <code>null</code>
-   * @throws java.util.MissingResourceException if no object for the given key can be found
+   * @return the resource bundle
    */
-  public static I18nTranslation getTranslation(String key) {
-    Locale locale = Locale.getDefault();
-    ResourceBundle bundle = ResourceBundle.getBundle(SwingSwingBundle.class.getName(), locale);
-    String text = bundle.getString(key);
-    return I18nFactory.getInstance().createTranslation(key, locale, text);
+  public static ResourceBundle getBundle() {
+    return ResourceBundle.getBundle(SwingSwingBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**
@@ -54,7 +46,7 @@ public class SwingSwingBundle {
    * @return the string from the bundle
    */
   public static String getString(String key) {
-    return getTranslation(key).getText();
+    return getBundle().getString(key);
   }
 
   private SwingSwingBundle() {

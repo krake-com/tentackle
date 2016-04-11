@@ -739,7 +739,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
 
     searchButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("search"));
     searchButton.setMnemonic('f');
-    searchButton.setText(RdcSwingRdcBundle.getTranslation("FIND")); // NOI18N
+    searchButton.setText(RdcSwingRdcBundle.getString("FIND")); // NOI18N
     searchButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     searchButton.setName("find"); // NOI18N
     searchButton.addActionListener(new java.awt.event.ActionListener() {
@@ -754,7 +754,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
 
     newButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("new"));
     newButton.setMnemonic('n');
-    newButton.setText(RdcSwingRdcBundle.getTranslation("NEW")); // NOI18N
+    newButton.setText(RdcSwingRdcBundle.getString("NEW")); // NOI18N
     newButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     newButton.setName("new"); // NOI18N
     newButton.addActionListener(new java.awt.event.ActionListener() {
@@ -769,7 +769,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("close"));
     cancelButton.setMnemonic('c');
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -809,7 +809,7 @@ public class PdoSearchDialog<T extends PersistentDomainObject<T>> extends FormDi
     patternPanel.add(morePatternField, gridBagConstraints);
 
     moreButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("search"));
-    moreButton.setText(RdcSwingRdcBundle.getTranslation("FIND IN RESULTS")); // NOI18N
+    moreButton.setText(RdcSwingRdcBundle.getString("FIND IN RESULTS")); // NOI18N
     moreButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     moreButton.setName("findInResults"); // NOI18N
     moreButton.addActionListener(new java.awt.event.ActionListener() {

@@ -202,7 +202,7 @@ public class PdoNavigationDialog<T extends PersistentDomainObject<T>> extends Fo
   private void initComponents() {
 
     setAutoPosition(true);
-    setTitle(RdcSwingRdcBundle.getTranslation("BROWSER")); // NOI18N
+    setTitle(RdcSwingRdcBundle.getString("BROWSER")); // NOI18N
     setModal(true);
 
     pack();

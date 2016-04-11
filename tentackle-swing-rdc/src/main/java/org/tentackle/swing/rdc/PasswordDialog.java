@@ -186,16 +186,16 @@ public class PasswordDialog extends org.tentackle.swing.FormDialog {
 
     setAutoPosition(true);
     setHelpURL("#passworddialog");
-    setTitle(RdcSwingRdcBundle.getTranslation("CHANGE PASSWORD")); // NOI18N
+    setTitle(RdcSwingRdcBundle.getString("CHANGE PASSWORD")); // NOI18N
     setModal(true);
 
     passwordPanel.setLayout(new java.awt.BorderLayout());
 
-    oldPasswordLabel.setText(RdcSwingRdcBundle.getTranslation("OLD PASSWORD:")); // NOI18N
+    oldPasswordLabel.setText(RdcSwingRdcBundle.getString("OLD PASSWORD:")); // NOI18N
 
-    jLabel2.setText(RdcSwingRdcBundle.getTranslation("NEW PASSWORD:")); // NOI18N
+    jLabel2.setText(RdcSwingRdcBundle.getString("NEW PASSWORD:")); // NOI18N
 
-    jLabel3.setText(RdcSwingRdcBundle.getTranslation("NEW PASSWORD REPEATED:")); // NOI18N
+    jLabel3.setText(RdcSwingRdcBundle.getString("NEW PASSWORD REPEATED:")); // NOI18N
 
     oldPasswordField.setColumns(8);
     oldPasswordField.setName("oldPassword"); // NOI18N
@@ -247,7 +247,7 @@ public class PasswordDialog extends org.tentackle.swing.FormDialog {
     getContentPane().add(passwordPanel, java.awt.BorderLayout.CENTER);
 
     okButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
-    okButton.setText(RdcSwingRdcBundle.getTranslation("OK")); // NOI18N
+    okButton.setText(RdcSwingRdcBundle.getString("OK")); // NOI18N
     okButton.setName("ok"); // NOI18N
     okButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -257,7 +257,7 @@ public class PasswordDialog extends org.tentackle.swing.FormDialog {
     buttonPanel.add(okButton);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {

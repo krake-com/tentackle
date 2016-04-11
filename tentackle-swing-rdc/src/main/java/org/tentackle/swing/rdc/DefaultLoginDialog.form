@@ -128,7 +128,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="USERNAME:" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="USERNAME:" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="SansSerif" size="12" style="1"/>
@@ -141,7 +141,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="PASSWORD:" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="PASSWORD:" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
                   <Font name="SansSerif" size="12" style="1"/>
@@ -196,7 +196,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="LOGIN" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="LOGIN" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[0, 4, 0, 4]"/>
@@ -213,7 +213,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[0, 4, 0, 4]"/>
@@ -230,7 +230,7 @@
                   <Color blue="0" green="c8" id="orange" palette="1" red="ff" type="palette"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CAPS LOCK" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CAPS LOCK" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
             </Component>
@@ -281,7 +281,7 @@
                   <Color blue="0" green="c8" id="orange" palette="1" red="ff" type="palette"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="LOGIN..." replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="LOGIN..." replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
             </Component>
@@ -291,7 +291,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[0, 4, 0, 4]"/>

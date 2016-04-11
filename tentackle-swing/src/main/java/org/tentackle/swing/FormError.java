@@ -34,7 +34,7 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.Toolkit;
-import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.reflect.ReflectionHelper; 
 
 
 
@@ -356,7 +356,7 @@ public class FormError extends FormDialog {
     okButton = new org.tentackle.swing.FormButton();
 
     setAutoPosition(true);
-    setTitle(SwingSwingBundle.getTranslation("ERROR")); // NOI18N
+    setTitle(SwingSwingBundle.getString("ERROR")); // NOI18N
     setModal(true);
 
     messagePanel.setLayout(new java.awt.GridBagLayout());

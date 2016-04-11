@@ -28,8 +28,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.Icon;
 import javax.swing.JCheckBox;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.swing.bind.FormComponentBinding;
 
 
@@ -40,7 +38,7 @@ import org.tentackle.swing.bind.FormComponentBinding;
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormCheckBox extends JCheckBox implements FormComponent, I18nTranslatable, ActionListener {
+public class FormCheckBox extends JCheckBox implements FormComponent, ActionListener {
 
   // keyboard shortcuts
   private static final String SELECT_CHARS   = SwingSwingBundle.getString("YESKEYS");
@@ -78,7 +76,6 @@ public class FormCheckBox extends JCheckBox implements FormComponent, I18nTransl
   private FocusTraversalGroup focusTraversalGroup;  // the focus traversal group, null = none
   private PropertyGroup propertyGroup;              // the property group, null = none
   private boolean triggerValueChangedEnabled = true;  // true if trigger value changed is enabled
-  private I18nTranslation i18nTranslation;          // the I18N translated text
 
 
   /**
@@ -127,34 +124,10 @@ public class FormCheckBox extends JCheckBox implements FormComponent, I18nTransl
   }
 
 
-  /**
-   * Sets the translated text.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setText(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setText(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
-  }
-
   @Override
   public void showErrorPopup(String message) {
     FormUtilities.getInstance().showErrorPopup(this, message);
   }
-
-
 
   /**
    * Gets the color for "checked".

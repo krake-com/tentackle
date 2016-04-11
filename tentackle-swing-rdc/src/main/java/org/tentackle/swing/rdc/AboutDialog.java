@@ -158,7 +158,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     gcButton.setName("gc"); // NOI18N
 
     closeButton.setBackground(new java.awt.Color(204, 204, 255));
-    closeButton.setText(RdcSwingRdcBundle.getTranslation("CLOSE")); // NOI18N
+    closeButton.setText(RdcSwingRdcBundle.getString("CLOSE")); // NOI18N
     closeButton.setMargin(new java.awt.Insets(1, 4, 1, 4));
     closeButton.setName("close"); // NOI18N
     closeButton.addActionListener(new java.awt.event.ActionListener() {
@@ -168,7 +168,7 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     });
 
     jLabel1.setForeground(new java.awt.Color(204, 204, 255));
-    jLabel1.setText(RdcSwingRdcBundle.getTranslation("MEMORY:")); // NOI18N
+    jLabel1.setText(RdcSwingRdcBundle.getString("MEMORY:")); // NOI18N
 
     javax.swing.GroupLayout infoPanelLayout = new javax.swing.GroupLayout(infoPanel);
     infoPanel.setLayout(infoPanelLayout);
@@ -206,9 +206,9 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
         .addContainerGap())
     );
 
+    layeredPane.setLayer(infoPanel, javax.swing.JLayeredPane.PALETTE_LAYER);
     layeredPane.add(infoPanel);
     infoPanel.setBounds(0, 0, 500, 350);
-    layeredPane.setLayer(infoPanel, javax.swing.JLayeredPane.PALETTE_LAYER);
 
     logoPanel.setOpaque(false);
     logoPanel.setLayout(null);
@@ -217,9 +217,9 @@ public class AboutDialog extends org.tentackle.swing.FormDialog {
     logoPanel.add(logoLabel);
     logoLabel.setBounds(45, 60, 140, 200);
 
+    layeredPane.setLayer(logoPanel, javax.swing.JLayeredPane.MODAL_LAYER);
     layeredPane.add(logoPanel);
     logoPanel.setBounds(0, 0, 500, 350);
-    layeredPane.setLayer(logoPanel, javax.swing.JLayeredPane.MODAL_LAYER);
 
     getContentPane().add(layeredPane, java.awt.BorderLayout.CENTER);
   }// </editor-fold>//GEN-END:initComponents
