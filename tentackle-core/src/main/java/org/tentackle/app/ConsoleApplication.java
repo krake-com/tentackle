@@ -150,7 +150,6 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
   /**
    * Gracefully terminates the application.
-   * Usually invoked from an exit-Button or when window is closed.
    */
   public void stop() {
     try {
@@ -237,7 +236,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
     // add a shutdown handler in case the modthread terminates unexpectedly
     PdoTracker.getInstance().addShutdownRunnable(() -> {
       LOGGER.severe("*** emergency shutdown ***");
-      stop();
+      doStop(5);
     });
 
   }

@@ -477,7 +477,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     PdoTracker.getInstance().addShutdownRunnable(() -> {
       if (!PdoTracker.getInstance().isTerminationRequested()) {
         LOGGER.severe("*** emergency shutdown ***");
-        stop();
+        doStop(5);
       }
     });
 

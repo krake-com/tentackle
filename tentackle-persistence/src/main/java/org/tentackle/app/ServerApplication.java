@@ -383,7 +383,7 @@ public abstract class ServerApplication extends AbstractApplication
     super.doFinishStartup();
 
     // add a shutdown handler in case the modthread terminates unexpectedly
-    PdoTracker.getInstance().addShutdownRunnable(this::stop);
+    PdoTracker.getInstance().addShutdownRunnable(() -> doStop(5));
 
     sessionManager = createSessionManager();
     sessionPool = createSessionPool();

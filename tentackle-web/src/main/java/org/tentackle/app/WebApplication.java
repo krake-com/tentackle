@@ -131,7 +131,7 @@ public abstract class WebApplication<T> extends AbstractApplication
          throws ApplicationException {
 
     synchronized(AbstractApplication.class) {
-      
+
       WebApplication<T> app = getWebApplication();
       if (app == null) {
         try {
@@ -488,12 +488,7 @@ public abstract class WebApplication<T> extends AbstractApplication
     // add a shutdown handler in case the modthread terminates unexpectedly
     PdoTracker.getInstance().addShutdownRunnable(() -> {
       LOGGER.severe("*** emergency shutdown ***");
-      try {
-        stop();
-      }
-      catch (ApplicationException ex) {
-        LOGGER.logStacktrace(ex);
-      }
+      doStop(5);
     });
 
     sessionManager = createSessionManager();
