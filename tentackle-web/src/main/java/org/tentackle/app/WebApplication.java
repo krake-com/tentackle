@@ -19,9 +19,12 @@
 
 package org.tentackle.app;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Properties;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -32,6 +35,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.pdo.SessionManager;
 import org.tentackle.pdo.SessionManagerProvider;
@@ -70,8 +74,9 @@ import org.tentackle.reflect.ReflectionHelper;
  * the user id at all.
  *
  * @author harald
+ * @param <T> the web session key type
  */
-public abstract class WebApplication extends AbstractApplication
+public abstract class WebApplication<T> extends AbstractApplication
        implements SessionPoolProvider, SessionManagerProvider {
 
 
@@ -85,13 +90,13 @@ public abstract class WebApplication extends AbstractApplication
    *
    * This is just a convenience method to {@link AbstractApplication#getRunningApplication()}.
    *
+   * @param <T> the web session key type
    * @return the application, null if not started yet
    */
-  public static WebApplication getWebApplication() {
-    return (WebApplication) getRunningApplication();
+  @SuppressWarnings("unchecked")
+  public static <T> WebApplication<T> getWebApplication() {
+    return (WebApplication<T>) getRunningApplication();
   }
-
-
 
 
   /**
@@ -116,19 +121,20 @@ public abstract class WebApplication extends AbstractApplication
    * the <tt>WEB-INF</tt>-directory (without <tt>"../"</tt> from <tt>WEB-INF/classes</tt>)
    * and modify the properties given by <tt>props</tt>.
    *
+   * @param <T> the web session key type
    * @param clazz the application class
    * @param props the properties to configure the application
    * @return the application
    * @throws ApplicationException if failed
    */
-  public static WebApplication getInstance(Class<? extends WebApplication> clazz, Properties props)
+  public static <T> WebApplication<T> getInstance(Class<? extends WebApplication<T>> clazz, Properties props)
          throws ApplicationException {
 
     synchronized(AbstractApplication.class) {
-      WebApplication app = getWebApplication();
+      
+      WebApplication<T> app = getWebApplication();
       if (app == null) {
         try {
-          // createPdo new instance
           app = clazz.newInstance();
           if (app.isRunningInContainer()) {
             // if in container: add extra properties
@@ -145,7 +151,7 @@ public abstract class WebApplication extends AbstractApplication
                 }
               }
             }
-            catch (Exception ex) {
+            catch (NamingException | IOException ex) {
               // no extra properties
             }
           }
@@ -154,7 +160,7 @@ public abstract class WebApplication extends AbstractApplication
           app.start(props);
         }
 
-        catch (Exception ex) {
+        catch (InstantiationException | IllegalAccessException | NamingException | ApplicationException ex) {
           LOGGER.logStacktrace(ex);
           if (ex instanceof ApplicationException) {
             throw (ApplicationException)ex;
@@ -173,7 +179,7 @@ public abstract class WebApplication extends AbstractApplication
 
 
 
-  private SessionCache sessionCache;           // the session cache
+  private WebSessionKeyCache<T> sessionCache;  // the web session cache
   private String sessionPropsName;             // db properties name
   private SessionManager sessionManager;       // the connection manager
   private Db serverDb;                         // the primary server db
@@ -225,44 +231,54 @@ public abstract class WebApplication extends AbstractApplication
 
 
   /**
-   * Adds a mapping between a session and a user info.
+   * Adds a mapping between a web session key and a user session info.<br>
    * This is usually done in the login controller.
    * If a session with that key already exists, the user info
    * will be replaced.
    *
-   * @param sessionKey the (unique) session key
+   * @param sessionKey the (unique) web session key
    * @param userInfo the user info
    */
-  public void addSession(Object sessionKey, SessionInfo userInfo) {
+  public void addWebSession(T sessionKey, SessionInfo userInfo) {
     sessionCache.addSession(sessionKey, userInfo);
   }
 
 
   /**
-   * Removes a mapping between a session and a user info.
+   * Removes a mapping between a web session key and a user session info.<br>
    * This is usually done in the logout controller.
    * If there is no such session, the method will do nothing.
    *
-   * @param sessionKey the (unique) session key
+   * @param sessionKey the (unique) web session key
    */
-  public void removeSession(Object sessionKey) {
+  public void removeWebSession(T sessionKey) {
     sessionCache.removeSession(sessionKey);
   }
 
 
+  /**
+   * Gets the web session keys for a user session info.<br>
+   *
+   * @param sessionInfo the user session info
+   * @return the web session keys, never null
+   */
+  public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
+    return sessionCache.getSessionKeys(sessionInfo);
+  }
+
 
   /**
-   * Gets a logical db connection by a session key.
+   * Gets a persistence session from the session pool by a web session key.<br>
    *
-   * @param sessionKey the session key
-   * @return the attached Db or null if no such session
+   * @param sessionKey the web session key
+   * @return the attached session or null if no such session
    */
-  public Db getDb(Object sessionKey) {
-    SessionInfo userInfo = sessionCache.getSession(sessionKey);
-    if (userInfo != null) {
+  public Session getSession(T sessionKey) {
+    SessionInfo sessionInfo = sessionCache.getSession(sessionKey);
+    if (sessionInfo != null) {
       // not cleared so far: we can use it
       Db db = (Db) sessionPool.getSession();
-      db.setSessionInfo(userInfo); // attach userinfo
+      db.setSessionInfo(sessionInfo); // attach userinfo
       return db;
     }
     else  {
@@ -272,20 +288,20 @@ public abstract class WebApplication extends AbstractApplication
 
 
   /**
-   * Release a logical db connection.
+   * Release a persistence session.<br>
    * Should be invoked after sending/rendering the response to the web browser.
-   * @param db the db to release
+   *
+   * @param session the persistence session to release
    */
-  public void putDb(Db db) {
+  public void putSession(Session session) {
     /**
      * dereference user info (possible target for the GC).
      * If (due to tight memory or timeout) the userinfo gets garbage
      * collected the user must login again.
      */
-    db.setSessionInfo(null);
-    sessionPool.putSession(db);
+    ((Db) session).setSessionInfo(null);
+    sessionPool.putSession(session);
   }
-
 
 
 
@@ -299,7 +315,7 @@ public abstract class WebApplication extends AbstractApplication
    */
   public void start(Properties props) throws ApplicationException {
     synchronized (this) {
-      sessionCache = new SessionCache();
+      sessionCache = new WebSessionKeyCache<>();
 
       setProperties(props);
 
@@ -354,7 +370,7 @@ public abstract class WebApplication extends AbstractApplication
 
 
   /**
-   * Creates the logical SessionPool.
+   * Creates the logical SessionPool.<br>
    * The default implementation creates a DefaultDbPool with a
    * 2 pre-opened Db, increment by 1, don't drop below 2.
    * The maximum number of Db instances is derived from the
@@ -364,7 +380,7 @@ public abstract class WebApplication extends AbstractApplication
    *
    * @return the database pool, null if don't use a pool
    */
-  public SessionPool createDbPool() {
+  public SessionPool createSessionPool() {
     return new DefaultDbPool("web-pool", (ConnectionManager) sessionManager, getSessionInfo(), 2, 1, 2,
                              sessionManager.getMaxSessions(), 60, 24*60);
   }
@@ -481,7 +497,7 @@ public abstract class WebApplication extends AbstractApplication
     });
 
     sessionManager = createSessionManager();
-    sessionPool = createDbPool();
+    sessionPool = createSessionPool();
 
     // start the session cache
     sessionCache.startup(300000);    // 5 minutes

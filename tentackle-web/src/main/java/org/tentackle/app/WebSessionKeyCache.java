@@ -20,23 +20,27 @@
 package org.tentackle.app;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.pdo.SessionInfo;
 
 /**
- * A session cache for to map user infos to sessions.
+ * A web session cache for to map user infos to session keys.
  * <p>
  * Primarily used in web-applications where short-lived roundtrips
  * must be associated to long-lived authenticated sessions.
  *
  * @author harald
+ * @param <T> the session key type
  */
-public class SessionCache {
+public class WebSessionKeyCache<T> {
 
-  // the user info map, key is the session-key
-  private final ConcurrentHashMap<Object,SoftReference<SessionInfo>> userInfoMap;
+  // the session info map, key is the session-key
+  private final ConcurrentHashMap<T,SoftReference<SessionInfo>> userInfoMap;
   private CleanupThread cleanupThread;
 
 
@@ -47,12 +51,12 @@ public class SessionCache {
     private final long ms;
     private boolean stop;
 
-    CleanupThread(long ms) {
+    private CleanupThread(long ms) {
       this.ms = ms;
       setDaemon(true);
     }
 
-    void requestToStop()  {
+    private void requestToStop()  {
       stop = true;
       interrupt();
     }
@@ -83,16 +87,16 @@ public class SessionCache {
 
 
   /**
-   * Creates a session cache.
+   * Creates a session key cache.
    */
-  public SessionCache() {
+  public WebSessionKeyCache() {
     userInfoMap = new ConcurrentHashMap<>();
   }
 
 
 
   /**
-   * Starts the session cache.<p>
+   * Starts the session key cache.<p>
    * This will start a thread to cleanup crashed sessions.
    *
    * @param cleanupInterval interval in [ms] to run cleanup
@@ -146,10 +150,10 @@ public class SessionCache {
    * will be replaced.
    *
    * @param sessionKey the (unique) session key
-   * @param userInfo the user info
+   * @param sessionInfo the user's session info
    */
-  public void addSession(Object sessionKey, SessionInfo userInfo) {
-    userInfoMap.put(sessionKey, new SoftReference<>(userInfo));
+  public void addSession(T sessionKey, SessionInfo sessionInfo) {
+    userInfoMap.put(sessionKey, new SoftReference<>(sessionInfo));
   }
 
 
@@ -160,10 +164,9 @@ public class SessionCache {
    *
    * @param sessionKey the (unique) session key
    */
-  public void removeSession(Object sessionKey) {
+  public void removeSession(T sessionKey) {
     userInfoMap.remove(sessionKey);
   }
-
 
 
   /**
@@ -172,16 +175,38 @@ public class SessionCache {
    * @param sessionKey the session key
    * @return the session, null if no such session
    */
-  public SessionInfo getSession(Object sessionKey) {
-    SoftReference<SessionInfo> userInfoRef = userInfoMap.get(sessionKey);
-    if (userInfoRef != null) {
-      SessionInfo userInfo = userInfoRef.get();
+  public SessionInfo getSession(T sessionKey) {
+    SoftReference<SessionInfo> sessionInfoRef = userInfoMap.get(sessionKey);
+    if (sessionInfoRef != null) {
+      SessionInfo userInfo = sessionInfoRef.get();
       if (userInfo != null) {
         // not cleared so far: we can use it
         return userInfo;
       }
     }
     return null;
+  }
+
+
+  /**
+   * Gets the session keys for a user session info.
+   *
+   * @param sessionInfo the user info
+   * @return the session keys, never null
+   */
+  public Collection<T> getSessionKeys(SessionInfo sessionInfo) {
+    Collection<T> sessionKeys = new ArrayList<>();
+    for (Iterator<Map.Entry<T, SoftReference<SessionInfo>>> iter = userInfoMap.entrySet().iterator(); iter.hasNext();) {
+      Map.Entry<T,SoftReference<SessionInfo>> entry = iter.next();
+      SessionInfo info = entry.getValue().get();
+      if (info == null) {
+        iter.remove();
+      }
+      else if (info.equals(sessionInfo)) {
+        sessionKeys.add(entry.getKey());
+      }
+    }
+    return sessionKeys;
   }
 
 }
