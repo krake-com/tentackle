@@ -22,13 +22,13 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.ImportTree;
+import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.TypeTag;
-import com.sun.tools.javac.tree.JCTree;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,17 +47,18 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
   @Override
   public Object visitMethodInvocation(MethodInvocationTree mit, Trees trees) {
     ExpressionTree methodSelect = mit.getMethodSelect();
-    if (methodSelect instanceof JCTree.JCFieldAccess) {
-      JCTree.JCFieldAccess fieldAccess = (JCTree.JCFieldAccess) methodSelect;
+    if (methodSelect instanceof MemberSelectTree) {   // JCTree.JCFieldAccess
+      MemberSelectTree fieldAccess = (MemberSelectTree) methodSelect;
       Name methodName = fieldAccess.getIdentifier();
       if ("getString".equals(methodName.toString())) {
         // method getString() called
         List<? extends ExpressionTree> methodArgs = mit.getArguments();
         if (methodArgs.size() == 1) {
           ExpressionTree stringExpr = methodArgs.get(0);
-          if (stringExpr instanceof JCTree.JCLiteral) {
-            JCTree.JCLiteral stringLit = (JCTree.JCLiteral) stringExpr;
-            if (stringLit.typetag == TypeTag.CLASS && stringLit.value instanceof String) {
+          if (stringExpr instanceof LiteralTree) {    // JCTree.JCLiteral
+            LiteralTree stringLit = (LiteralTree) stringExpr;
+            Object literal = stringLit.getValue();
+            if (literal instanceof String) {
               // method getString(".....") called
               ExpressionTree classExpr = fieldAccess.getExpression();
               String className = classExpr.toString();
@@ -82,7 +83,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
                 bundleName = packageName + lastName;
               }
 
-              String key = (String) stringLit.value;
+              String key = (String) literal;
               String usingClassName = buildUsingClassName(currentPath);
               bundleKeys.add(new BundleKey(usingClassName, bundleName, key));
             }
