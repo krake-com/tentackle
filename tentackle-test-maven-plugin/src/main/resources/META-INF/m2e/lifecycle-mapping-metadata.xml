@@ -4,8 +4,8 @@
     <pluginExecution>
       <pluginExecutionFilter>
         <goals>
-          <goal>create</goal>
-          <goal>migrate</goal>
+          <goal>bundles</goal>
+          <goal>validations</goal>
         </goals>
       </pluginExecutionFilter>
       <action>
