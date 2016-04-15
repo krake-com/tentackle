@@ -931,7 +931,7 @@ public class Db implements Session, Cloneable {
     }
 
     if (e instanceof LoginFailedException) {
-      LOGGER.warning("remote login failed", e);
+      LOGGER.warning("remote login failed: " + e.getMessage());
       return (LoginFailedException) e;
     }
 
