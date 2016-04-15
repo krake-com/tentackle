@@ -180,7 +180,6 @@ public abstract class WebApplication<T> extends AbstractApplication
 
 
   private WebSessionKeyCache<T> sessionCache;  // the web session cache
-  private String sessionPropsName;             // db properties name
   private SessionManager sessionManager;       // the connection manager
   private Db serverDb;                         // the primary server db
   private SessionPool sessionPool;             // the session pool
@@ -403,7 +402,7 @@ public abstract class WebApplication<T> extends AbstractApplication
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    sessionPropsName = getProperty(Constants.BACKEND_PROPS);
+    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
 

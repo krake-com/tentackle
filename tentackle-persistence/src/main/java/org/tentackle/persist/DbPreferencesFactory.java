@@ -34,7 +34,6 @@ import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.pdo.DefaultDomainContext;
 import org.tentackle.pdo.DomainContextFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;

@@ -46,7 +46,6 @@ public class ColumnMigrator {
   private ColumnMetaData column;        // current column, null if not in database yet
   private String columnName;            // the column name
   private String comment;               // the column's comment
-  private DataType dataType;            // the effective attribute's datatype
   private SqlType sqlType;              // the SQL type
   private int columnSize;               // the column size/width
   private int columnScale;              // the scale/precision
@@ -120,7 +119,7 @@ public class ColumnMigrator {
   public String migrate() throws ModelException {
     StringBuilder buf = new StringBuilder();
     if (attribute != null) {
-      dataType = attribute.getDataType();
+      DataType dataType = attribute.getDataType();
       if (dataType == DataType.APPLICATION) {
         dataType = attribute.getInnerType();
       }
@@ -205,9 +204,8 @@ public class ColumnMigrator {
    *
    * @param column the column to drop
    * @return the sql code
-   * @throws ModelException
    */
-  private String dropColumn(ColumnMetaData column) throws ModelException {
+  private String dropColumn(ColumnMetaData column) {
     return backend.sqlDropColumn(column.getTableMetaData().getFullTableName(), column.getColumnName());
   }
 

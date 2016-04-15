@@ -362,7 +362,7 @@ public class PersistedPreferencesXmlSupport {
   /**
    * Write XML document to the specified output stream.
    */
-  private static void writeDoc(Document doc, OutputStream out) throws IOException {
+  private static void writeDoc(Document doc, OutputStream out) {
     try {
       Transformer t = TransformerFactory.newInstance().newTransformer();
       t.setOutputProperty(OutputKeys.DOCTYPE_SYSTEM, doc.getDoctype().getSystemId());

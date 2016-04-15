@@ -92,7 +92,7 @@ public class FxHTMLEditor extends HTMLEditor implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

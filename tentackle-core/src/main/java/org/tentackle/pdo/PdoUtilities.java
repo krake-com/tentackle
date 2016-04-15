@@ -56,7 +56,7 @@ public class PdoUtilities {
 
 
   /** minimum keep alive interval in milliseconds. */
-  public static long MIN_SESSION_KEEPALIVE_MS = 1000;
+  public static long minSessionKeepAliveMillis = 1000;
 
 
 
@@ -297,7 +297,7 @@ public class PdoUtilities {
    */
   public synchronized void startKeepAliveDaemonIfNotRunning() {
     if (keepAliveDaemon == null || !keepAliveDaemon.isAlive()) {
-      keepAliveDaemon = new SessionKeepAliveDaemon(MIN_SESSION_KEEPALIVE_MS);
+      keepAliveDaemon = new SessionKeepAliveDaemon(minSessionKeepAliveMillis);
       keepAliveDaemon.start();
     }
   }

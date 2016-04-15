@@ -40,8 +40,6 @@ public class DbPoolTest {
   private static final StatementId selectOneStatementId = new StatementId();
 
 
-  private final SessionInfo sessionInfo;
-  private final ConnectionManager conMgr;
   private final SessionPool pool;
 
 
@@ -87,9 +85,9 @@ public class DbPoolTest {
   }
 
   public DbPoolTest() {
-    sessionInfo = new DefaultSessionInfo(null, null, "TestDb");
-    conMgr = new MpxConnectionManager("mpx", new Db(new DefaultConnectionManager(), sessionInfo),
-                     NUM_THREADS, 1, NUM_THREADS/8, 1, NUM_THREADS/8, NUM_THREADS, 720, 2160);
+    SessionInfo sessionInfo = new DefaultSessionInfo(null, null, "TestDb");
+    ConnectionManager conMgr = new MpxConnectionManager("mpx", new Db(new DefaultConnectionManager(), sessionInfo),
+            NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS, 720, 2160);
 //                     1, 1, 1, 0, 1, 1, 720, 2160);
 //    conMgr = new DefaultConnectionManager("default", 8, NUM_THREADS, 1);
     pool = new DefaultDbPool("default", conMgr, sessionInfo, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);

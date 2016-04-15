@@ -72,7 +72,6 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
 
   private CommandLine cmdLine;       // command line
-  private String sessionPropsName;   // name of the db-properties file
 
 
   /**
@@ -185,7 +184,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    sessionPropsName = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
+    String sessionPropsName = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
     sessionInfo.applyProperties();

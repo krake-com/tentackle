@@ -26,8 +26,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import org.tentackle.common.Constants;
 
-import static org.tentackle.buildsupport.BundleHandler.PROPS_EXTENSION;
-
 
 /**
  * Handler to extract the name of the resource bundle from

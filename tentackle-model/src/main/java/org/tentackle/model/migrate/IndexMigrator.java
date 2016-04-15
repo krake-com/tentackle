@@ -22,7 +22,6 @@ import org.tentackle.common.BasicStringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
-import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
@@ -136,9 +135,8 @@ public class IndexMigrator {
    * Migrates the index.
    *
    * @return the SQL code, empty string if nothing to migrate
-   * @throws ModelException if migration failed
    */
-  public Result migrate() throws ModelException {
+  public Result migrate() {
     StringBuilder dropSql = new StringBuilder();
     StringBuilder createSql = new StringBuilder();
     if (indexMetaData == null) {

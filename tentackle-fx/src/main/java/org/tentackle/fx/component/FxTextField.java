@@ -101,7 +101,7 @@ public class FxTextField extends TextField implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

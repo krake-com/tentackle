@@ -248,24 +248,24 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   /**
-   * Gets the value for given type
+   * Gets the value for given type.
    *
-   * @param <T> the class type
+   * @param <V> the value type
    * @param value the value from the annotation
    * @param clazz the type of the value, null to get from validation context
    * @param validationContext the validation context
    * @return the evaluated value
    */
   @SuppressWarnings("unchecked")
-  protected <T> T getValue(String value, Class<T> clazz, ValidationContext validationContext) {
+  protected <V> V getValue(String value, Class<V> clazz, ValidationContext validationContext) {
     if (clazz == null) {
-      clazz = (Class<T>) validationContext.getType();
+      clazz = (Class<V>) validationContext.getType();
       if (clazz == null) {
         Object object = validationContext.getObject();
         if (object == null) {
           throw new ValidationRuntimeException("could not determine object's type for " + this);
         }
-        clazz = (Class<T>) object.getClass();
+        clazz = (Class<V>) object.getClass();
       }
     }
     if (valueParameter == null) {
@@ -274,7 +274,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     }
     Object parentObject = validationContext.getParentObject();
     ScriptVariable[] variables = createScriptVariables(validationContext);
-    return (T) valueParameter.getValue(parentObject, variables);
+    return (V) valueParameter.getValue(parentObject, variables);
   }
 
 
@@ -335,16 +335,16 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
   /**
    * Casts given object to a comparable.
    *
-   * @param <T> the type
+   * @param <C> the comparable type
    * @param obj the object
    * @return the object as a Comparable or null if obj is null
    */
   @SuppressWarnings("unchecked")
-  public <T> Comparable<T> assertComparable(T obj) {
+  public <C> Comparable<C> assertComparable(C obj) {
     if (obj != null && !(obj instanceof Comparable)) {
       throw new ValidationRuntimeException(obj.getClass() + " is not a Comparable");
     }
-    return (Comparable<T>) obj;
+    return (Comparable<C>) obj;
   }
 
 

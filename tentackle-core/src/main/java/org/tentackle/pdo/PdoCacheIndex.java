@@ -35,8 +35,8 @@ import org.tentackle.log.LoggerFactory;
  *
  * Holds the mapping of keys to objects.
  *
- * @param <T> the {@link PersistentDomainObject} class
- * @param <C> the {@link Comparable} class
+ * @param <T> the {@link PersistentDomainObject} type
+ * @param <C> the {@link Comparable} type
  * @author harald
  */
 public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C extends Comparable<? super C>> {
@@ -497,12 +497,14 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
 
   /**
-   * key for the cache map.
+   * key for the cache map.<br>
    * We must compare C with ontextDb, because the same object may live in different
    * contexts. The domain context is essential, especially when it comes to different
    * Db (database connections)!
    * The CacheKey does not allow null context or null keys and throws PdoCacheException
    * if it detects such.
+   *
+   * @param <C> the {@link Comparable} type
    */
   private class CacheKey<C extends Comparable<? super C>> implements Comparable<CacheKey<C>> {
 

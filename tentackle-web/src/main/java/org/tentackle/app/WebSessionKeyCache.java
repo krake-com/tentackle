@@ -29,10 +29,7 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.pdo.SessionInfo;
 
 /**
- * A web session cache for to map user infos to session keys.
- * <p>
- * Primarily used in web-applications where short-lived roundtrips
- * must be associated to long-lived authenticated sessions.
+ * A cache mapping user session infos to the web container's session keys.
  *
  * @author harald
  * @param <T> the session key type
@@ -40,7 +37,7 @@ import org.tentackle.pdo.SessionInfo;
 public class WebSessionKeyCache<T> {
 
   // the session info map, key is the session-key
-  private final ConcurrentHashMap<T,SoftReference<SessionInfo>> userInfoMap;
+  private final ConcurrentHashMap<T, SoftReference<SessionInfo>> userInfoMap;
   private CleanupThread cleanupThread;
 
 

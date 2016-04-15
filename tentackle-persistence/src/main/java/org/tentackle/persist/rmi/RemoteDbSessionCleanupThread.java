@@ -31,7 +31,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.persist.Db;
 
 import static java.lang.Thread.sleep;
-import static java.lang.Thread.sleep;
 
 
 /**

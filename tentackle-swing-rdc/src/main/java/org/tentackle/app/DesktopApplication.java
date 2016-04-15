@@ -130,7 +130,6 @@ public abstract class DesktopApplication extends AbstractApplication {
   private CommandLine cmdLine;                // command line
   private FormWindow window;                  // the application's window
   private LoginDialog loginDialog;            // the login dialog
-  private String sessionPropsName;            // db properties name
 
 
   /**
@@ -534,7 +533,7 @@ public abstract class DesktopApplication extends AbstractApplication {
 
     String username     = cmdLine.getOptionValue(Constants.BACKEND_USER);
     char[] password     = StringHelper.toCharArray(cmdLine.getOptionValue(Constants.BACKEND_PASSWORD));
-    sessionPropsName    = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
+    String sessionPropsName = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
 

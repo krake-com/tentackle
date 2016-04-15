@@ -97,7 +97,7 @@ public class FxColorPicker extends ColorPicker implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

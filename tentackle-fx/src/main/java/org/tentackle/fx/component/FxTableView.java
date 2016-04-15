@@ -176,7 +176,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

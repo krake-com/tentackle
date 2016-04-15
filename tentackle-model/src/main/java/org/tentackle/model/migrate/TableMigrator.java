@@ -530,9 +530,8 @@ public class TableMigrator {
    * Migrates the indexes.
    *
    * @return the sql code
-   * @throws ModelException
    */
-  private IndexMigrator.Result migrateIndexes() throws ModelException {
+  private IndexMigrator.Result migrateIndexes() {
     IndexMigrator.Result result = new IndexMigrator.Result("", "");
 
     Collection<IndexMetaData> existingIndexes = table.getIndexes();

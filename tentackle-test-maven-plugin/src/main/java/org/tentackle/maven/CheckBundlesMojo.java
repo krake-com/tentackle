@@ -69,7 +69,6 @@ import org.tentackle.common.TentackleRuntimeException;
 public class CheckBundlesMojo extends AbstractTestMojo {
 
   private final CheckBundlesScanner bundleScanner;
-	private final CheckBundlesProcessor processor;
 
 
   /**
@@ -77,8 +76,7 @@ public class CheckBundlesMojo extends AbstractTestMojo {
    */
   public CheckBundlesMojo() {
     bundleScanner = new CheckBundlesScanner();
-    processor = new CheckBundlesProcessor(bundleScanner);
-    addProcessor(processor);
+    addProcessor(new CheckBundlesProcessor(bundleScanner));
   }
 
 

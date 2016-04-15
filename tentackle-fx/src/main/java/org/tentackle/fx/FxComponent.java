@@ -88,10 +88,10 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * Retrieves the value from this component.<br>
    * The value's type is that of the model.
    *
-   * @param <T> the value's type
+   * @param <V> the value's type
    * @return the value shown by the component
    */
-  <T> T getViewValue();
+  <V> V getViewValue();
 
   /**
    * Retrieves the internal native object of the component.

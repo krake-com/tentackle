@@ -95,7 +95,7 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

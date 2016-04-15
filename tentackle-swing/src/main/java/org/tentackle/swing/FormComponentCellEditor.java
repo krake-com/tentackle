@@ -502,8 +502,7 @@ public class FormComponentCellEditor extends AbstractCellEditor implements Table
    */
   private void updateHeight() {
     if (table != null &&
-        ((editor instanceof JTextComponent && editor.hasFocus()) ||
-         !(editor instanceof JTextComponent)))  {
+        (!(editor instanceof JTextComponent) || editor.hasFocus()))  {
       // must be invoked after component got its size computed correctly
       EventQueue.invokeLater(() -> {
         int preferredHeight = ((JComponent) editor).getPreferredSize().height;

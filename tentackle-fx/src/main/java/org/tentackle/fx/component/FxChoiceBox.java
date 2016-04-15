@@ -100,7 +100,7 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

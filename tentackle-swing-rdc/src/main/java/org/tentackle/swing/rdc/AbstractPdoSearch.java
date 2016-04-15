@@ -62,7 +62,6 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
   private final int warnRowCount;           // number of rows displayable without warning, 0 = unlimited
   private final int maxRowCount;            // maximum number of rows displayable, 0 = unlimited
   private final int fetchSize;              // the fetchsize
-  private Task searchTask;                  // the search task
 
   private boolean searchImmediate;
   private boolean searchPanelInvisible;
@@ -147,7 +146,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
               (isDialogNotShownIfSearchImmediateFindsSingleMatch() || !isDialogShownIfSearchImmediateFails());
 
       // search in PdoTracker
-      searchTask = new AbstractSessionTask() {
+      Task searchTask = new AbstractSessionTask() {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -156,8 +155,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
           if (all) {
             // select all PDOs
             cursor = proxy.selectAllAsCursor();
-          }
-          else {
+          } else {
             cursor = findByCriteria(proxy);
           }
 
@@ -170,7 +168,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
             cursor.setFetchSize(fetchSize);
 
             while ((cursorDialog == null || !cursorDialog.isAbortRequested()) &&
-                   (fetched = cursor.fetch()) != null) {   // get next fetchsize block
+                    (fetched = cursor.fetch()) != null) {   // get next fetchsize block
 
               list.addAll(fetched);
               int count = list.size();    // number of PDOs fetched so far (effectively final)
@@ -178,8 +176,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
               if (cursorDialog != null) {
                 if (cursorDialog.isShowing()) {
                   EventQueue.invokeLater(() -> cursorDialog.updateRowCount(count));
-                }
-                else if (count > warnRowCount) {
+                } else if (count > warnRowCount) {
                   EventQueue.invokeLater(cursorDialog::showDialog);
                 }
               }
@@ -203,8 +200,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
           // show results
           if (runInDispatchThread) {
             pdoDisplay.accept(list);
-          }
-          else  {
+          } else {
             EventQueue.invokeLater(() -> pdoDisplay.accept(list));
           }
         }

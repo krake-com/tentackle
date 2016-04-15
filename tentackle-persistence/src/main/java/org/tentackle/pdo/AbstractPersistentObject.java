@@ -2382,26 +2382,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Adds a PDO class that is referencing this PDO clazz.<br>
    *
-   * @param <T> the PDO type
+   * @param <R> the PDO type
    * @param clazz the class to add
    * @param methodName a method name, null if default
    * @return true if added, false if already in map
    * @see #removeReferencingClass
    */
-  public <T extends PersistentDomainObject<T>> boolean addReferencingClass(Class<T> clazz, String methodName) {
+  public <R extends PersistentDomainObject<R>> boolean addReferencingClass(Class<R> clazz, String methodName) {
     return getClassVariables().addReferencingClass(getPersistenceClass(clazz), methodName);
   }
 
   /**
    * Removes a PDO class that is referencing this PDO clazz.<br>
    *
-   * @param <T> the PDO type
+   * @param <R> the PDO type
    * @param clazz the class to add
    * @param methodName a method name, null if default
    * @return true if removed, false if not in map
    * @see #removeReferencingClass
    */
-  public <T extends PersistentDomainObject<T>> boolean removeReferencingClass(Class<T> clazz, String methodName) {
+  public <R extends PersistentDomainObject<R>> boolean removeReferencingClass(Class<R> clazz, String methodName) {
     return getClassVariables().removeReferencingClass(getPersistenceClass(clazz), methodName);
   }
 
@@ -2411,12 +2411,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * <p>
    * Throws a PersistenceException if the persistence class is not an {@link AbstractPersistentObject}.
    *
-   * @param <T> the PDO type
+   * @param <R> the PDO type
    * @param clazz the pdo class
    * @return the persistence class
    */
   @SuppressWarnings("unchecked")
-  public <T extends PersistentDomainObject<T>> Class<? extends AbstractPersistentObject<?,?>> getPersistenceClass(Class<T> clazz) {
+  public <R extends PersistentDomainObject<R>> Class<? extends AbstractPersistentObject<?,?>> getPersistenceClass(Class<R> clazz) {
     Class<?> persistenceClass = Pdo.create(clazz).getPersistenceDelegate().getClass();
     if (AbstractPersistentObject.class.isAssignableFrom(persistenceClass)) {
       return (Class<? extends AbstractPersistentObject<?,?>>) persistenceClass;

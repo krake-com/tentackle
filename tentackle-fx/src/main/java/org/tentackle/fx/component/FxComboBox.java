@@ -259,7 +259,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

@@ -90,7 +90,7 @@ public class FxTreeTableView<S> extends TreeTableView<S> implements FxComponent 
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

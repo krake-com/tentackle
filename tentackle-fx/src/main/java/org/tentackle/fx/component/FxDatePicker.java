@@ -97,7 +97,7 @@ public class FxDatePicker extends DatePicker implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

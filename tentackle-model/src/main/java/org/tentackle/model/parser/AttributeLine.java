@@ -262,9 +262,8 @@ public class AttributeLine extends SingleLine {
    * Parse options.
    *
    * @param text the options string
-   * @throws ModelException if parsing failed
    */
-  private void parseOptions(String text) throws ModelException {
+  private void parseOptions(String text) {
     OptionParser parser = new OptionParser(text, true);
     options = new ArrayList<>();
     String option;

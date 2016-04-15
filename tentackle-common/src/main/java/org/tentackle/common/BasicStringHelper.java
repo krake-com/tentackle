@@ -215,20 +215,22 @@ public final class BasicStringHelper {
         char c = str.charAt(i);
         if (escaped) {
           // check for special escapes
-          if (c == 'n') {
-            buf.append('\n');
-          }
-          else if (c == 'r') {
-            buf.append('\r');
-          }
-          else if (c == 't') {
-            buf.append('\t');
-          }
-          else if (c == 'f') {
-            buf.append('\f');
-          }
-          else  {
-            buf.append(c);
+          switch (c) {
+            case 'n':
+              buf.append('\n');
+              break;
+            case 'r':
+              buf.append('\r');
+              break;
+            case 't':
+              buf.append('\t');
+              break;
+            case 'f':
+              buf.append('\f');
+              break;
+            default:
+              buf.append(c);
+              break;
           }
           escaped = false;
         }
@@ -500,7 +502,7 @@ public final class BasicStringHelper {
   /**
    * All java reserved words.
    */
-  public static final String[] JAVA_RESERVED_WORDS = {
+  private static final String[] JAVA_RESERVED_WORDS = {
     "abstract",
     "assert",
     "boolean",

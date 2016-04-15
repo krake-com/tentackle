@@ -96,7 +96,7 @@ public class FxCheckBox extends CheckBox implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 
