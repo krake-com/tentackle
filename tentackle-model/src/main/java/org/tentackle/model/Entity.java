@@ -246,6 +246,15 @@ public interface Entity {
   Relation getRelation(String name, boolean all);
 
   /**
+   * Gets all relations for a given entity type.
+   *
+   * @param entity the entity
+   * @param all true if include inherited relations
+   * @return the relations, empty if no such relation
+   */
+  List<Relation> getRelations(Entity entity, boolean all);
+
+  /**
    * Gets the relations from other entities directly referencing this entity.
    *
    * @return the relations

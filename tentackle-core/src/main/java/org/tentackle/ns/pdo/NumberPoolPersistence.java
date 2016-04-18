@@ -27,7 +27,7 @@ import org.tentackle.pdo.PersistentObject;
 import org.tentackle.validate.validator.NotNull;
 
 /**
- * Persistence interface for security rules.
+ * Persistence interface for number pool.
  *
  * @author harald
  */

@@ -1181,6 +1181,28 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     return null;
   }
 
+  @Override
+  public List<Relation> getRelations(Entity entity, boolean all) {
+    List<Relation> rels = new ArrayList<>();
+    if (entity != null) {
+      Entity e = this;
+      while (e != null) {
+        for (Relation relation: e.getRelations()) {
+          if (entity.equals(relation.getForeignEntity())) {
+            rels.add(relation);
+          }
+        }
+        if (all) {
+          e = e.getSuperEntity();
+        }
+        else  {
+          break;
+        }
+      }
+    }
+    return rels;
+  }
+
 
   /**
    * Validates the entity without relation dependent settings.

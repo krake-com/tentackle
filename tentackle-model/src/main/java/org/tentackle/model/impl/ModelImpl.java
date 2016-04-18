@@ -673,10 +673,17 @@ public class ModelImpl implements Model {
           if (relation.getRelationType() == RelationType.LIST && relation.getLinkMethodName() == null) {
             // check if there is a lazy object relation back to me
             Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
+            if (parentRelation == null) {
+              // check by entity instead of name (in case relation name was changed)
+              List<Relation> parentRelations = relation.getForeignEntity().getRelations(entity, true);
+              if (parentRelations.size() == 1) {
+                parentRelation = parentRelations.get(0);
+              }
+            }
             if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
                 parentRelation.getSelectionType() == SelectionType.LAZY) {
               // 1:N composite lazy relations without a linkMethod don't make sense
-              ((RelationImpl) relation).setLinkMethodName("set" + entity.getName());
+              ((RelationImpl) relation).setLinkMethodName("set" + BasicStringHelper.firstToUpper(parentRelation.getName()));
             }
           }
           if (relation.getLinkMethodName() != null) {
