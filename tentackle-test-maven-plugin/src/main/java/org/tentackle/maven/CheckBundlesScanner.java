@@ -26,6 +26,7 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.Tree.Kind;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
@@ -47,7 +48,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
   @Override
   public Object visitMethodInvocation(MethodInvocationTree mit, Trees trees) {
     ExpressionTree methodSelect = mit.getMethodSelect();
-    if (methodSelect instanceof MemberSelectTree) {   // JCTree.JCFieldAccess
+    if (methodSelect.getKind() == Kind.MEMBER_SELECT) {   // JCTree.JCFieldAccess
       MemberSelectTree fieldAccess = (MemberSelectTree) methodSelect;
       Name methodName = fieldAccess.getIdentifier();
       if ("getString".equals(methodName.toString())) {
@@ -55,7 +56,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
         List<? extends ExpressionTree> methodArgs = mit.getArguments();
         if (methodArgs.size() == 1) {
           ExpressionTree stringExpr = methodArgs.get(0);
-          if (stringExpr instanceof LiteralTree) {    // JCTree.JCLiteral
+          if (stringExpr.getKind() == Kind.STRING_LITERAL) {    // JCTree.JCLiteral
             LiteralTree stringLit = (LiteralTree) stringExpr;
             Object literal = stringLit.getValue();
             if (literal instanceof String) {

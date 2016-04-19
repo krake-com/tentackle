@@ -45,6 +45,7 @@
     <module>tentackle-sql-maven-plugin</module>
     <module>tentackle-core</module>
     <module>tentackle-test-maven-plugin</module>
+    <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-log-util</module>
     <module>tentackle-log-log4j</module>
     <module>tentackle-log-slf4j</module>

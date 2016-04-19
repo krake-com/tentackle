@@ -134,6 +134,22 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
   // </editor-fold>//GEN-END:relations
 
   /**
+   * Selects from cache by unique domain key but does not load from db if not in cache.
+   *
+   * @param udk the unique domain key
+   * @return the pdo, null if not in cache
+   */
+  StoredBundle selectCachedOnlyByUniqueDomainKey(StoredBundle.StoredBundleUDK udk);
+
+  /**
+   * Selects via cache by unique domain key.
+   *
+   * @param udk the unique key
+   * @return the pdo, null if no such object
+   */
+  StoredBundle selectCachedByUniqueDomainKey(StoredBundle.StoredBundleUDK udk);
+
+  /**
    * Finds all bundles (one for each locale) for a given name.
    *
    * @param name the bundle name

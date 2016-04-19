@@ -43,6 +43,11 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   }
 
   @Override
+  public StoredBundleUDK getUniqueDomainKey() {
+    return new StoredBundleUDK(pdo());
+  }
+
+  @Override
   public StoredBundle findByUniqueDomainKey(Object domainKey) {
     StoredBundleUDK udk = (StoredBundleUDK) domainKey;
     return pdo().findByNameAndLocale(udk.name, udk.locale);

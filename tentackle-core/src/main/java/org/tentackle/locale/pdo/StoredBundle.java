@@ -39,7 +39,7 @@ import org.tentackle.pdo.TableName;
  * integrity := composite
  *
  * ## attributes
- * [root, remote, tracked]
+ * [root, remote, tracked, tableserial]
  *
  * String(128)    name            bname              the resource bundle name [key]
  * String(8)      locale          blocale            the locale [key]

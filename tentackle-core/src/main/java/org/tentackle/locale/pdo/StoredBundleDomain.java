@@ -19,6 +19,7 @@
 
 package org.tentackle.locale.pdo;
 
+import org.tentackle.locale.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.DomainObject;
 
 
@@ -29,5 +30,7 @@ import org.tentackle.pdo.DomainObject;
  */
 public interface StoredBundleDomain extends DomainObject<StoredBundle> {
 
+  @Override
+  StoredBundleUDK getUniqueDomainKey();
 
 }
