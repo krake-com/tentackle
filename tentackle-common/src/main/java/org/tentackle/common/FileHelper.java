@@ -19,6 +19,7 @@
 
 package org.tentackle.common;
 
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -64,6 +65,7 @@ public class FileHelper {
         else  {
           is = new FileInputStream(filename);
         }
+        is = new BufferedInputStream(is);
         dbProps.load(is);
       }
       finally {

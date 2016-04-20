@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import java.util.Properties;
 import org.tentackle.common.ServiceFactory;
 
 
@@ -53,6 +54,14 @@ public interface SessionInfoFactory {
    * @param propertiesName name of additional properties resource, null if default
    * @return the created session info
    */
-  SessionInfo create (String username, char[] password, String propertiesName);
+  SessionInfo create(String username, char[] password, String propertiesName);
+
+  /**
+   * Creates a session info from a properties object.
+   *
+   * @param properties the properties
+   * @return the created session info
+   */
+  SessionInfo create(Properties properties);
 
 }

@@ -33,4 +33,20 @@ public interface StoredBundleDomain extends DomainObject<StoredBundle> {
   @Override
   StoredBundleUDK getUniqueDomainKey();
 
+  /**
+   * Gets the translated string.
+   *
+   * @param key the string to translate
+   * @return the translated string, null if there is no translation
+   */
+  String getTranslation(String key);
+
+  /**
+   * Sets a translation.
+   *
+   * @param key the string to translate
+   * @param value the translated string, null to remove
+   */
+  void setTranslation(String key, String value);
+
 }

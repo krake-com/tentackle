@@ -24,7 +24,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-core</artifactId>
+      <artifactId>tentackle-persistence</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-domain</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

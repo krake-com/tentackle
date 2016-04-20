@@ -53,7 +53,7 @@ import org.tentackle.sql.metadata.TableMetaData;
  * @author harald
  */
 @Mojo(name = "migrate")
-public class MigrateSqlMojo extends AbstractTentackleSqlMojo {
+public class MigrateSqlMojo extends AbstractSqlMojo {
 
   /**
    * The name of the created sql file.

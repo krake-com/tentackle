@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import java.util.Properties;
 import org.tentackle.common.Service;
 
 /**
@@ -32,5 +33,10 @@ public class DefaultSessionInfoFactory implements SessionInfoFactory {
   @Override
   public SessionInfo create(String username, char[] password, String propertiesName) {
     return new DefaultSessionInfo(username, password, propertiesName);
+  }
+
+  @Override
+  public SessionInfo create(Properties properties) {
+    return new DefaultSessionInfo(properties);
   }
 }

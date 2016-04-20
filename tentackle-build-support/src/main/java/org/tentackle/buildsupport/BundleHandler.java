@@ -40,6 +40,12 @@ import org.tentackle.common.Constants;
  */
 public class BundleHandler extends AbstractAnalyzeHandler {
 
+  /**
+   * The service name to find all annotations using this handler or subclasses of it.
+   */
+  public static final String BUNDLE_HANDLER_SERVICE = BundleHandler.class.getName();
+
+  /** extension for property files. */
   public static final String PROPS_EXTENSION = ".properties";
 
   private AnalyzeProcessor processor;     // the annotation processor

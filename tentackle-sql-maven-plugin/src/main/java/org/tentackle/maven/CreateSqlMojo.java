@@ -40,7 +40,7 @@ import org.tentackle.sql.BackendInfo;
  * @author harald
  */
 @Mojo(name = "create")
-public class CreateSqlMojo extends AbstractTentackleSqlMojo {
+public class CreateSqlMojo extends AbstractSqlMojo {
 
   /**
    * The name of the created sql file.

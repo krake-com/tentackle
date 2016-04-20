@@ -33,6 +33,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.tentackle.buildsupport.BundleHandler;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
@@ -97,7 +98,7 @@ public class CheckBundlesMojo extends AbstractTestMojo {
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
     for (Map.Entry<String, URL> providerEntry :
             ServiceFactory.getServiceFinder(getProcessingClassloader(), Constants.DEFAULT_SERVICE_PATH).
-              findServiceConfigurations(getClass().getName()).entrySet()) {
+              findServiceConfigurations(BundleHandler.BUNDLE_HANDLER_SERVICE).entrySet()) {
       String serviceName = providerEntry.getKey();
 
       // for all bundles annotated with such an annotation

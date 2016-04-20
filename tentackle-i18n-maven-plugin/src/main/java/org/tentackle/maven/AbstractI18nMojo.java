@@ -18,31 +18,37 @@
 
 package org.tentackle.maven;
 
-import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.tentackle.script.ScriptFactory;
+import org.tentackle.buildsupport.BundleHandler;
+import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.Constants;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoTracker;
+import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.Session;
+import org.tentackle.pdo.SessionInfo;
+
 
 /**
  * Base class for i18n mojos.
  *
  * @author harald
  */
-public class AbstractI18nMojo extends AbstractTentackleAnnotationProcessingMojo {
-
-  /**
-   * Directory holding the sources to be processed.<br>
-   * Defaults to all java sources of the current project.
-   * If this is not desired, filesets must be used.
-   */
-  @Parameter(defaultValue = "${project.build.sourceDirectory}",
-             property = "tentackle.sourceDir",
-             required = true)
-  protected File sourceDir;
+public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements DomainContextProvider {
 
   /**
    * Project classpath.
@@ -52,6 +58,23 @@ public class AbstractI18nMojo extends AbstractTentackleAnnotationProcessingMojo 
              required = true)
   protected List<String> classpathElements;
 
+  /**
+   * The backend URL.
+   */
+  @Parameter(required = true)
+  protected String url;
+
+  /**
+   * The backend username.
+   */
+  @Parameter(required = true)
+  public String user;
+
+  /**
+   * The backend password.
+   */
+  @Parameter
+  public String password;
 
   /**
    * Additional locales except the default one.<br>
@@ -61,36 +84,153 @@ public class AbstractI18nMojo extends AbstractTentackleAnnotationProcessingMojo 
 
 
   /**
-   * Locales to check against bundles.
+   * Additional locale suffixes to scan for property files.<br>
+   * Without leading underscore.
    */
-  protected List<Locale> bundleLocales;
+  protected List<String> localeSuffixes;
+
+  /**
+   * The backend session.
+   */
+  protected Session session;
+
+  /**
+   * The domain context to access the stored bundles.
+   */
+  protected DomainContext context;
+
+  /**
+   * Bundle count.
+   */
+  protected int count;
+
+  /**
+   * Error count.
+   */
+  protected int errors;
+
+  /**
+   * Warning count.
+   */
+  protected int warnings;
+
+  @Override
+  public DomainContext getDomainContext() {
+    return context;
+  }
+
+  @Override
+  protected void validate() throws MojoExecutionException {
+    super.validate();
+    findResourceDirs();
+  }
 
 
   @Override
-  public void prepareExecute() throws MojoFailureException {
-    setMojoParameters(sourceDir, classpathElements);
+  public void execute() throws MojoExecutionException, MojoFailureException {
 
-    // grab the locales
-    bundleLocales = new ArrayList<>();
+    // validate configuration
+    validate();
+
+    // grab the extra locale suffixes
+    localeSuffixes = new ArrayList<>();
     if (locales != null) {
       StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
       while (stok.hasMoreTokens()) {
         String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
-        Locale bundleLocale = Locale.forLanguageTag(localeName);
-        if (bundleLocale != null && !bundleLocale.toString().isEmpty()) {
-          bundleLocales.add(bundleLocale);
-        }
-        else {
-          getLog().warn("no such locale: " + localeName);
+        if (localeName != null && !localeName.isEmpty()) {
+          localeSuffixes.add(localeName);
         }
       }
     }
-    if (bundleLocales.isEmpty()) {
-      Locale bundleLocale = Locale.getDefault();
-      getLog().warn("fallback to default locale " + bundleLocale);
-      bundleLocales.add(bundleLocale);
+
+    // open connection to backend
+    Properties props = new Properties();
+    props.setProperty(Constants.BACKEND_URL, url);
+    props.setProperty(Constants.BACKEND_USER, user);
+    props.setProperty(Constants.BACKEND_PASSWORD, password);
+    SessionInfo sessionInfo = Pdo.createSessionInfo(props);
+    session = Pdo.createSession(sessionInfo);
+
+    try {
+      session.open();
+      context = Pdo.createDomainContext(session);
+
+      PdoTracker pdoTracker = PdoTracker.getInstance();   // create tracker but don't start the thread
+      pdoTracker.setSession(session);
+
+      ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+
+      // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
+      for (Map.Entry<String, URL> providerEntry :
+              ServiceFactory.getServiceFinder(classLoader, Constants.DEFAULT_SERVICE_PATH).
+                findServiceConfigurations(BundleHandler.BUNDLE_HANDLER_SERVICE).entrySet()) {
+        String serviceName = providerEntry.getKey();
+
+        // for all bundles annotated with such an annotation
+        for (Map.Entry<String, URL> entry :
+                ServiceFactory.getServiceFinder(classLoader, Constants.BUNDLE_SERVICE_PATH).
+                  findServiceConfigurations(serviceName).entrySet()) {
+
+          String configuration = entry.getKey();
+          List<String> parts = BasicStringHelper.split(configuration, ":= ");
+          // process this bundle name
+          String bundleName = parts.get(0);
+          // translate to resource name
+          bundleName = bundleName.replace('.', '/');
+          String suffix = null;
+          String resourceName = bundleName;
+          Iterator<String> iter = localeSuffixes.iterator();
+          for (;;) {
+            if (suffix != null) {
+              resourceName = bundleName + "_" + suffix;
+            }
+            resourceName += BundleHandler.PROPS_EXTENSION;
+            if (verbosityLevel.isDebug()) {
+              getLog().debug("processing " + resourceName);
+            }
+            processBundle(classLoader, bundleName, suffix, resourceName);
+            if (iter.hasNext()) {
+              suffix = iter.next();
+            }
+            else {
+              break;
+            }
+          }
+        }
+      }
+    }
+    catch (MalformedURLException mx) {
+      getLog().error("cannot create project classloader", mx);
+    }
+    catch (PersistenceException rex) {
+      throw new MojoExecutionException("processing the bundles failed", rex);
+    }
+    finally {
+      if (session.isOpen()) {
+        session.close();
+      }
     }
 
+    getLog().info(count + " bundle" + (count == 1 ? "" : "s") + " processed, " +
+                  warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
+                  errors + " error" + (errors == 1 ? "" : "s"));
+
+    if (errors > 0) {
+      throw new MojoExecutionException("pushing to the database failed");
+    }
   }
+
+
+  /**
+   * Process the given bundle resource name.<br>
+   * The resource name must not start with a leading slash because this method directly uses
+   * the classloader's getResourceAsStream method.
+   *
+   * @param resourceName the bundle resource name without leading slash
+   * @param bundleName the original bundle class name
+   * @param locale the locale, null if default
+   */
+  public abstract void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName);
 
 }

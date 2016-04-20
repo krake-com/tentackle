@@ -68,8 +68,8 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
 
 
   /**
-   * Create sesion info from a username, password and
-   * property file holding the connection parameters.
+   * Create session info from an optional username, optional password and
+   * a property file holding the connection parameters.
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
@@ -79,6 +79,21 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
     this.userName       = username == null ? System.getProperty("user.name") : username;
     this.password       = password;
     this.propertiesName = propertiesName == null ? Constants.BACKEND_PROPS : propertiesName;
+  }
+
+  /**
+   * Create session from a properties object.
+   *
+   * @param properties the properties
+   */
+  public DefaultSessionInfo(Properties properties)  {
+    this.propertiesName = "<internal>";
+    this.properties = properties;
+    this.userName = properties.getProperty(Constants.BACKEND_USER);
+    String pass = properties.getProperty(Constants.BACKEND_PASSWORD);
+    if (pass != null && !pass.isEmpty()) {
+      this.password = pass.toCharArray();
+    }
   }
 
 
@@ -412,11 +427,12 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
    * Gets the connection properties.<br>
    * If the properties are not set so far, the method will load
    * the properties file by adding the extension {@code ".properties"}
-   * to {@code dbPropertiesName} (if it does not contain an extension already).<br>
+   * to {@code propertiesName} (if it does not contain an extension already).<br>
    * If there is no such file, the properties will be read as a resource according
    * to the classpath.<br>
-   * If all failes the db errorhandler
-   * will be invoked (which will usually terminate the application).
+   * If all fails the db errorhandler will be invoked (which will usually terminate the application).
+   * <p>
+   * However, if {@code propertiesName} is null, empty properties are returned.
    *
    * @return the connection properties, never null
    */

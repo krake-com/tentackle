@@ -1,0 +1,2 @@
+# necessary for tentackle-i18n and tentackle-test maven plugins
+org.tentackle.common.Bundle

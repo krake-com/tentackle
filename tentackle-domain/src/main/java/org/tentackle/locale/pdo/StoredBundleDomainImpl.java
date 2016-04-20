@@ -19,6 +19,7 @@
 
 package org.tentackle.locale.pdo;
 
+import java.util.Iterator;
 import org.tentackle.locale.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
@@ -56,6 +57,37 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   @Override
   public String toString() {
     return pdo().getName() + "[" + pdo().getLocale() + "]";
+  }
+
+  @Override
+  public String getTranslation(String key) {
+    for (StoredBundleKey bundleKey: pdo().getKeys()) {
+      if (key.equals(bundleKey.getKey())) {
+        return bundleKey.getValue();
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public void setTranslation(String key, String value) {
+    for (Iterator<StoredBundleKey> iter = pdo().getKeys().iterator(); iter.hasNext(); ) {
+      StoredBundleKey bundleKey = iter.next();
+      if (key.equals(bundleKey.getKey())) {
+        if (value == null) {
+          iter.remove();
+        }
+        else {
+          bundleKey.setValue(value);
+        }
+        return;
+      }
+    }
+    // not found: add
+    StoredBundleKey bundleKey = on(StoredBundleKey.class);
+    bundleKey.setKey(key);
+    bundleKey.setValue(value);
+    pdo().getKeys().add(bundleKey);
   }
 
 }

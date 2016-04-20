@@ -23,7 +23,6 @@ import com.sun.tools.javac.api.JavacTool;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +96,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     this.sourceDir = sourceDir;
     this.classpathElements = classpathElements;
     try {
-      processingClassloader = new ProcessingClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+      processingClassloader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
     }
     catch (MalformedURLException mx) {
       throw new MojoFailureException("cannot create bundle classloader", mx);
@@ -370,35 +369,6 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     }
 
     totalErrors += errorCount;
-  }
-
-
-  /**
-   * Classloader to load from the classpath elements as well.<br>
-   * Necessary since the compliler's classpath options don't change the task's classloader.
-   */
-  private static class ProcessingClassLoader extends URLClassLoader {
-
-    /**
-     * Create from another classloader.
-     *
-     * @param classLoader the task's classloader
-     */
-    private ProcessingClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
-      super(new URL[0], classLoader);
-      if (classpathElements != null) {
-        for (String classpathElement : classpathElements) {
-          File classPathFile = new File(classpathElement);
-          URL url = classPathFile.toURI().toURL();
-          addURL(url);
-        }
-      }
-    }
-
-    @Override
-    public void addURL(URL url) {
-      super.addURL(url);
-    }
   }
 
 }

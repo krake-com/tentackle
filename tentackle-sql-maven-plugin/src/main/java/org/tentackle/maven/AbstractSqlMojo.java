@@ -56,7 +56,7 @@ import org.tentackle.sql.BackendInfo;
  *
  * @author harald
  */
-public abstract class AbstractTentackleSqlMojo extends AbstractTentackleMojo {
+public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
   /**
    * The Maven Project.

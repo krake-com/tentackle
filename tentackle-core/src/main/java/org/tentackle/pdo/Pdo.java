@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import java.util.Collection;
+import java.util.Properties;
 
 /**
  * Collected factory methods for the PDOs and related objects.<br>
@@ -492,6 +493,16 @@ public class Pdo {
    */
   public static SessionInfo createSessionInfo(String username, char[] password, String propertiesName) {
     return SessionInfoFactory.getInstance().create(username, password, propertiesName);
+  }
+
+  /**
+   * Creates a session info from a properties object.
+   *
+   * @param properties the properties
+   * @return the created session info
+   */
+  public static SessionInfo createSessionInfo(Properties properties) {
+    return SessionInfoFactory.getInstance().create(properties);
   }
 
 
