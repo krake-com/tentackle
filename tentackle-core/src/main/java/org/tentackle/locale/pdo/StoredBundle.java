@@ -42,14 +42,13 @@ import org.tentackle.pdo.TableName;
  * [root, remote, tracked, tableserial]
  *
  * String(128)    name            bname              the resource bundle name [key]
- * String(8)      locale          blocale            the locale [key]
+ * String(8)      locale          blocale            the locale, null if default [key, mapnull]
  *
  * ## indexes
  * unique index udk := bname, blocale
  *
  * ## validations
  * name: @NotNull
- * locale: @NotNull
  *
  * ## relations
  * StoredBundleKey:
@@ -116,14 +115,14 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
     /** the resource bundle name. */
     public final String name;
 
-    /** the locale. */
+    /** the locale, null if default. */
     public final String locale;
 
     /**
      * Creates a unique domain key.
      *
      * @param name the resource bundle name
-     * @param locale the locale
+     * @param locale the locale, null if default
      */
     public StoredBundleUDK(String name, String locale) {
       this.name = name;

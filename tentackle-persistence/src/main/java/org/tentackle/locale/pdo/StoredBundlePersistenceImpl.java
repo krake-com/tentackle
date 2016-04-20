@@ -123,8 +123,8 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Persistent("the resource bundle name")
   private String name;
 
-  /** the locale. */
-  @Persistent("the locale")
+  /** the locale, null if default. */
+  @Persistent("the locale, null if default")
   private String locale;
 
   // </editor-fold>//GEN-END:declare
@@ -224,7 +224,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     }
     setTableSerial(rs.getLong());
     name = rs.getString();
-    locale = rs.getString();
+    locale = rs.getString(true);
     setId(rs.getLong());
     setSerial(rs.getLong());
   }
@@ -234,7 +234,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     int ndx = super.setFields(st);
     st.setLong(++ndx, getTableSerial());
     st.setString(++ndx, name);
-    st.setString(++ndx, locale);
+    st.setString(++ndx, locale, true);
     st.setLong(++ndx, getId());
     st.setLong(++ndx, getSerial());
     return ndx;
@@ -294,7 +294,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   /**
    * Gets the attribute locale.
    *
-   * @return the locale
+   * @return the locale, null if default
    */
   @Override
   public String getLocale()    {
@@ -304,7 +304,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   /**
    * Sets the attribute locale.
    *
-   * @param locale the locale
+   * @param locale the locale, null if default
    */
   @Override
   public void setLocale(String locale) {
@@ -334,7 +334,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     super.revertAttributesToSnapshot(snapshot);
     // the resource bundle name
     name = snapshot.name;
-    // the locale
+    // the locale, null if default
     locale = snapshot.locale;
   }
 
@@ -377,7 +377,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     );
     int ndx = 1;
     st.setString(ndx++, name);
-    st.setString(ndx++, locale);
+    st.setString(ndx++, locale, true);
     return executeFirstPdoQuery(st);
   }
 
@@ -807,7 +807,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     );
     int ndx = 1;
     st.setString(ndx++, name);
-    st.setString(ndx++, locale);
+    st.setString(ndx++, locale, true);
     return executeFirstPdoQuery(st);
   }
 

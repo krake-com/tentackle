@@ -93,7 +93,7 @@ public class PushMojo extends AbstractI18nMojo {
       // create a new one
       bundle = on(StoredBundle.class);
       bundle.setName(bundleName);
-      bundle.setLocale(locale == null ? "" : locale);
+      bundle.setLocale(locale);
     }
     for (String key: props.stringPropertyNames()) {
       String value = props.getProperty(key);

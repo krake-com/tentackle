@@ -87,17 +87,16 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
   /**
    * Gets the attribute locale.
    *
-   * @return the locale
+   * @return the locale, null if default
    */
-  @Persistent("the locale")
-  @NotNull
+  @Persistent("the locale, null if default")
   @DomainKey
   String getLocale();
 
   /**
    * Sets the attribute locale.
    *
-   * @param locale the locale
+   * @param locale the locale, null if default
    */
   void setLocale(String locale);
 
@@ -105,7 +104,7 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    * Selects StoredBundle by its unique domain key.
    *
    * @param name the resource bundle name
-   * @param locale the locale
+   * @param locale the locale, null if default
    * @return the StoredBundle, null if no such PDO
    */
   StoredBundle selectByUniqueDomainKey(String name, String locale);
