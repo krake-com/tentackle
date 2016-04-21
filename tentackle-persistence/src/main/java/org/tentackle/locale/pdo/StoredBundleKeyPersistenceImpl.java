@@ -21,8 +21,6 @@ package org.tentackle.locale.pdo;
 
 import java.rmi.RemoteException;
 import java.util.Objects;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.locale.pdo.rmi.StoredBundleKeyRemoteDelegate;
 import org.tentackle.pdo.AbstractPersistentObject;
@@ -47,12 +45,7 @@ import org.tentackle.sql.Backend;
 @PersistentObjectService(StoredBundleKey.class)
 public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<StoredBundleKey, StoredBundleKeyPersistenceImpl> implements StoredBundleKeyPersistence {
 
-  private static final long serialVersionUID = -1178387730540795339L;
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(StoredBundleKeyPersistenceImpl.class);
+  private static final long serialVersionUID = -1178387730540795319L;
 
 
   // @wurblet classVariables ClassVariables

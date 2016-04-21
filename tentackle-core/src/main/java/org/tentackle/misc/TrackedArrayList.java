@@ -665,6 +665,22 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     return false;
   }
 
+  @Override
+  public void addBlunt(E element) {
+    super.add(element);
+  }
+
+  @Override
+  public boolean removeBlunt(E element) {
+    return super.remove(element);
+  }
+
+  @Override
+  public E removeBlunt(int index) {
+    return super.remove(index);
+  }
+
+
   /**
    * Replaces the element at the specified position in this list with
    * the specified element.<br>

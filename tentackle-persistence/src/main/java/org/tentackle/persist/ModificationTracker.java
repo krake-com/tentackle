@@ -532,15 +532,16 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
    * @return the (guessed lowest) table serial (may be higher already)
    */
   public long countModification (String tableName) {
-    long tableSerial = 0;
-    if (isAlive()) {
-      ModificationTally counter = getCounter(tableName);
-      // put pending count
-      counter.countPending();
-      // return the guessed minimum table serial
-      tableSerial = counter.getLatestSerial();
+    ModificationTally counter = getCounter(tableName);
+    // put pending count
+    counter.countPending();
+    if (!isAlive()) {
+      // no poll() -> persist now
+      counter.performPendingCount();
     }
-    return tableSerial;
+    // else optimize:
+    // return the guessed minimum table serial (pending count is done in next poll())
+    return counter.getLatestSerial();
   }
 
 

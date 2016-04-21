@@ -175,7 +175,7 @@
       new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
         (@(alias)@, @(joinAlias)@) -> {
           @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
-          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+          po.@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
         }
       )
     );

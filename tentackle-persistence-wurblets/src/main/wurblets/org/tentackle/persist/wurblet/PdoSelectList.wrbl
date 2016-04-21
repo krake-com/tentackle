@@ -260,7 +260,7 @@
           }
           else {
 ]@
-          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+          po.@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
 @[
           }
 ]@
