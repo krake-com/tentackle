@@ -35,6 +35,8 @@ public class ProjectClassLoader extends URLClassLoader {
    * Create from another classloader.
    *
    * @param classLoader the task's classloader
+   * @param classpathElements the class path elements from maven
+   * @throws MalformedURLException if malformed classpath element
    */
   public ProjectClassLoader(URLClassLoader classLoader, List<String> classpathElements) throws MalformedURLException {
     super(new URL[0], classLoader);

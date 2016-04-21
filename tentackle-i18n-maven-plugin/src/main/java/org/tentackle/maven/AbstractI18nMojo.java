@@ -227,6 +227,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
    * The resource name must not start with a leading slash because this method directly uses
    * the classloader's getResourceAsStream method.
    *
+   * @param classLoader the project classloader
    * @param resourceName the bundle resource name without leading slash
    * @param bundleName the original bundle class name
    * @param locale the locale, null if default
