@@ -20,6 +20,7 @@ package org.tentackle.swing;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 
 /**
@@ -36,7 +37,7 @@ public class SwingSwingBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(SwingSwingBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(SwingSwingBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**

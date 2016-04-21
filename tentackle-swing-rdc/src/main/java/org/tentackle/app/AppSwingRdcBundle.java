@@ -20,6 +20,7 @@ package org.tentackle.app;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 
 /**
  * Bundle for app-package in tentackle-swing-rdc.
@@ -35,7 +36,7 @@ public class AppSwingRdcBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(AppSwingRdcBundle.class.getName());
+    return BundleFactory.getBundle(AppSwingRdcBundle.class.getName());
   }
 
   /**

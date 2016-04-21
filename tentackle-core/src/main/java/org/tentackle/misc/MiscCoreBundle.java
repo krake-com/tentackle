@@ -20,6 +20,7 @@ package org.tentackle.misc;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 
 /**
@@ -36,7 +37,7 @@ public class MiscCoreBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(MiscCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(MiscCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**

@@ -38,6 +38,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.BuilderFactory;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -279,7 +280,7 @@ public class DefaultFxFactory implements FxFactory {
     }
 
     if (!FxControllerService.RESOURCES_NONE.equals(resourcesStr)) {
-      resources = ResourceBundle.getBundle(resourcesStr, LocaleProvider.getInstance().getLocale());
+      resources = BundleFactory.getBundle(resourcesStr, LocaleProvider.getInstance().getLocale());
     }
 
     if (url == null) {

@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -16,52 +16,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.locale;
 
+import java.util.ResourceBundle;
+import java.util.spi.ResourceBundleControlProvider;
+import org.tentackle.common.Service;
 
 /**
- * Bundle exception.
+ * Bundle control provider to use stored bundles.
  * 
  * @author harald
  */
-public class BundleException extends RuntimeException {
+@Service(ResourceBundleControlProvider.class)
+public class StoredBundleControlProvider implements ResourceBundleControlProvider {
 
-  private static final long serialVersionUID = -5951808213011320583L;
+  private static final ResourceBundle.Control CONTROL = new StoredBundleControl();
 
-  /**
-   * Creates a bundle exception.
-   *
-   * @param cause the cause for the exception
-   */
-  public BundleException(Throwable cause) {
-    super(cause);
-  }
-
-  /**
-   * Creates a bundle exception.
-   *
-   * @param message a detailed message
-   * @param cause the cause for the exception
-   */
-  public BundleException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  /**
-   * Creates a bundle exception.
-   *
-   * @param message a detailed message
-   */
-  public BundleException(String message) {
-    super(message);
-  }
-
-  /**
-   * Creates a bundle exception.
-   */
-  public BundleException() {
-    super();
+  @Override
+  public ResourceBundle.Control getControl(String baseName) {
+    return CONTROL;
   }
 
 }

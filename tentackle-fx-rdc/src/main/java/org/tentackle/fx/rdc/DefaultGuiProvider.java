@@ -18,6 +18,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
@@ -60,7 +61,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   @Override
   public ResourceBundle getBundle() {
     if (bundle == null) {
-      bundle = ResourceBundle.getBundle(getClass().getName());
+      bundle = BundleFactory.getBundle(getClass().getName());
     }
     return bundle;
   }

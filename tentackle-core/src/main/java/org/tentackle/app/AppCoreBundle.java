@@ -21,6 +21,7 @@ package org.tentackle.app;
 import java.util.ResourceBundle;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 
 /**
  * Bundle for app-package in tentackle-core.
@@ -36,7 +37,7 @@ public class AppCoreBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(AppCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(AppCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**

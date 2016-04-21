@@ -20,6 +20,7 @@ package org.tentackle.app;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 
 /**
  * Bundle for app-package in tentackle-fx-rdc.
@@ -35,7 +36,7 @@ public class AppFxRdcBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(AppFxRdcBundle.class.getName());
+    return BundleFactory.getBundle(AppFxRdcBundle.class.getName());
   }
 
   /**

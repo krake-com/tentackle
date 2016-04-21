@@ -20,6 +20,7 @@ package org.tentackle.swing.print;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 
 /**
  * Bundle for print-package in tentackle-swing-print.
@@ -35,7 +36,7 @@ public class PrintSwingPrintBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(PrintSwingPrintBundle.class.getName());
+    return BundleFactory.getBundle(PrintSwingPrintBundle.class.getName());
   }
 
   /**

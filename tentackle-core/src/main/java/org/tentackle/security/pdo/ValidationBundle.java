@@ -15,6 +15,7 @@ package org.tentackle.security.pdo;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 
 /**
@@ -31,7 +32,7 @@ public class ValidationBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(ValidationBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(ValidationBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**
