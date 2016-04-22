@@ -64,6 +64,9 @@ import org.tentackle.pdo.TableName;
 /**
  * A resource bundle stored in the database.
  * <p>
+ * Important: modifications of the bundle should only be done via
+ * {@link #setTranslation(java.lang.String, java.lang.String)} and never by adding or modifying a bundle key
+ * directly. Bundles are always loaded eagerly, i.e. including all components..
  *
  * @author harald
  */

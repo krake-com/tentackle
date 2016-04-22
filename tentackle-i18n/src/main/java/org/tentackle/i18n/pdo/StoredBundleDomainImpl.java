@@ -19,10 +19,9 @@
 
 package org.tentackle.i18n.pdo;
 
-import org.tentackle.i18n.pdo.StoredBundle;
-import org.tentackle.i18n.pdo.StoredBundleKey;
-import org.tentackle.i18n.pdo.StoredBundleDomain;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
@@ -36,6 +35,10 @@ import org.tentackle.pdo.DomainObjectService;
 public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, StoredBundleDomainImpl> implements StoredBundleDomain {
 
   private static final long serialVersionUID = 1L;
+
+
+  @SuppressWarnings("stateful-domain-logic")
+  private transient Map<String,String> translations;    // cached translations
 
 
   public StoredBundleDomainImpl(StoredBundle pdo) {
@@ -63,17 +66,20 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   }
 
   @Override
-  public String getTranslation(String key) {
-    for (StoredBundleKey bundleKey: pdo().getKeys()) {
-      if (key.equals(bundleKey.getKey())) {
-        return bundleKey.getValue();
+  public synchronized String getTranslation(String key) {
+    if (translations == null) {
+      Map<String,String> map = new HashMap<>();
+      for (StoredBundleKey bundleKey: pdo().getKeys()) {
+        map.put(bundleKey.getKey(), bundleKey.getValue());
       }
+      translations = map;
     }
-    return null;
+    return translations.get(key);
   }
 
   @Override
-  public void setTranslation(String key, String value) {
+  public synchronized void setTranslation(String key, String value) {
+    translations = null;
     for (Iterator<StoredBundleKey> iter = pdo().getKeys().iterator(); iter.hasNext(); ) {
       StoredBundleKey bundleKey = iter.next();
       if (key.equals(bundleKey.getKey())) {

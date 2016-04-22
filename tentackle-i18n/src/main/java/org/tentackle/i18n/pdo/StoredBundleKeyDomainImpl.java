@@ -19,8 +19,6 @@
 
 package org.tentackle.i18n.pdo;
 
-import org.tentackle.i18n.pdo.StoredBundleKey;
-import org.tentackle.i18n.pdo.StoredBundleKeyDomain;
 import org.tentackle.pdo.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
