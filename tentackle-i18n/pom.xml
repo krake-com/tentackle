@@ -73,7 +73,7 @@
           <wurbletDependencies>
             <wurbletDependency>
               <groupId>${project.groupId}</groupId>
-              <artifactId>tentackle-wurblets</artifactId>
+              <artifactId>tentackle-persistence-wurblets</artifactId>
               <version>${project.version}</version>
             </wurbletDependency>
           </wurbletDependencies>
@@ -82,6 +82,7 @@
 
           <wurbletPaths>
             <param>org.tentackle.wurblet</param>
+            <param>org.tentackle.persist.wurblet</param>
           </wurbletPaths>
 
           <wurbletProperties>
@@ -112,12 +113,8 @@
             </fileset>
             <fileset>
               <includes>
-                <include>**/pdo/*Domain.java</include>
-                <include>**/pdo/*Persistence.java</include>
+                <include>**/pdo/*.java</include>
               </includes>
-              <excludes>
-                <exclude>**/tentackle/pdo/*.java</exclude>
-              </excludes>
               <followSymlinks>false</followSymlinks>
             </fileset>
           </filesets>

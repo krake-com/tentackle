@@ -14,6 +14,7 @@
 package org.tentackle.fx.rdc.security;
 
 import javafx.scene.image.ImageView;
+import org.tentackle.common.Bundle;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.rdc.DefaultGuiProvider;
@@ -27,6 +28,7 @@ import org.tentackle.security.pdo.Security;
  * @author harald
  */
 @GuiProviderService(Security.class)
+@Bundle
 public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
 
   /**

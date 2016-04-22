@@ -94,7 +94,7 @@
           if (join.getForeignEntity().isAbstract()) {
             if (join.getRelationType() == RelationType.LIST) {
 ]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.id", "_e@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "_e@(joinCount)@",
+                      new Join<>(JoinType.LEFT, "@(alias)@.id", "e_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
                           @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
                           po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
@@ -104,7 +104,7 @@
             }
             else {
 ]@
-                      new Join<>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "_e@(joinCount)@.id", @(joinClass)@.class, "_e@(joinCount)@",
+                      new Join<>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "e_@(joinCount)@.id", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(pdoName)@ @(alias)@, @(joinClass)@ @(joinAlias)@) -> {
                           @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
                         }
@@ -115,17 +115,33 @@
           else  { // non-abstract
             if (join.getRelationType() == RelationType.LIST) {
 ]@
-                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.id", "_e@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "_e@(joinCount)@",
+                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.id", "e_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(alias)@, @(joinAlias)@) -> {
-                          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
-                          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
+@[
+          if (join.isReversed()) {
+]@
+                        ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
+@[
+          }
+          else {
+]@
+                        ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
+@[
+            if (join.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
+]@
+                        ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
+@[
+            }
+          }
+]@
                         }
                       @(joinCount < joins.size() ? ")," : ")")@
 @[
             }
             else {
 ]@
-                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "_e@(joinCount)@.id", @(joinClass)@.class, "_e@(joinCount)@",
+                      new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "e_@(joinCount)@.id", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(alias)@, @(joinAlias)@) -> {
                           @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
                         }
