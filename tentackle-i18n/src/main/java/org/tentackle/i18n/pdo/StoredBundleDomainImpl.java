@@ -68,11 +68,10 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   @Override
   public synchronized String getTranslation(String key) {
     if (translations == null) {
-      Map<String,String> map = new HashMap<>();
+      translations = new HashMap<>();
       for (StoredBundleKey bundleKey: pdo().getKeys()) {
-        map.put(bundleKey.getKey(), bundleKey.getValue());
+        translations.put(bundleKey.getKey(), bundleKey.getValue());
       }
-      translations = map;
     }
     return translations.get(key);
   }
