@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
 import org.tentackle.pdo.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;

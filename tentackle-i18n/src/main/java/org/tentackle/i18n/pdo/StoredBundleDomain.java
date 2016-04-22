@@ -17,9 +17,9 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
-import org.tentackle.locale.pdo.StoredBundle.StoredBundleUDK;
+import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.DomainObject;
 
 

@@ -17,6 +17,6 @@
  */
 
 /**
- * Remoting for resource bundles.
+ * PDOs for resource bundles stored in the database.
  */
-package org.tentackle.locale.pdo.rmi;
+package org.tentackle.i18n.pdo;

@@ -1,4 +1,4 @@
-/*
+/**
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -16,7 +16,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
+package org.tentackle.i18n.pdo;
+
+import org.tentackle.pdo.DomainObject;
+
+
 /**
- * PDOs for resource bundles stored in the database.
+ * Stored bundle key domain interface.
+ *
+ * @author harald
  */
-package org.tentackle.locale.pdo;
+public interface StoredBundleKeyDomain extends DomainObject<StoredBundleKey> {
+
+
+}

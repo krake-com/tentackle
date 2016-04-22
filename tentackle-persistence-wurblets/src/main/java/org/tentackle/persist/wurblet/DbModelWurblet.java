@@ -730,15 +730,28 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code to update the reference of a relation.
    *
    * @param relation the relation
+   * @param pdo the PDO name
    * @return the java code
    */
-  public String createRelationUpdateReferenceCode(Relation relation) {
+  public String createRelationUpdateReferenceCode(Relation relation, String pdo) {
     if (relation.getLinkMethodName() != null) {
-      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ? "(pdo(), ndx++)" : "(pdo())");
+      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ?
+              ("(" + pdo + ", ndx++)") : ("(" + pdo + ")"));
     }
     else {
       return "set" + relation.getEntity().getName() + "(pdo())";
     }
+  }
+
+  /**
+   * Creates the java code to update the reference of a relation.<br>
+   * The pdo name is fixed {@code "pdo()"}.
+   *
+   * @param relation the relation
+   * @return the java code
+   */
+  public String createRelationUpdateReferenceCode(Relation relation) {
+    return createRelationUpdateReferenceCode(relation, "pdo()");
   }
 
   /**

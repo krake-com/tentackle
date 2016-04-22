@@ -17,10 +17,13 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
+import org.tentackle.i18n.pdo.StoredBundle;
+import org.tentackle.i18n.pdo.StoredBundleKey;
+import org.tentackle.i18n.pdo.StoredBundleDomain;
 import java.util.Iterator;
-import org.tentackle.locale.pdo.StoredBundle.StoredBundleUDK;
+import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.pdo.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 

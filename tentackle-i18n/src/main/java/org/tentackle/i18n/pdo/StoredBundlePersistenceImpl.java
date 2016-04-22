@@ -17,17 +17,20 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
+import org.tentackle.i18n.pdo.StoredBundleKey;
+import org.tentackle.i18n.pdo.StoredBundle;
+import org.tentackle.i18n.pdo.StoredBundlePersistence;
 import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.locale.pdo.StoredBundle.StoredBundleUDK;
+import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.locale.pdo.rmi.StoredBundleRemoteDelegate;
+import org.tentackle.i18n.pdo.rmi.StoredBundleRemoteDelegate;
 import org.tentackle.pdo.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Join;
@@ -745,8 +748,8 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     js.addJoin(
       new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
         (bndl, bkey) -> {
-          StoredBundlePersistenceImpl po = (StoredBundlePersistenceImpl) bndl.getPersistenceDelegate();
-          po.getKeysBlunt().addBlunt(bkey);
+          ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
+          ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
         }
       )
     );
@@ -796,8 +799,8 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     js.addJoin(
       new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
         (bndl, bkey) -> {
-          StoredBundlePersistenceImpl po = (StoredBundlePersistenceImpl) bndl.getPersistenceDelegate();
-          po.getKeysBlunt().addBlunt(bkey);
+          ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
+          ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
         }
       )
     );

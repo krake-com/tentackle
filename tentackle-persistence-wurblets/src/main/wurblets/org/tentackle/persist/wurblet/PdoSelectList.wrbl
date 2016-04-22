@@ -251,17 +251,22 @@
     js.addJoin(
       new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
         (@(alias)@, @(joinAlias)@) -> {
-          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
 @[
           if (join.isReversed()) {
 ]@
-          po.@(join.getSetterName())@(@(joinAlias)@);
+          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
 @[
           }
           else {
 ]@
-          po.@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
+          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
 @[
+            if (join.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
+]@
+          ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
+@[
+            }
           }
 ]@
         }

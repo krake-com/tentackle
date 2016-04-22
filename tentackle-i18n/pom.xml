@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>2.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-i18n</artifactId>
+  <version>2.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Tentackle I18N via persistence layer</name>
+  <description>I18N provider to use StoredBundle instead of ResourceBundle</description>
+  <url>http://www.tentackle.org</url>
+
+  <dependencies>
+
+    <!-- local dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-persistence</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-domain</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <id>analyze</id>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-analyze</id>
+            <goals>
+              <goal>test-analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>false</showCompileOutput>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>wurbel</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <wurbletDependencies>
+            <wurbletDependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>tentackle-wurblets</artifactId>
+              <version>${project.version}</version>
+            </wurbletDependency>
+          </wurbletDependencies>
+
+          <verbosity>info</verbosity>
+
+          <wurbletPaths>
+            <param>org.tentackle.wurblet</param>
+          </wurbletPaths>
+
+          <wurbletProperties>
+            <property>
+              <name>guardtype</name>
+              <value>netbeans</value>
+            </property>
+            <property>
+              <name>foldtype</name>
+              <value>collapsed</value>
+            </property>
+            <property>
+              <name>model</name>
+              <value>${wurbel.wurbelDir}/model</value>
+            </property>
+            <property>
+              <name>backends</name>
+              <value>all</value>
+            </property>
+          </wurbletProperties>
+
+          <filesets>
+            <fileset>
+              <includes>
+                <include>**/*.wurb</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+            <fileset>
+              <includes>
+                <include>**/pdo/*Domain.java</include>
+                <include>**/pdo/*Persistence.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/tentackle/pdo/*.java</exclude>
+              </excludes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+

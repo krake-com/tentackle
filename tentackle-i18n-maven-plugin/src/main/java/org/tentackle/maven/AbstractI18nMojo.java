@@ -34,6 +34,7 @@ import org.tentackle.buildsupport.BundleHandler;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.i18n.StoredBundleControlProvider;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
@@ -128,6 +129,9 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
+
+    // disable provider because we need only the PDOs from tt-i18n, not the bundle control
+    StoredBundleControlProvider.enabled = false;
 
     // validate configuration
     validate();

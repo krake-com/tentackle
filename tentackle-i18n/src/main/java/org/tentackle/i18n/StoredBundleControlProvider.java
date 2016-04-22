@@ -16,7 +16,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+package org.tentackle.i18n;
+
+import java.util.ResourceBundle;
+import java.util.spi.ResourceBundleControlProvider;
+import org.tentackle.common.Service;
+
 /**
- * Persistence implementation for resource bundles stored in the database.
+ * Bundle control provider to use stored bundles.
+ *
+ * @author harald
  */
-package org.tentackle.locale.pdo;
+@Service(ResourceBundleControlProvider.class)
+public class StoredBundleControlProvider implements ResourceBundleControlProvider {
+
+  /**
+   * Flag to disable the control provider.<br>
+   * By default, the provider is enabled.
+   */
+  public static boolean enabled = true;
+
+  /** the control instance. */
+  private static final ResourceBundle.Control CONTROL = new StoredBundleControl();
+
+  @Override
+  public ResourceBundle.Control getControl(String baseName) {
+    return enabled ? CONTROL : null;
+  }
+
+}

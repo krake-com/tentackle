@@ -17,6 +17,6 @@
  */
 
 /**
- * Localization support.
+ * Remoting for resource bundles.
  */
-package org.tentackle.locale;
+package org.tentackle.i18n.pdo.rmi;

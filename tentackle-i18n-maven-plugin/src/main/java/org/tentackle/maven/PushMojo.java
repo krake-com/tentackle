@@ -26,7 +26,7 @@ import java.util.Properties;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.tentackle.locale.pdo.StoredBundle;
+import org.tentackle.i18n.pdo.StoredBundle;
 
 
 

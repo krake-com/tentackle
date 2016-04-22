@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.locale;
+package org.tentackle.i18n;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -40,9 +40,10 @@ public class StoredBundleControl extends ResourceBundle.Control {
   public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
           throws IllegalAccessException, InstantiationException, IOException {
 
-//    String bundleName = toBundleName(baseName, locale);
-//    String resourceName = toResourceName(bundleName, format);
-//    LOGGER.info("bundleName = {0}, resourceName = {1}", bundleName, resourceName);
+    String bundleName = toBundleName(baseName, locale);
+    String resourceName = toResourceName(bundleName, format);
+    LOGGER.info("bundleName = {0}, resourceName = {1}", bundleName, resourceName);
+    
     return super.newBundle(baseName, locale, format, loader, reload);
   }
 

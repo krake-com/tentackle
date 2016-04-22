@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.misc.TrackedList;

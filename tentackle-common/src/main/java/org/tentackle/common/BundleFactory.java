@@ -19,8 +19,10 @@
 
 package org.tentackle.common;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.spi.ResourceBundleControlProvider;
 
 
 interface BundleFactory$Singleton {
@@ -44,7 +46,7 @@ interface BundleFactory$Singleton {
  * to lookup and install providers as the standard JRE, but scans the application classpath instead
  * of the system classpath.
  * <p>
- * See {@code org.tentackle.locale.StoredBundleControlProvider} in tentackle-core for an example.
+ * See {@code org.tentackle.locale.StoredBundleControlProvider} in tentackle-i18n for an example.
  *
  * @author harald
  */
@@ -97,6 +99,23 @@ public interface BundleFactory {
   static ResourceBundle getBundle(String baseName, Locale locale, ClassLoader loader) {
     return getInstance().findBundle(baseName, locale, loader);
   }
+
+
+  /**
+   * Gets the control providers.<br>
+   * Method can be used to add a provider explicitly.
+   *
+   * @return the non-empty list of providers or null, if no providers found
+   */
+  List<ResourceBundleControlProvider> getProviders();
+
+  /**
+   * Gets the control to load the bundle.
+   *
+   * @param baseName the bundle basename
+   * @return the control, null if delegate to ResourceBundle's default
+   */
+  ResourceBundle.Control getControl(String baseName);
 
   /**
    * Finds a resource bundle using the specified base name, the default locale, and the caller's class loader.<br>

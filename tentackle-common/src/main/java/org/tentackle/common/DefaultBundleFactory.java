@@ -22,8 +22,9 @@ package org.tentackle.common;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.ResourceBundleControlProvider;
 
 /**
@@ -31,34 +32,47 @@ import java.util.spi.ResourceBundleControlProvider;
  *
  * @author harald
  */
-@Service(BundleFactory.class)
+@Service(BundleFactory.class)   // doesn't work in tt-common, for documentation only
 public class DefaultBundleFactory implements BundleFactory {
 
-  private List<ResourceBundleControlProvider> providers;    // the control providers
+  private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
+  private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
 
 
   /**
    * Creates the bundle factory.
    */
   public DefaultBundleFactory() {
-    try {
-      for (Class<ResourceBundleControlProvider> clazz:
-              ServiceFactory.getServiceFinder().findServiceProviders(ResourceBundleControlProvider.class)) {
-        if (providers == null) {
-          providers = new ArrayList<>();
-        }
-        providers.add(clazz.newInstance());
-      }
-    }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
-      throw new TentackleRuntimeException("cannot load bundle control providers", ex);
-    }
+    providers = createProviders();
+    controlMap = new ConcurrentHashMap<>();
   }
 
+  @Override
+  public final List<ResourceBundleControlProvider> getProviders() {
+    return providers;
+  }
+
+  @Override
+  public ResourceBundle.Control getControl(String baseName) {
+    if (providers != null) {
+      ResourceBundle.Control control = controlMap.get(baseName);
+      if (control != null) {
+        return control;
+      }
+      for (ResourceBundleControlProvider provider : providers) {
+        control = provider.getControl(baseName);
+        if (control != null) {
+          controlMap.put(baseName, control);
+          return control;
+        }
+      }
+    }
+    return null;
+  }
 
   @Override
   public ResourceBundle findBundle(String baseName) {
-    Control control = getControl(baseName);
+    ResourceBundle.Control control = getControl(baseName);
     return control == null ?
               ResourceBundle.getBundle(baseName) :
               ResourceBundle.getBundle(baseName, control);
@@ -66,7 +80,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale) {
-    Control control = getControl(baseName);
+    ResourceBundle.Control control = getControl(baseName);
     return control == null ?
               ResourceBundle.getBundle(baseName, locale) :
               ResourceBundle.getBundle(baseName, locale, control);
@@ -74,7 +88,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale, ClassLoader loader) {
-    Control control = getControl(baseName);
+    ResourceBundle.Control control = getControl(baseName);
     return control == null ?
               ResourceBundle.getBundle(baseName, locale, loader) :
               ResourceBundle.getBundle(baseName, locale, loader, control);
@@ -82,21 +96,25 @@ public class DefaultBundleFactory implements BundleFactory {
 
 
   /**
-   * Gets the control to load the bundle.
+   * Creates a list of providers.
    *
-   * @param baseName the bundle basename
-   * @return the control, null if delegate to ResourceBundle's default
+   * @return the non-empty list of providers, null if no providers found
    */
-  private ResourceBundle.Control getControl(String baseName) {
-    if (providers != null) {
-      for (ResourceBundleControlProvider provider : providers) {
-        ResourceBundle.Control control = provider.getControl(baseName);
-        if (control != null) {
-          return control;
+  protected List<ResourceBundleControlProvider> createProviders() {
+    List<ResourceBundleControlProvider> providerList = null;
+    try {
+      for (Class<ResourceBundleControlProvider> clazz:
+              ServiceFactory.getServiceFinder().findServiceProviders(ResourceBundleControlProvider.class)) {
+        if (providerList == null) {
+          providerList = new ArrayList<>();
         }
+        providerList.add(clazz.newInstance());
       }
     }
-    return null;
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+      throw new TentackleRuntimeException("cannot load bundle control providers", ex);
+    }
+    return providerList;
   }
 
 }

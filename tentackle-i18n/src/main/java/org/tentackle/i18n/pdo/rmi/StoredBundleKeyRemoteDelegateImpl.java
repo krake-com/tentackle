@@ -2,10 +2,10 @@
  * StoredBundleKeyRemoteDelegateImpl.java (generated Mon Apr 18 11:49:57 CEST 2016)
  */
 
-package org.tentackle.locale.pdo.rmi;
+package org.tentackle.i18n.pdo.rmi;
 
-import org.tentackle.locale.pdo.StoredBundleKey;
-import org.tentackle.locale.pdo.StoredBundleKeyPersistenceImpl;
+import org.tentackle.i18n.pdo.StoredBundleKey;
+import org.tentackle.i18n.pdo.StoredBundleKeyPersistenceImpl;
 import java.rmi.RemoteException;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;

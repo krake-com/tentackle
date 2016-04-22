@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.locale.pdo;
+package org.tentackle.i18n.pdo;
 
 import java.util.Objects;
 import org.tentackle.common.Compare;
