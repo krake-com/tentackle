@@ -25,12 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.pdo.ClassId;
 import org.tentackle.pdo.ModificationEvent;
 import org.tentackle.pdo.ModificationListenerAdapter;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.TableName;
 import org.tentackle.persist.rmi.DbPreferencesNodeRemoteDelegate;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.sql.Backend;
@@ -66,8 +64,6 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
-@ClassId(/**/3/**/)   // @wurblet < Inject $classid
-@TableName(/**/"prefnode"/**/)   // @wurblet < Inject --string $tablename
 public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
   private static final long serialVersionUID = 4677525106428955014L;

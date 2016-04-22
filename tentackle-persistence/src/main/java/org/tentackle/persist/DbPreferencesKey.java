@@ -24,12 +24,10 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.pdo.ClassId;
 import org.tentackle.pdo.ModificationEvent;
 import org.tentackle.pdo.ModificationListenerAdapter;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.TableName;
 import org.tentackle.persist.rmi.DbPreferencesKeyRemoteDelegate;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.sql.Backend;
@@ -65,8 +63,6 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
-@ClassId(/**/4/**/)   // @wurblet < Inject $classid
-@TableName(/**/"prefkey"/**/)   // @wurblet < Inject --string $tablename
 public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   private static final long serialVersionUID = 5733105489734329678L;
