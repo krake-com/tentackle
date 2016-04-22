@@ -123,6 +123,27 @@
           </filesets>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!--<excludePackageNames>*/ns/pdo/rmi, */security/pdo/rmi</excludePackageNames>-->
+          <sourceFileExcludes>
+            <exclude>**/rmi/*Delegate.java</exclude>
+            <exclude>**/rmi/*DelegateImpl.java</exclude>
+          </sourceFileExcludes>
+          <tags>
+            <tag>
+              <name>wurblet</name>
+              <placement>a</placement>
+              <head>Wurblet:</head>
+            </tag>
+          </tags>
+          <!-- don't complain about wurblet args -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
