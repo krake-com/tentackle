@@ -239,6 +239,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * Initializes all processors.
    *
    * @param srcDir the current file set directory
+   * @throws MojoFailureException if initialization failed
    */
   protected void initializeProcessors(File srcDir) throws MojoFailureException {
     if (processors != null) {
