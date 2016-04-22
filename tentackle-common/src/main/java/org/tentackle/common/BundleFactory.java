@@ -110,8 +110,8 @@ public interface BundleFactory {
 
   /**
    * Sets the classloader to load the bundles.<br>
-   * If set, this classloader will be used for {@link #getBundle(java.lang.String) and
-   * {@link #getBundle(java.lang.String, java.util.Locale).
+   * If set, this classloader will be used for {@link #getBundle(java.lang.String)} and
+   * {@link #getBundle(java.lang.String, java.util.Locale)}.
    *
    * @param classLoader the classloader, null if default
    */
