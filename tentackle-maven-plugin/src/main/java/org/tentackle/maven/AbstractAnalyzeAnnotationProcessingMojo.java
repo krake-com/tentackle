@@ -105,21 +105,14 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   }
 
 
-  /**
-   * Initializes a processor.
-   *
-   * @param processor the annotation processor
-   * @param srcDir the sources dir
-   */
   @Override
-  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
+  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
     super.initializeProcessor(processor, srcDir);
     AnalyzeProcessor p = (AnalyzeProcessor) processor;
     p.setAnalyzeDir(analyzeDir);
     p.setServiceDir(servicesDir);
     p.setProcessingClassLoader(getProcessingClassloader());
   }
-
 
   @Override
   protected String[] filterFileNames(String dirName, String[] fileNames) {

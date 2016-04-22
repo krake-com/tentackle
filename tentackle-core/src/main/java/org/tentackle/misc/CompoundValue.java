@@ -118,7 +118,7 @@ public class CompoundValue {
    * converted to the given type, if possible.
    *
    * @param str the string value
-   * @param clazz the class of the value.
+   * @param clazz the class of the value
    */
   public CompoundValue(String str, Class<?> clazz) {
     configure(str, clazz);

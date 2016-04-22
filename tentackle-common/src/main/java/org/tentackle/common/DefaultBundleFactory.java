@@ -37,7 +37,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
-
+  private ClassLoader classLoader;                                // another classloader, null if default
 
   /**
    * Creates the bundle factory.
@@ -45,6 +45,16 @@ public class DefaultBundleFactory implements BundleFactory {
   public DefaultBundleFactory() {
     providers = createProviders();
     controlMap = new ConcurrentHashMap<>();
+  }
+
+  @Override
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  @Override
+  public void setClassLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
   }
 
   @Override
@@ -73,17 +83,27 @@ public class DefaultBundleFactory implements BundleFactory {
   @Override
   public ResourceBundle findBundle(String baseName) {
     ResourceBundle.Control control = getControl(baseName);
+    if (classLoader == null) {
+      return control == null ?
+                ResourceBundle.getBundle(baseName) :
+                ResourceBundle.getBundle(baseName, control);
+    }
     return control == null ?
-              ResourceBundle.getBundle(baseName) :
-              ResourceBundle.getBundle(baseName, control);
+                ResourceBundle.getBundle(baseName, Locale.getDefault(), classLoader) :
+                ResourceBundle.getBundle(baseName, Locale.getDefault(), classLoader, control);
   }
 
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale) {
     ResourceBundle.Control control = getControl(baseName);
+    if (classLoader == null) {
+      return control == null ?
+                ResourceBundle.getBundle(baseName, locale) :
+                ResourceBundle.getBundle(baseName, locale, control);
+    }
     return control == null ?
-              ResourceBundle.getBundle(baseName, locale) :
-              ResourceBundle.getBundle(baseName, locale, control);
+                ResourceBundle.getBundle(baseName, locale, classLoader) :
+                ResourceBundle.getBundle(baseName, locale, classLoader, control);
   }
 
   @Override

@@ -22,6 +22,7 @@ package org.tentackle.validate;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
@@ -624,7 +625,7 @@ public class ValidationUtilities {
         try {
           String bundleName = packageName + (packageName.isEmpty() ? "" : ".") + "ValidationBundle";
           bundleClass = getValidationBundleClassLoader().loadClass(bundleName);
-          // class must contain a public static attribute named "bundle" which must be a ResourceBundle
+          // class must contain a public static method getString(String.class)
           Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
           if (!bundleMethod.getReturnType().equals(String.class)) {
             throw new ValidationRuntimeException(
@@ -641,10 +642,8 @@ public class ValidationUtilities {
             String localizedPattern = (String) bundleMethod.invoke(null, pattern);
             return MessageFormat.format(localizedPattern, args);
           }
-          catch (Exception ex) {
-            // could not translate: format without translation and write a log
-            LOGGER.warning("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
-            return MessageFormat.format(pattern, args);
+          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            throw new ValidationRuntimeException("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
           }
         }
         catch (ClassNotFoundException e1) {

@@ -26,6 +26,7 @@ import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.script.ScriptFactory;
 
 /**
@@ -114,6 +115,8 @@ public class AbstractTestMojo extends AbstractTentackleAnnotationProcessingMojo 
       getLog().warn("fallback to default locale " + bundleLocale);
       bundleLocales.add(bundleLocale);
     }
+
+    BundleFactory.getInstance().setClassLoader(getProcessingClassloader());
 
     if (scriptingLanguage != null) {
       ScriptFactory.getInstance().setDefaultLanguage(scriptingLanguage);

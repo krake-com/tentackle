@@ -30,8 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ServiceFactory {
 
-  // the singleton instance
-  private static final ServiceFactory INSTANCE = new ServiceFactory();
+  /** the singleton instance. */
+  public static final ServiceFactory INSTANCE = new ServiceFactory();
 
 
   // the bootstrap finder (by default finds an instance of iself, see @Service annotation in DefaultServiceFinder)
@@ -77,7 +77,11 @@ public class ServiceFactory {
   // map of finders for different classloaders and service paths
   private final Map<Key,ServiceFinder> finderMap;
 
-
+  /**
+   * Use another classloader, if set.<br>
+   * Default is to use Thread.currentThread().getContextClassLoader().
+   */
+  private ClassLoader classLoader;
 
   /**
    * Singleton.
@@ -97,6 +101,25 @@ public class ServiceFactory {
     finderMap = new ConcurrentHashMap<>();
   }
 
+
+  /**
+   * Gets the fixed classloader.
+   *
+   * @return the classloader, null if default
+   */
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  /**
+   * Sets the fixed classloader.<br>
+   * Default is Thread.currentThread().getContextClassLoader().
+   *
+   * @param classLoader the classloader, null if default
+   */
+  public void setClassLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
+  }
 
 
   /**
@@ -132,13 +155,15 @@ public class ServiceFactory {
   /**
    * Gets a service finder for a given service path.<br>
    * If the finder does not exist yet, it will be created.
-   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
+   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}, except
+   * if a fixed classloader is set.
    *
    * @param servicePath the service path prefix
    * @return the finder
    */
   private ServiceFinder getServiceFinderImpl(String servicePath) {
-    return getServiceFinderImpl(Thread.currentThread().getContextClassLoader(), servicePath);
+    return getServiceFinderImpl(classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader,
+                                servicePath);
   }
 
 

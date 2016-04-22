@@ -228,8 +228,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    *
    * @param processor the annotation processor
    * @param srcDir the source dir
+   * @throws MojoFailureException if initialization failed
    */
-  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
+  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
     processor.setSourceDir(srcDir);
   }
 
@@ -239,7 +240,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    *
    * @param srcDir the current file set directory
    */
-  protected void initializeProcessors(File srcDir) {
+  protected void initializeProcessors(File srcDir) throws MojoFailureException {
     if (processors != null) {
       for (AbstractTentackleProcessor processor : processors) {
         initializeProcessor(processor, srcDir);
@@ -268,7 +269,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * @param fileSet the set of files
    * @throws MojoExecutionException
    */
-  private void processFileSet(FileSet fileSet) throws MojoExecutionException {
+  private void processFileSet(FileSet fileSet) throws MojoFailureException, MojoExecutionException {
 
     if (fileSet.getDirectory() == null && sourceDir != null) {
       // directory missing: use sourceDir as default

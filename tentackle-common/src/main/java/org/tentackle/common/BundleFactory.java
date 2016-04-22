@@ -102,6 +102,23 @@ public interface BundleFactory {
 
 
   /**
+   * Gets the classloader to load the bundles.
+   *
+   * @return the classloader, null if default
+   */
+  ClassLoader getClassLoader();
+
+  /**
+   * Sets the classloader to load the bundles.<br>
+   * If set, this classloader will be used for {@link #getBundle(java.lang.String) and
+   * {@link #getBundle(java.lang.String, java.util.Locale).
+   *
+   * @param classLoader the classloader, null if default
+   */
+  void setClassLoader(ClassLoader classLoader);
+
+
+  /**
    * Gets the control providers.<br>
    * Method can be used to add a provider explicitly.
    *

@@ -72,7 +72,7 @@ public class CheckValidationsMojo extends AbstractTestMojo {
 
 
   @Override
-  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
+  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
     super.initializeProcessor(processor, srcDir);
     ((CheckValidationsProcessor) processor).setProcessingClassLoader(getProcessingClassloader());
   }
