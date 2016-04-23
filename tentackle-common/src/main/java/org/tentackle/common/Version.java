@@ -41,7 +41,7 @@ public class Version {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return BundleFactory.getBundle(Version.class.getName());
+    return ResourceBundle.getBundle(Version.class.getName());
   }
 
 

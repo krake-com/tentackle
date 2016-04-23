@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.BundleFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.persist.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.reflect.ReflectionHelper;
@@ -325,7 +324,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     // Resourcebundle isn't serializable, but Properties are.
     properties = new Properties();
     try {
-      ResourceBundle bundle = BundleFactory.getBundle(clazz.getName());
+      ResourceBundle bundle = ResourceBundle.getBundle(clazz.getName());
       for (String key: bundle.keySet()) {
         properties.setProperty(key, bundle.getString(key));
       }
