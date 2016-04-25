@@ -51,6 +51,16 @@ public class StoredBundleRemoteDelegateImpl
   }
 
   @Override
+  public StoredBundle selectByUniqueDomainKeyForCache(DomainContext context, StoredBundle.StoredBundleUDK udk) throws RemoteException {
+    try {
+      return newInstance(context).selectCachedByUniqueDomainKey(udk);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public TrackedList<StoredBundle> findByName(DomainContext context, String name) throws RemoteException {
     try {
       setDomainContext(context);

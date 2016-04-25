@@ -44,12 +44,6 @@
               <goal>analyze</goal>
             </goals>
           </execution>
-          <execution>
-            <id>test-analyze</id>
-            <goals>
-              <goal>test-analyze</goal>
-            </goals>
-          </execution>
         </executions>
         <configuration>
           <verbosity>info</verbosity>
@@ -114,6 +108,12 @@
             <fileset>
               <includes>
                 <include>**/pdo/*.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+            <fileset>
+              <includes>
+                <include>**/rmi/*.java</include>
               </includes>
               <followSymlinks>false</followSymlinks>
             </fileset>

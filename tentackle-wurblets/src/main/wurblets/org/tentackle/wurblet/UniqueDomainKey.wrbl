@@ -65,7 +65,9 @@
   /**
    * The unique domain key for @(getEntity())@.
    */
-  public static class @(getEntity())@UDK implements Comparable<@(getEntity())@UDK> {
+  public static class @(getEntity())@UDK implements Serializable, Comparable<@(getEntity())@UDK> {
+
+    private static final long serialVersionUID = 1L;
 @[
       StringBuilder con1Args = new StringBuilder();   // 1st constructor arguments
       StringBuilder con2Args = new StringBuilder();   // 2nd constructor arguments

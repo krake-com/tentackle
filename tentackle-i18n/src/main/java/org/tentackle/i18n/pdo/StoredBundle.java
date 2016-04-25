@@ -19,6 +19,7 @@
 
 package org.tentackle.i18n.pdo;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.tentackle.common.Compare;
 import org.tentackle.pdo.ClassId;
@@ -113,7 +114,9 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
   /**
    * The unique domain key for StoredBundle.
    */
-  public static class StoredBundleUDK implements Comparable<StoredBundleUDK> {
+  public static class StoredBundleUDK implements Serializable, Comparable<StoredBundleUDK> {
+
+    private static final long serialVersionUID = 1L;
 
     /** the resource bundle name. */
     public final String name;

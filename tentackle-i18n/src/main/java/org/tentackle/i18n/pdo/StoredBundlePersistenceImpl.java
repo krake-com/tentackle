@@ -23,7 +23,6 @@ import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -630,7 +629,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   private static PdoCache<StoredBundle> cache;
 
   /** index for the unique domain key. */
-  private static PdoCacheIndex<StoredBundle,StoredBundleUDK> udkIndex;
+  private static PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK> udkIndex;
 
   /**
    * Creates the cache singleton if it does not exist.
@@ -641,15 +640,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     if (cache == null) {
       cache = Pdo.createPdoCache(StoredBundle.class, false, true, false);
 
-      udkIndex = new PdoCacheIndex<StoredBundle,StoredBundleUDK>("StoredBundle:UDK") {
+      udkIndex = new PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK>("StoredBundle:UDK") {
 
           @Override
-          public StoredBundle select(DomainContext context, StoredBundleUDK udk) {
-            return Pdo.create(StoredBundle.class, context).findByUniqueDomainKey(udk);
+          public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
+            return Pdo.create(StoredBundle.class, context).findByUniqueDomainKeyForCache(udk);
           }
 
           @Override
-          public StoredBundleUDK extract(StoredBundle pdo) {
+          public StoredBundle.StoredBundleUDK extract(StoredBundle pdo) {
             return pdo.getUniqueDomainKey();
           }
         };
@@ -703,7 +702,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    * @return the pdo, null if not in cache
    */
   @Override
-  public StoredBundle selectCachedOnlyByUniqueDomainKey(StoredBundleUDK udk)  {
+  public StoredBundle selectCachedOnlyByUniqueDomainKey(StoredBundle.StoredBundleUDK udk)  {
     return getCache().select(udkIndex, getDomainContext(), udk, false);
   }
 
@@ -714,8 +713,33 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    * @return the pdo, null if no such object
    */
   @Override
-  public StoredBundle selectCachedByUniqueDomainKey(StoredBundleUDK udk)  {
+  public StoredBundle selectCachedByUniqueDomainKey(StoredBundle.StoredBundleUDK udk)  {
     return getCache().select(udkIndex, getDomainContext(), udk);
+  }
+
+  /**
+   * Selects via remote cache, if session is remote.
+   *
+   * @param udk the unique key
+   * @return the pdo, null if no such object
+   */
+  @Override
+  public StoredBundle findByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk) {
+    StoredBundle obj;
+    if (getSession().isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, udk);
+        configureRemoteObject(context, obj);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      obj = pdo().findByUniqueDomainKey(udk);
+    }
+    return obj;
   }
 
   // </editor-fold>//GEN-END:cache

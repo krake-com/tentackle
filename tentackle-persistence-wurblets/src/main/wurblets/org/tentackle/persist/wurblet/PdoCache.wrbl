@@ -46,7 +46,6 @@
    */
 
   // main class
-  String mainClass   = getClassName();
   String pdoName     = getPdoClassName();
 
   boolean secure     = false;
@@ -132,6 +131,7 @@
         udkType = getEntity().getName() + "UDK";
         udkName = "udk";
         udkSuffix = "UniqueDomainKey";
+        udkType = getEntity().getName() + "." + udkType;
       }
     }
     else {
@@ -331,7 +331,7 @@
 ]@
 
   /** index for @(key.getName())@. */
-  @(scope)@ static PdoCacheIndex<@(pdoName)@,@(type)@> @(key.getName())@Index;
+  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(type)@> @(key.getName())@Index;
 @[
     }
 
@@ -339,7 +339,7 @@
 ]@
 
   /** index for the unique domain key. */
-  @(scope)@ static PdoCacheIndex<@(pdoName)@,@(udkType)@> udkIndex;
+  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(udkType)@> udkIndex;
 @[
     }
 ]@
@@ -390,9 +390,12 @@
     for (WurbletParameter key: getExpressionParameters()) {
       String type   = key.getAttribute().getJavaType();
       String suffix = key.getAttribute().getMethodNameSuffix();
+      if (isRemote()) {
+        suffix += "ForCache";
+      }
 ]@
 
-      @(key.getName())@Index = new PdoCacheIndex<@(pdoName)@,@(type)@>("@(pdoName)@:@(key.getName())@") {
+      @(key.getName())@Index = new PdoCacheIndex<@(pdoName)@, @(type)@>("@(pdoName)@:@(key.getName())@") {
 
           \@Override
           public @(pdoName)@ select(DomainContext context, @(type)@ @(key.getArg())@) {
@@ -410,11 +413,39 @@
     if (genudk) {
 ]@
 
-      udkIndex = new PdoCacheIndex<@(pdoName)@,@(udkType)@>("@(pdoName)@:UDK") {
+      udkIndex = new PdoCacheIndex<@(pdoName)@, @(udkType)@>("@(pdoName)@:UDK") {
 
           \@Override
           public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
+@[
+      if (isRemote()) {
+        RemoteIncludes genInc = new RemoteIncludes(this);
+        PrintStream implOut   = genInc.getImplStream();
+        PrintStream remoteOut = genInc.getRemoteStream();
+]@
+@{to remoteOut}@
+  @(pdoName)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(pdoName)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException {
+    try {
+      return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+            return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKeyForCache(@(udkName)@);
+@[
+      }
+      else {
+]@
             return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKey(@(udkName)@);
+@[
+      }
+]@
           }
 
           \@Override
@@ -532,6 +563,31 @@
   \@Override
   public @(pdoName)@ selectCachedByUniqueDomainKey(@(udkType)@ @(udkName)@)  {
     return getCache().select(udkIndex, getDomainContext(), @(udkName)@);
+  }
+
+  /**
+   * Selects via remote cache, if session is remote.
+   *
+   * \@param @(udkName)@ the unique key
+   * \@return the pdo, null if no such object
+   */
+  \@Override
+  public @(pdoName)@ findByUniqueDomainKeyForCache(@(udkType)@ @(udkName)@) {
+    @(pdoName)@ obj;
+    if (getSession().isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, @(udkName)@);
+        configureRemoteObject(context, obj);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      obj = pdo().findByUniqueDomainKey(@(udkName)@);
+    }
+    return obj;
   }
 @[
     }

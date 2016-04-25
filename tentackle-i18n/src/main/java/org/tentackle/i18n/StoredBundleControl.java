@@ -101,15 +101,18 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
     StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(new StoredBundle.StoredBundleUDK(name, loc));
     if (bundle != null) {
-      LOGGER.info("bundle {0} {1} loaded", name, loc);
+      LOGGER.fine("bundle {0} {1} loaded", name, loc);
       return new StoredResourceBundle(bundle);
     }
 
-    LOGGER.info("no bundle {0} {1}", name, loc);
+    LOGGER.fine("no bundle {0} {1}", name, loc);
     return null;
   }
 
 
+  /**
+   * ResourceBundle implements a wrapper for the bundle keys.
+   */
   private static class StoredResourceBundle extends ResourceBundle {
 
     private final Properties props;
@@ -137,6 +140,9 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   }
 
 
+  /**
+   * Enumeration to provide the keys.
+   */
   private static class BundleEnumeration implements Enumeration<String> {
 
     private final Set<String> keys;

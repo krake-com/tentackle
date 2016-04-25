@@ -165,4 +165,12 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    */
   StoredBundle findByNameAndLocale(String name, String locale);
 
+  /**
+   * Selects via remote cache, if session is remote.
+   *
+   * @param udk the unique key
+   * @return the pdo, null if no such object
+   */
+  StoredBundle findByUniqueDomainKeyForCache(StoredBundle.StoredBundleUDK udk);
+
 }
