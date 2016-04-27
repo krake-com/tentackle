@@ -151,7 +151,7 @@ public class CheckBundlesMojo extends AbstractTestMojo {
             bundle.getString(key.getKey());
           }
           catch (MissingResourceException mx) {
-            getLog().error("missing resource " + key);
+            getLog().error("missing resource " + key + " for " + bundleLocale);
             errors++;
           }
         }
