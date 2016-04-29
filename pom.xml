@@ -73,6 +73,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <javac.version.src>1.8</javac.version.src>
     <javac.version.target>1.8</javac.version.target>
+    <javac.version.require>1.8.0-45</javac.version.require>
     <maven.version>3.0.5</maven.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
@@ -306,6 +307,9 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.19.1</version>
+          <configuration>
+            <argLine>-Duser.language=en -Duser.region=US</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -369,9 +373,15 @@
             </goals>
             <configuration>
               <rules>
+                <requireProperty>
+                  <property>file.encoding</property>
+                  <message>file.encoding not set!</message>
+                  <regex>^UTF-8$</regex>
+                  <regexMessage>file.encoding must be UTF-8</regexMessage>
+                </requireProperty>
                 <requireJavaVersion>
-                  <version>[${javac.version.src},)</version>
-                  <message>[ERROR] The currently supported version of Java is ${javac.version.src} or higher</message>
+                  <version>[${javac.version.require},)</version>
+                  <message>[ERROR] The currently supported version of Java is ${javac.version.require} or higher</message>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>[${maven.version},)</version>

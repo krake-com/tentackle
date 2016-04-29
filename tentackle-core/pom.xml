@@ -46,7 +46,7 @@
         </executions>
         <configuration>
           <verbosity>info</verbosity>
-          <showCompileOutput>false</showCompileOutput>
+          <showCompileOutput>true</showCompileOutput>
         </configuration>
       </plugin>
 
