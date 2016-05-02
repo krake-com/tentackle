@@ -17,12 +17,13 @@
  *
  */
 
-package org.tentackle.app;
+package org.tentackle.fx.rdc.app;
 
 import java.util.Properties;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.login.Login;

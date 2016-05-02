@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.fx.apt;
+package org.tentackle.fx.rdc.apt;
 
 import java.util.List;
 import java.util.Set;

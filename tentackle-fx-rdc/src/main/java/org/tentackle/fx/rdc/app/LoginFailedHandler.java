@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.app;
+package org.tentackle.fx.rdc.app;
 
 import java.text.MessageFormat;
 import javafx.application.Platform;

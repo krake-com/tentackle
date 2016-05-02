@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.fx.apt;
+package org.tentackle.fx.rdc.apt;
 
 import java.util.List;
 import java.util.Set;
@@ -33,24 +33,24 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
-import org.tentackle.fx.rdc.PdoTreeCell;
+import org.tentackle.fx.rdc.PdoTableCell;
 
 import static javax.lang.model.SourceVersion.RELEASE_8;
 
 /**
- * Annotation processor for the {@code @PdoTreeContextMenuItemService} annotation.<br>
+ * Annotation processor for the {@code @PdoTableContextMenuItemService} annotation.<br>
  * Enforces the implementation of the following constructors:
  *
  * <ul>
- *   <li>({@link PdoTreeCell})</li>
+ *   <li>({@link PdoTableCell})</li>
  * </ul>
  *
  * @author harald
  */
-@SupportedAnnotationTypes("org.tentackle.fx.rdc.PdoTreeContextMenuItemService")
+@SupportedAnnotationTypes("org.tentackle.fx.rdc.PdoTableContextMenuItemService")
 @SupportedSourceVersion(RELEASE_8)
 @AnnotationProcessor
-public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
+public class PdoTableContextMenuItemServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 
 
   @Override
@@ -72,9 +72,9 @@ public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractSe
     if (!verifyConstructor(element, pdoVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PdoTreeCell)", element);
+          "class " + element + " needs constructor (PdoTableCell)", element);
     }
-    verifyImplements(element, "org.tentackle.fx.rdc.PdoTreeContextMenuItem");
+    verifyImplements(element, "org.tentackle.fx.rdc.PdoTableContextMenuItem");
   }
 
 
@@ -83,7 +83,7 @@ public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractSe
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 1 &&
-             acceptTypeVisitor(typeList.get(0), PdoTreeCell.class);
+             acceptTypeVisitor(typeList.get(0), PdoTableCell.class);
     }
   };
 

@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.fx.translate;
+package org.tentackle.fx.rdc.translate;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -40,6 +40,7 @@ import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;

@@ -28,7 +28,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.app.AbstractApplication;
-import org.tentackle.app.DesktopApplication;
+import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;

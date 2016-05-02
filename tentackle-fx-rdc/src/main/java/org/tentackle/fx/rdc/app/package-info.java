@@ -17,6 +17,6 @@
  */
 
 /**
- * Predefined PDO value translators.
+ * Application lifecycle.
  */
-package org.tentackle.fx.translate;
+package org.tentackle.fx.rdc.app;

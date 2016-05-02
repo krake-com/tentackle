@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.app;
+package org.tentackle.fx.rdc.app;
 
 import java.text.MessageFormat;
 import javafx.application.Application;
@@ -29,6 +29,7 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
