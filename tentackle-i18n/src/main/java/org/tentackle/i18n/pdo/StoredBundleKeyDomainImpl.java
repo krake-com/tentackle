@@ -19,7 +19,7 @@
 
 package org.tentackle.i18n.pdo;
 
-import org.tentackle.pdo.AbstractDomainObject;
+import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
 /**

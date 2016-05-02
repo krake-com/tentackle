@@ -1,0 +1,490 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.persist;
+
+import java.util.List;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoUtilities;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.security.Permission;
+import org.tentackle.security.SecurityFactory;
+import org.tentackle.persist.security.SecurityPersistenceImpl;
+
+
+
+/**
+ * Extends {@link DbObjectClassVariables} for {@link AbstractPersistentObject}s.
+ *
+ * @param <T> the PDO class type
+ * @param <P> the persistence class type
+ * @author harald
+ */
+public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
+       extends DbObjectClassVariables<P> {
+
+
+  /** property key for the check security. */
+  public static final String PROPERTY_CHECKSECURITY = "checksecurity";
+
+  /** the declared name of the static class variables. */
+  public static final String CLASSVARIABLES_NAME = "CLASSVARIABLES";
+
+
+  /**
+   * The associated PDO class (i.e. the interface)
+   */
+  public final Class<T> pdoClass;
+
+  /**
+   * The optional eager join.
+   */
+  public final List<Join<T,?>> eagerJoins;
+
+  /**
+   * the pdo base-classname.
+   */
+  public final String pdoClassBaseName;
+
+  /**
+   * The table alias to be used in joined selects.
+   */
+  public String tableAlias;
+
+  /**
+   * The classvariables of the parent class.<br>
+   * null if not inherited.
+   */
+  public final PersistentObjectClassVariables<? super T, ? super P> superClassVariables;
+
+  /**
+   * The classvariables of the topmost parent class.<br>
+   * "this" if not inherited.
+   */
+  public PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
+
+  /**
+   * Flag is true to check the security rules for each access to objects of this class.
+   * The rules will be checked in local db access only (i.e. the check will be applied
+   * already at the RMI-side *before* the data is leaving the client!)
+   * Because this check can be somewhat time consuming, it's turned off by default.
+   * The flag cannot be changed at runtime anymore!
+   */
+  public boolean checkSecurity;
+
+
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectByNormText}.
+   */
+  public final StatementId selectByNormTextStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectAll}.
+   */
+  public final StatementId selectAllStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectByNormTextAsCursor}.
+   */
+  public final StatementId selectByNormTextCursorStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectAllAsCursor()}.
+   */
+  public final StatementId selectAllCursorStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#updateTokenLock}.
+   */
+  public final StatementId updateTokenLockStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#updateTokenLockOnly}.
+   */
+  public final StatementId updateTokenLockOnlyStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for select in {@link AbstractPersistentObject#updateTokenLock}.
+   */
+  public final StatementId selectTokenLockStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#transferTokenLock}.
+   */
+  public final StatementId transferTokenLockStatementId = new StatementId();
+
+
+  /**
+   * The effective tablename.
+   */
+  private String effectiveTableName;
+
+  /**
+   * The effective table alias.
+   */
+  private String effectiveTableAlias;
+
+
+  /**
+   * Constructs a classvariable.<p>
+   * Notice: the superPoClass is necessary only in SINGLE and MULTI table inheritance configurations.
+   *
+   * @param pdoClass the PDO's class (i.e. interface)
+   * @param poClass the class of the persistence implementation
+   * @param tableAlias the table alias to be used in joined selects
+   * @param superClassVariables the class variables of the superclass, null if not inherited
+   * @param eagerJoins the optional eager joins, null of empty if none
+   */
+  public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String tableAlias,
+                                        PersistentObjectClassVariables<? super T, ? super P> superClassVariables,
+                                        List<Join<T,?>> eagerJoins)  {
+    super(poClass,
+          PdoUtilities.getInstance().determineClassId(pdoClass),
+          PdoUtilities.getInstance().determineTablename(pdoClass));
+    this.pdoClass = pdoClass;
+    this.tableAlias = tableAlias;
+    this.superClassVariables = superClassVariables;
+    this.eagerJoins = eagerJoins;
+    pdoClassBaseName = ReflectionHelper.getClassBaseName(this.pdoClass);
+    loadMoreProperties();
+  }
+
+  /**
+   * Constructs a classvariable.
+   *
+   * @param pdoClass the PDO's class (i.e. interface)
+   * @param poClass the class of the persistence implementation
+   * @param alias the table alias to be used in joined selects
+   */
+  public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String alias)  {
+    this(pdoClass, poClass, alias, null, null);
+  }
+
+  /**
+   * Gets the eager joins.
+   *
+   * @return the join, null or empty if none
+   */
+  public List<Join<T, ?>> getEagerJoins() {
+    return eagerJoins;
+  }
+
+
+  /**
+   * Returns the tablename for this classvariable.
+   * <p>
+   * If the class has no tablename, it is derived from its superclasses.
+   *
+   * @return the tablename, null if class does not map to any database table
+   */
+  public String getTableName () {
+    if (effectiveTableName == null) {
+      effectiveTableName = tableName;
+      if (effectiveTableName == null) {
+        PersistentObjectClassVariables<? super T, ? super P> superCV = superClassVariables;
+        while (superCV != null) {
+          effectiveTableName = superCV.tableName;
+          if (effectiveTableName != null) {
+            break;
+          }
+          superCV = superCV.superClassVariables;
+        }
+      }
+    }
+    return effectiveTableName;
+  }
+
+
+  /**
+   * Gets the table alias.
+   * <p>
+   * If the class has no tablename, it is derived from its superclasses.
+   *
+   * @return the alias, null if class does not map to any database table
+   */
+  public String getTableAlias () {
+    if (effectiveTableAlias == null) {
+      effectiveTableAlias = tableAlias;
+      if (effectiveTableAlias == null) {
+        PersistentObjectClassVariables<? super T, ? super P> superCV = superClassVariables;
+        while (superCV != null) {
+          effectiveTableAlias = superCV.tableAlias;
+          if (effectiveTableAlias != null) {
+            break;
+          }
+          superCV = superCV.superClassVariables;
+        }
+      }
+    }
+    return effectiveTableAlias;
+  }
+
+
+  /**
+   * Gets the full column name with optional table alias.
+   *
+   * @param name the short name
+   * @return the full name
+   */
+  public String getColumnName(String name) {
+    StringBuilder buf = new StringBuilder();
+    String alias = getTableAlias();
+    if (alias != null) {
+      buf.append(alias).append('.');
+    }
+    buf.append(name);
+    return buf.toString();
+  }
+
+  /**
+   * Returns the topmost classvariables.<br>
+   * Useful for multi-inheritance.
+   *
+   * @return the topmost variables, this if not inherited, never null
+   */
+  public PersistentObjectClassVariables<? super T, ? super P> getTopSuperClassVariables() {
+    if (topSuperClassVariables == null) {
+      topSuperClassVariables = this;
+      while (topSuperClassVariables.superClassVariables != null) {
+        topSuperClassVariables = topSuperClassVariables.superClassVariables;
+      }
+    }
+    return topSuperClassVariables;
+  }
+
+
+  /**
+   * Loads more properties.<br>
+   * Invoked from constructor.
+   */
+  protected void loadMoreProperties() {
+    String prop = getProperty(PROPERTY_CHECKSECURITY);
+    checkSecurity = prop == null ||
+            !(prop.equals("no") || prop.equals("off") || prop.equals("false") || prop.equals("disabled") || prop.equals("0"));
+  }
+
+
+  @Override
+  public boolean isReferenced(Db db, long id) {
+    PersistentObjectClassVariables<? super T, ? super P> cv = this;
+    boolean referenced = false;
+    while (!referenced && cv != null) {
+      referenced = cv.isReferencedImpl(db, id, cv.foreignReferences);
+      cv = cv.superClassVariables;
+    }
+    return referenced;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder(pdoClass.getName());
+    buf.append("/").append(super.toString());
+    if (!checkSecurity) {
+      buf.append("/*NOSECURITY*");
+    }
+    return buf.toString();
+  }
+
+  /**
+   * Returns whether the pdo class is abstract.
+   *
+   * @return true if abstract
+   */
+  public boolean isAbstract() {
+    return classId == 0;
+  }
+
+
+  /**
+   * Check the read security for this class.
+   * The implementation checks that the class rules will accept
+   * and that no object rule denies.
+   * <p>
+   * Notice that {@link SecurityPersistenceImpl} objects are always readable!
+   *
+   * @param context the current domain context, null = all
+   * @return false if operation (select) is denied.
+   */
+  public boolean isReadAllowed(DomainContext context) {
+    return clazz.isAssignableFrom(SecurityPersistenceImpl.class) ||
+            checkClassPermission(context, SecurityFactory.getInstance().getReadPermission());
+  }
+
+  /**
+   * Check the read security for this class in all contexts.
+   *
+   * @return false if operation (select) is denied.
+   */
+  public boolean isReadAllowed() {
+    return clazz.isAssignableFrom(SecurityPersistenceImpl.class) ||
+            checkClassPermission(null, SecurityFactory.getInstance().getReadPermission());
+  }
+
+
+
+  /**
+   * Check the write security for this class.
+   * The implementation checks that the class rules will accept
+   * and that no object rule denies.
+   *
+   * @param context the current domain context, null = all
+   * @return false if operation (delete, update or insert) is denied.
+   */
+  public boolean isWriteAllowed(DomainContext context) {
+    return checkClassPermission(context, SecurityFactory.getInstance().getWritePermission());
+  }
+
+  /**
+   * Check the write security for this class in all contexts.
+   *
+   * @return false if operation (delete, update or insert) is denied.
+   */
+  public boolean isWriteAllowed() {
+    return checkClassPermission(null, SecurityFactory.getInstance().getWritePermission());
+  }
+
+
+  /**
+   * Check the read permission for a PDO.
+   * <p>
+   * Components are readable if their root-entity is readable.
+   *
+   * @param object the object to check the security rules for.
+   *
+   * @return false if operation (select) is denied.
+   */
+  public boolean isReadAllowed(AbstractPersistentObject<?,?> object) {
+    if (checkSecurity) {
+      Permission readPermission = SecurityFactory.getInstance().getReadPermission();
+      if (object.isRootEntity()) {
+        return object.isPermissionAccepted(readPermission);
+      }
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), readPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Check the write permission for a PDO.
+   * <p>
+   * Only root-entities are writable.
+   * Components are not writable by default (because only the root can be persisted).
+   * <p>
+   * Notice that the persistence layer will not invoke isWriteAllowed on components,
+   * because the root is already checked when saving or deleting a PDO. Remember that
+   * only root entities can be persisted by the application!
+   *
+   * @param object the object to check the security rules for.
+   *
+   * @return false if operation is denied
+   */
+  public boolean isWriteAllowed(AbstractPersistentObject<?,?> object) {
+    return !checkSecurity ||
+           (object.isRootEntity() &&
+            object.isPermissionAccepted(SecurityFactory.getInstance().getWritePermission()));
+  }
+
+  /**
+   * Check the view permission for a PDO.
+   * <p>
+   * Components are viewable if their root-entity is viewable.
+   *
+   * @param object the object to check the security rules for.
+   *
+   * @return false if operation is denied
+   */
+  public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
+    if (checkSecurity) {
+      Permission viewPermission = SecurityFactory.getInstance().getViewPermission();
+      if (object.isRootEntity()) {
+        return object.isPermissionAccepted(viewPermission);
+      }
+      if (object.getRootClassId() > 0 && object.getRootId() > 0) {  // if root info provided
+        return SecurityFactory.getInstance().getSecurityManager().evaluate(
+                  object.getBaseContext(), viewPermission, object.getRootClassId(), object.getRootId()).isAccepted();
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Check the edit permission for a PDO.
+   * <p>
+   * Only root-entities are editable.
+   * Components are not editable by default (because only the root can be persisted).
+   *
+   * @param object the object to check the security rules for.
+   *
+   * @return false if operation is denied
+   */
+  public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
+    return !checkSecurity ||
+           (object.isRootEntity() &&
+            object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission()));
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overridden to determine the priority according to the presence of a cache:
+   * <ol>
+   *  <li>high: class provides a preloading cache (low volume data, usually master data)</li>
+   *  <li>medium: class provides a non-preloading cache (medium volume data)</li>
+   *  <li>low: class provides no cache (high volume, usually transaction data)</li>
+   * </ol>
+   * Notice that the cache must be named "cache". This is the case for wurblet generated caches.
+   */
+  @Override
+  protected int determineReferencePriority(Class<? extends AbstractDbObject<?>> clazz) {
+    @SuppressWarnings("unchecked")
+    PdoCache<T> cache = Pdo.getPdoCache((Class<T>) clazz);
+    if (cache != null) {
+      return cache.isPreloading() ? 1 : 2;
+    }
+    return 3;   // no cache: check these last!
+  }
+
+
+  /**
+   * Check security for this class.
+   *
+   * @param context the domain context
+   * @param permission the permission
+   * @return true if accepted
+   */
+  protected boolean checkClassPermission(DomainContext context, Permission permission) {
+    try {
+      return !checkSecurity ||
+             SecurityFactory.getInstance().getSecurityManager().evaluate(context, permission, classId, 0).isAccepted();
+    }
+    catch (Exception ex) {
+      // either context not set or security manager or whatever...
+      return false;
+    }
+  }
+
+}

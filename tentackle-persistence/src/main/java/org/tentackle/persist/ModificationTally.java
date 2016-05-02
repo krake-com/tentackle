@@ -26,7 +26,6 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.PersistentObjectClassVariables;
 
 
 

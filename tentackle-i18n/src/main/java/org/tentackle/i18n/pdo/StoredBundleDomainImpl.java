@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
-import org.tentackle.pdo.AbstractDomainObject;
+import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 
 /**

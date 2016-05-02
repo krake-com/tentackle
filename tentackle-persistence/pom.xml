@@ -102,11 +102,8 @@
             <fileset>
               <includes>
                 <include>**/*.wurb</include>
-                <include>**/pdo/*.java</include>
+                <include>**/*.java</include>
               </includes>
-              <excludes>
-                <exclude>**/tentackle/pdo/*.java</exclude>
-              </excludes>
               <followSymlinks>false</followSymlinks>
             </fileset>
             <!-- wurbel rmis last -->
