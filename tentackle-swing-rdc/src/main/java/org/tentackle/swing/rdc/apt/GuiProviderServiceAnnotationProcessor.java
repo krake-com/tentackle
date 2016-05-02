@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.swing.apt;
+package org.tentackle.swing.rdc.apt;
 
 import java.util.List;
 import java.util.Set;

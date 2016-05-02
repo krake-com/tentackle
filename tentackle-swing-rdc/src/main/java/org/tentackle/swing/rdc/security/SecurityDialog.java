@@ -18,7 +18,7 @@
 
 
 
-package org.tentackle.security;
+package org.tentackle.swing.rdc.security;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;

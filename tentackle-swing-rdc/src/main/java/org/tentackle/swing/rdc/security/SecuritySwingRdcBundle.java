@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.security;
+package org.tentackle.swing.rdc.security;
 
 import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;

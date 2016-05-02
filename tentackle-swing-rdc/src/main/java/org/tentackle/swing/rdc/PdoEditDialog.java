@@ -62,7 +62,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.security.SecurityDialogFactory;
+import org.tentackle.swing.rdc.security.SecurityDialogFactory;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityManager;
 import org.tentackle.security.SecurityResult;

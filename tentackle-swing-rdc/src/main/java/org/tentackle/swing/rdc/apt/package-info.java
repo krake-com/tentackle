@@ -17,10 +17,10 @@
  */
 
 /**
- * Common utilities.
+ * Swing annotation processors.
  * <p>
  * Notice: the Swing layer is legacy since Tentackle 2.0 and only provided
  * to migrate old TT1-applications to TT2.<br>
  * Consider using FX for new desktop applications.
  */
-package org.tentackle.common;
+package org.tentackle.swing.rdc.apt;

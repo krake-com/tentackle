@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.security;
+package org.tentackle.swing.rdc.security;
 
 import org.tentackle.security.pdo.Security;
 import org.tentackle.swing.rdc.DefaultGuiProvider;

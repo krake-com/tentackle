@@ -17,10 +17,10 @@
  */
 
 /**
- * Swing annotation processors.
+ * Security rules editing UI.
  * <p>
  * Notice: the Swing layer is legacy since Tentackle 2.0 and only provided
  * to migrate old TT1-applications to TT2.<br>
  * Consider using FX for new desktop applications.
  */
-package org.tentackle.swing.apt;
+package org.tentackle.swing.rdc.security;

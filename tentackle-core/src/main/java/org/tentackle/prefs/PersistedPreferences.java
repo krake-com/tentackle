@@ -32,12 +32,8 @@ import java.util.prefs.PreferenceChangeListener;
 /**
  * Persisted Preferences.
  * <p>
- * Despite the JDK's implementation this is just an interface.
- * This makes it easier to switch implementations at runtime.
- * <p>
- * Some static methods became class methods.
- * The only static method is getPersistedPreferencesClass which determines
- * the implementation class of the PeristedPreferences via service lookup.
+ * Resembles the JDK's {@link java.util.prefs.Preferences}, but is just an interface.
+ * Allows to switch implementations at runtime.
  */
 public interface PersistedPreferences {
 

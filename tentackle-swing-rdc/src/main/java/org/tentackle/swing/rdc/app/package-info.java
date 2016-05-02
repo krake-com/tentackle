@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,28 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.common;
-
-import java.util.Locale;
-
 /**
- * Locale provider for RDC-client applications.
- *
- * @author harald
+ * Application lifecycle.
+ * <p>
+ * Notice: the Swing layer is legacy since Tentackle 2.0 and only provided
+ * to migrate old TT1-applications to TT2.<br>
+ * Consider using FX for new desktop applications.
  */
-@Service(LocaleProvider.class)    // replaces the default
-public class ClientLocaleProvider extends LocaleProvider {
-
-  /**
-   * Gets the locale.
-   * <p>
-   * Always returns the JVM's default locale.
-   *
-   * @return the default locale, never null
-   */
-  @Override
-  public Locale getLocale() {
-    return Locale.getDefault();
-  }
-
-}
+package org.tentackle.swing.rdc.app;

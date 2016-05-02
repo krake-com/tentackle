@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.app;
+package org.tentackle.swing.rdc.app;
 
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -34,6 +34,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.plaf.metal.MetalLookAndFeel;
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;

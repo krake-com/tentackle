@@ -18,7 +18,7 @@
 
 // Created on August 21, 2002, 10:14 AM
 
-package org.tentackle.security;
+package org.tentackle.swing.rdc.security;
 
 import java.awt.Component;
 import java.awt.Dimension;
