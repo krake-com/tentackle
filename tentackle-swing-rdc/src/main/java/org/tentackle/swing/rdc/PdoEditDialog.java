@@ -183,9 +183,6 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
   /**
    * Creates a database object dialog.
-   * <p>
-   * Note: applications should use {@link org.tentackle.app.DesktopApplication#showEditDialog} instead, because
-   * this will make use of dialog pooling!
    *
    * @param owner the owner window, null if no owner
    * @param pdo is the database object

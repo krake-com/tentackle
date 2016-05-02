@@ -42,7 +42,6 @@ import org.tentackle.swing.StringFormField;
  * The default tentackle login dialog.
  *
  * @author harald
- * @see org.tentackle.app.DesktopApplication
  */
 public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implements LoginDialog {
 
