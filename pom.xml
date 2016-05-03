@@ -81,7 +81,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>2.0.6</wurbelizer.version>
+    <wurbelizer.version>2.0.8</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
 
@@ -103,8 +103,8 @@
 
   <distributionManagement>
     <site>
-      <id>${url}</id>
-      <url>scp://${url}/docs/${project.version}</url>
+      <id>${project.url}</id>
+      <url>scp://${project.url}/docs/${project.version}</url>
     </site>
     <repository>
       <id>${repo.id}</id>
@@ -458,7 +458,7 @@
           </tags>
           <!-- don't complain about wurblet args -->
           <additionalparam>-Xdoclint:none</additionalparam>
-          <bottom><![CDATA[<a href="${url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
         </configuration>
       </plugin>
       <plugin>
@@ -466,7 +466,7 @@
         <artifactId>maven-jxr-plugin</artifactId>
         <version>2.5</version>
         <configuration>
-          <bottom><![CDATA[<a href="${url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
         </configuration>
       </plugin>
       <plugin>
@@ -516,7 +516,7 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
-                  <bottom><![CDATA[<a href="${url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
                   <quiet>true</quiet>
                   <archive>
                     <manifest>

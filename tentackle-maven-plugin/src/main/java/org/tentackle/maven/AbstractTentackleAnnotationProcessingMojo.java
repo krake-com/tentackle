@@ -57,7 +57,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   @Parameter(defaultValue = "${tentackle.showCompileOutput}")
   protected boolean showCompileOutput;
 
-
+  /**
+   * Source file encoding.
+   */
+  @Parameter(defaultValue = "${project.build.sourceEncoding}")
+  protected String encoding;
 
   /**
    * Directory holding the sources to be processed.
@@ -312,6 +316,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 
       List<String> options = new ArrayList<>();
+      options.add("-encoding");
+      options.add(encoding);
       options.add("-proc:only");    // run only the annotation processing
       options.add("-classpath");
       StringBuilder buf = new StringBuilder();
