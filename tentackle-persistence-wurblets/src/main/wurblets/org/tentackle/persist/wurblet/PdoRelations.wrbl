@@ -1394,26 +1394,29 @@
    */
   \@Override
   public void insertPlainWithComponents()  {
-    insertPlain();
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite()) {
+        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     // @(rel)@. @(rel.getComment())@
-@[
-          if (rel.getRelationType() == RelationType.LIST) {
-]@
-    insertPlainWithComponents(@(rel.getGetterName())@());
-@[
-          }
-          else  {
-]@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).insertPlainWithComponents();
     }
 @[
-          }
+        }
+      }
+]@
+    // @(getEntity())@
+    insertPlain();
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+]@
+    // @(rel)@. @(rel.getComment())@
+    insertPlainWithComponents(@(rel.getGetterName())@());
+@[
         }
       }
 ]@
@@ -1435,26 +1438,29 @@
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite()) {
+        if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
 ]@
     // @(rel)@. @(rel.getComment())@
-@[
-          if (rel.getRelationType() == RelationType.LIST) {
-]@
     deletePlainWithComponents(@(rel.getGetterName())@());
 @[
-          }
-          else  {
+        }
+      }
 ]@
+    // @(getEntity())@
+    deletePlain();
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        String var = rel.getVariableName();
+        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+]@
+    // @(rel)@. @(rel.getComment())@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).deletePlainWithComponents();
     }
 @[
-          }
         }
       }
 ]@
-    deletePlain();
   }
 @[
     }

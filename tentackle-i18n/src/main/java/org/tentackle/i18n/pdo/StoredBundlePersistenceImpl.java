@@ -555,6 +555,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   @Override
   public void insertPlainWithComponents()  {
+    // StoredBundle
     insertPlain();
     // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     insertPlainWithComponents(getKeys());
@@ -567,6 +568,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   public void deletePlainWithComponents()  {
     // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     deletePlainWithComponents(getKeys());
+    // StoredBundle
     deletePlain();
   }
 

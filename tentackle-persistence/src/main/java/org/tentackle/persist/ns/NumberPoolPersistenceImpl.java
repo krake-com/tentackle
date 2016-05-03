@@ -982,6 +982,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   @Override
   public void insertPlainWithComponents()  {
+    // NumberPool
     insertPlain();
     // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     insertPlainWithComponents(getNumberRangeList());
@@ -994,6 +995,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void deletePlainWithComponents()  {
     // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
     deletePlainWithComponents(getNumberRangeList());
+    // NumberPool
     deletePlain();
   }
 
