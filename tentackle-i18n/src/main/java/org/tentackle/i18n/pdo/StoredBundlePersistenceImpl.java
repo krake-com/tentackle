@@ -566,8 +566,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   @Override
   public void deletePlainWithComponents()  {
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
-    deletePlainWithComponents(getKeys());
+    // components are deleted via database referential integrity constraints
     // StoredBundle
     deletePlain();
   }

@@ -421,6 +421,14 @@ public interface Entity {
   Entity getRootEntity();
 
   /**
+   * Returns whether this is a root entity.<br>
+   * Inspects the super entities as well.
+   *
+   * @return true if root entity
+   */
+  boolean isRootEntity();
+
+  /**
    * Returns whether entity is the root of an inheritance hierarchy.
    *
    * @return true if root

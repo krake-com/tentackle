@@ -1464,6 +1464,18 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
+  public boolean isRootEntity() {
+    Entity entity = this;
+    while (entity != null) {
+      if (entity.getOptions().isRootEntity()) {
+        return true;
+      }
+      entity = entity.getSuperEntity();
+    }
+    return false;
+  }
+
+  @Override
   public Entity getTableProvidingEntity() {
     InheritanceType ihType = getHierarchyInheritanceType();
     if (ihType.isMappingToOwnTable()) {

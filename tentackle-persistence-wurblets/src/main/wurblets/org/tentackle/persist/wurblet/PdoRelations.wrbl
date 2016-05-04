@@ -152,6 +152,9 @@
       }
     }
 
+    boolean useDatabaseRefInt = getEntity().getIntegrity().isCompositesCheckedByDatabase() &&
+                                Boolean.FALSE.equals(getEntity().isDeletionCascaded());
+
     if (generateLoadComponents == null) {
       generateLoadComponents = generateIsComposite;
     }
@@ -159,11 +162,9 @@
       generateInsertComponents = generateIsComposite;
     }
     if (generateDeleteComponents == null) {
-      generateDeleteComponents = generateIsComposite;
+      generateDeleteComponents = generateIsComposite && (!useDatabaseRefInt || getEntity().isRootEntity());
     }
 
-    boolean useDatabaseRefInt = getEntity().getIntegrity().isCompositesCheckedByDatabase() &&
-                                Boolean.FALSE.equals(getEntity().isDeletionCascaded());
 
     // dump what we read from source
 ]@
@@ -1078,7 +1079,7 @@
   \@Override
   public void saveReferencedRelations(boolean update)  {
 @[
-      if (getEntity().getOptions().isRootEntity()) {
+      if (getEntity().isRootEntity()) {
         // need a valid id to store in rootId of composite object relations
 ]@
     reserveId();
@@ -1436,28 +1437,37 @@
   \@Override
   public void deletePlainWithComponents()  {
 @[
-      for (Relation rel: getEntity().getRelations()) {
-        String var = rel.getVariableName();
-        if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
+      if (useDatabaseRefInt) {
+]@
+    // components are deleted via database referential integrity constraints
+@[
+      }
+      else {
+        for (Relation rel: getEntity().getRelations()) {
+          String var = rel.getVariableName();
+          if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
 ]@
     // @(rel)@. @(rel.getComment())@
     deletePlainWithComponents(@(rel.getGetterName())@());
 @[
+          }
         }
       }
 ]@
     // @(getEntity())@
     deletePlain();
 @[
-      for (Relation rel: getEntity().getRelations()) {
-        String var = rel.getVariableName();
-        if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
+      if (!useDatabaseRefInt) {
+        for (Relation rel: getEntity().getRelations()) {
+          String var = rel.getVariableName();
+          if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
     // @(rel)@. @(rel.getComment())@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).deletePlainWithComponents();
     }
 @[
+          }
         }
       }
 ]@
