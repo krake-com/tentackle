@@ -12,7 +12,10 @@
   <version>2.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle All (Test-Only)</name>
-  <description>Tentackle all dependencies test-only module</description>
+  <description>
+    Tentackle all dependencies module for testing purposes.
+    Also provides the SQL-scripts to create the default tables.
+  </description>
   <url>http://www.tentackle.org</url>
 
   <dependencies>
@@ -45,6 +48,13 @@
   </dependencies>
 
   <build>
+
+    <resources>
+      <resource>
+        <directory>target/generated-resources</directory>
+      </resource>
+    </resources>
+
     <plugins>
 
       <plugin>
@@ -135,6 +145,26 @@
               <followSymlinks>false</followSymlinks>
             </fileset>
           </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <!-- create the SQL-files -->
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <backendNames>all</backendNames>
+          <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
         </configuration>
       </plugin>
 
