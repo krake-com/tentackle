@@ -16,21 +16,20 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-
-    <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <!-- ordinary dependencies -->
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby</artifactId>
     </dependency>
-
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
   <build>
     <plugins>

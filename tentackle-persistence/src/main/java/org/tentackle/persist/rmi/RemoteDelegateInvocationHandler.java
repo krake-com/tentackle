@@ -246,23 +246,24 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         LOGGER.log(loggingLevel, message.toString(), withStacktrace ? realCause : null);
       }
 
-      cleanupDbAfterException();
+      cleanupDbAfterException(realCause);
     }
   }
 
 
 
   /**
-   * Cleans up the db after an exception.
-   * <p>
+   * Cleans up the db after an exception.<br>
    * Invoked from {@link #handleInvocationException}.
+   *
+   * @param cause the cause of failure
    */
-  protected void cleanupDbAfterException() {
+  protected void cleanupDbAfterException(Throwable cause) {
     Db db = delegate.getSession();
     if (db != null && !db.isCrashed()) {
       try {
         // rollback any pending transaction and/or force detaching the db
-        db.rollbackImmediately();
+        db.rollbackImmediately(cause);
       }
       catch (RuntimeException ex) {
         LOGGER.severe("*** immediate rollback failed ***", ex);

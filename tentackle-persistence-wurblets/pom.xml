@@ -26,7 +26,11 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
-  
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
   <build>
     <plugins>
       <plugin>

@@ -316,14 +316,6 @@ public interface Session extends Comparable<Session> {
   Thread getOwnerThread();
 
   /**
-   * Rolls back the current transaction, if pending. <p> Applications should use {@link #rollback(long)}.
-   * Invocations of this method will be logged as a warning.
-   *
-   * @return true if rolled back
-   */
-  boolean rollbackImmediately();
-
-  /**
    * Sets the session's alive state.
    *
    * @param alive is true to signal it's alive, false to clear

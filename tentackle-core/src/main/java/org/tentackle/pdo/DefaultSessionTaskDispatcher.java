@@ -178,13 +178,6 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
     if (session != null && sessionClosedOnTermination) {
       try {
-        session.rollbackImmediately();
-      }
-      catch (RuntimeException ex) {
-        LOGGER.severe("rollback cleaning up " + this + " failed", ex);
-      }
-
-      try {
         session.close();
       }
       catch (RuntimeException ex) {

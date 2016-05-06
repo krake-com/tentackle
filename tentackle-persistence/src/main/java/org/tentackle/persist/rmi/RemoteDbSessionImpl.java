@@ -529,7 +529,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     if (db != null) {
       db.setCrashed(crashed);
-      db.rollbackImmediately();   // roll back if anything pending
+      db.rollbackImmediately(null);   // roll back if anything pending
     }
     doLogStatistics(Level.INFO, true);
   }
@@ -554,7 +554,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   protected void closeDb(boolean cleanup) {
     if (db != null) {
       if (db.isPooled()) {
-        db.rollbackImmediately(); // roll back if anything pending
+        db.rollbackImmediately(null); // roll back if anything pending
         if (cleanup) {
           db.close(); // closed db will be removed from the pool in putDb
           LOGGER.warning("pooled {0} closed due to session cleanup", db);

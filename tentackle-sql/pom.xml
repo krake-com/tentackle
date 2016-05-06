@@ -16,29 +16,25 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-common</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <!-- test dependencies -->
     <dependency>
       <groupId>postgresql</groupId>
       <artifactId>postgresql</artifactId>
     </dependency>
-    <!--    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-    </dependency>-->
     <dependency>
       <groupId>org.testng</groupId>
       <artifactId>testng</artifactId>
-      <version>6.8.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
   <build>
     <plugins>

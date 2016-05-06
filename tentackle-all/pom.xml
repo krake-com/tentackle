@@ -18,6 +18,10 @@
   </description>
   <url>http://www.tentackle.org</url>
 
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
   <dependencies>
 
     <!-- local dependencies -->

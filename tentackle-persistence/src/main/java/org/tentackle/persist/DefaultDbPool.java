@@ -530,7 +530,7 @@ public class DefaultDbPool implements SessionPool {
   @Override
   public void shutdown() {
     shutdownRequested = true;
-    
+
     if (timeoutThread != null && timeoutThread.isAlive()) {
       timeoutThread.interrupt();
       try {
@@ -610,7 +610,7 @@ public class DefaultDbPool implements SessionPool {
       boolean txRunning = db.isTxRunning();
       if (txRunning) {
         // rollback first and return to pool, log the exception later (see below)
-        db.rollbackImmediately();
+        db.rollbackImmediately(null);
       }
       if (poolId > 0) { // if not returned to pool yet
         // check if there are no pending transactions

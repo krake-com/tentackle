@@ -16,8 +16,6 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-
-    <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-core</artifactId>
@@ -29,6 +27,10 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
   <build>
     <plugins>

@@ -18,9 +18,9 @@
 
 package org.tentackle.maven.sql;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;

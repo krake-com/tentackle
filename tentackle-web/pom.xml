@@ -16,20 +16,21 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-    <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-persistence</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <!-- ordinary dependencies -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
 </project>
 

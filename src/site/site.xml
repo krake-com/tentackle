@@ -25,10 +25,6 @@
     <menu ref="modules"/>
     <menu ref="reports"/>
     <menu name="Links">
-      <item name="Tentackle Maven Plugin" href="tentackle-maven-plugin/plugin-info.html"/>
-      <item name="Tentackle SQL Maven Plugin" href="tentackle-sql-maven-plugin/plugin-info.html"/>
-      <item name="Tentackle Check Maven Plugin" href="tentackle-check-maven-plugin/plugin-info.html"/>
-      <item name="Tentackle I18N Maven Plugin" href="tentackle-i18n-maven-plugin/plugin-info.html"/>
       <item name="Bitbucket" href="https://bitbucket.org/krake-oss/tentackle"/>
       <item name="Wurbelizer" href="http://www.wurbelizer.org"/>
     </menu>

@@ -1933,15 +1933,20 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Rolls back the current transaction, if pending.
+   * Rolls back the current transaction, if pending.<br>
+   * Used to cleanup in case of an exception or alike.
    * <p>
-   * Applications should use {@link #rollback(long)}.
+   * Only applicable to local sessions.
+   * <p>
+   * Applications should use {@link #rollback(long)}.<br>
    * Invocations of this method will be logged as a warning.
    *
+   * @param cause the cause of the rollback, may be null
    * @return true if rolled back
    */
-  @Override
-  public boolean rollbackImmediately() {
+  public boolean rollbackImmediately(Throwable cause) {
+
+    assertNotRemote();
 
     try {
       // cancel all pending statements (usually max. 1)
@@ -1950,21 +1955,20 @@ public class Db implements Session, Cloneable {
       }
 
       if (transaction != null) {
+        LOGGER.warning("*** immediate rollback for {0} ***", this);
         int currentTxLevel = transaction.getTxLevel();
-        if(!isRemote()) {
-          immediatelyCommitted = 0;
-          immediatelyRolledBack = 0;
-        }
+        immediatelyCommitted = 0;
+        immediatelyRolledBack = 0;
         transaction.invalidateTxLevel();    // avoid misleading warnings
-        if (!rollback(transaction.getTxVoucher())) {
+        // log statements only if the root-cause is a persistence exception
+        boolean withLog = ExceptionHelper.extractException(PersistenceException.class, true, cause) != null;
+        if (!rollback(transaction.getTxVoucher(), withLog)) {
           throw new PersistenceException(this, transaction + " not rolled back despite valid voucher");
         }
         transaction = null;
-        LOGGER.warning("*** immediate rollback for " + this + " ***");
-        if (!isRemote()) {
-          // remember the txLevel for pending rollback()s, if any will arive from the application
-          immediatelyRolledBack = currentTxLevel;
-        }
+        // remember the txLevel for pending rollback()s, if any will arive from the application
+        immediatelyRolledBack = currentTxLevel;
+        forceDetached();
         return true;
       }
       else  {
@@ -1973,7 +1977,7 @@ public class Db implements Session, Cloneable {
         return false;
       }
     }
-    catch(RuntimeException rex) {
+    catch (RuntimeException rex) {
       if (con != null && !con.isClosed()) {
         // check low level transaction state
         boolean connectionInTransaction;

@@ -16,22 +16,21 @@
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-
-    <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-swing</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <!-- ordinary dependencies -->
     <dependency>
       <groupId>net.sf.tinylaf</groupId>
       <artifactId>tinylaf</artifactId>
       <version>1.4.0</version>
     </dependency>
-
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
   <build>
     <plugins>

@@ -15,21 +15,21 @@
   <description>UI components based on FX</description>
   <url>http://www.tentackle.org</url>
 
-  <dependencies>
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
-    <!-- local dependencies -->
+  <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
     </dependency>
 
-    <!-- ordinary dependencies -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
     </dependency>
-
   </dependencies>
 
   <build>
