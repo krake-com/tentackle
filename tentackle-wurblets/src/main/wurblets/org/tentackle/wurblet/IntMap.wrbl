@@ -4,6 +4,7 @@
 @{extends AbstractIntMap}@
 @{args}@
 @[
+  private void wurbel() {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -99,4 +100,5 @@
   };
 @[
     }
+  }
 ]@

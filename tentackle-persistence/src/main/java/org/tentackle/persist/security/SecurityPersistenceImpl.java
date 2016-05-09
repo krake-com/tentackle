@@ -466,7 +466,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     return executeListQuery(st);
   }
 
-
   // </editor-fold>//GEN-END:selectByGrantee
 
 
@@ -514,7 +513,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     return executeTrackedListQuery(st);
   }
 
-
   // </editor-fold>//GEN-END:selectByObject
 
 
@@ -557,7 +555,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     st.setString(ndx++, objectClassName);
     return executeTrackedListQuery(st);
   }
-
 
   // </editor-fold>//GEN-END:selectByObjectClass
 
@@ -605,7 +602,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     st.setLong(ndx++, domainContextId);
     return executeTrackedListQuery(st);
   }
-
 
   // </editor-fold>//GEN-END:selectByDomainContext
 
@@ -907,7 +903,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
            Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
-
   @Override
   public String createUpdateSql() {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +

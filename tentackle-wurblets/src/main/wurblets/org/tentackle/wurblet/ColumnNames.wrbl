@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -42,4 +43,5 @@
         }
       }
     }
+  }
 ]@

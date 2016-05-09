@@ -354,7 +354,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
            Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
-
   @Override
   public String createUpdateSql() {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +

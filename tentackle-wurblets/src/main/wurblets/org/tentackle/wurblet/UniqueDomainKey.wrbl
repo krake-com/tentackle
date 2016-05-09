@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() throws ModelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -95,20 +96,20 @@
      * Creates a unique domain key.
      *
 @[
-        for (Attribute attr: udk) {
+      for (Attribute attr: udk) {
 ]@
      * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
 @[
-        }
+      }
 ]@
      */
     public @(getEntity())@UDK(@(con1Args.toString())@) {
 @[
-        for (Attribute attr: udk) {
+      for (Attribute attr: udk) {
 ]@
       this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
 @[
-        }
+      }
 ]@
     }
 
@@ -125,18 +126,18 @@
     public int hashCode() {
       int hash = 7;
 @[
-        for (Attribute attr: udk) {
-          if (attr.getDataType().isPrimitive()) {
+      for (Attribute attr: udk) {
+        if (attr.getDataType().isPrimitive()) {
 ]@
       hash = 79 * hash + @(attr.getJavaName())@;
 @[
-          }
-          else  {
+        }
+        else  {
 ]@
       hash = 79 * hash + Objects.hashCode(@(attr.getJavaName())@);
 @[
-          }
         }
+      }
 ]@
       return hash;
     }
@@ -151,22 +152,22 @@
       }
       @(getEntity())@UDK other = (@(getEntity())@UDK) obj;
 @[
-        for (Attribute attr: udk) {
-          if (attr.getDataType().isPrimitive()) {
+      for (Attribute attr: udk) {
+        if (attr.getDataType().isPrimitive()) {
 ]@
       if (@(attr.getJavaName())@ != other.@(attr.getJavaName())@) {
         return false;
       }
 @[
-          }
-          else  {
+        }
+        else  {
 ]@
       if (!Objects.equals(@(attr.getJavaName())@, other.@(attr.getJavaName())@)) {
         return false;
       }
 @[
-          }
         }
+      }
 ]@
       return true;
     }
@@ -175,8 +176,8 @@
     public int compareTo(@(getEntity())@UDK other) {
       int rv = other == null ? 1 : 0;
 @[
-        String inset = "";
-        for (Attribute attr: udk) {
+      String inset = "";
+      for (Attribute attr: udk) {
 ]@
       @(inset)@if (rv == 0) {
 @[
@@ -184,26 +185,27 @@
 ]@
       @(inset)@  rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
 @[
-          }
-          else  {
+        }
+        else  {
 ]@
       @(inset)@  rv = Compare.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
 @[
-          }
-          inset += "  ";
         }
+        inset += "  ";
+      }
 
-        do {
-          inset = inset.substring(2);
+      do {
+        inset = inset.substring(2);
 ]@
       @(inset)@}
 @[
 
-        } while (!inset.isEmpty());
+      } while (!inset.isEmpty());
 ]@
       return rv;
     }
   }
 @[
+    }
   }
 ]@

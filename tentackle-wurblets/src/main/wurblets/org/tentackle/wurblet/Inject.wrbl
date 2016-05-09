@@ -5,6 +5,7 @@
 @{import org.wurbelizer.wurblet.*}@
 @{args}@
 @[
+  private void wurbel() {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -60,4 +61,5 @@
     if (asString) {
       out.print('"');
     }
+  }
 ]@

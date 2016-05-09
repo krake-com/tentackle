@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() throws WurbelException, ModelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -574,8 +575,7 @@
 
       if (createSetter)  {
         String nullVal = attr != null && !attr.getDataType().isPrimitive() ? "null" : "0";
-        String linkMethodIndex = rel.getForeignRelation() != null ?
-            rel.getForeignRelation().getLinkMethodIndex() : null;
+        String linkMethodIndex = rel.getForeignRelation() != null ? rel.getForeignRelation().getLinkMethodIndex() : null;
 ]@
 
   /**
@@ -1710,4 +1710,5 @@
   }
 @[
     }
+  }
 ]@

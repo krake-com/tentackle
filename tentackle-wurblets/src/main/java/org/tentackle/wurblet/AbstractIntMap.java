@@ -26,7 +26,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.wurbelizer.wurbel.WurbelUtilities;
+import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurbel.WurbelException;
 import org.wurbelizer.wurblet.AbstractWurblet;
 
@@ -73,7 +73,7 @@ public class AbstractIntMap extends AbstractWurblet {
     }
 
     // read the model
-    try (BufferedReader reader = new BufferedReader(WurbelUtilities.openReader(modelName))) {
+    try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(modelName))) {
       int lineno = 0;
       for (;;)  {
         String line = reader.readLine();

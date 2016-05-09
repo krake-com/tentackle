@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() throws WurbelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -48,4 +49,5 @@
   // remote code generation disabled
 @[
     }
+  }
 ]@

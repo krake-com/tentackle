@@ -20,7 +20,7 @@
 package org.tentackle.wurblet;
 
 import org.wurbelizer.wurbel.WurbelException;
-import org.wurbelizer.wurbel.WurbelUtilities;
+import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurblet.AbstractWurblet;
 
 
@@ -80,7 +80,7 @@ public class IncludeWurblet extends AbstractWurblet {
   @Override
   public void cleanup() throws WurbelException {
     if (delete) {
-      if (WurbelUtilities.deleteFile(filename)) {
+      if (WurbelHelper.deleteFile(filename)) {
         getContainer().getLogger().warning("included file '" + filename + "' deleted");
       }
     }

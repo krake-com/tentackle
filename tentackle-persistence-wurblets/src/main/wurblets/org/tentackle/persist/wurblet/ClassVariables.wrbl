@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() throws WurbelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -118,22 +119,22 @@
                       new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.id", "e_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(alias)@, @(joinAlias)@) -> {
 @[
-          if (join.isReversed()) {
+              if (join.isReversed()) {
 ]@
                         ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
 @[
-          }
-          else {
+              }
+              else {
 ]@
                         ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
 @[
-            if (join.getLinkMethodName() != null) {
-              String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
+                if (join.getLinkMethodName() != null) {
+                  String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
 ]@
                         ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
 @[
-            }
-          }
+                }
+              }
 ]@
                         }
                       @(joinCount < joins.size() ? ")," : ")")@
@@ -164,15 +165,16 @@
 
   \@Override
 @[
-  if (getEntity().isAbstract()) {
+      if (getEntity().isAbstract()) {
 ]@
   \@SuppressWarnings("unchecked")
 @[
-  }
+      }
 ]@
   public @(cvType)@ getClassVariables() {
     return CLASSVARIABLES;
   }
 @[
     }
+  }
 ]@

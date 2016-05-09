@@ -6,6 +6,7 @@
 @{extends IncludeWurblet}@
 @{args}@
 @[
+  private void wurbel() throws WurbelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -38,17 +39,17 @@
      */
 
     // read the file to include
-    BufferedReader reader = null;
     char[] chars = new char[128];
     StringBuilder outBuf = new StringBuilder(512);
     // copy
-    try {
-      reader = new BufferedReader(WurbelUtilities.openReader(filename));
+    try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(filename))) {
       int numRead;
       while((numRead = reader.read(chars)) > -1) {
         outBuf.append(String.valueOf(chars, 0, numRead));
       }
-      out.print(translate ? WurbelUtilities.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET)) : outBuf);
+      out.print(translate ?
+                  WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET)) :
+                  outBuf);
     }
     catch (IOException ex) {
       throw new WurbelException("including " + filename + " failed", ex);
@@ -63,10 +64,5 @@
         throw ex;
       }
     }
-    finally {
-      try {
-        reader.close();
-      }
-      catch (Exception ex) {}
-    }
+  }
 ]@

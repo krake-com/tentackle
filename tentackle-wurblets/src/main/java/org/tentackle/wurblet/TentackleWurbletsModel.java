@@ -23,7 +23,7 @@ import org.tentackle.common.Service;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.ModelImpl;
-import org.wurbelizer.wurbel.WurbelUtilities;
+import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
@@ -44,7 +44,7 @@ public class TentackleWurbletsModel extends ModelImpl {
   @Override
   protected Reader createFileReader(String fileName) throws ModelException {
     try {
-      return WurbelUtilities.openReader(fileName);
+      return WurbelHelper.openReader(fileName);
     }
     catch (WurbelException wex) {
       throw new ModelException("cannot create reader for " + fileName, wex);

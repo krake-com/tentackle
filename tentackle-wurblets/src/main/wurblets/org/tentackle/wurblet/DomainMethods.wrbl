@@ -1,5 +1,6 @@
 @{include $currentDir/header.incl}@
 @[
+  private void wurbel() throws ModelException, WurbelException {
     /**
      * Tentackle - http://www.tentackle.org
      *
@@ -109,4 +110,5 @@
         }
       }
     }
+  }
 ]@

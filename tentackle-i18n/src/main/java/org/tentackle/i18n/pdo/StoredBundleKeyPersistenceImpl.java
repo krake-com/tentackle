@@ -225,7 +225,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
            Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
-
   @Override
   public String createUpdateSql() {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
@@ -436,7 +435,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     st.setLong(ndx++, bundleId);
     return executeTrackedListQuery(st);
   }
-
 
   // </editor-fold>//GEN-END:selectByBundleId
 
