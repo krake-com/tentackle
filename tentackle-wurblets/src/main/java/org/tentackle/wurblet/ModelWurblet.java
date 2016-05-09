@@ -48,8 +48,16 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 
 
 /**
- * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.
+ * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.<br>
  *
+ * The following wurblet options are parsed:
+ * <ul>
+ * <li><em>--method=&lt;method-name&gt;:</em> optional name of the generated method. Defaults to the wurblet tag.</li>
+ * <li><em>--model=&lt;mapping&gt;:</em> optional model mapping. Derived from source file, if missing.</li>
+ * <li><em>--remote:</em> force generating remote code. Taken from model-defaults, if missing.</li>
+ * <li><em>--noremote:</em> don't generate remote code. Taken from model-defaults, if missing.</li>
+ * </ul>
+ * For the general form of a wurblet-anchor, see {@link AbstractWurblet}.
  * @author  harald
  */
 public class ModelWurblet extends AbstractWurblet {

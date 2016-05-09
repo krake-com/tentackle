@@ -3,14 +3,14 @@
 Generate code to define the attribute- and relation-names of an entity.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; AttributeNames [--model=&lt;mapping&gt;] [--noif]
+&#064;wurblet &lt;tag&gt; AttributeNames [--noif]
 <p>
 arguments:
 <ul>
 <li>&lt;tag&gt; the required wurblet tag. Must be unique within the source file.</li>
-<li>&lt;mapping&gt; optional model mapping. Derived from source file, if missing.</li>
 <li>--noif: if not part of an interface (adds "public static final")</li>
 </ul>
+For more options, see {\@link ModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException {
