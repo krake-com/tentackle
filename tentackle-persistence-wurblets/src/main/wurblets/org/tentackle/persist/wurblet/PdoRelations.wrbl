@@ -1,47 +1,27 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code for related entities.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoRelations
+    [--loadcomponents|--noloadcomponents]
+    [--insertcomponents|--noinsertcomponents]
+    [--deletecomponents|--nodeletecomponents]
+    [--nori] [--noselects] [--nodeletes]
+<p>
+arguments:
+<ul>
+<li><em>--loadcomponents|--noloadcomponents:</em> force (no) generation of loadComponents().</li>
+<li><em>--insertcomponents|--noinsertcomponents:</em> force (no) generation of insertPlainWithComponents().</li>
+<li><em>--deletecomponents|--nodeletecomponents:</em> force (no) generation of deletePlainWithComponents().</li>
+<li><em>--nori:</em> don't generate PdoIsReferencing wurblet anchors and addReferencingClass() invocations.</li>
+<li><em>--noselects:</em> don't generate PdoSelect... wurblet anchors.</li>
+<li><em>--nodeletes:</em> don't generate PdoDelete... wurblet anchors.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws WurbelException, ModelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * generate code for PDO relations.
-     *
-     * usage:  \@wurblet <tag> PdoRelations [options] --model=<mapfile>
-     *
-     *         <mapfile> is the mapping description
-     *
-     *         --loadcomponents force generation of method loadComponents()
-     *         --insertcomponents force generation of method insertPlainWithComponents()
-     *         --deletecomponents force generation of method deletePlainWithComponents()
-     *         --noloadcomponents don't generate method loadComponents()
-     *         --noinsertcomponents don't generate method insertPlainWithComponents()
-     *         --nodeletecomponents don't generate method deletePlainWithComponents()
-     *         --nori don't generate PdoIsReferencing wurblets and addReferencingClasses static block
-     *         --noselects don't generate (foreign) select list wurblets
-     *         --nodeletes don't generate (foreign) delete list wurblets
-     *
-     * Example: \@wurblet relations PdoRelations --model=$mapping $relations
-     */
-
-
 
     // main class
     String mainClass = getClassName();

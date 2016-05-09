@@ -39,7 +39,17 @@ import org.tentackle.wurblet.WurbletParameter;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * Adds persistence-specific stuff.
+ * Base class for persistence wurblets.
+ * <p>
+ * The following wurblet options are supported:
+ * <ul>
+ * <li><em>--context=&lt;key&gt;:</em> defines the context id (--context= turns off default context).</li>
+ * <li><em>--tracked:</em> return a TrackedList instead of List (useful if [TRACKED] not given in model).</li>
+ * <li><em>--attracked:</em> same as --tracked but generate is...Modified per attribute.</li>
+ * <li><em>--fulltracked:</em> same as --attracked but keep last persisted values as well.</li>
+ * <li><em>--untracked:</em> disable [TRACKED, ATTRACKED or FULLTRACKED] from model.</li>
+ * </ul>
+ * For more options, see {@link ModelWurblet}.
  *
  * @author harald
  */
@@ -53,22 +63,6 @@ public class DbModelWurblet extends ModelWurblet {
   private List<Relation> joinedRelations;
 
 
-  /**
-   * Overridden to process some arguments.
-   *
-   * <pre>
-   * --context=&lt;key&gt; defines the context id (--context= turns off default context)
-   * --tracked return a TrackedArrayList instead of an ArrayList (if not [TRACKED] given in model)
-   * --attracked (same as tracked but generate is...Modified per attribute)
-   * --fulltracked (same as attracked but keep last persisted values as well)
-   * --untracked to disable [TRACKED, ATTRACKED or FULLTRACKED] from model
-   * --makevalidcontext sets the context from the object instead of context
-   * --makevalidcontext=- turns off the default makeValidContext
-   * --or use OR instead of AND for multiple keys
-   * </pre>
-   *
-   * @throws WurbelException if running the wurblet failed
-   */
   @Override
   public void run() throws WurbelException {
 

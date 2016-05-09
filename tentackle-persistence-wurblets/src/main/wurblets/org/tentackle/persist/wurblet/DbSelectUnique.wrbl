@@ -1,42 +1,26 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to select a low-level persistent object.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; DbSelectUnique
+    [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--sort] [--lock]
+    &lt;expression&gt;
+<p>
+arguments:
+<ul>
+<li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
+<li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
+<li><em>--sort:</em> sort according to orderBy()-method.</li>
+<li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws WurbelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a unique select
-     * usage:  \@wurblet <methodname> DbSelectUnique --model=<mapfile> [--remote|--local] [--sort] [--append=<sqltext>] [--private] [--lock]
-     *                    [--classvar=<access_to_classvariables>] <key1> ... <keyn>
-     *         --remote means "with remote rmi-code" (overrides default)
-     *         --local means "without remote rmi-code" (overrides default)
-     *         --sort checks for orderBy()-Method and adds a LIMIT 1
-     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever and adds a LIMIT 1
-     *         --lock selects FOR UPDATE
-     *         --private makes the method private (default is public, turns on --local as well)
-     *         --classvar=... name or method to classvariables for statementId, default is private static
-     *
-     *         the keys are java-names.
-     *
-     * Example: \@wurblet selectByArtikelNr DbSelectUnique --model=$scripts/artikel.map --remote artikelNr
-     */
 
     if (!getExtraParameters().isEmpty()) {
       String msg = "unexpected extra parameters:";

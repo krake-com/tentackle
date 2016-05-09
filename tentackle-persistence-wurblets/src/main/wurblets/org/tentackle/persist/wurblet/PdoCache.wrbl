@@ -1,50 +1,34 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code for setting up a PdoCache for an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoCache
+    [--cache=&lt;classname&gt;] [--secure] [--public] [--preload]
+    [--mutable] [--noreg] [--udk] [--bounded]
+    [--strategy=LRU|LFU|FORGET] [--maxsize=&lt;n&gt;] [--keepquota=&lt;p&gt;] [--configure=&lt;method&gt;]
+    [index1] [index2] ...
+<p>
+arguments:
+<ul>
+<li><em>--cache=&lt;classname&gt;:</em> sets the cache-class. Defaults to PdoCache.</li>
+<li><em>--secure:</em> if cache must check read permission for each access (default is no check).</li>
+<li><em>--public:</em> makes the cache and indexes public (default is private).</li>
+<li><em>--preload:</em> the first access will load all entities at once.</li>
+<li><em>--mutable:</em> generates a non-shared cache, i.e. mutable PDOs (by default a shared readonly cache is generated).</li>
+<li><em>--noreg:</em> will not register the cache globally (default is to use the factory).</li>
+<li><em>--udk:</em> add index for the unique domain key.</li>
+<li><em>--bounded:</em> creates List&lt;? extends T&gt; for selectAllCached instead of List&lt;T&gt;.</li>
+<li><em>--strategy=LRU|LFU|FORGET:</em> the caching strategy (default is FORGET).</li>
+<li><em>--maxsize=&lt;n&gt;:</em> the cache size (if not preloaded).</li>
+<li><em>--keepquota=&lt;p&gt;:</em> percentage of entries to keep when applying caching strategy. Default is 50.</li>
+<li><em>--configure=&lt;method&gt;:</em> an optional method to further configure the cache.</li>
+<li><em>--index&lt;n&gt;:</em> additional unique indexes. By default, only the ID-index will be created.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws ModelException, WurbelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a code for setting up an PdoCache
-     *
-     * usage:  \@wurblet <somename> PdoCache --model=<mapfile> [--cache=<classname>] [--secure]
-     *                   [--public] [--preload] [--mutable] [--noreg] [--udk] [--bounded] [index1] [index2] ...
-     *         --secure if cache must check read permission (default is no check)
-     *         --preload will generate an autopreloading cache
-     *         --mutable generates a non-shared cache, i.e. mutable PDOs (by default a shared readonly cache is generated)
-     *         --public makes the cache and indexes public (default is private!)
-     *         --immediate forces immediate expiration (by using the ModificationThread's db-connection)
-     *         --cache=<classname> sets the cache-class. If missing "PdoCache".
-     *         --noreg will not register the cache globally (default is to register if cache=PdoCache)
-     *         --bounded returns a bounded List<? extends ...> for selectAllCached
-     *         --udk create index for unique domain key
-     *         --strategy=<LRU|LFU|FORGET>    the caching strategy (default is FORGET)
-     *         --maxsize=<maximum number of pdos>   the cache size (if not preload)
-     *         --keepquota=<quota> percentage of entries to keep when applying caching strategy, default 50
-     *         --configure=<method> an optional method to configure the cache
-     *
-     *         index1, ... are additional unique indexes to create. By default, only the ID-index
-     *         will be created.
-     *
-     * Example: \@wurblet cache PdoCache --model=$mapfile --preload artikelNr
-     */
 
     // main class
     String pdoName     = getPdoClassName();

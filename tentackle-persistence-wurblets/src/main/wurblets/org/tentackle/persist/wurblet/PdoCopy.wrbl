@@ -1,56 +1,31 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to copy an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoCopy [--maponly] [--super] [&lt;skiplist&gt;]
+<p>
+arguments:
+<ul>
+<li><em>--maponly:</em> generates code only for attributes of the entities model file (i.e. not for ID and SERIAL).</li>
+<li><em>--super:</em> invokes super.copy() to create the object.</li>
+<li><em>&lt;skiplist&gt;:</em> optional list of attributes and/or relations that must not be copied.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws ModelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * Generates code to implement PdoObject's copy() method.
-     *
-     * usage:  \@wurblet <tag> PdoCopy --model=<mapfile> [--maponly] [skip list]
-     *
-     *         <mapfile> is the mapping description
-     *         --super invokes super.copy() to create the object
-     *         --maponly generates code only for columns in mapfile (i.e. not for ID and SERIAL)
-     *         --sorted generates code sorted by relation names
-     *         skip list: optional list of attributes and/or relations that must not be copied
-     *
-     * Example: \@wurblet setFrom PdoCopy --model=$mapping $relations
-     */
-
-
 
     // main class
     String pdoClass = getEntity().getName();
     char objName = Character.toLowerCase(pdoClass.charAt(0));
     boolean mapOnly = false;
-    boolean sorted = false;
     boolean useSuper = false;
 
     for (String arg: getOptionArgs()) {
       switch (arg) {
         case "maponly":
           mapOnly = true;
-          break;
-        case "sorted":
-          sorted = true;
           break;
         case "super":
           useSuper = true;

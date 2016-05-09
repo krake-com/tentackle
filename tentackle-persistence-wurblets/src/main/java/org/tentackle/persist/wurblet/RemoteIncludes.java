@@ -32,7 +32,8 @@ import org.wurbelizer.wurbel.Wurbler;
 
 
 /**
- * Handles generated .remote and .impl-code.<br>
+ * Handles generated .remote and .impl-code.
+ * <p>
  * Also creates the RMI-java files, if missing.
  *
  * @author harald

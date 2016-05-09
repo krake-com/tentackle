@@ -1,46 +1,21 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to check whether a low-level persistent object is referenced.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoIsReferencing [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;] &lt;expression&gt;
+<p>
+arguments:
+<ul>
+<li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
+<li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws WurbelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a check for reference.
-     * This is always a hidden method not made public in the interfaces as this is an implementation
-     * defail of the persistence layer.
-     *
-     * usage:  \@wurblet <methodname> PdoIsReferencing --model=<mapfile> [--remote|--local] [--private]
-     *                [--append=...] [--class=<referenced class>] [--classvar=<access_to_classvariables>]
-     *                <key1> ... <keyn>
-     *         --remote means "with remote rmi-code" (overrides default)
-     *         --local means "without remote rmi-code" (overrides default)
-     *         --private makes the method private (default is public, turns on --local as well)
-     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever
-     *         --class=... registers the generated method at the referenced class
-     *         --classvar=... name or method to classvariables for statementId, default is private static
-     *
-     *         the keys are java-names.
-     *
-     * Example: \@wurblet isReferencingArtikel PdoIsReferencing --model=$scripts/artikel.map --remote artikelNr
-     */
-
 
     assertEntityIsPersistable();
 
@@ -50,7 +25,6 @@
 
     String  classVar    = null;
     String  append      = null;
-    String  refClass    = null;
     String  scope       = "public";
 
     for (String arg: getOptionArgs())  {
@@ -59,9 +33,6 @@
       }
       else if (arg.startsWith("append=")) {
         append = arg.substring(7);
-      }
-      else if (arg.startsWith("class=")) {
-        refClass = arg.substring(6);
       }
       else if (arg.startsWith("classvar="))  {
         classVar = arg.substring(9);
@@ -196,28 +167,11 @@
       return rs.next();
     }
   }
-
 @[
     if (classVar.length() == 0) {
 ]@
 
   private static final StatementId @(statementId)@ = new StatementId();
-
-@[
-    }
-]@
-
-@[
-    if (refClass != null) {
-      HeapStream globalCode = new HeapStream(getContainer(), "global/persistence/ri");
-]@
-@{to globalCode.getStream()}@
-        DbObject.newByClass(@(className)@.class);    // @(methodName)@
-@{to}@
-
-  static {
-    Pdo.create(@(refClass)@.class).addReferencingClass(@(pdoName)@.class, "@(methodName)@");
-  }
 @[
     }
   }

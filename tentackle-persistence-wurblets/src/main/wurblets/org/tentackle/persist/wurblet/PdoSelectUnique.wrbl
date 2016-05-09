@@ -1,43 +1,27 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to select an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoSelectUnique
+    [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--sort] [--lock]
+    &lt;expression&gt;
+<p>
+arguments:
+<ul>
+<li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
+<li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
+<li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
+<li><em>--sort:</em> sort according to orderBy()-method.</li>
+<li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
   private void wurbel() throws WurbelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a unique select
-     * usage:  \@wurblet <methodname> PdoSelectUnique --model=<mapfile> [--remote|--local] [--private] [--sort]
-     *                          [--noif] [--append=<sqltext>] [--lock] <key1> ... <keyn>
-     *         --remote means "with remote rmi-code" (overrides default)
-     *         --local means "without remote rmi-code" (overrides default)
-     *         --private makes the method private (default is public, turns on --local as well)
-     *         --lock selects FOR UPDATE
-     *         --sort checks for orderBy()-Method and adds a LIMIT 1
-     *         --append appends an sql-string, i.e. to ORDER BY, GROUP or whatever and adds a LIMIT 1
-     *         --noif "no interface method", i.e. no \@Override will be generated
-     *
-     *         the keys are java-names.
-     *
-     * Example: \@wurblet selectByArtikelNr PdoSelectUnique --model=$scripts/artikel.map --remote artikelNr
-     */
-
 
     assertEntityIsPersistable();
 
