@@ -48,8 +48,8 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 
 
 /**
- * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.<br>
- *
+ * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.
+ *<p>
  * The following wurblet options are parsed:
  * <ul>
  * <li><em>--method=&lt;method-name&gt;:</em> optional name of the generated method. Defaults to the wurblet tag.</li>

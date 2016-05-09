@@ -23,7 +23,8 @@ import org.tentackle.model.Relation;
 import org.tentackle.sql.Backend;
 
 /**
- * A wurblet parameter.<br>
+ * A wurblet parameter.
+ * <p>
  * Holds select, update/set and sorting parameters.
  *
  * @author harald

@@ -4,43 +4,28 @@
 @{import org.wurbelizer.wurbel.*}@
 @{import org.wurbelizer.wurblet.*}@
 @{args}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Injects code from the argument list.
+<p>
+usage:<br>
+&#064;wurblet &lt;|&gt; Inject [--string] &lt;text&gt;
+<p>
+arguments:
+<ul>
+<li><em>--string:</em> enclose in double quotes.</li>
+<li><em>text:</em> the text to inject.</li>
+</ul>
+The Inject-wurblet is a tag-less wurblet and injects the code between two empty comment blocks &#047;**&#047;...&#047;**&#047;.
+If the wurblet should scan for such a pattern to the left, the pseudo tag-name {\@code <} must be used.
+If to the right, use {\@code >}.
+<p>
+Example:
+<pre>
+  String text = &#047;**&#047;"blah"&#047;**&#047;;  // &#064;wurblet &lt; Inject --string $some_variable
+</pre>
+}@
 @[
   private void wurbel() {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * Injects from the argument list.
-     * All args will be concatenated as strings.
-     *
-     * This wurblet is normally used as an inline wurblet like this:
-     *
-     * usage:  \@wurblet + Inject [--string] <text>
-     *        --string to enclose in double quotes (same as "\"xxxxxxx\"")
-     *
-     *
-     * Example (simple dependency injection):
-     */
-    // \@wurblet + Inject $implClass
-    // public MyInterface injected = new /**/<REPLACE_THIS>/**/();
-
     StringBuilder text = new StringBuilder();
     boolean asString = false;
 

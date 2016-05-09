@@ -1,23 +1,19 @@
 @{include $currentDir/header.incl}@
 @{comment
-Generate code to define the attribute- and relation-names of an entity.
+<strong>({\@code \@wurblet})</strong> Generate code to define the attribute- and relation-names of an entity.
 <p>
 usage:<br>
 &#064;wurblet &lt;tag&gt; AttributeNames [--noif]
 <p>
 arguments:
 <ul>
-<li>&lt;tag&gt; the required wurblet tag. Must be unique within the source file.</li>
-<li>--noif: if not part of an interface (adds "public static final")</li>
+<li><em>--noif:</em> if not part of an interface (adds "public static final")</li>
 </ul>
 For more options, see {\@link ModelWurblet}.
 }@
 @[
-  private void wurbel() throws WurbelException {
-
-    String mainClass = getClassName();
+  private void wurbel() {
     String lead = getOption("noif") == null ? "" : "public static final ";
-
     for (Relation rel: getEntity().getRelations()) {
       String var = rel.getVariableName();
 ]@

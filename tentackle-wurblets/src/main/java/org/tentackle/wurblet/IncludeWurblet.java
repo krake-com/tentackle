@@ -25,6 +25,9 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 
 
 /**
+ * Base class for the {@code @Include}-wurblet.
+ * <p>
+ * Necessary because the run-method is overridden.
  *
  * @author harald
  */

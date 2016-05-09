@@ -1,35 +1,18 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate getter and setter definitions of an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; Methods [--noudk]
+<p>
+arguments:
+<ul>
+<li><em>--noudk:</em> don't generate selectByUniqueDomainKey method definition.</li>
+</ul>
+For more options, see {\@link ModelWurblet}.
+}@
 @[
   private void wurbel() throws ModelException, WurbelException {
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a getter and setter methods for pdo interfaces.
-
-     * usage:  \@wurblet <somename> Methods --model=<mapfile> [--noudk]
-     *
-     *         --noudk don't generate selectByUniqueDomainKey method definition
-     *
-     * Example: \@wurblet methods Methods --model=$scripts/artikel.map
-     */
 
     boolean generateSelectByUDK = getOption("noudk") == null;
 
