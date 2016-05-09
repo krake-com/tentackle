@@ -24,7 +24,7 @@ import org.tentackle.common.Service;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistenceException;
-import org.tentackle.persist.rmi.AdminExtensionRemoteDelegate;
+import org.tentackle.pdo.rmi.AdminExtensionRemoteDelegate;
 
 /**
  * Adapter hiding the rmi-stuff for the admin session extension.

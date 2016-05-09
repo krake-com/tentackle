@@ -16,12 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.pdo.rmi;
 
 import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.persist.rmi.RemoteDelegate;
 
 /**
  * Admin utility methods.

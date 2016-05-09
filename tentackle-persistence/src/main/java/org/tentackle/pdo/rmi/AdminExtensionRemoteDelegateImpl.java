@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.rmi;
+package org.tentackle.pdo.rmi;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -35,6 +35,8 @@ import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.persist.Db;
+import org.tentackle.persist.rmi.RemoteDbSessionImpl;
+import org.tentackle.persist.rmi.RemoteDelegateImpl;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 
