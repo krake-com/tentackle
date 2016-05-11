@@ -50,9 +50,9 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
    * If this is not desired, filesets must be used.
    */
   @Parameter(defaultValue = "${project.build.testSourceDirectory}",
-             property = "tentackle.testSourceDir",
+             property = "wurbel.testSourceDir",
              required = true)
-  protected File sourceDir;
+  protected File sourceDir;   // same as in wurbelizer's WurbelMojo
 
   /**
    * Project classpath.
@@ -66,9 +66,9 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
    * Directory analyze results.
    */
   @Parameter(defaultValue = "${project.build.directory}/test-analyze",
-             property = "tentackle.testAnalyzeDir",
+             property = "wurbel.testAnalyzeDir",
              required = true)
-  protected File analyzeDir;
+  protected File analyzeDir;    // same as in wurbelizer's WurbelMojo
 
   /**
    * Directory generated services.

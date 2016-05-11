@@ -49,9 +49,9 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
    * If this is not desired, filesets must be used.
    */
   @Parameter(defaultValue = "${project.build.sourceDirectory}",
-             property = "tentackle.sourceDir",
+             property = "wurbel.sourceDir",
              required = true)
-  protected File sourceDir;
+  protected File sourceDir;   // same as in wurbelizer's WurbelMojo
 
   /**
    * Project classpath.
@@ -65,9 +65,9 @@ public class AnalyzeAnnotationProcessingMojo extends AbstractAnalyzeAnnotationPr
    * Directory for the analyze results.
    */
   @Parameter(defaultValue = "${project.build.directory}/analyze",
-             property = "tentackle.analyzeDir",
+             property = "wurbel.analyzeDir",
              required = true)
-  protected File analyzeDir;
+  protected File analyzeDir;    // same as in wurbelizer's WurbelMojo
 
   /**
    * Directory for the generated services.
