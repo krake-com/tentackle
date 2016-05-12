@@ -19,7 +19,9 @@
 
 package org.tentackle.swing.print;
 
+import java.util.Currency;
 import org.tentackle.common.BMoney;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.misc.FormatHelper;
 
 
@@ -42,8 +44,7 @@ public class BMoneyPrintLabel extends NumberPrintLabel {
     format.setGroupingUsed(true);
     format.setGroupingSize(3);
     format.applyPattern(FormatHelper.getMoneyPattern());
-//    setScale(BMoney.currency.getDefaultFractionDigits());
-    // TODO: use LocaleHelper via threadlocal
+    setScale(Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
     setPrintValue(new BMoney());
   }
 
