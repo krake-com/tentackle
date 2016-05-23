@@ -84,6 +84,15 @@ public class ModificationTally {
     }
   }
 
+  
+  /**
+   * Gets the modification PO.
+   *
+   * @return the modification PO
+   */
+  public DbModification getDbModification() {
+    return dbModification;
+  }
 
   /**
    * Gets the ID of the counter.

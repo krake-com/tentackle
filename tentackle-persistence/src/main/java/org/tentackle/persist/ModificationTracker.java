@@ -387,6 +387,10 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
   @Override
   public void setSession(Session session) {
     super.setSession(session);
+    // fix session in counters
+    for (ModificationTally counter: countersById.values()) {
+      counter.getDbModification().setSession(session);
+    }
     // check if modification table is initialized
     try {
       masterModification = new DbModification((Db) session);
