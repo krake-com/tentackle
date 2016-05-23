@@ -130,6 +130,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private ResourceBundle resources;                 // the resources
   private PdoEditor<T> editor;                      // the editor
   private SimpleBooleanProperty editAllowed;        // is editing allowed effectively
+  private SimpleBooleanProperty pdoIsNew;           // pdo is new
   private List<T> pdoList;                          // optional list of PDOs
   private int pdoListIndex;                         // index in list
   private boolean editable;                         // editability requested by the application
@@ -252,13 +253,14 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       editor.getView().setVisible(false);
       editAllowed.set(false);    // no view -> no edit (no need to check again)
     }
+    pdoIsNew = new SimpleBooleanProperty(pdo.isNew());
     getContainer().saveView();                    // triggerViewModified when view has changed
     updateTitle();
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     treeButton.setDisable(pdo.isNew() || !guiProvider.providesTreeChildObjects());
     deleteButton.setDisable(!editAllowed.get() || !editor.isRemoveAllowed());
     newButton.setDisable(!editAllowed.get() || !editor.isNewAllowed());
-    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().and(editAllowed).not());
+    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).and(editAllowed).not());
     securityButton.setDisable(!pdo.isRootEntity() ||
                               !SecurityDialogFactory.getInstance().isDialogAllowed(pdo.getDomainContext()));
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
@@ -343,6 +345,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
     cancelButton.setGraphic(Fx.createImageView("close"));
     cancelButton.setOnAction(e -> cancel());
+    cancelButton.setCancelButton(true);
   }
 
 
@@ -370,7 +373,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-              !event.isShiftDown() && !event.isShortcutDown()) {
+          !event.isShiftDown() && !event.isShortcutDown()) {
         if (event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
           cancel();
         }

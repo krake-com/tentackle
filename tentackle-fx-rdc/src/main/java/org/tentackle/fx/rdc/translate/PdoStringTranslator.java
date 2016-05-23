@@ -67,6 +67,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   private ValueStringTranslator<?> udkTranslator;
   private String viewValue;
   private T pdo;
+  private boolean inPdoSearch;
 
 
   /**
@@ -118,7 +119,9 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         }
         else if (event.getCode() == KeyCode.F3) {
           event.consume();
+          inPdoSearch = true;
           T found = searchPdo(createPdo());
+          inPdoSearch = false;
           if (found != null) {
             pdo = found;
             component.setViewValue(pdo);
@@ -152,7 +155,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   @Override
   public Function<String, T> toModelFunction() {
     return v -> {
-      if (!Objects.equals(v, viewValue)) {
+      if (!inPdoSearch && !Objects.equals(v, viewValue)) {
         // view changed
         if (v == null) {
           pdo = null;

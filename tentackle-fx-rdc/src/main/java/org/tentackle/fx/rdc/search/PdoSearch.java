@@ -575,7 +575,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Creates a new PDO.
    */
   public void createPdo() {
-    T nPdo = Rdc.displayCrudStage(on(), true, Modality.APPLICATION_MODAL, getStage());
+    T nPdo = on();
+    if (getPdo().isUniqueDomainKeyProvided()) {
+      nPdo.setUniqueDomainKey(getPdo().getUniqueDomainKey());
+    }
+    nPdo = Rdc.displayCrudStage(nPdo, true, Modality.APPLICATION_MODAL, getStage());
     if (nPdo != null && !nPdo.isNew()) {
       createdPdo = nPdo;
       close();
@@ -613,6 +617,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
     cancelButton.setGraphic(Fx.createImageView("close"));
     cancelButton.setOnAction(e -> cancel());
+    cancelButton.setCancelButton(true);
   }
 
   @Override
