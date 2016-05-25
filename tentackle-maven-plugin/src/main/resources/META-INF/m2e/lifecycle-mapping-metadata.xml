@@ -5,7 +5,7 @@
       <pluginExecutionFilter>
         <goals>
           <goal>analyze</goal>
-          <goal>testAnalyze</goal>
+          <goal>test-analyze</goal>
           <goal>beaninfo</goal>
         </goals>
       </pluginExecutionFilter>
