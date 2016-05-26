@@ -2,24 +2,20 @@
  * copy from the JDK because BasicTransferable is package scope (arrrgh...)
  */
 
-
-/*
- * @(#)BasicTransferable.java	1.9 03/12/19
- *
- * Copyright 2004 Sun Microsystems, Inc. All rights reserved.
- * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 package org.tentackle.swing.plaf;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringBufferInputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import javax.swing.plaf.UIResource;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 
 /**
  * A transferable implementation for the default data transfer of some Swing
@@ -32,14 +28,13 @@ import javax.swing.plaf.UIResource;
  */
 class TBasicTransferable implements Transferable, UIResource {
 
-  protected final String plainData;
-
-  protected final String htmlData;
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(TBasicTransferable.class);
 
   private static DataFlavor[] htmlFlavors;
-
   private static DataFlavor[] stringFlavors;
-
   private static DataFlavor[] plainFlavors;
 
   static {
@@ -60,9 +55,13 @@ class TBasicTransferable implements Transferable, UIResource {
 
     }
     catch (ClassNotFoundException cle) {
-      System.err.println("error initializing javax.swing.plaf.basic.BasicTranserable");
+      LOGGER.severe("error initializing javax.swing.plaf.basic.BasicTranserable", cle);
     }
   }
+
+
+  protected final String plainData;
+  protected final String htmlData;
 
   public TBasicTransferable(String plainData, String htmlData) {
     this.plainData = plainData;
@@ -151,7 +150,7 @@ class TBasicTransferable implements Transferable, UIResource {
         return new StringReader(data);
       }
       else if (InputStream.class.equals(flavor.getRepresentationClass())) {
-        return new StringBufferInputStream(data);
+        return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
       }
       // fall through to unsupported
     }
@@ -165,7 +164,7 @@ class TBasicTransferable implements Transferable, UIResource {
         return new StringReader(data);
       }
       else if (InputStream.class.equals(flavor.getRepresentationClass())) {
-        return new StringBufferInputStream(data);
+        return new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
       }
       // fall through to unsupported
 
