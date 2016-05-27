@@ -21,7 +21,8 @@ package org.tentackle.buildsupport;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -99,7 +100,10 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
             File outputDir = getDirectory(getProcessor().getAnalyzeDir(), className);
             outputDir.mkdirs();
             File outputFile = new File(outputDir, methodName + RemoteMethodInfo.INFO_FILE_EXTENSION);
-            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)))) {
+            try (PrintWriter pw = new PrintWriter(
+                                    new BufferedWriter(
+                                      new OutputStreamWriter(
+                                        new FileOutputStream(outputFile), Settings.encodingCharset)))) {
               info.write(pw);
             }
             if (getProcessor().isDebugLogging()) {

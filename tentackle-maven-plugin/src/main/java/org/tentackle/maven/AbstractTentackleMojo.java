@@ -30,7 +30,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.wurbelizer.misc.Settings;
+import org.tentackle.buildsupport.Settings;
 import org.wurbelizer.misc.Verbosity;
 
 
@@ -87,7 +87,8 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   protected void determineEncoding() {
     if (charset != null) {
-      Settings.encodingCharset = Charset.forName(charset);
+      Settings.encodingCharset =
+      org.wurbelizer.misc.Settings.encodingCharset = Charset.forName(charset);
     }
   }
 
