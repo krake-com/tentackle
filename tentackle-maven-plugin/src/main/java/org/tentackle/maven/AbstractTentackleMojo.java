@@ -21,6 +21,7 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.maven.model.Resource;
@@ -29,6 +30,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
+import org.wurbelizer.misc.Settings;
 import org.wurbelizer.misc.Verbosity;
 
 
@@ -62,6 +64,12 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Parameter(defaultValue = "${tentackle.verbosity}")
   protected String verbosity;
 
+  /**
+   * The encode used to read and write files.
+   */
+  @Parameter(defaultValue = "${project.build.sourceEncoding}")
+  protected String charset;   // don't use the name "encoding" as this is handled by maven
+
 
   /**
    * mapped verbosity level.
@@ -73,6 +81,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   protected List<String> resourceDirs;
 
+
+  /**
+   * Determines the encode charset.
+   */
+  protected void determineEncoding() {
+    if (charset != null) {
+      Settings.encodingCharset = Charset.forName(charset);
+    }
+  }
 
 
   /**
@@ -185,6 +202,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @throws MojoExecutionException if validation failed
    */
   protected void validate() throws MojoExecutionException {
+    determineEncoding();
     determineVerbosity();
     if (mavenProject == null) {
       throw new MojoExecutionException("missing project");

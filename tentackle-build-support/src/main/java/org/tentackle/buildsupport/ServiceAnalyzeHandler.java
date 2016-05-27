@@ -149,7 +149,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
                   println(servicingClassName);
           processor.getResourceManager(processor.getAnalyzeDir()).getWriter(servicingClassName.replace('.', '/') +
                   "/service.log").
-                  println(servicingClassName);
+                  println(servicedClassName);
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(

@@ -58,7 +58,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   protected boolean showCompileOutput;
 
   /**
-   * Source file encoding.
+   * Source file encode.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
   protected String encoding;

@@ -138,7 +138,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   println(configuration);
           processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
                   servicingClassName.replace('.', '/') + "/service.log").
-                  println(configuration);
+                  println(annoName + ": " + configuration);
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(

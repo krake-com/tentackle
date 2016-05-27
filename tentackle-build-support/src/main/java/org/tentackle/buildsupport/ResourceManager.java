@@ -22,9 +22,11 @@ package org.tentackle.buildsupport;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.HashMap;
@@ -68,14 +70,19 @@ public class ResourceManager {
 
     private PrintWriter getWriter() throws IOException {
       if (writer == null) {
-        writer = new PrintWriter(new BufferedWriter(new FileWriter(getFile())));
+        writer = new PrintWriter(
+                    new BufferedWriter(
+                      new OutputStreamWriter(
+                        new FileOutputStream(getFile()), Settings.encodingCharset)));
       }
       return writer;
     }
 
     private Reader getReader() throws IOException {
       if (reader == null) {
-        reader = new BufferedReader(new FileReader(getFile()));
+        reader = new BufferedReader(
+                  new InputStreamReader(
+                    new FileInputStream(getFile()), Settings.encodingCharset));
       }
       return reader;
     }
