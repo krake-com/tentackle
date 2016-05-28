@@ -37,6 +37,15 @@ import org.wurbelizer.wurbel.WurbelException;
 public class TentackleWurbletsModel extends ModelImpl {
 
   /**
+   * Creates a model.
+   */
+  public TentackleWurbletsModel() {
+    // use the charset from the wurbelizer plugin
+    org.tentackle.buildsupport.Settings.encodingCharset = org.wurbelizer.misc.Settings.encodingCharset;
+  }
+
+
+  /**
    * Exception from loading the whole model.
    */
   private WurbelException loadingException;

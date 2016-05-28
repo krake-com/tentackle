@@ -20,8 +20,9 @@ package org.tentackle.maven.sql;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.tentackle.buildsupport.Settings;
 import org.tentackle.model.migrate.ColumnMigration;
 
 /**
@@ -384,7 +386,9 @@ public class MigrationHints {
             if (filter == null || filter.test(hintFile)) {
               logger.debug("loading migration hints from " + hintFile);
               StringBuilder buf = new StringBuilder();
-              try (BufferedReader reader = new BufferedReader(new FileReader(hintFile))) {
+              try (BufferedReader reader = new BufferedReader(
+                                             new InputStreamReader(
+                                               new FileInputStream(hintFile), Settings.encodingCharset))) {
                 char[] readBuf = new char[1024];
                 int len;
                 while ((len = reader.read(readBuf)) != -1) {

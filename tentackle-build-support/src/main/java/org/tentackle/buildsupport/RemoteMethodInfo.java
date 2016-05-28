@@ -20,8 +20,9 @@
 package org.tentackle.buildsupport;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -89,7 +90,9 @@ public class RemoteMethodInfo {
    */
   public static RemoteMethodInfo readInfo(File infoFile) throws IOException {
     RemoteMethodInfo info;
-    try (LineNumberReader reader = new LineNumberReader(new FileReader(infoFile))) {
+    try (LineNumberReader reader = new LineNumberReader(
+                                     new InputStreamReader(
+                                       new FileInputStream(infoFile), Settings.encodingCharset))) {
       info = readInfo(reader);
     }
     return info;

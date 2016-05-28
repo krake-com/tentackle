@@ -19,16 +19,16 @@
 
 package org.tentackle.maven.sql;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -50,6 +50,7 @@ import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.BackendInfo;
+import org.wurbelizer.misc.Settings;
 
 
 /**
@@ -221,7 +222,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       sqlDirName = getCanonicalPath(dir);
       dir.mkdirs();
       // create the SQL output file
-      sqlWriter = new BufferedWriter(new FileWriter(sqlFile, false));  // re-create if exists
+      sqlWriter = Files.newBufferedWriter(sqlFile.toPath(), Settings.encodingCharset,
+                                          StandardOpenOption.CREATE,
+                                          StandardOpenOption.TRUNCATE_EXISTING);
     }
     catch (IOException iox) {
       throw new MojoExecutionException("cannot create sql file " + sqlFile.getAbsolutePath(), iox);

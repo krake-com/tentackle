@@ -20,9 +20,9 @@ package org.tentackle.model.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import org.tentackle.buildsupport.Settings;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
@@ -246,7 +247,8 @@ public class ModelImpl implements Model {
    * @return the entity
    * @throws ModelException if no such mapfile or parsing error
    */
-  protected synchronized Entity loadByFileName(ModelDefaults defaults, String fileName, boolean updateRelations) throws ModelException {
+  protected synchronized Entity loadByFileName(ModelDefaults defaults, String fileName, boolean updateRelations)
+            throws ModelException {
 
     ModelEntity modelEntity = mapByFileName.get(fileName);
 
@@ -262,7 +264,7 @@ public class ModelImpl implements Model {
       // load from file
       StringBuilder modelSource = new StringBuilder();
 
-      try (BufferedReader reader = new BufferedReader(createFileReader(fileName))) {
+      try (Reader reader = createFileReader(fileName)) {
         char[] buf = new char[1024];
         int len;
         while ((len = reader.read(buf)) != -1)  {
@@ -1054,9 +1056,9 @@ public class ModelImpl implements Model {
    */
   protected Reader createFileReader(String fileName) throws ModelException {
     try {
-      return new FileReader(fileName);
+      return new BufferedReader(new InputStreamReader(new FileInputStream(fileName), Settings.encodingCharset));
     }
-    catch (FileNotFoundException ex) {
+    catch (IOException ex) {
       throw new ModelException("cannot open reader for " + fileName, ex);
     }
   }
