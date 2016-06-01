@@ -14,7 +14,7 @@ For more options, see {\@link DbModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException, ModelException {
-    
+
     // main class
     String mainClass = getClassName();
     String pdoClass = null;
@@ -688,24 +688,21 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   \@Override
-  protected void updateImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void insertImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void deleteImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
     st.setLong(1, getId());
     st.setLong(2, getSerial());
