@@ -120,7 +120,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             }
           }
           catch (IOException iox) {
-            throw new MojoExecutionException("cannot write to sql file " + sqlFile.getAbsolutePath(), iox);
+            throw new MojoExecutionException("cannot write table definitions to sql file " + sqlFile.getAbsolutePath(), iox);
           }
           catch (ModelException wex) {
             getLog().error("parsing model failed for " + filename, wex);
@@ -140,7 +140,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       }
     }
     catch (IOException iox) {
-      throw new MojoExecutionException("cannot close sql file " + sqlFile.getAbsolutePath(), iox);
+      throw new MojoExecutionException("cannot write constraints to sql file " + sqlFile.getAbsolutePath(), iox);
     }
 
     getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
