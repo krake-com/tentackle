@@ -31,6 +31,7 @@ import org.tentackle.model.ModelException;
 public class ModelEntity {
 
   private final Entity entity;      // the entity
+  private final String fileName;    // the filename
   private final File file;          // its source file
   private final long lastModified;  // the last modification time
 
@@ -44,6 +45,7 @@ public class ModelEntity {
    */
   public ModelEntity(Entity entity, String fileName) throws ModelException {
     this.entity = entity;
+    this.fileName = fileName;
     file = new File(fileName);
     if (!file.exists()) {
       throw new ModelException(fileName + " does not exist");
@@ -61,6 +63,15 @@ public class ModelEntity {
    */
   public Entity getEntity() {
     return entity;
+  }
+
+  /**
+   * Gets the filename.
+   *
+   * @return the filename
+   */
+  public String getFileName() {
+    return fileName;
   }
 
   /**

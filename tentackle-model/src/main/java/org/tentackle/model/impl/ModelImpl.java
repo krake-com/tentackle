@@ -285,26 +285,8 @@ public class ModelImpl implements Model {
         throw new ModelException(msg, mex);
       }
 
-      if (mapSchemas) {
-        String tableName = modelEntity.getEntity().getTableName();
-        if (tableName != null) {
-          ((EntityImpl) modelEntity.getEntity()).setTableName(tableName.replace('.', '_'));
-        }
-      }
+      addModelEntity(modelEntity);
 
-      // append to maps
-      mapByFileName.put(fileName, modelEntity);    // must be new...
-      ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
-      if (modelEntity.getEntity().getClassId() != 0) {
-        if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {
-          throw new ModelException("duplicate entity " + modelEntity.getEntity().getName() + " in file " + fileName, modelEntity.getEntity());
-        }
-        oldModelEntity = mapByClassId.put(modelEntity.getEntity().getClassId(), modelEntity);
-        if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
-          throw new ModelException("duplicate entity id " + modelEntity.getEntity().getClassId() + " for " + modelEntity.getEntity().getName() +
-                                   ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
-        }
-      }
       foreignKeys = null;
 
       if (updateRelations) {
@@ -313,6 +295,37 @@ public class ModelImpl implements Model {
     }
 
     return modelEntity.getEntity();
+  }
+
+
+  /**
+   * Adds an entity to the model.
+   *
+   * @param modelEntity the model entity
+   */
+  protected void addModelEntity(ModelEntity modelEntity) throws ModelException {
+    if (mapSchemas) {
+      String tableName = modelEntity.getEntity().getTableName();
+      if (tableName != null) {
+        ((EntityImpl) modelEntity.getEntity()).setTableName(tableName.replace('.', '_'));
+      }
+    }
+
+    String fileName = modelEntity.getFileName();
+
+    // append to maps
+    mapByFileName.put(fileName, modelEntity);    // must be new...
+    ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
+    if (modelEntity.getEntity().getClassId() != 0) {
+      if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {
+        throw new ModelException("duplicate entity " + modelEntity.getEntity().getName() + " in file " + fileName, modelEntity.getEntity());
+      }
+      oldModelEntity = mapByClassId.put(modelEntity.getEntity().getClassId(), modelEntity);
+      if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
+        throw new ModelException("duplicate entity id " + modelEntity.getEntity().getClassId() + " for " + modelEntity.getEntity().getName() +
+                                 ", already assigned to " + oldModelEntity.getEntity().getName(), modelEntity.getEntity());
+      }
+    }
   }
 
 
