@@ -887,6 +887,20 @@ public abstract class AbstractBackend implements Backend {
               replace(Backend.SQL_WHEREALL, "");
   }
 
+  @Override
+  public String buildSelectSql(String sql, boolean writeLock, int limit, int offset) {
+    StringBuilder buf = new StringBuilder(sql);
+    buildSelectSql(buf, writeLock, limit, offset);
+    return buf.toString();
+  }
+
+  @Override
+  public String sqlJoinSelects(JoinType type, boolean addColumns, String select, String joinSelect, String joinSelectIdAlias, String joinAlias, String join) {
+    StringBuilder buf = new StringBuilder(select);
+    sqlJoinSelects(type, addColumns, buf, joinSelect, joinSelectIdAlias, joinAlias, join);
+    return buf.toString();
+  }
+
 
   /**
    * Checks if the exception's state starts with a given string.

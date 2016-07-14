@@ -269,6 +269,21 @@ public interface Backend {
    */
   void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset);
 
+  /**
+   * Creates a select statement string from an inner sql string.
+   * <p>
+   * {@code sqlBuilder} is anything as {@code FROM... WHERE... ORDER BY...}.<br>
+   * It is decorated with a leading {@code SELECT} plus optional clauses
+   * like for the given parameters.
+   *
+   * @param sql the sql without leading {@code SELECT}.
+   * @param writeLock true select should write lock
+   * @param limit the limit value, &le; 0 if no limit clause
+   * @param offset the offset value, &le; 0 if no offset clause
+   * @return the select statement
+   */
+  String buildSelectSql(String sql, boolean writeLock, int limit, int offset);
+
 
   /**
    * Sets optional parameters before applying the original parameters.
@@ -819,7 +834,7 @@ public interface Backend {
    *
    * @param type the join type
    * @param addColumns true if columns of joined table should be added to the result set
-   * @param select the original select
+   * @param select the original select statement
    * @param joinSelect the select to join with the original sql or just a tablename
    * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
    * @param joinAlias the alias of the joined select
@@ -827,6 +842,21 @@ public interface Backend {
    */
   void sqlJoinSelects(JoinType type, boolean addColumns, StringBuilder select,
                       String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
+
+  /**
+   * Generate SQL code for joining a table to an existing select.
+   *
+   * @param type the join type
+   * @param addColumns true if columns of joined table should be added to the result set
+   * @param select the original select statement
+   * @param joinSelect the select to join with the original sql or just a tablename
+   * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
+   * @param joinAlias the alias of the joined select
+   * @param join the join clause
+   * @return the select statement
+   */
+  String sqlJoinSelects(JoinType type, boolean addColumns, String select,
+                        String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
 
   /**
    * Converts the JDBC data type integer to a tentackle backend SqlTypes.
