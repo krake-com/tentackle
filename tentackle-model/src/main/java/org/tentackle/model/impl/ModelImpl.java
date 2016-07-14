@@ -262,22 +262,8 @@ public class ModelImpl implements Model {
     if (modelEntity == null) {
 
       // load from file
-      StringBuilder modelSource = new StringBuilder();
-
-      try (Reader reader = createFileReader(fileName)) {
-        char[] buf = new char[1024];
-        int len;
-        while ((len = reader.read(buf)) != -1)  {
-          modelSource.append(buf, 0, len);
-        }
-      }
-      catch (IOException ex) {
-        throw new ModelException("reading model '" + fileName + "' failed", ex);
-      }
-
-      // parse the model source
       try {
-        Entity entity = getEntityFactory().createEntity(modelSource.toString(), defaults);
+        Entity entity = parseEntity(defaults, fileName);
         modelEntity = new ModelEntity(entity, fileName);
       }
       catch (ModelException mex) {
@@ -295,6 +281,30 @@ public class ModelImpl implements Model {
     }
 
     return modelEntity.getEntity();
+  }
+
+
+  /**
+   * Parses the given file and returns the created entity.
+   *
+   * @param defaults the model defaults, null if none
+   * @param fileName the name of the file holding the model
+   * @return the entity
+   * @throws ModelException if parsing failed
+   */
+  protected Entity parseEntity(ModelDefaults defaults, String fileName) throws ModelException {
+    StringBuilder modelSource = new StringBuilder();
+    try (Reader reader = createFileReader(fileName)) {
+      char[] buf = new char[1024];
+      int len;
+      while ((len = reader.read(buf)) != -1)  {
+        modelSource.append(buf, 0, len);
+      }
+    }
+    catch (IOException ex) {
+      throw new ModelException("reading model '" + fileName + "' failed", ex);
+    }
+    return getEntityFactory().createEntity(modelSource.toString(), defaults);
   }
 
 
