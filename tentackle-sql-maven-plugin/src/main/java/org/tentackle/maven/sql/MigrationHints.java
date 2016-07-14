@@ -363,84 +363,85 @@ public class MigrationHints {
    * @throws MojoExecutionException if failed
    */
   public void load(List<FileSet> filesets, Predicate<File> filter, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
-
-    for (FileSet fileset: filesets) {
-      FileSetManager fileSetManager = new FileSetManager(logger, verbose);
-      List<String> hintDirNames;
-      if (fileset.getDirectory() == null) {
-        hintDirNames = resourceDirs;  // try all resource directories
-        if (hintDirNames == null || hintDirNames.isEmpty()) {
-          throw new MojoExecutionException("no <directory> given in <fileset> of <migrationHints> and no resource directories found");
+    if (filesets != null) {
+      for (FileSet fileset: filesets) {
+        FileSetManager fileSetManager = new FileSetManager(logger, verbose);
+        List<String> hintDirNames;
+        if (fileset.getDirectory() == null) {
+          hintDirNames = resourceDirs;  // try all resource directories
+          if (hintDirNames == null || hintDirNames.isEmpty()) {
+            throw new MojoExecutionException("no <directory> given in <fileset> of <migrationHints> and no resource directories found");
+          }
         }
-      }
-      else  {
-        hintDirNames = new ArrayList<>();
-        hintDirNames.add(fileset.getDirectory());   // use given directory
-      }
-      for (String propertiesDirName: hintDirNames) {
-        fileset.setDirectory(propertiesDirName);
-        String[] fileNames = fileSetManager.getIncludedFiles(fileset);
-        if (fileNames.length > 0) {
-          for (String filename : fileNames) {
-            File hintFile = new File(new File(propertiesDirName), filename);
-            if (filter == null || filter.test(hintFile)) {
-              logger.debug("loading migration hints from " + hintFile);
-              StringBuilder buf = new StringBuilder();
-              try (BufferedReader reader = new BufferedReader(
-                                             new InputStreamReader(
-                                               new FileInputStream(hintFile), Settings.encodingCharset))) {
-                char[] readBuf = new char[1024];
-                int len;
-                while ((len = reader.read(readBuf)) != -1) {
-                  buf.append(readBuf, 0, len);
+        else  {
+          hintDirNames = new ArrayList<>();
+          hintDirNames.add(fileset.getDirectory());   // use given directory
+        }
+        for (String propertiesDirName: hintDirNames) {
+          fileset.setDirectory(propertiesDirName);
+          String[] fileNames = fileSetManager.getIncludedFiles(fileset);
+          if (fileNames.length > 0) {
+            for (String filename : fileNames) {
+              File hintFile = new File(new File(propertiesDirName), filename);
+              if (filter == null || filter.test(hintFile)) {
+                logger.debug("loading migration hints from " + hintFile);
+                StringBuilder buf = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(
+                                               new InputStreamReader(
+                                                 new FileInputStream(hintFile), Settings.encodingCharset))) {
+                  char[] readBuf = new char[1024];
+                  int len;
+                  while ((len = reader.read(readBuf)) != -1) {
+                    buf.append(readBuf, 0, len);
+                  }
                 }
-              }
-              catch (IOException ex) {
-                throw new MojoExecutionException("reading migration hints from '" + hintFile + "' failed", ex);
-              }
+                catch (IOException ex) {
+                  throw new MojoExecutionException("reading migration hints from '" + hintFile + "' failed", ex);
+                }
 
-              String delims = "\n\r";
-              StringTokenizer lineTokenizer = new StringTokenizer(buf.toString(), delims, true);
-              int lineNumber = 1;
-              Section section = null;       // current section
-              try {
-                while (lineTokenizer.hasMoreTokens()) {
-                  String line = lineTokenizer.nextToken();
-                  if (line.length() == 1) {
-                    if (delims.contains(line)) {
-                      // delimiter
-                      if (line.equals("\n")) {
-                        lineNumber++;
+                String delims = "\n\r";
+                StringTokenizer lineTokenizer = new StringTokenizer(buf.toString(), delims, true);
+                int lineNumber = 1;
+                Section section = null;       // current section
+                try {
+                  while (lineTokenizer.hasMoreTokens()) {
+                    String line = lineTokenizer.nextToken();
+                    if (line.length() == 1) {
+                      if (delims.contains(line)) {
+                        // delimiter
+                        if (line.equals("\n")) {
+                          lineNumber++;
+                        }
+                        continue;
                       }
-                      continue;
+                    }
+                    Section newSection = nextSection(line);
+                    if (newSection != null) {
+                      if (section != null) {
+                        section.finish();
+                      }
+                      section = newSection;
+                    }
+                    else if (section != null) {
+                      section.text.append('\n');
+                      section.text.append(line);
                     }
                   }
-                  Section newSection = nextSection(line);
-                  if (newSection != null) {
-                    if (section != null) {
-                      section.finish();
-                    }
-                    section = newSection;
-                  }
-                  else if (section != null) {
-                    section.text.append('\n');
-                    section.text.append(line);
+                  if (section != null) {
+                    section.finish();
                   }
                 }
-                if (section != null) {
-                  section.finish();
+                catch (MojoExecutionException mox) {
+                  String msg = mox.getMessage() + " in " + hintFile + ", line " + lineNumber;
+                  if (mox.getCause() != null) {
+                    throw new MojoExecutionException(msg);
+                  }
+                  throw new MojoExecutionException(msg, mox.getCause());
                 }
               }
-              catch (MojoExecutionException mox) {
-                String msg = mox.getMessage() + " in " + hintFile + ", line " + lineNumber;
-                if (mox.getCause() != null) {
-                  throw new MojoExecutionException(msg);
-                }
-                throw new MojoExecutionException(msg, mox.getCause());
+              else {
+                logger.debug(hintFile + " skipped");
               }
-            }
-            else {
-              logger.debug(hintFile + " skipped");
             }
           }
         }
