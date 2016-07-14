@@ -287,7 +287,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
                ") VALUES ('" +
                trackedName +
                "',(SELECT MAX(" + CN_ID + ")+1 FROM " + TABLENAME + ")," +
-               (tableSerialTableName != null ? ("(SELECT " + getSession().getBackend().getCoalesceKeyword() +
+               (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
                "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1" ) +
                ")"
               )
@@ -300,7 +300,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
                "INSERT INTO " + TABLENAME + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
                CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
                TABLENAME + ") AS x), " + CN_SERIAL + "=" +
-               (tableSerialTableName != null ? ("(SELECT " + getSession().getBackend().getCoalesceKeyword() +
+               (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
                "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1" )
               )
 

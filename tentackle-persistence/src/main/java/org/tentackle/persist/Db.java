@@ -971,31 +971,31 @@ public class Db implements Session, Cloneable {
 
         // get connection to RMI-server
         if (csf != null) {
-            String rmiUrl = backendInfo.getUrl();
-            URI uri = new URI(rmiUrl);
-            String host = uri.getHost();
-            int port = uri.getPort();
-            String path = uri.getPath();
-            if (path.startsWith("/")) {
-              path = path.substring(1);
-            }
-            LOGGER.info("connecting to {0}:{1}/{2} using {3}", host, port, path, csf);
-            Registry registry = LocateRegistry.getRegistry(host, port, csf);
-            try {
-              rcon = (RemoteDbConnection) registry.lookup(path);
-            }
-            catch (NotBoundException nx) {
-              StringBuilder buf = new StringBuilder();
-              buf.append("bound services =");
-              String[] services = registry.list();
-              if (services != null) {
-                for (String service: services) {
-                  buf.append(" '").append(service).append("'");
-                }
+          String rmiUrl = backendInfo.getUrl();
+          URI uri = new URI(rmiUrl);
+          String host = uri.getHost();
+          int port = uri.getPort();
+          String path = uri.getPath();
+          if (path.startsWith("/")) {
+            path = path.substring(1);
+          }
+          LOGGER.info("connecting to {0}:{1}/{2} using {3}", host, port, path, csf);
+          Registry registry = LocateRegistry.getRegistry(host, port, csf);
+          try {
+            rcon = (RemoteDbConnection) registry.lookup(path);
+          }
+          catch (NotBoundException nx) {
+            StringBuilder buf = new StringBuilder();
+            buf.append("bound services =");
+            String[] services = registry.list();
+            if (services != null) {
+              for (String service : services) {
+                buf.append(" '").append(service).append("'");
               }
-              LOGGER.warning(buf.toString());
-              throw nx;
             }
+            LOGGER.warning(buf.toString());
+            throw nx;
+          }
         }
         else {
           rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());
