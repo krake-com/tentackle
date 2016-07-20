@@ -127,4 +127,18 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
     this.visible = visible;
   }
 
+
+  /**
+   * Creates the optional totals from the search results.<br>
+   * By default, all numeric columns are candidates for being summed up.
+   * If a primitive numeric column must not be shown in the totals view, its column configurator
+   * must return isSummable() = false.
+   *
+   * @param items the items to create the totals from
+   * @return the totals (usually one item), null or empty if no totals (default)
+   */
+  public ObservableList<T> createTotals(ObservableList<T> items) {
+    return null;
+  }
+
 }

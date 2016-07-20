@@ -22,9 +22,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TableView;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.table.TableConfiguration;
@@ -54,7 +54,7 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
   public PdoObservableListTranslator(FxComponent component) {
     super(component);
 
-    if (component instanceof TableView) {
+    if (component instanceof FxTableView) {
       Type genType = component.getGenericType();
       if (genType instanceof ParameterizedType) {
         Type[] typeArguments = ((ParameterizedType) genType).getActualTypeArguments();
@@ -71,7 +71,7 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
             else if (config.getBindingType() == TableConfiguration.BINDING.INHERITED) {
               config.getBinder().bindAllInherited();
             }
-            config.configure((TableView<T>) component);
+            config.configure((FxTableView<T>) component);
           }
         }
       }

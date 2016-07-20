@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -219,7 +218,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void savePreferences(TableView<S> table, String suffix, boolean system) {
+  public void savePreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
     prefName.append(name);
@@ -247,7 +246,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       }
 
       // store also the dimensions of the table
-      prefs.putDouble(PREF_TABLE_HEIGHT, table.getHeight());
+      double height = table.getHeight();
+      if (table.getTotalsTableView() != null) {
+        // add the height of the totals table
+        height += table.getTotalsTableView().getHeight();
+      }
+      prefs.putDouble(PREF_TABLE_HEIGHT, height);
       prefs.putDouble(PREF_TABLE_WIDTH, table.getWidth());
 
       prefs.flush();
@@ -258,7 +262,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void loadPreferences(TableView<S> table, String suffix, boolean system, boolean noViewSize) {
+  public void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize) {
 
     StringBuilder prefName = new StringBuilder();
     prefName.append(name);
@@ -343,7 +347,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void toSpreadsheet(TableView<S> table, File file, boolean onlySelected) {
+  public void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected) {
     HSSFWorkbook wb = new HSSFWorkbook();
     HSSFSheet sheet = wb.createSheet();
 
@@ -454,7 +458,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void toXml(TableView<S> table, File file, boolean onlySelected) {
+  public void toXml(FxTableView<S> table, File file, boolean onlySelected) {
 
     try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
 
@@ -503,13 +507,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
 
   @Override
-  public void configure(TableView<S> table) {
+  public void configure(FxTableView<S> table) {
     table.getColumns().clear();
     for (TableColumnConfiguration<S,?> config: columnConfigurations) {
       table.getColumns().add(config.getTableColumn());
     }
     if (table instanceof FxTableView) {
-      ((FxTableView<S>) table).setConfiguration(this);
+      table.setConfiguration(this);
     }
   }
 

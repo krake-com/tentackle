@@ -33,17 +33,26 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TotalsTableView;
 
 /**
  * Extended TableView.
  *
  * @author harald
- * @param <S> the type
+ * @param <S> the row type
  */
 public class FxTableView<S> extends TableView<S> implements FxComponent {
 
-
+  /**
+   * The configuration.<br>
+   * Optional but recommended.
+   */
   private TableConfiguration<S> configuration;
+
+  /**
+   * The optional totals table.
+   */
+  private TotalsTableView<S> totalsTableView;
 
   /**
    * Creates a default TableView control with no content.
@@ -72,6 +81,26 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   public void setConfiguration(TableConfiguration<S> configuration) {
     this.configuration = configuration;
   }
+
+
+  /**
+   * Gets the totals table.
+   *
+   * @return null if no totals (default)
+   */
+  public TotalsTableView<S> getTotalsTableView() {
+    return totalsTableView;
+  }
+
+  /**
+   * Sets the totals table.
+   *
+   * @param totalsTableView null to clear
+   */
+  public void setTotalsTableView(TotalsTableView<S> totalsTableView) {
+    this.totalsTableView = totalsTableView;
+  }
+
 
   /**
    * Saves the column sizes, visability, view size and sorting to the preferences.

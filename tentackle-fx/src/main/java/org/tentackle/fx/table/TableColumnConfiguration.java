@@ -215,11 +215,25 @@ public interface TableColumnConfiguration<S,T> {
   void setCaseConversion(Boolean caseConversion);
 
   /**
-   * Determines whether the given column is summable.<br>
+   * Determines whether the column is summable.<br>
    *
-   * @return false if column is definitely NOT numeric, else we dont know
+   * @return true if column is summable
    */
   boolean isSummable();
+
+  /**
+   * Sets whether the column is summable.
+   *
+   * @param summable {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL if numeric type
+   */
+  void setSummable(Boolean summable);
+
+  /**
+   * Returns whether the column is summable.
+   *
+   * @return {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL if numeric type
+   */
+  Boolean getSummable();
 
   /**
    * Gets the binding for this column.

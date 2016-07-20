@@ -31,7 +31,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.stage.FileChooser;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
@@ -69,7 +68,7 @@ public class TablePopup<S> {
   private static final String XML_KEY = "path";
 
 
-  private final TableView<S> table;             // the table
+  private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
   private final boolean noViewSize;             // true if don't set the table view's size
   private String title;                         // title of table (null = title from window)
@@ -85,7 +84,7 @@ public class TablePopup<S> {
    * @param preferencesSuffix the preferences suffix to load/save table preferences
    * @param noViewSize true if don't set the table view's size
    */
-  public TablePopup(TableView<S> table, String preferencesSuffix, boolean noViewSize) {
+  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize) {
     this.table = table;
     this.preferencesSuffix = preferencesSuffix;
     this.noViewSize = noViewSize;
@@ -101,7 +100,7 @@ public class TablePopup<S> {
    * Gets the table.
    * @return the table
    */
-  public TableView<S> getTable() {
+  public FxTableView<S> getTable() {
     return table;
   }
 
@@ -313,9 +312,8 @@ public class TablePopup<S> {
    */
   public void toSpreadsheet(boolean onlySelected) {
     try {
-      FxTableView<S> fxTable = (FxTableView<S>) table;
       // Pfadname fuer diese Tabelle merken (immer in den userPrefs und immer abseits der normalen prefs)
-      String prefName = StringHelper.trimRight(LAST_EXCEL_PREFIX + fxTable.getConfiguration().getName(), '/');
+      String prefName = StringHelper.trimRight(LAST_EXCEL_PREFIX + table.getConfiguration().getName(), '/');
       PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
       String lastName = prefs.get(EXCEL_KEY, null);
 
@@ -331,7 +329,7 @@ public class TablePopup<S> {
         if (!selectedFile.getName().toLowerCase().endsWith(EXCEL_EXTENSION))  {
           selectedFile = new File(selectedFile.getPath() + EXCEL_EXTENSION);
         }
-        fxTable.toSpreadsheet(selectedFile, onlySelected);
+        table.toSpreadsheet(selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(EXCEL_KEY, selectedFile.getAbsolutePath());
           prefs.flush();
@@ -374,9 +372,8 @@ public class TablePopup<S> {
    */
   public void toXml(boolean onlySelected) {
     try {
-      FxTableView<S> fxTable = (FxTableView<S>) table;
       // Pfadname fuer diese Tabelle merken (immer in den userPrefs und immer abseits der normalen prefs)
-      String prefName = StringHelper.trimRight(LAST_XML_PREFIX + fxTable.getConfiguration().getName(), '/');
+      String prefName = StringHelper.trimRight(LAST_XML_PREFIX + table.getConfiguration().getName(), '/');
       PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
       String lastName = prefs.get(XML_KEY, null);
 
@@ -392,7 +389,7 @@ public class TablePopup<S> {
         if (!selectedFile.getName().toLowerCase().endsWith(XML_EXTENSION))  {
           selectedFile = new File(selectedFile.getPath() + XML_EXTENSION);
         }
-        fxTable.toXml(selectedFile, onlySelected);
+        table.toXml(selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(XML_KEY, selectedFile.getAbsolutePath());
           prefs.flush();
@@ -434,7 +431,7 @@ public class TablePopup<S> {
    */
   public void savePreferences(boolean system) {
     try {
-      ((FxTableView<S>) table).savePreferences(preferencesSuffix, system);
+      table.savePreferences(preferencesSuffix, system);
     }
     catch (RuntimeException ex) {
       LOGGER.severe("saving table preferences failed", ex);
@@ -449,7 +446,7 @@ public class TablePopup<S> {
    */
   public void loadPreferences(boolean system) {
     try {
-      ((FxTableView<S>) table).loadPreferences(preferencesSuffix, system, noViewSize);
+      table.loadPreferences(preferencesSuffix, system, noViewSize);
     }
     catch (RuntimeException ex) {
       LOGGER.severe("loading table preferences failed", ex);

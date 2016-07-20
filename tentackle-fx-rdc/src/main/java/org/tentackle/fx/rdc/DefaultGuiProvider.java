@@ -22,6 +22,7 @@ import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -193,7 +194,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public TableView<T> createTableView() {
+  public FxTableView<T> createTableView() {
     TableConfiguration<T> config = createTableConfiguration();
     if (config.getBindingType() == TableConfiguration.BINDING.YES) {
       config.getBinder().bind();
@@ -202,7 +203,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
       config.getBinder().bindAllInherited();
     }
     @SuppressWarnings("unchecked")
-    TableView<T> tableView = Fx.createNode(TableView.class);
+    FxTableView<T> tableView = Fx.createNode(TableView.class);
     config.configure(tableView);
     return tableView;
   }

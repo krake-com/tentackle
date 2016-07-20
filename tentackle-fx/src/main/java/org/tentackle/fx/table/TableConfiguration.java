@@ -22,8 +22,8 @@ package org.tentackle.fx.table;
 import java.io.File;
 import java.util.List;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import org.tentackle.fx.bind.FxTableBinder;
+import org.tentackle.fx.component.FxTableView;
 
 /**
  * Configuration for a table view.<br>
@@ -112,7 +112,7 @@ public interface TableConfiguration<S> {
    * @param suffix the configuration suffix, null if none
    * @param system true if save to system prefs, else user prefs
    */
-  void savePreferences(TableView<S> table, String suffix, boolean system);
+  void savePreferences(FxTableView<S> table, String suffix, boolean system);
 
   /**
    * Loads the column sizes, visability, view size and sorting from the preferences.
@@ -122,7 +122,7 @@ public interface TableConfiguration<S> {
    * @param system true if load from system prefs only, else user prefs first
    * @param noViewSize true if don't set the table view's size
    */
-  void loadPreferences(TableView<S> table, String suffix, boolean system, boolean noViewSize);
+  void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize);
 
   /**
    * Converts the table to a spreadsheet file.
@@ -131,7 +131,7 @@ public interface TableConfiguration<S> {
    * @param file the output file
    * @param onlySelected true if export only selected rows
    */
-  void toSpreadsheet(TableView<S> table, File file, boolean onlySelected);
+  void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected);
 
   /**
    * Exports a table to an XML file.
@@ -140,7 +140,7 @@ public interface TableConfiguration<S> {
    * @param file the output file
    * @param onlySelected true if export only selected rows
    */
-  void toXml(TableView<S> table, File file, boolean onlySelected);
+  void toXml(FxTableView<S> table, File file, boolean onlySelected);
 
   /**
    * Gets the type of binding.
@@ -161,7 +161,7 @@ public interface TableConfiguration<S> {
    *
    * @param table the table view
    */
-  void configure(TableView<S> table);
+  void configure(FxTableView<S> table);
 
   /**
    * Gets the cell type according to the item type.

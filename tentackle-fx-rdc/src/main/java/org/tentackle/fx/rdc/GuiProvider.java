@@ -22,13 +22,13 @@ package org.tentackle.fx.rdc;
 import java.util.Collection;
 import java.util.ResourceBundle;
 import javafx.scene.Node;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoHolder;
@@ -227,6 +227,6 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
    *
    * @return the view
    */
-  TableView<T> createTableView();
+  FxTableView<T> createTableView();
 
 }
