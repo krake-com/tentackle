@@ -362,7 +362,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
   /**
    * Sets the totals.<br>
-   * Shows the results from {@link PdoFinder#createTotals) or hides the totals if none.
+   * Shows the results from {@link PdoFinder#createTotals} or hides the totals if none.
    *
    * @see TotalsTableView
    * @param totals the totals (usually one item), null or empty if none
