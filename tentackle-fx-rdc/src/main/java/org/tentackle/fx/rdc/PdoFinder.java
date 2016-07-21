@@ -24,6 +24,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoHolder;
@@ -139,6 +140,16 @@ public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends Abs
    */
   public ObservableList<T> createTotals(ObservableList<T> items) {
     return null;
+  }
+
+  /**
+   * Creates the totals table view.<br>
+   * Will be invoked only if {@link #createTotals} returned a non-empty list.
+   *
+   * @return the totals table view
+   */
+  public TotalsTableView<T> createTotalsTableView() {
+    return new TotalsTableView<>();
   }
 
 }

@@ -367,10 +367,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * @see TotalsTableView
    * @param totals the totals (usually one item), null or empty if none
    */
-  public void setTotalsItems(ObservableList<T> totals) {
+  public void setTotals(ObservableList<T> totals) {
     if (totals != null && !totals.isEmpty()) {
       if (totalsView == null) {
-        totalsView = new TotalsTableView<>();
+        totalsView = finder.createTotalsTableView();
       }
       totalsView.setBoundTable(tableView);
       totalsView.setItems(totals);
@@ -481,12 +481,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     itemsListener = null;   // to GC -> will remove WeakInvalidationListener eventually
     if (!this.items.isEmpty()) {
       // show totals only if result is not empty
-      itemsListener = (o) -> setTotalsItems(finder.createTotals(this.items));
+      itemsListener = (o) -> setTotals(finder.createTotals(this.items));
       this.items.addListener(new WeakInvalidationListener(itemsListener));
       itemsListener.invalidated(this.items);    // show totals first time, if any totals at all
     }
     else {
-      setTotalsItems(null);
+      setTotals(null);
     }
   }
 

@@ -70,16 +70,6 @@ public class TotalsTableView<S> extends FxTableView<S> {
     enableCopyToClipboard();
   }
 
-  /**
-   * Creates a bound totals table.
-   *
-   * @param boundTable the original table bound to this totals table
-   */
-  public TotalsTableView(FxTableView<S> boundTable) {
-    this();
-    setBoundTable(boundTable);
-  }
-
 
   /**
    * Sets the bound table.<br>
@@ -145,19 +135,9 @@ public class TotalsTableView<S> extends FxTableView<S> {
   @SuppressWarnings("unchecked")
   protected void bind() {
     if (boundTable != null) {
+      int index = 0;
       for (TableColumn<S,?> boundColumn: boundTable.getColumns()) {
-        // create copy of original column
-        TableColumn totalsColumn = new TableColumn();
-        if (isSummable(boundColumn)) {
-          totalsColumn.setCellValueFactory(boundColumn.getCellValueFactory());
-          totalsColumn.setCellFactory(boundColumn.getCellFactory());
-        }
-        // sync column widths
-        totalsColumn.prefWidthProperty().bind(boundColumn.widthProperty());
-        // sync visibility
-        totalsColumn.visibleProperty().bind(boundColumn.visibleProperty());
-
-        getColumns().add(totalsColumn);
+        getColumns().add(createTotalsColumn(boundColumn, index++));
       }
       boundTable.getColumns().addListener(columnListener);
       boundTable.setTotalsTableView(this);
@@ -173,6 +153,27 @@ public class TotalsTableView<S> extends FxTableView<S> {
       boundTable.getColumns().removeListener(columnListener);
     }
     getColumns().clear();
+  }
+
+  /**
+   * Creates a totals column from the original bound column.
+   *
+   * @param boundColumn the original column
+   * @param index the index within the columns
+   * @return the totals column
+   */
+  @SuppressWarnings("unchecked")
+  protected TableColumn<S,?> createTotalsColumn(TableColumn<S,?> boundColumn, int index) {
+    TableColumn totalsColumn = new TableColumn<>();
+    if (isSummable(boundColumn)) {
+      totalsColumn.setCellValueFactory(boundColumn.getCellValueFactory());
+      totalsColumn.setCellFactory(boundColumn.getCellFactory());
+    }
+    // sync column widths
+    totalsColumn.prefWidthProperty().bind(boundColumn.widthProperty());
+    // sync visibility
+    totalsColumn.visibleProperty().bind(boundColumn.visibleProperty());
+    return totalsColumn;
   }
 
   /**
