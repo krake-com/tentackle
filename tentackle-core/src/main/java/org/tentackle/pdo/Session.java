@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import java.io.Serializable;
 import java.util.Collection;
 import org.tentackle.misc.TrackedList;
 
@@ -406,5 +407,28 @@ public interface Session extends Comparable<Session> {
    * @return the dispatcher
    */
   SessionTaskDispatcher getDispatcher();
+
+  /**
+   * Sets a session property.<br>
+   * Session properties are application specific.<br>
+   * For remote sessions, the properties are delegated to the corresponding
+   * local session at the remote side. Thus, session properties can be used
+   * to share some application state between the client and the server.
+   *
+   * @param <T> the value's type
+   * @param key the property key
+   * @param value the property value
+   * @return the old value, null if key is new
+   */
+  <T extends Serializable> T setProperty(String key, T value);
+
+  /**
+   * Gets a session property.
+   *
+   * @param <T> the value's type
+   * @param key the property key
+   * @return the property value, null if no such property
+   */
+  <T extends Serializable> T getProperty(String key);
 
 }

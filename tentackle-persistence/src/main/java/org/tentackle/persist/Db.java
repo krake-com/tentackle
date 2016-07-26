@@ -22,6 +22,7 @@ package org.tentackle.persist;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -37,9 +38,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -331,6 +334,7 @@ public class Db implements Session, Cloneable {
   private boolean crashed;                                // true = db is closed because it is treated as crashed
   private volatile Thread ownerThread;                    // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
+  private Map<String,Serializable> applicationProperties; // application-specific properties
 
   // for RMI remote connections
   private RMIClientSocketFactory csf;                     // client socket factory, null if system default
@@ -900,6 +904,52 @@ public class Db implements Session, Cloneable {
       }
     }
     return false;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Serializable> T setProperty(String key, T value) {
+    if (isRemote()) {
+      try {
+        return rdel.setProperty(key, value);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    // else: local session
+    synchronized (this) {
+      return (T) getApplicationProperties().put(key, value);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Serializable> T getProperty(String key) {
+    if (isRemote()) {
+      try {
+        return rdel.getProperty(key);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    // else: local session
+    synchronized (this) {
+      return (T) getApplicationProperties().get(key);
+    }
+  }
+
+  /**
+   * Lazy getter for application properties.
+   *
+   * @return the properties, never null
+   */
+  private Map<String,Serializable> getApplicationProperties() {
+    if (applicationProperties == null) {
+      applicationProperties = new HashMap<>();
+    }
+    return applicationProperties;
   }
 
 

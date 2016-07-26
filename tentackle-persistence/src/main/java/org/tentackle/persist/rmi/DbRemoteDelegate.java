@@ -20,6 +20,7 @@
 
 package org.tentackle.persist.rmi;
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
@@ -88,5 +89,9 @@ public interface DbRemoteDelegate extends RemoteDelegate {
   PersistenceVisitor unregisterPersistenceVisitor(DbTransactionHandle handle) throws RemoteException;
 
   Collection<PersistenceVisitor> getPersistenceVisitors() throws RemoteException;
+
+  <T extends Serializable> T setProperty(String key, T value) throws RemoteException;
+
+  <T extends Serializable> T getProperty(String key) throws RemoteException;
 
 }

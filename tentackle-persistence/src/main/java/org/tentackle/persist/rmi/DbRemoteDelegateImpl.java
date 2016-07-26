@@ -20,6 +20,7 @@
 
 package org.tentackle.persist.rmi;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -316,6 +317,26 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   public Collection<RollbackTxRunnable> getRollbackTxRunnables() throws RemoteException {
     try {
       return getSession().getRollbackTxRunnables();
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public <T extends Serializable> T setProperty(String key, T value) throws RemoteException {
+    try {
+      return getSession().setProperty(key, value);
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public <T extends Serializable> T getProperty(String key) throws RemoteException {
+    try {
+      return getSession().getProperty(key);
     }
     catch (Exception ex)  {
       throw createException(ex);
