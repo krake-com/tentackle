@@ -3,6 +3,7 @@
 @{import java.io.*}@
 @{import org.wurbelizer.wurbel.*}@
 @{import org.wurbelizer.wurblet.*}@
+@{import org.wurbelizer.misc.*}@
 @{extends IncludeWurblet}@
 @{args}@
 @{comment
@@ -32,9 +33,13 @@ For more options, see {\@link AbstractWurblet}.
       while((numRead = reader.read(chars)) > -1) {
         outBuf.append(String.valueOf(chars, 0, numRead));
       }
-      out.print(translate ?
-                  WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET)) :
-                  outBuf);
+      if (translate) {
+        outBuf = WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET));
+      }
+      if (outBuf.indexOf(Constants.ORIGIN_INFO_LEAD) == 0) {
+        outBuf.insert(0, "// ");
+      }
+      out.print(outBuf);
     }
     catch (IOException ex) {
       throw new WurbelException("including " + filename + " failed", ex);
