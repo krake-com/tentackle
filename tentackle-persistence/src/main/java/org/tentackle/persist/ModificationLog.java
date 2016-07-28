@@ -653,6 +653,16 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
            modType == UPDATE;
   }
 
+  
+  /**
+   * Returns whether this modlog marks a transaction boundary.
+   *
+   * @return true if BEGIN or COMMIT
+   */
+  public boolean isTransactionBoundary() {
+    return modType == BEGIN || modType == COMMIT;
+  }
+
 
   /**
    * Returns whether this modlog belongs to a transaction.
