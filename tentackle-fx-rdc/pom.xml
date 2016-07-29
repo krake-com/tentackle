@@ -21,6 +21,10 @@
       <artifactId>tentackle-fx</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi</artifactId>
+    </dependency>
   </dependencies>
 
   <properties>

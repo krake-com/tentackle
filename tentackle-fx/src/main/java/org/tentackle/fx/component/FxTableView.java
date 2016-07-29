@@ -127,30 +127,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     }
   }
 
-  /**
-   * Converts the table to a spreadsheet file.
-   *
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  public void toSpreadsheet(File file, boolean onlySelected) {
-    if (configuration != null) {
-      configuration.toSpreadsheet(this, file, onlySelected);
-    }
-  }
-
-  /**
-   * Exports a table to an XML file.
-   *
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  public void toXml(File file, boolean onlySelected) {
-    if (configuration != null) {
-      configuration.toXml(this, file, onlySelected);
-    }
-  }
-
 
   /**
    * Sets the sortable property of all columns.

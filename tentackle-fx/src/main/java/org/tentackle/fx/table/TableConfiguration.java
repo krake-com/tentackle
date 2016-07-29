@@ -125,24 +125,6 @@ public interface TableConfiguration<S> {
   void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize);
 
   /**
-   * Converts the table to a spreadsheet file.
-   *
-   * @param table the table view
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected);
-
-  /**
-   * Exports a table to an XML file.
-   *
-   * @param table the table view
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  void toXml(FxTableView<S> table, File file, boolean onlySelected);
-
-  /**
    * Gets the type of binding.
    *
    * @return the binding type

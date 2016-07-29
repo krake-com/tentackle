@@ -27,7 +27,7 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.fx.table.TablePopup;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;

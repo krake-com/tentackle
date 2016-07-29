@@ -43,7 +43,7 @@ import org.tentackle.fx.container.FxTabPane;
 import org.tentackle.fx.container.FxVBox;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcRuntimeException;
-import org.tentackle.fx.table.TablePopup;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;

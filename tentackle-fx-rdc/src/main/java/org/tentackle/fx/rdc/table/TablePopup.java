@@ -19,7 +19,7 @@
 
 // Created on January 31, 2003, 11:30 AM
 
-package org.tentackle.fx.table;
+package org.tentackle.fx.rdc.table;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -312,7 +312,7 @@ public class TablePopup<S> {
    */
   public void toSpreadsheet(boolean onlySelected) {
     try {
-      // Pfadname fuer diese Tabelle merken (immer in den userPrefs und immer abseits der normalen prefs)
+      // remember the pathname
       String prefName = StringHelper.trimRight(LAST_EXCEL_PREFIX + table.getConfiguration().getName(), '/');
       PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
       String lastName = prefs.get(EXCEL_KEY, null);
@@ -329,7 +329,7 @@ public class TablePopup<S> {
         if (!selectedFile.getName().toLowerCase().endsWith(EXCEL_EXTENSION))  {
           selectedFile = new File(selectedFile.getPath() + EXCEL_EXTENSION);
         }
-        table.toSpreadsheet(selectedFile, onlySelected);
+        TableUtilities.getInstance().toSpreadsheet(table, selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(EXCEL_KEY, selectedFile.getAbsolutePath());
           prefs.flush();
@@ -389,7 +389,7 @@ public class TablePopup<S> {
         if (!selectedFile.getName().toLowerCase().endsWith(XML_EXTENSION))  {
           selectedFile = new File(selectedFile.getPath() + XML_EXTENSION);
         }
-        table.toXml(selectedFile, onlySelected);
+        TableUtilities.getInstance().toXml(table, selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(XML_KEY, selectedFile.getAbsolutePath());
           prefs.flush();
