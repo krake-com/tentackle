@@ -202,7 +202,7 @@ public class DefaultDbPool implements SessionPool {
   private int unusedCount;                  // number of unused Db instances
 
   private Thread timeoutThread;             // watching for timed out Db instances to close and for min pool size
-  private boolean shutdownRequested;        // true if shutdown procedure initiated
+  private volatile boolean shutdownRequested;  // true if shutdown procedure initiated
 
 
   /**
