@@ -60,10 +60,19 @@ public class FxTabPane extends TabPane implements FxContainer {
 
   private /**/FxTabPaneDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxTabPaneDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxTabPaneDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxTabPaneDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxTabPaneDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }

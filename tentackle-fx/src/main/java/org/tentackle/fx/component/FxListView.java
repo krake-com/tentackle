@@ -60,10 +60,19 @@ public class FxListView<T> extends ListView<T> implements FxComponent {
 
   private /**/FxListViewDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxListViewDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxListViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxListViewDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxListViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }

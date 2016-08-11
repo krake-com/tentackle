@@ -62,9 +62,10 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   private transient PdoCache<T> cache;    // the cache to backup
 
   // persisted data
-  private String applicationName;         // the application name (null if file-backup disabled, i.e. not a client application)
-  private String serverName;              // the name of the backend
+  private final String applicationName;   // the application name (null if file-backup disabled, i.e. not a client application)
+  private final String serverName;        // the name of the backend
   private final String fileName;          // the filename
+
   private long tableSerial;               // the serial version of the table
   private List<T> objects;                // the objects in the cache
 
@@ -85,6 +86,13 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       if (session != null && session.isRemote()) {
         serverName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
       }
+      else {
+        serverName = null;
+      }
+    }
+    else {
+      applicationName = null;
+      serverName = null;
     }
     fileName = StringHelper.toAsciiLetterOrDigit(cache.getObjectClass().getName()) + CACHE_FILE_EXTENSION;
   }

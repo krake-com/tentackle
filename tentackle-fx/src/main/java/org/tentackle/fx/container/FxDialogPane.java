@@ -50,10 +50,19 @@ public class FxDialogPane extends DialogPane implements FxContainer {
 
   private /**/FxDialogPaneDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxDialogPaneDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxDialogPaneDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxDialogPaneDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxDialogPaneDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }

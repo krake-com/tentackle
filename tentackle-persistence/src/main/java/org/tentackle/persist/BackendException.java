@@ -17,7 +17,10 @@
  */
 
 
-package org.tentackle.pdo;
+package org.tentackle.persist;
+
+import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.Session;
 
 
 /**

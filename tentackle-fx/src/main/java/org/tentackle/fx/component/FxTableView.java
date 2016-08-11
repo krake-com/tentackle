@@ -146,10 +146,19 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
   private /**/FxTableViewDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxTableViewDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxTableViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxTableViewDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxTableViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }

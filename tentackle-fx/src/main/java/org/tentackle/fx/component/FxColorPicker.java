@@ -62,10 +62,19 @@ public class FxColorPicker extends ColorPicker implements FxComponent {
 
   private /**/FxColorPickerDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxColorPickerDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxColorPickerDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxColorPickerDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxColorPickerDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }

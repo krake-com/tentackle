@@ -21,6 +21,11 @@
       <artifactId>tentackle-swing</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-pdo</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <properties>

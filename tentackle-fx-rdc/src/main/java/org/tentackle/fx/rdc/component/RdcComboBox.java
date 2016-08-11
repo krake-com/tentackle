@@ -1,5 +1,6 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - a framework for java desktop applications
+ * http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,30 +15,26 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
  */
+// $Id$
 
-package org.tentackle.fx.table.type;
+package org.tentackle.fx.rdc.component;
 
-import javafx.geometry.Pos;
-import org.tentackle.fx.table.FxTableCell;
-import org.tentackle.fx.table.TableCellTypeService;
-import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
+import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
 
 /**
- * PDO cell type.<br>
- * Not covered by the default ObjectTableCellType because PersistentDomainObject is an interface.
+ * PDO-aware combo box.
  *
  * @author harald
+ * @param <T> the type
  */
-@TableCellTypeService(PersistentDomainObject.class)
-public class PdoTableCellType<T extends PersistentDomainObject<T>> extends AbstractTableCellType<T> {
+public class RdcComboBox<T> extends FxComboBox<T> {
 
   @Override
-  public void updateItem(FxTableCell<?, T> tableCell, T pdo) {
-    tableCell.setText(pdo.toString());
-    tableCell.setGraphic(null);
-    updateAlignment(tableCell, Pos.CENTER_LEFT);
+  protected FxComboBoxDelegate createDelegate() {
+    return new RdcComboBoxDelegate(this);
   }
 
 }

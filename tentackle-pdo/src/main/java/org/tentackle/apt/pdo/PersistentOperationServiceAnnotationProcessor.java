@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.apt;
+package org.tentackle.apt.pdo;
 
 import java.util.List;
 import java.util.Set;
@@ -31,33 +31,34 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Session;
 
 import static javax.lang.model.SourceVersion.RELEASE_8;
 
 /**
- * Annotation processor for the {@code @PersistentObjectService} annotation.<br>
+ * Annotation processor for the {@code @PersistentOperationService} annotation.<br>
  * Enforces the implementation of the following constructors:
  *
  * <ul>
- *   <li>({@link PersistentDomainObject}, {@link DomainContext})</li>
- *   <li>({@link PersistentDomainObject}, {@link Session})</li>
- *   <li>({@link PersistentDomainObject})</li>
+ *   <li>({@link Operation}, {@link DomainContext})</li>
+ *   <li>({@link Operation}, {@link Session})</li>
+ *   <li>({@link Operation})</li>
  *   <li>()</li>
  * </ul>
  *
  * @author harald
  */
-@SupportedAnnotationTypes("org.tentackle.pdo.PersistentObjectService")
+@SupportedAnnotationTypes("org.tentackle.pdo.PersistentOperationService")
 @SupportedSourceVersion(RELEASE_8)
 @AnnotationProcessor
-public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
+public class PersistentOperationServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 
-  private final ClassArgConstructorVisitor pdoVisitor = new ClassArgConstructorVisitor(this, PersistentDomainObject.class);
+  private final ClassArgConstructorVisitor classArgVisitor = new ClassArgConstructorVisitor(this, Operation.class);
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -80,43 +81,43 @@ public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceA
           Diagnostic.Kind.ERROR,
           "class " + element + " needs a no-args constructor", element);
     }
-    if (!verifyConstructor(element, pdoVisitor)) {
+    if (!verifyConstructor(element, classArgVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject)", element);
+          "class " + element + " needs constructor (Operation)", element);
     }
-    if (!verifyConstructor(element, pdoContextVisitor)) {
+    if (!verifyConstructor(element, opContextVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject, DomainContext)", element);
+          "class " + element + " needs constructor (Operation, DomainContext)", element);
     }
-    if (!verifyConstructor(element, pdoSessionVisitor)) {
+    if (!verifyConstructor(element, opSessionVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject, Session)", element);
+          "class " + element + " needs constructor (Operation, Session)", element);
     }
-    verifyImplements(element, "org.tentackle.pdo.PersistentObject");
+    verifyImplements(element, "org.tentackle.pdo.PersistentOperation");
   }
 
 
-  private final TypeVisitor<Boolean, Void> pdoContextVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+
+  private final TypeVisitor<Boolean, Void> opContextVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 2 &&
-             acceptTypeVisitor(typeList.get(0), PersistentDomainObject.class) &&
+             acceptTypeVisitor(typeList.get(0), Operation.class) &&
              acceptTypeVisitor(typeList.get(1), DomainContext.class);
     }
   };
 
-  private final TypeVisitor<Boolean, Void> pdoSessionVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> opSessionVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 2 &&
-             acceptTypeVisitor(typeList.get(0), PersistentDomainObject.class) &&
+             acceptTypeVisitor(typeList.get(0), Operation.class) &&
              acceptTypeVisitor(typeList.get(1), Session.class);
     }
   };
-
 }

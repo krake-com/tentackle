@@ -58,7 +58,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.pdo.BackendException;
 import org.tentackle.pdo.DefaultSessionTaskDispatcher;
 import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;

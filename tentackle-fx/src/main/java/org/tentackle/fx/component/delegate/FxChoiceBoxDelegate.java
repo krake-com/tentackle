@@ -11,11 +11,8 @@ import javafx.collections.ObservableList;
 import javafx.scene.Parent;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
-import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxChoiceBox;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistentDomainObject;
+
 
 /**
  * Delegate for FxChoiceBox.
@@ -56,16 +53,6 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
       ObservableList items = component.getItems();
       items.clear();
       items.addAll(Arrays.asList(type.getEnumConstants()));
-    }
-    else if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      FxComponentBinding binding = component.getBinding();
-      DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
-      if (context != null) {
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) type, context);
-        ObservableList items = component.getItems();
-        items.clear();
-        items.addAll(pdo.selectAll());
-      }
     }
   }
 
