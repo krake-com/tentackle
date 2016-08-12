@@ -76,6 +76,7 @@ import org.tentackle.persist.rmi.RemoteDbSession;
 import org.tentackle.persist.rmi.RemoteDelegate;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 
 
