@@ -111,6 +111,15 @@ public class ModelMetaData {
   }
 
   /**
+   * Gets the valid schemas.
+   *
+   * @return the optional schemas, null if no schema check
+   */
+  public String[] getSchemas() {
+    return schemas;
+  }
+
+  /**
    * Gets the JDBC-connection's meta data.<br>
    * May be more than one if different schemas and schema-option was given in {@link BackendInfo}.
    *

@@ -291,13 +291,13 @@ public abstract class AbstractBackend implements Backend {
     for (DatabaseMetaData metaData: modelMetaData.getMetaData()) {
       try {
         try {
-          table.setupTableFromMetaData(metaData, schemaPattern, tablePattern);
+          table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(), schemaPattern, tablePattern);
           found = true;
           break;
         }
         catch (BackendException ex1) {
           try {
-            table.setupTableFromMetaData(metaData,
+            table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
                                          schemaPattern == null ? null : schemaPattern.toUpperCase(),
                                          tablePattern.toUpperCase());
             found = true;
@@ -305,7 +305,7 @@ public abstract class AbstractBackend implements Backend {
           }
           catch (BackendException ex2) {
             try {
-              table.setupTableFromMetaData(metaData,
+              table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
                                            schemaPattern == null ? null : schemaPattern.toLowerCase(),
                                            tablePattern.toLowerCase());
               found = true;
