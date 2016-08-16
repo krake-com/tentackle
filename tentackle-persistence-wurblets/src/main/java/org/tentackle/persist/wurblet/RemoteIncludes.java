@@ -78,15 +78,13 @@ public class RemoteIncludes {
       // only needed for initial class file generation below
     }
 
-    int ndx = packageName.lastIndexOf(".persistence");
-    pdoPackageName = ndx > 0 ? packageName.substring(0, ndx) : packageName;
-
     if (remotePrefix == null) {
       // if not defined, set the default
       switch (superClassName) {
         case "AbstractPersistentObject":
-          remotePrefix = "org.tentackle.pdo.rmi." + superClassName;
+          remotePrefix = "org.tentackle.persist.rmi." + superClassName;
           importSuperDelegate = true;
+          pdoPackageName = packageName.replace(".persistence.", ".pdo.").replace(".persist.", ".pdo.");
           break;
 
         case "AbstractDbObject":
@@ -106,7 +104,7 @@ public class RemoteIncludes {
       }
     }
 
-    ndx = remotePrefix.lastIndexOf('.');
+    int ndx = remotePrefix.lastIndexOf('.');
     remotePrefixBasename = ndx < 0 ? remotePrefix : remotePrefix.substring(ndx + 1);
 
     // find directory for remote delegates
