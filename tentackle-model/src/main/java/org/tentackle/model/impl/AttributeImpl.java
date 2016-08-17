@@ -393,9 +393,6 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (BasicStringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
     }
-    if (getColumnName().startsWith("_")) {
-      throw createModelException("column name '" + getColumnName() + "' must not start with an underscore");
-    }
 
     for (Backend backend: factory.getBackends()) {
       try {

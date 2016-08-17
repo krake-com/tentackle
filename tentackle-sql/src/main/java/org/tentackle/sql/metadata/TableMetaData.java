@@ -121,7 +121,8 @@ public class TableMetaData {
 
         ColumnMetaData columnMetaData = modelMetaData.getBackend().createColumnMetaData(this);
         columnMetaData.setupColumnFromMetaData(resultSet);
-        if (columnMetaData.getColumnName() != null && !columnMetaData.getColumnName().startsWith("_")) {
+        if (columnMetaData.getColumnName() != null &&
+            !modelMetaData.getBackend().isTemporaryName(columnMetaData.getColumnName())) {
           columns.add(columnMetaData);
         }
       }
@@ -131,7 +132,7 @@ public class TableMetaData {
     try (ResultSet resultSet = metaData.getIndexInfo(null, schemaName, tableName, false, false)) {
       while (resultSet.next()) {
         String indexName = resultSet.getString("INDEX_NAME");
-        if (indexName != null && !indexName.startsWith("_")) {
+        if (indexName != null && !modelMetaData.getBackend().isTemporaryName(indexName)) {
           // find index meta data, if new: create one
           IndexMetaData indexMetaData = indexes.get(indexName);
           if (indexMetaData == null) {
@@ -155,7 +156,7 @@ public class TableMetaData {
           foreignKeyMetaData = new ForeignKeyMetaData(this);
           foreignKeyMetaData.setupForeignKeyFromMetaData(resultSet);
           if (foreignKeyMetaData.getForeignKeyName() != null &&
-              !foreignKeyMetaData.getForeignKeyName().startsWith("_")) {
+              !modelMetaData.getBackend().isTemporaryName(foreignKeyMetaData.getForeignKeyName())) {
             foreignKeys.put(foreignKeyMetaData.getForeignKeyName(), foreignKeyMetaData);
           }
         }

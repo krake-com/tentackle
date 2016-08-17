@@ -1281,9 +1281,6 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       if (BasicStringHelper.isAllWhitespace(getTableName())) {
         throw new ModelException("configuration 'table = ...' missing", this);
       }
-      if (getTableName().startsWith("_")) {
-        throw new ModelException("table name '" + getTableName() + "' must not start with an underscore", this);
-      }
       for (Backend backend: factory.getBackends()) {
         try {
           backend.assertValidName("table name", getTableName());

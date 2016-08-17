@@ -254,6 +254,17 @@ public interface Backend {
    */
   DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException;
 
+  /**
+   * Checks whether this is a temporary name.<br>
+   * Returns whether an entity-, attribute- or index-name is temporary and should not
+   * be taken into account for migration or even used in the model.<br>
+   * Depending on the backend, temporary names start with an underscore or some other
+   * lead string.
+   *
+   * @param name the name
+   * @return true temporary (invalid) name
+   */
+  boolean isTemporaryName(String name);
 
   /**
    * Creates a select statement string from an inner sql string.

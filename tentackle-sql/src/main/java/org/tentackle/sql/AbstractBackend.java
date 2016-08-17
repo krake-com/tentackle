@@ -121,6 +121,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isTemporaryName(String name) {
+    return name.startsWith("_");
+  }
+
+  @Override
   public String getEmptyString() {
     return EMPTY_STRING;
   }
@@ -778,8 +783,13 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public void assertValidName(String nameType, String name) {
-    if (name != null && getReservedWords().contains(name.toUpperCase())) {
-      throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
+    if (name != null) {
+      if (getReservedWords().contains(name.toUpperCase())) {
+        throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
+      }
+      if (isTemporaryName(name)) {
+        throw new BackendException(nameType + " '" + name + "' is a temporary identifier for backend " + this);
+      }
     }
   }
 
