@@ -222,7 +222,7 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public boolean isTemporaryName(String name) {
     // oracle does not allow identifiers to start with an underscore -> we use "tmp_" instead.
-    return name.startsWith("tmp_");
+    return name != null && (name.startsWith("tmp_") || name.startsWith("TMP_"));
   }
 
   @Override
