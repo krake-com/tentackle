@@ -20,6 +20,9 @@
 package org.tentackle.model.impl;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
@@ -63,6 +66,16 @@ public class ModelDirectory {
    */
   public File getFile() {
     return dir;
+  }
+
+  /**
+   * Gets the model files.
+   *
+   * @return the list of files, never null
+   */
+  public List<File> getFiles() {
+    File[] files = getFile().listFiles();
+    return files == null ? new ArrayList<>() : Arrays.asList(files);
   }
 
   /**

@@ -116,14 +116,11 @@ public class ModelImpl implements Model {
 
     ModelDirectory dir = modelDirs.get(modelDir);
     if (dir == null || dir.hasChanged()) {
-      dir = new ModelDirectory(modelDir, defaults);
+      dir = createModelDirectory(modelDir, defaults);
       modelDirs.put(modelDir, dir);
-      File[] files = dir.getFile().listFiles();
-      if (files != null) {
-        for (File file : files) {
-          if (!file.isHidden()) {
-            loadByFileName(defaults, file.getPath(), false);
-          }
+      for (File file : dir.getFiles()) {
+        if (!file.isHidden()) {
+          loadByFileName(defaults, file.getPath(), false);
         }
       }
       updateRelations(defaults);
@@ -1069,6 +1066,17 @@ public class ModelImpl implements Model {
     return new EntityFactoryImpl();
   }
 
+  /**
+   * Creates a model directory object.
+   *
+   * @param modelDir the directory name
+   * @param defaults the model defaults
+   * @return the model directory
+   * @throws ModelException if directory does not exist or is not a directory
+   */
+  protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults) throws ModelException {
+    return new ModelDirectory(modelDir, defaults);
+  }
 
   /**
    * Creates a reader for given filename.

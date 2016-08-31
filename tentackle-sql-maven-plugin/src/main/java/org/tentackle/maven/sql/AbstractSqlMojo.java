@@ -390,7 +390,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       try {
         // process files
         if (filesets != null && filesets.size() > 0) {
-          // explicit filesets given instead of source dir
+          // explicit filesets given instead of model dir
           for (FileSet fileSet : filesets) {
             processFileSet(backendInfo, fileSet);
           }
@@ -400,7 +400,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
           if (modelDir.isDirectory() && modelDir.list().length > 0) {
             final FileSet fs = new FileSet();
             fs.setDirectory(modelDir.getPath());
-            fs.addInclude("**/*.map");
             processFileSet(backendInfo, fs);
           }
           else {
