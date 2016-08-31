@@ -85,11 +85,11 @@
 
     <wurbelizer.version>2.1-SNAPSHOT</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
-    <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
+    <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
     <!-- for the tentackle sql plugin -->
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
-    <tentackle.sqlDir>${project.parent.build.directory}/sql</tentackle.sqlDir>
+    <tentackle.sqlDir>${wurbel.wurbelDir}/sql</tentackle.sqlDir>
   </properties>
 
   <scm>
