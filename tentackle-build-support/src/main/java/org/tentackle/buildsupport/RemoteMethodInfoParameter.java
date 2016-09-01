@@ -33,6 +33,7 @@ import javax.lang.model.type.TypeMirror;
  */
 public class RemoteMethodInfoParameter {
 
+  private final RemoteMethodInfo info;  // the parent info
   private final String name;            // the formal parameter name
   private final String type;            // the parameter's type
   private Modifier[] modifiers;         // modifiers like final, etc...
@@ -47,23 +48,32 @@ public class RemoteMethodInfoParameter {
   /**
    * Constructs a RemoteMethodInfoParameter.
    *
+   * @param info the parent info
    * @param processingEnv the annotation processing environment
    * @param var the variable
    */
-  public RemoteMethodInfoParameter(ProcessingEnvironment processingEnv, VariableElement var) {
+  public RemoteMethodInfoParameter(RemoteMethodInfo info, ProcessingEnvironment processingEnv, VariableElement var) {
+    this.info = info;
     TypeMirror tm = var.asType();
     name = var.toString();
     type = tm.toString();
     Set<Modifier> varModifiers = var.getModifiers();
     modifiers = varModifiers.toArray(new Modifier[varModifiers.size()]);
     // determine special types
-    instanceOfSession = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_SESSION);
-    instanceOfContext = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_CONTEXT);
-    instanceOfPdo = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_PDO);
-    instanceOfDbObject = instanceOfPdo || AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, RemoteMethodInfo.CLASSNAME_DBOBJECT);
+    instanceOfSession = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameSession());
+    instanceOfContext = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameContext());
+    instanceOfPdo = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNamePdo());
+    instanceOfDbObject = instanceOfPdo || AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameDbObject());
   }
 
-  public RemoteMethodInfoParameter(StringTokenizer stok) {
+  /**
+   * Constructs a RemoteMethodInfoParameter.
+   *
+   * @param info the parent info
+   * @param stok the tokenizer to read from
+   */
+  public RemoteMethodInfoParameter(RemoteMethodInfo info, StringTokenizer stok) {
+    this.info = info;
     name = stok.nextToken();
     type = stok.nextToken();
     instanceOfSession = Boolean.valueOf(stok.nextToken());
@@ -73,9 +83,26 @@ public class RemoteMethodInfoParameter {
     modifiers = AnnotationProcessingHelper.readModifiers(stok);
   }
 
-  public RemoteMethodInfoParameter(String name, String type) {
+  /**
+   * Constructs a RemoteMethodInfoParameter.
+   *
+   * @param info the parent info
+   * @param name the parameter name
+   * @param type the parameter type
+   */
+  public RemoteMethodInfoParameter(RemoteMethodInfo info, String name, String type) {
+    this.info = info;
     this.name = name;
     this.type = type;
+  }
+
+  /**
+   * Gets the parent info.
+   *
+   * @return the parent
+   */
+  public RemoteMethodInfo getInfo() {
+    return info;
   }
 
   /**

@@ -27,6 +27,7 @@ import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.StringTokenizer;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -70,15 +71,6 @@ public class RemoteMethodInfo {
    * Information type for a class.
    */
   public static final String TYPE_CLASS = "class";    // not implemented yet!
-
-
-  // some private class Strings (we don't use <class>.getName() because we want to keep dependencies small
-  public static final String CLASSNAME_COLLECTION  = "java.util.Collection";
-  public static final String CLASSNAME_SESSION     = "org.tentackle.pdo.Session";
-  public static final String CLASSNAME_DBOBJECT    = "org.tentackle.persist.AbstractDbObject";
-  public static final String CLASSNAME_CURSOR      = "org.tentackle.misc.ScrollableResource";
-  public static final String CLASSNAME_CONTEXT     = "org.tentackle.pdo.DomainContext";
-  public static final String CLASSNAME_PDO         = "org.tentackle.pdo.PersistentDomainObject";
 
 
   /**
@@ -149,7 +141,7 @@ public class RemoteMethodInfo {
               info.setVarArgsMethod(Boolean.valueOf(stok.nextToken()));
             }
             else if (type.startsWith("arg")) {
-              info.addParameter(new RemoteMethodInfoParameter(stok));
+              info.addParameter(new RemoteMethodInfoParameter(info, stok));
             }
           }
         }
@@ -168,6 +160,14 @@ public class RemoteMethodInfo {
     return info;
   }
 
+
+  // classnames from property file (we don't use <class>.getName() because we want to keep dependencies small
+  private final String nameCollection;
+  private final String nameSession;
+  private final String nameDbObject;
+  private final String nameCursor;
+  private final String nameContext;
+  private final String namePdo;
 
 
   // information gathered from apt run
@@ -196,6 +196,14 @@ public class RemoteMethodInfo {
    * @throws IOException if unsupported TYPE_...
    */
   public RemoteMethodInfo(String type) throws IOException {
+    ResourceBundle bundle = ResourceBundle.getBundle("org.tentackle.buildsupport.ClassNames");
+    nameCollection = bundle.getString("CLASSNAME_COLLECTION");
+    nameSession = bundle.getString("CLASSNAME_SESSION");
+    nameDbObject = bundle.getString("CLASSNAME_DBOBJECT");
+    nameCursor = bundle.getString("CLASSNAME_CURSOR");
+    nameContext = bundle.getString("CLASSNAME_CONTEXT");
+    namePdo = bundle.getString("CLASSNAME_PDO");
+
     if (!type.equals(TYPE_METHOD)) {
       throw new IOException("unsupported type '" + type + "'");
     }
@@ -233,28 +241,28 @@ public class RemoteMethodInfo {
       }
     }
 
-    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_PDO));
-    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_COLLECTION, CLASSNAME_PDO));
-    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_CURSOR, CLASSNAME_PDO));
+    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, namePdo));
+    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, namePdo));
+    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor, namePdo));
 
     if (isReturningPdo()) {
       setReturningDbObject(true);
     }
     else  {
-      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_DBOBJECT));
+      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameDbObject));
     }
 
     if (isReturningPdoCollection()) {
       setReturningDbObjectCollection(true);
     }
     else  {
-      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_COLLECTION, CLASSNAME_DBOBJECT));
+      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, nameDbObject));
     }
     if (isReturningPdoCursor()) {
       setReturningCursor(true);
     }
     else  {
-      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_CURSOR));
+      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor));
     }
 
     Set<Modifier> methodElementModifiers = methodElement.getModifiers();
@@ -262,7 +270,7 @@ public class RemoteMethodInfo {
     varArgsMethod = methodElement.isVarArgs();
     List<? extends VariableElement> varList = methodElement.getParameters();
     for (int i=0; i < varList.size(); i++) {
-      RemoteMethodInfoParameter par = new RemoteMethodInfoParameter(processingEnv, varList.get(i));
+      RemoteMethodInfoParameter par = new RemoteMethodInfoParameter(this, processingEnv, varList.get(i));
       if (i == varList.size()-1) {
         par.setVarArg(varArgsMethod);
       }
@@ -270,6 +278,59 @@ public class RemoteMethodInfo {
     }
   }
 
+  /**
+   * Gets the classname for a collection.
+   *
+   * @return the classname
+   */
+  public String getNameCollection() {
+    return nameCollection;
+  }
+
+  /**
+   * Gets the classname for a session.
+   *
+   * @return the classname
+   */
+  public String getNameSession() {
+    return nameSession;
+  }
+
+  /**
+   * Gets the classname for a simple db object.
+   *
+   * @return the classname
+   */
+  public String getNameDbObject() {
+    return nameDbObject;
+  }
+
+  /**
+   * Gets the classname for a cursor.
+   *
+   * @return the classname
+   */
+  public String getNameCursor() {
+    return nameCursor;
+  }
+
+  /**
+   * Gets the classname for a domain context.
+   *
+   * @return the classname
+   */
+  public String getNameContext() {
+    return nameContext;
+  }
+
+  /**
+   * Gets the classname for a PDO.
+   *
+   * @return the classname
+   */
+  public String getNamePdo() {
+    return namePdo;
+  }
 
   /**
    * Gets the type of this analyze info.

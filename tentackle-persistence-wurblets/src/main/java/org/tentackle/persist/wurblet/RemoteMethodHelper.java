@@ -64,7 +64,7 @@ public class RemoteMethodHelper {
     returningObject = info.isReturningDbObject(); // PDO implies this as well
 
     if (addThis) {
-      info.addParameter(new RemoteMethodInfoParameter("this", classBaseName));
+      info.addParameter(new RemoteMethodInfoParameter(info, "this", classBaseName));
     }
 
     // check static method
