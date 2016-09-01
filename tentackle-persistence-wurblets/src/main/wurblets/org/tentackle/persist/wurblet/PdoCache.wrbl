@@ -467,7 +467,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 
   \@Override
-  public PdoCache<@(pdoName)@> getCache() {
+  public PdoCache<@(bounded ? "? extends " : "")@@(pdoName)@> getCache() {
     return cache == null ? createCache() : cache;
   }
 
