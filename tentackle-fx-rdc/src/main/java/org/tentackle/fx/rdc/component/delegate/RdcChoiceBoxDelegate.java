@@ -45,9 +45,10 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void setType(Class<?> type) {
     super.setType(type);
-    
+
     if (PersistentDomainObject.class.isAssignableFrom(type)) {
       FxComponentBinding binding = getComponent().getBinding();
       DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
@@ -59,7 +60,5 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
       }
     }
   }
-
-
 
 }

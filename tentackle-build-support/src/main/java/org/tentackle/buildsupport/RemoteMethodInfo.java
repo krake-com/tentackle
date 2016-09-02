@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -71,6 +73,18 @@ public class RemoteMethodInfo {
    * Information type for a class.
    */
   public static final String TYPE_CLASS = "class";    // not implemented yet!
+
+
+
+  /**
+   * Part in a classname.
+   */
+  private static final String NAME_PART = "\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
+  /**
+   * Pattern to detect full qualified classnames.
+   */
+  private static final Pattern FQCN_PATTERN = Pattern.compile(NAME_PART + "\\." + NAME_PART + "(\\." + NAME_PART + ")*");
+
 
 
   /**
@@ -649,7 +663,6 @@ public class RemoteMethodInfo {
   }
 
 
-
   /**
    * Simplifies some classnames by removing package names.<br>
    * Makes generated code better readable.
@@ -659,23 +672,18 @@ public class RemoteMethodInfo {
    * @return the shortened type
    */
   public String cleanTypeString(String type) {
-    // cut out leading package names
-    int gndx = type.indexOf('<');   // with generics?
-    String typeStr;
-    String genStr;
-    if (gndx >= 0) {
-      typeStr = type.substring(0, gndx);
-      genStr = "<" + cleanTypeString(type.substring(gndx + 1, type.length() - 1)) + ">";
+    StringBuilder buf = new StringBuilder();
+    Matcher matcher = FQCN_PATTERN.matcher(type);
+    int lastNdx = 0;
+    while (matcher.find()) {
+      buf.append(type.substring(lastNdx, matcher.start()));
+      String name = type.substring(matcher.start(), matcher.end());
+      int dotNdx = name.lastIndexOf('.');   // at least one dot!
+      buf.append(name.substring(dotNdx + 1));
+      lastNdx = matcher.end();
     }
-    else {
-      typeStr = type;
-      genStr = "";
-    }
-    int ndx = typeStr.lastIndexOf('.');
-    if (ndx >= 0) {
-      typeStr = typeStr.substring(ndx + 1);
-    }
-    return typeStr + genStr;
+    buf.append(type.substring(lastNdx));
+    return buf.toString();
   }
 
 }

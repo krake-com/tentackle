@@ -55,6 +55,7 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
     if (loadPdosPending) {
       loadPdosPending = false;
