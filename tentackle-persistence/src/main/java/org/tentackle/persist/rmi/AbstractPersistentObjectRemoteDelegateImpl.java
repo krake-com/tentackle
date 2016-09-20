@@ -43,7 +43,6 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
        extends AbstractDbObjectRemoteDelegateImpl<P>
        implements AbstractPersistentObjectRemoteDelegate<T,P> {
 
-  private static final long serialVersionUID = 3420107982404335392L;
 
   private static final String ILLEGAL_METHOD_TEXT = "remote method not allowed for PDOs";
 

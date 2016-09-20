@@ -1493,8 +1493,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@param snapshot the snapshot
    */
-  \@SuppressWarnings("unchecked")
-  protected void createComponentsInSnapshot(@(mainClass)@ snapshot) {
+  protected void createComponentsInSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.createComponentsInSnapshot(snapshot);
 @[
       for (Relation rel: getEntity().getRelations()) {
@@ -1517,8 +1516,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@param snapshot the snapshot object
    */
-  \@SuppressWarnings("unchecked")
-  protected void revertComponentsToSnapshot(@(mainClass)@ snapshot) {
+  protected void revertComponentsToSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.revertComponentsToSnapshot(snapshot);
 @[
       for (Relation rel: getEntity().getRelations()) {
@@ -1664,31 +1662,43 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (generateAddReferencing) {
-]@
-
-  // add referencing classes and their methods
-  static {
-    \@SuppressWarnings("unchecked")
-    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
-        Pdo.create(@(pdoName)@.class).getPersistenceDelegate();
-@[
-      // register referencing classes and the methods
+      List<Relation> refRels = new ArrayList<>();
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
             (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
             rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
-          String methodName = "isReferencing" + rel.getClassName() + "By" +
-                              BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
-          for (Entity leaf: rel.getEntity().getLeafEntities()) {
+          refRels.add(rel);
+        }
+      }
+      if (!refRels.isEmpty()) {
+]@
+
+  // add referencing classes and their methods
+  static {
+@[
+        if (getEntity().isAbstract()) {
+]@
+    \@SuppressWarnings("unchecked")
+@[
+        }
+]@
+    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
+        Pdo.create(@(pdoName)@.class).getPersistenceDelegate();
+@[
+      // register referencing classes and the methods
+      for (Relation rel: refRels) {
+        String methodName = "isReferencing" + rel.getClassName() + "By" +
+                            BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
+        for (Entity leaf: rel.getEntity().getLeafEntities()) {
 ]@
     po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
 @[
-          }
         }
       }
 ]@
   }
 @[
+      }
     }
   }
 ]@

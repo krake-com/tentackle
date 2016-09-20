@@ -587,7 +587,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    *
    * @param snapshot the snapshot
    */
-  @SuppressWarnings("unchecked")
   protected void createComponentsInSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
     // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
@@ -601,7 +600,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    *
    * @param snapshot the snapshot object
    */
-  @SuppressWarnings("unchecked")
   protected void revertComponentsToSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
     // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
@@ -610,13 +608,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       keys.revertToSnapshot(snapshot.keysSnapshot);
     }
     keysLoaded = snapshot.keysLoaded;
-  }
-
-  // add referencing classes and their methods
-  static {
-    @SuppressWarnings("unchecked")
-    AbstractPersistentObject<?,?> po = (AbstractPersistentObject<?,?>)
-        Pdo.create(StoredBundle.class).getPersistenceDelegate();
   }
 
   // </editor-fold>//GEN-END:relations

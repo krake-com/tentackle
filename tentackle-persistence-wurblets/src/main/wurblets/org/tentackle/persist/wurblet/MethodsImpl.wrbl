@@ -921,7 +921,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@param snapshot the snapshot
    */
-  protected void createAttributesInSnapshot(@(mainClass)@ snapshot) {
+  protected void createAttributesInSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.createAttributesInSnapshot(snapshot);
 @[
       for (Attribute attr: getEntity().getAttributes())  {
@@ -945,7 +945,7 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@param snapshot the snapshot object
    */
-  protected void revertAttributesToSnapshot(@(mainClass)@ snapshot) {
+  protected void revertAttributesToSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.revertAttributesToSnapshot(snapshot);
 @[
       for (Attribute attr: getEntity().getAttributes()) {

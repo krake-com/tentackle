@@ -38,8 +38,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
        extends RemoteDelegateImpl<P>
        implements AbstractDbObjectRemoteDelegate<P> {
 
-  private static final long serialVersionUID = -1047294990270307668L;
-
 
   /**
    * persistent object associated to the delegate's session.

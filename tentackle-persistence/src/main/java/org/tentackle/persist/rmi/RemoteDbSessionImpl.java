@@ -67,8 +67,6 @@ import org.tentackle.reflect.ReflectionHelper;
  */
 abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable {
 
-  private static final long serialVersionUID = 2805986467738001409L;
-
   /**
    * logger for this class.
    */

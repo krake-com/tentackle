@@ -71,11 +71,6 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (isRemote()) {
-]@
-  \@SuppressWarnings("unchecked")
-@[
-    }
 ]@
   @(scope)@ boolean @(methodName)@(@(params)@) {
 @[
