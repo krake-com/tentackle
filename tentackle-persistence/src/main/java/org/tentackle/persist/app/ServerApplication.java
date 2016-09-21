@@ -19,10 +19,6 @@
 
 package org.tentackle.persist.app;
 
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Enumeration;
 import java.util.Properties;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
@@ -464,23 +460,7 @@ public abstract class ServerApplication extends AbstractApplication
 
       if (isRunningInContainer()) {
         // deregister all JDBC drivers loaded by the server app's classloader
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Enumeration<Driver> drivers = DriverManager.getDrivers();
-        while (drivers.hasMoreElements()) {
-          Driver driver = drivers.nextElement();
-          if (driver.getClass().getClassLoader() == cl) {
-            try {
-              LOGGER.info("deregistering JDBC driver {0}", driver);
-              DriverManager.deregisterDriver(driver);
-            }
-            catch (SQLException sx) {
-              LOGGER.severe("failed to deregister JDBC driver {0}", driver, sx);
-            }
-          }
-          else {
-            LOGGER.fine("JDBC driver {0} skipped because it does not belong to this webapp's ClassLoader", driver);
-          }
-        }
+        deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
       }
     }
     catch (Exception anyEx) {

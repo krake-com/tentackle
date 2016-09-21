@@ -21,7 +21,11 @@ package org.tentackle.app;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -198,6 +202,33 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    */
   public boolean isRunningInContainer() {
     return runsInContainer;
+  }
+
+
+  /**
+   * Deregisters all JDBC-Drivers loaded by the app's classloader.<br>
+   * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
+   * Avoids memleaks.
+   *
+   * @param cl the app's classloader
+   */
+  protected void deregisterJdbcDrivers(ClassLoader cl) {
+    Enumeration<Driver> drivers = DriverManager.getDrivers();
+    while (drivers.hasMoreElements()) {
+      Driver driver = drivers.nextElement();
+      if (driver.getClass().getClassLoader() == cl) {
+        try {
+          LOGGER.info("deregistering JDBC driver {0}", driver);
+          DriverManager.deregisterDriver(driver);
+        }
+        catch (SQLException sx) {
+          LOGGER.severe("failed to deregister JDBC driver {0}", driver, sx);
+        }
+      }
+      else {
+        LOGGER.fine("JDBC driver {0} skipped because it does not belong to this app's ClassLoader", driver);
+      }
+    }
   }
 
 

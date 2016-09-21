@@ -539,6 +539,11 @@ public abstract class WebApplication<T> extends AbstractApplication
 
       sessionManager.shutdown();
       sessionManager = null;
+
+      if (isRunningInContainer()) {
+        // deregister all JDBC drivers loaded by the server app's classloader
+        deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
+      }
     }
     catch (Exception anyEx) {
       LOGGER.severe("web server stopped ungracefully", anyEx);
