@@ -66,6 +66,7 @@
     <module>tentackle-swing-rdc</module>
     <module>tentackle-web</module>
     <module>tentackle-all</module>
+    <module>tentackle-bom</module>
   </modules>
 
   <properties>
