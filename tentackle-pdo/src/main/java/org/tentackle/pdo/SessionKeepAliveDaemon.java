@@ -48,8 +48,8 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
   private final long minAliveInterval;            // the minimum alive interval
   private final Map<Session,Task> sessionTaskMap; // the session/task map
   private final ExecutorService executorService;  // background executor service
-  private final ThreadGroup threadGroup;          // the thread group
   private final AtomicInteger threadNumber;       // set alive thread number
+  private ThreadGroup threadGroup;                // the thread group
 
 
   /**
@@ -63,10 +63,20 @@ public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
     this.sessionTaskMap = new ConcurrentHashMap<>();
     this.executorService = createExecutorService();
     this.threadNumber = new AtomicInteger(1);
-    this.threadGroup = Thread.currentThread().getThreadGroup();
     setPriority(MAX_PRIORITY);
   }
 
+  @Override
+  protected void cleanup() {
+    executorService.shutdown();
+    super.cleanup();
+  }
+
+  @Override
+  public void run() {
+    threadGroup = Thread.currentThread().getThreadGroup();
+    super.run();
+  }
 
   /**
    * Handles the change of a keep alive interval of a session.
