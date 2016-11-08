@@ -37,7 +37,15 @@ For more options, see {\@link AbstractWurblet}.
         outBuf = WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET));
       }
       if (outBuf.indexOf(Constants.ORIGIN_INFO_LEAD) == 0) {
-        outBuf.insert(0, "// ");
+        // remove info line
+        int ndx = outBuf.indexOf("\n");   // EOL (crlf or lf)
+        if (ndx > 0) {
+          outBuf.delete(0, ndx + 1);
+        }
+        else {
+          outBuf.setLength(0);
+          outBuf.append("// <empty>\n");
+        }
       }
       out.print(outBuf);
     }
