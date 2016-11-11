@@ -992,7 +992,7 @@ public class ModelImpl implements Model {
               if (exMsg.length() > 0) {
                 exMsg.append('\n');
               }
-              exMsg.append("broken relation ");
+              exMsg.append("broken foreign key relation ");
               exMsg.append(relation);
               exMsg.append(" in ");
               exMsg.append(entity);

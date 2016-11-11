@@ -56,6 +56,11 @@ public class ModelEntity {
     lastModified = file.lastModified();
   }
 
+  @Override
+  public String toString() {
+    return entity.toString();
+  }
+
   /**
    * Gets the entity.
    *
