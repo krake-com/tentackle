@@ -232,11 +232,13 @@ public class ModelCommentSupport {
       if (!relation.getEntity().equals(entity)) {   // some sub entity
         out.print(" from ");
         out.print(relation.getEntity());
-        printRootEntities(entity, relation.getEntity().getRootEntities(), out);
       }
       printVia(relation, out);
       if (relation.isReversed()) {
-        out.println(" reversed");
+        out.print(" reversed");
+      }
+      if (relation.isDeepReference()) {
+        out.print(" deeply");
       }
       out.println();
     }
