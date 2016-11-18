@@ -287,7 +287,7 @@ public class ModelWurblet extends AbstractWurblet {
    * Gets the name of the modelfile.
    *
    * @return the name
-   * @throws org.wurbelizer.wurbel.WurbelException if model could not be determined
+   * @throws WurbelException if model could not be determined
    */
   public String getModelName() throws WurbelException {
     if (modelName == null) {
@@ -554,6 +554,9 @@ public class ModelWurblet extends AbstractWurblet {
     parser = new WurbletParameterParser(args);
 
     modelDirName = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "model");
+    if (modelDirName == null) {
+      throw new WurbelException("missing wurblet property 'model'");
+    }
     File modelDir = new File(modelDirName);
     if (!modelDir.exists()) {
       getContainer().getLogger().info("creating " + modelDir);
@@ -571,7 +574,7 @@ public class ModelWurblet extends AbstractWurblet {
       if ("all".equalsIgnoreCase(backends)) {
         backendList.addAll(BackendFactory.getInstance().getAllBackends());
       }
-      else  {
+      else if (!"none".equalsIgnoreCase(backends)) {
         for (String backend: backends.split(",")) {
           backendList.add(BackendFactory.getInstance().getBackendByName(backend.trim()));
         }
