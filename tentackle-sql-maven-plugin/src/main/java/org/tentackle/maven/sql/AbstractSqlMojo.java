@@ -45,6 +45,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.Backend;
@@ -80,6 +81,12 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(property = "tentackle.modelDefaults")
   protected String modelDefaults;
+
+  /**
+   * The entity aliases.
+   */
+  @Parameter(property = "tentackle.entityAliases")
+  protected String entityAliases;
 
   /**
    * Map schema names to flat table names.
@@ -192,7 +199,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   /**
    * Gets the model defaults.
    *
-   * @return the defaults, null if no defaults
+   * @return the defaults, null if none
    * @throws MojoExecutionException if parsing the model defaults failed
    */
   protected ModelDefaults getModelDefaults() throws MojoExecutionException {
@@ -201,6 +208,25 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     }
     try {
       return new ModelDefaults(modelDefaults);
+    }
+    catch (ModelException mex) {
+      throw new MojoExecutionException(mex.getMessage(), mex);
+    }
+  }
+
+  
+  /**
+   * Gets the entity aliases.
+   *
+   * @return the aliases, null if none
+   * @throws MojoExecutionException if parsing the aliases failed
+   */
+  protected EntityAliases getEntityAliases() throws MojoExecutionException {
+    if (entityAliases == null) {
+      return null;
+    }
+    try {
+      return new EntityAliases(entityAliases);
     }
     catch (ModelException mex) {
       throw new MojoExecutionException(mex.getMessage(), mex);

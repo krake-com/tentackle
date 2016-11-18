@@ -494,7 +494,19 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       }
     }
     else {
-      buf.append('?');
+      if (!methodArgs.isEmpty()) {
+        boolean needComma = false;
+        for (String methodArg: methodArgs) {
+          if (needComma) {
+            buf.append(',');
+          }
+          buf.append(methodArg);
+          needComma = true;
+        }
+      }
+      else {
+        buf.append('?');
+      }
     }
     return buf.toString();
   }

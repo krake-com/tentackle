@@ -134,8 +134,9 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    * @param option the option string
    * @param ctrl option control: true if turn option on, false if oprion off, null if on/off missing (defaults to on)
    * @return true if applied, false if unknown option
+   * @throws ModelException if applying the option failed
    */
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     String uco = option.toUpperCase();
     String fullopt = uco;
@@ -252,8 +253,9 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    *
    * @param option the option string
    * @return true if option applied, false if not known
+   * @throws ModelException if option malformed
    */
-  public boolean processOption(String option) {
+  public boolean processOption(String option) throws ModelException {
     boolean applied;
     switch (option.charAt(0)) {
       case '-':

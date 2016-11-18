@@ -23,6 +23,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.function.Function;
 
 /**
  * The sql types used by tentackle.
@@ -34,68 +35,188 @@ import java.sql.Types;
 public enum SqlType {
 
   /** String. */
-  VARCHAR(Types.VARCHAR, false, false, ""),
+  VARCHAR(Types.VARCHAR, false, false, "", (t) -> {
+    return removeSingleQuotes(t);
+  }),
 
   /** Date. */
-  DATE(Types.DATE, false, false, new Date(0)),
+  DATE(Types.DATE, false, false, new Date(0), (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Date.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return new Date(0);   // parsing failed
+    }
+  }),
 
   /** Time. */
-  TIME(Types.TIME, false, false, new Time(0)),
+  TIME(Types.TIME, false, false, new Time(0), (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Time.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return new Time(0);   // parsing failed
+    }
+  }),
 
   /** Timestamp. */
-  TIMESTAMP(Types.TIMESTAMP, false, false, new Timestamp(0)),
+  TIMESTAMP(Types.TIMESTAMP, false, false, new Timestamp(0), (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Timestamp.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return new Timestamp(0);   // parsing failed
+    }
+  }),
 
   /** Binary. */
-  LONGVARBINARY(Types.LONGVARBINARY, false, false, null),
+  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, (t) -> {
+    return null;    // cannot be converted
+  }),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0)),
+  DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0), (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return BigDecimal.valueOf(Double.valueOf(t));
+    }
+    catch (RuntimeException rex) {
+      return new BigDecimal(0);   // parsing failed
+    }
+  }),
 
   /** Character and char. */
-  CHAR(Types.CHAR, false, false, ' '),
+  CHAR(Types.CHAR, false, false, ' ', (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return t.isEmpty() ? ' ' : t.charAt(0);
+    }
+    catch (RuntimeException rex) {
+      return ' ';   // parsing failed
+    }
+  }),
 
   /** Boolean and boolean. */
-  BIT(Types.BIT, false, false, false),
+  BIT(Types.BIT, false, false, false, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Boolean.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return false;   // parsing failed
+    }
+  }),
 
   /** Byte and byte. */
-  TINYINT(Types.TINYINT, true, false, (byte) 0),
+  TINYINT(Types.TINYINT, true, false, (byte) 0, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Byte.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return (byte) 0;   // parsing failed
+    }
+  }),
 
   /** Short and short. */
-  SMALLINT(Types.SMALLINT, true, false, (short) 0),
+  SMALLINT(Types.SMALLINT, true, false, (short) 0, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Short.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return (short) 0;   // parsing failed
+    }
+  }),
 
   /** Integer and int. */
-  INTEGER(Types.INTEGER, true, false, 0),
+  INTEGER(Types.INTEGER, true, false, 0, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Integer.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return 0;   // parsing failed
+    }
+  }),
 
   /** Long and long. */
-  BIGINT(Types.BIGINT, true, false, 0L),
+  BIGINT(Types.BIGINT, true, false, 0L, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Long.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return 0L;   // parsing failed
+    }
+  }),
 
   /** Float and float. */
-  FLOAT(Types.FLOAT, true, true, 0.0f),
+  FLOAT(Types.FLOAT, true, true, 0.0f, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Float.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return 0.0f;   // parsing failed
+    }
+  }),
 
   /** Double and double. */
-  DOUBLE(Types.DOUBLE, true, true, 0.0d),
+  DOUBLE(Types.DOUBLE, true, true, 0.0d, (t) -> {
+    t = removeSingleQuotes(t);
+    try {
+      return Double.valueOf(t);
+    }
+    catch (RuntimeException rex) {
+      return 0.0d;   // parsing failed
+    }
+  }),
 
   /** Application specific. */
-  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null);
+  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, (t) -> {
+    return null;    // conversion not possible (never returned from meta data)
+  });
 
-
-
-
-  private final int sqlType;          // the JDBC sql type
-  private final boolean numeric;      // true if numeric type
-  private final boolean fractional;   // true if fractional numeric type
-  private final Object defaultValue;  // the default value
 
   /**
-   * Creates an sql type.
+   * Removes optional single quotes if returned from meta data.
    *
-   * @param sqlType the java sql type
+   * @param str the meta data string
+   * @return the cleaned string
    */
-  SqlType(int sqlType, boolean numeric, boolean fractional, Object defaultValue) {
-    this.sqlType = sqlType;
+  private static String removeSingleQuotes(String str) {
+    if (str != null && str.length() >= 2 && str.startsWith("'") && str.endsWith("'")) {
+      str = str.substring(1, str.length() - 1);
+    }
+    return str;
+  }
+
+
+  private final int jdbcType;                       // the JDBC sql type
+  private final boolean numeric;                    // true if numeric type
+  private final boolean fractional;                 // true if fractional numeric type
+  private final Object defaultValue;                // the default value
+  private final Function<String,Object> parser;     // to parse JDBC metadata
+
+  /**
+   * Creates an SQL type.
+   *
+   * @param jdbcType the JDBC type
+   * @param numeric true if numeric
+   * @param fractional true if fractional
+   * @param defaultValue the default value
+   * @param parser the parser to parse JDBC metadata (e.g. DEFAULTs)
+   */
+  SqlType(int jdbcType, boolean numeric, boolean fractional, Object defaultValue, Function<String,Object> parser) {
+    this.jdbcType = jdbcType;
     this.numeric = numeric;
     this.fractional = fractional;
     this.defaultValue = defaultValue;
+    this.parser = parser;
   }
 
 
@@ -104,8 +225,8 @@ public enum SqlType {
    *
    * @return the sql type
    */
-  public int getSqlType() {
-    return sqlType;
+  public int getJdbcType() {
+    return jdbcType;
   }
 
   /**
@@ -133,6 +254,16 @@ public enum SqlType {
    */
   public Object getDefaultValue() {
     return defaultValue;
+  }
+
+  /**
+   * Parses the string and converts to a java-value.
+   *
+   * @param str the string usually returned from JDBC metadata
+   * @return the java value
+   */
+  public Object parse(String str) {
+    return parser.apply(str);
   }
 
 }

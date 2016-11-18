@@ -146,7 +146,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     getOptions().applyEntityOptions(entity.getOptions(), getDataType());
     getOptions().setComment(line.getComment());
-
+    
     for (String option: line.getOptions()) {
       if (!getOptions().processOption(option)) {
         throw line.createModelException("illegal attribute option: " + option);
@@ -245,6 +245,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       throw createModelException("illegal inner type: " + getInnerName());
     }
     return innerType;
+  }
+
+
+  @Override
+  public DataType getEffectiveType() throws ModelException {
+    if (dataType == DataType.APPLICATION) {
+      return getInnerType();
+    }
+    return dataType;
   }
 
 
@@ -358,10 +367,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (nullable != null) {
       return nullable;
     }
-    DataType type = getDataType();
-    if (type == DataType.APPLICATION) {
-      type = getInnerType();
-    }
+    DataType type = getEffectiveType();
     return !type.isPrimitive() && !getOptions().isMapNull();
   }
 

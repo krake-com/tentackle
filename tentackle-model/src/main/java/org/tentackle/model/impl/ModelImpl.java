@@ -40,6 +40,7 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.InheritanceType;
@@ -82,6 +83,12 @@ public class ModelImpl implements Model {
   /** map schema names. */
   private boolean mapSchemas;
 
+  /** the optional model defaults. */
+  private ModelDefaults modelDefaults;
+
+  /** the optional entity aliases. */
+  private EntityAliases entityAliases;
+
 
   /**
    * Creates a model.
@@ -104,26 +111,29 @@ public class ModelImpl implements Model {
     return mapSchemas;
   }
 
-
   @Override
   public EntityFactory getEntityFactory() {
     return entityFactory;
   }
 
+  @Override
+  public EntityAliases getEntityAliases() {
+    return entityAliases;
+  }
 
   @Override
-  public synchronized void loadModel(String modelDir, ModelDefaults defaults) throws ModelException {
+  public synchronized void loadModel(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
 
     ModelDirectory dir = modelDirs.get(modelDir);
     if (dir == null || dir.hasChanged()) {
-      dir = createModelDirectory(modelDir, defaults);
+      dir = createModelDirectory(modelDir, defaults, aliases);
       modelDirs.put(modelDir, dir);
       for (File file : dir.getFiles()) {
         if (!file.isHidden()) {
-          loadByFileName(defaults, file.getPath(), false);
+          loadByFileName(file.getPath(), defaults, aliases, false);
         }
       }
-      updateRelations(defaults);
+      updateRelations(defaults, aliases);
     }
 
     if (defaults != null) {
@@ -152,7 +162,7 @@ public class ModelImpl implements Model {
         }
       }
       if (updateRelations) {
-        updateRelations(defaults);
+        updateRelations(defaults, aliases);
       }
     }
   }
@@ -170,7 +180,7 @@ public class ModelImpl implements Model {
   public void refreshModel() throws ModelException {
     for (ModelDirectory modelDir: modelDirs.values()) {
       modelDir.markDirty();
-      loadModel(modelDir.getFile().getAbsolutePath(), modelDir.getModelDefaults());
+      loadModel(modelDir.getFile().getAbsolutePath(), modelDir.getModelDefaults(), modelDir.getEntityAliases());
     }
   }
 
@@ -229,8 +239,8 @@ public class ModelImpl implements Model {
 
 
   @Override
-  public Entity loadByFileName(ModelDefaults defaults, String fileName) throws ModelException {
-    return loadByFileName(defaults, fileName, true);
+  public Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
+    return loadByFileName(fileName, defaults, aliases, true);
   }
 
 
@@ -238,13 +248,15 @@ public class ModelImpl implements Model {
    * Loads an entity for a given mapfile name.<br>
    * Entities are cached so they are loaded and parsed only once.
    *
-   * @param defaults the model defaults
    * @param fileName the name of the mapfile
+   * @param defaults optional model defaults, null if none
+   * @param aliases optional entity aliases, null if none
    * @param updateRelations true if update the related entites in the model
    * @return the entity
    * @throws ModelException if no such mapfile or parsing error
    */
-  protected synchronized Entity loadByFileName(ModelDefaults defaults, String fileName, boolean updateRelations)
+  protected synchronized Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases,
+                                               boolean updateRelations)
             throws ModelException {
 
     ModelEntity modelEntity = mapByFileName.get(fileName);
@@ -273,7 +285,7 @@ public class ModelImpl implements Model {
       foreignKeys = null;
 
       if (updateRelations) {
-        updateRelations(defaults, modelEntity);
+        updateRelations(defaults, aliases, modelEntity);
       }
     }
 
@@ -309,6 +321,7 @@ public class ModelImpl implements Model {
    * Adds an entity to the model.
    *
    * @param modelEntity the model entity
+   * @throws ModelException if duplicate entities detected
    */
   protected void addModelEntity(ModelEntity modelEntity) throws ModelException {
     if (mapSchemas) {
@@ -339,21 +352,24 @@ public class ModelImpl implements Model {
   /**
    * Updates the inheritance links and relations of all entities in the model.
    *
-   * @param defaults the model defaults
+   * @param defaults the optional model defaults
+   * @param aliases the optional entity aliases
    * @throws ModelException if relations or inheritance misconfigured
    */
-  protected void updateRelations(ModelDefaults defaults) throws ModelException {
-    updateRelations(defaults, null);
+  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases) throws ModelException {
+    updateRelations(defaults, aliases, null);
   }
 
   /**
    * Updates all relations.
    *
-   * @param defaults the model defaults
+   * @param defaults the optional model defaults
+   * @param aliases the optional entity aliases
    * @param loadedModelEntity the entity that caused the update, null if none
    * @throws ModelException if relations or inheritance misconfigured
    */
-  protected void updateRelations(ModelDefaults defaults, ModelEntity loadedModelEntity) throws ModelException {
+  protected void updateRelations(ModelDefaults defaults, EntityAliases aliases, ModelEntity loadedModelEntity)
+            throws ModelException {
 
     StringBuilder exMsg = new StringBuilder();
     Set<Entity> exEntities = new HashSet<>();
@@ -368,7 +384,7 @@ public class ModelImpl implements Model {
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
       if (entity.getSuperEntityName() != null) {
-        Entity superEntity = getByEntityName(entity.getSuperEntityName());
+        Entity superEntity = getByEntityName(translateAlias(aliases, entity.getSuperEntityName()));
         if (superEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             if (exMsg.length() > 0) {
@@ -417,7 +433,7 @@ public class ModelImpl implements Model {
 
         ((RelationImpl) relation).setForeignRelation(null);
 
-        Entity foreignEntity = getByEntityName(relation.getClassName());
+        Entity foreignEntity = getByEntityName(translateAlias(aliases, relation.getClassName()));
         if (foreignEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             // log error only if class is associated to the updated one
@@ -434,7 +450,7 @@ public class ModelImpl implements Model {
           if (relation.getRelationType() == RelationType.LIST) {
             String attributeName;
             if (relation.getMethodName() != null) {
-              attributeName = relation.getMethodName();
+              attributeName = relation.getMethodName();     // selectBy<MethodName>
             }
             else {
               attributeName = relation.getEntity().getName() + "Id";
@@ -442,14 +458,17 @@ public class ModelImpl implements Model {
             attributeName = BasicStringHelper.firstToLower(attributeName);
             Attribute foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
             if (foreignAttribute == null) {
-              if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
+              if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
+                  (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
                 if (exMsg.length() > 0) {
                   exMsg.append('\n');
                 }
-                exMsg.append("no such attribute: ");
-                exMsg.append(attributeName);
-                exMsg.append(" in ");
-                exMsg.append(foreignEntity);
+                exMsg.append("no such attribute: ")
+                     .append(attributeName)
+                     .append(" in ")
+                     .append(foreignEntity)
+                     .append(" referenced by ")
+                     .append(entity);
                 exEntities.add(entity);
                 exEntities.add(foreignEntity);
               }
@@ -488,7 +507,7 @@ public class ModelImpl implements Model {
                     exEntities.add(foreignEntity);
                   }
                 }
-                if (nmRelation.getClassName().equals(entity.getName())) {
+                if (translateAlias(aliases, nmRelation.getClassName()).equals(entity.getName())) {
                   if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
                     if (exMsg.length() > 0) {
                       exMsg.append('\n');
@@ -564,7 +583,7 @@ public class ModelImpl implements Model {
       ((EntityImpl) entity).setRootEntityAccordingToModel(isRootEntity);
       if (isRootEntity) {
         for (Relation relation: entity.getAllRelations()) {
-          if (relation.isComposite()) {
+          if (relation.isComposite() && relation.getForeignEntity() != null) {
             List<Relation> compositePath = new ArrayList<>();
             compositePath.add(relation);
             updateCompositePath(compositePath, relation.getForeignEntity());
@@ -691,8 +710,8 @@ public class ModelImpl implements Model {
         if (relation.getEntity().getOptions().getTrackType().isTracked()) {
           ((RelationImpl) relation).setTracked(true);
         }
-        if (relation.isComposite()) {
-          if (relation.getRelationType() == RelationType.LIST && relation.getLinkMethodName() == null) {
+        if (relation.isComposite() && relation.getForeignEntity() != null) {
+          if (relation.getRelationType() == RelationType.LIST) {
             // check if there is a lazy object relation back to me
             Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
             if (parentRelation == null) {
@@ -928,9 +947,12 @@ public class ModelImpl implements Model {
     entity.getCompositePaths().add(compositePath);
     for (Relation relation: entity.getAllRelations()) {
       if (relation.isComposite()) {
-        List<Relation> newPath = new ArrayList<>(compositePath);
-        newPath.add(relation);
-        updateCompositePath(newPath, relation.getForeignEntity());
+        Entity foreignEntity = relation.getForeignEntity();
+        if (foreignEntity != null && !foreignEntity.equals(entity)) {
+          List<Relation> newPath = new ArrayList<>(compositePath);
+          newPath.add(relation);
+          updateCompositePath(newPath, foreignEntity);
+        }
       }
     }
   }
@@ -989,6 +1011,9 @@ public class ModelImpl implements Model {
               referencedAttribute = entity.getAttributeByJavaName(Constants.AN_ID, true);
             }
             else {
+              if (!relation.getMethodArgs().isEmpty()) {
+                continue;   // complex relation, classname + id, whatever -> no foreign key possible
+              }
               if (exMsg.length() > 0) {
                 exMsg.append('\n');
               }
@@ -1070,12 +1095,14 @@ public class ModelImpl implements Model {
    * Creates a model directory object.
    *
    * @param modelDir the directory name
-   * @param defaults the model defaults
+   * @param defaults optional model defaults, null if none
+   * @param aliases optional entity aliases, null if none
    * @return the model directory
    * @throws ModelException if directory does not exist or is not a directory
    */
-  protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults) throws ModelException {
-    return new ModelDirectory(modelDir, defaults);
+  protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases)
+            throws ModelException {
+    return new ModelDirectory(modelDir, defaults, aliases);
   }
 
   /**
@@ -1189,11 +1216,32 @@ public class ModelImpl implements Model {
 
     for (Relation relation: entity.getRelations()) {
       if (relation.isComposite()) {
-        validateComponents(relation.getForeignEntity(), integrity, exMsg, exEntities);
+        Entity foreignEntity = relation.getForeignEntity();
+        if (foreignEntity != null && !foreignEntity.equals(entity)) {
+          validateComponents(foreignEntity, integrity, exMsg, exEntities);
+        }
       }
     }
 
     return exMsg.toString();
+  }
+
+
+  /**
+   * Translates an entity name if it is an alias.
+   *
+   * @param aliases the entity aliases
+   * @param name the original name
+   * @return the possibly translated name
+   */
+  protected String translateAlias(EntityAliases aliases, String name) {
+    if (aliases != null) {
+      String mappedName = aliases.get(name);
+      if (mappedName != null) {
+        name = mappedName;
+      }
+    }
+    return name;
   }
 
 }

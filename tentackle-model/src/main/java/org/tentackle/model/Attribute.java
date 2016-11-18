@@ -130,10 +130,19 @@ public interface Attribute {
   /**
    * Gets the innertype for application specific types.
    *
-   * @return the inner type to convert to agains the SQL backend
+   * @return the inner type to convert to agains the backend
    * @throws ModelException if not application specific type or innertype not a legal DataType.
    */
   DataType getInnerType() throws ModelException;
+
+  /**
+   * Gets the effective type exposed to the backend.<br>
+   * If this is an application specific type, the inner type will be returned.
+   *
+   * @return the effective data type
+   * @throws ModelException if model garbeled
+   */
+  DataType getEffectiveType() throws ModelException;
 
   /**
    * Gets the java type.<br>

@@ -84,7 +84,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       if (mapSchemas) {
         model.setSchemaNameMapped(true);
       }
-      model.loadModel(modelDirName, getModelDefaults());
+      model.loadModel(modelDirName, getModelDefaults(), getEntityAliases());
       foreignKeys = Model.getInstance().getForeignKeys();
     }
     catch (ModelException mex) {

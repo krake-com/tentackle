@@ -114,7 +114,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
 
   @Override
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     boolean applied = super.applyOption(option, ctrl);
     boolean on = ctrl == null || ctrl;
@@ -124,7 +124,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
       if (uco.startsWith(OPTION_DEFAULT)) {
         if (on) {
           String str = option.substring(OPTION_DEFAULT.length()).trim();
-          Object value = getAttribute().getDataType().parse(str);
+          Object value = getAttribute().getEffectiveType().parse(str);
           setDefaultValue(value);
         }
         else  {

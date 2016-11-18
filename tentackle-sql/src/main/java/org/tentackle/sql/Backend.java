@@ -749,9 +749,10 @@ public interface Backend {
    * @param tableName the tablename
    * @param columnName the column name
    * @param sqlType the sql type
+   * @param defaultValue the optional default value if defined in the model
    * @return the SQL code
    */
-  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType);
+  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue);
 
   /**
    * Generates sql code to change the null-constraint of a column.

@@ -1329,10 +1329,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     for (Attribute attribute: tableAttributes) {
       if (!attribute.getOptions().isDerived()) {
-        DataType dataType = attribute.getDataType();
-        if (dataType == DataType.APPLICATION) {
-          dataType = attribute.getInnerType();
-        }
+        DataType dataType = attribute.getEffectiveType();
         int multiColumnIndex = 1;
         int multiColumnSize = dataType.getSqlTypes().length;
         for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {

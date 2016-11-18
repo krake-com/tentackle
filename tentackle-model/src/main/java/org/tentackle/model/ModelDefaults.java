@@ -26,8 +26,6 @@ import java.util.StringTokenizer;
  * Only logically "higher" values will be copied to the model.
  * For example: fulltracked will overwrite tracked, but a default of tracked will not overwrite fulltracked if
  * already defined in the model. Accordingly deletionCascaded will never clear the model setting to false if true.
- * <p>
- * Notice: the defaults have an effect on the generated java code only. The SQL/database-side remains unaffected.
  *
  * @author harald
  */

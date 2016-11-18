@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
@@ -35,6 +36,7 @@ public class ModelDirectory {
 
   private final File dir;                       // the directory file
   private final ModelDefaults modelDefaults;    // the model defaults used for that directory
+  private final EntityAliases entityAliases;    // the aliases used for that directory
 
   private long lastModified;                    // the last modification time
 
@@ -43,10 +45,11 @@ public class ModelDirectory {
    * Creates a model directory object.
    *
    * @param modelDir the directory name
-   * @param defaults the model defaults
+   * @param defaults optional model defaults, null if none
+   * @param aliases optional entity aliases, null if none
    * @throws ModelException if directory does not exist or is not a directory
    */
-  public ModelDirectory(String modelDir, ModelDefaults defaults) throws ModelException {
+  public ModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
     dir = new File(modelDir);
     if (!dir.exists()) {
       throw new ModelException(modelDir + " does not exist");
@@ -56,8 +59,8 @@ public class ModelDirectory {
     }
     lastModified = dir.lastModified();
     modelDefaults = defaults;
+    entityAliases = aliases;
   }
-
 
   /**
    * Gets the directory file.
@@ -81,10 +84,19 @@ public class ModelDirectory {
   /**
    * Gets the model defaults.
    *
-   * @return the defaults
+   * @return the defaults, null if none
    */
   public ModelDefaults getModelDefaults() {
     return modelDefaults;
+  }
+
+  /**
+   * Gets the entity aliases.
+   *
+   * @return the aliases, null if none
+   */
+  public EntityAliases getEntityAliases() {
+    return entityAliases;
   }
 
   /**

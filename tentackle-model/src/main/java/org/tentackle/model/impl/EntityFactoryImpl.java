@@ -253,6 +253,7 @@ public class EntityFactoryImpl implements EntityFactory {
         ((RelationImpl) relation).setAttribute(attribute);
         ((AttributeImpl) attribute).setRelation(relation);
       }
+      // else: some method like getId()
     }
 
     if (entity.isRootOfInheritanceHierarchy() && !entity.getInheritanceType().isMappingToNoTable()) {

@@ -265,15 +265,6 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
-  public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
-    // @todo: this does only work for strings and simple numerics.
-    // make it work with booleans, dates, timestamps, etc...
-    // specials like Oracle's empty/null string, etc...
-    String attributeDefault = defaultValue == null ? null : defaultValue.toString();
-    return Objects.equals(attributeDefault, column.getDefaultValue());
-  }
-
-  @Override
   public String sqlCreateColumn(String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue, boolean primaryKey, boolean withTrailingComma) {
     if (comment == null) {

@@ -119,10 +119,7 @@ public class ColumnMigrator {
   public String migrate() throws ModelException {
     StringBuilder buf = new StringBuilder();
     if (attribute != null) {
-      DataType dataType = attribute.getDataType();
-      if (dataType == DataType.APPLICATION) {
-        dataType = attribute.getInnerType();
-      }
+      DataType dataType = attribute.getEffectiveType();
 
       /**
        * round 1: only add missing columns and migrate only those with exact name match
@@ -206,7 +203,7 @@ public class ColumnMigrator {
    * @return the sql code
    */
   private String dropColumn(ColumnMetaData column) {
-    return backend.sqlDropColumn(column.getTableMetaData().getFullTableName(), column.getColumnName());
+    return backend.sqlDropColumn(entity.getTableName(), column.getColumnName());
   }
 
 
@@ -278,7 +275,7 @@ public class ColumnMigrator {
    */
   private String updateToNotNull() {
     return toNonNullString(backend.sqlUpdateToNotNull(
-            entity.getTableName(), columnName, sqlType));
+            entity.getTableName(), columnName, sqlType, defaultValue));
   }
 
   /**

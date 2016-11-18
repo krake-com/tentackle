@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
@@ -590,10 +591,22 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
 
+    // scan optional entity aliases
+    EntityAliases entityAliases = null;
+    String entityAliasesStr = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "entityAliases");
+    if (entityAliasesStr != null) {
+      try {
+        entityAliases = new EntityAliases(entityAliasesStr);
+      }
+      catch (ModelException mex) {
+        throw new WurbelException(mex.getMessage(), mex);
+      }
+    }
+
     // load the model (if not yet done)
     Model model = Model.getInstance();
     try {
-      model.loadModel(modelDirName, modelDefaults);
+      model.loadModel(modelDirName, modelDefaults, entityAliases);
     }
     catch (ModelException mex) {
       WurbelException wex = new WurbelException("errors in model loaded from directory '" + modelDirName + "'", mex);
@@ -612,7 +625,7 @@ public class ModelWurblet extends AbstractWurblet {
     try {
       if (getModelName().indexOf(File.separatorChar) >= 0) {
         // is a filename (load it if it's not already loaded)
-        entity = model.loadByFileName(modelDefaults, getModelName());
+        entity = model.loadByFileName(getModelName(), modelDefaults, entityAliases);
       }
       else  {
         // is an entity name

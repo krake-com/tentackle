@@ -37,6 +37,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
@@ -176,7 +177,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       writeModelIntroComment(backendInfo, modelDirName);
-      ModelDefaults modlDefaults = getModelDefaults();
+      ModelDefaults defaults = getModelDefaults();
+      EntityAliases aliases = getEntityAliases();
 
       Collection<ForeignKey> foreignKeys = null;
       try {
@@ -184,7 +186,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         if (mapSchemas) {
           model.setSchemaNameMapped(true);
         }
-        model.loadModel(modelDirName, modlDefaults);
+        model.loadModel(modelDirName, defaults, aliases);
         foreignKeys = Model.getInstance().getForeignKeys();
       }
       catch (ModelException mex) {
@@ -214,7 +216,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               getLog().info("processing " + modelFile);
             }
             try {
-              Entity entity = Model.getInstance().loadByFileName(modlDefaults, modelFile.getPath());
+              Entity entity = Model.getInstance().loadByFileName(modelFile.getPath(), defaults, aliases);
               if (entity.getTableProvidingEntity() != entity) {
                 continue;   // skip
               }

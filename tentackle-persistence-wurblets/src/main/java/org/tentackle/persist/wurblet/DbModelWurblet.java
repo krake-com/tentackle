@@ -510,15 +510,12 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if type is misconfigured
    */
   public DataType getJdbcDataType(Attribute attribute) throws WurbelException {
-    if (attribute.getDataType() == DataType.APPLICATION) {
-      try {
-        return attribute.getInnerType();
-      }
-      catch (ModelException me) {
-        throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
-      }
+    try {
+      return attribute.getEffectiveType();
     }
-    return attribute.getDataType();
+    catch (ModelException me) {
+      throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
+    }
   }
 
   /**

@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import org.tentackle.common.TentackleRuntimeException;
@@ -463,11 +464,37 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
-    // @todo: this does only work for strings and simple numerics.
-    // make it work with booleans, dates, timestamps, etc...
-    // specials like Oracle's empty/null string, etc...
-    String attributeDefault = defaultValue == null ? null : valueToLiteral(sqlType, defaultValue);
-    return Objects.equals(attributeDefault, column.getDefaultValue());
+    String attributeDefault = normalizeDefault(defaultValue == null ? null : defaultValue.toString());
+    String columnDefault = normalizeDefault(column.getDefaultValue());
+    boolean rv = attributeDefault.equals(columnDefault);
+    if (!rv && column.getDefaultValue() != null) {
+      Object value = sqlType.parse(column.getDefaultValue());
+      // retry with literal according to type
+      rv = Objects.equals(defaultValue, value);
+    }
+    return rv;
+  }
+
+  /**
+   * Normalize the default string to compare.
+   *
+   * @param str the default value as a string, may be null
+   * @return the normalized value, never null
+   */
+  protected String normalizeDefault(String str) {
+    if (str == null) {
+      str = "";
+    }
+    else {
+      str = str.toUpperCase();
+      if (str.startsWith("'")) {
+        str = str.substring(1);
+      }
+      if (str.endsWith("'")) {
+        str = str.substring(0, str.length() - 1);
+      }
+    }
+    return str;
   }
 
   @Override
@@ -557,12 +584,12 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType) {
+  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
     return  "UPDATE " + tableName +
             " SET " +
             columnName +
             "=" +
-            valueToLiteral(sqlType, sqlType.getDefaultValue()) +
+            valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
             " WHERE " +
             columnName +
             " IS NULL;\n";

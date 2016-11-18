@@ -25,6 +25,7 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.EntityOptions;
+import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
 
@@ -108,7 +109,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   }
 
   @Override
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     boolean applied = super.applyOption(option, ctrl);
     boolean on = ctrl == null || ctrl;
