@@ -21,6 +21,7 @@ package org.tentackle.wurblet;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.common.BasicStringHelper;
 import org.tentackle.model.Entity;
@@ -54,6 +55,16 @@ public class ModelCommentSupport {
       out.print(entityName);
       out.print('.');
       out.print(relation.getForeignAttribute());
+    }
+    else if (!relation.getMethodArgs().isEmpty()) {
+      boolean needComma = false;
+      for (String arg: relation.getMethodArgs()) {
+        if (needComma) {
+          out.print(',');
+        }
+        out.print(arg);
+        needComma = true;
+      }
     }
     else {
       out.print("?");
@@ -202,22 +213,32 @@ public class ModelCommentSupport {
    */
   public static void printNonCompositeRelations(Entity entity, List<Relation> relations, String indent, PrintStream out) {
 
+    List<Relation> sortedRelations = new ArrayList<>();
+
     for (Relation relation: relations) {
       if (!relation.isComposite() && !relation.getForeignEntity().equals(entity)) {
-        out.print(indent);
-        out.print(relation.getForeignEntity());
-        printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
-        if (!relation.getEntity().equals(entity)) {   // some sub entity
-          out.print(" from ");
-          out.print(relation.getEntity());
-          printRootEntities(entity, relation.getEntity().getRootEntities(), out);
-        }
-        printVia(relation, out);
-        if (relation.isReversed()) {
-          out.println(" reversed");
-        }
-        out.println();
+        sortedRelations.add(relation);
       }
+    }
+
+    Collections.sort(sortedRelations, (o1, o2) -> {
+      return o1.getForeignEntity().getName().compareTo(o2.getForeignEntity().getName());
+    });
+
+    for (Relation relation: sortedRelations) {
+      out.print(indent);
+      out.print(relation.getForeignEntity());
+      printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
+      if (!relation.getEntity().equals(entity)) {   // some sub entity
+        out.print(" from ");
+        out.print(relation.getEntity());
+        printRootEntities(entity, relation.getEntity().getRootEntities(), out);
+      }
+      printVia(relation, out);
+      if (relation.isReversed()) {
+        out.println(" reversed");
+      }
+      out.println();
     }
   }
 
@@ -230,6 +251,11 @@ public class ModelCommentSupport {
       }
     }
     if (!roots.isEmpty()) {
+
+      Collections.sort(roots, (o1, o2) -> {
+        return o1.getName().compareTo(o2.getName());
+      });
+
       out.print(" (");
       boolean needComma = false;
       for (Entity rootEntity : roots) {
