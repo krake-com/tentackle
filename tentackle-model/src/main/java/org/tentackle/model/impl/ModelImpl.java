@@ -83,11 +83,6 @@ public class ModelImpl implements Model {
   /** map schema names. */
   private boolean mapSchemas;
 
-  /** the optional model defaults. */
-  private ModelDefaults modelDefaults;
-
-  /** the optional entity aliases. */
-  private EntityAliases entityAliases;
 
 
   /**
@@ -114,11 +109,6 @@ public class ModelImpl implements Model {
   @Override
   public EntityFactory getEntityFactory() {
     return entityFactory;
-  }
-
-  @Override
-  public EntityAliases getEntityAliases() {
-    return entityAliases;
   }
 
   @Override

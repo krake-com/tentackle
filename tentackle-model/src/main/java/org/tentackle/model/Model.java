@@ -146,12 +146,4 @@ public interface Model {
    */
   Collection<ForeignKey> getForeignKeys() throws ModelException;
 
-  /**
-   * Gets a map of entity name aliases used in relations and inheritance hierarchies.<br>
-   * Useful for refactoring or special cases where multiple names are used for some entities.
-   *
-   * @return the name map, never null
-   */
-  Map<String,String> getEntityAliases();
-
 }
