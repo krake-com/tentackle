@@ -238,7 +238,7 @@ public class ModelCommentSupport {
       if (relation.isDeepReference()) {
         out.print(" deeply");
       }
-      if (relation.getRelationType() == RelationType.LIST) {
+      if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
         out.print(" [1:N]");
       }
       else {
