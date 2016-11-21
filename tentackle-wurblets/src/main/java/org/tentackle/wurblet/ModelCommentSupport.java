@@ -74,24 +74,20 @@ public class ModelCommentSupport {
   /**
    * Prints the referencing relation.
    *
+   * @param entity the referenced entity
    * @param relation the relation
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printReferencedBy(Relation relation, String indent, PrintStream out) {
-    Entity entity = relation.getEntity();   // the referencing entity
+  public static void printReferencedBy(Entity entity, Relation relation, String indent, PrintStream out) {
+    Entity referencingEntity = relation.getEntity();
     out.print(indent);
-    out.print(entity);
-    printRootEntities(entity, entity.getRootEntities(), out);
+    out.print(referencingEntity);
+    printRootEntities(referencingEntity, referencingEntity.getRootEntities(), out);
     if (relation.isDeepReference()) {
       out.print(" deeply");
     }
 
-    printVia(relation, out);
-
-    if (!relation.getName().equalsIgnoreCase(entity.toString())) {
-      out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
-    }
     Relation nmRel = relation.getNmRelation();
     Relation rel = relation;
     if (nmRel == null && relation.getForeignRelation() != null) {
@@ -100,17 +96,19 @@ public class ModelCommentSupport {
         rel = relation.getForeignRelation();
       }
     }
-    if (nmRel != null) {
-      out.print(" [N:M] to ");
-      Entity nmEntity = nmRel.getForeignEntity();
-      out.print(nmEntity);
-      if (rel.getNmMethodName() != null &&
-          !rel.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
-        out.print(" as " + BasicStringHelper.firstToLower(rel.getNmMethodName()));
-      }
-      out.println();
+
+    if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
+      out.print(" via ");
+      out.print(relation.getForeignEntity());
+      out.print(" as ");
+      out.print(relation.getName());
+      out.println(" [N:M]");
     }
     else  {
+      printVia(relation, out);
+      if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
+        out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+      }
       if (relation.getRelationType() == RelationType.LIST) {
         out.println(" [1:N]");
       }
@@ -239,6 +237,18 @@ public class ModelCommentSupport {
       }
       if (relation.isDeepReference()) {
         out.print(" deeply");
+      }
+      if (relation.getRelationType() == RelationType.LIST) {
+        out.print(" [1:N]");
+      }
+      else {
+        Relation nmRel = relation.getDefiningNmRelation();
+        if (nmRel != null && entity.equals(nmRel.getEntity())) {
+          out.print(" [N:M]");
+        }
+        else {
+          out.print(" [1:1]");
+        }
       }
       out.println();
     }

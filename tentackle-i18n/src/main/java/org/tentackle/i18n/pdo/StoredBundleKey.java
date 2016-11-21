@@ -85,7 +85,7 @@ public interface StoredBundleKey
    *
    * StoredBundleKey is referencing the following entities:
    *
-   * StoredBundle via bundleId
+   * StoredBundle via bundleId [1:1]
    *
    *
    * StoredBundleKey is a component of: StoredBundle

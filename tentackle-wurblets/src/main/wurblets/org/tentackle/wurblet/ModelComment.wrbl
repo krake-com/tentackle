@@ -32,6 +32,12 @@ For more options, see {\@link ModelWurblet}.
           !foreignRelation.isComposite()) {
         refRels.add(rel);
       }
+      else {
+        Relation nmRel = rel.getDefiningNmRelation();
+        if (nmRel != null) {
+          refRels.add(nmRel);
+        }
+      }
     }
 
     if (refRels.isEmpty()) {
@@ -46,7 +52,7 @@ For more options, see {\@link ModelWurblet}.
 @[
     }
     for (Relation rel: refRels) {
-      ModelCommentSupport.printReferencedBy(rel, "   * ", out);
+      ModelCommentSupport.printReferencedBy(getEntity(), rel, "   * ", out);
     }
 
     if (getEntity().isRootEntityAccordingToModel() ||
