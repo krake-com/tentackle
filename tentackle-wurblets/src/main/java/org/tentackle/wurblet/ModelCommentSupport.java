@@ -81,39 +81,42 @@ public class ModelCommentSupport {
    */
   public static void printReferencedBy(Entity entity, Relation relation, String indent, PrintStream out) {
     Entity referencingEntity = relation.getEntity();
-    out.print(indent);
-    out.print(referencingEntity);
-    printRootEntities(referencingEntity, referencingEntity.getRootEntities(), out);
-    if (relation.isDeepReference()) {
-      out.print(" deeply");
-    }
+    Collection<Entity> roots = referencingEntity.getRootEntities();
+    if (roots.size() != 1 || !roots.contains(entity)) {
+      out.print(indent);
+      out.print(referencingEntity);
+      printRootEntities(referencingEntity, roots, out);
+      if (relation.isDeepReference()) {
+        out.print(" deeply");
+      }
 
-    Relation nmRel = relation.getNmRelation();
-    Relation rel = relation;
-    if (nmRel == null && relation.getForeignRelation() != null) {
-      nmRel = relation.getForeignRelation().getNmRelation();
-      if (nmRel != null) {
-        rel = relation.getForeignRelation();
+      Relation nmRel = relation.getNmRelation();
+      Relation rel = relation;
+      if (nmRel == null && relation.getForeignRelation() != null) {
+        nmRel = relation.getForeignRelation().getNmRelation();
+        if (nmRel != null) {
+          rel = relation.getForeignRelation();
+        }
       }
-    }
 
-    if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
-      out.print(" via ");
-      out.print(relation.getForeignEntity());
-      out.print(" as ");
-      out.print(relation.getName());
-      out.println(" [N:M]");
-    }
-    else  {
-      printVia(relation, out);
-      if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
-        out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+      if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
+        out.print(" via ");
+        out.print(relation.getForeignEntity());
+        out.print(" as ");
+        out.print(relation.getName());
+        out.println(" [N:M]");
       }
-      if (relation.getRelationType() == RelationType.LIST) {
-        out.println(" [1:N]");
-      }
-      else {
-        out.println(" [1:1]");
+      else  {
+        printVia(relation, out);
+        if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
+          out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+        }
+        if (relation.getRelationType() == RelationType.LIST) {
+          out.println(" [1:N]");
+        }
+        else {
+          out.println(" [1:1]");
+        }
       }
     }
   }
@@ -255,13 +258,19 @@ public class ModelCommentSupport {
   }
 
 
+  /**
+   * Prints the root entities for a component or other entity.
+   *
+   * @param entity the entity to ignore in roots
+   * @param rootEntities the root entities
+   * @param out the output stream
+   */
   private static void printRootEntities(Entity entity, Collection<Entity> rootEntities, PrintStream out) {
-    List<Entity> roots = new ArrayList<>();
-    for (Entity rootEntity: rootEntities) {
-      if (!rootEntity.equals(entity)) {
-        roots.add(rootEntity);
-      }
+    List<Entity> roots = new ArrayList<>(rootEntities);
+    if (roots.size() == 1 && entity.equals(roots.get(0))) {
+      roots.clear();
     }
+
     if (!roots.isEmpty()) {
 
       Collections.sort(roots, (o1, o2) -> {
