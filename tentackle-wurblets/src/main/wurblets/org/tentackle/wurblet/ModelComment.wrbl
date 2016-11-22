@@ -103,7 +103,7 @@ For more options, see {\@link ModelWurblet}.
    * @(getEntity())@ is referencing the following entities:
    *
 @[
-      ModelCommentSupport.printNonCompositeRelations(getEntity(), outRels, "   * ", out);
+      ModelCommentSupport.printNonCompositeRelations(getEntity(), outRels, true, "   * ", out);
     }
 
     if (getEntity().isComposite()) {
@@ -122,7 +122,7 @@ For more options, see {\@link ModelWurblet}.
    * The following components of @(getEntity())@ are deeply referenced:
    *
 @[
-        ModelCommentSupport.printNonCompositeRelations(getEntity(), deepRels, "   * ", out);
+        ModelCommentSupport.printNonCompositeRelations(getEntity(), deepRels, false, "   * ", out);
       }
     }
 

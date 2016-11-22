@@ -209,10 +209,13 @@ public class ModelCommentSupport {
    *
    * @param entity the root entity
    * @param relations the outgoing relations
+   * @param rootsFromForeignEntity true if print roots from relation.foreignEntity else relation.entity
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printNonCompositeRelations(Entity entity, List<Relation> relations, String indent, PrintStream out) {
+  public static void printNonCompositeRelations(Entity entity, List<Relation> relations,
+                                                boolean rootsFromForeignEntity,
+                                                String indent, PrintStream out) {
 
     List<Relation> sortedRelations = new ArrayList<>();
 
@@ -229,10 +232,15 @@ public class ModelCommentSupport {
     for (Relation relation: sortedRelations) {
       out.print(indent);
       out.print(relation.getForeignEntity());
-      printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
+      if (rootsFromForeignEntity) {
+        printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
+      }
       if (!relation.getEntity().equals(entity)) {   // some sub entity
         out.print(" from ");
         out.print(relation.getEntity());
+        if (!rootsFromForeignEntity) {
+          printRootEntities(relation.getEntity(), relation.getEntity().getRootEntities(), out);
+        }
       }
       printVia(relation, out);
       if (relation.isReversed()) {
