@@ -204,6 +204,12 @@ public class ModelWurblet extends AbstractWurblet {
       return pdoClassName;
     }
 
+    // last try: use interface name (manually implemented PDOs, or migration from TT1)
+    pdoClassName = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.INTERFACE_NAME);
+    if (pdoClassName != null) {
+      return pdoClassName;
+    }
+
     throw new WurbelException("cannot determine the pdo-class from the java-source");
   }
 
