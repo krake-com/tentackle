@@ -155,7 +155,7 @@ public class FormatHelper {
 
 
   /** formattings by locale. */
-  private static final Map<Locale,Formatting> formattingMap = new HashMap<>();
+  private static final Map<Locale,Formatting> FORMATTING_MAP = new HashMap<>();
 
 
   /**
@@ -165,10 +165,10 @@ public class FormatHelper {
    * @return the formatting
    */
   private static Formatting getFormatting(Locale locale) {
-    Formatting formatting = formattingMap.get(locale);
+    Formatting formatting = FORMATTING_MAP.get(locale);
     if (formatting == null) {
       formatting = new Formatting(locale);
-      formattingMap.put(locale, formatting);
+      FORMATTING_MAP.put(locale, formatting);
     }
     return formatting;
   }

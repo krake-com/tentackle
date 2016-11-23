@@ -827,15 +827,15 @@ public class DateFormField extends AbstractFormField  implements SqlDateField {
    * @return the current format
    */
   public SimpleDateFormat getDateFormat() {
-    String shortDatePattern = FormatHelper.getShortDatePattern();
+    String datePattern = FormatHelper.getDatePattern();
     if (dateFormat == null ||
-        (format == null && !Objects.equals(oldDefaultFormat, shortDatePattern))) {
+        (format == null && !Objects.equals(oldDefaultFormat, datePattern))) {
       /**
        * dateFormat not set or format not set by application and
        * default format has changed due to locale change
        */
-      setDateFormat(new SimpleDateFormat(shortDatePattern));
-      oldDefaultFormat = shortDatePattern;
+      setDateFormat(new SimpleDateFormat(datePattern));
+      oldDefaultFormat = datePattern;
     }
     return dateFormat;
   }
