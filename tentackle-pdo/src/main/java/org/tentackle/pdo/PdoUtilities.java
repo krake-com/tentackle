@@ -506,7 +506,7 @@ public class PdoUtilities {
       names = new String[classes.length];
       int i=0;
       for (Class<?> clazz: classes) {
-        names[i++] = PdoUtilities.getInstance().getTableName((Class<? extends PersistentDomainObject>) clazz);
+        names[i++] = getTableName((Class<? extends PersistentDomainObject>) clazz);
       }
     }
     else  {
