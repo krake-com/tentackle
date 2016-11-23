@@ -30,7 +30,7 @@ import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
 

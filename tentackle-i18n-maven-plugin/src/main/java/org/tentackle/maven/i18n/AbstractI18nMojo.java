@@ -31,9 +31,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.buildsupport.BundleHandler;
-import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.i18n.StoredBundleControlProvider;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;
@@ -179,7 +179,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
                   findServiceConfigurations(serviceName).entrySet()) {
 
           String configuration = entry.getKey();
-          List<String> parts = BasicStringHelper.split(configuration, ":= ");
+          List<String> parts = StringHelper.split(configuration, ":= ");
           // process this bundle name
           String bundleName = parts.get(0);
           // translate to resource name

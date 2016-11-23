@@ -38,7 +38,7 @@ import org.tentackle.bind.BindingMember;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.swing.FormComponent;
 import org.tentackle.swing.FormContainer;

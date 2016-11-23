@@ -33,7 +33,7 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.misc.Duration;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.Session;
 import org.tentackle.persist.Db;
 import org.tentackle.reflect.ReflectionHelper;

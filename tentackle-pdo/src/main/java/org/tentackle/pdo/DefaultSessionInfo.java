@@ -30,7 +30,7 @@ import org.tentackle.common.FileHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ImmutableException;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * The default implementation for a session info.

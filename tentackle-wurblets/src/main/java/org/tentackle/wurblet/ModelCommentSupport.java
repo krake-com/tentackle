@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
@@ -109,7 +109,7 @@ public class ModelCommentSupport {
       else  {
         printVia(relation, out);
         if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
-          out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+          out.print(" as " + StringHelper.firstToLower(relation.getName()));
         }
         if (relation.getRelationType() == RelationType.LIST) {
           out.println(" [1:N]");
@@ -156,7 +156,7 @@ public class ModelCommentSupport {
       printVia(relation, out);
 
       if (!relation.getName().equalsIgnoreCase(component.toString())) {
-        out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+        out.print(" as " + StringHelper.firstToLower(relation.getName()));
       }
       if (relation.getNmRelation() != null) {
         out.print(" [N:M] to ");
@@ -164,7 +164,7 @@ public class ModelCommentSupport {
         out.print(nmEntity);
         if (relation.getNmMethodName() != null &&
             !relation.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
-          out.print(" as " + BasicStringHelper.firstToLower(relation.getNmMethodName()));
+          out.print(" as " + StringHelper.firstToLower(relation.getNmMethodName()));
         }
         out.println();
       }

@@ -53,7 +53,7 @@ For more options, see {\@link DbModelWurblet}.
         }
         if (isPdo) {
 ]@
-  \@Persistent(@(BasicStringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
+  \@Persistent(@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
         }
 ]@

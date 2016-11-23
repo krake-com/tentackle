@@ -29,8 +29,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 
 /**
  * Handler for the {@code @TableName} annotation.
@@ -88,8 +88,8 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   break;
 
                 case "prefix":
-                  prefix = BasicStringHelper.parseString(entry.getValue().toString());
-                  if (BasicStringHelper.isAllWhitespace(prefix)) {
+                  prefix = StringHelper.parseString(entry.getValue().toString());
+                  if (StringHelper.isAllWhitespace(prefix)) {
                     prefix = null;
                   }
                   break;

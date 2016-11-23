@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.misc;
+package org.tentackle.common;
 
 import java.util.Locale;
 import java.util.function.Function;
@@ -142,29 +142,33 @@ public class DefaultStringNormalizer implements Function<String,String> {
          * Map certain characters phonetically.
          * This should work with all western languages sufficiently.
          */
-        if      (c == 'D') {
-          c = 'T';
-        }
-        else if (c == 'G') {
-          c = 'K';
-        }
-        else if (c == 'C') {
-          c = 'K';
-        }
-        else if (c == 'Y') {
-          c = 'I';
-        }
-        else if (c == 'B') {
-          c = 'P';
-        }
-        else if (c == 'Q') {
-          c = 'K';
-        }
-        else if (c == 'W') {
-          c = 'V';
-        }
-        else if (c == 'Z') {
-          c = 'S';
+        switch (c) {
+          case 'D':
+            c = 'T';
+            break;
+          case 'G':
+            c = 'K';
+            break;
+          case 'C':
+            c = 'K';
+            break;
+          case 'Y':
+            c = 'I';
+            break;
+          case 'B':
+            c = 'P';
+            break;
+          case 'Q':
+            c = 'K';
+            break;
+          case 'W':
+            c = 'V';
+            break;
+          case 'Z':
+            c = 'S';
+            break;
+          default:
+            break;
         }
 
         sb.append(c);

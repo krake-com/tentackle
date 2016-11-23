@@ -265,7 +265,7 @@ public class BMoney extends BigDecimal implements Cloneable {
         else {
           buf.append(' ');
         }
-        buf.append(BasicStringHelper.digitToString(c));
+        buf.append(StringHelper.digitToString(c));
       }
     }
     return buf.toString();

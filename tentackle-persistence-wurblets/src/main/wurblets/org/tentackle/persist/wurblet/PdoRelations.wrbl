@@ -174,7 +174,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (rel.isComposite()) {
 ]@
-  \@Persistent(@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@)
+  \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
           }
 ]@
@@ -202,10 +202,10 @@ For more options, see {\@link DbModelWurblet}.
         if (rel.getNmName() != null) {
           String nmVar;
           if (rel.getNmMethodName() != null) {
-            nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+            nmVar  = StringHelper.firstToLower(rel.getNmMethodName());
           }
           else  {
-            nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+            nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
           }
 ]@
   private transient TrackedList<@(rel.getNmRelation().getDeclaredJavaType())@> @(nmVar)@;
@@ -268,12 +268,12 @@ For more options, see {\@link DbModelWurblet}.
       String nmVar = null;
       if (nmRel != null) {
         if (rel.getNmMethodName() != null) {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmMethodName());
-          nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+          nmName = StringHelper.firstToUpper(rel.getNmMethodName());
+          nmVar  = StringHelper.firstToLower(rel.getNmMethodName());
         }
         else  {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
-          nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+          nmName = StringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
+          nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
         }
       }
 
@@ -601,7 +601,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (linkMethodIndex != null) {
 ]@
-    set@(BasicStringHelper.firstToUpper(linkMethodIndex))@(index);
+    set@(StringHelper.firstToUpper(linkMethodIndex))@(index);
 @[
           }
         }
@@ -1526,10 +1526,10 @@ For more options, see {\@link DbModelWurblet}.
           String nmVar = null;
           if (nmRel != null) {
             if (rel.getNmMethodName() != null) {
-              nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+              nmVar  = StringHelper.firstToLower(rel.getNmMethodName());
             }
             else  {
-              nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+              nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
             }
           }
 ]@
@@ -1581,7 +1581,7 @@ For more options, see {\@link DbModelWurblet}.
             (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
             rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
           String tagName = "isReferencing" + rel.getClassName() + "By" +
-                           BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
+                           StringHelper.firstToUpper(rel.getMethodArgs().get(0));
 ]@
 
   // Determines whether any @(pdoName)@ references given @(rel.getClassName())@
@@ -1688,7 +1688,7 @@ For more options, see {\@link DbModelWurblet}.
       // register referencing classes and the methods
       for (Relation rel: refRels) {
         String methodName = "isReferencing" + rel.getClassName() + "By" +
-                            BasicStringHelper.firstToUpper(rel.getMethodArgs().get(0));
+                            StringHelper.firstToUpper(rel.getMethodArgs().get(0));
         for (Entity leaf: rel.getEntity().getLeafEntities()) {
 ]@
     po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");

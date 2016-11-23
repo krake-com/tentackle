@@ -21,7 +21,7 @@ package org.tentackle.sql.metadata;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.sql.BackendException;
 
 
@@ -117,10 +117,10 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
   public void setupForeignKeyColumnFromMetaData(ResultSet resultSet) throws SQLException {
 
     position = resultSet.getShort("KEY_SEQ");
-    foreignKeyColumn = BasicStringHelper.toLower(resultSet.getString("FKCOLUMN_NAME"));
-    primaryKeyColumn = BasicStringHelper.toLower(resultSet.getString("PKCOLUMN_NAME"));
+    foreignKeyColumn = StringHelper.toLower(resultSet.getString("FKCOLUMN_NAME"));
+    primaryKeyColumn = StringHelper.toLower(resultSet.getString("PKCOLUMN_NAME"));
 
-    String val = BasicStringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
+    String val = StringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
     if (!Objects.equals(val, foreignKeyMetaData.getForeignKeySchema())) {
       throw new BackendException("inconsistent referencing schema in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +
@@ -128,7 +128,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
               foreignKeyMetaData.getForeignKeySchema());
     }
 
-    val = BasicStringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
+    val = StringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
     if (!Objects.equals(val, foreignKeyMetaData.getForeignKeyTable())) {
       throw new BackendException("inconsistent referencing table in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +
@@ -136,7 +136,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
               foreignKeyMetaData.getForeignKeyTable());
     }
 
-    val = BasicStringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
+    val = StringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
     if (!Objects.equals(val, foreignKeyMetaData.getPrimaryKeySchema())) {
       throw new BackendException("inconsistent referenced schema in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +
@@ -144,7 +144,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
               foreignKeyMetaData.getPrimaryKeySchema());
     }
 
-    val = BasicStringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
+    val = StringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
     if (!Objects.equals(val, foreignKeyMetaData.getPrimaryKeyTable())) {
       throw new BackendException("inconsistent referenced table in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +

@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import org.tentackle.buildsupport.Settings;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
@@ -445,7 +445,7 @@ public class ModelImpl implements Model {
             else {
               attributeName = relation.getEntity().getName() + "Id";
             }
-            attributeName = BasicStringHelper.firstToLower(attributeName);
+            attributeName = StringHelper.firstToLower(attributeName);
             Attribute foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
             if (foreignAttribute == null) {
               if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
@@ -714,7 +714,7 @@ public class ModelImpl implements Model {
             if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
                 parentRelation.getSelectionType() == SelectionType.LAZY) {
               // 1:N composite lazy relations without a linkMethod don't make sense
-              ((RelationImpl) relation).setLinkMethodName("set" + BasicStringHelper.firstToUpper(parentRelation.getName()));
+              ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
             }
           }
           if (relation.getLinkMethodName() != null) {

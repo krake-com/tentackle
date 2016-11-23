@@ -28,7 +28,7 @@ import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.swing.BindableTableModel;
 import org.tentackle.swing.FormUtilities;
 

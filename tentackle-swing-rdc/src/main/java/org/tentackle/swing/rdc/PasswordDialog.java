@@ -23,7 +23,7 @@ import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.swing.FormQuestion;
 import org.tentackle.swing.FormUtilities;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * Password dialog.

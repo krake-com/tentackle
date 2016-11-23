@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
@@ -612,7 +612,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public String getName() {
-    return name == null ? BasicStringHelper.firstToLower(className) : name;
+    return name == null ? StringHelper.firstToLower(className) : name;
   }
 
   public void setName(String name) {
@@ -943,10 +943,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private String buildName(boolean tolower) {
     String str = name == null ? className : name;
     if (tolower) {
-      str = BasicStringHelper.firstToLower(str);
+      str = StringHelper.firstToLower(str);
     }
     else {
-      str = BasicStringHelper.firstToUpper(str);
+      str = StringHelper.firstToUpper(str);
     }
     if (getRelationType() == RelationType.LIST && !reversed && name == null) {
       str += "List";

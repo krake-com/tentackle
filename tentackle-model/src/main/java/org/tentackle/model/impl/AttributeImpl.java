@@ -19,7 +19,7 @@
 package org.tentackle.model.impl;
 
 import java.util.Objects;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
@@ -339,7 +339,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
 
   public void setColumnName(String columnName) {
-    this.columnName = BasicStringHelper.toLower(columnName);
+    this.columnName = StringHelper.toLower(columnName);
   }
 
   public void setDataType(DataType dataType) {
@@ -390,13 +390,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   @Override
   public void validate() throws ModelException {
 
-    if (BasicStringHelper.isAllWhitespace(getJavaName())) {
+    if (StringHelper.isAllWhitespace(getJavaName())) {
       throw createModelException("missing Java name");
     }
-    if (BasicStringHelper.isReservedWord(getJavaName())) {
+    if (StringHelper.isReservedWord(getJavaName())) {
       throw createModelException("'" + getJavaName() + "' is a reserved Java keyword");
     }
-    if (BasicStringHelper.isAllWhitespace(getColumnName())) {
+    if (StringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
     }
 
@@ -454,7 +454,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String getMethodNameSuffix() {
-    return BasicStringHelper.firstToUpper(javaName);
+    return StringHelper.firstToUpper(javaName);
   }
 
   @Override
@@ -479,7 +479,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   public String getBindableAnnotation() {
     if (getOptions().isBind()) {
       String bindOptions = getOptions().getBindOptions();
-      if (BasicStringHelper.isAllWhitespace(bindOptions)) {
+      if (StringHelper.isAllWhitespace(bindOptions)) {
         return "@Bindable";
       }
       else {

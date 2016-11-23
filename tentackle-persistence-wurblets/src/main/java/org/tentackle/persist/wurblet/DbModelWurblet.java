@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
@@ -529,7 +529,7 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder("set");
     DataType type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
-      buf.append(BasicStringHelper.firstToUpper(type.toString()));
+      buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else  {
       buf.append(type.toString());
@@ -548,7 +548,7 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder("get");
     DataType type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
-      buf.append(BasicStringHelper.firstToUpper(type.toString()));
+      buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else if (type == DataType.BOOLEAN) {
       buf.append("ABoolean");
@@ -752,7 +752,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the set-method name
    */
   public String createRelationSetFirstArgMethodName(Relation relation) {
-    return "set" + BasicStringHelper.firstToUpper(relation.getMethodArgs().get(0));
+    return "set" + StringHelper.firstToUpper(relation.getMethodArgs().get(0));
   }
 
 

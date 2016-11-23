@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.validate.scope.AllScope;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.InteractiveScope;

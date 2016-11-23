@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
@@ -171,7 +171,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         if (str.indexOf('.') >= 0) {
           throw line.createModelException("entity name must not contain package name");
         }
-        if (!BasicStringHelper.isValidJavaClassName(str)) {
+        if (!StringHelper.isValidJavaClassName(str)) {
           throw line.createModelException("'" + str + "' is not a valid Java class name");
         }
         setName(str);
@@ -1211,7 +1211,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    */
   public void validate() throws ModelException {
 
-    if (BasicStringHelper.isAllWhitespace(getName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw new ModelException("configuration 'name = ...' missing", this);
     }
 
@@ -1278,7 +1278,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    */
   public void validateRelated() throws ModelException {
     if (getTableProvidingEntity() == this) {
-      if (BasicStringHelper.isAllWhitespace(getTableName())) {
+      if (StringHelper.isAllWhitespace(getTableName())) {
         throw new ModelException("configuration 'table = ...' missing", this);
       }
       for (Backend backend: factory.getBackends()) {
@@ -1292,10 +1292,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
     else  {
-      if (!BasicStringHelper.isAllWhitespace(getTableName())) {
+      if (!StringHelper.isAllWhitespace(getTableName())) {
         throw new ModelException("configuration 'table = ...' not allowed", this);
       }
-      if (!BasicStringHelper.isAllWhitespace(getTableAlias())) {
+      if (!StringHelper.isAllWhitespace(getTableAlias())) {
         throw new ModelException("configuration 'alias = ...' not allowed", this);
       }
     }

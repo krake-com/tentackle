@@ -21,7 +21,7 @@ package org.tentackle.model.impl;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.TimeZone;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
@@ -52,7 +52,7 @@ public class ModelTest {
   public void testModel() {
 
     try {
-      String model = BasicStringHelper.readTextFromResource(MODEL_FILENAME);
+      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
       Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
 
       Assert.assertEquals("the invoice header", entity.getOptions().getComment());

@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.wurblet.ModelWurblet;
 import org.wurbelizer.wurbel.HeapStream;
@@ -67,7 +67,7 @@ public class RemoteIncludes {
     container       = wurblet.getContainer();
     className       = wurblet.getClassName();
     entity          = wurblet.getEntity();
-    superClassName  = BasicStringHelper.getPlainClassName(wurblet.getSuperClassName());
+    superClassName  = StringHelper.getPlainClassName(wurblet.getSuperClassName());
     packageName     = wurblet.getPackageName();
     remotePrefix    = container.getProperty(Wurbler.PROPSPACE_EXTRA, "remoteprefix");
 

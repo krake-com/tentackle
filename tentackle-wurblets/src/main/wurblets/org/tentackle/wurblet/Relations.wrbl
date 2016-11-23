@@ -50,12 +50,12 @@ For more options, see {\@link ModelWurblet}.
       String nmVar = null;
       if (nmRel != null) {
         if (rel.getNmMethodName() != null) {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmMethodName());
-          nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+          nmName = StringHelper.firstToUpper(rel.getNmMethodName());
+          nmVar  = StringHelper.firstToLower(rel.getNmMethodName());
         }
         else  {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
-          nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+          nmName = StringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
+          nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
         }
       }
 
@@ -77,12 +77,12 @@ For more options, see {\@link ModelWurblet}.
 @[
         if (!rel.isComposite()) {
 ]@
-  \@Persistent(value=@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
 @[
         }
         else {
 ]@
-  \@Persistent(@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@)
+  \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
         }
         for (String annotation: rel.getAnnotations()) {
@@ -102,7 +102,7 @@ For more options, see {\@link ModelWurblet}.
    * \@return list of @(nmRel.getVariableName())@
    */
   \@Bindable
-  \@Persistent(value=@(BasicStringHelper.toDoubleQuotes(nmVar))@, component=false)
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
   TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@();
 @[
         }

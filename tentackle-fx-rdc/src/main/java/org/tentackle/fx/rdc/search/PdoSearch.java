@@ -66,7 +66,7 @@ import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistentDomainObject;

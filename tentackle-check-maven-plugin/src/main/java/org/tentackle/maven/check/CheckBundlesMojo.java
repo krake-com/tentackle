@@ -34,9 +34,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.buildsupport.BundleHandler;
-import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 
 
@@ -107,7 +107,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
                 findServiceConfigurations(serviceName).entrySet()) {
 
         String configuration = entry.getKey();
-        List<String> parts = BasicStringHelper.split(configuration, ":= ");
+        List<String> parts = StringHelper.split(configuration, ":= ");
         String bundleName = parts.get(0);
         if (usedBundleNames.contains(bundleName)) {
           for (Locale bundleLocale: bundleLocales) {

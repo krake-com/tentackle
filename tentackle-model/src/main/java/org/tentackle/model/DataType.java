@@ -26,7 +26,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import org.tentackle.common.BMoney;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.SqlType;
@@ -372,7 +372,7 @@ public enum DataType {
     try {
       switch (type) {
         case STRING:
-          return BasicStringHelper.parseString(str);
+          return StringHelper.parseString(str);
         case DATE:
           return parseDate(str);
         case TIME:
@@ -380,19 +380,19 @@ public enum DataType {
         case TIMESTAMP:
           return parseTimestamp(str);
         case BIGDECIMAL:
-          return new BigDecimal(BasicStringHelper.parseString(str));
+          return new BigDecimal(StringHelper.parseString(str));
         case BMONEY:
-          return new BMoney(new BigDecimal(BasicStringHelper.parseString(str)));
+          return new BMoney(new BigDecimal(StringHelper.parseString(str)));
         case DMONEY:
-          return new DMoney(new BigDecimal(BasicStringHelper.parseString(str)));
+          return new DMoney(new BigDecimal(StringHelper.parseString(str)));
         case CHARACTER:
-          String cstr = BasicStringHelper.parseString(str);
+          String cstr = StringHelper.parseString(str);
           if (cstr.length() != 1) {
             throw new TentackleRuntimeException("character must be of length 1: " + cstr);
           }
           return cstr.charAt(0);
         case BOOLEAN:
-          String bstr = BasicStringHelper.parseString(str);
+          String bstr = StringHelper.parseString(str);
           switch (bstr.toLowerCase()) {
             case "true":
             case "t":
@@ -406,17 +406,17 @@ public enum DataType {
               throw new TentackleRuntimeException("invalid boolean value: " + bstr);
           }
         case BYTE:
-          return Byte.valueOf(BasicStringHelper.parseString(str));
+          return Byte.valueOf(StringHelper.parseString(str));
         case SHORT:
-          return Short.valueOf(BasicStringHelper.parseString(str));
+          return Short.valueOf(StringHelper.parseString(str));
         case INTEGER:
-          return Integer.valueOf(BasicStringHelper.parseString(str));
+          return Integer.valueOf(StringHelper.parseString(str));
         case LONG:
-          return Long.valueOf(BasicStringHelper.parseString(str));
+          return Long.valueOf(StringHelper.parseString(str));
         case FLOAT:
-          return Float.valueOf(BasicStringHelper.parseString(str));
+          return Float.valueOf(StringHelper.parseString(str));
         case DOUBLE:
-          return Double.valueOf(BasicStringHelper.parseString(str));
+          return Double.valueOf(StringHelper.parseString(str));
       }
     }
     catch (ParseException ex) {
@@ -439,18 +439,18 @@ public enum DataType {
 
   private static Date parseDate(String str) throws ParseException {
     synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
-      return new Date(DATE_FORMAT.parse(BasicStringHelper.parseString(str)).getTime());
+      return new Date(DATE_FORMAT.parse(StringHelper.parseString(str)).getTime());
     }
   }
 
   private static Time parseTime(String str) throws ParseException {
     synchronized(TIME_FORMAT) {
-      return new Time(TIME_FORMAT.parse(BasicStringHelper.parseString(str)).getTime());
+      return new Time(TIME_FORMAT.parse(StringHelper.parseString(str)).getTime());
     }
   }
 
   private static Timestamp parseTimestamp(String str) throws ParseException {
-    str = BasicStringHelper.parseString(str);
+    str = StringHelper.parseString(str);
     if (str.length() > 3 && str.charAt(str.length() - 4) == '.') {
       synchronized(MS_TIMESTAMP_FORMAT) {
         return new Timestamp(MS_TIMESTAMP_FORMAT.parse(str).getTime());

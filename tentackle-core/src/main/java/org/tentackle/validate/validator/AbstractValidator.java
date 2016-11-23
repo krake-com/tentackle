@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.CompoundValue;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptVariable;

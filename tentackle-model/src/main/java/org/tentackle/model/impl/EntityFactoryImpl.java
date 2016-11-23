@@ -21,7 +21,7 @@ package org.tentackle.model.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
@@ -332,7 +332,7 @@ public class EntityFactoryImpl implements EntityFactory {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
     index.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(index.getComment())) {
+    if (StringHelper.isAllWhitespace(index.getComment())) {
       index.setComment(comment);
     }
     entity.getIndexes().add(index);
@@ -423,7 +423,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl attribute = createAttribute(entity, line.getSourceInfo(), false);
     attribute.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
+    if (StringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
       attribute.getOptions().setComment(comment);
     }
     entity.getAttributes().add(attribute);
@@ -441,10 +441,10 @@ public class EntityFactoryImpl implements EntityFactory {
     RelationImpl relation = createRelation(entity, line.getSourceInfo());
     relation.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+    if (StringHelper.isAllWhitespace(relation.getComment())) {
       relation.setComment(comment);
     }
-    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+    if (StringHelper.isAllWhitespace(relation.getComment())) {
       relation.setComment(relation.getName());
     }
     entity.getRelations().add(relation);

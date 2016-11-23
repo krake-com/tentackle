@@ -68,7 +68,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.tentackle.common.BMoney;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.xml.sax.SAXException;

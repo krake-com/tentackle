@@ -282,7 +282,7 @@ public class DefaultServiceFinder implements ServiceFinder {
             ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH).findServiceConfigurations(serviceName).entrySet()) {
 
       String configuration = entry.getKey();
-      List<String> parts = BasicStringHelper.split(configuration, ":= ");
+      List<String> parts = StringHelper.split(configuration, ":= ");
       if (parts.size() != 2) {
         throw new TentackleRuntimeException("invalid service configuration '" + configuration + "' in " + entry.getValue());
       }
@@ -309,7 +309,7 @@ public class DefaultServiceFinder implements ServiceFinder {
             ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH).findServiceConfigurations(serviceName).entrySet()) {
 
       String configuration = entry.getKey();
-      List<String> parts = BasicStringHelper.split(configuration, ":= ");
+      List<String> parts = StringHelper.split(configuration, ":= ");
       if (parts.size() != 2) {
         throw new TentackleRuntimeException("invalid service configuration '" + configuration + "' in " + entry.getValue());
       }

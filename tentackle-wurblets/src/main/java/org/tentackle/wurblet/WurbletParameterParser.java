@@ -21,7 +21,7 @@ package org.tentackle.wurblet;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
@@ -336,7 +336,7 @@ public class WurbletParameterParser {
               (c == ')' && cl != '(') ||
               c == '|') {
             String str = buf.toString().trim();
-            if (!BasicStringHelper.isAllWhitespace(str)) {
+            if (!StringHelper.isAllWhitespace(str)) {
               strs.add(str);
             }
             buf.setLength(0);
@@ -351,7 +351,7 @@ public class WurbletParameterParser {
       }
     }
     String str = buf.toString().trim();
-    if (!BasicStringHelper.isAllWhitespace(str)) {
+    if (!StringHelper.isAllWhitespace(str)) {
       strs.add(str);
     }
     return strs;

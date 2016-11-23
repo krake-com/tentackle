@@ -37,7 +37,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.FormatHelper;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 import static java.util.Calendar.DATE;
 import static java.util.Calendar.DAY_OF_MONTH;

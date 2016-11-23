@@ -12,7 +12,7 @@ import javafx.scene.control.TextFormatter;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxTextField;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * Delegate for FxTextField.

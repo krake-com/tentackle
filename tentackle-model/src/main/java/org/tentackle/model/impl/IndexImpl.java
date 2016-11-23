@@ -21,7 +21,7 @@ package org.tentackle.model.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
@@ -219,7 +219,7 @@ public class IndexImpl implements Index {
 
 
   public void setName(String name) {
-    this.name = BasicStringHelper.toLower(name);
+    this.name = StringHelper.toLower(name);
   }
 
   public void setComment(String comment) {
@@ -231,7 +231,7 @@ public class IndexImpl implements Index {
   }
 
   public void setFilterCondition(String filterCondition) {
-    if (BasicStringHelper.isAllWhitespace(filterCondition)) {
+    if (StringHelper.isAllWhitespace(filterCondition)) {
       this.filterCondition = null;
     }
     else  {
@@ -247,7 +247,7 @@ public class IndexImpl implements Index {
 
   @Override
   public void validate() throws ModelException {
-    if (BasicStringHelper.isAllWhitespace(getName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
     // leading underscore is ok, because index name gets the tablename prepended

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.ValidationEvent;
 import org.tentackle.validate.ValidationListener;

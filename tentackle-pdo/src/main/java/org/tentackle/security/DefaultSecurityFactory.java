@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.security.permissions.AllPermission;
 import org.tentackle.security.permissions.EditPermission;
 import org.tentackle.security.permissions.ExecutePermission;

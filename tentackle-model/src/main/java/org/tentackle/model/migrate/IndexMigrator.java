@@ -18,7 +18,7 @@
 
 package org.tentackle.model.migrate;
 
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
@@ -151,7 +151,7 @@ public class IndexMigrator {
       if (!changed) {
         // check filter condition
         String modelFilter = index.getFilterCondition();
-        if (BasicStringHelper.isAllWhitespace(modelFilter)) {
+        if (StringHelper.isAllWhitespace(modelFilter)) {
           modelFilter = "";
         }
         else {
@@ -162,7 +162,7 @@ public class IndexMigrator {
           modelFilter = modelFilter.replace(" ", "");
         }
         String currentFilter = indexMetaData.getFilterCondition();
-        if (BasicStringHelper.isAllWhitespace(currentFilter)) {
+        if (StringHelper.isAllWhitespace(currentFilter)) {
           currentFilter = "";
         }
         else {

@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * Meta data for foreign keys.
@@ -187,16 +187,16 @@ public class ForeignKeyMetaData {
    * @throws SQLException the processing the result set failed
    */
   public void setupForeignKeyFromMetaData(ResultSet resultSet) throws SQLException {
-    foreignKeySchema = BasicStringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
-    foreignKeyTable = BasicStringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
-    foreignKeyName = BasicStringHelper.toLower(resultSet.getString("FK_NAME"));
+    foreignKeySchema = StringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
+    foreignKeyTable = StringHelper.toLower(resultSet.getString("FKTABLE_NAME"));
+    foreignKeyName = StringHelper.toLower(resultSet.getString("FK_NAME"));
     // cut off schema name, if any
     int dotNdx = foreignKeyName.indexOf('.');
     if (dotNdx >= 0) {
       foreignKeyName = foreignKeyName.substring(dotNdx + 1);
     }
-    primaryKeySchema = BasicStringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
-    primaryKeyTable = BasicStringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
+    primaryKeySchema = StringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
+    primaryKeyTable = StringHelper.toLower(resultSet.getString("PKTABLE_NAME"));
     updateRule = ForeignKeyAction.createFromAction(resultSet.getShort("UPDATE_RULE"));
     deleteRule = ForeignKeyAction.createFromAction(resultSet.getShort("DELETE_RULE"));
 
