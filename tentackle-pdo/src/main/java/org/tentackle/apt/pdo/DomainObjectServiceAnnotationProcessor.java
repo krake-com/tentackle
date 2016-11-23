@@ -23,7 +23,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractDomainServiceAnnotationProcessor;
 import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.PersistentDomainObject;

@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.apt;
+package org.tentackle.apt.pdo;
 
 import java.util.Set;
 import javax.annotation.processing.RoundEnvironment;
@@ -26,6 +26,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.Constants;
 
 /**
