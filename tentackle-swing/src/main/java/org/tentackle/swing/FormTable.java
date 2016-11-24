@@ -1461,10 +1461,11 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
                       ((AbstractFormField)field).clearText();
                       ((AbstractFormField)field).setInhibitAutoSelect(true);
                     }
-                    field.dispatchEvent(
-                        new KeyEvent(field, KeyEvent.KEY_TYPED,
-                                     kevt.getWhen()+1,  // +1 to get processed!
-                                     kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
+                    // no more necessary since Java 1.8
+//                    field.dispatchEvent(
+//                        new KeyEvent(field, KeyEvent.KEY_TYPED,
+//                                     kevt.getWhen()+1,  // +1 to get processed!
+//                                     kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
                   }
                   else  {
                     EventQueue.invokeLater(() -> box.selectWithKeyChar(key));
