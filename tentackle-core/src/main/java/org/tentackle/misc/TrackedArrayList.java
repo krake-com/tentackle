@@ -50,7 +50,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private Set<E> removedObjects;                    // set of removed objects
   private boolean removedObjectsFiltered;           // true if removed objects filtered
 
-  private transient List<TrackedList<E>> snapshots; // snapshots of this list
+  private transient List<TrackedArrayList<E>> snapshots; // snapshots of this list
   private transient List<E> elementSnapshots;       // snapshots for the elements of this list (if this is a snapshot)
 
   private transient List<TrackedListListener<E>> listeners;   // the listeners
@@ -237,7 +237,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @return the list of snapshots for this object, null if none taken so far
    */
   @Override
-  public List<TrackedList<E>> getSnapshots() {
+  public List<TrackedArrayList<E>> getSnapshots() {
     return snapshots;
   }
 

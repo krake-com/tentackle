@@ -60,6 +60,6 @@ public interface Snapshotable<T> {
    *
    * @return the list of snapshots for this object, null if none taken so far
    */
-  List<T> getSnapshots();
+  List<? extends T> getSnapshots();
 
 }
