@@ -133,7 +133,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   @SuppressWarnings("unchecked")
-  public TrackedList<E> createSnapshot() {
+  public TrackedArrayList<E> createSnapshot() {
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
