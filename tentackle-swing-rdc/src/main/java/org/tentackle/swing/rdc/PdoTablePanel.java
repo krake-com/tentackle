@@ -36,9 +36,7 @@ import org.tentackle.swing.FormTable;
 import org.tentackle.swing.FormTableEntry;
 import org.tentackle.swing.FormTableModel;
 import org.tentackle.swing.FormTableSorter;
-import org.tentackle.swing.FormTableUtilityPopupFactory;
 import org.tentackle.swing.FormUtilities;
-import org.tentackle.swing.UIFactory;
 import org.tentackle.swing.mocking.MockFormTableEntry;
 
 
@@ -190,7 +188,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
    */
   @SuppressWarnings("unchecked")
   public FormTable<T> createFormTable() {
-    return (FormTable<T>) UIFactory.getInstance().createFormTable();
+    return (FormTable<T>) Rdc.createFormTable();
   }
 
 
@@ -309,7 +307,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     dataTable.setName(prefName);
     if (prefName != null)  {
       dataTable.setCreateDefaultColumnsFromPreferences(true);
-      dataTable.setUtilityPopup(FormTableUtilityPopupFactory.getInstance().createPopup());
+      dataTable.setUtilityPopup(Rdc.createPopup());
     }
     else  {
       dataTable.setCreateDefaultColumnsFromPreferences(false);

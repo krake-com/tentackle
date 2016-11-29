@@ -23,8 +23,11 @@ import java.awt.Component;
 import java.awt.Window;
 import java.util.Collection;
 import java.util.List;
+import javax.swing.table.TableModel;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.swing.FormTable;
+import org.tentackle.swing.FormTableUtilityPopup;
 
 
 /**
@@ -396,6 +399,34 @@ public class Rdc {
     return PdoTreeFactory.getInstance().createPdoTree();
   }
 
+
+  /**
+   * Creates a formtable.
+   *
+   * @return the created formtable
+   */
+  public static FormTable<?> createFormTable() {
+    return FormTableFactory.getInstance().createFormTable();
+  }
+
+  /**
+   * Creates a formtable for a given data model.
+   *
+   * @param model the data model
+   * @return the created formtable
+   */
+  public static FormTable<?> createFormTable(TableModel model) {
+    return FormTableFactory.getInstance().createFormTable(model);
+  }
+
+  /**
+   * Creates a popup.
+   *
+   * @return the popup
+   */
+  public static FormTableUtilityPopup createPopup() {
+    return FormTableFactory.getInstance().createPopup();
+  }
 
 
   private Rdc() {

@@ -17,22 +17,36 @@
  */
 
 
+package org.tentackle.swing.rdc;
 
-package org.tentackle.swing;
-
+import javax.swing.table.TableModel;
 import org.tentackle.common.Service;
+import org.tentackle.swing.FormTable;
+import org.tentackle.swing.FormTableUtilityPopup;
+import org.tentackle.swing.print.PrintingFormTableUtilityPopup;
+
 
 /**
- * Default implementation of a FormTableUtilityPopupFactory.
+ * Default implementation of a formtable factory.
  *
  * @author harald
  */
-@Service(FormTableUtilityPopupFactory.class)
-public class DefaultFormTableUtilityPopupFactory implements FormTableUtilityPopupFactory {
+@Service(FormTableFactory.class)
+public class DefaultFormTableFactory implements FormTableFactory {
+
+  @Override
+  public FormTable<?> createFormTable() {
+    return new FormTable<>();
+  }
+
+  @Override
+  public FormTable<?> createFormTable(TableModel model) {
+    return new FormTable<>(model);
+  }
 
   @Override
   public FormTableUtilityPopup createPopup() {
-    return new FormTableUtilityPopup();
+    return new PrintingFormTableUtilityPopup();
   }
 
 }

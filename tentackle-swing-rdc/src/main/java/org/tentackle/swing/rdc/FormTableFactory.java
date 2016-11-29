@@ -17,24 +17,26 @@
  */
 
 
-package org.tentackle.swing;
+package org.tentackle.swing.rdc;
 
 import javax.swing.table.TableModel;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.swing.FormTable;
+import org.tentackle.swing.FormTableUtilityPopup;
 
 
-interface UIFactory$Singleton {
-  UIFactory INSTANCE = ServiceFactory.createService(UIFactory.class, DefaultUIFactory.class);
+interface FormTableFactory$Singleton {
+  FormTableFactory INSTANCE = ServiceFactory.createService(FormTableFactory.class, DefaultFormTableFactory.class);
 }
 
 
-
 /**
- * The UI factory.
+ * The formtable factory.<br>
+ * Allows application specific replacement in RDC.
  *
  * @author harald
  */
-public interface UIFactory {
+public interface FormTableFactory {
 
 
   /**
@@ -42,8 +44,8 @@ public interface UIFactory {
    *
    * @return the singleton
    */
-  static UIFactory getInstance() {
-    return UIFactory$Singleton.INSTANCE;
+  static FormTableFactory getInstance() {
+    return FormTableFactory$Singleton.INSTANCE;
   }
 
 
@@ -62,5 +64,12 @@ public interface UIFactory {
    * @return the created formtable
    */
   FormTable<?> createFormTable(TableModel model);
+
+  /**
+   * Creates a popup.
+   *
+   * @return the popup
+   */
+  FormTableUtilityPopup createPopup();
 
 }

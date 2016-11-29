@@ -54,11 +54,9 @@ import org.tentackle.swing.FormTableEntry;
 import org.tentackle.swing.FormTableModel;
 import org.tentackle.swing.FormTableSorter;
 import org.tentackle.swing.FormTableUtilityPopup;
-import org.tentackle.swing.FormTableUtilityPopupFactory;
 import org.tentackle.swing.FormTree;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.SumFormTableEntry;
-import org.tentackle.swing.UIFactory;
 
 
 
@@ -676,7 +674,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   @SuppressWarnings("unchecked")
   public FormTable<T> createTable() {
     // create empty table
-    FormTable<?> table = UIFactory.getInstance().createFormTable();
+    FormTable<?> table = Rdc.createFormTable();
     table.setDragEnabled(true);
     table.setAutoResizeMode(FormTable.AUTO_RESIZE_OFF);
     table.setCreateDefaultColumnsFromPreferences(true);
@@ -1507,7 +1505,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
 
           naviTable.createDefaultColumnsFromModel();    // create column width from preferences. table height see below
 
-          FormTableUtilityPopup popup = FormTableUtilityPopupFactory.getInstance().createPopup();
+          FormTableUtilityPopup popup = Rdc.createPopup();
           popup.setTitle(title);
           popup.setIntro(tableIntro);
           naviTable.setUtilityPopup(popup);
