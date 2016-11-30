@@ -26,22 +26,35 @@ package org.tentackle.validate;
  */
 public class ValidationContext {
 
-  private String validationPath;
-  private Class<?> type;
-  private Object object;
-  private Object parentObject;
-  private ValidationScope effectiveScope;
+  private final String validationPath;
+  private final Class<?> type;
+  private final Object object;
+  private final Object parentObject;
+  private final ValidationScope effectiveScope;
 
 
   /**
-   * Sets the validation path.<br>
-   * The method is invoked before validate().
+   * Creates a validation context.
    *
-   * @param validationPath the path in dot-notation corresponding to the object
+   * @param validationPath the validation path
+   * @param type the type of the object to validate
+   * @param object the element to validate
+   * @param parentObject the object containing the element
+   * @param effectiveScope the effective validation scope
    */
-  public void setValidationPath(String validationPath) {
+  public ValidationContext(String validationPath,
+                           Class<?> type,
+                           Object object,
+                           Object parentObject,
+                           ValidationScope effectiveScope) {
+
     this.validationPath = validationPath;
+    this.type = type;
+    this.object = object;
+    this.parentObject = parentObject;
+    this.effectiveScope = effectiveScope;
   }
+
 
   /**
    * Gets the validation path.<br>
@@ -53,32 +66,14 @@ public class ValidationContext {
     return validationPath;
   }
 
-
   /**
-   * Sets the object to be validated.<br>
-   * Invoked before validate().
+   * Gets the element to validate.<br>
+   * This is usually annotated with validator annotation.
    *
-   * @param object the object
-   */
-  public void setObject(Object object) {
-    this.object = object;
-  }
-
-  /**
-   * Gets the validated object.
-   * @return the object.
+   * @return the object to validate
    */
   public Object getObject() {
     return object;
-  }
-
-  /**
-   * Sets the type of the object.
-   *
-   * @param type the type
-   */
-  public void setType(Class<?> type) {
-    this.type = type;
   }
 
   /**
@@ -91,15 +86,6 @@ public class ValidationContext {
   }
 
   /**
-   * Sets the effective scope for this validator.
-   *
-   * @param effectiveScope the effective scope
-   */
-  public void setEffectiveScope(ValidationScope effectiveScope) {
-    this.effectiveScope = effectiveScope;
-  }
-
-  /**
    * Gets the effective scope.
    *
    * @return the effective scope
@@ -108,20 +94,11 @@ public class ValidationContext {
     return effectiveScope;
   }
 
-
   /**
-   * Sets the root-object containing the annotated element.
+   * Gets the parent object.<br>
    *
-   * @param parentObject the root object
-   */
-  public void setParentObject(Object parentObject) {
-    this.parentObject = parentObject;
-  }
-
-  /**
-   * Gets the parent object
    *
-   * @return the object containing the annotated element
+   * @return the object containing the element to validate
    */
   public Object getParentObject() {
     return parentObject;

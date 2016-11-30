@@ -34,6 +34,7 @@ import org.tentackle.swing.FormTableRowObject;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
 
@@ -247,11 +248,14 @@ public class DefaultFormTableBinding extends AbstractFormBinding implements Form
       boolean cellIsMandatory = false;
       for (Validator validator: mandatoryValidators) {
         if (parent != null) { // if parent path is valid, i.e. no null reference
-          ValidationContext validationContext = new ValidationContext();
-          validationContext.setParentObject(parent);
-          validationContext.setObject(modelValue);
-          validationContext.setType(getMember().getType());
-          if (ValidationScopeFactory.getInstance().getMandatoryScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+          ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
+          ValidationContext validationContext = new ValidationContext(
+                  getMember().getMemberPath(),
+                  getMember().getType(),
+                  modelValue,
+                  parent,
+                  scope);
+          if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((MandatoryBindingEvaluator)validator).isMandatory(validationContext)) {
             cellIsMandatory = true;   // should only be once, but one never knows
@@ -266,11 +270,14 @@ public class DefaultFormTableBinding extends AbstractFormBinding implements Form
       boolean cellIsChangeable = false;
       for (Validator validator: changeableValidators) {
         if (parent != null) { // if parent path is valid, i.e. no null reference
-          ValidationContext validationContext = new ValidationContext();
-          validationContext.setParentObject(parent);
-          validationContext.setObject(modelValue);
-          validationContext.setType(getMember().getType());
-          if (ValidationScopeFactory.getInstance().getChangeableScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+          ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
+          ValidationContext validationContext = new ValidationContext(
+                  getMember().getMemberPath(),
+                  getMember().getType(),
+                  modelValue,
+                  parent,
+                  scope);
+          if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
               validator.isConditionValid(validationContext) &&
               ((ChangeableBindingEvaluator)validator).isChangeable(validationContext)) {
             cellIsChangeable = true;   // should only be once, but one never knows

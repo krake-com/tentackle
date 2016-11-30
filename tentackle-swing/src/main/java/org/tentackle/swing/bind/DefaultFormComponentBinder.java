@@ -46,6 +46,7 @@ import org.tentackle.swing.FormUtilities;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
 
@@ -105,12 +106,15 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
           if (validator instanceof MandatoryBindingEvaluator) {
             Object parentObject = mandatoryBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
-              ValidationContext validationContext = new ValidationContext();
-              validationContext.setParentObject(parentObject);
-              validationContext.setObject(mandatoryBinding.getModelValue());
-              validationContext.setType(mandatoryBinding.getMember().getType());
+              ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
+              ValidationContext validationContext = new ValidationContext(
+                      mandatoryBinding.getMember().getMemberPath(),
+                      mandatoryBinding.getMember().getType(),
+                      mandatoryBinding.getModelValue(),
+                      parentObject,
+                      scope);
               // we must check the scope, because it may change due to CompoundValues
-              if (ValidationScopeFactory.getInstance().getMandatoryScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
                   validator.isConditionValid(validationContext)) {
                 mandatory = true;
@@ -130,12 +134,15 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
           if (validator instanceof ChangeableBindingEvaluator) {
             Object parentObject = changeableBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
-              ValidationContext validationContext = new ValidationContext();
-              validationContext.setParentObject(parentObject);
-              validationContext.setObject(changeableBinding.getModelValue());
-              validationContext.setType(changeableBinding.getMember().getType());
+              ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
+              ValidationContext validationContext = new ValidationContext(
+                      changeableBinding.getMember().getMemberPath(),
+                      changeableBinding.getMember().getType(),
+                      changeableBinding.getModelValue(),
+                      parentObject,
+                      scope);
               // we must check the scope, because it may change due to CompoundValues
-              if (ValidationScopeFactory.getInstance().getChangeableScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
                   validator.isConditionValid(validationContext)) {
                 changeable = true;

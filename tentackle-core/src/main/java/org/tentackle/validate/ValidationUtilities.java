@@ -307,10 +307,8 @@ public class ValidationUtilities {
     for (Validator validator : validators) {
 
       // build validation context
-      ValidationContext validationContext = new ValidationContext();
-      validationContext.setParentObject(object);    // set object prior to determine condition
-      validationContext.setEffectiveScope(effectiveScope);
-      validationContext.setValidationPath(validationPath + "." + validator.getValidatedElementName());
+      Object valObject = null;   // the element to validate
+      Class<?> valType = null;   // the element's type
 
       AnnotatedElement element = validator.getAnnotatedElement();
       if (element instanceof Field) {
@@ -319,8 +317,8 @@ public class ValidationUtilities {
           field.setAccessible(true);
         }
         try {
-          validationContext.setObject(object == null ? null : field.get(object));
-          validationContext.setType(field.getType());
+          valObject = object == null ? null : field.get(object);
+          valType = field.getType();
         }
         catch (Exception ex) {
           throw new ValidationRuntimeException("cannot access value of field " + field, ex);
@@ -329,13 +327,18 @@ public class ValidationUtilities {
       else if (element instanceof Method) {
         Method method = (Method) element;
         try {
-          validationContext.setObject(object == null ? null : method.invoke(object));
-          validationContext.setType(method.getReturnType());
+          valObject = object == null ? null : method.invoke(object);
+          valType = method.getReturnType();
         }
         catch (Exception ex) {
           throw new ValidationRuntimeException("cannot invoke method " + method, ex);
         }
       }
+
+      ValidationContext validationContext = new ValidationContext(
+              validationPath + "." + validator.getValidatedElementName(),
+              valType, valObject, object, effectiveScope);
+
 
       // check if scope applies
       if (validator.isConditionValid(validationContext)
@@ -387,12 +390,8 @@ public class ValidationUtilities {
     for (Validator validator : validators) {
 
       // build validation context
-      ValidationContext validationContext = new ValidationContext();
-      validationContext.setParentObject(parentObject);    // set object prior to determine condition
-      validationContext.setObject(object);
-      validationContext.setType(type);
-      validationContext.setEffectiveScope(effectiveScope);
-      validationContext.setValidationPath(validationPath);
+      ValidationContext validationContext = new ValidationContext(
+              validationPath, type, object, parentObject, effectiveScope);
 
       // check if scope applies and validator is valid
       if (validator.isConditionValid(validationContext)
