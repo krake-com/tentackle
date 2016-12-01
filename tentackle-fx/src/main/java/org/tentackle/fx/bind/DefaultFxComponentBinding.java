@@ -128,10 +128,9 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
                   modelValue,
                   parent,
                   scope);
-          if (scope.appliesTo(validator.getConfiguredScopes(
-                  validationContext)) &&
-                  validator.isConditionValid(validationContext) &&
-                  ((MandatoryBindingEvaluator) validator).isMandatory(validationContext)) {
+          if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              validator.isConditionValid(validationContext) &&
+              ((MandatoryBindingEvaluator) validator).isMandatory(validationContext)) {
             mandatory = true;
             break;
           }
@@ -152,10 +151,9 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
                   modelValue,
                   parent,
                   scope);
-          if (scope.appliesTo(validator.getConfiguredScopes(
-                  validationContext)) &&
-                  validator.isConditionValid(validationContext) &&
-                  ((ChangeableBindingEvaluator) validator).isChangeable(validationContext)) {
+          if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              validator.isConditionValid(validationContext) &&
+              ((ChangeableBindingEvaluator) validator).isChangeable(validationContext)) {
             changeable = true;
             break;
           }

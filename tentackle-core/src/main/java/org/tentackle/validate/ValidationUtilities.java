@@ -381,42 +381,44 @@ public class ValidationUtilities {
           List<Validator> validators, ValidationScope effectiveScope,
           String validationPath, Object parentObject, Object object, Class<?> type) {
 
-    if (validationPath == null) {
-      validationPath = getDefaultValidationPath(object);
-    }
-
     List<ValidationResult> allResults = new ArrayList<>();
 
-    for (Validator validator : validators) {
+    if (!validators.isEmpty()) {
 
-      // build validation context
+      if (validationPath == null) {
+        validationPath = getDefaultValidationPath(object);
+      }
+
       ValidationContext validationContext = new ValidationContext(
-              validationPath, type, object, parentObject, effectiveScope);
+                validationPath, type, object, parentObject, effectiveScope);
 
-      // check if scope applies and validator is valid
-      if (validator.isConditionValid(validationContext)
-              && (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
-        // scope applies
-        try {
-          List<? extends ValidationResult> results = validator.validate(validationContext);
-          if (results != null) {
-            boolean failed = false;
-            for (ValidationResult result : results) {
-              allResults.add(result);
-              if (result.hasFailed() && validator.getStopIfFailed()) {
-                failed = true;
+      for (Validator validator : validators) {
+
+        // check if scope applies and validator is valid
+        if (validator.isConditionValid(validationContext) &&
+            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
+          // scope applies
+          try {
+            List<? extends ValidationResult> results = validator.validate(validationContext);
+            if (results != null) {
+              boolean failed = false;
+              for (ValidationResult result : results) {
+                allResults.add(result);
+                if (result.hasFailed() && validator.getStopIfFailed()) {
+                  failed = true;
+                  break;
+                }
+              }
+              if (failed) {
                 break;
               }
             }
-            if (failed) {
-              break;
-            }
           }
-        }
-        catch (RuntimeException ex) {
-          // just log the error for diagnostics
-          LOGGER.severe("validator '" + validator + "' failed", ex);
-          throw ex;
+          catch (RuntimeException ex) {
+            // just log the error for diagnostics
+            LOGGER.severe("validator '" + validator + "' failed", ex);
+            throw ex;
+          }
         }
       }
     }
