@@ -20,7 +20,9 @@
 package org.tentackle.validate;
 
 /**
- * Data to describe the validation context.
+ * The validation context.<br>
+ * No logic in here, just data.
+ * The VC itself is immutable.
  *
  * @author harald
  */

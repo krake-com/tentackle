@@ -543,8 +543,12 @@ public class DefaultSecurityManager implements SecurityManager {
       throw new SecurityException("no class or classId given");
     }
 
+    boolean fineLoggable = LOGGER.isFineLoggable();   // little speedup
+
     if (!isEnabled()) {
-      LOGGER.fine("SecurityManager is disabled -> GRANT_DEFAULT");
+      if (fineLoggable) {
+        LOGGER.fine("SecurityManager is disabled -> GRANT_DEFAULT");
+      }
       return createDefaultSecurityResult("security manager is disabled");
     }
 
@@ -570,9 +574,11 @@ public class DefaultSecurityManager implements SecurityManager {
 
       for (GranteeDescriptor grantee: granteesToCheck) {
 
-        LOGGER.fine("Checking grantee={0}[{1}], context={2}, permission={3}, object={4}[{5}], class={6}",
-                    sessionGrantee.getGranteeClassId(), sessionGrantee.getGranteeId(),
-                    context, permission, objectClassId, objectId, clazz);
+        if (fineLoggable) {
+          LOGGER.fine("Checking grantee={0}[{1}], context={2}, permission={3}, object={4}[{5}], class={6}",
+                      sessionGrantee.getGranteeClassId(), sessionGrantee.getGranteeId(),
+                      context, permission, objectClassId, objectId, clazz);
+        }
 
         // the map of applicable security rules
         SortedMap<?, Security> map;
@@ -595,11 +601,15 @@ public class DefaultSecurityManager implements SecurityManager {
         // walk through the security settings of the map
         // they are sorted by priority!
         for (Security sec : map.values()) {
-          LOGGER.fine("evaluate {0}", sec);
+          if (fineLoggable) {
+            LOGGER.fine("evaluate {0}", sec);
+          }
           // check if rule fires
           if (sec.evaluate(context, permission)) {
             // rule applies!
-            LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
+            if (fineLoggable) {
+              LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
+            }
             if (sec.isAllowed()) {
               return createdAcceptedSecurityResult(sec.getMessage(), false);
             }
@@ -611,7 +621,9 @@ public class DefaultSecurityManager implements SecurityManager {
       }
     }
 
-    LOGGER.fine("no rule matched");
+    if (fineLoggable) {
+      LOGGER.fine("no rule matched");
+    }
     return null;
   }
 
