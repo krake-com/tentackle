@@ -23,11 +23,17 @@ import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * A replacement for the standard event queue providing
@@ -40,11 +46,21 @@ public class FormEventQueue extends EventQueue {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(FormEventQueue.class);
 
-  /** default milliseconds to drop keyevents for FormError, etc... **/
-  public static long dropKeyEventDefaultTime = 250;
+  /** default milliseconds to drop events. **/
+  public static long dropEventDefaultTime = 250;
 
 
-  private long dropKeyEventTime;    // drop keys in ms
+  /**
+   * Filter to drop events.<br>
+   * null if none or timed out (default).
+   */
+  private Predicate<InputEvent> eventFilter;
+
+  /**
+   * Epochal time in ms until events described by eventFilter should be dropped.<br>
+   * 0 if none or timed out (default).
+   */
+  private long dropEventTime;
 
 
   /**
@@ -60,17 +76,25 @@ public class FormEventQueue extends EventQueue {
    * Useful for dialogs to prevent accidently ack (usually ENTER) by user.
    *
    * @param millis the time in milliseconds to add the current system time
+   * @param eventFilter the filter describing the events to drop
    */
-  public void dropKeyEvents(long millis) {
-    dropKeyEventTime = System.currentTimeMillis() + millis;
+  public void dropEvents(long millis, Predicate<InputEvent> eventFilter) {
+    dropEventTime = System.currentTimeMillis() + millis;
+    this.eventFilter = eventFilter;
   }
 
   /**
-   * Drops all key events so far up to a given time from now.<br>
-   * @see #dropKeyEventDefaultTime
+   * Drops all key events so far up {@link #dropEventDefaultTime} ms from now.
    */
   public void dropKeyEvents() {
-    dropKeyEvents(dropKeyEventDefaultTime);
+    dropEvents(dropEventDefaultTime, (e) -> e instanceof KeyEvent);
+  }
+
+  /**
+   * Drops all mouse events so far up {@link #dropEventDefaultTime} ms from now.
+   */
+  public void dropMouseEvents() {
+    dropEvents(dropEventDefaultTime, (e) -> e instanceof MouseEvent);
   }
 
 
@@ -80,14 +104,28 @@ public class FormEventQueue extends EventQueue {
    * Overridden to drop keyboard events.
    */
   @Override
-  @SuppressWarnings("nls")
   public AWTEvent getNextEvent() throws InterruptedException {
 
-    AWTEvent event;
-    do  {
-      event = super.getNextEvent();
+    AWTEvent event = super.getNextEvent();
+
+    if (dropEventTime != 0 && eventFilter != null) {
+      for (;;) {
+        if (event instanceof InputEvent) {
+          InputEvent ie = (InputEvent) event;
+          if (ie.getWhen() <= dropEventTime) {
+            if (!eventFilter.test(ie)) {
+              break;  // pass to application
+            }
+            // else: skip this event
+          }
+          else {  // time reached
+            eventFilter = null;
+            dropEventTime = 0;
+            break;  // pass to application
+          }
+        }
+      }
     }
-    while (event instanceof KeyEvent && ((KeyEvent)event).getWhen() <= dropKeyEventTime);
 
     /**
      * Check for debug feature shift+ctrl+rightear:
@@ -95,12 +133,45 @@ public class FormEventQueue extends EventQueue {
      */
     if (event instanceof MouseEvent) {
       MouseEvent me = (MouseEvent) event;
-      if (me.isShiftDown() && me.isControlDown() && me.isPopupTrigger()) {
+      if (me.isShiftDown() && me.isControlDown() && me.isPopupTrigger() && LOGGER.isInfoLoggable()) {
         Object object = me.getSource();
         if (object instanceof Component) {
           Point p = me.getPoint();
+          List<Component> dumpedComponents = new ArrayList<>();
+	        if (object instanceof JFrame) {
+            Component glass = ((JFrame) object).getGlassPane();
+            if (glass != null) {
+              Component comp = SwingUtilities.getDeepestComponentAt(glass, p.x - glass.getX(), p.y - glass.getY());
+              if (comp != null) {
+                LOGGER.info("component hierarchy for glass pane " +
+                            ReflectionHelper.getClassBaseName(glass.getClass()) +
+                            (glass.getName() == null ? "" : (" (" + glass.getName() + ")")) +
+                            ":\n" +
+                            FormUtilities.getInstance().dumpComponentHierarchy(comp, me));
+                dumpedComponents.add(comp);
+              }
+            }
+            Component pane = ((JFrame) object).getContentPane();
+            if (pane != null) {
+              Component comp = SwingUtilities.getDeepestComponentAt(pane, p.x - pane.getX(), p.y - pane.getY());
+              if (comp != null && !dumpedComponents.contains(comp)) {
+                LOGGER.info("component hierarchy for content pane " +
+                            ReflectionHelper.getClassBaseName(pane.getClass()) +
+                            (pane.getName() == null ? "" : (" (" + pane.getName() + ")")) +
+                            ":\n" +
+                            FormUtilities.getInstance().dumpComponentHierarchy(comp, me));
+                dumpedComponents.add(comp);
+              }
+            }
+          }
           Component comp = SwingUtilities.getDeepestComponentAt((Component) object, p.x, p.y);
-          LOGGER.info("Component Hierarchy:\n" + FormUtilities.getInstance().dumpComponentHierarchy(comp, me));
+          if (comp != null && !dumpedComponents.contains(comp)) {
+            LOGGER.info("component hierarchy for " +
+                        ReflectionHelper.getClassBaseName(comp.getClass()) +
+                        (comp.getName() == null ? "" : (" (" + comp.getName() + ")")) +
+                        ":\n" +
+                        FormUtilities.getInstance().dumpComponentHierarchy(comp, me));
+          }
         }
       }
     }
