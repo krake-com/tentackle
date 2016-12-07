@@ -36,4 +36,7 @@ public interface FxComponentBinding extends Binding {
    */
   FxComponent getComponent();
 
+  @Override
+  FxComponentBinder getBinder();
+
 }

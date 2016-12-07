@@ -37,4 +37,7 @@ public interface FormComponentBinding extends Binding {
    */
   FormComponent getFormComponent();
 
+  @Override
+  FormComponentBinder getBinder();
+
 }

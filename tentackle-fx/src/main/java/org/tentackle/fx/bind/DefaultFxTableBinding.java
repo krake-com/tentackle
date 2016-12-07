@@ -88,6 +88,12 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
   }
 
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public T getModelValue() {
+    return (T) super.getModelValue();
+  }
+
   /**
    * Applies the model's type to the component.
    *

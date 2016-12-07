@@ -32,6 +32,12 @@ import org.tentackle.fx.table.TableColumnConfiguration;
  */
 public interface FxTableBinding<S,T> extends Binding {
 
+  @Override
+  FxTableBinder<S> getBinder();
+
+  @Override
+  T getModelValue();
+
   /**
    * Gets the column configuration.
    *

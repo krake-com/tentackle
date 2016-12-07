@@ -27,16 +27,17 @@ import org.tentackle.swing.BindableTableModel;
 /**
  * The Binder that associates a formtable with object binding paths.
  *
+ * @param <S> type of the objects contained within the table's items list
  * @author harald
  */
-public interface FormTableBinder extends Binder {
+public interface FormTableBinder<S> extends Binder {
 
   /**
    * Gets the table model.
    *
    * @return the bound table model
    */
-  BindableTableModel getModel();
+  BindableTableModel<S> getModel();
 
 
   /**

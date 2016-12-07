@@ -364,7 +364,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
         throw new FxRuntimeException("missing binding for " + this);
       }
       binding.setBoundRootObject(p.getValue());
-      return new ReadOnlyObjectWrapper<>((T) binding.getModelValue());
+      return new ReadOnlyObjectWrapper<>(binding.getModelValue());
     };
   }
 

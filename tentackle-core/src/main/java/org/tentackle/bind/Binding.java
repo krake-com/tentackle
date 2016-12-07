@@ -29,7 +29,7 @@ import org.tentackle.validate.Validator;
 
 
 /**
- * Binding between a class member and some other GUI-related component.
+ * Binding between a class member and some related component.
  *
  * @author harald
  */
