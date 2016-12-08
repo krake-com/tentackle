@@ -27,6 +27,7 @@ import java.util.List;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.Interceptable;
+import org.tentackle.reflect.InterceptableMethodCache;
 import org.tentackle.reflect.Mixin;
 
 /**
