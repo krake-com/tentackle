@@ -66,6 +66,7 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
   private final FormContainer form;                                       // the form to bind
   private final TreeMap<String,FormComponent> eligibleComponents;         // all eligible components in given form
   private final Map<FormComponent,FormComponentBinding> boundComponents;  // the bindings mapped by component
+  private final Set<FormComponent> unboundComponents;                     // unbound components
   private final Map<String,FormComponentBinding> boundPaths;              // the bindings mapped by binding path
   private final List<Binding> dynamicMandatoryBindings;                   // bindings to be monitored for the mandatory attribute
   private boolean needMandatoryUpdate;                                    // true if we need an update of the mandatory bindings
@@ -82,6 +83,7 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
     super();
     this.form = form;
     eligibleComponents = new TreeMap<>();
+    unboundComponents = new HashSet<>();
     boundComponents = new HashMap<>();
     boundPaths = new TreeMap<>();
     dynamicMandatoryBindings = new ArrayList<>();
@@ -191,19 +193,31 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
 
   @Override
   public int bindAllInherited() {
-    return doBind(false, false);
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(false, false);
+    }
+    return count;
   }
 
 
   @Override
-  public int bindFormInherited() {
-    return doBind(false, true);
+  public int bindWithInheritedBindables() {
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(false, true);
+    }
+    return count;
   }
 
 
   @Override
-  public int bindBindableInherited() {
-    return doBind(true, false);
+  public int bindWithInheritedComponents() {
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(true, false);
+    }
+    return count;
   }
 
 
@@ -219,6 +233,7 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
       comp.setBinding(null);
     }
     eligibleComponents.clear();
+    unboundComponents.clear();
     boundComponents.clear();
     boundPaths.clear();
   }
@@ -236,24 +251,29 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
   }
 
 
+  /**
+   * Checks whether some components are still unbound.
+   *
+   * @return true if unbound pending, false if all bound
+   */
+  public boolean isUnboundPending() {
+    return !unboundComponents.isEmpty();
+  }
+
+
   @Override
   public Collection<FormComponent> getUnboundComponents() {
-    List<FormComponent> unboundComponents = new ArrayList<>();
-    for (FormComponent component: eligibleComponents.values()) {
-      if (component.getBinding() == null) {
-        unboundComponents.add(component);
-      }
-    }
     return unboundComponents;
   }
 
 
   @Override
   public void assertAllBound() throws BindingException {
-    Collection<FormComponent> unboundComponents = getUnboundComponents();
-    if (!unboundComponents.isEmpty()) {
-      for (FormComponent comp: unboundComponents) {
-        LOGGER.severe("unbound component " + comp.getComponentPath());
+    if (isUnboundPending()) {
+      for (FormComponent comp: eligibleComponents.values()) {   // sorted by bindingPath
+        if (comp.getBinding() == null) {
+          LOGGER.severe("unbound component " + comp.getComponentPath());
+        }
       }
       throw new BindingException("unbound components in " + form.getClass().getName());
     }
@@ -266,14 +286,16 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
       FormComponentBinding oldBinding = boundPaths.put(binding.getMember().getMemberPath(), (FormComponentBinding) binding);
       if (oldBinding != null) {
         throw new BindingException(binding + ": binding path '" + binding.getMember().getMemberPath() +
-                                   "' already bound to " + oldBinding.getFormComponent().getComponentPath());
+                                   "' already bound to " + oldBinding.getComponent().getComponentPath());
       }
-      oldBinding = boundComponents.put(((FormComponentBinding) binding).getFormComponent(), (FormComponentBinding) binding);
+      oldBinding = boundComponents.put(((FormComponentBinding) binding).getComponent(), (FormComponentBinding) binding);
       if (oldBinding != null) {
-        throw new BindingException(binding + ": component '" + ((FormComponentBinding) binding).getFormComponent().getComponentPath() +
+        throw new BindingException(binding + ": component '" + ((FormComponentBinding) binding).getComponent().getComponentPath() +
                                    "' already bound to " + oldBinding.getMember().getMemberPath());
       }
-      ((FormComponentBinding) binding).getFormComponent().setBinding((FormComponentBinding) binding);
+      ((FormComponentBinding) binding).getComponent().setBinding((FormComponentBinding) binding);
+
+      unboundComponents.remove(((FormComponentBinding) binding).getComponent());
 
       // check if binding is dynamically mandatory according to the annotation
       List<Validator> validators = binding.getValidators();
@@ -314,7 +336,7 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
       if (boundPaths.remove(binding.getMember().getMemberPath()) != binding) {
         throw new BindingException("Binding " + binding + " missing in path map");
       }
-      binding.getFormComponent().setBinding(null);
+      binding.getComponent().setBinding(null);
     }
     return binding;
   }
@@ -324,10 +346,10 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
   public FormComponentBinding removeBinding(String bindingPath) {
     FormComponentBinding binding = boundPaths.remove(bindingPath);
     if (binding != null) {
-      if (boundComponents.remove(binding.getFormComponent()) != binding) {
+      if (boundComponents.remove(binding.getComponent()) != binding) {
         throw new BindingException("Binding " + binding + " missing in component map");
       }
-      binding.getFormComponent().setBinding(null);
+      binding.getComponent().setBinding(null);
     }
     return binding;
   }
@@ -435,8 +457,8 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
 
         // try to bind this member
         FormComponent component = findComponent(fieldMemberPath);
-        if (component != null) {
-          // found
+        if (component != null && component.getBinding() == null) {
+          // unbound found
           Binding binding = FormUtilities.getInstance().getBindingFactory().createFormComponentBinding(this, parents, fieldMember,
                                                                       component, element.getBindingOptions());
           addBinding(binding);
@@ -546,19 +568,23 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
    *
    * @param container the container declaring the field
    * @param formField the form field declared in the container
-   * @return the form component or container, may be null!
+   * @return the form component or container, null if field is not a form object
    */
   private Object getFormObject(Container container, Field formField) {
+    Object formObject = null;
     try {
       if (!formField.isAccessible()) {
         formField.setAccessible(true);
       }
-      return formField.get(container);
+      formObject = formField.get(container);
+      if (formObject == null) {
+        throw new BindingException(formField + " is null");
+      }
     }
     catch (Exception ex) {
-      throw new BindingException("cannot access " + formField + " in container " +
-                                 container.getClass().getName(), ex);
+      throw new BindingException("cannot access " + formField, ex);
     }
+    return formObject;
   }
 
 
@@ -587,8 +613,8 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
 
           if (FormComponent.class.isAssignableFrom(field.getType())) {
             FormComponent component = (FormComponent) getFormObject(container, field);
-            if (component != null && component.isBindable()) {
-              // only initialized members (usually generated by the GUI builder)
+            if (component != null && component.isBindable() && component.getBinding() == null) {
+              // if component is bindable and not bound in advance
               String componentPath = containerPath + "." + field.getName();
               component.setComponentPath(componentPath);
               String bindingPath = component.getBindingPath();
@@ -606,10 +632,15 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
               // add to component map
               FormComponent oldComponent = eligibleComponents.put(bindingPath, component);
               if (oldComponent != null) {
-                throw new BindingException("binding path '" + bindingPath +
-                                           "' already provided by " + oldComponent.getComponentPath());
+                if (oldComponent != component) {
+                  throw new BindingException("binding path '" + bindingPath
+                          + "' already provided by " + oldComponent.getComponentPath());
+                }
               }
-              LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
+              else {
+                LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
+                unboundComponents.add(component);
+              }
             }
           }
           else if (Container.class.isAssignableFrom(field.getType())) {

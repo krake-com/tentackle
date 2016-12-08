@@ -77,10 +77,13 @@ public class Duration {
 
   /**
    * Sets the duration to zero.
+   *
+   * @return the duration itself (for fluent style)
    */
-  public void zero() {
+  public Duration zero() {
     end = start;
     durationValid = true;
+    return this;
   }
 
   /**
@@ -88,10 +91,13 @@ public class Duration {
    * <p>
    * The end is retrieved from {@link System#nanoTime()}.<br>
    * The method can be invoked more than once.
+   *
+   * @return the duration itself (for fluent style)
    */
-  public void end() {
+  public Duration end() {
     end = System.nanoTime();
     durationValid = true;
+    return this;
   }
 
   /**

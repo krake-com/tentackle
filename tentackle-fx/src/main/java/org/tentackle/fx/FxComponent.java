@@ -171,6 +171,7 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
 
   /**
    * Gets the component path.
+   * 
    * @return the component path, null if not bound
    */
   String getComponentPath();

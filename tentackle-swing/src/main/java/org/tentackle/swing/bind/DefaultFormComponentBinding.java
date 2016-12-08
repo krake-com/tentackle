@@ -99,7 +99,7 @@ public class DefaultFormComponentBinding extends AbstractFormBinding implements 
 
 
   @Override
-  public FormComponent getFormComponent() {
+  public FormComponent getComponent() {
     return component;
   }
 
@@ -267,8 +267,8 @@ public class DefaultFormComponentBinding extends AbstractFormBinding implements 
    */
   protected void processOptions(String componentOptions) {
     if (componentOptions != null) {
-      if (getFormComponent() instanceof FormFieldComponent) {
-        FormFieldComponent comp = (FormFieldComponent) getFormComponent();
+      if (getComponent() instanceof FormFieldComponent) {
+        FormFieldComponent comp = (FormFieldComponent) getComponent();
         StringTokenizer stok = new StringTokenizer(componentOptions.toUpperCase(), ",");
         while (stok.hasMoreTokens()) {
           String token = stok.nextToken();

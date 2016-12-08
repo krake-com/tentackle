@@ -119,7 +119,7 @@ public class TestControllers extends AbstractApplication {
           }
         }
         catch (RuntimeException rex) {
-          Assert.fail("loading " + clazz + " failed", rex);
+          Assert.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
         }
       }
     }

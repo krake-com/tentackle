@@ -50,7 +50,7 @@ public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
     // map the binding path to a component
     Binding binding = mapResult.getBinder().getBinding(mapResult.getBindingPath());
     if (binding instanceof FormComponentBinding) {
-      error.setUiComponent(((FormComponentBinding) binding).getFormComponent());
+      error.setUiComponent(((FormComponentBinding) binding).getComponent());
     }
 
     return error;
