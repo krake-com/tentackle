@@ -2412,7 +2412,7 @@ public class Db implements Session, Cloneable {
         detach();
       }
       this.autoCommit = autoCommit;
-      LOGGER.finest("physically setAutoCommit({0})", autoCommit);
+      LOGGER.finer("physically setAutoCommit({0})", autoCommit);
       return !autoCommit;     // was toggled
     }
     else {

@@ -86,7 +86,6 @@ public class SLF4JLogger implements Logger {
   @Override
   public boolean isLoggable(Level level) {
     switch (level) {
-      case FINEST:  return isFinestLoggable();
       case FINER:   return isFinerLoggable();
       case FINE:    return isFineLoggable();
       case INFO:    return isInfoLoggable();
@@ -101,12 +100,6 @@ public class SLF4JLogger implements Logger {
   @Override
   public void log(Level level, String message, Throwable cause) {
     doLog(level, message, cause);
-  }
-
-
-  @Override
-  public void finest(String message, Throwable cause) {
-    doLog(Level.FINEST, message, cause);
   }
 
   @Override
@@ -134,12 +127,6 @@ public class SLF4JLogger implements Logger {
     doLog(Level.SEVERE, message, cause);
   }
 
-
-  @Override
-  public void finest(String message, Object... params) {
-    doLog(Level.FINEST, message, null, params);
-  }
-
   @Override
   public void finer(String message, Object... params) {
     doLog(Level.FINER, message, null, params);
@@ -165,12 +152,6 @@ public class SLF4JLogger implements Logger {
     doLog(Level.SEVERE, message, null, params);
   }
 
-
-
-  @Override
-  public boolean isFinestLoggable() {
-    return logger.isTraceEnabled();
-  }
 
   @Override
   public boolean isFinerLoggable() {
@@ -236,7 +217,6 @@ public class SLF4JLogger implements Logger {
    */
   protected int translateLevel(Level level) {
     switch (level) {
-      case FINEST:  return org.slf4j.spi.LocationAwareLogger.TRACE_INT;
       case FINER:   return org.slf4j.spi.LocationAwareLogger.TRACE_INT;
       case FINE:    return org.slf4j.spi.LocationAwareLogger.DEBUG_INT;
       case INFO:    return org.slf4j.spi.LocationAwareLogger.INFO_INT;
@@ -279,7 +259,6 @@ public class SLF4JLogger implements Logger {
     else  {
       // probably the SimpleLogger...
       switch (level) {
-        case FINEST:
         case FINER:
           logger.trace(message, cause);
           break;

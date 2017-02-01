@@ -27,10 +27,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
@@ -131,9 +129,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   private DbPreferencesNode node;                     // the database node (backing store), null = deleted
   private Map<String, DbPreferencesKey> keys;         // list of keys associated with this node
                                                       // (lazy if no PreferenceChangeListeners registered)
-  private Set<Long> childIds;                         // IDs of all child nodes (only if NodeChangeListeners registered)
-  private Map<String, DbPreferences> childPrefs;      // accessed child preferences so far.
-                                                      // Key is the name relative to the parent.
+  private Map<String, DbPreferences> childPrefs;      // child preferences, key is the name relative to the parent
   private PreferenceChangeListener[] prefListeners;   // preference change listeners
   private NodeChangeListener[] nodeListeners;         // node change listeners
 
@@ -174,9 +170,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
 
   /**
-   * Special constructor for roots (both user and system).
-   * This constructor will only be called twice by the static intializer.
-   * Package scope!
+   * Creates a root node.<br>
+   * Called once per user and once for system scope.
    *
    * @param userMode true if user mode, else system mode
    */
@@ -218,7 +213,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     getFactory().updateNodeTableSerial(node.getTableSerial());
 
     childPrefs = new TreeMap<>();
-    childIds   = node.selectChildIds();
   }
 
 
@@ -258,13 +252,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     return absolutePath;
   }
 
-  /**
-   * Returns whether user-scope or system.
-   *
-   * @return true if user, else system
-   */
-  public boolean isUserMode() {
-    return userMode;
+
+  public boolean isRootNode() {
+    return "/".equals(absolutePath);
   }
 
   /**
@@ -285,14 +275,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     return childPrefs;
   }
 
-  /**
-   * Gets the child IDs.
-   *
-   * @return the child IDs
-   */
-  public Set<Long> getChildIds() {
-    return childIds;
-  }
 
   /**
    * Gets the persistence key/value pairs.
@@ -326,17 +308,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
                     absolutePath);
     if (node == null) {
       // node is new
-      childIds = new TreeSet<>();
       node = getFactory().createNode();
       node.setUser(userMode ? session.getSessionInfo().getUserName() : null);
       node.setName(absolutePath);
       if (parent != null) {
         node.setParentId(parent.node.getId());
+        node.setRootNodeId(parent.node.getRootNodeId());
       }
     }
     else  {
       // node already exists
-      childIds = node.selectChildIds();
       getFactory().updateNodeTableSerial(node.getTableSerial());
     }
     getFactory().addPreferences(this);
@@ -380,13 +361,11 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       }
     }
     childPrefs.clear();
-    childIds.clear();
     for (DbPreferencesNode n: childNodes)  {
       String basename = n.getBaseName();
       try {
         DbPreferences childPref = getFactory().createPreferences(this, n);
         childPrefs.put(basename, childPref);    // append to node cache
-        childIds.add(n.getId());                // remember IDs
         getFactory().addPreferences(childPref); // append to maps
       }
       catch (BackingStoreException ex) {
@@ -476,6 +455,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       if (parent != null) {
         // set parent node if not root
         node.setParentId(parent.node.getId());    // node must exist (see flush())
+        node.setRootNodeId(parent.node.getRootNodeId());
+      }
+      else {
+        // this is the root node
+        node.reserveId();
+        node.setRootNodeId(node.getId());
       }
       try {
         node.saveObject();
@@ -569,10 +554,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
     // remove this node from its parent
     if (parent != null) {
-      if (node != null) {
-        parent.childIds.remove(node.getId());
-
-      }
       parent.childPrefs.remove(name);
     }
 
@@ -614,9 +595,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       child = getFactory().createPreferences(this, token);
       if (child.node.isNew()) {
         enqueueNodeAddedEvent(child);
-      }
-      else  {
-        childIds.add(child.node.getId());
       }
       childPrefs.put(token, child);
     }
@@ -673,7 +651,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
       keys          = null;
       childPrefs    = null;
-      childIds      = null;
       nodeListeners = null;
       prefListeners = null;
 
@@ -778,6 +755,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
           }
           else  {
             k.setNodeId(node.getId());
+            k.setRootNodeId(node.getRootNodeId());
           }
           k.setKey(key);
           keys.put(key, k);

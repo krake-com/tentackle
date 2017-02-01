@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.pdo.PersistenceException;
@@ -117,6 +118,14 @@ public class ManagedConnection {
    * Optionally enable statement checks for resultSetType and resultSetConcurrency.
    */
   public static boolean checkStatementResultSetParameters;
+
+  /**
+   * Logging level to log nested selects.<br>
+   * When enabled, selects running in parallel on the same connection will be logged.
+   * This is usually means, that from within a loop processing a result set, a method is invoked,
+   * that in turn triggers another select.
+   */
+  public static Level logLevelForParallelOpenResultSets;
 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ManagedConnection.class);
@@ -540,6 +549,24 @@ public class ManagedConnection {
    */
   public void addResultSet(ResultSetWrapper rs) {
     openResultSets.add(new WeakReference<>(rs));
+    if (logLevelForParallelOpenResultSets != null && openResultSets.size() > 1 && LOGGER.isLoggable(logLevelForParallelOpenResultSets)) {
+      Collection<ResultSetWrapper> parallelResultStatements = getOpenResultSets();
+      if (!parallelResultStatements.isEmpty()) {
+        int count = 0;
+        StringBuilder buf = new StringBuilder();
+        buf.append("parallel queries running on ").append(this).append(":");
+        for (ResultSetWrapper prs: parallelResultStatements) {
+          StatementWrapper stmt = prs.getStatement();
+          if (stmt != null && !stmt.isParallelOk()) {
+            buf.append('\n').append(prs);
+            count++;
+          }
+        }
+        if (count > 1) {
+          LOGGER.log(logLevelForParallelOpenResultSets, buf.toString(), null);
+        }
+      }
+    }
   }
 
   /**

@@ -52,7 +52,7 @@ public class ResultSetWrapper implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetWrapper.class);
 
   private ResultSet rs;                             // the wrapped result set, null if closed
-  private StatementWrapper stmt;                    // the prepared statement wrapper
+  private StatementWrapper stmt;                    // the statement wrapper
   private Db db;                                    // db from statement
   private int columnOffset;                         // offset to add to column index (e.g. for eager loading / joins)
   private boolean commitOnCloseVoucherValid;        // true if commitOnCloseVoucher has been set
@@ -103,10 +103,18 @@ public class ResultSetWrapper implements AutoCloseable {
     return db;
   }
 
+  /**
+   * Gets the statement.
+   *
+   * @return the statement being executes for this result set
+   */
+  public StatementWrapper getStatement() {
+    return stmt;
+  }
 
   @Override
   public String toString() {
-    return stmt == null ? "(closed resultset)" : stmt.toString();
+    return stmt == null ? "<closed resultset>" : stmt.toString();
   }
 
 

@@ -45,6 +45,16 @@ public class DbPreferencesKeyRemoteDelegateImpl
 
 
   @Override
+  public List<DbPreferencesKey> selectByRootNodeId(long rootNodeId) throws RemoteException {
+    try {
+      return dbObject.selectByRootNodeId(rootNodeId);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public List<DbPreferencesKey> selectByNodeId(long nodeId) throws RemoteException {
     try {
       return dbObject.selectByNodeId(nodeId);

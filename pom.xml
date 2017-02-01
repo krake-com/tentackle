@@ -67,6 +67,7 @@
     <module>tentackle-web</module>
     <module>tentackle-all</module>
     <module>tentackle-bom</module>
+    <module>tentackle-tools</module>
   </modules>
 
   <properties>
@@ -78,6 +79,7 @@
     <javac.version.target>1.8</javac.version.target>
     <javac.version.require>1.8.0-45</javac.version.require>
     <maven.version>3.0.5</maven.version>
+    <postgresql.version>9.1-901-1.jdbc4</postgresql.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
@@ -140,7 +142,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>3.14</version>
+        <version>3.15</version>
       </dependency>
 
       <dependency>
@@ -176,13 +178,13 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.0.5.0</version>
+        <version>9.1.6.0</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>2.4.6</version>
+        <version>2.4.7</version>
         <classifier>indy</classifier>
       </dependency>
 
@@ -190,7 +192,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>6.9.10</version>
+        <version>6.10</version>
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -203,14 +205,7 @@
       <dependency>
         <groupId>postgresql</groupId>
         <artifactId>postgresql</artifactId>
-        <version>9.1-901-1.jdbc4</version>
-        <scope>test</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>6.0.2</version>
+        <version>${postgresql.version}</version>
         <scope>test</scope>
       </dependency>
 
@@ -228,7 +223,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.4</version>
+        <version>3.5</version>
         <scope>provided</scope><!-- annotations are needed only to build the plugin -->
       </dependency>
 
@@ -280,7 +275,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.5.1</version>
+          <version>3.6</version>
           <configuration>
             <siteDirectory>${rootBasedir}/src/site</siteDirectory>
           </configuration>
@@ -300,7 +295,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.5.1</version>
+          <version>3.6.0</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <source>${javac.version.src}</source>
@@ -313,7 +308,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.7</version>
+          <version>3.0.2</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <escapeString>\</escapeString>
@@ -330,17 +325,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.3</version>
+          <version>2.10.4</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.0.2</version>
           <configuration>
             <archive>
               <manifest>
@@ -356,7 +351,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.0.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -367,6 +362,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
           <version>2.5.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.8</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -450,7 +450,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.4</version>
+        <version>3.5</version>
         <configuration>
           <requirements>
             <maven>3.0</maven>
@@ -460,7 +460,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.3</version>
+        <version>2.10.4</version>
         <configuration>
           <sourceFileExcludes>
             <exclude>**/rmi/*.java</exclude>
@@ -494,7 +494,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.2</version>
+        <version>2.3</version>
         <reportSets>
           <reportSet>
             <id>versions</id>
@@ -598,7 +598,7 @@
           <plugin>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
-            <version>1.3.5.1</version>
+            <version>1.4.4.1</version>
             <executions>
               <execution>
                 <goals>

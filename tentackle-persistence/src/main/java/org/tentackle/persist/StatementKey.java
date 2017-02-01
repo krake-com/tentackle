@@ -19,6 +19,7 @@
 package org.tentackle.persist;
 
 import java.util.Objects;
+import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * The statement key.
@@ -101,6 +102,20 @@ public class StatementKey {
    */
   public String getSql() {
     return sql;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    buf.append('<');
+    if (sql != null) {
+      buf.append(sql);
+    }
+    else {
+      buf.append(ReflectionHelper.getClassBaseName(usingClass)).append('#').append(statementId);
+    }
+    buf.append('>');
+    return buf.toString();
   }
 
   @Override

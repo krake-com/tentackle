@@ -391,22 +391,12 @@ public abstract class WebApplication<T> extends AbstractApplication
   }
 
 
-
   /**
-   * Connects the server to the database backend.
-   * The database properties may be either given by the "db" property
-   * or if this is missing the application's properties will be used.
+   * Configures the session info.
    *
-   * @throws ApplicationException if login failed
+   * @param sessionInfo the session info
    */
-  protected void doLogin() throws ApplicationException {
-
-    String username = getProperty(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
-
-    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
-
+  protected void configureSessionInfo(SessionInfo sessionInfo) {
     // load properties
     Properties sessionProps = null;
     try {
@@ -426,15 +416,29 @@ public abstract class WebApplication<T> extends AbstractApplication
       sessionInfo.setProperties(sessionProps);
     }
 
-    if (sessionPropsName == null || sessionPropsName.isEmpty()) {
-      // get the connection properties from the local properties
-      sessionInfo.setProperties(getProperties());
-    }
     if (sessionInfo.getApplicationName() == null) {
       sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
     }
 
     sessionInfo.applyProperties();
+  }
+
+
+  /**
+   * Connects the server to the database backend.
+   * The database properties may be either given by the "db" property
+   * or if this is missing the application's properties will be used.
+   *
+   * @throws ApplicationException if login failed
+   */
+  protected void doLogin() throws ApplicationException {
+
+    String username = getProperty(Constants.BACKEND_USER);
+    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
+    String sessionPropertiesName = getProperty(Constants.BACKEND_PROPS);
+
+    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropertiesName);
+    configureSessionInfo(sessionInfo);
     setSessionInfo(sessionInfo);
 
     if (serverDb != null) {

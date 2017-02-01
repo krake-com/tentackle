@@ -169,7 +169,23 @@
           <verbosity>info</verbosity>
           <backendNames>all</backendNames>
           <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
+          <backends>
+            <!-- for migration only -->
+            <backend>
+              <url>jdbc:postgresql://localhost/tentackle</url>
+              <user>tentackle</user>
+              <password>tentackle</password>
+              <schemaNames>public</schemaNames>
+            </backend>
+          </backends>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
     </plugins>

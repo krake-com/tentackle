@@ -88,12 +88,10 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
 
   @Override
   public String toString() {
-    String s1 = super.toString();
-    String s2 = "{ " + getSql() + " }";
-    if (s1.equals(s2)) {
-      return s1;
+    if (statementKey != null && statementKey.getStatementId() != null) {
+      return statementKey + super.toString();
     }
-    return s2 + " -> " + s1;
+    return "<prepared>" + super.toString();
   }
 
 

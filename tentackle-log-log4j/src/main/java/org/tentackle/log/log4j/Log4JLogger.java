@@ -39,7 +39,7 @@ public class Log4JLogger implements Logger {
   private static final String EXCLUDE_CLASSNAME = Log4JLogger.class.getName();
 
   // cached loggers
-  private static final HashMap<String,Log4JLogger> loggers = new HashMap<>();
+  private static final HashMap<String,Log4JLogger> LOGGERS = new HashMap<>();
 
   /**
    * Gets the Log4JLogger for given name.
@@ -49,12 +49,12 @@ public class Log4JLogger implements Logger {
    * @return the logger
    */
   public static Log4JLogger getLogger(String name) {
-    synchronized(loggers) {
-      Log4JLogger logger = loggers.get(name);
+    synchronized(LOGGERS) {
+      Log4JLogger logger = LOGGERS.get(name);
       if (logger == null) {
         // create a new one
         logger = new Log4JLogger(name);
-        loggers.put(name, logger);
+        LOGGERS.put(name, logger);
       }
       return logger;
     }
@@ -94,11 +94,6 @@ public class Log4JLogger implements Logger {
 
 
   @Override
-  public void finest(String message, Throwable cause) {
-    doLog(Level.FINEST, message, cause);
-  }
-
-  @Override
   public void finer(String message, Throwable cause) {
     doLog(Level.FINER, message, cause);
   }
@@ -121,12 +116,6 @@ public class Log4JLogger implements Logger {
   @Override
   public void severe(String message, Throwable cause) {
     doLog(Level.SEVERE, message, cause);
-  }
-
-
-  @Override
-  public void finest(String message, Object... params) {
-    doLog(Level.FINEST, message, null, params);
   }
 
   @Override
@@ -154,12 +143,6 @@ public class Log4JLogger implements Logger {
     doLog(Level.SEVERE, message, null, params);
   }
 
-
-
-  @Override
-  public boolean isFinestLoggable() {
-    return isLoggable(Level.FINEST);
-  }
 
   @Override
   public boolean isFinerLoggable() {
@@ -224,12 +207,11 @@ public class Log4JLogger implements Logger {
    */
   protected org.apache.log4j.Level translateLevel(Level level) {
     switch (level) {
-      case FINEST:  return org.apache.log4j.Level.ALL;
       case FINER:   return org.apache.log4j.Level.TRACE;
       case FINE:    return org.apache.log4j.Level.DEBUG;
       case INFO:    return org.apache.log4j.Level.INFO;
       case WARNING: return org.apache.log4j.Level.WARN;
-      default:      return org.apache.log4j.Level.FATAL;
+      default:      return org.apache.log4j.Level.ERROR;
     }
   }
 

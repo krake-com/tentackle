@@ -79,7 +79,6 @@ public abstract class ServerApplication extends AbstractApplication
 
   private CommandLine cmdLine;                        // command line
   private DbServer dbServer;                          // the RMI server instance
-  private String sessionPropsName;                    // db properties name
   private SessionManager sessionManager;              // the connection manager
   private Db serverDb;                                // the primary server db
   private SessionPool sessionPool;                    // the session pool
@@ -292,18 +291,11 @@ public abstract class ServerApplication extends AbstractApplication
 
 
   /**
-   * Connects the server to the database backend.
+   * Configures the session info.
    *
-   * @throws ApplicationException if login failed
+   * @param sessionInfo the session info
    */
-  protected void doLogin() throws ApplicationException {
-
-    String username = getProperty(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    sessionPropsName = getProperty(Constants.BACKEND_PROPS);
-
-    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
-
+  protected void configureSessionInfo(SessionInfo sessionInfo) {
     // load properties
     Properties sessionProps = null;
     try {
@@ -328,6 +320,22 @@ public abstract class ServerApplication extends AbstractApplication
     }
 
     sessionInfo.applyProperties();
+  }
+
+
+  /**
+   * Connects the server to the database backend.
+   *
+   * @throws ApplicationException if login failed
+   */
+  protected void doLogin() throws ApplicationException {
+
+    String username = getProperty(Constants.BACKEND_USER);
+    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
+    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
+
+    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
+    configureSessionInfo(sessionInfo);
 
     if (serverDb != null) {
       throw new ApplicationException("only one server application instance allowed");

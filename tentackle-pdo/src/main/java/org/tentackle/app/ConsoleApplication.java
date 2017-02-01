@@ -19,6 +19,7 @@
 
 package org.tentackle.app;
 
+import java.util.Properties;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -173,6 +174,29 @@ public abstract class ConsoleApplication extends AbstractApplication {
   }
 
 
+  /**
+   * Configures the session info.
+   *
+   * @param sessionInfo the session info
+   */
+  protected void configureSessionInfo(SessionInfo sessionInfo) {
+    String url = getCommandLine().getOptionValue(Constants.BACKEND_URL);
+    String user = getCommandLine().getOptionValue(Constants.BACKEND_USER);
+    String password = getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD);
+    if (url != null && user != null) {
+      // don't use a properties file: get from command line (password is optional)
+      Properties props = new Properties();
+      props.setProperty(Constants.BACKEND_URL, url);
+      props.setProperty(Constants.BACKEND_USER, user);
+      props.setProperty(Constants.BACKEND_PASSWORD, password);
+      sessionInfo.setProperties(props);
+    }
+    sessionInfo.applyProperties();
+    if (sessionInfo.getApplicationName() == null) {
+      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
+    }
+  }
+
 
   /**
    * Connects to the database backend (or application server).
@@ -187,11 +211,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
     String sessionPropsName = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
-    sessionInfo.applyProperties();
-
-    if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
-    }
+    configureSessionInfo(sessionInfo);
     setSessionInfo(sessionInfo);
     Session session = createSession(sessionInfo);
 
@@ -234,8 +254,10 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
     // add a shutdown handler in case the modthread terminates unexpectedly
     PdoTracker.getInstance().addShutdownRunnable(() -> {
-      LOGGER.severe("*** emergency shutdown ***");
-      doStop(5);
+      if (!PdoTracker.getInstance().isTerminationRequested()) {
+        LOGGER.severe("*** emergency shutdown ***");
+        doStop(5);
+      }
     });
 
   }

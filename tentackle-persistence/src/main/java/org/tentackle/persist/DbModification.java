@@ -251,7 +251,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public int countModification(long count) {
     assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(countModificationStatementId,
+    PreparedStatementWrapper st = getPreparedStatement(COUNT_MODIFICATION_ID,
       () -> Backend.SQL_UPDATE + TABLENAME + Backend.SQL_SET + CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL +
             "+?" + Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR + Backend.SQL_OR + CN_ID + Backend.SQL_EQUAL_PAR
     );
@@ -261,7 +261,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
     return st.executeUpdate();
   }
 
-  private static final StatementId countModificationStatementId = new StatementId();
+  private static final StatementId COUNT_MODIFICATION_ID = new StatementId();
 
 
 
@@ -347,10 +347,11 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public long refresh() {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(selectModificationStatementId,
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_MODIFICATION_ID,
       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL + Backend.SQL_FROM + TABLENAME +
              Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
+    st.setParallelOk(true);
     st.setString(1, trackedName);
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next())  {
@@ -365,7 +366,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
     }
   }
 
-  private static final StatementId selectModificationStatementId = new StatementId();
+  private static final StatementId SELECT_MODIFICATION_ID = new StatementId();
 
 
 
@@ -377,11 +378,12 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public IdSerialTuple selectIdSerial(String tableName) {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(selectIdStatementId,
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_ID_ID,
       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL +
              Backend.SQL_FROM + TABLENAME + Backend.SQL_WHERE +
              CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
+    st.setParallelOk(true);
     st.setString(1, tableName);
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next()) {
@@ -391,7 +393,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
     }
   }
 
-  private static final StatementId selectIdStatementId = new StatementId();
+  private static final StatementId SELECT_ID_ID = new StatementId();
 
 
 
@@ -403,10 +405,11 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public String selectTableNameForId(long id) {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(selectTableNameStatementId,
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_TABLENAME_ID,
             () -> Backend.SQL_SELECT + CN_TRACKEDNAME + Backend.SQL_FROM + TABLENAME +
                    Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
+    st.setParallelOk(true);
     st.setLong(1, id);
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next()) {
@@ -416,7 +419,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
     }
   }
 
-  private static final StatementId selectTableNameStatementId = new StatementId();
+  private static final StatementId SELECT_TABLENAME_ID = new StatementId();
 
 
 
@@ -427,10 +430,11 @@ public class DbModification extends AbstractDbObject<DbModification> {
    */
   public long selectMasterSerial() {
     getSession().assertNotRemote();
-    PreparedStatementWrapper st = getPreparedStatement(selectMasterSerialStatementId,
+    PreparedStatementWrapper st = getPreparedStatement(SELECT_MASTERSERIAL_ID,
       () -> Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + TABLENAME +
              Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
+    st.setParallelOk(true);
     st.setLong(1, 0);   // ID=0 is the master
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next()) {
@@ -442,6 +446,6 @@ public class DbModification extends AbstractDbObject<DbModification> {
     }
   }
 
-  private static final StatementId selectMasterSerialStatementId = new StatementId();
+  private static final StatementId SELECT_MASTERSERIAL_ID = new StatementId();
 
 }

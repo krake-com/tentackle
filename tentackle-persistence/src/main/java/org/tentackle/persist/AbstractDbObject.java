@@ -1752,7 +1752,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     if (classVariables.columnCount <= 0) {
       // perform a dummy select (this happens only once per class, hence no prepared statement)
       String sql = getBackend().optimizeSql(Backend.SQL_SELECT + createSelectAllInnerSql() + SQL_AND + "1=0");
-      try (ResultSetWrapper rs = getSession().createStatement().executeQuery(sql)) {
+      StatementWrapper stmt = getSession().createStatement();
+      stmt.setParallelOk(true);   // don't count this as a parallel query
+      try (ResultSetWrapper rs = stmt.executeQuery(sql)) {
         classVariables.columnCount = rs.getColumnCount();
       }
     }

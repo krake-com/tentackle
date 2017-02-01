@@ -66,6 +66,9 @@ public class StatementWrapper implements AutoCloseable {
   /** flag if statement has been cancelled. */
   protected boolean cancelled;
 
+  /** flag to tell that parallel execution should not be logged. */
+  protected boolean parallelOk;
+
   /** pending open result set. */
   protected WeakReference<ResultSetWrapper> openResultSet;
 
@@ -101,6 +104,29 @@ public class StatementWrapper implements AutoCloseable {
    */
   public Statement getStatement ()  {
     return stmt;
+  }
+
+  
+  /**
+   * Returns whether parallel execution on same connection should be logged.
+   *
+   * @see ManagedConnection#logNestedResultSets
+   * @return true if parallel is select ok
+   */
+  public boolean isParallelOk() {
+    return parallelOk;
+  }
+
+  /**
+   * Sets whether parallel execution on same connection should be logged.<br>
+   * Multiple open result sets on a single connection ususally means, that
+   * other selects are submitted while processing the resultset. Under rare conditions
+   * this might be ok, but usually it's not.
+   *
+   * @param parallelOk true if parallel select is ok
+   */
+  public void setParallelOk(boolean parallelOk) {
+    this.parallelOk = parallelOk;
   }
 
 
@@ -211,7 +237,22 @@ public class StatementWrapper implements AutoCloseable {
 
   @Override
   public String toString() {
-    return "{ " + (stmt == null ? "<closed>" : stmt.toString()) + " }";
+    StringBuilder buf = new StringBuilder();
+    buf.append("{ ");
+    if (sql != null) {
+      buf.append(sql);
+    }
+    else if (stmt != null) {
+      buf.append(stmt);
+    }
+    else {
+      return "<closed statement>";
+    }
+    buf.append(" }");
+    if (stmt == null) {
+      buf.append(" (closed)");
+    }
+    return buf.toString();
   }
 
 
@@ -250,7 +291,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   public int executeUpdate (String sql) {
 
-    LOGGER.finest("execute update {0} = {1}", this, sql);
+    LOGGER.finer("execute update {0} = {1}", this, sql);
 
     try {
       con.countForClearWarnings();
@@ -338,7 +379,7 @@ public class StatementWrapper implements AutoCloseable {
    */
   public ResultSetWrapper executeQuery (String sql, boolean withinTx) {
 
-    LOGGER.finest("execute query {0} = {1}", this, sql);
+    LOGGER.finer("execute query {0} = {1}", this, sql);
 
     long txVoucher = 0;
 

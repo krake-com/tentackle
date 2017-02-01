@@ -240,29 +240,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       missCount++;
     }
 
-    if (LOGGER.isFineLoggable())  {
-      if (obj == null)  {
-        if (LOGGER.isFinerLoggable())  {
-          String text = this + ": cache miss for '" + ck + "'";
-          if (LOGGER.isFinestLoggable()) {
-            LOGGER.finest(text + ", " + printStatistics());
-          }
-          else {
-            LOGGER.finer(text);
-          }
-        }
-      }
-      else  {
-        if (LOGGER.isFinerLoggable())  {
-          String text = this + ": cache hit for '" + ck + "'";
-          if (LOGGER.isFinestLoggable()) {
-            LOGGER.finest(text + ", " + printStatistics());
-          }
-          else {
-            LOGGER.finer(text);
-          }
-        }
-      }
+    if (LOGGER.isFinerLoggable())  {
+      LOGGER.finer(this + (obj == null ? ": cache miss for '" : ": cache hit for '") + ck +
+                   "', " + printStatistics());
     }
 
     if (obj != null)  {

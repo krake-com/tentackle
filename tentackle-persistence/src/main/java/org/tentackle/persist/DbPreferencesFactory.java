@@ -302,10 +302,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         if (pref != null && pref.getNode().isNew()) {
           pref.getNode().setId(expiredNode.getId());   // serial and tableserial will be updated below
           pref.getNode().setParentId(expiredNode.getParentId());
+          pref.getNode().setRootNodeId(expiredNode.getRootNodeId());
           prefIdMap.put(pref.getNode().getId(), pref);
-          if (pref.getParent() != null) {
-            pref.getParent().getChildIds().add(expiredNode.getId());
-          }
           LOGGER.fine("assigned ID(s) to node {0}", pref.getNode());
         }
       }
@@ -356,14 +354,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           if (pref.areNodeListenersRegistered()) {
             // check for added nodes
             for (DbPreferencesNode node: currentNodes)  {
-              if (!pref.getChildIds().contains(node.getId()))  {
+              if (pref.getChildPrefs().get(node.getBaseName()) == null)  {
                 try {
                   // node has been added
                   DbPreferences child = createPreferences(pref, node);
                   prefIdMap.put(node.getId(), child);
                   prefNameMap.put(new NodeIndex(node), child);
                   pref.getChildPrefs().put(child.getName(), child);
-                  pref.getChildIds().add(node.getId());
                   pref.enqueueNodeAddedEvent(child);
                   LOGGER.fine("node {0} added to {1}", child, pref);
                 }
@@ -375,17 +372,17 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
           if (someNodesRemoved) {
             // check for deleted nodes
-            for (Long id: pref.getChildIds())  {
+            for (DbPreferences child: pref.getChildPrefs().values())  {
               boolean removed = true;
               for (DbPreferencesNode node: currentNodes)  {
-                if (id == node.getId()) {
+                if (child.getNode().getId() == node.getId()) {
                   removed = false;
                   break;
                 }
               }
               if (removed)  {
                 try {
-                  DbPreferences child = prefIdMap.get(id);    // must exist
+                  child = prefIdMap.get(child.getNode().getId());    // must exist
                   child.removeNode();
                   pref.enqueueNodeRemovedEvent(child);
                   LOGGER.fine("node {0} removed from {1}", child, pref);
