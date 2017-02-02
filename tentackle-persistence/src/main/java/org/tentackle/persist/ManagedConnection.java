@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
@@ -492,8 +493,21 @@ public class ManagedConnection {
 
   @Override
   public String toString() {
+    StringBuilder buf = new StringBuilder();
     Connection con = connection;  // local variable because could be closed between test and use
-    return (con == null ? "<closed connection>" : con.toString()) + '[' + getName() + ']';
+    buf.append(con == null ? "<closed connection>" : con.toString());
+    buf.append('[').append(getName());
+    if (index >= 0) {
+      buf.append('/').append(index);
+    }
+    if (attachCount > 0) {
+      buf.append(", attached ").append(attachCount).append(" since ").append(new Timestamp(attachedSince));
+    }
+    if (dead) {
+      buf.append(", dead");
+    }
+    buf.append(']');
+    return buf.toString();
   }
 
 
