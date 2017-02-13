@@ -22,6 +22,7 @@ package org.tentackle.persist;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.EventObject;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,7 +44,6 @@ import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PersistedPreferencesXmlSupport;
 
 
 
@@ -1426,13 +1426,34 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
   @Override
   public void exportNode(OutputStream os) throws IOException, BackingStoreException {
-    PersistedPreferencesXmlSupport.export(os, this, false);
+    exportImpl(os, false);
   }
 
 
   @Override
   public void exportSubtree(OutputStream os) throws IOException, BackingStoreException {
-    PersistedPreferencesXmlSupport.export(os, this, true);
+    exportImpl(os, true);
+  }
+
+
+  /**
+   * Exports a preferences node.<br>
+   * XmlSupport is package scope.
+   * Hence, we must use reflection to invoke the export method.
+   *
+   * @param os the output stream
+   * @param subtree true if whole subtree, false this node only
+   */
+  private void exportImpl(OutputStream os, boolean subtree) {
+    try {
+      Method exportMethod = Class.forName("java.util.prefs.XmlSupport").
+              getDeclaredMethod("export", OutputStream.class, Preferences.class, Boolean.TYPE);
+      exportMethod.setAccessible(true);               // it's package scope!
+      exportMethod.invoke(null, os, this, subtree);   // static method
+    }
+    catch (Exception ex) {
+      LOGGER.severe("exporting node failed", ex);
+    }
   }
 
 }

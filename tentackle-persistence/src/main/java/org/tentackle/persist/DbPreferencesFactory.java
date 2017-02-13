@@ -17,18 +17,13 @@
  */
 
 
-
-
 package org.tentackle.persist;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
-import java.util.prefs.InvalidPreferencesFormatException;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
@@ -40,7 +35,6 @@ import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionHolder;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PersistedPreferencesXmlSupport;
 
 
 
@@ -468,10 +462,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return systemRoot().node(nodeName(c));
   }
 
-  @Override
-  public void importPreferences(InputStream is) throws IOException, InvalidPreferencesFormatException {
-    PersistedPreferencesXmlSupport.importPreferences(is);
-  }
 
 
   /**
