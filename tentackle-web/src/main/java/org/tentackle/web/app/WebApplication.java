@@ -363,7 +363,7 @@ public abstract class WebApplication<T> extends AbstractApplication
    * @return the connection cache
    */
   public ConnectionManager createSessionManager() {
-    return new MpxConnectionManager("webmpx-mgr", serverDb, 100, serverDb.getSessionId() + 1,
+    return new MpxConnectionManager("webmpx-mgr", serverDb.getBackendInfo(), 100, serverDb.getSessionId() + 1,
                                     1, 1, 1, 100, 720, 2160);
   }
 

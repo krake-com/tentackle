@@ -374,8 +374,8 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   @Override
   public boolean isReferenced(long id) throws RemoteException {
     try {
-      // object must exist because method is only invoked if !isNew()
-      return newInstance().selectObject(id).isReferenced();
+      P obj = newInstance().selectObject(id);
+      return obj != null && obj.isReferenced();
     }
     catch (RuntimeException e) {
       throw createException(e);

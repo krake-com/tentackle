@@ -203,7 +203,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       if (isTracked())  {
 ]@
-      @(varListType)@ list = new TrackedArrayList<@(className)@>();
+      @(varListType)@ list = new TrackedArrayList<>();
 @[
       }
       else  {

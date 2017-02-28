@@ -18,14 +18,15 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.pdo.DefaultSessionInfo;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.Session;
 import org.tentackle.pdo.TransactionEnvelope;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 
 /**
+ * Tests for transaction envelope.
  *
  * @author harald
  */
@@ -33,27 +34,28 @@ public class TransactionEnvelopeTest {
 
   @Test
   public void testEnvelope() {
-    SessionInfo ui = new DefaultSessionInfo(null, null, "TestDb");
-    Db db = new Db(new DefaultConnectionManager(), ui);
-    db.open();
+    Session session = Pdo.createSession();
+    session.open();
+    try {
+      int rv = session.transaction(() -> {
+        assertEquals(session.getTxName(), "TransactionEnvelopeTest");
+        return 5;
+      });
+      assertEquals(rv, 5);
 
-    int rv = db.transaction(() -> {
-      assertEquals(db.getTxName(), "TransactionEnvelopeTest");
-      return 5;
-    });
-    assertEquals(rv, 5);
-
-    // same without lambda
-    rv = db.transaction(new TransactionEnvelope<Integer>() {
-      @Override
-      public Integer run() {
-        assertEquals(db.getTxName(), "TransactionEnvelopeTest#testEnvelope");
-        return 10;
-      }
-    });
-    assertEquals(rv, 10);
-
-    db.close();
+      // same without lambda
+      rv = session.transaction(new TransactionEnvelope<Integer>() {
+        @Override
+        public Integer run() {
+          assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
+          return 10;
+        }
+      });
+      assertEquals(rv, 10);
+    }
+    finally {
+      session.close();
+    }
   }
 
 }

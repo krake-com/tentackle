@@ -1,5 +1,6 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - a framework for java desktop applications
+ * http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,28 +17,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist;
+package org.tentackle.persist.prefs.rmi;
 
-import org.tentackle.pdo.DefaultSessionInfo;
-import org.tentackle.pdo.SessionInfo;
-import org.testng.annotations.Test;
-
+import java.rmi.RemoteException;
+import org.tentackle.persist.prefs.DbPreferences;
+import org.tentackle.persist.prefs.DbPreferencesOperation;
+import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
 
 /**
- * SQL connection test.
  *
  * @author harald
  */
-public class ConnectionTest {
+public interface DbPreferencesOperationRemoteDelegate extends AbstractDbOperationRemoteDelegate<DbPreferencesOperation>{
 
-  @Test
-  public void pingDb() {
-    SessionInfo ui = new DefaultSessionInfo(null, null, "TestDb");
-    Db db = new Db(new DefaultConnectionManager(), ui);
-    db.open();
-    db.close();
-    // and re-open
-    db.open();
-    db.close();
-  }
+  DbPreferences getSystemRoot() throws RemoteException;
+
+  DbPreferences getUserRoot(String user) throws RemoteException;
+
+  void flush(DbPreferences node) throws RemoteException;
+
 }

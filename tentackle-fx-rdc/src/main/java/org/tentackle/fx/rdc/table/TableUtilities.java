@@ -28,6 +28,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
+import javafx.application.Platform;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.control.TableView;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -45,6 +52,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
@@ -243,6 +251,34 @@ public class TableUtilities {
     }
     catch (IOException | TransformerConfigurationException | SAXException ex) {
       throw new FxRuntimeException("creating XML file failed", ex);
+    }
+  }
+
+
+  /**
+   * Prints a table view.<br>
+   * Tables need a special handling for multiple pages.
+   *
+   * @param table the table to print
+   */
+  public void print(FxTableView<?> table, String title) {
+    final PrinterJob job = PrinterJob.createPrinterJob();
+    if (job != null && job.showPrintDialog(Fx.getStage(table))) {
+      Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+      SimpleTablePrinter printer = Fx.load(SimpleTablePrinter.class);
+      Scene scene = new Scene(printer.getView());
+      stage.setScene(scene);
+      stage.setOnShown(e -> {
+        printer.print(table,
+                      title == null ? table.getConfiguration().getName() : title,
+                      job, job.getJobSettings().getPageLayout());
+        Platform.runLater(() -> {
+          if (stage.isShowing()) {    // if not closed by the user meanwhile
+            stage.close();
+          }
+        });
+      });
+      stage.showAndWait();
     }
   }
 

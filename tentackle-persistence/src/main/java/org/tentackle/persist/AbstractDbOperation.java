@@ -29,7 +29,7 @@ import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
 /**
  * A {@code AbstractDbOperation} provides methods that are not part of {@link AbstractDbObject}s
  * and is associated to a {@link Db}-session. Complex transactions are usually
- * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remote capabable.
+ * {@code AbstractDbOperation}s. {@code AbstractDbOperation}s are remoting capabable.
  *
  * @param <P> the operation class type
  * @author harald
@@ -39,15 +39,15 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
   private static final long serialVersionUID = 1L;
 
-  private Db db;                                          // the bound db connection
+  private transient Db db;                                // the bound db connection
   private transient boolean sessionImmutable;             // true if Db is immutable
   private transient SessionHolder sessionHolder;          // a redirector to retrieve the Db
 
 
   /**
-   * Creates a database object.
+   * Creates an operation object.
    *
-   * @param session the logical {@link Db}-connection
+   * @param session the session
    */
   public AbstractDbOperation(Db session) {
     setSession(session);
@@ -55,8 +55,8 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
 
 
   /**
-   * Creates a database object not associated to a logical {@link Db}-connection.
-   * The connection must be set via {@link #setSession} in order to use it.
+   * Creates an operation object not associated to a session.<br>
+   * The session must be set via {@link #setSession} in order to use it.
    */
   public AbstractDbOperation() {
     // nothing to do

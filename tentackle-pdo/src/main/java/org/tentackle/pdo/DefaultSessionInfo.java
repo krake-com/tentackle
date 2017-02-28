@@ -68,12 +68,12 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
 
 
   /**
-   * Create session info from an optional username, optional password and
+   * Creates a session info from an optional username, optional password and
    * a property file holding the connection parameters.
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
-   * @param propertiesName name of the db-properties, null if {@code "Db"}
+   * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
   public DefaultSessionInfo(String username, char[] password, String propertiesName)  {
     this.userName       = username == null ? System.getProperty("user.name") : username;
@@ -82,7 +82,24 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
   }
 
   /**
-   * Create session from a properties object.
+   * Creates a session info from a property file holding the connection parameters.
+   *
+   * @param propertiesName name of the session's properties file, null if {@code "backend"}
+   */
+  public DefaultSessionInfo(String propertiesName)  {
+    this(null, null, propertiesName);
+  }
+
+  /**
+   * Creates a session info from the default properties file.<br>
+   * The property file's name is {@code "backend"}.
+   */
+  public DefaultSessionInfo()  {
+    this(null, null, null);
+  }
+
+  /**
+   * Creates a session from a properties object.
    *
    * @param properties the properties
    */

@@ -345,7 +345,8 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   @Override
   public boolean isReferenced(DomainContext cb, long id) throws RemoteException {
     try {
-      return newInstance(cb).select(id).isReferenced();
+      T obj = newInstance(cb).select(id);
+      return obj != null && obj.isReferenced();
     }
     catch (Exception e) {
       throw createException(e);

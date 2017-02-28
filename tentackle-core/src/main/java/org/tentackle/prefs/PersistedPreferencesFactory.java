@@ -50,6 +50,12 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
     return PersistedPreferencesFactory$Singleton.INSTANCE;
   }
 
+  /**
+   * Invalidates all loaded and/or cached nodes.<br>
+   * The listeners remain registered.<br>
+   * Any modifications not flushed so far will be discarded as well.
+   */
+  void invalidate();
 
   /**
    * Returns whether the preferences are automatically sync'd

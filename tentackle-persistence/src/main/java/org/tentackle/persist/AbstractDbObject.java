@@ -2627,7 +2627,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       List<IdSerialTuple> exp;
-      if (AbstractApplication.getRunningApplication().isServer()) {
+      AbstractApplication application = AbstractApplication.getRunningApplication();
+      if (application != null && application.isServer()) {
         final TableSerialExpirationBacklog backlog = getClassVariables().expirationBacklog;
         synchronized(backlog) {
           // try to get from backlog

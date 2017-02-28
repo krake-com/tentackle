@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.persist;
+package org.tentackle.persist.prefs;
 
 import java.util.Iterator;
 import java.util.List;
@@ -42,13 +42,13 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
 /**
  * Implementation of a PersistedPreferencesFactory.
  */
-@Service(PersistedPreferencesFactory.class)
-public class DbPreferencesFactory implements PersistedPreferencesFactory {
+//@Service(PersistedPreferencesFactory.class)
+public class OldDbPreferencesFactory implements PersistedPreferencesFactory {
 
   /**
    * the logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferencesFactory.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(OldDbPreferencesFactory.class);
 
 
 
@@ -96,13 +96,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
 
 
-  private final Map<Long,DbPreferences>       prefIdMap;      // for expiration processing: id map of nodes
+  private final Map<Long,OldDbPreferences>       prefIdMap;      // for expiration processing: id map of nodes
   private final Map<Long,DbPreferencesKey>    keyIdMap;       // for expiration processing: id map of keys
-  private final Map<NodeIndex,DbPreferences>  prefNameMap;    // dto. indexed by user + name
+  private final Map<NodeIndex,OldDbPreferences>  prefNameMap;    // dto. indexed by user + name
   private final SessionHolder                 sessionHolder;  // thread-local session holder
 
-  private DbPreferences systemRoot;         // the system root
-  private DbPreferences userRoot;           // the user root
+  private OldDbPreferences systemRoot;         // the system root
+  private OldDbPreferences userRoot;           // the user root
   private boolean autoSync;                 // autosync flag
   private boolean readOnly;                 // readonly flag
   private boolean systemOnly;               // systemonly flag
@@ -114,7 +114,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Creates the factory.
    */
-  public DbPreferencesFactory() {
+  public OldDbPreferencesFactory() {
     autoSync = true;
     prefIdMap = new TreeMap<>();
     keyIdMap = new TreeMap<>();
@@ -161,7 +161,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    *
    * @param prefs the preferences node
    */
-  public void addPreferences(DbPreferences prefs) {
+  public void addPreferences(OldDbPreferences prefs) {
     if (!prefs.getNode().isNew()) {
       updateNodeTableSerial(prefs.getNode().getTableSerial());
       prefIdMap.put(prefs.getNode().getId(), prefs);
@@ -185,7 +185,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param nodeId the node id
    * @return the preferences, null if not in cache
    */
-  public DbPreferences getPreferences(long nodeId) {
+  public OldDbPreferences getPreferences(long nodeId) {
     return prefIdMap.get(nodeId);
   }
 
@@ -196,7 +196,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param path the node path
    * @return the preferences, null if not in cache
    */
-  public DbPreferences getPreferences(String user, String path) {
+  public OldDbPreferences getPreferences(String user, String path) {
     return prefNameMap.get(new NodeIndex(user, path));
   }
 
@@ -243,7 +243,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         key.setSerial(nkey.getSerial());
         key.setTableSerial(nkey.getTableSerial());
         // fire listeners if any for this node
-        DbPreferences pref = prefIdMap.get(key.getNodeId());
+        OldDbPreferences pref = prefIdMap.get(key.getNodeId());
         if (pref != null) {
           LOGGER.fine("key updated in {0}: {1}", pref, key);
           pref.enqueuePreferenceChangeEvent(key.getKey(), key.getValue());
@@ -288,7 +288,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       // load the node
       DbPreferencesNode expiredNode = createNode().selectObject(idSer.getId());
 
-      DbPreferences pref = prefIdMap.get(idSer.getId());    // check if node is already loaded
+      OldDbPreferences pref = prefIdMap.get(idSer.getId());    // check if node is already loaded
 
       if (pref == null) {
         // node is not known so far: possibly it does not have an ID yet, so giv'em an ID if new
@@ -351,7 +351,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
               if (pref.getChildPrefs().get(node.getBaseName()) == null)  {
                 try {
                   // node has been added
-                  DbPreferences child = createPreferences(pref, node);
+                  OldDbPreferences child = createPreferences(pref, node);
                   prefIdMap.put(node.getId(), child);
                   prefNameMap.put(new NodeIndex(node), child);
                   pref.getChildPrefs().put(child.getName(), child);
@@ -366,7 +366,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
           if (someNodesRemoved) {
             // check for deleted nodes
-            for (DbPreferences child: pref.getChildPrefs().values())  {
+            for (OldDbPreferences child: pref.getChildPrefs().values())  {
               boolean removed = true;
               for (DbPreferencesNode node: currentNodes)  {
                 if (child.getNode().getId() == node.getId()) {
@@ -394,10 +394,14 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     nodeTableSerial = maxSerial;    // next check starts at maxSerial
   }
 
+  @Override
+  public void invalidate() {
+    // not implemented
+  }
 
 
   @Override
-  public DbPreferences userRoot() {
+  public OldDbPreferences userRoot() {
     if (userRoot == null) {
       userRoot = createPreferences(true);
     }
@@ -410,7 +414,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   @Override
-  public DbPreferences systemRoot() {
+  public OldDbPreferences systemRoot() {
     if (systemRoot == null) {
       systemRoot = createPreferences(false);
     }
@@ -453,40 +457,40 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   @Override
-  public DbPreferences userNodeForPackage(Class<?> c) {
+  public OldDbPreferences userNodeForPackage(Class<?> c) {
     return userRoot().node(nodeName(c));
   }
 
   @Override
-  public DbPreferences systemNodeForPackage(Class<?> c) {
+  public OldDbPreferences systemNodeForPackage(Class<?> c) {
     return systemRoot().node(nodeName(c));
   }
 
 
 
   /**
-   * Creates a DbPreferences instance.
+   * Creates a OldDbPreferences instance.
    *
    * @param userMode true if user mode
    * @return the preferences instance
    */
-  public DbPreferences createPreferences(boolean userMode) {
-    return new DbPreferences(userMode);
+  public OldDbPreferences createPreferences(boolean userMode) {
+    return new OldDbPreferences(userMode);
   }
 
   /**
-   * Creates a DbPreferences instance from a parent and a name.
+   * Creates a OldDbPreferences instance from a parent and a name.
    *
    * @param parent the parent preferences node
    * @param name the name of the child node
    * @return the preferences instance
    */
-  public DbPreferences createPreferences(DbPreferences parent, String name) {
-    return new DbPreferences(parent, name);
+  public OldDbPreferences createPreferences(OldDbPreferences parent, String name) {
+    return new OldDbPreferences(parent, name);
   }
 
   /**
-   * Creates a DbPreferences instance from a parent and a node.
+   * Creates a OldDbPreferences instance from a parent and a node.
    * Protected scope!
    *
    * @param parent the parent preferences
@@ -494,8 +498,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @return the preferences instance
    * @throws BackingStoreException if creation failed
    */
-  public DbPreferences createPreferences(DbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
-    return new DbPreferences(parent, node);
+  public OldDbPreferences createPreferences(OldDbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
+    return new OldDbPreferences(parent, node);
   }
 
 

@@ -23,7 +23,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Session;
@@ -56,7 +55,7 @@ public class TestControllers extends AbstractApplication {
 
   @BeforeClass
   public void setUpClass() throws Exception {
-    SessionInfo sessionInfo = Pdo.createSessionInfo(null, null, "test-backend");
+    SessionInfo sessionInfo = Pdo.createSessionInfo();
     session = Pdo.createSession(sessionInfo);
     try {
       session.open();
@@ -68,7 +67,6 @@ public class TestControllers extends AbstractApplication {
       return;
     }
     Session.setCurrentSession(session);
-    PdoTracker.getInstance().setSession(session);
     context = Pdo.createDomainContext(session);
     register();
   }

@@ -27,19 +27,18 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
+import org.tentackle.sql.BackendInfo;
 
 
 
 /**
  * Multiplexing connection manager.<br>
  *
- * A connection manager for applications with a large number of Db instances,
- * e.g. application servers. The manager will multiplex N Db instances against
- * M connections, allowing N &gt; M. This is not to be mixed up with db-pooling, as connection
+ * A connection manager for applications with a large number of session instances,
+ * e.g. application servers. The manager will multiplex N session instances against
+ * M connections, allowing N &gt; M. This is not to be mixed up with session-pooling, as connection
  * multiplexing is completely transparent to the application whereas pooling requires
- * an explicit relation to something like a session.
- * Note that the authentication must be done at the application level because
- * the pool's connections are derived from the userinfo of a server db.
+ * some handling to request and release a session.
  *
  * @author harald
  */
@@ -49,8 +48,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   // args
 
-  /** server Db to clone. */
-  final protected Db  serverDb;
+  /** the backend info. */
+  final protected BackendInfo backendInfo;
 
   /** increment size. */
   final protected int incSize;
@@ -98,7 +97,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Creates a new connection manager.
    *
    * @param name the name of the connection manager
-   * @param serverDb the root db to use for creating connections (may be open or closed)
+   * @param backendInfo the backend info to use for creating connections
    * @param maxDb the maximum number of Db instances, 0 = no limit
    * @param idOffset the offset for connection ids (&gt; 0)
    * @param iniSize the initial size of the connection pool
@@ -108,7 +107,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * @param minMinutes minimum minutes a connection should be used
    * @param maxMinutes maximum minutes a connection should be used
    */
-  public MpxConnectionManager(String name, Db serverDb, int maxDb, int idOffset, int iniSize, int incSize,
+  public MpxConnectionManager(String name, BackendInfo backendInfo, int maxDb, int idOffset, int iniSize, int incSize,
                               int minSize, int maxSize, int minMinutes, int maxMinutes) {
 
     super(name, iniSize, maxSize, idOffset);
@@ -121,10 +120,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       throw new IllegalArgumentException("illegal or conflicting parameters");
     }
 
-    this.serverDb   = serverDb;
-    this.maxDbSize  = maxDb;
-    this.incSize    = incSize;
-    this.minSize    = minSize;
+    this.backendInfo = backendInfo;
+    this.maxDbSize = maxDb;
+    this.incSize = incSize;
+    this.minSize = minSize;
     this.minMinutes = minMinutes;
     this.maxMinutes = maxMinutes;
 
@@ -156,12 +155,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database servers's QEPs, prepared statements cache, etc...).
    *
-   * The idOffset will be the connectionId of the serverDb + 1 (i.e. normally 2 for application servers)
-   *
-   * @param serverDb the root db to use for creating connections (may be open or closed).
+   * @param backendInfo backend info to use for creating connections (may be open or closed)
+   * @param idOffset the offset for connection ids (&gt; 0)
    */
-  public MpxConnectionManager(Db serverDb) {
-    this("mpx-mgr", serverDb, 1000, serverDb.getSessionId() + 1, 8, 2, 4, 100, 720, 2160);
+  public MpxConnectionManager(BackendInfo backendInfo, int idOffset) {
+    this("mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 100, 720, 2160);
   }
 
 
@@ -308,7 +306,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         }
       }
       for (int i=0; i < count; i++) {
-        ManagedConnection con = new ManagedConnection(this, serverDb.getBackend(), serverDb.connect());    // can take some time dep. on the db backend
+        ManagedConnection con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
+        // may take some time dep. on the db backend...
         con.setExpireAt(con.getEstablishedSince() + (minMinutes*60 + random.nextInt((maxMinutes - minMinutes)*60)) * 1000L);
         LOGGER.info("{0}: open connection {1}, valid until {2}",
                     this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
@@ -398,7 +397,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         if (conIndex >= 0) {
           con = conList[conIndex];
           if (con.getIndex() != conIndex) {
-            throw new PersistenceException(session, "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
+            throw new PersistenceException(session,
+                    "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
           }
           /**
            * If connection is detached for a long time (minMinutes/2), verify the connection first.
@@ -459,7 +459,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         try {
           // sleep a randomly between 1 and 5 seconds (3 average)
           long ms = loopCount > 1 ? 1000 + random.nextInt(4000) : 100 + random.nextInt(400);
-          LOGGER.warning(this + ": Running out of connections! Putting " + session + " to sleep for " + ms + " ms, loop " + loopCount);
+          LOGGER.warning(this + ": Running out of connections! Putting " + session +
+                         " to sleep for " + ms + " ms, loop " + loopCount);
           Thread.sleep(ms);
         }
         catch (InterruptedException ex) {

@@ -18,7 +18,7 @@
  */
 
 
-package org.tentackle.persist;
+package org.tentackle.persist.prefs;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,6 +42,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
+import org.tentackle.persist.ModificationLog;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
@@ -82,8 +83,8 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
  * </ul>
  *
  * Compared to {@link java.util.prefs.AbstractPreferences} (which we can not simply extend
- * due to various design issues), the DbPreferences differ slightly in the following aspects:
- * <ul>
+ due to various design issues), the OldDbPreferences differ slightly in the following aspects:
+ <ul>
  * <li>PreferenceChangeEvents are only triggered if there really is a change. Thus, invoking put() without
  *   an effective change will *not* trigger an event.
  * </li>
@@ -102,12 +103,12 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
  *
  * @author harald
  */
-public class DbPreferences extends Preferences implements PersistedPreferences {
+public class OldDbPreferences extends Preferences implements PersistedPreferences {
 
   /**
    * the logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferences.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(OldDbPreferences.class);
 
 
   /** transaction name for flush. */
@@ -124,12 +125,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   private String name;                                // name relative to the parent
   private String absolutePath;                        // absolute pathname
   private boolean userMode;                           // true if this is a user-node (speeds up)
-  private DbPreferences parent;                       // parent node, null = this is the root
-  private DbPreferences root;                         // the root preference (non-static because of user and system-scope)
+  private OldDbPreferences parent;                       // parent node, null = this is the root
+  private OldDbPreferences root;                         // the root preference (non-static because of user and system-scope)
   private DbPreferencesNode node;                     // the database node (backing store), null = deleted
   private Map<String, DbPreferencesKey> keys;         // list of keys associated with this node
                                                       // (lazy if no PreferenceChangeListeners registered)
-  private Map<String, DbPreferences> childPrefs;      // child preferences, key is the name relative to the parent
+  private Map<String, OldDbPreferences> childPrefs;      // child preferences, key is the name relative to the parent
   private PreferenceChangeListener[] prefListeners;   // preference change listeners
   private NodeChangeListener[] nodeListeners;         // node change listeners
 
@@ -144,7 +145,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *          (<tt>'/'</tt>),  or <tt>parent</tt> is <tt>null</tt> and
    *          name isn't <tt>""</tt>.
    */
-  public DbPreferences(DbPreferences parent, String name) {
+  public OldDbPreferences(OldDbPreferences parent, String name) {
 
     if (parent == null) {
       throw new IllegalArgumentException("illegal constructor for root node");
@@ -175,7 +176,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *
    * @param userMode true if user mode, else system mode
    */
-  public DbPreferences(boolean userMode) {
+  public OldDbPreferences(boolean userMode) {
 
     this.userMode = userMode;
 
@@ -195,7 +196,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    * @param node the node
    * @throws BackingStoreException if creation failed
    */
-  public DbPreferences(DbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
+  public OldDbPreferences(OldDbPreferences parent, DbPreferencesNode node) throws BackingStoreException {
 
     if (node.getParentId() != parent.node.getId())  {
       throw new BackingStoreException(
@@ -230,7 +231,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *
    * @return the parent
    */
-  public DbPreferences getParent() {
+  public OldDbPreferences getParent() {
     return parent;
   }
 
@@ -262,7 +263,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *
    * @return the root node
    */
-  public DbPreferences getRoot() {
+  public OldDbPreferences getRoot() {
     return root;
   }
 
@@ -271,7 +272,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *
    * @return the child preferences
    */
-  public Map<String, DbPreferences> getChildPrefs() {
+  public Map<String, OldDbPreferences> getChildPrefs() {
     return childPrefs;
   }
 
@@ -292,8 +293,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
    *
    * @return the factory
    */
-  private DbPreferencesFactory getFactory() {
-    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
+  private OldDbPreferencesFactory getFactory() {
+    return (OldDbPreferencesFactory) PersistedPreferencesFactory.getInstance();
   }
 
 
@@ -355,7 +356,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   private void loadNodes() {
     List<DbPreferencesNode> childNodes = getFactory().createNode().selectByParentId(node.getId());
     // remove from maps before clear
-    for (DbPreferences child: childPrefs.values()) {
+    for (OldDbPreferences child: childPrefs.values()) {
       if (child.node != null) {
         getFactory().removeNode(child.node);
       }
@@ -364,7 +365,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     for (DbPreferencesNode n: childNodes)  {
       String basename = n.getBaseName();
       try {
-        DbPreferences childPref = getFactory().createPreferences(this, n);
+        OldDbPreferences childPref = getFactory().createPreferences(this, n);
         childPrefs.put(basename, childPref);    // append to node cache
         getFactory().addPreferences(childPref); // append to maps
       }
@@ -422,7 +423,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   private void updateParentNode() throws BackingStoreException {
     if (parent != null && parent.node != null)  {
       // update parent to trigger events in other jvms
-      DbPreferences parentPref = getFactory().getPreferences(node.getParentId());
+      OldDbPreferences parentPref = getFactory().getPreferences(node.getParentId());
       if (parentPref == null) {
         throw new BackingStoreException("parent of " + node + " not in cache");
       }
@@ -525,7 +526,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     }
 
     // process child nodes
-    for (DbPreferences child: childPrefs.values()) {
+    for (OldDbPreferences child: childPrefs.values()) {
       child.flushImpl();
     }
   }
@@ -567,10 +568,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
     prefListeners = null;
 
     // do that for all childs (need a copy cause of remove() in collection)
-    DbPreferences[] childs = new DbPreferences[childPrefs.size()];
+    OldDbPreferences[] childs = new OldDbPreferences[childPrefs.size()];
     childPrefs.values().toArray(childs);
 
-    for (DbPreferences child: childs)  {
+    for (OldDbPreferences child: childs)  {
       child.recover();
     }
   }
@@ -579,7 +580,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
   /**
    * tokenizer contains <name> {'/' <name>}*
    */
-  private DbPreferences node(StringTokenizer path) {
+  private OldDbPreferences node(StringTokenizer path) {
 
     String token = path.nextToken();
 
@@ -587,7 +588,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       throw new IllegalArgumentException("Consecutive slashes in path");
     }
 
-    DbPreferences child = childPrefs.get(token);
+    OldDbPreferences child = childPrefs.get(token);
     if (child == null) {
       if (token.length() > MAX_NAME_LENGTH) {
         throw new IllegalArgumentException("Node name " + token + " too long");
@@ -621,7 +622,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       loadKeys();     // and keys
 
       // recursively remove all children
-      for (DbPreferences child: childPrefs.values()) {
+      for (OldDbPreferences child: childPrefs.values()) {
         child.removeNodeImpl();
       }
 
@@ -751,7 +752,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
              * node is not saved to disk: delay setting the nodeID
              * by setLazyNode(). See prepareSetFields in DbPreferencesKey.
              */
-            k.setLazyNode(node);
+//            k.setLazyNode(node);
           }
           else  {
             k.setNodeId(node.getId());
@@ -845,7 +846,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
           /**
            * go up to the first parent with a new node
            */
-          DbPreferences prefs = this;
+          OldDbPreferences prefs = this;
           while (prefs.parent != null && prefs.parent.node != null && prefs.parent.node.isNew()) {
             prefs = prefs.parent;
           }
@@ -1027,14 +1028,14 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
 
 
   @Override
-  public DbPreferences parent() {
+  public OldDbPreferences parent() {
     assertNotRemoved();
     return parent;
   }
 
 
   @Override
-  public DbPreferences node(String path) {
+  public OldDbPreferences node(String path) {
     synchronized(getFactory()) {
       assertNotRemoved();
       if (path.isEmpty()) {
@@ -1084,7 +1085,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
       }
 
       // go by absolute path
-      DbPreferences pref = getFactory().getPreferences(node.getUser(), pathName);  // check cache first
+      OldDbPreferences pref = getFactory().getPreferences(node.getUser(), pathName);  // check cache first
       if (pref != null && !pref.node.isNew()) {
         return true;  // persistent node exists in cache
       }
@@ -1321,7 +1322,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences {
         }
 
         // Now we have event & hold no locks; deliver evt to listeners
-        DbPreferences src = (DbPreferences) event.getSource();
+        OldDbPreferences src = (OldDbPreferences) event.getSource();
         if (event instanceof PreferenceChangeEvent) {
           PreferenceChangeEvent pce = (PreferenceChangeEvent) event;
           PreferenceChangeListener[] listeners = src.prefListeners();

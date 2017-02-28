@@ -31,8 +31,8 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.Db;
-import org.tentackle.persist.DbPreferencesKey;
-import org.tentackle.persist.DbPreferencesNode;
+import org.tentackle.persist.prefs.DbPreferencesKey;
+import org.tentackle.persist.prefs.DbPreferencesNode;
 
 /**
  * A tool to fix the persisted preferences stored in a database.

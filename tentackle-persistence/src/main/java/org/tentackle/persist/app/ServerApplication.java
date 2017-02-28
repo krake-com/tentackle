@@ -225,7 +225,7 @@ public abstract class ServerApplication extends AbstractApplication
    * @return the connection manager
    */
   public SessionManager createSessionManager() {
-    return new MpxConnectionManager(serverDb);
+    return new MpxConnectionManager(serverDb.getBackendInfo(), serverDb.getSessionId() + 1);
   }
 
 

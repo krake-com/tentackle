@@ -30,6 +30,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
+import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.TrackedList;
 
 
@@ -626,6 +627,32 @@ public class PdoUtilities {
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos) {
     return saveCollection(pdos, false);
+  }
+
+
+  /**
+   * Inspects an expiration set and determines whether at least one PDO has been removed.
+   *
+   * @param expireSet the expiration set
+   * @param maxSerial the current tableserial
+   * @return true if some object removed
+   */
+  public boolean isSomePdoRemoved(List<IdSerialTuple> expireSet, long maxSerial) {
+    // determine whether some objects have been removed or not
+    boolean someRemoved = false;
+    long lastSerial = -1;
+    for (IdSerialTuple idSer: expireSet) {
+      if (lastSerial != -1 && idSer.getSerial() - lastSerial > 1) {
+        // gap in tableSerials: delete() invoked at least once
+        someRemoved = true;
+        break;
+      }
+      lastSerial = idSer.getSerial();
+    }
+    if (maxSerial - lastSerial > 1) {
+      someRemoved = true;  // lastserial == -1 (no expired pdos found) or gap at end
+    }
+    return someRemoved;
   }
 
 }

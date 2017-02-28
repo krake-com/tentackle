@@ -19,44 +19,117 @@
 
 package org.tentackle.test.pdo;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
+import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeSuite;
 
 /**
  * Abstract PDO test.
- * <p>
- * Opens a session, runs a transaction, rolls back and closes the session.
  *
  * @author harald
  */
 public abstract class AbstractPdoTest implements DomainContextProvider {
 
-  private Session session;
-  private DomainContext context;
-  private long txVoucher;
+  /**
+   * The transaction handling for the test class.
+   */
+  public static enum TransactionType {
+    /** transaction per test class. */
+    CLASS,
+
+    /** transaction per test method. */
+    METHOD,
+
+    /** no automatic transaction handling. */
+    NONE
+  }
+
+  private TransactionType txType;           // transaction handling
+  private static Session session;           // session for all methods in all test classes
+  private static DomainContext context;     // domain context for all methods in all test classes
+  private long txVoucher;                   // transaction voucher for current test class
+
+
+  public AbstractPdoTest(TransactionType txType) {
+    this.txType = txType;
+  }
+
+  public AbstractPdoTest() {
+    this(TransactionType.CLASS);    // per class
+  }
+
+
+  @BeforeSuite
+  public static void openSessionsAndStartPdoTracker() throws Exception {
+    session = Pdo.createSession();
+    session.open();
+    session.makeCurrent();
+    context = Pdo.createDomainContext();
+
+    PdoTracker tracker = PdoTracker.getInstance();
+    tracker.setSession(session.clone());
+    tracker.setSleepInterval(500);   // fast polling for tests
+    tracker.start();
+  }
+
+  @AfterSuite
+  public static void closeSessionsAndTerminatePdoTracker() throws Exception {
+    PdoTracker.getInstance().terminate();
+    session.close();
+  }
 
   @BeforeClass
-  public void setUpClass() throws Exception {
-    SessionInfo sessionInfo = Pdo.createSessionInfo(null, null, "test-backend");
-    session = Pdo.createSession(sessionInfo);
-    session.open();
-    Session.setCurrentSession(session);
-    PdoTracker.getInstance().setSession(session);
-    context = Pdo.createDomainContext();
-    txVoucher = session.begin("namesource-test");
+  public void beforeClass() throws Exception {
+    if (txType == TransactionType.CLASS) {
+      beginTransaction();
+    }
   }
 
   @AfterClass
-  public void tearDownClass() throws Exception {
-    session.rollback(txVoucher);
-    session.close();
-    Session.setCurrentSession(null);
+  public void afterClass() throws Exception {
+    if (txType == TransactionType.CLASS) {
+      rollbackTransaction();
+    }
+  }
+
+  @BeforeMethod
+  public void beforeMethod() throws Exception {
+    if (txType == TransactionType.METHOD) {
+      beginTransaction();
+    }
+  }
+
+  @AfterMethod
+  public void afterMethod() throws Exception {
+    if (txType == TransactionType.METHOD) {
+      rollbackTransaction();
+    }
+  }
+
+
+  private void beginTransaction() {
+    txVoucher = session.begin("test");
+  }
+
+
+  private void rollbackTransaction() {
+    if (session.isTxRunning()) {
+      session.rollback(txVoucher);
+      txVoucher = 0;
+    }
   }
 
   /**
@@ -76,6 +149,39 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   @Override
   public DomainContext getDomainContext() {
     return context;
+  }
+
+
+  /**
+   * Runs the given class in another JVM.<br>
+   * The testclass must have a main method.
+   *
+   * @param testClass the test class
+   * @throws IOException if some IO operation failed
+   */
+  public void runInOtherJVM(Class<?> testClass) throws IOException {
+    // add node and key in other jvm
+    String javaHome = System.getProperty("java.home");
+    String classPath = System.getProperty("java.class.path");
+    String cmd = javaHome + "/bin/" + "java -classpath " + classPath + " " + testClass.getName();
+    Reporter.log("running: " + cmd + "<br>");
+    Process process = Runtime.getRuntime().exec(cmd);
+    // collect stdout
+    Reader r = new InputStreamReader(process.getInputStream());
+    try (BufferedReader in = new BufferedReader(r)) {
+      String line;
+      while ((line = in.readLine()) != null) {
+        Reporter.log(line + "<br>");
+      }
+    }
+    // collect stderr
+    r = new InputStreamReader(process.getErrorStream());
+    try (BufferedReader in = new BufferedReader(r)) {
+      String line;
+      while ((line = in.readLine()) != null) {
+        Reporter.log(line + "<br>");
+      }
+    }
   }
 
 }

@@ -32,7 +32,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -622,32 +621,6 @@ public class Db implements Session, Cloneable {
    */
   public RemoteDbSession getRemoteDbSession() {
     return rses;
-  }
-
-
-  /**
-   * Creates a physical low level connection to the local db server via JDBC
-   * using this Db (authentication by userinfo or fixed user/password).
-   *
-   * @return the low level JDBC connection
-   * @throws SQLException if connection failed
-   */
-  public Connection connect() throws SQLException {
-    Connection connection = null;
-    try {
-      connection = backendInfo.connect();
-      if (!connection.getAutoCommit()) {
-        connection.setAutoCommit(true);   // set to autocommit mode for sure
-      }
-      return connection;
-    }
-    catch (SQLException sqx) {
-      LOGGER.severe("connection to " + backendInfo + " failed");
-      if (connection != null) {
-        connection.close();
-      }
-      throw sqx;
-    }
   }
 
 

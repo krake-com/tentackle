@@ -71,8 +71,6 @@ public class TablePopup<S> {
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
   private final boolean noViewSize;             // true if don't set the table view's size
-  private String title;                         // title of table (null = title from window)
-  private String intro;                         // intro on first printed page (null = none)
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
 
@@ -113,43 +111,6 @@ public class TablePopup<S> {
     return preferencesSuffix;
   }
 
-
-  /**
-   * Sets the title.<br>
-   * The title will be printed pn each page and shown in toSpreadsheet sheets.
-   *
-   * @param title the title, null if default from window
-   */
-  public void setTitle(String title)  {
-    this.title = title;
-  }
-
-  /**
-   * Gets the title.
-   * @return the title, null if default from window
-   */
-  public String getTitle()  {
-    return title;
-  }
-
-  /**
-   * Sets the intro-text.<br>
- The intro will be printed on the first page and shown in toSpreadsheet sheets.
-   *
-   * @param intro the intro, null = none
-   */
-  public void setIntro(String intro)  {
-    this.intro = intro;
-  }
-
-  /**
-   * Gets the intro text.
-   *
-   * @return the intro, null = none
-   */
-  public String getIntro()  {
-    return intro;
-  }
 
   /**
    * Returns whether the column menu is enabled.
@@ -199,34 +160,30 @@ public class TablePopup<S> {
     autoWidthItem.setOnAction(e -> FxUtilities.getInstance().resizeColumnsToFitContent(table));
     menu.getItems().add(autoWidthItem);
 
-    // prints only the visible rows which is not what we want.
-    // workaround so far: export to excel and print from there.
-//    MenuItem printItem = new MenuItem();
-//    printItem.setText(FxFxBundle.getString("PRINT"));
-//    printItem.setOnAction(e -> FxUtilities.getInstance().print(table));
-//    menu.getItems().add(printItem);
+    MenuItem printItem = new MenuItem();
+    printItem.setText(FxFxBundle.getString("PRINT"));
+    printItem.setOnAction(e -> TableUtilities.getInstance().print(table, null));
+    menu.getItems().add(printItem);
 
-    if (table instanceof FxTableView) {
-      MenuItem excelItem = new MenuItem();
-      excelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL"));
-      excelItem.setOnAction(e -> toSpreadsheet(false));
-      menu.getItems().add(excelItem);
+    MenuItem excelItem = new MenuItem();
+    excelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL"));
+    excelItem.setOnAction(e -> toSpreadsheet(false));
+    menu.getItems().add(excelItem);
 
-      MenuItem selectedExcelItem = new MenuItem();
-      selectedExcelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL (ONLY SELECTED)"));
-      selectedExcelItem.setOnAction(e -> toSpreadsheet(true));
-      menu.getItems().add(selectedExcelItem);
+    MenuItem selectedExcelItem = new MenuItem();
+    selectedExcelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL (ONLY SELECTED)"));
+    selectedExcelItem.setOnAction(e -> toSpreadsheet(true));
+    menu.getItems().add(selectedExcelItem);
 
-      MenuItem xmlItem = new MenuItem();
-      xmlItem.setText(FxFxBundle.getString("EXPORT TO XML"));
-      xmlItem.setOnAction(e -> toXml(false));
-      menu.getItems().add(xmlItem);
+    MenuItem xmlItem = new MenuItem();
+    xmlItem.setText(FxFxBundle.getString("EXPORT TO XML"));
+    xmlItem.setOnAction(e -> toXml(false));
+    menu.getItems().add(xmlItem);
 
-      MenuItem selectedXmlItem = new MenuItem();
-      selectedXmlItem.setText(FxFxBundle.getString("EXPORT TO XML (ONLY SELECTED)"));
-      selectedXmlItem.setOnAction(e -> toXml(true));
-      menu.getItems().add(selectedXmlItem);
-    }
+    MenuItem selectedXmlItem = new MenuItem();
+    selectedXmlItem.setText(FxFxBundle.getString("EXPORT TO XML (ONLY SELECTED)"));
+    selectedXmlItem.setOnAction(e -> toXml(true));
+    menu.getItems().add(selectedXmlItem);
 
     if (PersistedPreferencesFactory.getInstance().isSystemOnly()) {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly())  {

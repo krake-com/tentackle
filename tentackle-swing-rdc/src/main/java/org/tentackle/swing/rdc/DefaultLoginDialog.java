@@ -89,7 +89,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
    */
   public DefaultLoginDialog(SessionInfo sessionInfo, boolean promptLogin, Icon logo) {
 
-    this.sessionInfo = sessionInfo == null ? Pdo.createSessionInfo(null, null, null) : sessionInfo;
+    this.sessionInfo = sessionInfo == null ? Pdo.createSessionInfo() : sessionInfo;
     this.promptLogin = promptLogin;
 
     initComponents();

@@ -57,11 +57,26 @@ public interface SessionInfoFactory {
   SessionInfo create(String username, char[] password, String propertiesName);
 
   /**
+   * Creates a session info from a property file holding the connection parameters.
+   *
+   * @param propertiesName name of additional properties resource, null if default
+   * @return the created session info
+   */
+  SessionInfo create(String propertiesName);
+
+  /**
    * Creates a session info from a properties object.
    *
    * @param properties the properties
    * @return the created session info
    */
   SessionInfo create(Properties properties);
+
+  /**
+   * Creates a session info from the default property file holding the connection parameters.
+   *
+   * @return the created session info
+   */
+  SessionInfo create();
 
 }

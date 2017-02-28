@@ -142,10 +142,11 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
     /**
      * Creates a modification detail.
      *
+     * @param serial the serial
      * @return the detail
      */
-    private ModificationEventDetail createDetail() {
-      return new ModificationEventDetail(tableEntry.tableName, tableEntry.serial);
+    private ModificationEventDetail createDetail(long serial) {
+      return new ModificationEventDetail(tableEntry.tableName, serial);
     }
 
     @Override
@@ -402,9 +403,9 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
   }
 
 
-
   @Override
   protected void cleanup() {
+    performPendingCounts();
     super.cleanup();
     invokeShutdownRunnables();
   }
@@ -609,6 +610,16 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
 
 
   /**
+   * Flushes all pending modification counts to database.
+   */
+  private void performPendingCounts() {
+    for (ModificationTally counter: countersByName.values()) {
+      counter.performPendingCount();
+    }
+  }
+
+
+  /**
    * Checks for changes in the modification table.
    * <p>
    * Always invoked from within the tracker thread, so it's ok to use
@@ -616,10 +627,7 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
    */
   private void poll() {
 
-    // perform pending counts
-    for (ModificationTally counter: countersByName.values()) {
-      counter.performPendingCount();
-    }
+    performPendingCounts();
 
     long serial = selectMasterSerial();
 
@@ -645,12 +653,12 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
           // e.g. countModification invoked without a listener registered
         }
 
-        TableEntry entry = tableEntriesById.get(idSer.getId());     // serial changed for entry
-        if (entry != null) {                                        // no entry -> no listenerEntry
+        TableEntry tableEntry = tableEntriesById.get(idSer.getId());     // serial changed for entry
+        if (tableEntry != null) {                                        // no entry -> no listenerEntry
           for (ListenerEntry listenerEntry : listenerEntries) {
             if (listenerEntry.tableEntry.id == idSer.getId() && listenerEntry.tableEntry.serial != idSer.getSerial()) {
               // table entry for listener has changed
-              LOGGER.fine("modification detected for {0}", listenerEntry.tableEntry);
+              LOGGER.fine("modification detected for {0}, new serial {1}", listenerEntry.tableEntry, idSer.getSerial());
               Set<ModificationEventDetail> details = detailMap.get(listenerEntry.listener);
               if (details == null) {
                 // create a new one
@@ -659,11 +667,11 @@ public class ModificationTracker extends DefaultSessionTaskDispatcher implements
               }
               if (!listenerEntry.isMaster()) {
                 getCounter(listenerEntry.tableEntry.tableName);   // configure counter if not yet done
-                details.add(listenerEntry.createDetail());
+                details.add(listenerEntry.createDetail(idSer.getSerial()));
               }
             }
           }
-          entry.serial = idSer.getSerial();   // remember serial, even if no listener entry
+          tableEntry.serial = idSer.getSerial();   // remember serial, even if no listener entry
         }
       }
 

@@ -19,13 +19,16 @@
 
 package org.tentackle.persist;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.Session;
 
 
 
@@ -47,8 +50,9 @@ public class ModificationTally {
   private DbObjectClassVariables<?> clazzVar;         // the classvariables if tablename belongs to a PDO, null if just a name
   private Boolean isTableSerialProvided;              // true if table serial is managed by table, null if not known yet
   private String tableSerialTableName;                // if tableSerialValid holds the tableserial's tablename
-  private final AtomicLong lastSerial;                // last (known) serial for the table
-  private final AtomicLong pendingCount;              // number of pending counts
+  private long lastSerial;                            // last (known) serial for the table
+  private long pendingCount;                          // number of pending counts
+  private final Set<Session> sessionsInTx;            // sessions running a transaction during countPending()
 
 
   /**
@@ -58,8 +62,7 @@ public class ModificationTally {
    * @param trackedName the tracked name
    */
   public ModificationTally(Db db, String trackedName) {
-    lastSerial = new AtomicLong();
-    pendingCount = new AtomicLong();
+    sessionsInTx = new HashSet<>();
     dbModification = new DbModification(db, trackedName);
     clazzVar = DbObjectClassVariables.getVariables(trackedName);
     if (clazzVar == null) {
@@ -84,7 +87,7 @@ public class ModificationTally {
     }
   }
 
-  
+
   /**
    * Gets the modification PO.
    *
@@ -108,8 +111,12 @@ public class ModificationTally {
    *
    * @return the new pending count
    */
-  public long countPending() {
-    return pendingCount.incrementAndGet();
+  public synchronized long countPending() {
+    Session session = Session.getCurrentSession();
+    if (session != null && session.isTxRunning()) {
+      sessionsInTx.add(session);
+    }
+    return ++pendingCount;
   }
 
 
@@ -118,8 +125,8 @@ public class ModificationTally {
    *
    * @return the pending count, 0 if none
    */
-  public long getPendingCount() {
-    return pendingCount.get();
+  public synchronized long getPendingCount() {
+    return pendingCount;
   }
 
 
@@ -129,8 +136,8 @@ public class ModificationTally {
    *
    * @param lastSerial the serial
    */
-  public void setLastSerial(long lastSerial) {
-    this.lastSerial.set(lastSerial);
+  public synchronized void setLastSerial(long lastSerial) {
+    this.lastSerial = lastSerial;
   }
 
   /**
@@ -138,8 +145,8 @@ public class ModificationTally {
    *
    * @return the latest serial from last update plus pending count
    */
-  public long getLatestSerial() {
-    return lastSerial.get() + pendingCount.get();
+  public synchronized long getLatestSerial() {
+    return lastSerial + pendingCount;
   }
 
 
@@ -147,18 +154,27 @@ public class ModificationTally {
   /**
    * Performs the physical pending count if pending count &gt; 0.
    */
-  public void performPendingCount() {
-    long count = pendingCount.getAndSet(0);
-    if (count > 0) {
-      lastSerial.addAndGet(count);
-      LOGGER.fine("increment serial for {0} by {1}", dbModification, count);
-      if (dbModification.countModification(count) != 2)  {
-        // probably the record doesn't exist? create it!
-        dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
-        // try again
-        if (dbModification.countModification(count) != 2)  {
-          throw new PersistenceException(dbModification, "updating modification count failed");
+  public synchronized void performPendingCount() {
+    if (pendingCount > 0) {
+      // don't flush to database because listeners could be triggered that may not see the uncommitted data
+      for (Iterator<Session> iter = sessionsInTx.iterator(); iter.hasNext(); ) {
+        Session session = iter.next();
+        if (!session.isTxRunning()) {
+          iter.remove();    // committed
         }
+      }
+      if (sessionsInTx.isEmpty()) {
+        LOGGER.fine("increment serial for {0} by {1}", dbModification, pendingCount);
+        if (dbModification.countModification(pendingCount) != 2)  {
+          // probably the record doesn't exist? create it!
+          dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
+          // try again
+          if (dbModification.countModification(pendingCount) != 2)  {
+            throw new PersistenceException(dbModification, "updating modification count failed");
+          }
+        }
+        lastSerial += pendingCount;
+        pendingCount = 0;
       }
     }
   }
@@ -169,7 +185,7 @@ public class ModificationTally {
    */
   public void addToModificationTable()  {
     dbModification.addToModificationTable(clazzVar != null, getTableSerialTableName());
-    lastSerial.set(getModificationCount());
+    setLastSerial(getModificationCount());
   }
 
   /**

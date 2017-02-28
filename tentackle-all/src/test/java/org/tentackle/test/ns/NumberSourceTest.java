@@ -41,29 +41,29 @@ public class NumberSourceTest extends AbstractPdoTest {
 
 
   @Test
-  public void createPool() {
-    NumberPool pool = on(NumberPool.class);
-    pool.setName(POOL_NAME);
-    pool.setRealm(POOL_REALM);
-    pool.setOnline(true);
-    NumberRange range = pool.on(NumberRange.class);
-    range.setBegin(2000);
-    range.setEnd(3000);
-    pool.getNumberRangeList().add(range);
-    range = range.on();
-    range.setBegin(1);
-    range.setEnd(1000);   // 1 - 999
-    pool.getNumberRangeList().add(range);
-    range = range.on();
-    range.setBegin(5000);
-    range.setEnd(6000);
-    pool.getNumberRangeList().add(range);
-    pool.save();
-  }
+  public void createAndRetrieveNumbers() {
+
+    // create pool
+    NumberPool numberPool = on(NumberPool.class);
+    numberPool.setName(POOL_NAME);
+    numberPool.setRealm(POOL_REALM);
+    numberPool.setOnline(true);
+    NumberRange numberRange = numberPool.on(NumberRange.class);
+    numberRange.setBegin(2000);
+    numberRange.setEnd(3000);
+    numberPool.getNumberRangeList().add(numberRange);
+    numberRange = numberRange.on();
+    numberRange.setBegin(1);
+    numberRange.setEnd(1000);   // 1 - 999
+    numberPool.getNumberRangeList().add(numberRange);
+    numberRange = numberRange.on();
+    numberRange.setBegin(5000);
+    numberRange.setEnd(6000);
+    numberPool.getNumberRangeList().add(numberRange);
+    numberPool.save();
 
 
-  @Test
-  public void retrieveNumbers() {
+    // retrieve numbers from range
     NumberSource ns = NumberSourceFactory.getInstance().getNumberSource(POOL_NAME, POOL_REALM);
     NumberSource.Range[] ranges = ns.getRanges();
     assertEquals(ranges.length, 3);
@@ -120,8 +120,6 @@ public class NumberSourceTest extends AbstractPdoTest {
     assertEquals(range.getBegin(), 2201);
     assertEquals(range.getEnd(), 6000);
     assertTrue(ns.isEmpty());
-
   }
-
 
 }

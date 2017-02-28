@@ -24,6 +24,15 @@ import org.tentackle.pdo.DefaultSessionInfo;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.SessionInfo;
 import org.tentackle.pdo.SessionPool;
+import org.tentackle.persist.ConnectionManager;
+import org.tentackle.persist.Db;
+import org.tentackle.persist.DefaultDbPool;
+import org.tentackle.persist.MpxConnectionManager;
+import org.tentackle.persist.PreparedStatementWrapper;
+import org.tentackle.persist.ResultSetWrapper;
+import org.tentackle.persist.StatementId;
+import org.tentackle.persist.StatementKey;
+import org.tentackle.sql.BackendInfo;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
@@ -36,9 +45,7 @@ import org.testng.annotations.Test;
 public class DbPoolTest {
 
   private static final int NUM_THREADS = 50;
-
-  private static final StatementId selectOneStatementId = new StatementId();
-
+  private static final StatementId SELECT_ONE_STATEMENT_ID = new StatementId();
 
   private final SessionPool pool;
 
@@ -58,7 +65,7 @@ public class DbPoolTest {
       while (!stopRequested) {
         Db db = (Db) pool.getSession();
         db.setOwnerThread(Thread.currentThread());
-        PreparedStatementWrapper st = db.getPreparedStatement(new StatementKey(selectOneStatementId, getClass()), false,
+        PreparedStatementWrapper st = db.getPreparedStatement(new StatementKey(SELECT_ONE_STATEMENT_ID, getClass()), false,
           () -> "SELECT 1"
         );
         try (ResultSetWrapper rs = st.executeQuery()) {
@@ -69,14 +76,6 @@ public class DbPoolTest {
             throw new PersistenceException("cannot read 1");
           }
         }
-
-        // wait a little to emulate work and give main thread a hook to shutdown
-//        try {
-//          Thread.sleep(1);
-//        }
-//        catch (InterruptedException ie) {
-//        }
-
         db.setOwnerThread(null);
         pool.putSession(db);
       }
@@ -85,13 +84,11 @@ public class DbPoolTest {
   }
 
   public DbPoolTest() {
-    SessionInfo sessionInfo = new DefaultSessionInfo(null, null, "TestDb");
-    ConnectionManager conMgr = new MpxConnectionManager("mpx", new Db(new DefaultConnectionManager(), sessionInfo),
+    SessionInfo sessionInfo = new DefaultSessionInfo();
+    BackendInfo backendInfo = new BackendInfo(sessionInfo.getProperties());
+    ConnectionManager conMgr = new MpxConnectionManager("mpx", backendInfo,
             NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS, 720, 2160);
-//                     1, 1, 1, 0, 1, 1, 720, 2160);
-//    conMgr = new DefaultConnectionManager("default", 8, NUM_THREADS, 1);
     pool = new DefaultDbPool("default", conMgr, sessionInfo, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
-//    pool = new DefaultDbPool("<default>", conMgr, sessionInfo, 1, 1, 1, conMgr.getMaxSessions(), 60);
   }
 
 
@@ -141,4 +138,5 @@ public class DbPoolTest {
       Assert.fail(failedThreads.size() + " threads died");
     }
   }
+
 }

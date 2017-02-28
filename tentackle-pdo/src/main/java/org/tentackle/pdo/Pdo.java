@@ -488,11 +488,21 @@ public class Pdo {
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
-   * @param propertiesName name of additional properties resource, null if default
+   * @param propertiesName name of additional properties resource, null if default {@ccode "backend"}
    * @return the created session info
    */
   public static SessionInfo createSessionInfo(String username, char[] password, String propertiesName) {
     return SessionInfoFactory.getInstance().create(username, password, propertiesName);
+  }
+
+  /**
+   * Creates a session info from a property file holding the connection parameters.
+   *
+   * @param propertiesName name of additional properties resource, null if default {@ccode "backend"}
+   * @return the created session info
+   */
+  public static SessionInfo createSessionInfo(String propertiesName) {
+    return SessionInfoFactory.getInstance().create(propertiesName);
   }
 
   /**
@@ -505,6 +515,14 @@ public class Pdo {
     return SessionInfoFactory.getInstance().create(properties);
   }
 
+  /**
+   * Creates a session info from the default property file {@ccode "backend"} holding the connection parameters.
+   *
+   * @return the created session info
+   */
+  public static SessionInfo createSessionInfo() {
+    return SessionInfoFactory.getInstance().create();
+  }
 
   // ------------------- methods to create sessions --------------
 
@@ -519,7 +537,6 @@ public class Pdo {
     return SessionFactory.getInstance().create(sessionInfo);
   }
 
-
   /**
    * Creates a session.
    *
@@ -531,6 +548,14 @@ public class Pdo {
     return SessionFactory.getInstance().create(sessionManager, sessionInfo);
   }
 
+  /**
+   * Creates a session for the default session manager and a default session info {@ccode "backend"}.
+   *
+   * @return the created session (still closed)
+   */
+  public static Session createSession() {
+    return createSession(createSessionInfo());
+  }
 
   /**
    * Registers a global close handler for all sessions.

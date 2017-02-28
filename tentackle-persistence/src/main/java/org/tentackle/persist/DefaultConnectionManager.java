@@ -523,7 +523,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
     ManagedConnection con;
 
     try {
-      con = new ManagedConnection(this, db.getBackend(), db.connect());
+      con = new ManagedConnection(this, db.getBackend(), db.getBackendInfo().connect());
     }
     catch (SQLException e) {
       throw new PersistenceException(e);

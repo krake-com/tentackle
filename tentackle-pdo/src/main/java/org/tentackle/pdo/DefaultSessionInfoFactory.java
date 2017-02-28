@@ -36,7 +36,18 @@ public class DefaultSessionInfoFactory implements SessionInfoFactory {
   }
 
   @Override
+  public SessionInfo create(String propertiesName) {
+    return new DefaultSessionInfo(propertiesName);
+  }
+
+  @Override
   public SessionInfo create(Properties properties) {
     return new DefaultSessionInfo(properties);
   }
+
+  @Override
+  public SessionInfo create() {
+    return new DefaultSessionInfo();
+  }
+
 }
