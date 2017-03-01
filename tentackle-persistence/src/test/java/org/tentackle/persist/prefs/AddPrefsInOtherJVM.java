@@ -31,9 +31,6 @@ import org.tentackle.prefs.PersistedPreferences;
  */
 public class AddPrefsInOtherJVM {
 
-  public static final String KEY_4 = "key4";
-  public static final String VALUE_4 = "value4";
-
   // not annotated with @Test because invoked from shell!
   private static void addNode() throws Exception {
     Session session = Pdo.createSession();
@@ -41,12 +38,13 @@ public class AddPrefsInOtherJVM {
     session.makeCurrent();
 
     PdoTracker tracker = PdoTracker.getInstance();
-    tracker.setSession(session);    // don't start the tracker, not necessary here
+    tracker.setSession(session.clone());
+    tracker.start();
 
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
-    prefs.put(KEY_4, VALUE_4);
+    prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
     PersistedPreferences.systemRoot().flush();
-    System.out.println("flushed " + prefs.absolutePath());
+    tracker.terminate();
     session.close();
   }
 

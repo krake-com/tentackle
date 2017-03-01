@@ -25,6 +25,7 @@ import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import org.tentackle.persist.AbstractDbTest;
+import org.tentackle.persist.DbModification;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.testng.Reporter;
@@ -44,6 +45,9 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
   private static final String KEY_2 = "key2";
   private static final String VALUE_1 = "value1";
   private static final String VALUE_2 = "value2";
+
+  public static final String KEY_4 = "key4";
+  public static final String VALUE_4 = "value4";
 
   private final List<NodeChangeEvent> nodeEvents = new ArrayList<>();
   private final List<PreferenceChangeEvent> keyEvents = new ArrayList<>();
@@ -75,6 +79,9 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
   @Test(priority = 1)
   public void writePreferences() throws Exception {
     try {
+
+      dumpSerials();
+
       PersistedPreferencesFactory.getInstance().invalidate();
       PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(MultiJVMPreferencesTest.class);
 
@@ -91,8 +98,9 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
 
       // add node and key in other jvm
       runInOtherJVM(AddPrefsInOtherJVM.class);
-
       Thread.sleep(1000);   // give time for modtracker to fire events
+
+      dumpSerials();
 
       assertEquals(nodeEvents.size(), 1);
       NodeChangeEvent nodeEvent = nodeEvents.get(0);
@@ -100,12 +108,33 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
       assertFalse(((DbPreferences) nodeEvent.getChild()).getNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getNode().isNew());    // and persisted!
+      nodeEvents.clear();
 
       assertEquals(keyEvents.size(), 1);
       PreferenceChangeEvent keyEvent = keyEvents.get(0);
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
-      assertEquals(keyEvent.getKey(), AddPrefsInOtherJVM.KEY_4);
-      assertEquals(keyEvent.getNewValue(), AddPrefsInOtherJVM.VALUE_4);
+      assertEquals(keyEvent.getKey(), KEY_4);
+      assertEquals(keyEvent.getNewValue(), VALUE_4);
+      keyEvents.clear();
+
+      // remove node and key in other jvm
+      runInOtherJVM(RemovePrefsInOtherJVM.class);
+      Thread.sleep(1000);   // give time for modtracker to fire events
+
+      dumpSerials();
+
+      assertEquals(nodeEvents.size(), 1);
+      nodeEvent = nodeEvents.get(0);
+      assertEquals(nodeEvent.getParent(), prefs);
+      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertTrue(((DbPreferences) nodeEvent.getChild()).getNode().isRemoved());
+      assertFalse(((DbPreferences) nodeEvent.getChild()).getNode().isNew());    // and persisted!
+
+      assertEquals(keyEvents.size(), 1);
+      keyEvent = keyEvents.get(0);
+      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(keyEvent.getKey(), KEY_4);
+      assertNull(keyEvent.getNewValue());
     }
     finally {
       // always cleanup because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
@@ -117,6 +146,13 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
           Reporter.log("removed key " + key.getKey() + "<br>");
         }
       }
+    }
+  }
+
+
+  private void dumpSerials() {
+    for (DbModification mod : new DbModification(getSession()).selectAllObjects()) {
+      Reporter.log(mod.getTrackedName() + ":= " + mod.getSerial() + "<br>");
     }
   }
 

@@ -46,7 +46,7 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   P selectLockedObject(long id) throws RemoteException;
 
-  List<? extends P> selectAllObjects() throws RemoteException;
+  List<P> selectAllObjects() throws RemoteException;
 
   List<IdSerialTuple> selectAllIdSerial() throws RemoteException;
 

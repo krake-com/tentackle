@@ -33,10 +33,12 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 
+import static org.testng.Assert.*;
+
 
 /**
  * Base class for persistence tests.
- * 
+ *
  * @author harald
  */
 public abstract class AbstractDbTest {
@@ -153,6 +155,12 @@ public abstract class AbstractDbTest {
     String cmd = javaHome + "/bin/" + "java -classpath " + classPath + " " + testClass.getName();
     Reporter.log("running: " + cmd + "<br>");
     Process process = Runtime.getRuntime().exec(cmd);
+    try {
+      process.waitFor();
+    }
+    catch (InterruptedException ex) {
+      fail("executing " + testClass + " failed<br>", ex);
+    }
     // collect stdout
     Reader r = new InputStreamReader(process.getInputStream());
     try (BufferedReader in = new BufferedReader(r)) {

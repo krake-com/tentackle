@@ -106,16 +106,6 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   }
 
 
-
-
-
-
-  @Override
-  public boolean isCountingModification(char modType) {
-    return true;
-  }
-
-
   @Override
   public DbObjectClassVariables<DbPreferencesNode> getClassVariables() {
     return CLASSVARIABLES;
@@ -461,12 +451,18 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
   @Override
   public String toString()  {
-    return "ID=" + getId() + ", parentId=" + parentId +
-           (user == null ? ", <system>" : (", user='" + user + "'")) +
-           ", name='" + name + "'";
+    StringBuilder buf = new StringBuilder();
+    buf.append("ID=").append(getId())
+       .append(", parentId=").append(parentId);
+    if (user == null) {
+      buf.append(", <system>");
+    }
+    else {
+      buf.append(", user='").append(user).append("'");
+    }
+    buf.append(", name='").append(name).append("'");
+    return buf.toString();
   }
-
-
 
 
   // record members

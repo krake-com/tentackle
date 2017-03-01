@@ -1566,10 +1566,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the list of objects
    */
   @SuppressWarnings("unchecked")
-  public List<? extends P> selectAllObjects() {
+  public List<P> selectAllObjects() {
     if (getSession().isRemote())  {
       try {
-        List<? extends P> list = getRemoteDelegate().selectAllObjects();
+        List<P> list = getRemoteDelegate().selectAllObjects();
         for (P obj : list) {
           obj.setSession(getSession());
         }

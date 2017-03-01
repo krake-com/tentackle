@@ -131,7 +131,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
 
   @Override
   @SuppressWarnings("unchecked")
-  public List<? extends P> selectAllObjects() throws RemoteException {
+  public List<P> selectAllObjects() throws RemoteException {
     try {
       return dbObject.selectAllObjects();
     }

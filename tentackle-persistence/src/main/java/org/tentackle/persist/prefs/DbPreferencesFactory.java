@@ -310,16 +310,19 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   public synchronized void flush(DbPreferences node) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
-    try {
-      new DbPreferencesOperation(db).flush(node);
-    }
-    catch (RuntimeException rex) {
-      // remove the root node from the repo (forces reload on next access)
-      removeRoot(node);
-    }
-    finally {
-      releaseDb(db);
-    }
+    db.transaction(() -> {
+      try {
+        new DbPreferencesOperation(db).flush(node);
+      }
+      catch (RuntimeException rex) {
+        // remove the root node from the repo (forces reload on next access)
+        removeRoot(node);
+      }
+      finally {
+        releaseDb(db);
+      }
+      return null;
+    });
   }
 
 

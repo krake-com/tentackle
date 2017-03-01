@@ -144,7 +144,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public List<? extends P> selectAllObjects() throws RemoteException {
+  public List<P> selectAllObjects() throws RemoteException {
     throw new RemoteException(ILLEGAL_METHOD_TEXT);
   }
 

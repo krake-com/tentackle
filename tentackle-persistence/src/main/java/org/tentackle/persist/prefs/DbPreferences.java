@@ -143,6 +143,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     this.node.setId(node.getId());    // node may be persisted in another JVM meanwhile
     this.node.setSerial(node.getSerial());
     this.node.setTableSerial(node.getTableSerial());
+    this.node.setRemoved(node.isRemoved());
     // the other attributes don't ever change in a node
   }
 
@@ -221,6 +222,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       existingKey.setId(key.getId());   // may be persisted in another JVM meanwhile
       existingKey.setSerial(key.getSerial());
       existingKey.setTableSerial(key.getTableSerial());
+      existingKey.setRemoved(key.isRemoved());
     }
     else {
       putKey(key);
@@ -627,9 +629,17 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       if (node.isRemoved()) {
         if (!node.isNew()) {
           // remove this and all subnodes and keys
-          new DbPreferencesKey(db).deleteByNodeId(node.getId());
           for (DbPreferencesKey key: keyMap.values()) {
             key.setRemoved(true);
+            if (!key.isNew()) {
+              try {
+                key.setSession(db);
+                key.deleteObject();
+              }
+              finally {
+                key.setSession(null);
+              }
+            }
             getFactory().keyChanged(this, key);
           }
           keyMap.clear();
