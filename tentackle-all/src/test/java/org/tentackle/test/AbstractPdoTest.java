@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.test.pdo;
+package org.tentackle.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,7 +37,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 
 /**
- * Abstract PDO test.
+ * Base class for tests on PDO level.
  *
  * @author harald
  */
@@ -57,9 +57,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     NONE
   }
 
-  private TransactionType txType;           // transaction handling
   private static Session session;           // session for all methods in all test classes
   private static DomainContext context;     // domain context for all methods in all test classes
+
+  private TransactionType txType;           // transaction handling
   private long txVoucher;                   // transaction voucher for current test class
 
 

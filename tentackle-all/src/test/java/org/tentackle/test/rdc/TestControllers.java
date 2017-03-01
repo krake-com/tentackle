@@ -14,23 +14,13 @@
 package org.tentackle.test.rdc;
 
 import com.sun.javafx.application.PlatformImpl;
-import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.test.AbstractPdoTest;
 import org.testng.Assert;
 import org.testng.Reporter;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
@@ -39,69 +29,16 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
-public class TestControllers extends AbstractApplication {
-
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(TestControllers.class);
-
-  private Session session;
-  private DomainContext context;
-
-  public TestControllers() {
-    super("test");
-  }
-
-  @BeforeClass
-  public void setUpClass() throws Exception {
-    SessionInfo sessionInfo = Pdo.createSessionInfo();
-    session = Pdo.createSession(sessionInfo);
-    try {
-      session.open();
-    }
-    catch (PersistenceException ex) {
-      LOGGER.warning("cannot connect to backend: ", ex);
-      // no database? wrong database? whatever: testing environment incomplete
-      session = null;
-      return;
-    }
-    Session.setCurrentSession(session);
-    context = Pdo.createDomainContext(session);
-    register();
-  }
-
-  @AfterClass
-  public void tearDownClass() throws Exception {
-    if (session != null) {
-      session.close();
-      Session.setCurrentSession(null);
-      unregister();
-    }
-  }
-
-  @Override
-  public DomainContext getDomainContext() {
-    return context;
-  }
+public class TestControllers extends AbstractPdoTest {
 
   @Test
   public void testControllers() {
-
-    if (session == null) {
-      String msg = "no backend found -> no FX tests";
-      LOGGER.warning(msg);
-      Reporter.log(msg + "<br>");
-      return;
-    }
 
     try {
       PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
     }
     catch(RuntimeException rex) {
-      String msg = "FX not supported -> no FX tests<br>";
-      LOGGER.warning(msg);
-      Reporter.log(msg + "<br>");
+      Reporter.log("FX not supported -> no FX tests<br>");
       return;
     }
 
@@ -121,16 +58,6 @@ public class TestControllers extends AbstractApplication {
         }
       }
     }
-  }
-
-  @Override
-  public boolean isServer() {
-    return false;
-  }
-
-  @Override
-  public <U extends PersistentDomainObject<U>> U getUser(DomainContext context, long userId) {
-    return null;
   }
 
 }
