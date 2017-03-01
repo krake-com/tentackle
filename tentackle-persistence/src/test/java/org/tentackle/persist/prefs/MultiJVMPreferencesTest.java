@@ -24,6 +24,8 @@ import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.persist.AbstractDbTest;
 import org.tentackle.persist.DbModification;
 import org.tentackle.prefs.PersistedPreferences;
@@ -40,6 +42,11 @@ import static org.testng.Assert.*;
  * @author harald
  */
 public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChangeListener, PreferenceChangeListener {
+
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(MultiJVMPreferencesTest.class);
 
   private static final String KEY_1 = "key1";
   private static final String KEY_2 = "key2";
@@ -61,19 +68,19 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
   @Override
   public synchronized void childAdded(NodeChangeEvent evt) {
     nodeEvents.add(evt);
-    System.out.println("child added: " + evt);
+    LOGGER.info("child added: " + evt);
   }
 
   @Override
   public synchronized void childRemoved(NodeChangeEvent evt) {
     nodeEvents.add(evt);
-    System.out.println("child removed: " + evt);
+    LOGGER.info("child removed: " + evt);
   }
 
   @Override
   public synchronized void preferenceChange(PreferenceChangeEvent evt) {
     keyEvents.add(evt);
-    System.out.println("key changed: " + evt);
+    LOGGER.info("key changed: " + evt);
   }
 
   @Test(priority = 1)

@@ -19,8 +19,7 @@
 
 package org.tentackle.misc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import org.tentackle.common.ExceptionHelper;
 
 /**
  * Application Exception.<br>
@@ -34,22 +33,6 @@ public class ApplicationException extends Exception {
 
   /** the default error code **/
   public static final int ERROR_DEFAULT = 1;
-
-  /**
-   * Returns the stacktrace of a given exception as a string.
-   *
-   * @param cause the exception
-   * @return the printable stacktrace
-   */
-  public static String getStackTraceAsString(Throwable cause)  {
-    ByteArrayOutputStream bs = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(bs);
-    cause.printStackTrace(ps);
-    ps.flush();
-    String str = bs.toString();
-    ps.close();
-    return str;
-  }
 
 
   private int errorCode;    // the errorcode of this exception
@@ -116,16 +99,6 @@ public class ApplicationException extends Exception {
 
 
   /**
-   * Returns the stacktrace of this exception as a string.
-   *
-   * @return the printable stacktrace
-   */
-  public String getStackTraceAsString()  {
-    return getStackTraceAsString(this);
-  }
-
-
-  /**
    * Gets the chain of all messages (if exception is cascaded).<br>
    *
    * Any Exception other than ApplicationException will be stacktraced.
@@ -148,7 +121,7 @@ public class ApplicationException extends Exception {
       }
       if (!(cause instanceof ApplicationException)) {
         // some severe programming error
-        buf.append('\n').append(getStackTraceAsString());
+        buf.append('\n').append(ExceptionHelper.getStackTraceAsString(this));
       }
       closeCount++;
       cause = cause.getCause();

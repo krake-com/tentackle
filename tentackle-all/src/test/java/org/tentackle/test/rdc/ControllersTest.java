@@ -14,6 +14,7 @@
 package org.tentackle.test.rdc;
 
 import com.sun.javafx.application.PlatformImpl;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
@@ -39,7 +40,8 @@ public class ControllersTest extends AbstractPdoTest {
       PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
     }
     catch(RuntimeException rex) {
-      fail("FX not supported -> no FX tests", rex);
+      Reporter.log("FX not supported -> no FX tests:<br>" +
+                   ExceptionHelper.getStackTraceAsString(rex) + "<br>");
       return;
     }
 

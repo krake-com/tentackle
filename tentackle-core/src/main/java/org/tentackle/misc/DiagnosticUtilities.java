@@ -18,14 +18,13 @@
 
 package org.tentackle.misc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.task.TaskDispatcher;
@@ -127,22 +126,20 @@ public class DiagnosticUtilities {
   public String createStackDump() {
 
     StringBuilder buf = new StringBuilder("\n-------------------- Stackdump ");
-    buf.append(dumpCount.incrementAndGet());
-    buf.append(" --------------------\n\n");
+    buf.append(dumpCount.incrementAndGet())
+       .append(" --------------------\n\n");
 
     try {
       doCreateStackDump(buf);
     }
     catch (Exception ex) {
-      buf.append("CREATING STACKDUMP FAILED:\n");
-      ByteArrayOutputStream os = new ByteArrayOutputStream();
-      ex.printStackTrace(new PrintStream(os));
-      buf.append(os);
+      buf.append("CREATING STACKDUMP FAILED:\n")
+         .append(ExceptionHelper.getStackTraceAsString(ex));
     }
 
-    buf.append("\n-------------------- End Of Stackdump ");
-    buf.append(dumpCount);
-    buf.append(" --------------------\n\n");
+    buf.append("\n-------------------- End Of Stackdump ")
+       .append(dumpCount)
+       .append(" --------------------\n\n");
 
     return buf.toString();
   }

@@ -18,6 +18,9 @@
 
 package org.tentackle.common;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 /**
  * Helper methods dealing with exceptions.
  *
@@ -96,6 +99,22 @@ public final class ExceptionHelper {
       }
     }
     return buf.toString();
+  }
+
+
+  /**
+   * Returns the stacktrace of a given exception as a string.
+   *
+   * @param cause the exception
+   * @return the stacktrace as a printable string
+   */
+  public static String getStackTraceAsString(Throwable cause)  {
+    ByteArrayOutputStream bs = new ByteArrayOutputStream();
+    try (PrintStream ps = new PrintStream(bs)) {
+      cause.printStackTrace(ps);
+      ps.flush();
+      return bs.toString();
+    }
   }
 
 
