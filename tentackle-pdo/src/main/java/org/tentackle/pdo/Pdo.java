@@ -488,7 +488,7 @@ public class Pdo {
    *
    * @param username is the name of the user, null if {@code System.getProperty("user.name")}
    * @param password is the password, null if none
-   * @param propertiesName name of additional properties resource, null if default {@ccode "backend"}
+   * @param propertiesName name of additional properties resource, null if default {@code "backend"}
    * @return the created session info
    */
   public static SessionInfo createSessionInfo(String username, char[] password, String propertiesName) {
@@ -498,7 +498,7 @@ public class Pdo {
   /**
    * Creates a session info from a property file holding the connection parameters.
    *
-   * @param propertiesName name of additional properties resource, null if default {@ccode "backend"}
+   * @param propertiesName name of additional properties resource, null if default {@code "backend"}
    * @return the created session info
    */
   public static SessionInfo createSessionInfo(String propertiesName) {
@@ -516,7 +516,7 @@ public class Pdo {
   }
 
   /**
-   * Creates a session info from the default property file {@ccode "backend"} holding the connection parameters.
+   * Creates a session info from the default property file {@code "backend"} holding the connection parameters.
    *
    * @return the created session info
    */
@@ -549,7 +549,7 @@ public class Pdo {
   }
 
   /**
-   * Creates a session for the default session manager and a default session info {@ccode "backend"}.
+   * Creates a session for the default session manager and a default session info {@code "backend"}.
    *
    * @return the created session (still closed)
    */
