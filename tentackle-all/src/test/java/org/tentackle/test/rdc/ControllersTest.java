@@ -19,9 +19,10 @@ import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.test.AbstractPdoTest;
-import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Tests whether controllers could be loaded and bound.<br>
@@ -29,7 +30,7 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
-public class TestControllers extends AbstractPdoTest {
+public class ControllersTest extends AbstractPdoTest {
 
   @Test
   public void testControllers() {
@@ -38,7 +39,7 @@ public class TestControllers extends AbstractPdoTest {
       PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
     }
     catch(RuntimeException rex) {
-      Reporter.log("FX not supported -> no FX tests<br>");
+      fail("FX not supported -> no FX tests", rex);
       return;
     }
 
@@ -54,7 +55,7 @@ public class TestControllers extends AbstractPdoTest {
           }
         }
         catch (RuntimeException rex) {
-          Assert.fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
+          fail("loading " + clazz + " failed: " + rex.getMessage(), rex);
         }
       }
     }
