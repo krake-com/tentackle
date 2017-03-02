@@ -149,17 +149,39 @@ public abstract class AbstractDbTest {
    * @throws IOException if some IO operation failed
    */
   public void runInOtherJVM(Class<?> testClass) throws IOException {
+    Process process = runClass(testClass);
+    waitForProcess(process);
+  }
+
+
+  /**
+   * Runs the given class in another JVM and waits for termination.<br>
+   * The testclass must have a main method.
+   *
+   * @param testClass the test class
+   * @throws IOException if some IO operation failed
+   */
+  public static Process runClass(Class<?> testClass) throws IOException {
     // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
     String cmd = javaHome + "/bin/" + "java -classpath " + classPath + " " + testClass.getName();
     Reporter.log("running: " + cmd + "<br>");
-    Process process = Runtime.getRuntime().exec(cmd);
+    return Runtime.getRuntime().exec(cmd);
+  }
+
+  /**
+   * Waits for process to terminate and write stdout and stderr to the reporter log.
+   *
+   * @param process the process
+   * @throws IOException if some IO failed
+   */
+  public static void waitForProcess(Process process) throws IOException {
     try {
       process.waitFor();
     }
     catch (InterruptedException ex) {
-      fail("executing " + testClass + " failed<br>", ex);
+      fail("executing " + process + " failed<br>", ex);
     }
     // collect stdout
     Reader r = new InputStreamReader(process.getInputStream());

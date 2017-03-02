@@ -38,6 +38,7 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.persist.Db;
 import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PersistedPreferencesFactory;
 
 /**
  * Persisted preferences implementation.
@@ -64,7 +65,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferences.class);
 
-  private final DbPreferencesFactory factory;           // the factory that creates this node
   private final DbPreferences root;                     // the root of thos nodd ("this" if this is a root)
   private final DbPreferences parent;                   // the parent node, null if this is a root
   private final String absolutePath;                    // the absolute path
@@ -78,17 +78,14 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   /**
    * Creates a preferences node.
    *
-   * @param factory the factory creating this node
    * @param parent the parent node, null if this is a root node
    * @param prefNode the persistent node
    * @param childs the child preferences nodes
    * @param keys the persistent keys
    */
-  public DbPreferences(DbPreferencesFactory factory,
-                       DbPreferences parent, DbPreferencesNode prefNode,
+  public DbPreferences(DbPreferences parent, DbPreferencesNode prefNode,
                        Collection<DbPreferences> childs, Collection<DbPreferencesKey> keys) {
 
-    this.factory = factory;
     this.root = parent == null ? this : parent.getRoot();
     this.parent = parent;
     this.prefNode = prefNode;
@@ -529,32 +526,32 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public void flush() throws BackingStoreException {
-    factory.flush(this);
+    getFactory().flush(this);
   }
 
   @Override
   public void sync() throws BackingStoreException {
-    factory.sync(this);
+    getFactory().sync(this);
   }
 
   @Override
   public void addPreferenceChangeListener(PreferenceChangeListener pcl) {
-    factory.addPreferenceChangeListener(this, pcl);
+    getFactory().addPreferenceChangeListener(this, pcl);
   }
 
   @Override
   public void removePreferenceChangeListener(PreferenceChangeListener pcl) {
-    factory.removePreferenceChangeListener(this, pcl);
+    getFactory().removePreferenceChangeListener(this, pcl);
   }
 
   @Override
   public void addNodeChangeListener(NodeChangeListener ncl) {
-    factory.addNodeChangeListener(this, ncl);
+    getFactory().addNodeChangeListener(this, ncl);
   }
 
   @Override
   public void removeNodeChangeListener(NodeChangeListener ncl) {
-    factory.removeNodeChangeListener(this, ncl);
+    getFactory().removeNodeChangeListener(this, ncl);
   }
 
   @Override
@@ -598,7 +595,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         else {
           childNode.setName(currentPrefs.absolutePath() + "/" + subName);
         }
-        childPrefs = new DbPreferences(factory, currentPrefs, childNode, null, null);
+        childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
         currentPrefs.putChild(childPrefs);
       }
       currentPrefs = childPrefs;
@@ -613,7 +610,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
 
-  
+
 
   /**
    * Returns whether this is a root node.
@@ -701,7 +698,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
                 key.setSession(null);
               }
             }
-            factory.keyChanged(this, key);
+            getFactory().keyChanged(this, key);
           }
           keyMap.clear();
           for (DbPreferences child: childMap.values()) {
@@ -710,7 +707,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
           }
           childMap.clear();
           prefNode.deleteObject();
-          factory.nodeChanged(this);
+          getFactory().nodeChanged(this);
         }
       }
       else {
@@ -729,7 +726,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         }
         if (prefNode.isModified()) {
           prefNode.saveObject();
-          factory.nodeChanged(this);
+          getFactory().nodeChanged(this);
         }
 
         for (DbPreferencesKey key: keyMap.values()) {
@@ -738,7 +735,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             if (key.isRemoved()) {
               if (!key.isNew()) {
                 key.deleteObject();
-                factory.keyChanged(this, key);
+                getFactory().keyChanged(this, key);
               }
             }
             else if (key.isModified()) {
@@ -747,7 +744,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
                 key.setRootNodeId(prefNode.getRootNodeId());
               }
               key.saveObject();
-              factory.keyChanged(this, key);
+              getFactory().keyChanged(this, key);
             }
           }
           finally {
@@ -763,6 +760,15 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     finally {
       prefNode.setSession(null);
     }
+  }
+
+  /**
+   * Gets the DbPreferencesFactory singleton.
+   *
+   * @return the factory singleton, never null
+   */
+  private DbPreferencesFactory getFactory() {
+    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
   }
 
 }

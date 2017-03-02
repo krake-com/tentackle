@@ -168,7 +168,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     Map<Long,DbPreferences> childs = new HashMap<>();
     List<DbPreferencesKey> keys = new ArrayList<>();
 
-    DbPreferences root = new DbPreferences(getFactory(), null, rootNode, childs.values(), keys);
+    DbPreferences root = new DbPreferences(null, rootNode, childs.values(), keys);
     childs.put(rootNode.getId(), root);   // add root to simplify buildChild below
 
     if (!rootNode.isNew()) {
@@ -238,18 +238,9 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       // parent missing: build recursively
       parent = buildChild(subNodes.get(prefNode.getParentId()), subNodes, childs);
     }
-    DbPreferences child = new DbPreferences(getFactory(), parent, prefNode, null, null);
+    DbPreferences child = new DbPreferences(parent, prefNode, null, null);
     childs.put(prefNode.getId(), child);
     return child;
-  }
-
-  /**
-   * Gets the DbPreferencesFactory singleton.
-   *
-   * @return the factory singleton, never null
-   */
-  private DbPreferencesFactory getFactory() {
-    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
   }
 
 }

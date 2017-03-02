@@ -578,7 +578,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           removeRoot(root);   // force reload next access
         }
         else {
-          node = new DbPreferences(this, parent, prefNode, null, null);
+          node = new DbPreferences(parent, prefNode, null, null);
           parent.putChild(node);
           nodeMap.put(prefNode.getId(), node);
           nodeChanged(node);
@@ -670,7 +670,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           // add node
           DbPreferences parent = nodeMap.get(prefNode.getParentId());
           if (parent != null) {
-            node = new DbPreferences(this, parent, prefNode, null, null);
+            node = new DbPreferences(parent, prefNode, null, null);
             parent.putChild(node);
             nodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
