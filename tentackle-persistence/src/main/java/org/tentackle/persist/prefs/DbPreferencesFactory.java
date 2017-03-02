@@ -63,9 +63,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Listeners are managed by the repository, not the nodes.
    * This allows un- and reloading the nodes without losing the listeners.
+   * <p>
+   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * So, if the node is added again, the listeners are still there.
+   * Listeners have to be removed by the application explicitly.
    */
   private static class ListenerKey {
-    private final String user;    // "" = root
+    private final String user;    // "" = system
     private final String path;
 
     public ListenerKey(DbPreferences node) {
@@ -116,6 +120,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private long keyTableSerial;              // highest tableSerial of _all_ DbPreferencesKeys
 
 
+  /**
+   * Creates the factory.
+   */
   public DbPreferencesFactory() {
     userRoots = new HashMap<>();
     nodeListeners = new HashMap<>();
@@ -150,7 +157,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
               break;
           }
         }
-        updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
+        if (isAutoSync()) {
+          updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
+        }
       }
     });
   }
@@ -160,7 +169,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     systemRoot = null;
     userRoots.clear();
   }
-
 
   @Override
   public boolean isAutoSync() {
@@ -228,21 +236,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return root;
   }
 
-
-  /**
-   * Removes a root node of given node from the repository.
-   *
-   * @param root the root node or one of its subnodes
-   */
-  public synchronized void removeRoot(DbPreferences root) {
-    if (root.isUserNode()) {
-      userRoots.remove(root.getUser());
-    }
-    else {
-      systemRoot = null;
-    }
-  }
-
   @Override
   public DbPreferences userNodeForPackage(Class<?> c) {
     return getUserRoot().node(nodeName(c));
@@ -264,6 +257,16 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
 
+  /**
+   * Adds a preferences changed listener.
+   * <p>
+   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * So, if the node is added again, the listeners are still there.
+   * Listeners have to be removed by the application explicitly.
+   *
+   * @param node the node
+   * @param pcl the listener
+   */
   public synchronized void addPreferenceChangeListener(DbPreferences node, PreferenceChangeListener pcl) {
     ListenerKey lk = new ListenerKey(node);
     Set<PreferenceChangeListener> listeners = prefListeners.get(lk);
@@ -274,6 +277,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     listeners.add(pcl);
   }
 
+  /**
+   * Removes a preferences changed listener.
+   *
+   * @param node the node
+   * @param pcl the listener
+   */
   public synchronized void removePreferenceChangeListener(DbPreferences node, PreferenceChangeListener pcl) {
     ListenerKey lk = new ListenerKey(node);
     Set<PreferenceChangeListener> listeners = prefListeners.get(lk);
@@ -285,6 +294,16 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
+  /**
+   * Adds a node listener.
+   * <p>
+   * Notice that when a node is removed, their listeners will <em>not</em> be removed.
+   * So, if the node is added again, the listeners are still there.
+   * Listeners have to be removed by the application explicitly.
+   *
+   * @param node the node
+   * @param pcl the listener
+   */
   public synchronized void addNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);
     Set<NodeChangeListener> listeners = nodeListeners.get(lk);
@@ -295,6 +314,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     listeners.add(ncl);
   }
 
+  /**
+   * Removes a node listener.
+   *
+   * @param node the node
+   * @param pcl the listener
+   */
   public synchronized void removeNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);
     Set<NodeChangeListener> listeners = nodeListeners.get(lk);
@@ -306,33 +331,116 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
+  /**
+   * Invoke listeners when a node is added or removed.
+   *
+   * @param node the added or removed node
+   */
+  public void nodeChanged(DbPreferences node) {
+    DbPreferences parent = node.parent();
+    if (parent != null) {
+      Set<NodeChangeListener> listeners = nodeListeners.get(new ListenerKey(parent));
+      if (listeners != null) {
+        NodeChangeEvent ev = new NodeChangeEvent(node.parent(), node);
+        for (NodeChangeListener listener: listeners) {
+          if (node.getPersistentNode().isRemoved()) {
+            listener.childRemoved(ev);
+          }
+          else {
+            listener.childAdded(ev);
+          }
+        }
+      }
+    }
+  }
 
-
-  public synchronized void flush(DbPreferences node) throws BackingStoreException {
-    Db db = requestDb(node.isUserNode(), true);
-    db.transaction(() -> {
-      try {
-        new DbPreferencesOperation(db).flush(node);
+  /**
+   * Invoke listeners when a key is added, updated or removed.
+   *
+   * @param node the node holding the key
+   * @param key the changed key
+   */
+  public void keyChanged(DbPreferences node, DbPreferencesKey key) {
+    Set<PreferenceChangeListener> listeners = prefListeners.get(new ListenerKey(node));
+    if (listeners != null) {
+      PreferenceChangeEvent ev = new PreferenceChangeEvent(node, key.getKey(), key.isRemoved() ? null : key.getValue());
+      for (PreferenceChangeListener listener: listeners) {
+        listener.preferenceChange(ev);
       }
-      catch (RuntimeException rex) {
-        // remove the root node from the repo (forces reload on next access)
-        removeRoot(node);
-      }
-      finally {
-        releaseDb(db);
-      }
-      return null;
-    });
+    }
   }
 
 
+  /**
+   * Flushes a node and all of its subnodes to the backing store.
+   *
+   * @param node the preferences node
+   * @throws BackingStoreException
+   */
+  public synchronized void flush(DbPreferences node) throws BackingStoreException {
+    Db db = requestDb(node.isUserNode(), true);
+    try {
+      db.transaction(() -> {
+        try {
+          new DbPreferencesOperation(db).flush(node);
+        }
+        catch (RuntimeException rex) {
+          // remove the root node from the repo (forces reload on next access)
+          removeRoot(node);
+        }
+        return null;
+      });
+    }
+    finally {
+      releaseDb(db);
+    }
+  }
+
+  /**
+   * Syncs a node and all of its subnodes from and to the backing store.<br>
+   * Same as flush but loads any modifications into repo first and then flushes all mods.
+   *
+   * @param node the preferences node
+   * @throws BackingStoreException
+   */
   public synchronized void sync(DbPreferences node) throws BackingStoreException {
+    Db db = requestDb(node.isUserNode(), true);
+    try {
+      long nodeMaxSerial = new DbPreferencesNode(db).getModificationCount();
+      long keyMaxSerial = new DbPreferencesKey(db).getModificationCount();
+      updateRepository(db, nodeMaxSerial, keyMaxSerial);
+    }
+    finally {
+      releaseDb(db);
+    }
     flush(node);
   }
 
 
 
-  public void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
+  /**
+   * Removes a root node of given node from the repository.
+   *
+   * @param root the root node or one of its subnodes
+   */
+  protected synchronized void removeRoot(DbPreferences root) {
+    if (root.isUserNode()) {
+      userRoots.remove(root.getUser());
+    }
+    else {
+      systemRoot = null;
+    }
+  }
+
+  /**
+   * Updates the repository.<br>
+   * Invoked whenever the data in prefnode or prefkey has changed.
+   *
+   * @param db the session
+   * @param nodeMaxSerial the new table serial for prefnodes
+   * @param keyMaxSerial the nore table serial for prefkeys
+   */
+  protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
     if (db.isRemote()) {
       // todo: via remote delegate
     }
@@ -440,9 +548,15 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
 
-
+  /**
+   * Rebuilds the given root from scratch.<br>
+   * Reloads all nodes and keys.
+   *
+   * @param db the session
+   * @param root the root node
+   */
   protected void rebuildRoot(Db db, DbPreferences root) {
-    long rootId = root.getNode().getId();
+    long rootId = root.getPersistentNode().getId();
     // load all nodes and keys for this root (ordered by id, i.e. creation)
     List<DbPreferencesNode> prefNodes = new DbPreferencesNode(db).selectByRootNodeId(rootId);
     List<DbPreferencesKey> prefKeys = new DbPreferencesKey(db).selectByRootNodeId(rootId);
@@ -464,7 +578,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           removeRoot(root);   // force reload next access
         }
         else {
-          node = new DbPreferences(parent, prefNode, null, null);
+          node = new DbPreferences(this, parent, prefNode, null, null);
           parent.putChild(node);
           nodeMap.put(prefNode.getId(), node);
           nodeChanged(node);
@@ -472,7 +586,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
       else {
         // just id,serial or tableserial changed -> no listener to invoke
-        node.updateNode(prefNode);
+        node.updatePersistentNode(prefNode);
       }
     }
 
@@ -484,18 +598,17 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         removeRoot(root);   // force reload next access
       }
       else {
-        DbPreferencesKey key = node.getKey(prefKey.getKey());
+        DbPreferencesKey key = node.getPersistentKey(prefKey.getKey());
         if (key == null) {
-          node.putKey(prefKey);
+          node.putPersistentKey(prefKey);
           keyMap.put(prefKey.getId(), prefKey);
         }
         else {
-          node.updateKey(prefKey);
+          node.updatePersistentKey(prefKey);
         }
         keyChanged(node, prefKey);
       }
     }
-
 
     // remove keys
     Set<DbPreferencesKey> persistedKeys = new HashSet<>(prefKeys);
@@ -504,7 +617,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         if (!persistedKeys.contains(prefKey)) {
           DbPreferences node = nodeMap.get(prefKey.getNodeId());
           if (node != null) {
-            prefKey = node.removeKey(prefKey.getKey());
+            prefKey = node.removePersistentKey(prefKey.getKey());
             if (prefKey != null) {
               keyChanged(node, prefKey);
             }
@@ -516,8 +629,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     // remove nodes
     Set<DbPreferencesNode> persistedNodes = new HashSet<>(prefNodes);
     for (DbPreferences node: nodeMap.values()) {
-      if (!node.getNode().isNew()) {  // if not created in this JVM
-        if (!persistedNodes.contains(node.getNode())) {
+      if (!node.getPersistentNode().isNew()) {  // if not created in this JVM
+        if (!persistedNodes.contains(node.getPersistentNode())) {
           DbPreferences parent = node.parent();
           if (parent != null) {
             node = parent.removeChild(node.name());
@@ -528,10 +641,16 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         }
       }
     }
-
   }
 
 
+  /**
+   * Updates a root node.
+   *
+   * @param root the root preferences node
+   * @param changedNodes the changed nodes
+   * @param changedKeys the changes keys
+   */
   protected void updateRoot(DbPreferences root,
                             Set<DbPreferencesNode> changedNodes,
                             Set<DbPreferencesKey> changedKeys) {
@@ -541,7 +660,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     Map<Long,DbPreferencesKey> keyMap = new HashMap<>();
     addNodeToMaps(root, nodeMap, keyMap);
 
-    long rootId = root.getNode().getId();
+    long rootId = root.getPersistentNode().getId();
 
     // add or update nodes
     for (DbPreferencesNode prefNode: changedNodes) {
@@ -551,7 +670,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           // add node
           DbPreferences parent = nodeMap.get(prefNode.getParentId());
           if (parent != null) {
-            node = new DbPreferences(parent, prefNode, null, null);
+            node = new DbPreferences(this, parent, prefNode, null, null);
             parent.putChild(node);
             nodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
@@ -561,7 +680,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
         }
         else {
-          node.updateNode(prefNode);
+          node.updatePersistentNode(prefNode);
         }
       }
     }
@@ -571,7 +690,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       if (prefKey.getRootNodeId() == rootId) {
         DbPreferences node = nodeMap.get(prefKey.getNodeId());
         if (node != null) {
-          node.updateKey(prefKey);
+          node.updatePersistentKey(prefKey);
           keyChanged(node, prefKey);
         }
         else {
@@ -580,11 +699,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
     }
   }
-
-
-
-
-
 
 
   /**
@@ -599,7 +713,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param forWrite true if the session is used for writing (flush), else read
    * @return the session
    */
-  public Db requestDb(boolean forUser, boolean forWrite) {
+  protected Db requestDb(boolean forUser, boolean forWrite) {
     Db db = (Db) Session.getCurrentSession();
     if (db == null) {
       if (forUser) {
@@ -614,23 +728,21 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return db;
   }
 
-
   /**
    * Releases the session after use.
    *
    * @param db the session
    */
-  public void releaseDb(Db db) {
+  protected void releaseDb(Db db) {
     // default does nothing
   }
-
 
   /**
    * Gets the current user name.
    *
    * @return the username
    */
-  private String getUserName() {
+  protected String getUserName() {
     return requestDb(true, false).getSessionInfo().getUserName();
   }
 
@@ -655,52 +767,17 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return "/" + packageName.replace('.', '/');
   }
 
-
   /**
-   * Invoke listeners when a node is added or removed.
+   * Adds all subnodes and keys of a node to given maps.
    *
-   * @param node the added or removed node
+   * @param node the node
+   * @param nodeMap the node map (ID:node)
+   * @param keyMap the keymap (ID:key)
    */
-  public void nodeChanged(DbPreferences node) {
-    DbPreferences parent = node.parent();
-    if (parent != null) {
-      Set<NodeChangeListener> listeners = nodeListeners.get(new ListenerKey(parent));
-      if (listeners != null) {
-        NodeChangeEvent ev = new NodeChangeEvent(node.parent(), node);
-        for (NodeChangeListener listener: listeners) {
-          if (node.getNode().isRemoved()) {
-            listener.childRemoved(ev);
-          }
-          else {
-            listener.childAdded(ev);
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Invoke listeners when a key is added, updated or removed.
-   *
-   * @param node the node holding the key
-   * @param key the changed key
-   */
-  public void keyChanged(DbPreferences node, DbPreferencesKey key) {
-    Set<PreferenceChangeListener> listeners = prefListeners.get(new ListenerKey(node));
-    if (listeners != null) {
-      PreferenceChangeEvent ev = new PreferenceChangeEvent(node, key.getKey(), key.isRemoved() ? null : key.getValue());
-      for (PreferenceChangeListener listener: listeners) {
-        listener.preferenceChange(ev);
-      }
-    }
-  }
-
-
-
   private void addNodeToMaps(DbPreferences node,
                                Map<Long,DbPreferences> nodeMap,
                                Map<Long,DbPreferencesKey> keyMap) {
-    nodeMap.put(node.getNode().getId(), node);
+    nodeMap.put(node.getPersistentNode().getId(), node);
     for (DbPreferencesKey key: node.getKeys()) {
       keyMap.put(key.getId(), key);
     }

@@ -168,7 +168,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     Map<Long,DbPreferences> childs = new HashMap<>();
     List<DbPreferencesKey> keys = new ArrayList<>();
 
-    DbPreferences root = new DbPreferences(null, rootNode, childs.values(), keys);
+    DbPreferences root = new DbPreferences(getFactory(), null, rootNode, childs.values(), keys);
     childs.put(rootNode.getId(), root);   // add root to simplify buildChild below
 
     if (!rootNode.isNew()) {
@@ -190,7 +190,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
       // add childs to their parents
       for (DbPreferences child: childs.values()) {
-        long parentId = child.getNode().getParentId();
+        long parentId = child.getPersistentNode().getParentId();
         if (parentId != 0) {
           DbPreferences parent = childs.get(parentId);
           if (parent != null) {
@@ -198,7 +198,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
           }
           else {
             LOGGER.warning("parent with ID={0} missing for child node {1}",
-                           child.getNode().getId(), child.getNode().getId());
+                           child.getPersistentNode().getId(), child.getPersistentNode().getId());
           }
         }
       }
@@ -209,7 +209,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
         subKeys.put(prefKey.getId(), prefKey);
         DbPreferences parent = childs.get(prefKey.getNodeId());
         if (parent != null) {
-          parent.putKey(prefKey);
+          parent.putPersistentKey(prefKey);
         }
         else {
           LOGGER.warning("parent with ID={0} missing for key {1}",
@@ -238,9 +238,18 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       // parent missing: build recursively
       parent = buildChild(subNodes.get(prefNode.getParentId()), subNodes, childs);
     }
-    DbPreferences child = new DbPreferences(parent, prefNode, null, null);
+    DbPreferences child = new DbPreferences(getFactory(), parent, prefNode, null, null);
     childs.put(prefNode.getId(), child);
     return child;
+  }
+
+  /**
+   * Gets the DbPreferencesFactory singleton.
+   *
+   * @return the factory singleton, never null
+   */
+  private DbPreferencesFactory getFactory() {
+    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
   }
 
 }

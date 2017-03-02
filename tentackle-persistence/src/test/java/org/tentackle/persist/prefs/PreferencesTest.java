@@ -141,7 +141,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     NodeChangeEvent nodeEvent = nodeEvents.get(0);
     assertEquals(nodeEvent.getParent(), PersistedPreferences.systemRoot());
     assertEquals(nodeEvent.getChild().absolutePath(), "/org");
-    assertFalse(((DbPreferences) nodeEvent.getChild()).getNode().isRemoved());
+    assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
     nodeEvents.clear();
 
     assertEquals(keyEvents.size(), 2);
@@ -179,7 +179,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     NodeChangeEvent nodeEvent = nodeEvents.get(0);
     assertEquals(nodeEvent.getParent(), PersistedPreferences.systemNodeForPackage(PreferencesTest.class));
     assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/node3");
-    assertFalse(((DbPreferences) nodeEvent.getChild()).getNode().isRemoved());
+    assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
     nodeEvents.clear();
 
     assertEquals(keyEvents.size(), 1);
@@ -197,7 +197,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     nodeEvent = nodeEvents.get(0);
     assertEquals(nodeEvent.getParent(), PersistedPreferences.systemNodeForPackage(PreferencesTest.class));
     assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/node3");
-    assertTrue(((DbPreferences) nodeEvent.getChild()).getNode().isRemoved());
+    assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
     nodeEvents.clear();
 
     assertEquals(keyEvents.size(), 1);

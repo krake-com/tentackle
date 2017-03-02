@@ -38,7 +38,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.persist.Db;
 import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 
 /**
  * Persisted preferences implementation.
@@ -65,23 +64,35 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferences.class);
 
-  private final DbPreferences root;
-  private final DbPreferences parent;
-  private final String absolutePath;
-  private final String name;
-  private final DbPreferencesNode node;
+  private final DbPreferencesFactory factory;           // the factory that creates this node
+  private final DbPreferences root;                     // the root of thos nodd ("this" if this is a root)
+  private final DbPreferences parent;                   // the parent node, null if this is a root
+  private final String absolutePath;                    // the absolute path
+  private final String name;                            // the name relative to the parent
+  private final DbPreferencesNode prefNode;             // the persistent node
 
   private final Map<String,DbPreferences> childMap;     // childs of this node <subname:node>
   private final Map<String,DbPreferencesKey> keyMap;    // keys of this node <key:value>
 
 
-  public DbPreferences(DbPreferences parent, DbPreferencesNode node,
+  /**
+   * Creates a preferences node.
+   *
+   * @param factory the factory creating this node
+   * @param parent the parent node, null if this is a root node
+   * @param prefNode the persistent node
+   * @param childs the child preferences nodes
+   * @param keys the persistent keys
+   */
+  public DbPreferences(DbPreferencesFactory factory,
+                       DbPreferences parent, DbPreferencesNode prefNode,
                        Collection<DbPreferences> childs, Collection<DbPreferencesKey> keys) {
 
+    this.factory = factory;
     this.root = parent == null ? this : parent.getRoot();
     this.parent = parent;
-    this.node = node;
-    this.absolutePath = node.getName();
+    this.prefNode = prefNode;
+    this.absolutePath = prefNode.getName();
     if ("/".equals(this.absolutePath)) {
       this.name = this.absolutePath;    // root node
     }
@@ -94,17 +105,27 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         throw new PersistenceException("illegal path " + this.absolutePath);
       }
     }
+
     childMap = new HashMap<>();
+    if (childs != null) {
+      for (DbPreferences child : childs) {
+        putChild(child);
+      }
+    }
+
     keyMap = new HashMap<>();
-    setChilds(childs);
-    setKeys(keys);
+    if (keys != null) {
+      for (DbPreferencesKey key: keys) {
+        putPersistentKey(key);
+      }
+    }
   }
 
   @Override
   public int hashCode() {
     int hash = 3;
     hash = 59 * hash + Objects.hashCode(this.absolutePath);
-    hash = 59 * hash + Objects.hashCode(this.node.getUser());
+    hash = 59 * hash + Objects.hashCode(this.prefNode.getUser());
     return hash;
   }
 
@@ -123,79 +144,140 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     if (!Objects.equals(this.absolutePath, other.absolutePath)) {
       return false;
     }
-    return Objects.equals(this.node.getUser(), other.node.getUser());
+    return Objects.equals(this.prefNode.getUser(), other.prefNode.getUser());
   }
 
-
-  public DbPreferencesFactory getFactory() {
-    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
+  /**
+   * Returns the string represenation of this node.
+   *
+   * <ul>
+   * <li>user node: "user:absolutePath"</li>
+   * <li>system node: "&lt;system&gt;:absolutePath"</li>
+   * <li>if node is removed: "(removed)" is appended</li>
+   * </ul>
+   *
+   * @return the string
+   */
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    if (prefNode.getUser() != null) {
+      buf.append(prefNode.getUser());
+    }
+    else {
+      buf.append("<system>");
+    }
+    buf.append(':').append(absolutePath);
+    if (prefNode.isRemoved()) {
+      buf.append(" (removed)");
+    }
+    return buf.toString();
   }
 
+  /**
+   * Gets the root of this node.<br>
+   * If this is a root, "this" will be returned.
+   *
+   * @return the root node, never null
+   */
   public DbPreferences getRoot() {
     return root;
   }
 
-  public DbPreferencesNode getNode() {
-    return node;
+  /**
+   * Gets the persistent node.
+   *
+   * @return the persistent node, never null
+   */
+  public DbPreferencesNode getPersistentNode() {
+    return prefNode;
   }
 
-  public void updateNode(DbPreferencesNode node) {
-    this.node.setId(node.getId());    // node may be persisted in another JVM meanwhile
-    this.node.setSerial(node.getSerial());
-    this.node.setTableSerial(node.getTableSerial());
-    this.node.setRemoved(node.isRemoved());
+  /**
+   * Updates the persistent node.
+   *
+   * @param prefNode the persistent node
+   */
+  public void updatePersistentNode(DbPreferencesNode prefNode) {
+    this.prefNode.setId(prefNode.getId());    // node may be persisted in another JVM meanwhile
+    this.prefNode.setSerial(prefNode.getSerial());
+    this.prefNode.setTableSerial(prefNode.getTableSerial());
+    this.prefNode.setRemoved(prefNode.isRemoved());
     // the other attributes don't ever change in a node
   }
 
+  /**
+   * Gets the peristent keys.
+   *
+   * @return the keys, never null
+   */
   public Collection<DbPreferencesKey> getKeys() {
     return keyMap.values();
   }
 
+  /**
+   * Gets the child nodes.
+   *
+   * @return the child nodes, never null
+   */
   public Collection<DbPreferences> getChilds() {
     return childMap.values();
   }
 
-  void setChilds(Collection<DbPreferences> childs) {
-    childMap.clear();
-    if (childs != null) {
-      for (DbPreferences child: childs) {
-        putChild(child);
-      }
-    }
-  }
-
-  DbPreferences putChild(DbPreferences child) {
-    child.getNode().setRemoved(false);
+  /**
+   * Adds a child node.
+   *
+   * @param child the child node
+   * @return the replaced child, null if new
+   */
+  public DbPreferences putChild(DbPreferences child) {
+    child.getPersistentNode().setRemoved(false);
     return childMap.put(child.name(), child);
   }
 
-  DbPreferences removeChild(String name) {
+  /**
+   * Removes a child node.
+   *
+   * @param name the name relative to this node
+   * @return the removed child, null if no such name
+   */
+  public DbPreferences removeChild(String name) {
     DbPreferences child = childMap.remove(name);
     if (child != null) {
-      child.node.setRemoved(true);
+      child.prefNode.setRemoved(true);
     }
     return child;
   }
 
-  DbPreferences getChild(String name) {
+  /**
+   * Gets the child with given relative name.
+   *
+   * @param name the name relative to this node
+   * @return the child, null if no such name
+   */
+  public DbPreferences getChild(String name) {
     return childMap.get(name);
   }
 
-  void setKeys(Collection<DbPreferencesKey> keys) {
-    keyMap.clear();
-    if (keys != null) {
-      for (DbPreferencesKey key: keys) {
-        putKey(key);
-      }
-    }
-  }
 
-  DbPreferencesKey putKey(DbPreferencesKey key) {
+  /**
+   * Adds a key.
+   *
+   * @param key the key
+   * @return the replaced key, null if key was new
+   */
+  public DbPreferencesKey putPersistentKey(DbPreferencesKey key) {
     key.setRemoved(false);
     return keyMap.put(key.getKey(), key);
   }
 
-  DbPreferencesKey removeKey(String name) {
+  /**
+   * Removes a key.
+   *
+   * @param name the key name
+   * @return the removed persistent key, null if no such key
+   */
+  public DbPreferencesKey removePersistentKey(String name) {
     DbPreferencesKey removedKey = keyMap.remove(name);
     if (removedKey != null) {
       removedKey.setRemoved(true);
@@ -203,19 +285,25 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return removedKey;
   }
 
-  DbPreferencesKey getKey(String name) {
+  /**
+   * Gets the persistent key.
+   *
+   * @param name the name of the key
+   * @return the persistent key, null if no such name
+   */
+  public DbPreferencesKey getPersistentKey(String name) {
     return keyMap.get(name);
   }
 
-
   /**
+   * Updates the persistent key.
    *
-   * @param key
-   * @return null if key added, else the old value
+   * @param key the key
+   * @return null if key added, else the old key's value
    */
-  String updateKey(DbPreferencesKey key) {
+  public String updatePersistentKey(DbPreferencesKey key) {
     String oldValue = null;
-    DbPreferencesKey existingKey = getKey(key.getKey());
+    DbPreferencesKey existingKey = getPersistentKey(key.getKey());
     if (existingKey != null) {
       oldValue = existingKey.getValue();
       existingKey.setValue(key.getValue());
@@ -225,49 +313,55 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       existingKey.setRemoved(key.isRemoved());
     }
     else {
-      putKey(key);
+      putPersistentKey(key);
     }
     return oldValue;
   }
 
-
+  /**
+   * Gets the user name.
+   *
+   * @return the user name, null if system user
+   */
   public String getUser() {
-    return node.getUser();
+    return prefNode.getUser();
   }
 
 
+
+  // ------------------ implements PersistentPreferences ---------------------------------
+
   @Override
   public synchronized void put(String key, String value) {
-    DbPreferencesKey prefKey = getKey(key);
+    DbPreferencesKey prefKey = getPersistentKey(key);
     if (prefKey == null) {
       prefKey = new DbPreferencesKey();
       prefKey.setKey(key);
-      putKey(prefKey);
+      putPersistentKey(prefKey);
     }
     prefKey.setValue(value);
   }
 
   @Override
   public synchronized String get(String key, String def) {
-    DbPreferencesKey prefKey = getKey(key);
+    DbPreferencesKey prefKey = getPersistentKey(key);
     return prefKey == null || prefKey.isRemoved() ? def : prefKey.getValue();
   }
 
   @Override
   public synchronized void remove(String key) {
-    removeKey(key);
+    removePersistentKey(key);
   }
 
   @Override
   public void clear() throws BackingStoreException {
-    setKeys(null);
+    keyMap.clear();
   }
 
   @Override
   public void putInt(String key, int value) {
     put(key, Integer.toString(value));
   }
-
 
   @Override
   public int getInt(String key, int def) {
@@ -284,12 +378,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return result;
   }
 
-
   @Override
   public void putLong(String key, long value) {
     put(key, Long.toString(value));
   }
-
 
   @Override
   public long getLong(String key, long def) {
@@ -306,12 +398,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return result;
   }
 
-
   @Override
   public void putBoolean(String key, boolean value) {
     put(key, String.valueOf(value));
   }
-
 
   @Override
   public boolean getBoolean(String key, boolean def) {
@@ -328,12 +418,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return result;
   }
 
-
   @Override
   public void putFloat(String key, float value) {
     put(key, Float.toString(value));
   }
-
 
   @Override
   public float getFloat(String key, float def) {
@@ -350,12 +438,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return result;
   }
 
-
   @Override
   public void putDouble(String key, double value) {
     put(key, Double.toString(value));
   }
-
 
   @Override
   public double getDouble(String key, double def) {
@@ -372,12 +458,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     return result;
   }
 
-
   @Override
   public void putByteArray(String key, byte[] value) {
     put(key, Base64.byteArrayToBase64(value));
   }
-
 
   @Override
   public byte[] getByteArray(String key, byte[] def) {
@@ -393,7 +477,6 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     }
     return result;
   }
-
 
   @Override
   public synchronized String[] keys() throws BackingStoreException {
@@ -417,7 +500,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
     DbPreferences childPrefs = currentPrefs;
     StringTokenizer stok = new StringTokenizer(pathName, "/");
-    while (stok.hasMoreTokens() && !currentPrefs.getNode().isRemoved()) {
+    while (stok.hasMoreTokens() && !currentPrefs.getPersistentNode().isRemoved()) {
       String subName = stok.nextToken();
       childPrefs = currentPrefs.getChild(subName);
       if (childPrefs == null) {
@@ -426,12 +509,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       currentPrefs = childPrefs;
     }
 
-    return childPrefs != null && !childPrefs.getNode().isRemoved();
+    return childPrefs != null && !childPrefs.getPersistentNode().isRemoved();
   }
 
   @Override
   public synchronized void removeNode() throws BackingStoreException {
-    getNode().setRemoved(true);
+    getPersistentNode().setRemoved(true);
   }
 
   @Override
@@ -445,77 +528,39 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   @Override
-  public boolean isUserNode() {
-    return node.getUser() != null;
-  }
-
-  public boolean isRootNode() {
-    return "/".equals(absolutePath);
-  }
-
-  /**
-   * Returns the string represenation of this node.
-   *
-   * <ul>
-   * <li>user node: "user:absolutePath"</li>
-   * <li>system node: "&lt;system&gt;:absolutePath"</li>
-   * <li>if node is removed: "(removed)" is appended</li>
-   * </ul>
-   *
-   * @return the string
-   */
-  @Override
-  public String toString() {
-    StringBuilder buf = new StringBuilder();
-    if (node.getUser() != null) {
-      buf.append(node.getUser());
-    }
-    else {
-      buf.append("<system>");
-    }
-    buf.append(':').append(absolutePath);
-    if (node.isRemoved()) {
-      buf.append(" (removed)");
-    }
-    return buf.toString();
-  }
-
-
-  @Override
   public void flush() throws BackingStoreException {
-    getFactory().flush(this);
+    factory.flush(this);
   }
 
   @Override
   public void sync() throws BackingStoreException {
-    getFactory().sync(this);
+    factory.sync(this);
   }
 
   @Override
   public void addPreferenceChangeListener(PreferenceChangeListener pcl) {
-    getFactory().addPreferenceChangeListener(this, pcl);
+    factory.addPreferenceChangeListener(this, pcl);
   }
 
   @Override
   public void removePreferenceChangeListener(PreferenceChangeListener pcl) {
-    getFactory().removePreferenceChangeListener(this, pcl);
+    factory.removePreferenceChangeListener(this, pcl);
   }
 
   @Override
   public void addNodeChangeListener(NodeChangeListener ncl) {
-    getFactory().addNodeChangeListener(this, ncl);
+    factory.addNodeChangeListener(this, ncl);
   }
 
   @Override
   public void removeNodeChangeListener(NodeChangeListener ncl) {
-    getFactory().removeNodeChangeListener(this, ncl);
+    factory.removeNodeChangeListener(this, ncl);
   }
 
   @Override
   public void exportNode(OutputStream os) throws IOException, BackingStoreException {
     exportImpl(os, false);
   }
-
 
   @Override
   public void exportSubtree(OutputStream os) throws IOException, BackingStoreException {
@@ -540,8 +585,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     DbPreferences childPrefs = currentPrefs;
     StringTokenizer stok = new StringTokenizer(pathName, "/");
     while (stok.hasMoreTokens()) {
-      if (currentPrefs.getNode().isRemoved()) {
-        currentPrefs.getNode().setRemoved(false);
+      if (currentPrefs.getPersistentNode().isRemoved()) {
+        currentPrefs.getPersistentNode().setRemoved(false);
       }
       String subName = stok.nextToken();
       childPrefs = currentPrefs.getChild(subName);
@@ -553,13 +598,30 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         else {
           childNode.setName(currentPrefs.absolutePath() + "/" + subName);
         }
-        childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
+        childPrefs = new DbPreferences(factory, currentPrefs, childNode, null, null);
         currentPrefs.putChild(childPrefs);
       }
       currentPrefs = childPrefs;
     }
 
     return childPrefs;
+  }
+
+  @Override
+  public boolean isUserNode() {
+    return prefNode.getUser() != null;
+  }
+
+
+  
+
+  /**
+   * Returns whether this is a root node.
+   *
+   * @return true if root
+   */
+  protected boolean isRootNode() {
+    return "/".equals(absolutePath);
   }
 
   /**
@@ -619,15 +681,14 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
 
-
   /**
    * Recursive implementation of flush.
    */
   protected void flushImpl(Db db) {
-    node.setSession(db);
+    prefNode.setSession(db);
     try {
-      if (node.isRemoved()) {
-        if (!node.isNew()) {
+      if (prefNode.isRemoved()) {
+        if (!prefNode.isNew()) {
           // remove this and all subnodes and keys
           for (DbPreferencesKey key: keyMap.values()) {
             key.setRemoved(true);
@@ -640,35 +701,35 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
                 key.setSession(null);
               }
             }
-            getFactory().keyChanged(this, key);
+            factory.keyChanged(this, key);
           }
           keyMap.clear();
           for (DbPreferences child: childMap.values()) {
-            child.getNode().setRemoved(true);
+            child.getPersistentNode().setRemoved(true);
             child.flushImpl(db);
           }
           childMap.clear();
-          node.deleteObject();
-          getFactory().nodeChanged(this);
+          prefNode.deleteObject();
+          factory.nodeChanged(this);
         }
       }
       else {
-        if (node.isNew()) {
+        if (prefNode.isNew()) {
           // node is new
           if (parent != null) {
             // set parent node if not root
-            node.setParentId(parent.node.getId());    // node must exist (see flush())
-            node.setRootNodeId(parent.node.getRootNodeId());
+            prefNode.setParentId(parent.prefNode.getId());    // node must exist (see flush())
+            prefNode.setRootNodeId(parent.prefNode.getRootNodeId());
           }
           else {
             // this is the root node
-            node.reserveId();
-            node.setRootNodeId(node.getId());
+            prefNode.reserveId();
+            prefNode.setRootNodeId(prefNode.getId());
           }
         }
-        if (node.isModified()) {
-          node.saveObject();
-          getFactory().nodeChanged(this);
+        if (prefNode.isModified()) {
+          prefNode.saveObject();
+          factory.nodeChanged(this);
         }
 
         for (DbPreferencesKey key: keyMap.values()) {
@@ -677,16 +738,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             if (key.isRemoved()) {
               if (!key.isNew()) {
                 key.deleteObject();
-                getFactory().keyChanged(this, key);
+                factory.keyChanged(this, key);
               }
             }
             else if (key.isModified()) {
               if (key.isNew()) {
-                key.setNodeId(node.getId());
-                key.setRootNodeId(node.getRootNodeId());
+                key.setNodeId(prefNode.getId());
+                key.setRootNodeId(prefNode.getRootNodeId());
               }
               key.saveObject();
-              getFactory().keyChanged(this, key);
+              factory.keyChanged(this, key);
             }
           }
           finally {
@@ -700,7 +761,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       }
     }
     finally {
-      node.setSession(null);
+      prefNode.setSession(null);
     }
   }
 
