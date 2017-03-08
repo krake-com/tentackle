@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.prefs;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +62,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferencesFactory.class);
 
   /**
+   * Modification tracker name.
+   */
+  private static final String TRACKER_NAME = "preferences";
+
+
+  /**
    * Listeners are managed by the repository, not the nodes.
    * This allows un- and reloading the nodes without losing the listeners.
    * <p>
@@ -72,7 +79,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     private final String user;    // "" = system
     private final String path;
 
-    public ListenerKey(DbPreferences node) {
+    private ListenerKey(DbPreferences node) {
       user = node.isUserNode() ? node.getUser() : "";
       path = node.absolutePath();
     }
@@ -102,7 +109,55 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       }
       return Objects.equals(this.path, other.path);
     }
+  }
 
+
+
+  /**
+   * The root node with all nodes and keys loaded.
+   */
+  public static class Root {
+
+    private static long lastSerial;     // last serial
+
+    private final DbPreferences node;   // the root node holding the whole tree
+    private long serial;                // the serial version of the whole tree
+
+    /**
+     * Creates a root node.
+     *
+     * @param node the preferences node
+     */
+    public Root(DbPreferences node) {
+      this.node = node;
+      countUpdate();
+    }
+
+    /**
+     * Gets the preferences node.
+     *
+     * @return the preferences root node
+     */
+    public DbPreferences getNode() {
+      return node;
+    }
+
+    /**
+     * Gets the serial of the root tree.
+     *
+     * @return the serial (always &ge; 1)
+     */
+    public long getSerial() {
+      return serial;
+    }
+
+    private long nextSerial() {
+      return ++lastSerial;
+    }
+
+    private void countUpdate() {
+      serial = nextSerial();
+    }
   }
 
 
@@ -110,13 +165,12 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   private boolean readOnly;                 // readonly flag
   private boolean systemOnly;               // systemonly flagc
 
-  private DbPreferences systemRoot;                           // the one and only system root node, null if not loaded
-  private final Map<String,DbPreferences> userRoots;          // loaded roots for users
+  private final Map<String,Root> roots;     // loaded roots, key is username ("" for system)
 
   private final Map<ListenerKey,Set<NodeChangeListener>> nodeListeners;       // listeners for added/removed nodes
   private final Map<ListenerKey,Set<PreferenceChangeListener>> prefListeners; // listeners for changed keys
 
-  private long nodeTableSerial;             // highest tableSerial of _all_ DbPreferencesNodes
+  private long nodeTableSerial;             // highest tableSerial of _all_ DbPreferencesNodes or remote repo
   private long keyTableSerial;              // highest tableSerial of _all_ DbPreferencesKeys
 
 
@@ -124,50 +178,62 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Creates the factory.
    */
   public DbPreferencesFactory() {
-    userRoots = new HashMap<>();
+    roots = new HashMap<>();
     nodeListeners = new HashMap<>();
     prefListeners = new HashMap<>();
     autoSync = true;
 
     Db db = requestDb(false, false);
-    if (!db.isRemote()) {
-      try {
+    try {
+      if (db.isRemote()) {
+        nodeTableSerial = PdoTracker.getInstance().getSerial(TRACKER_NAME);
+        keyTableSerial = 0;
+        PdoTracker.getInstance().addModificationListener(
+                new ModificationListenerAdapter(TRACKER_NAME) {
+
+          @Override
+          public void dataChanged(ModificationEvent ev) {
+            if (isAutoSync()) {
+              updateRepository((Db) ev.getSession(), ev.getSerial(), 0);
+            }
+          }
+        });
+      }
+      else {
         nodeTableSerial = new DbPreferencesNode(db).getModificationCount();
         keyTableSerial = new DbPreferencesKey(db).getModificationCount();
-      }
-      finally {
-        releaseDb(db);
+        PdoTracker.getInstance().addModificationListener(
+                new ModificationListenerAdapter(DbPreferencesNode.TABLENAME, DbPreferencesKey.TABLENAME) {
+
+          @Override
+          public void dataChanged(ModificationEvent ev) {
+            long nodeMaxSerial = 0;
+            long keyMaxSerial = 0;
+            for (ModificationEventDetail detail : ev.getDetails()) {
+              switch (detail.getName()) {
+                case DbPreferencesNode.TABLENAME:
+                  nodeMaxSerial = detail.getSerial();
+                  break;
+                case DbPreferencesKey.TABLENAME:
+                  keyMaxSerial = detail.getSerial();
+                  break;
+              }
+            }
+            if (isAutoSync()) {
+              updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
+            }
+          }
+        });
       }
     }
-
-    PdoTracker.getInstance().addModificationListener(
-            new ModificationListenerAdapter(DbPreferencesNode.TABLENAME, DbPreferencesKey.TABLENAME) {
-
-      @Override
-      public void dataChanged(ModificationEvent ev) {
-        long nodeMaxSerial = 0;
-        long keyMaxSerial = 0;
-        for (ModificationEventDetail detail: ev.getDetails()) {
-          switch(detail.getName()) {
-            case DbPreferencesNode.TABLENAME:
-              nodeMaxSerial = detail.getSerial();
-              break;
-            case DbPreferencesKey.TABLENAME:
-              keyMaxSerial = detail.getSerial();
-              break;
-          }
-        }
-        if (isAutoSync()) {
-          updateRepository((Db) ev.getSession(), nodeMaxSerial, keyMaxSerial);
-        }
-      }
-    });
+    finally {
+      releaseDb(db);
+    }
   }
 
   @Override
   public synchronized void invalidate() {
-    systemRoot = null;
-    userRoots.clear();
+    roots.clear();
   }
 
   @Override
@@ -202,38 +268,15 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   @Override
   public synchronized DbPreferences getSystemRoot() {
-    if (systemRoot == null) {
-      Db db = requestDb(false, false);
-      try {
-        systemRoot = new DbPreferencesOperation(db).getSystemRoot();
-      }
-      finally {
-        releaseDb(db);
-      }
-    }
-    return systemRoot;
+    return getRoot(null).node;
   }
 
   @Override
   public synchronized DbPreferences getUserRoot() {
-
     if (isSystemOnly()) {
       return getSystemRoot();
     }
-
-    String user = getUserName();
-    DbPreferences root = userRoots.get(user);
-    if (root == null) {
-      Db db = requestDb(true, false);
-      try {
-        root = new DbPreferencesOperation(db).getUserRoot(user);
-      }
-      finally {
-        releaseDb(db);
-      }
-      userRoots.put(user, root);
-    }
-    return root;
+    return getRoot(getUserName()).node;
   }
 
   @Override
@@ -256,6 +299,18 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return getUserRoot();
   }
 
+
+  /**
+   * Gets the current serial version of given user- or system root.
+   *
+   * @param user the username, null of "" if system
+   * @return the serial, 0 if no such root loaded
+   */
+  public long getSerial(String user) {
+    String key = user == null ? "" : user;
+    Root root = roots.get(key);
+    return root == null ? 0 : root.serial;
+  }
 
   /**
    * Adds a preferences changed listener.
@@ -421,15 +476,14 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Removes a root node of given node from the repository.
    *
-   * @param root the root node or one of its subnodes
+   * @param node the root node or one of its subnodes
    */
-  protected synchronized void removeRoot(DbPreferences root) {
-    if (root.isUserNode()) {
-      userRoots.remove(root.getUser());
+  protected synchronized void removeRoot(DbPreferences node) {
+    String user = node.getUser();
+    if (user == null) {
+      user = "";
     }
-    else {
-      systemRoot = null;
-    }
+    roots.remove(user);
   }
 
   /**
@@ -441,70 +495,68 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param keyMaxSerial the nore table serial for prefkeys
    */
   protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
-    if (db.isRemote()) {
-      // todo: via remote delegate
-    }
-    else {
-      // get tableserial/id-pairs
-      boolean someRemoved = false;
-      List<IdSerialTuple> nodeExpireSet = null;
-      List<IdSerialTuple> keyExpireSet = null;
-      if (nodeMaxSerial > 0) {
-        nodeExpireSet = new DbPreferencesNode(db).getExpiredTableSerials(nodeTableSerial, nodeMaxSerial);
-        if (PdoUtilities.getInstance().isSomePdoRemoved(nodeExpireSet, nodeMaxSerial)) {
-          someRemoved = true;
+    if (nodeMaxSerial != nodeTableSerial || keyMaxSerial != keyTableSerial) {
+      if (db.isRemote()) {
+        // rebuild all roots if serials don't match with the ones in the remote repository
+        for (Root root: roots.values()) {
+          rebuildRoot(db, root);
         }
       }
-      if (!someRemoved && keyMaxSerial > 0) {
-        keyExpireSet = new DbPreferencesKey(db).getExpiredTableSerials(keyTableSerial, keyMaxSerial);
-        if (PdoUtilities.getInstance().isSomePdoRemoved(keyExpireSet, keyMaxSerial)) {
-          someRemoved = true;
-        }
-      }
-
-      boolean systemModified = false;               // true if systemroot affected
-      Set<String> usersModified = new HashSet<>();  // user roots affected
-      // TreeSet to sort by id (because childs are always added _after_ their parents, see flushImpl)
-      Set<DbPreferencesNode> changedNodes = new TreeSet<>();
-      Set<DbPreferencesKey> changedKeys = new TreeSet<>();
-
-      if (!someRemoved) {
-        if (nodeExpireSet != null) {
-          // figure out roots to update
-          for (IdSerialTuple idSer: nodeExpireSet) {
-            DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(idSer.getId());
-            if (prefNode != null) {
-              changedNodes.add(prefNode);
-              String user = prefNode.getUser();
-              if (user == null) {
-                systemModified = true;
-              }
-              else {
-                usersModified.add(user);
-              }
-            }
-            else {
-              // removed in the meantime???
-              someRemoved = true;
-              break;
-            }
+      else {
+        // get tableserial/id-pairs
+        boolean someRemoved = false;
+        List<IdSerialTuple> nodeExpireSet = null;
+        List<IdSerialTuple> keyExpireSet = null;
+        if (nodeMaxSerial > 0) {
+          nodeExpireSet = new DbPreferencesNode(db).getExpiredTableSerials(nodeTableSerial, nodeMaxSerial);
+          if (PdoUtilities.getInstance().isSomePdoRemoved(nodeExpireSet, nodeMaxSerial)) {
+            someRemoved = true;
           }
         }
-        if (keyExpireSet != null) {
-          // update keys
-          for (IdSerialTuple idSer: keyExpireSet) {
-            DbPreferencesKey prefKey = new DbPreferencesKey(db).selectObject(idSer.getId());
-            if (prefKey != null) {
-              changedKeys.add(prefKey);
-              DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(prefKey.getNodeId());
+        if (!someRemoved && keyMaxSerial > 0) {
+          keyExpireSet = new DbPreferencesKey(db).getExpiredTableSerials(keyTableSerial, keyMaxSerial);
+          if (PdoUtilities.getInstance().isSomePdoRemoved(keyExpireSet, keyMaxSerial)) {
+            someRemoved = true;
+          }
+        }
+
+        Set<String> usersModified = new HashSet<>();  // roots affected, "" is system
+        // TreeSet to sort by id (because childs are always added _after_ their parents, see flushImpl)
+        Set<DbPreferencesNode> changedNodes = new TreeSet<>();
+        Set<DbPreferencesKey> changedKeys = new TreeSet<>();
+
+        if (!someRemoved) {
+          if (nodeExpireSet != null) {
+            // figure out roots to update
+            for (IdSerialTuple idSer: nodeExpireSet) {
+              DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(idSer.getId());
               if (prefNode != null) {
-                changedNodes.add(prefNode);   // add even if node itself wasn't modified
+                changedNodes.add(prefNode);
                 String user = prefNode.getUser();
-                if (user == null) {
-                  systemModified = true;
+                usersModified.add(user == null ? "" : user);
+              }
+              else {
+                // removed in the meantime???
+                someRemoved = true;
+                break;
+              }
+            }
+          }
+          if (keyExpireSet != null) {
+            // update keys
+            for (IdSerialTuple idSer: keyExpireSet) {
+              DbPreferencesKey prefKey = new DbPreferencesKey(db).selectObject(idSer.getId());
+              if (prefKey != null) {
+                changedKeys.add(prefKey);
+                DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(prefKey.getNodeId());
+                if (prefNode != null) {
+                  changedNodes.add(prefNode);   // add even if node itself wasn't modified
+                  String user = prefNode.getUser();
+                  usersModified.add(user == null ? "" : user);
                 }
                 else {
-                  usersModified.add(user);
+                  someRemoved = true;
+                  break;
                 }
               }
               else {
@@ -512,39 +564,32 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
                 break;
               }
             }
-            else {
-              someRemoved = true;
-              break;
+          }
+        }
+
+        if (someRemoved) {
+          // rebuild all roots
+          for (Root root: roots.values()) {
+            rebuildRoot(db, root);
+          }
+        }
+        else {
+          // only added or updated nodes or keys: update roots
+          for (String user: usersModified) {
+            Root root = roots.get(user);
+            if (root != null) {
+              updateRoot(root, changedNodes, changedKeys);
             }
           }
         }
       }
 
-      if (someRemoved) {
-        // rebuild all roots (rare condition, hopefully...)
-        if (systemRoot != null) {
-          rebuildRoot(db, systemRoot);
-        }
-        for (DbPreferences root: userRoots.values()) {
-          rebuildRoot(db, root);
-        }
-      }
-      else {
-        // only added or updated nodes or keys: update roots
-        if (systemModified && systemRoot != null) {
-          updateRoot(systemRoot, changedNodes, changedKeys);
-        }
-        for (String user: usersModified) {
-          DbPreferences root = userRoots.get(user);
-          if (root != null) {
-            updateRoot(root, changedNodes, changedKeys);
-          }
-        }
+      nodeTableSerial = nodeMaxSerial;
+      keyTableSerial = keyMaxSerial;
+      if (!db.isRemote()) {
+        PdoTracker.getInstance().countModification(TRACKER_NAME);
       }
     }
-
-    nodeTableSerial = nodeMaxSerial;
-    keyTableSerial = keyMaxSerial;
   }
 
 
@@ -555,90 +600,104 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param db the session
    * @param root the root node
    */
-  protected void rebuildRoot(Db db, DbPreferences root) {
-    long rootId = root.getPersistentNode().getId();
+  private void rebuildRoot(Db db, Root root) {
     // load all nodes and keys for this root (ordered by id, i.e. creation)
-    List<DbPreferencesNode> prefNodes = new DbPreferencesNode(db).selectByRootNodeId(rootId);
-    List<DbPreferencesKey> prefKeys = new DbPreferencesKey(db).selectByRootNodeId(rootId);
+    DbPreferencesOperation.RefreshInfo info = new DbPreferencesOperation(db).refreshRoot(
+            root.node, db.isRemote() ? root.serial : 0);
+    if (info != null) {
+      Collection<DbPreferencesNode> prefNodes = info.prefNodes;
+      Collection<DbPreferencesKey> prefKeys = info.prefKeys;
 
-    // to speed up: build maps of ID:node and ID:key
-    Map<Long,DbPreferences> nodeMap = new HashMap<>();
-    Map<Long,DbPreferencesKey> keyMap = new HashMap<>();
-    addNodeToMaps(root, nodeMap, keyMap);
+      // to speed up: build maps of ID:node and ID:key
+      Map<Long,DbPreferences> idNodeMap = new HashMap<>();
+      Map<String,DbPreferences> pathNodeMap = new HashMap<>();
+      Map<Long,DbPreferencesKey> idKeyMap = new HashMap<>();
+      addNodeToMaps(root.node, idNodeMap, pathNodeMap, idKeyMap);
 
-    // add or update nodes
-    for (DbPreferencesNode prefNode : prefNodes) {
-      DbPreferences node = nodeMap.get(prefNode.getId());
-      if (node == null) {
-        // node is new
-        DbPreferences parent = nodeMap.get(prefNode.getParentId());
-        if (parent == null) {
-          // must exist, because prefNodes are sorted by id!
-          LOGGER.severe("parent ID={0} missing for node ID={1}", prefNode.getParentId(), prefNode.getId());
-          removeRoot(root);   // force reload next access
+      // add or update nodes
+      for (DbPreferencesNode prefNode : prefNodes) {
+        DbPreferences node = pathNodeMap.get(prefNode.getName());
+        if (node == null) {
+          // node is new
+          DbPreferences parent = idNodeMap.get(prefNode.getParentId());   // must exist bec. nodes are sorted by id
+          if (parent == null) {
+            // must exist, because prefNodes are sorted by id!
+            LOGGER.severe("parent ID={0} missing for node ID={1}", prefNode.getParentId(), prefNode.getId());
+            removeRoot(root.node);   // force reload next access
+          }
+          else {
+            node = new DbPreferences(parent, prefNode, null, null);
+            parent.putChild(node);
+            idNodeMap.put(prefNode.getId(), node);
+            nodeChanged(node);
+          }
         }
         else {
-          node = new DbPreferences(parent, prefNode, null, null);
-          parent.putChild(node);
-          nodeMap.put(prefNode.getId(), node);
-          nodeChanged(node);
-        }
-      }
-      else {
-        // just id,serial or tableserial changed -> no listener to invoke
-        node.updatePersistentNode(prefNode);
-      }
-    }
-
-    // add or update keys
-    for (DbPreferencesKey prefKey: prefKeys) {
-      DbPreferences node = nodeMap.get(prefKey.getNodeId());
-      if (node == null) {
-        LOGGER.severe("node ID={0} missing for key ID={1}", prefKey.getNodeId(), prefKey.getId());
-        removeRoot(root);   // force reload next access
-      }
-      else {
-        DbPreferencesKey key = node.getPersistentKey(prefKey.getKey());
-        if (key == null) {
-          node.putPersistentKey(prefKey);
-          keyMap.put(prefKey.getId(), prefKey);
-        }
-        else {
-          node.updatePersistentKey(prefKey);
-        }
-        keyChanged(node, prefKey);
-      }
-    }
-
-    // remove keys
-    Set<DbPreferencesKey> persistedKeys = new HashSet<>(prefKeys);
-    for (DbPreferencesKey prefKey: keyMap.values()) {
-      if (!prefKey.isNew()) {   // if not created in this JVM
-        if (!persistedKeys.contains(prefKey)) {
-          DbPreferences node = nodeMap.get(prefKey.getNodeId());
-          if (node != null) {
-            prefKey = node.removePersistentKey(prefKey.getKey());
-            if (prefKey != null) {
-              keyChanged(node, prefKey);
-            }
+          // just id,serial or tableserial changed
+          if (node.updatePersistentNode(prefNode)) {
+            nodeChanged(node);
+            idNodeMap.put(prefNode.getId(), node);    // in case ID has changed (node was new)
           }
         }
       }
-    }
 
-    // remove nodes
-    Set<DbPreferencesNode> persistedNodes = new HashSet<>(prefNodes);
-    for (DbPreferences node: nodeMap.values()) {
-      if (!node.getPersistentNode().isNew()) {  // if not created in this JVM
-        if (!persistedNodes.contains(node.getPersistentNode())) {
-          DbPreferences parent = node.parent();
-          if (parent != null) {
-            node = parent.removeChild(node.name());
+      // add or update keys
+      for (DbPreferencesKey prefKey: prefKeys) {
+        DbPreferences node = idNodeMap.get(prefKey.getNodeId());    // must exist now!
+        if (node == null) {
+          LOGGER.severe("node ID={0} missing for key ID={1}", prefKey.getNodeId(), prefKey.getId());
+          removeRoot(root.node);   // force reload next access
+        }
+        else {
+          DbPreferencesKey key = node.getPersistentKey(prefKey.getKey());
+          if (key == null) {
+            node.putPersistentKey(prefKey);
+            idKeyMap.put(prefKey.getId(), prefKey);
+          }
+          else {
+            node.updatePersistentKey(prefKey);
+          }
+          keyChanged(node, prefKey);
+        }
+      }
+
+      // remove keys
+      Set<DbPreferencesKey> persistedKeys = new HashSet<>(prefKeys);
+      for (DbPreferencesKey prefKey: idKeyMap.values()) {
+        if (!prefKey.isNew()) {   // if not created in this JVM
+          if (!persistedKeys.contains(prefKey)) {
+            DbPreferences node = idNodeMap.get(prefKey.getNodeId());
             if (node != null) {
-              nodeChanged(node);
+              prefKey = node.removePersistentKey(prefKey.getKey());
+              if (prefKey != null) {
+                keyChanged(node, prefKey);
+              }
             }
           }
         }
+      }
+
+      // remove nodes
+      Set<DbPreferencesNode> persistedNodes = new HashSet<>(prefNodes);
+      for (DbPreferences node: idNodeMap.values()) {
+        if (!node.getPersistentNode().isNew()) {  // if not created in this JVM
+          if (!persistedNodes.contains(node.getPersistentNode())) {
+            DbPreferences parent = node.parent();
+            if (parent != null) {
+              node = parent.removeChild(node.name());
+              if (node != null) {
+                nodeChanged(node);
+              }
+            }
+          }
+        }
+      }
+
+      if (db.isRemote()) {
+        root.serial = info.serial;
+      }
+      else {
+        root.countUpdate();
       }
     }
   }
@@ -651,28 +710,28 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param changedNodes the changed nodes
    * @param changedKeys the changes keys
    */
-  protected void updateRoot(DbPreferences root,
-                            Set<DbPreferencesNode> changedNodes,
-                            Set<DbPreferencesKey> changedKeys) {
+  private void updateRoot(Root root,
+                          Set<DbPreferencesNode> changedNodes,
+                          Set<DbPreferencesKey> changedKeys) {
 
     // to speed up: build maps of ID:node and ID:key
-    Map<Long,DbPreferences> nodeMap = new HashMap<>();
-    Map<Long,DbPreferencesKey> keyMap = new HashMap<>();
-    addNodeToMaps(root, nodeMap, keyMap);
+    Map<Long,DbPreferences> idNodeMap = new HashMap<>();
+    Map<String,DbPreferences> pathNodeMap = new HashMap<>();
+    addNodeToMaps(root.node, idNodeMap, pathNodeMap);
 
-    long rootId = root.getPersistentNode().getId();
+    long rootId = root.node.getPersistentNode().getId();
 
     // add or update nodes
     for (DbPreferencesNode prefNode: changedNodes) {
       if (prefNode.getRootNodeId() == rootId) {   // only nodes belonging to this root
-        DbPreferences node = nodeMap.get(prefNode.getId());
+        DbPreferences node = pathNodeMap.get(prefNode.getName());
         if (node == null) {
           // add node
-          DbPreferences parent = nodeMap.get(prefNode.getParentId());
+          DbPreferences parent = idNodeMap.get(prefNode.getParentId());  // must exist bec. nodes are sorted by id
           if (parent != null) {
             node = new DbPreferences(parent, prefNode, null, null);
             parent.putChild(node);
-            nodeMap.put(prefNode.getId(), node);
+            idNodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
           }
           else {
@@ -680,7 +739,10 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
         }
         else {
-          node.updatePersistentNode(prefNode);
+          if (node.updatePersistentNode(prefNode)) {
+            nodeChanged(node);
+            idNodeMap.put(prefNode.getId(), node);    // in case ID changed
+          }
         }
       }
     }
@@ -688,7 +750,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     // now that all nodes are added: add or update the keys
     for (DbPreferencesKey prefKey: changedKeys) {
       if (prefKey.getRootNodeId() == rootId) {
-        DbPreferences node = nodeMap.get(prefKey.getNodeId());
+        DbPreferences node = idNodeMap.get(prefKey.getNodeId());    // must exist now
         if (node != null) {
           node.updatePersistentKey(prefKey);
           keyChanged(node, prefKey);
@@ -698,6 +760,8 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         }
       }
     }
+
+    root.countUpdate();
   }
 
 
@@ -748,6 +812,28 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
 
   /**
+   * Loads the root node for given user and all of its subnodes and keys.
+   *
+   * @param user the username, null or empty if system user
+   * @return the root node, never null
+   */
+  public Root getRoot(String user) {
+    String key = user == null ? "" : user;
+    Root root = roots.get(key);
+    if (root == null) {
+      Db db = requestDb(true, false);
+      try {
+        root = new Root(new DbPreferencesOperation(db).getRoot(user));
+        roots.put(key, root);
+      }
+      finally {
+        releaseDb(db);
+      }
+    }
+    return root;
+  }
+
+  /**
    * Returns the absolute path name of the node corresponding to the package of the specified object.
    *
    * @param clazz the class
@@ -771,18 +857,49 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Adds all subnodes and keys of a node to given maps.
    *
    * @param node the node
-   * @param nodeMap the node map (ID:node)
-   * @param keyMap the keymap (ID:key)
+   * @param idNodeMap the nodes mapped by ID
+   * @param pathNodeMap the nodes mapped by path
+   * @param idKeyMap the keys mapped by ID
    */
-  private void addNodeToMaps(DbPreferences node,
-                               Map<Long,DbPreferences> nodeMap,
-                               Map<Long,DbPreferencesKey> keyMap) {
-    nodeMap.put(node.getPersistentNode().getId(), node);
+  public void addNodeToMaps(DbPreferences node,
+                            Map<Long,DbPreferences> idNodeMap,
+                            Map<String,DbPreferences> pathNodeMap,
+                            Map<Long,DbPreferencesKey> idKeyMap) {
+
+    if (!node.getPersistentNode().isVirgin()) {
+      idNodeMap.put(node.getPersistentNode().getId(), node);
+    }
+    pathNodeMap.put(node.absolutePath(), node);
+
     for (DbPreferencesKey key: node.getKeys()) {
-      keyMap.put(key.getId(), key);
+      if (!key.isVirgin()) {
+        idKeyMap.put(key.getId(), key);
+      }
     }
     for (DbPreferences child: node.getChilds()) {
-      addNodeToMaps(child, nodeMap, keyMap);
+      addNodeToMaps(child, idNodeMap, pathNodeMap, idKeyMap);
+    }
+  }
+
+
+  /**
+   * Adds all subnodes of a node to given maps.
+   *
+   * @param node the node
+   * @param idNodeMap the nodes mapped by ID
+   * @param pathNodeMap the nodes mapped by path
+   */
+  public void addNodeToMaps(DbPreferences node,
+                            Map<Long,DbPreferences> idNodeMap,
+                            Map<String,DbPreferences> pathNodeMap) {
+
+    if (!node.getPersistentNode().isVirgin()) {
+      idNodeMap.put(node.getPersistentNode().getId(), node);
+    }
+    pathNodeMap.put(node.absolutePath(), node);
+
+    for (DbPreferences child: node.getChilds()) {
+      addNodeToMaps(child, idNodeMap, pathNodeMap);
     }
   }
 

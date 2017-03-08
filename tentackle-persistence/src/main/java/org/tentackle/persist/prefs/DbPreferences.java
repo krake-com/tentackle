@@ -69,6 +69,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   private final DbPreferences parent;                   // the parent node, null if this is a root
   private final String absolutePath;                    // the absolute path
   private final String name;                            // the name relative to the parent
+  private final String parentPath;                      // the absolute path of the parent, null if this is root
   private final DbPreferencesNode prefNode;             // the persistent node
 
   private final Map<String,DbPreferences> childMap;     // childs of this node <subname:node>
@@ -92,11 +93,13 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     this.absolutePath = prefNode.getName();
     if ("/".equals(this.absolutePath)) {
       this.name = this.absolutePath;    // root node
+      this.parentPath = null;
     }
     else {
       int ndx = this.absolutePath.lastIndexOf('/');
       if (ndx >= 0) {
         this.name = this.absolutePath.substring(ndx + 1);
+        this.parentPath = this.absolutePath.substring(0, ndx);
       }
       else {
         throw new PersistenceException("illegal path " + this.absolutePath);
@@ -172,6 +175,15 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   }
 
   /**
+   * Gets the parent path.
+   *
+   * @return the parent path, null if this is a root node
+   */
+  public String getParentPath() {
+    return parentPath;
+  }
+
+  /**
    * Gets the root of this node.<br>
    * If this is a root, "this" will be returned.
    *
@@ -194,13 +206,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    * Updates the persistent node.
    *
    * @param prefNode the persistent node
+   * @return true if persistence status changed
    */
-  public void updatePersistentNode(DbPreferencesNode prefNode) {
+  public boolean updatePersistentNode(DbPreferencesNode prefNode) {
+    boolean notPersisted = this.prefNode.isNew();
     this.prefNode.setId(prefNode.getId());    // node may be persisted in another JVM meanwhile
     this.prefNode.setSerial(prefNode.getSerial());
     this.prefNode.setTableSerial(prefNode.getTableSerial());
     this.prefNode.setRemoved(prefNode.isRemoved());
     // the other attributes don't ever change in a node
+    return notPersisted != prefNode.isNew();
   }
 
   /**

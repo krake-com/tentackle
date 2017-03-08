@@ -90,7 +90,15 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
 
   @Override
   public void setSession(Session session) {
-    assertNotAlive();
+    if (Thread.currentThread() == this) {
+      // only the dispatcher thread can change the session
+      session.setOwnerThread(this);
+      session.makeCurrent();
+    }
+    else {
+      // no change allowed from another thread unless the tracker wasnt started already
+      assertNotAlive();
+    }
     this.session = session;
   }
 

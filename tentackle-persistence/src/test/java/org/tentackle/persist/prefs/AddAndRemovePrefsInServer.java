@@ -22,6 +22,7 @@ package org.tentackle.persist.prefs;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.AbstractSessionTask;
@@ -57,7 +58,8 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
     private static final long serialVersionUID = 1L;
 
-    public ConnectionImpl(DbServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf) throws RemoteException {
+    public ConnectionImpl(DbServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
+           throws RemoteException {
       super(server, port, csf, ssf);
     }
 
@@ -72,7 +74,8 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
    */
   public static class SessionImpl extends RemoteDbSessionImpl {
 
-    public SessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) throws RemoteException {
+    public SessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo)
+           throws RemoteException {
       super(con, clientInfo, serverInfo);
     }
 
@@ -103,7 +106,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void sleep(long millis) {
     try {
-      Thread.sleep(1000);
+      Thread.sleep(millis);
     }
     catch (InterruptedException ix) {
     }
@@ -119,7 +122,6 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
           PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
           prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
           PersistedPreferences.systemRoot().flush();
-          sleep(1000);
         }
         catch (Exception bx) {
           LOGGER.severe("adding prefs failed", bx);
@@ -139,16 +141,6 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
           PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
           prefs.removeNode();
           PersistedPreferences.systemRoot().flush();
-          sleep(1000);
-
-          Thread.sleep(2000);
-          // always cleanup because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
-          for (DbPreferencesNode node: new DbPreferencesNode((Db) getSession()).selectAllObjects()) {
-            node.deletePlain();     // don't trigger modcounts
-            for (DbPreferencesKey key: new DbPreferencesKey((Db) getSession()).selectByNodeId(node.getId())) {
-              key.deletePlain();
-            }
-          }
         }
         catch (Exception bx) {
           LOGGER.severe("removing prefs failed", bx);
@@ -156,6 +148,43 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
         }
       }
     });
+  }
+
+
+  private void cleanup() {
+    PdoTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+      private static final long serialVersionUID = 1L;
+      @Override
+      public void run() {
+        try {
+          // always cleanup because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
+          for (DbPreferencesNode node : new DbPreferencesNode((Db) getSession()).selectAllObjects()) {
+            node.deletePlain();     // don't trigger modcounts
+            for (DbPreferencesKey key : new DbPreferencesKey((Db) getSession()).selectByNodeId(node.getId())) {
+              key.deletePlain();
+            }
+          }
+        }
+        catch (Exception bx) {
+          LOGGER.severe("cleanup prefs failed", bx);
+          stop();
+        }
+      }
+    });
+  }
+
+
+  private void runTests() {
+    System.out.println(new Timestamp() + ": server started");
+    sleep(2000);  // wait for startup
+    addPreferences();
+    System.out.println(new Timestamp() + ": node and key added");
+    sleep(2000);
+    removePreferences();
+    System.out.println(new Timestamp() + ": node and key removed");
+    sleep(2000);
+    cleanup();
+    System.out.println(new Timestamp() + ": preferences cleaned up");
   }
 
 
@@ -167,9 +196,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   public static void main(final String[] args) {
     AddAndRemovePrefsInServer server = new AddAndRemovePrefsInServer();
     server.start(args);
-    server.sleep(1000);  // wait for startup
-    server.addPreferences();
-    server.removePreferences();
+    server.runTests();
     server.stop();
   }
 

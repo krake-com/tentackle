@@ -41,9 +41,9 @@ public class DbPreferencesOperationRemoteDelegateImpl
   }
 
   @Override
-  public DbPreferences getSystemRoot() throws RemoteException {
+  public DbPreferences getRoot(String user) throws RemoteException {
     try {
-      return dbOperation.getSystemRoot();
+      return dbOperation.getRoot(user);
     }
     catch (Exception e) {
       throw createException(e);
@@ -51,9 +51,9 @@ public class DbPreferencesOperationRemoteDelegateImpl
   }
 
   @Override
-  public DbPreferences getUserRoot(String user) throws RemoteException {
+  public DbPreferencesOperation.RefreshInfo refreshRoot(DbPreferences node, long serial) throws RemoteException {
     try {
-      return dbOperation.getUserRoot(user);
+      return dbOperation.refreshRoot(node, serial);
     }
     catch (Exception e) {
       throw createException(e);

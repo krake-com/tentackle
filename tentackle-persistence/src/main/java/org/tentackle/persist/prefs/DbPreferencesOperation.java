@@ -19,11 +19,14 @@
 
 package org.tentackle.persist.prefs;
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistenceException;
@@ -46,6 +49,27 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
   private static final DbOperationClassVariables<DbPreferencesOperation> CLASSVARIABLES =
             new DbOperationClassVariables<>(DbPreferencesOperation.class);
+
+
+  /**
+   * Holds all nodes and keys for a user- or system-root along with its version.
+   */
+  public static class RefreshInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    /** the serial version of the preferences tree. */
+    public final long serial;
+    /** all prefnodes. */
+    public final Collection<DbPreferencesNode> prefNodes;
+    /** all prefkeys. */
+    public final Collection<DbPreferencesKey> prefKeys;
+
+    public RefreshInfo(long serial, Collection<DbPreferencesNode> prefNodes, Collection<DbPreferencesKey> prefKeys) {
+      this.serial = serial;
+      this.prefNodes = prefNodes;
+      this.prefKeys = prefKeys;
+    }
+  }
 
   @Override
   public DbOperationClassVariables<DbPreferencesOperation> getClassVariables() {
@@ -75,35 +99,15 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
 
   /**
-   * Gets the system root preferences node.
+   * Gets the root preferences node with all its subnodes and keys.
    *
+   * @param user the username, "" if system user
    * @return the node, never null
    */
-  public DbPreferences getSystemRoot() {
+  public DbPreferences getRoot(String user) {
     if (getSession().isRemote()) {
       try {
-        return getRemoteDelegate().getSystemRoot();
-      }
-      catch (RemoteException rex) {
-        throw PersistenceException.createFromRemoteException("<system>", rex);
-      }
-    }
-    else {
-      return loadRoot(getSession(), null);
-    }
-  }
-
-
-  /**
-   * Gets the user root preferences node.
-   *
-   * @param user the username
-   * @return the node,.never null
-   */
-  public DbPreferences getUserRoot(String user) {
-    if (getSession().isRemote()) {
-      try {
-        return getRemoteDelegate().getUserRoot(user);
+        return getRemoteDelegate().getRoot(user);
       }
       catch (RemoteException rex) {
         throw PersistenceException.createFromRemoteException(user, rex);
@@ -111,6 +115,51 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
     else {
       return loadRoot(getSession(), user);
+    }
+  }
+
+
+  /**
+   * Gets all persisted nodes and keys suitable to refresh a whole preferences tree.
+   *
+   * @param node the root node
+   * @param serial the current serial to load from repo, &lt; 0 to load unconditionally
+   * @return the nodes and keys if current serial outdated, null if serials match and no need to refresh
+   */
+  public RefreshInfo refreshRoot(DbPreferences node, long serial) {
+    if (getSession().isRemote()) {
+      try {
+        return getRemoteDelegate().refreshRoot(node, serial);
+      }
+      catch (RemoteException rex) {
+        throw PersistenceException.createFromRemoteException(node, rex);
+      }
+    }
+    else {
+      DbPreferencesFactory factory = (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
+      long repoSerial = factory.getSerial(node.getUser());
+      long rootId = node.getPersistentNode().getId();
+      if (serial <= 0) {
+        // load all nodes and keys for this root (ordered by id, i.e. creation)
+        List<DbPreferencesNode> prefNodes = new DbPreferencesNode(getSession()).selectByRootNodeId(rootId);
+        List<DbPreferencesKey> prefKeys = new DbPreferencesKey(getSession()).selectByRootNodeId(rootId);
+        return new RefreshInfo(repoSerial, prefNodes, prefKeys);
+      }
+      else if (serial != repoSerial) {
+        // request from remote client: load from repo
+        node = factory.getRoot(node.getUser()).getNode();
+        Map<Long,DbPreferences> idNodeMap = new TreeMap<>();
+        Map<String,DbPreferences> pathNodeMap = new HashMap<>();
+        Map<Long,DbPreferencesKey> idKeyMap = new TreeMap<>();
+        factory.addNodeToMaps(node, idNodeMap, pathNodeMap, idKeyMap);
+        List<DbPreferencesNode> prefNodes = new ArrayList<>();
+        List<DbPreferencesKey> prefKeys = new ArrayList<>(idKeyMap.values());
+        for (DbPreferences pref: idNodeMap.values()) {
+          prefNodes.add(pref.getPersistentNode());
+        }
+        return new RefreshInfo(repoSerial, prefNodes, prefKeys);
+      }
+      return null;
     }
   }
 

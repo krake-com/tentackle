@@ -30,10 +30,10 @@ import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
  */
 public interface DbPreferencesOperationRemoteDelegate extends AbstractDbOperationRemoteDelegate<DbPreferencesOperation>{
 
-  DbPreferences getSystemRoot() throws RemoteException;
-
-  DbPreferences getUserRoot(String user) throws RemoteException;
+  DbPreferences getRoot(String user) throws RemoteException;
 
   void flush(DbPreferences node) throws RemoteException;
+
+  DbPreferencesOperation.RefreshInfo refreshRoot(DbPreferences node, long serial) throws RemoteException;
 
 }
