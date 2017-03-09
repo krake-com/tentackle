@@ -726,4 +726,9 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return getClassId() + ":" + getId();
   }
 
+  @Override
+  public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
 }

@@ -266,6 +266,10 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final StatementId selectExpiredTableSerials1StatementId = new StatementId();
   public final StatementId selectExpiredTableSerials2StatementId = new StatementId();
 
+  /**
+   * prepared statement ID for selectObjectsWithExpiredTableSerials
+   */
+  public final StatementId selectObjectsWithExpiredTableSerialsStatementId = new StatementId();
 
   /**
    * table serial expiration backlog.

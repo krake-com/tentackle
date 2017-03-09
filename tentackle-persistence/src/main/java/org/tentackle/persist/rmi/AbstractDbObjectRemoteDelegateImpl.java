@@ -268,6 +268,16 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
+  public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) throws RemoteException {
+    try {
+      return dbObject.selectObjectsWithExpiredTableSerials(oldSerial);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public void deletePlain(long id, long serial) throws RemoteException {
     try {
       dbObject.setId(id);

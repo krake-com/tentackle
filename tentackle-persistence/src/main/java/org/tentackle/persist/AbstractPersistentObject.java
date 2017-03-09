@@ -2121,6 +2121,36 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return sql.toString();
   }
 
+  /**
+   * Creates SQL code for {@link #selectAllWithExpiredTableSerials}.<br>
+   * Appends context condition and order by clause if configured.<br>
+   * By default, the result is sorted by tableserial + id.
+   *
+   * @return the sql code
+   */
+  public String createSelectAllWithExpiredTableSerialsSql() {
+    StringBuilder sql = new StringBuilder(SQL_SELECT);
+    sql.append(createSelectAllInnerSql());
+    sql.append(SQL_AND).
+        append(CN_TABLESERIAL).append(">?");
+    String condition = getSqlClassIdCondition();
+    if (condition != null) {
+      sql.append(condition);
+    }
+    condition = getSqlContextCondition();
+    if (condition != null) {
+      sql.append(condition);
+    }
+    sql.append(SQL_ORDERBY);
+    String orderSuffix = orderBy();
+    if (orderSuffix != null)  {
+      sql.append(orderSuffix);
+    }
+    else {
+      sql.append(CN_TABLESERIAL).append(SQL_COMMA).append(CN_ID);
+    }
+    return sql.toString();
+  }
 
   /**
    * Gets the result set for all objects in the current context
@@ -2159,6 +2189,45 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     return st.executeQuery();
   }
+
+
+  /**
+   * Gets the result set for all objects in the current context with a given expired tableserial.
+   *
+   * @param js the optional join config, null if no joins
+   * @return the result set
+   */
+  public ResultSetWrapper resultAllWithExpiredTableSerials(JoinedSelect<T> js, long oldSerial)  {
+
+    getSession().assertNotRemote();
+    assertRootContextIsAccepted();
+
+    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectAllWithExpiredTableSerialsStatementId,
+            () -> {
+              StringBuilder sql = new StringBuilder(createSelectAllWithExpiredTableSerialsSql());
+              if (js != null) {
+                js.createJoinedSql(pdo, sql);
+              }
+              return sql.toString();
+            }
+    );
+
+    st.setLong(1, oldSerial);
+    int ndx = 2;
+    if (js != null) {
+      ndx = js.setClassIdsInStatement(st, ndx);
+    }
+    if (isClassIdRequiredInWhereClause()) {
+      st.setInt(ndx++, getClassId());
+    }
+    long contextId = getContextId();
+    if (contextId >= 0) {
+      st.setLong(ndx, contextId);
+    }
+
+    return st.executeQuery();
+  }
+
 
 
   /**
@@ -2209,7 +2278,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the list of objects, never null
    * @see #resultAll
    */
-  @SuppressWarnings("unchecked")
   @Override
   public List<T> selectAll() {
     if (getSession().isRemote())  {
@@ -2227,6 +2295,28 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     JoinedSelect<T> js = getEagerJoinedSelect();
     List<T> list = new ArrayList<>();
     try (ResultSetWrapper rs = resultAll(js)) {
+      executeQueryToList(rs, js, list);
+      return list;
+    }
+  }
+
+  @Override
+  public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
+    if (getSession().isRemote())  {
+      try {
+        DomainContext context = getDomainContext();
+        List<T> list = getRemoteDelegate().selectAllWithExpiredTableSerials(context, oldSerial);
+        configureRemoteObjects(context, list);
+        return list;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+
+    JoinedSelect<T> js = getEagerJoinedSelect();
+    List<T> list = new ArrayList<>();
+    try (ResultSetWrapper rs = resultAllWithExpiredTableSerials(js, oldSerial)) {
       executeQueryToList(rs, js, list);
       return list;
     }

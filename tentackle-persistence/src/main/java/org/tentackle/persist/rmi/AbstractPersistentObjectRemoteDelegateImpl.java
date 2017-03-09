@@ -343,6 +343,18 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial) throws RemoteException {
+    try {
+      setDomainContext(cb);
+      dbObject.assertRootEntity();
+      return dbObject.selectAllWithExpiredTableSerials(oldSerial);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public boolean isReferenced(DomainContext cb, long id) throws RemoteException {
     try {
       T obj = newInstance(cb).select(id);

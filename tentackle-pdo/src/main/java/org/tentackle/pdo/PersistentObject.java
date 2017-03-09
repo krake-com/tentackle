@@ -420,6 +420,15 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial);
 
   /**
+   * Selects all pdos with a tableSerial starting at a given serial.<br>
+   * Useful to update expired objects in a batch.
+   *
+   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
+   * @return the list of objects, never null
+   */
+  List<T> selectAllWithExpiredTableSerials(long oldSerial);
+
+  /**
    * Selects all id,serial-pairs of this class as a list of {@link IdSerialTuple}.
    *
    * @return the list of objects

@@ -76,6 +76,8 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) throws RemoteException;
 
+  List<P> selectObjectsWithExpiredTableSerials(long oldSerial) throws RemoteException;
+
   DbObjectResult insertObject(P obj) throws RemoteException;
 
   DbObjectResult updateObject(P obj) throws RemoteException;

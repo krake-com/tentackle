@@ -49,6 +49,8 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   List<T> selectAll(DomainContext cb) throws RemoteException;
 
+  RemoteResultSetCursor<T> selectAllAsCursor(DomainContext cb) throws RemoteException;
+
   List<T> selectByNormText(DomainContext cb, String normText) throws RemoteException;
 
   RemoteResultSetCursor<T> selectByNormTextAsCursor(DomainContext cb, String normText) throws RemoteException;
@@ -57,7 +59,7 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   T selectForCache(DomainContext cb, long id) throws RemoteException;
 
-  RemoteResultSetCursor<T> selectAllAsCursor(DomainContext cb) throws RemoteException;
+  List<T> selectAllWithExpiredTableSerials(DomainContext cb, long oldSerial) throws RemoteException;
 
   boolean isReferenced(DomainContext cb, long id) throws RemoteException;
 

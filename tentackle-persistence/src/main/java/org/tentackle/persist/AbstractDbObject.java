@@ -1523,6 +1523,24 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     return st.executeQuery();
   }
 
+  /**
+   * Selects all objects of this class and returns the ResultSetWrapper.
+   *
+   * @return the result set
+   */
+  public ResultSetWrapper resultObjectsWithExpiredTableSerials(long oldSerial) {
+    getSession().assertNotRemote();
+    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectObjectsWithExpiredTableSerialsStatementId,
+      () -> {
+        StringBuilder sql = createSelectObjectsWithExpiredTableSerialsSql();
+        getSession().getBackend().buildSelectSql(sql, false, 0, 0);
+        return sql.toString();
+      }
+    );
+    st.setLong(1, oldSerial);
+    return st.executeQuery();
+  }
+
 
   /**
    * Selects all id,serial-pairs of this class and returns the ResultSetWrapper.
@@ -1563,7 +1581,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Selects all objects of this class as a {@link java.util.List}.
    *
-   * @return the list of objects
+   * @return the list of objects, never null
    */
   @SuppressWarnings("unchecked")
   public List<P> selectAllObjects() {
@@ -1583,6 +1601,39 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       // local
       List<P> list = new ArrayList<>();
       try (ResultSetWrapper rs = resultAllObjects()) {
+        P obj;
+        while ((obj = newInstance().selectNextObject(rs)) != null)  {
+          list.add(obj);
+        }
+        return list;
+      }
+    }
+  }
+
+  /**
+   * Selects all objects with a tableSerial starting at a given serial.<br>
+   * Useful to update expired objects in a batch.
+   *
+   * @param oldSerial non-inclusive lower bound for tableSerial (&gt; oldSerial)
+   * @return the list of objects, never null
+   */
+  public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) {
+    if (getSession().isRemote())  {
+      try {
+        List<P> list = getRemoteDelegate().selectObjectsWithExpiredTableSerials(oldSerial);
+        for (P obj : list) {
+          obj.setSession(getSession());
+        }
+        return list;
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else  {
+      // local
+      List<P> list = new ArrayList<>();
+      try (ResultSetWrapper rs = resultObjectsWithExpiredTableSerials(oldSerial)) {
         P obj;
         while ((obj = newInstance().selectNextObject(rs)) != null)  {
           list.add(obj);
@@ -2982,6 +3033,19 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     return SQL_SELECT + CN_ID + SQL_COMMA + CN_TABLESERIAL + SQL_FROM + getTableName() + SQL_WHERE +
            CN_TABLESERIAL + ">?" + SQL_AND + CN_TABLESERIAL + "<=?" +
            SQL_ORDERBY + CN_TABLESERIAL + SQL_COMMA + CN_ID;
+  }
+
+  /**
+   * Creates the SQL code for the first statement to select expired table serials.
+   *
+   * @return the sql code
+   */
+  public StringBuilder createSelectObjectsWithExpiredTableSerialsSql() {
+    StringBuilder sql = createSelectAllInnerSql();
+    sql.append(SQL_AND).
+        append(CN_TABLESERIAL).append(">?").
+        append(SQL_ORDERBY).append(CN_TABLESERIAL).append(SQL_COMMA).append(CN_ID);
+    return sql;
   }
 
 

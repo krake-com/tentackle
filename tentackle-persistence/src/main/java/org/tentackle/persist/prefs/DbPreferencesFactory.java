@@ -515,44 +515,50 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         Set<DbPreferencesNode> changedNodes = new TreeSet<>();
         Set<DbPreferencesKey> changedKeys = new TreeSet<>();
 
+        Map<Long,DbPreferencesNode> idNodeMap = new HashMap<>();    // related nodes map by ID
+
         if (!someRemoved) {
           if (nodeExpireSet != null) {
             // figure out roots to update
-            for (IdSerialTuple idSer: nodeExpireSet) {
-              DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(idSer.getId());
-              if (prefNode != null) {
+            List<DbPreferencesNode> prefNodes =
+                    new DbPreferencesNode(db).selectObjectsWithExpiredTableSerials(nodeTableSerial);
+            if (prefNodes.size() == nodeExpireSet.size()) {
+              for (DbPreferencesNode prefNode : prefNodes) {
                 changedNodes.add(prefNode);
+                idNodeMap.put(prefNode.getId(), prefNode);
                 String user = prefNode.getUser();
                 usersModified.add(user == null ? "" : user);
               }
-              else {
-                // removed in the meantime???
-                someRemoved = true;
-                break;
-              }
+            }
+            else {
+              // removed in the meantime???
+              someRemoved = true;
             }
           }
-          if (keyExpireSet != null) {
+
+          if (!someRemoved && keyExpireSet != null) {
             // update keys
-            for (IdSerialTuple idSer: keyExpireSet) {
-              DbPreferencesKey prefKey = new DbPreferencesKey(db).selectObject(idSer.getId());
-              if (prefKey != null) {
+            List<DbPreferencesKey> prefKeys =
+                    new DbPreferencesKey(db).selectObjectsWithExpiredTableSerials(keyTableSerial);
+            if (prefKeys.size() == keyExpireSet.size()) {
+              for (DbPreferencesKey prefKey : prefKeys) {
                 changedKeys.add(prefKey);
-                DbPreferencesNode prefNode = new DbPreferencesNode(db).selectObject(prefKey.getNodeId());
+                DbPreferencesNode prefNode = idNodeMap.get(prefKey.getNodeId());
+                if (prefNode == null) {
+                  prefNode = new DbPreferencesNode(db).selectObject(prefKey.getNodeId());
+                  if (prefNode != null) {
+                    idNodeMap.put(prefNode.getId(), prefNode);
+                  }
+                }
                 if (prefNode != null) {
-                  changedNodes.add(prefNode);   // add even if node itself wasn't modified
+                  changedNodes.add(prefNode);   // add even if node itself wasn't modified bec. of listeners
                   String user = prefNode.getUser();
                   usersModified.add(user == null ? "" : user);
                 }
-                else {
-                  someRemoved = true;
-                  break;
-                }
               }
-              else {
-                someRemoved = true;
-                break;
-              }
+            }
+            else {
+              someRemoved = true;
             }
           }
         }
