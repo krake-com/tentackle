@@ -22,6 +22,7 @@ package org.tentackle.persist.prefs.rmi;
 import java.rmi.RemoteException;
 import org.tentackle.persist.prefs.DbPreferences;
 import org.tentackle.persist.prefs.DbPreferencesOperation;
+import org.tentackle.persist.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
 
 /**
@@ -30,10 +31,10 @@ import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegate;
  */
 public interface DbPreferencesOperationRemoteDelegate extends AbstractDbOperationRemoteDelegate<DbPreferencesOperation>{
 
-  DbPreferences getRoot(String user) throws RemoteException;
+  DbPreferences loadRoot(String user) throws RemoteException;
 
   void flush(DbPreferences node) throws RemoteException;
 
-  DbPreferencesOperation.RefreshInfo refreshRoot(DbPreferences node, long serial) throws RemoteException;
+  RefreshInfo refreshRoot(DbPreferences node, long serial) throws RemoteException;
 
 }

@@ -45,11 +45,18 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.Session;
 import org.tentackle.persist.Db;
+import org.tentackle.persist.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
 
 /**
  * Repository and factory for database backed preferences.
+ * <p>
+ * The DbPreferencesFactory implements {@link PersistedPreferencesFactory} which in turn
+ * extends {@link java.util.prefs.PreferencesFactory}. As such, it can be used as a drop-in
+ * replacement for the default JRE preferences factory. By default, however, it is available
+ * to the application only via {@link PersistedPreferencesFactory#getInstance()}, which is the
+ * preferred way for tentackle applications to use preferences.
  *
  * @author harald
  */
@@ -116,7 +123,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * The root node with all nodes and keys loaded.
    */
-  public static class Root {
+  private static class Root {
 
     private static long lastSerial;     // last serial
 
@@ -128,35 +135,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
      *
      * @param node the preferences node
      */
-    public Root(DbPreferences node) {
+    private Root(DbPreferences node) {
       this.node = node;
       countUpdate();
     }
 
-    /**
-     * Gets the preferences node.
-     *
-     * @return the preferences root node
-     */
-    public DbPreferences getNode() {
-      return node;
-    }
-
-    /**
-     * Gets the serial of the root tree.
-     *
-     * @return the serial (always &ge; 1)
-     */
-    public long getSerial() {
-      return serial;
-    }
-
-    private long nextSerial() {
-      return ++lastSerial;
-    }
-
     private void countUpdate() {
-      serial = nextSerial();
+      serial = ++lastSerial;
     }
   }
 
@@ -268,7 +253,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   @Override
   public synchronized DbPreferences getSystemRoot() {
-    return getRoot(null).node;
+    return getRootTree(null);
   }
 
   @Override
@@ -276,7 +261,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     if (isSystemOnly()) {
       return getSystemRoot();
     }
-    return getRoot(getUserName()).node;
+    return getRootTree(getUserName());
   }
 
   @Override
@@ -407,6 +392,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         }
       }
     }
+    if (node.isRootNode() && node.getPersistentNode().isRemoved()) {
+      removeRoot(node);
+    }
   }
 
   /**
@@ -453,7 +441,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   /**
    * Syncs a node and all of its subnodes from and to the backing store.<br>
-   * Same as flush but loads any modifications into repo first and then flushes all mods.
+   * Same as flush but loads any modifications into repo first and then flushes all mods.<br>
+   * Necessary if autoSync is set to false (default is true).
+   *
    *
    * @param node the preferences node
    * @throws BackingStoreException
@@ -461,9 +451,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   public synchronized void sync(DbPreferences node) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
     try {
-      long nodeMaxSerial = new DbPreferencesNode(db).getModificationCount();
-      long keyMaxSerial = new DbPreferencesKey(db).getModificationCount();
-      updateRepository(db, nodeMaxSerial, keyMaxSerial);
+      updateRepository(db,
+                       new DbPreferencesNode(db).getModificationCount(),
+                       new DbPreferencesKey(db).getModificationCount());
     }
     finally {
       releaseDb(db);
@@ -494,7 +484,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param nodeMaxSerial the new table serial for prefnodes
    * @param keyMaxSerial the nore table serial for prefkeys
    */
-  protected void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
+  protected synchronized void updateRepository(Db db, long nodeMaxSerial, long keyMaxSerial) {
     if (nodeMaxSerial != nodeTableSerial || keyMaxSerial != keyTableSerial) {
       if (db.isRemote()) {
         // rebuild all roots if serials don't match with the ones in the remote repository
@@ -602,8 +592,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   private void rebuildRoot(Db db, Root root) {
     // load all nodes and keys for this root (ordered by id, i.e. creation)
-    DbPreferencesOperation.RefreshInfo info = new DbPreferencesOperation(db).refreshRoot(
-            root.node, db.isRemote() ? root.serial : 0);
+    RefreshInfo info = new DbPreferencesOperation(db).refreshRoot(root.node, db.isRemote() ? root.serial : 0);
     if (info != null) {
       Collection<DbPreferencesNode> prefNodes = info.prefNodes;
       Collection<DbPreferencesKey> prefKeys = info.prefKeys;
@@ -812,26 +801,28 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
 
   /**
-   * Loads the root node for given user and all of its subnodes and keys.
+   * Gets the root node for given user and all of its subnodes and keys at once.
    *
    * @param user the username, null or empty if system user
    * @return the root node, never null
    */
-  public Root getRoot(String user) {
+  public DbPreferences getRootTree(String user) {
     String key = user == null ? "" : user;
     Root root = roots.get(key);
     if (root == null) {
       Db db = requestDb(true, false);
       try {
-        root = new Root(new DbPreferencesOperation(db).getRoot(user));
+        root = new Root(new DbPreferencesOperation(db).loadRoot(user));
         roots.put(key, root);
       }
       finally {
         releaseDb(db);
       }
     }
-    return root;
+    return root.node;
   }
+
+
 
   /**
    * Returns the absolute path name of the node corresponding to the package of the specified object.
@@ -861,10 +852,10 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param pathNodeMap the nodes mapped by path
    * @param idKeyMap the keys mapped by ID
    */
-  public void addNodeToMaps(DbPreferences node,
-                            Map<Long,DbPreferences> idNodeMap,
-                            Map<String,DbPreferences> pathNodeMap,
-                            Map<Long,DbPreferencesKey> idKeyMap) {
+  private void addNodeToMaps(DbPreferences node,
+                             Map<Long,DbPreferences> idNodeMap,
+                             Map<String,DbPreferences> pathNodeMap,
+                             Map<Long,DbPreferencesKey> idKeyMap) {
 
     if (!node.getPersistentNode().isVirgin()) {
       idNodeMap.put(node.getPersistentNode().getId(), node);
@@ -881,7 +872,6 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-
   /**
    * Adds all subnodes of a node to given maps.
    *
@@ -889,9 +879,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * @param idNodeMap the nodes mapped by ID
    * @param pathNodeMap the nodes mapped by path
    */
-  public void addNodeToMaps(DbPreferences node,
-                            Map<Long,DbPreferences> idNodeMap,
-                            Map<String,DbPreferences> pathNodeMap) {
+  private void addNodeToMaps(DbPreferences node,
+                             Map<Long,DbPreferences> idNodeMap,
+                             Map<String,DbPreferences> pathNodeMap) {
 
     if (!node.getPersistentNode().isVirgin()) {
       idNodeMap.put(node.getPersistentNode().getId(), node);

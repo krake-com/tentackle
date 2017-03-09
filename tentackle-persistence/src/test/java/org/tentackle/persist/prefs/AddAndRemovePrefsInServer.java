@@ -100,7 +100,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   @Override
   protected void configurePdoTracker() {
     super.configurePdoTracker();
-    PdoTracker.getInstance().setSleepInterval(500);
+    PdoTracker.getInstance().setSleepInterval(250);
   }
 
 
@@ -185,6 +185,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
     sleep(2000);
     cleanup();
     System.out.println(new Timestamp() + ": preferences cleaned up");
+    sleep(2000);    // allow client to logout
   }
 
 

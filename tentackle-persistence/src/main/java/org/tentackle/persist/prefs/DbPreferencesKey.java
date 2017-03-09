@@ -77,7 +77,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
                                  TABLENAME);
 
 
-  private boolean removed;
+  private boolean removed;                        // true if marked deleted (used by factory)
 
 
   /**
@@ -97,14 +97,27 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   }
 
 
-  public boolean isRemoved() {
+  /**
+   * Returns whether key has been marked as removed.
+   * <p>
+   * Notice: used by the DbPreferencesFactory, hence package scope
+   *
+   * @return true if removed
+   */
+  boolean isRemoved() {
     return removed;
   }
 
-  public void setRemoved(boolean removed) {
+  /**
+   * Sets the removed flag.
+   * <p>
+   * Notice: used by the DbPreferencesFactory, hence package scope
+   *
+   * @param removed true if removed
+   */
+  void setRemoved(boolean removed) {
     this.removed = removed;
   }
-
 
 
   @Override

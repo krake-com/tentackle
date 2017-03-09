@@ -86,14 +86,15 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
           @Override
           public void run() {
             // switch session from within running tracker's thread is allowed
-            getSession().close();
-            setSession(session.clone());
+            tracker.getSession().close();
+            tracker.setSession(session.clone());
+            tracker.setSleepInterval(250);   // fast polling for tests
           }
         });
     }
     else {
       tracker.setSession(session.clone());    // set or change session
-      tracker.setSleepInterval(500);   // fast polling for tests
+      tracker.setSleepInterval(250);   // fast polling for tests
       tracker.start();
     }
   }
@@ -162,7 +163,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     keyEvents.clear();
 
     // remove node and key in other jvm
-    Thread.sleep(3000);   // give time for modtracker to fire events
+    Thread.sleep(2000);   // give time for modtracker to fire events
 
 
     assertEquals(nodeEvents.size(), 1);

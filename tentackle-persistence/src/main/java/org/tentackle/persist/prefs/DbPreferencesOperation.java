@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistenceException;
@@ -64,12 +63,20 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     /** all prefkeys. */
     public final Collection<DbPreferencesKey> prefKeys;
 
+    /**
+     * Creates a refresh info.
+     *
+     * @param serial the serial version of the node tree
+     * @param prefNodes the persistent nodes
+     * @param prefKeys the persistent keys
+     */
     public RefreshInfo(long serial, Collection<DbPreferencesNode> prefNodes, Collection<DbPreferencesKey> prefKeys) {
       this.serial = serial;
       this.prefNodes = prefNodes;
       this.prefKeys = prefKeys;
     }
   }
+
 
   @Override
   public DbOperationClassVariables<DbPreferencesOperation> getClassVariables() {
@@ -99,15 +106,15 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
 
   /**
-   * Gets the root preferences node with all its subnodes and keys.
+   * Loads the root preferences node with all its subnodes and keys.
    *
    * @param user the username, "" if system user
    * @return the node, never null
    */
-  public DbPreferences getRoot(String user) {
+  public DbPreferences loadRoot(String user) {
     if (getSession().isRemote()) {
       try {
-        return getRemoteDelegate().getRoot(user);
+        return getRemoteDelegate().loadRoot(user);
       }
       catch (RemoteException rex) {
         throw PersistenceException.createFromRemoteException(user, rex);
@@ -138,26 +145,22 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     else {
       DbPreferencesFactory factory = (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
       long repoSerial = factory.getSerial(node.getUser());
-      long rootId = node.getPersistentNode().getId();
       if (serial <= 0) {
         // load all nodes and keys for this root (ordered by id, i.e. creation)
-        List<DbPreferencesNode> prefNodes = new DbPreferencesNode(getSession()).selectByRootNodeId(rootId);
-        List<DbPreferencesKey> prefKeys = new DbPreferencesKey(getSession()).selectByRootNodeId(rootId);
-        return new RefreshInfo(repoSerial, prefNodes, prefKeys);
+        long rootId = node.getPersistentNode().getId();
+        return new RefreshInfo(repoSerial,
+                               new DbPreferencesNode(getSession()).selectByRootNodeId(rootId),
+                               new DbPreferencesKey(getSession()).selectByRootNodeId(rootId));
       }
       else if (serial != repoSerial) {
-        // request from remote client: load from repo
-        node = factory.getRoot(node.getUser()).getNode();
-        Map<Long,DbPreferences> idNodeMap = new TreeMap<>();
-        Map<String,DbPreferences> pathNodeMap = new HashMap<>();
-        Map<Long,DbPreferencesKey> idKeyMap = new TreeMap<>();
-        factory.addNodeToMaps(node, idNodeMap, pathNodeMap, idKeyMap);
-        List<DbPreferencesNode> prefNodes = new ArrayList<>();
-        List<DbPreferencesKey> prefKeys = new ArrayList<>(idKeyMap.values());
-        for (DbPreferences pref: idNodeMap.values()) {
-          prefNodes.add(pref.getPersistentNode());
+        // request from remote client: load from repo (persisted only!)
+        synchronized(factory) {
+          node = factory.getRootTree(node.getUser());
+          List<DbPreferencesNode> prefNodes = new ArrayList<>();
+          List<DbPreferencesKey> prefKeys = new ArrayList<>();
+          addNodeToLists(node, prefNodes, prefKeys);
+          return new RefreshInfo(repoSerial, prefNodes, prefKeys);
         }
-        return new RefreshInfo(repoSerial, prefNodes, prefKeys);
       }
       return null;
     }
@@ -290,6 +293,33 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     DbPreferences child = new DbPreferences(parent, prefNode, null, null);
     childs.put(prefNode.getId(), child);
     return child;
+  }
+
+  /**
+   * Adds all subnodes and keys of a node to given lists.<br>
+   * Only persisted nodes and keys are added.
+   *
+   * @param node the node
+   * @param prefNodes the nodes mapped by ID
+   * @param pathNodeMap the nodes mapped by path
+   * @param prefKeys the keys mapped by ID
+   */
+  private void addNodeToLists(DbPreferences node,
+                              List<DbPreferencesNode> prefNodes,
+                              List<DbPreferencesKey> prefKeys) {
+
+    if (!node.getPersistentNode().isNew()) {
+      prefNodes.add(node.getPersistentNode());
+    }
+
+    for (DbPreferencesKey key: node.getKeys()) {
+      if (!key.isNew()) {
+        prefKeys.add(key);
+      }
+    }
+    for (DbPreferences child: node.getChilds()) {
+      addNodeToLists(child, prefNodes, prefKeys);
+    }
   }
 
 }
