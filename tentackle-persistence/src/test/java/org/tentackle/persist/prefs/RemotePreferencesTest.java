@@ -34,8 +34,6 @@ import org.tentackle.persist.AbstractDbTest;
 import org.tentackle.persist.Db;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -70,11 +68,6 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   private Db session;
 
 
-  @AfterClass
-  public void closeSession() throws Exception {
-    PdoTracker.getInstance().terminate();
-    session.close();
-  }
 
   // synchronized because it's the modtracker's thread
   // Reporter.log doesnt work from other than test thread!
@@ -151,6 +144,10 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
+      assertEquals(prefs.childrenNames().length, 1);
+      assertEquals(prefs.childrenNames()[0], "other");
+      PersistedPreferences otherPrefs = prefs.node("other");
+      assertEquals(otherPrefs.keys().length, 1);
       nodeEvents.clear();
 
       assertEquals(keyEvents.size(), 1);
@@ -158,11 +155,11 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertEquals(keyEvent.getNewValue(), VALUE_4);
+      assertEquals(otherPrefs.get(KEY_4, ""), VALUE_4);
       keyEvents.clear();
 
       // remove node and key in other jvm
       Thread.sleep(3000);   // give time for modtracker to fire events
-
 
       assertEquals(nodeEvents.size(), 1);
       nodeEvent = nodeEvents.get(0);
@@ -176,8 +173,14 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertNull(keyEvent.getNewValue());
+
+      assertEquals(prefs.childrenNames().length, 0);
+      otherPrefs = prefs.node("other");
+      assertEquals(otherPrefs.keys().length, 0);
     }
     finally {
+      PdoTracker.getInstance().terminate();
+      session.close();
       AbstractDbTest.waitForProcess(process);
     }
   }

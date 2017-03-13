@@ -259,6 +259,9 @@ public class DbTransaction {
    * @param savepoint the savepoint
    */
   public void addSavepoint(SavepointHandle handle, Savepoint savepoint) {
+    if (savepoints == null) {
+      savepoints = new HashMap<>();
+    }
     savepoints.put(handle, savepoint);
   }
 
@@ -269,7 +272,7 @@ public class DbTransaction {
    * @return savepoint the savepoint
    */
   public Savepoint getSavepoint(SavepointHandle handle) {
-    return savepoints.get(handle);
+    return savepoints == null ? null : savepoints.get(handle);
   }
 
 

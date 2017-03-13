@@ -35,7 +35,10 @@ import java.util.prefs.Preferences;
 import org.tentackle.io.Base64;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+import org.tentackle.pdo.ConstraintException;
+import org.tentackle.pdo.NotFoundException;
 import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.SavepointHandle;
 import org.tentackle.persist.Db;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -73,7 +76,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   private final DbPreferences parent;                   // the parent node, null if this is a root
   private final String absolutePath;                    // the absolute path
   private final String name;                            // the name relative to the parent
-  private final DbPreferencesNode prefNode;             // the persistent node
+  private DbPreferencesNode prefNode;                   // the persistent node
 
   private final Map<String,DbPreferences> childMap;     // childs of this node <subname:node>
   private final Map<String,DbPreferencesKey> keyMap;    // keys of this node <key:value>
@@ -658,7 +661,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             if (!key.isNew()) {
               try {
                 key.setSession(db);
-                key.deleteObject();
+                try {
+                  key.deleteObject();
+                }
+                catch (NotFoundException nfx) {
+                  // already deleted -> no error
+                }
               }
               finally {
                 key.setSession(null);
@@ -672,7 +680,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             child.flushImpl(db);
           }
           childMap.clear();
-          prefNode.deleteObject();
+          try {
+            prefNode.deleteObject();
+          }
+          catch (NotFoundException nfx) {
+            // already deleted -> no error
+          }
           getFactory().nodeChanged(this);
         }
       }
@@ -691,30 +704,57 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
           }
         }
         if (prefNode.isModified()) {
-          prefNode.saveObject();
+          SavepointHandle sh = db.setSavepoint();
+          try {
+            prefNode.saveObject();
+          }
+          catch (ConstraintException cx) {
+            // already persisted -> ignore
+            db.rollback(sh);
+            // load from backend
+            prefNode = new DbPreferencesNode(db).selectByUserAndName(prefNode.getUser(), prefNode.getName());
+            if (prefNode == null) {
+              throw cx;
+            }
+          }
           getFactory().nodeChanged(this);
         }
 
-        for (DbPreferencesKey key: keyMap.values()) {
-          key.setSession(db);
+        for (DbPreferencesKey prefKey: keyMap.values()) {
+          prefKey.setSession(db);
           try {
-            if (key.isRemoved()) {
-              if (!key.isNew()) {
-                key.deleteObject();
-                getFactory().keyChanged(this, key);
+            if (prefKey.isRemoved()) {
+              if (!prefKey.isNew()) {
+                try {
+                  prefKey.deleteObject();
+                }
+                catch (NotFoundException nfx) {
+                  // already deleted -> no error
+                }
+                getFactory().keyChanged(this, prefKey);
               }
             }
-            else if (key.isModified()) {
-              if (key.isNew()) {
-                key.setNodeId(prefNode.getId());
-                key.setRootNodeId(prefNode.getRootNodeId());
+            else if (prefKey.isModified()) {
+              if (prefKey.isNew()) {
+                prefKey.setNodeId(prefNode.getId());
+                prefKey.setRootNodeId(prefNode.getRootNodeId());
               }
-              key.saveObject();
-              getFactory().keyChanged(this, key);
+              SavepointHandle sh = db.setSavepoint();
+              try {
+                prefKey.saveObject();
+              }
+              catch (ConstraintException cx) {
+                db.rollback(sh);    // already persisted
+                prefKey = new DbPreferencesKey(db).selectByNodeIdAndKey(prefNode.getId(), prefKey.getKey());
+                if (prefKey == null) {
+                  throw cx;
+                }
+              }
+              getFactory().keyChanged(this, prefKey);
             }
           }
           finally {
-            key.setSession(null);
+            prefKey.setSession(null);
           }
         }
 
