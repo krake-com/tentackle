@@ -21,6 +21,7 @@ package org.tentackle.persist.prefs.rmi;
 
 import java.rmi.RemoteException;
 import org.tentackle.persist.prefs.DbPreferences;
+import org.tentackle.persist.prefs.DbPreferencesFactory;
 import org.tentackle.persist.prefs.DbPreferencesOperation;
 import org.tentackle.persist.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.persist.rmi.AbstractDbOperationRemoteDelegateImpl;
@@ -42,9 +43,9 @@ public class DbPreferencesOperationRemoteDelegateImpl
   }
 
   @Override
-  public DbPreferences loadRoot(String user) throws RemoteException {
+  public DbPreferences loadRootTree(String user, boolean forced) throws RemoteException {
     try {
-      return dbOperation.loadRoot(user);
+      return dbOperation.loadRootTree(user, forced);
     }
     catch (Exception e) {
       throw createException(e);
@@ -52,9 +53,10 @@ public class DbPreferencesOperationRemoteDelegateImpl
   }
 
   @Override
-  public RefreshInfo refreshRoot(DbPreferences node, long serial) throws RemoteException {
+  public RefreshInfo loadRefreshInfo(String user, long serial) throws RemoteException {
     try {
-      return dbOperation.refreshRoot(node, serial);
+      DbPreferences node = DbPreferencesFactory.getInstance().getRootTree(getSession(), user);
+      return dbOperation.loadRefreshInfo(node, serial);
     }
     catch (Exception e) {
       throw createException(e);

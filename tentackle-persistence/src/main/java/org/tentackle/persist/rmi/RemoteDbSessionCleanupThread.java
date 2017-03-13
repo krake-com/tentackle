@@ -142,7 +142,8 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
           Db db = session.getSession();
           if (db == null || !db.isOpen()) {
             if (db != null) {
-              LOGGER.warning("session Db " + db + " already closed in " + session + " -> cleanup forced and removed from session list");
+              LOGGER.warning("session Db " + db + " already closed in " + session +
+                             " -> cleanup forced and removed from session list");
               // we came too late or not MT-visible.
               // db is already closed (cleanup in parallel?)
               session.forceCleanup();   // works in parallel

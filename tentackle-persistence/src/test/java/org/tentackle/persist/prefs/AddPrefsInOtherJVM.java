@@ -43,7 +43,7 @@ public class AddPrefsInOtherJVM {
 
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
     prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
-    PersistedPreferences.systemRoot().flush();
+    prefs.flush();
     tracker.terminate();
     session.close();
   }

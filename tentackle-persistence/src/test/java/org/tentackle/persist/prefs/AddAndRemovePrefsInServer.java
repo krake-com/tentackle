@@ -175,16 +175,21 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
 
   private void runTests() {
-    System.out.println(new Timestamp() + ": server started");
-    sleep(3000);  // wait for startup and client to log in
-    addPreferences();
-    System.out.println(new Timestamp() + ": node and key added");
-    sleep(3000);
-    removePreferences();
-    System.out.println(new Timestamp() + ": node and key removed");
-    sleep(3000);
-    cleanup();
-    System.out.println(new Timestamp() + ": preferences cleaned up");
+    try {
+      cleanup();    // in case some garbage remained from failed test
+      System.out.println(new Timestamp() + ": server started");
+      sleep(3000);  // wait for startup and client to log in
+      addPreferences();
+      System.out.println(new Timestamp() + ": node and key added");
+      sleep(3000);
+      removePreferences();
+      System.out.println(new Timestamp() + ": node and key removed");
+      sleep(3000);
+    }
+    finally {
+      cleanup();
+      System.out.println(new Timestamp() + ": preferences cleaned up");
+    }
     sleep(3000);    // allow client to logout
   }
 

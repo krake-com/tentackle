@@ -70,40 +70,10 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   private Db session;
 
 
-  @BeforeClass
-  public void openSession() throws Exception {
-    process = AbstractDbTest.runClass(AddAndRemovePrefsInServer.class);
-    Thread.sleep(1000);
-    SessionInfo sessionInfo = Pdo.createSessionInfo("client");
-    session = (Db) Pdo.createSession(sessionInfo);
-    session.open();
-    session.makeCurrent();
-    PdoTracker tracker = PdoTracker.getInstance();
-    if (tracker.isAlive()) {
-        // open from previous tests (we're in testsuite), else single test
-        tracker.addTaskAndWait(new AbstractSessionTask() {
-          private static final long serialVersionUID = 1L;
-          @Override
-          public void run() {
-            // switch session from within running tracker's thread is allowed
-            tracker.getSession().close();
-            tracker.setSession(session.clone());
-            tracker.setSleepInterval(250);   // fast polling for tests
-          }
-        });
-    }
-    else {
-      tracker.setSession(session.clone());    // set or change session
-      tracker.setSleepInterval(250);   // fast polling for tests
-      tracker.start();
-    }
-  }
-
   @AfterClass
   public void closeSession() throws Exception {
     PdoTracker.getInstance().terminate();
     session.close();
-    AbstractDbTest.waitForProcess(process);
   }
 
   // synchronized because it's the modtracker's thread
@@ -129,55 +99,87 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   @Test(priority = 999)   // must be the last test!
   public void writePreferences() throws Exception {
 
-    PersistedPreferencesFactory.getInstance().invalidate();
-    PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(RemotePreferencesTest.class);
+    process = AbstractDbTest.runClass(AddAndRemovePrefsInServer.class);
+    Thread.sleep(1500);
 
-    prefs.put(KEY_1, VALUE_1);
-    prefs.put(KEY_2, VALUE_2);
-    PersistedPreferences.systemRoot().flush();
+    try {
+      SessionInfo sessionInfo = Pdo.createSessionInfo("client");
+      session = (Db) Pdo.createSession(sessionInfo);
+      session.open();
+      session.makeCurrent();
+      PdoTracker tracker = PdoTracker.getInstance();
+      if (tracker.isAlive()) {
+          // open from previous tests (we're in testsuite), else single test
+          tracker.addTaskAndWait(new AbstractSessionTask() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public void run() {
+              // switch session from within running tracker's thread is allowed
+              tracker.getSession().close();
+              tracker.setSession(session.clone());
+              tracker.setSleepInterval(250);   // fast polling for tests
+            }
+          });
+      }
+      else {
+        tracker.setSession(session.clone());    // set or change session
+        tracker.setSleepInterval(250);   // fast polling for tests
+        tracker.start();
+      }
 
-    // register after flush
-    prefs.addNodeChangeListener(this);
-    prefs.node("other").addPreferenceChangeListener(this);    // not persisted so far!
-    // so events are still empty
-    assertTrue(nodeEvents.isEmpty());
-    assertTrue(keyEvents.isEmpty());
+      PersistedPreferencesFactory.getInstance().invalidate();
+      PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(RemotePreferencesTest.class);
 
-    // add node and key in other jvm
-    Thread.sleep(3000);   // give time for modtracker to fire events
+      prefs.put(KEY_1, VALUE_1);
+      prefs.put(KEY_2, VALUE_2);
+      prefs.flush();
 
+      // register after flush
+      prefs.addNodeChangeListener(this);
+      prefs.node("other").addPreferenceChangeListener(this);    // not persisted so far!
+      // so events are still empty
+      assertTrue(nodeEvents.isEmpty());
+      assertTrue(keyEvents.isEmpty());
 
-    assertEquals(nodeEvents.size(), 1);
-    NodeChangeEvent nodeEvent = nodeEvents.get(0);
-    assertEquals(nodeEvent.getParent(), prefs);
-    assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
-    assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
-    assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
-    nodeEvents.clear();
-
-    assertEquals(keyEvents.size(), 1);
-    PreferenceChangeEvent keyEvent = keyEvents.get(0);
-    assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
-    assertEquals(keyEvent.getKey(), KEY_4);
-    assertEquals(keyEvent.getNewValue(), VALUE_4);
-    keyEvents.clear();
-
-    // remove node and key in other jvm
-    Thread.sleep(3000);   // give time for modtracker to fire events
+      // add node and key in other jvm
+      Thread.sleep(3000);   // give time for modtracker to fire events
 
 
-    assertEquals(nodeEvents.size(), 1);
-    nodeEvent = nodeEvents.get(0);
-    assertEquals(nodeEvent.getParent(), prefs);
-    assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
-    assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
-    assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
+      assertEquals(nodeEvents.size(), 1);
+      NodeChangeEvent nodeEvent = nodeEvents.get(0);
+      assertEquals(nodeEvent.getParent(), prefs);
+      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
+      assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
+      nodeEvents.clear();
 
-    assertEquals(keyEvents.size(), 1);
-    keyEvent = keyEvents.get(0);
-    assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
-    assertEquals(keyEvent.getKey(), KEY_4);
-    assertNull(keyEvent.getNewValue());
+      assertEquals(keyEvents.size(), 1);
+      PreferenceChangeEvent keyEvent = keyEvents.get(0);
+      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(keyEvent.getKey(), KEY_4);
+      assertEquals(keyEvent.getNewValue(), VALUE_4);
+      keyEvents.clear();
+
+      // remove node and key in other jvm
+      Thread.sleep(3000);   // give time for modtracker to fire events
+
+
+      assertEquals(nodeEvents.size(), 1);
+      nodeEvent = nodeEvents.get(0);
+      assertEquals(nodeEvent.getParent(), prefs);
+      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
+      assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
+
+      assertEquals(keyEvents.size(), 1);
+      keyEvent = keyEvents.get(0);
+      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(keyEvent.getKey(), KEY_4);
+      assertNull(keyEvent.getNewValue());
+    }
+    finally {
+      AbstractDbTest.waitForProcess(process);
+    }
   }
 
 }

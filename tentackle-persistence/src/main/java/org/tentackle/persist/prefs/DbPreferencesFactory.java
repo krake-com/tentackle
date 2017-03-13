@@ -64,6 +64,15 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
 public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
   /**
+   * Gets the factory singleton.
+   *
+   * @return the factory
+   */
+  public static  DbPreferencesFactory getInstance() {
+    return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
+  }
+
+  /**
    * The logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferencesFactory.class);
@@ -252,16 +261,16 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   }
 
   @Override
-  public synchronized DbPreferences getSystemRoot() {
-    return getRootTree(null);
+  public DbPreferences getSystemRoot() {
+    return getRootTree(null, null);
   }
 
   @Override
-  public synchronized DbPreferences getUserRoot() {
+  public DbPreferences getUserRoot() {
     if (isSystemOnly()) {
       return getSystemRoot();
     }
-    return getRootTree(getUserName());
+    return getRootTree(null, getUserName());
   }
 
   @Override
@@ -430,9 +439,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         catch (RuntimeException rex) {
           // remove the root node from the repo (forces reload on next access)
           removeRoot(node);
+          throw rex;
         }
         return null;
       });
+    }
+    catch (RuntimeException rex) {
+      throw new BackingStoreException(rex);
     }
     finally {
       releaseDb(db);
@@ -598,7 +611,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   private void rebuildRoot(Db db, Root root) {
     // load all nodes and keys for this root (ordered by id, i.e. creation)
-    RefreshInfo info = new DbPreferencesOperation(db).refreshRoot(root.node, db.isRemote() ? root.serial : 0);
+    RefreshInfo info = new DbPreferencesOperation(db).loadRefreshInfo(root.node, db.isRemote() ? root.serial : 0);
     if (info != null) {
       Collection<DbPreferencesNode> prefNodes = info.prefNodes;
       Collection<DbPreferencesKey> prefKeys = info.prefKeys;
@@ -809,20 +822,27 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   /**
    * Gets the root node for given user and all of its subnodes and keys at once.
    *
+   * @param db the oprional db, null if request a db temporarily
    * @param user the username, null or empty if system user
    * @return the root node, never null
    */
-  public DbPreferences getRootTree(String user) {
+  public synchronized DbPreferences getRootTree(Db db, String user) {
     String key = user == null ? "" : user;
     Root root = roots.get(key);
     if (root == null) {
-      Db db = requestDb(true, false);
+      boolean needRelease = false;
+      if (db == null) {
+        db = requestDb(true, false);
+        needRelease = true;
+      }
       try {
-        root = new Root(new DbPreferencesOperation(db).loadRoot(user));
+        root = new Root(new DbPreferencesOperation(db).loadRootTree(user, !db.isRemote()));
         roots.put(key, root);
       }
       finally {
-        releaseDb(db);
+        if (needRelease) {
+          releaseDb(db);
+        }
       }
     }
     return root.node;

@@ -79,7 +79,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     prefs.addNodeChangeListener(this);
     prefs.addPreferenceChangeListener(this);
 
-    PersistedPreferences.systemRoot().flush();
+    prefs.flush();
 
     // verify database contents
     DbPreferencesNode prefNode = new DbPreferencesNode(getSession()).selectByUserAndName(null, "/");

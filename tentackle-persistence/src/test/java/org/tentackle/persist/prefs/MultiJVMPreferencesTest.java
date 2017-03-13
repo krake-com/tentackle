@@ -94,7 +94,7 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
 
       prefs.put(KEY_1, VALUE_1);
       prefs.put(KEY_2, VALUE_2);
-      PersistedPreferences.systemRoot().flush();
+      prefs.flush();
 
       // register after flush
       prefs.addNodeChangeListener(this);

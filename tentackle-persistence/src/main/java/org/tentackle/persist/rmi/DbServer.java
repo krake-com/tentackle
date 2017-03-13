@@ -182,6 +182,15 @@ public class DbServer {
   public static final String CLIENT_AUTH = "clientauth";
 
 
+  /**
+   * Default timeout check interval in milliseconds.
+   */
+  public static long defaultSessionTimeoutCheckInterval = 1000;
+
+  /**
+   * Default timeout in timeout check intervals.
+   */
+  public static int defaultSessionTimeout = 30;
 
 
   /**
@@ -277,13 +286,16 @@ public class DbServer {
     if (val != null) {
       sessionTimeout = Integer.parseInt(val);
     }
+    else {
+      sessionTimeout = defaultSessionTimeout;
+    }
 
     val = props.getProperty(TIMEOUT_INTERVAL);
     if (val != null) {
       sessionTimeoutCheckInterval = Long.parseLong(val);
     }
     else  {
-      sessionTimeoutCheckInterval = 1000;
+      sessionTimeoutCheckInterval = defaultSessionTimeoutCheckInterval;
     }
 
     // check for default ports
@@ -646,19 +658,22 @@ public class DbServer {
    */
   public void stop() throws ApplicationException {
     try {
-      Naming.unbind(service);
       if (connectionObject != null) {
         connectionObject.unexportRemoteObject(connectionObject);
         connectionObject = null;
       }
       if (registry != null) {
-        // if still anything left...
+        // unbind all services registered for local registry
         for (String name: registry.list()) {
           LOGGER.info("unbinding {0}", name);
           registry.unbind(name);
         }
         UnicastRemoteObject.unexportObject(registry, true);
         registry = null;
+      }
+      else {
+        LOGGER.info("unbinding {0}", service);
+        Naming.unbind(service);
       }
     }
     catch (Exception e) {

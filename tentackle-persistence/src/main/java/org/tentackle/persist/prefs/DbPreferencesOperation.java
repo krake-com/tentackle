@@ -109,41 +109,42 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * Loads the root preferences node with all its subnodes and keys.
    *
    * @param user the username, "" if system user
+   * @param forced true always load from storage, false if try repository first
    * @return the node, never null
    */
-  public DbPreferences loadRoot(String user) {
+  public DbPreferences loadRootTree(String user, boolean forced) {
     if (getSession().isRemote()) {
       try {
-        return getRemoteDelegate().loadRoot(user);
+        return getRemoteDelegate().loadRootTree(user, forced);
       }
       catch (RemoteException rex) {
         throw PersistenceException.createFromRemoteException(user, rex);
       }
     }
     else {
-      return loadRoot(getSession(), user);
+      return forced ? loadRoot(getSession(), user) : DbPreferencesFactory.getInstance().getRootTree(getSession(), user);
     }
   }
 
 
   /**
-   * Gets all persisted nodes and keys suitable to refresh a whole preferences tree.
+   * Loads all persisted nodes and keys suitable to refresh a whole preferences tree.
    *
    * @param node the root node
    * @param serial the current serial to load from repo, &lt; 0 to load unconditionally
    * @return the nodes and keys if current serial outdated, null if serials match and no need to refresh
    */
-  public RefreshInfo refreshRoot(DbPreferences node, long serial) {
+  public RefreshInfo loadRefreshInfo(DbPreferences node, long serial) {
     if (getSession().isRemote()) {
       try {
-        return getRemoteDelegate().refreshRoot(node, serial);
+        return getRemoteDelegate().loadRefreshInfo(node.getUser(), serial);
       }
       catch (RemoteException rex) {
         throw PersistenceException.createFromRemoteException(node, rex);
       }
     }
     else {
-      DbPreferencesFactory factory = (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
+      DbPreferencesFactory factory = DbPreferencesFactory.getInstance();
       long repoSerial = factory.getSerial(node.getUser());
       if (serial <= 0) {
         // load all nodes and keys for this root (ordered by id, i.e. creation)
@@ -155,7 +156,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       else if (serial != repoSerial) {
         // request from remote client: load from repo (persisted only!)
         synchronized(factory) {
-          node = factory.getRootTree(node.getUser());
+          node = factory.getRootTree(getSession(), node.getUser());
           List<DbPreferencesNode> prefNodes = new ArrayList<>();
           List<DbPreferencesKey> prefKeys = new ArrayList<>();
           addNodeToLists(node, prefNodes, prefKeys);
@@ -173,6 +174,11 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * @param node the node
    */
   public void flush(DbPreferences node) {
+    // go up the tree until the first persisted node or the root node
+    while (!node.isRootNode() && node.getPersistentNode().isNew()) {
+      node = node.parent();
+    }
+
     if (getSession().isRemote()) {
       try {
         getRemoteDelegate().flush(node);
