@@ -295,6 +295,37 @@ public interface Session extends Comparable<Session> {
   <T> T transaction(TransactionEnvelope<T> txe);
 
   /**
+   * Creates an unnamed savepoint in the current transaction.
+   *
+   * @return the savepoint handle unique within current transaction
+   */
+  SavepointHandle setSavepoint();
+
+  /**
+   * Creates a savepoint with the given name in the current transaction.
+   *
+   * @param name the savepoint name
+   *
+   * @return the savepoint handle unique within current transaction
+   */
+  SavepointHandle setSavepoint(String name);
+
+  /**
+   * Undoes all changes made after the given <code>Savepoint</code> object was set.
+   *
+   * @param handle the savepoint handle
+   */
+  void rollback(SavepointHandle handle);
+
+  /**
+   * Removes the specified <code>Savepoint</code> and subsequent <code>Savepoint</code> objects from the current
+   * transaction.
+   *
+   * @param handle the savepoint handle
+   */
+  void releaseSavepoint(SavepointHandle handle);
+
+  /**
    * Gets the unique instance number of this Session.
    *
    * @return the instance number

@@ -24,8 +24,8 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
+import org.tentackle.pdo.SavepointHandle;
 import org.tentackle.persist.CommitTxRunnable;
-import org.tentackle.persist.DbTransaction;
 import org.tentackle.persist.DbTransactionHandle;
 import org.tentackle.persist.ModificationLog;
 import org.tentackle.persist.PersistenceVisitor;
@@ -50,11 +50,19 @@ public interface DbRemoteDelegate extends RemoteDelegate {
 
   void setAlive(boolean alive) throws RemoteException;
 
-  DbTransaction begin(String txName) throws RemoteException;
+  long begin(String txName) throws RemoteException;
 
   boolean commit(long txVoucher) throws RemoteException;
 
   boolean rollback(long txVoucher, boolean withLog) throws RemoteException;
+
+  SavepointHandle setSavepoint() throws RemoteException;
+
+  SavepointHandle setSavepoint(String name) throws RemoteException;
+
+  void rollback(SavepointHandle handle) throws RemoteException;
+
+  void releaseSavepoint(SavepointHandle handle) throws RemoteException;
 
   void setReadOnly(boolean flag) throws RemoteException;
 

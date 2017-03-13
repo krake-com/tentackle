@@ -34,6 +34,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -62,6 +63,7 @@ import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.RemoteSession;
+import org.tentackle.pdo.SavepointHandle;
 import org.tentackle.pdo.Session;
 import org.tentackle.pdo.SessionCloseHandler;
 import org.tentackle.pdo.SessionClosedException;
@@ -1395,8 +1397,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public long begin(String txName)  {
-    DbTransaction tx = begin(txName, false);
-    return tx != null ? tx.getTxVoucher() : 0;
+    return begin(txName, false);
   }
 
   @Override
@@ -1412,9 +1413,9 @@ public class Db implements Session, Cloneable {
    * @param txName is the optional transaction name, null if none
    * @param fromRemote true if invocation from remote client via {@link DbRemoteDelegate#begin}
    *
-   * @return the DbTransaction if a new transaction was begun, else null
+   * @return the transaction voucher (!= 0) if a new transaction was begun, else 0
    */
-  private DbTransaction begin(String txName, boolean fromRemote)  {
+  private long begin(String txName, boolean fromRemote)  {
 
     LOGGER.finer("begin transaction requested on {0} from {1}, txName={2}",
                  this, (fromRemote ? "remote client" : "local"), txName);
@@ -1422,14 +1423,13 @@ public class Db implements Session, Cloneable {
     assertOpen();
     assertOwnerThread();
 
-    DbTransaction tx = null;
+    long txVoucher = 0;
 
     if (isRemote()) {
       try {
-        tx = rdel.begin(txName);
-        if (tx != null) {
+        txVoucher = rdel.begin(txName);
+        if (txVoucher != 0) {
           // new transaction begun
-          tx.setSession(this);
           autoCommit = false;           // we are now within a tx
         }
       }
@@ -1448,8 +1448,8 @@ public class Db implements Session, Cloneable {
         // new transaction
         assertNoTxRunning();
         modificationLogList = null;
-        tx = transaction = new DbTransaction(this, txName, fromRemote);
-
+        transaction = new DbTransaction(this, txName, fromRemote);
+        txVoucher = transaction.getTxVoucher();
       }
       else  {
         // already running transaction
@@ -1458,11 +1458,122 @@ public class Db implements Session, Cloneable {
       }
     }
 
-    LOGGER.fine("{0} {1}", transaction, tx != null ? " begun" : " already running");
+    LOGGER.fine("{0} {1}", transaction, txVoucher != 0 ? " begun" : " already running");
 
-    return tx;
+    return txVoucher;
   }
 
+
+  /**
+   * Creates an unnamed savepoint in the current transaction.
+   *
+   * @return the savepoint handle unique within current transaction
+   */
+  @Override
+  public SavepointHandle setSavepoint() {
+    if (isRemote()) {
+      try {
+        return rdel.setSavepoint();
+      }
+      catch (RemoteException e)  {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      assertTxRunning();
+      Savepoint savepoint = con.setSavepoint();
+      try {
+        SavepointHandle handle = new SavepointHandle(savepoint.getSavepointId());
+        transaction.addSavepoint(handle, savepoint);
+        return handle;
+      }
+      catch (SQLException sqx) {
+        throw new PersistenceException(this, "setting unnamed savepoint failed", sqx);
+      }
+    }
+  }
+
+  /**
+   * Creates a savepoint with the given name in the current transaction.
+   *
+   * @param name the savepoint name
+   *
+   * @return the savepoint handle unique within current transaction
+   */
+  @Override
+  public SavepointHandle setSavepoint(String name) {
+    if (isRemote()) {
+      try {
+        return rdel.setSavepoint(name);
+      }
+      catch (RemoteException e)  {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      assertTxRunning();
+      Savepoint savepoint = con.setSavepoint(name);
+      try {
+        SavepointHandle handle = new SavepointHandle(savepoint.getSavepointName());
+        transaction.addSavepoint(handle, savepoint);
+        return handle;
+      }
+      catch (SQLException sqx) {
+        throw new PersistenceException(this, "setting named savepoint '" + name + "' failed", sqx);
+      }
+    }
+  }
+
+  /**
+   * Undoes all changes made after the given <code>Savepoint</code> object was set.
+   *
+   * @param savepointHandle the savepoint handle
+   */
+  @Override
+  public void rollback(SavepointHandle handle) {
+    if (isRemote()) {
+      try {
+        rdel.rollback(handle);
+      }
+      catch (RemoteException e)  {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      assertTxRunning();
+      Savepoint savepoint = transaction.getSavepoint(handle);
+      if (savepoint == null) {
+        throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
+      }
+      con.rollback(savepoint);
+    }
+  }
+
+  /**
+   * Removes the specified <code>Savepoint</code> and subsequent <code>Savepoint</code> objects from the current
+   * transaction.
+   *
+   * @param savepointHandle the savepoint handle
+   */
+  @Override
+  public void releaseSavepoint(SavepointHandle handle) {
+    if (isRemote()) {
+      try {
+        rdel.rollback(handle);
+      }
+      catch (RemoteException e)  {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      assertTxRunning();
+      Savepoint savepoint = transaction.getSavepoint(handle);
+      if (savepoint == null) {
+        throw new PersistenceException(this, "no such savepoint to release: " + handle);
+      }
+      con.releaseSavepoint(savepoint);
+    }
+  }
 
 
   /**

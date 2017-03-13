@@ -19,29 +19,28 @@
 
 package org.tentackle.persist;
 
-import java.io.Serializable;
+import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import org.tentackle.pdo.PersistenceException;
+import org.tentackle.pdo.SavepointHandle;
 
 /**
  * Holder for transaction local data.
  *
  * @author harald
  */
-public class DbTransaction implements Serializable {
+public class DbTransaction {
 
   // the jvm-wide transaction counter
   private static final AtomicLong TX_COUNT = new AtomicLong();
 
   private static final String DEFAULT_TXNAME = "<unnamed>";
 
-  private static final long serialVersionUID = -3091432011090916426L;
-
-  private transient Db db;              // the db connection
+  private Db db;                        // the db connection
   private final long creationTime;      // epochal time in ms when started/created
   private final long txNumber;          // the unique transaction number
   private final String txName;          // optional transaction name
@@ -54,6 +53,7 @@ public class DbTransaction implements Serializable {
   private Map<DbTransactionHandle,PersistenceVisitor> visitors;            // the visitors
   private Map<DbTransactionHandle,CommitTxRunnable> commitTxRunnables;     // the commit runnables
   private Map<DbTransactionHandle,RollbackTxRunnable> rollbackTxRunnables; // the commit runnables
+  private Map<SavepointHandle,Savepoint> savepoints;                       // the savepoints
 
 
   /**
@@ -251,6 +251,26 @@ public class DbTransaction implements Serializable {
     return txObject;
   }
 
+
+  /**
+   * Adds a savepoint to the transaction.
+   *
+   * @param handle the handle
+   * @param savepoint the savepoint
+   */
+  public void addSavepoint(SavepointHandle handle, Savepoint savepoint) {
+    savepoints.put(handle, savepoint);
+  }
+
+  /**
+   * Gets a savepoint by handle.
+   *
+   * @param handle the handle
+   * @return savepoint the savepoint
+   */
+  public Savepoint getSavepoint(SavepointHandle handle) {
+    return savepoints.get(handle);
+  }
 
 
   @Override

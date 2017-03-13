@@ -23,6 +23,7 @@ import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -783,6 +784,70 @@ public class ManagedConnection {
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "rollback failed: " + toDiagnosticString(), ex);
+    }
+  }
+
+
+  /**
+   * Creates an unnamed savepoint in the current transaction.
+   *
+   * @return the savepoint
+   */
+  public Savepoint setSavepoint() {
+    assertAttached();
+    try {
+      return connection.setSavepoint();
+    }
+    catch (SQLException ex) {
+      throw new PersistenceException(db, "setting unnamed savepoint failed: " + toDiagnosticString(), ex);
+    }
+  }
+
+  /**
+   * Creates a savepoint with the given name in the current transaction.
+   *
+   * @param name the savepoint name
+   *
+   * @return the savepoint
+   */
+  public Savepoint setSavepoint(String name) {
+    assertAttached();
+    try {
+      return connection.setSavepoint(name);
+    }
+    catch (SQLException ex) {
+      throw new PersistenceException(db, "setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
+    }
+  }
+
+  /**
+   * Undoes all changes made after the given <code>Savepoint</code> object was set.
+   *
+   * @param savepoint the savepoint
+   */
+  public void rollback(Savepoint savepoint) {
+    assertAttached();
+    try {
+      connection.rollback(savepoint);
+    }
+    catch (SQLException ex) {
+      throw new PersistenceException(db, "rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+    }
+  }
+
+  /**
+   * Removes the specified <code>Savepoint</code> and subsequent <code>Savepoint</code> objects from the current
+   * transaction.
+   *
+   * @param savepoint the savepoint to be removed
+   */
+  public void releaseSavepoint(Savepoint savepoint) {
+    assertAttached();
+    try {
+      connection.releaseSavepoint(savepoint);
+    }
+    catch (SQLException ex) {
+      throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
     }
   }
 

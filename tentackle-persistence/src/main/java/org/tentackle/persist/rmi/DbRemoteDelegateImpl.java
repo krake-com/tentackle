@@ -25,9 +25,9 @@ import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.List;
+import org.tentackle.pdo.SavepointHandle;
 import org.tentackle.persist.CommitTxRunnable;
 import org.tentackle.persist.Db;
-import org.tentackle.persist.DbTransaction;
 import org.tentackle.persist.DbTransactionHandle;
 import org.tentackle.persist.ModificationLog;
 import org.tentackle.persist.PersistenceVisitor;
@@ -141,9 +141,49 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   }
 
   @Override
-  public DbTransaction begin(String txName) throws RemoteException {
+  public long begin(String txName) throws RemoteException {
     try {
-      return (DbTransaction) beginMethod.invoke(getSession(), txName, true);
+      return (long) beginMethod.invoke(getSession(), txName, true);
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public SavepointHandle setSavepoint() throws RemoteException {
+    try {
+      return getSession().setSavepoint();
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public SavepointHandle setSavepoint(String name) throws RemoteException {
+    try {
+      return getSession().setSavepoint(name);
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public void rollback(SavepointHandle handle) throws RemoteException {
+    try {
+      getSession().rollback(handle);
+    }
+    catch (Exception ex)  {
+      throw createException(ex);
+    }
+  }
+
+  @Override
+  public void releaseSavepoint(SavepointHandle handle) throws RemoteException {
+    try {
+      getSession().releaseSavepoint(handle);
     }
     catch (Exception ex)  {
       throw createException(ex);
