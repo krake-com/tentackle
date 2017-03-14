@@ -709,7 +709,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             prefNode.saveObject();
             db.releaseSavepoint(sh);
           }
-          catch (ConstraintException cx) {
+          catch (ConstraintException | NotFoundException cx) {
             // already persisted -> ignore
             db.rollback(sh);
             // load from backend
@@ -745,7 +745,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
                 prefKey.saveObject();
                 db.releaseSavepoint(sh);
               }
-              catch (ConstraintException cx) {
+              catch (ConstraintException | NotFoundException cx) {
                 db.rollback(sh);    // already persisted
                 prefKey = new DbPreferencesKey(db).selectByNodeIdAndKey(prefNode.getId(), prefKey.getKey());
                 if (prefKey == null) {
