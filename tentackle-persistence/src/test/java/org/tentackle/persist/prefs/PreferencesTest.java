@@ -68,7 +68,7 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     Reporter.log("key changed: " + evt + "<br/>");
   }
 
-  @Test
+  @Test(priority = 0)
   public void writePreferences() throws Exception {
     PersistedPreferencesFactory.getInstance().invalidate();
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(PreferencesTest.class);

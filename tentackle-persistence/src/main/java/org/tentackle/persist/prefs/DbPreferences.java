@@ -707,6 +707,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
           SavepointHandle sh = db.setSavepoint();
           try {
             prefNode.saveObject();
+            db.releaseSavepoint(sh);
           }
           catch (ConstraintException cx) {
             // already persisted -> ignore
@@ -742,6 +743,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
               SavepointHandle sh = db.setSavepoint();
               try {
                 prefKey.saveObject();
+                db.releaseSavepoint(sh);
               }
               catch (ConstraintException cx) {
                 db.rollback(sh);    // already persisted
