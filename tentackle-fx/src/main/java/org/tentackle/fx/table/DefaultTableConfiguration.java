@@ -31,7 +31,10 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 
@@ -42,6 +45,11 @@ import org.tentackle.reflect.ReflectionHelper;
  * @author harald
  */
 public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
+
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTableConfiguration.class);
 
   /** preferences key for table width. */
   private static final String PREF_TABLE_WIDTH = "width";
@@ -228,7 +236,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       prefs.putDouble(PREF_TABLE_HEIGHT, height);
       prefs.putDouble(PREF_TABLE_WIDTH, table.getWidth());
 
-      prefs.flush();
+      try {
+        prefs.flush();
+      }
+      catch (PreferencesInvalidException pix) {
+        // ignore if changed meanwhile, just log that (would confuse user)
+        LOGGER.warning(pix.toString());
+      }
     }
     catch (BackingStoreException | RuntimeException ex) {
       throw new FxRuntimeException("saving table preferences failed for '" + prefName + "'", ex);

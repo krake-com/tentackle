@@ -108,6 +108,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isReleaseSavepointSupported() {
+    return true;
+  }
+
+  @Override
   public boolean needTxForFetchsize() {
     return true;
   }

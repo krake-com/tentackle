@@ -912,4 +912,13 @@ public interface Backend {
    */
   String optimizeSql(String sql);
 
+
+  /**
+   * Returns whether the backend supports releasing savepoints explicitly.
+   * If not, the savepoints are released when the transaction finishs.
+   *
+   * @return true if release is supported, else false
+   */
+  boolean isReleaseSavepointSupported();
+
 }

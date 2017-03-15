@@ -938,7 +938,12 @@ public abstract class AbstractBackend implements Backend {
     return buf.toString();
   }
 
+  @Override
+  public boolean isReleaseSavepointSupported() {
+    return false;
+  }
 
+  
   /**
    * Checks if the exception's state starts with a given string.
    *

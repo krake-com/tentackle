@@ -843,11 +843,13 @@ public class ManagedConnection {
    */
   public void releaseSavepoint(Savepoint savepoint) {
     assertAttached();
-    try {
-      connection.releaseSavepoint(savepoint);
-    }
-    catch (SQLException ex) {
-      throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+    if (db.getBackend().isReleaseSavepointSupported()) {
+      try {
+        connection.releaseSavepoint(savepoint);
+      }
+      catch (SQLException ex) {
+        throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+      }
     }
   }
 
