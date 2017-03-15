@@ -47,6 +47,7 @@ import org.tentackle.pdo.Session;
 import org.tentackle.persist.Db;
 import org.tentackle.persist.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.prefs.PreferencesInvalidException;
 
 
 /**
@@ -432,17 +433,20 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
   public synchronized void flush(DbPreferences node) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
     try {
-      db.transaction(() -> {
+      boolean updated = db.transaction(() -> {
         try {
-          new DbPreferencesOperation(db).flush(node);
+          return new DbPreferencesOperation(db).flush(node);
         }
         catch (RuntimeException rex) {
           // remove the root node from the repo (forces reload on next access)
           removeRoot(node);
           throw rex;
         }
-        return null;
       });
+
+      if (updated) {
+        throw new PreferencesInvalidException(node.toString());
+      }
     }
     catch (RuntimeException rex) {
       throw new BackingStoreException(rex);
@@ -657,15 +661,19 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           removeRoot(root.node);   // force reload next access
         }
         else {
+          boolean updated = false;
           DbPreferencesKey key = node.getPersistentKey(prefKey.getKey());
           if (key == null) {
             node.putPersistentKey(prefKey);
             idKeyMap.put(prefKey.getId(), prefKey);
+            updated = true;
           }
           else {
-            node.updatePersistentKey(prefKey);
+            updated = node.updatePersistentKey(prefKey);
           }
-          keyChanged(node, prefKey);
+          if (updated) {
+            keyChanged(node, prefKey);
+          }
         }
       }
 
@@ -760,8 +768,9 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       if (prefKey.getRootNodeId() == rootId) {
         DbPreferences node = idNodeMap.get(prefKey.getNodeId());    // must exist now
         if (node != null) {
-          node.updatePersistentKey(prefKey);
-          keyChanged(node, prefKey);
+          if (node.updatePersistentKey(prefKey)) {
+            keyChanged(node, prefKey);
+          }
         }
         else {
           LOGGER.warning("node ID=" + prefKey.getNodeId() + " valinished for key " + prefKey);

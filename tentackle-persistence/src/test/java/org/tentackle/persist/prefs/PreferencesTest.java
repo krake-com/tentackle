@@ -28,6 +28,7 @@ import org.tentackle.persist.AbstractDbTest;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.testng.Reporter;
+import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -68,8 +69,20 @@ public class PreferencesTest extends AbstractDbTest implements NodeChangeListene
     Reporter.log("key changed: " + evt + "<br/>");
   }
 
+  @BeforeSuite
+  public void cleanup() {
+    // always cleanup for sure (there is no DbPreNode/Key.deleteAll)
+    for (DbPreferencesNode node : new DbPreferencesNode(getSession()).selectAllObjects()) {
+      node.deletePlain();     // don't trigger modcounts
+      for (DbPreferencesKey key : new DbPreferencesKey(getSession()).selectByNodeId(node.getId())) {
+        key.deletePlain();
+      }
+    }
+  }
+
   @Test(priority = 0)
   public void writePreferences() throws Exception {
+
     PersistedPreferencesFactory.getInstance().invalidate();
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(PreferencesTest.class);
     prefs.put(KEY_1, VALUE_1);

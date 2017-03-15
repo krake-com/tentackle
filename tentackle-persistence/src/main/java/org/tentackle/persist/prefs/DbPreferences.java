@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -76,7 +77,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   private final DbPreferences parent;                   // the parent node, null if this is a root
   private final String absolutePath;                    // the absolute path
   private final String name;                            // the name relative to the parent
-  private DbPreferencesNode prefNode;                   // the persistent node
+  private final DbPreferencesNode prefNode;             // the persistent node
 
   private final Map<String,DbPreferences> childMap;     // childs of this node <subname:node>
   private final Map<String,DbPreferencesKey> keyMap;    // keys of this node <key:value>
@@ -492,6 +493,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     this.prefNode.setSerial(prefNode.getSerial());
     this.prefNode.setTableSerial(prefNode.getTableSerial());
     this.prefNode.setRemoved(prefNode.isRemoved());
+    this.prefNode.setModified(false);
     // the other attributes don't ever change in a node
     return notPersisted != prefNode.isNew();
   }
@@ -589,9 +591,9 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    * Updates the persistent key.
    *
    * @param key the key
-   * @return null if key added, else the old key's value
+   * @return true if persistence status changed
    */
-  public String updatePersistentKey(DbPreferencesKey key) {
+  public boolean updatePersistentKey(DbPreferencesKey key) {
     String oldValue = null;
     DbPreferencesKey existingKey = getPersistentKey(key.getKey());
     if (existingKey != null) {
@@ -601,11 +603,13 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       existingKey.setSerial(key.getSerial());
       existingKey.setTableSerial(key.getTableSerial());
       existingKey.setRemoved(key.isRemoved());
+      existingKey.setModified(false);
     }
     else {
+      key.setModified(false);
       putPersistentKey(key);
     }
-    return oldValue;
+    return !Objects.equals(oldValue, key.getValue());
   }
 
   /**
@@ -649,8 +653,11 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   /**
    * Recursive implementation of flush.
+   *
+   * @return true if some nodes or keys were updated from storage
    */
-  protected void flushImpl(Db db) {
+  protected boolean flushImpl(Db db) {
+    boolean updated = false;
     prefNode.setSession(db);
     try {
       if (prefNode.isRemoved()) {
@@ -713,15 +720,21 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             // already persisted -> ignore
             db.rollback(sh);
             // load from backend
-            prefNode = new DbPreferencesNode(db).selectByUserAndName(prefNode.getUser(), prefNode.getName());
-            if (prefNode == null) {
-              throw cx;
+            DbPreferencesNode updatedNode = new DbPreferencesNode(db).selectByUserAndName(prefNode.getUser(), prefNode.getName());
+            if (updatedNode == null) {
+              // node removed in the meantime
+              prefNode.setRemoved(true);
+              return flushImpl(db) || updated;    // start over
             }
+            updatePersistentNode(updatedNode);
+            // don't treat as updated if node just added meanwhile
           }
           getFactory().nodeChanged(this);
         }
 
-        for (DbPreferencesKey prefKey: keyMap.values()) {
+        for (Iterator<Map.Entry<String,DbPreferencesKey>> iter = keyMap.entrySet().iterator();
+             iter.hasNext(); ) {
+          DbPreferencesKey prefKey = iter.next().getValue();
           prefKey.setSession(db);
           try {
             if (prefKey.isRemoved()) {
@@ -734,6 +747,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
                 }
                 getFactory().keyChanged(this, prefKey);
               }
+              iter.remove();
             }
             else if (prefKey.isModified()) {
               if (prefKey.isNew()) {
@@ -747,9 +761,15 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
               }
               catch (ConstraintException | NotFoundException cx) {
                 db.rollback(sh);    // already persisted
-                prefKey = new DbPreferencesKey(db).selectByNodeIdAndKey(prefNode.getId(), prefKey.getKey());
-                if (prefKey == null) {
-                  throw cx;
+                DbPreferencesKey updatedKey = new DbPreferencesKey(db).selectByNodeIdAndKey(prefNode.getId(), prefKey.getKey());
+                if (updatedKey == null) {
+                  // key removed in the meantime
+                  prefKey.setRemoved(true);
+                  iter.remove();
+                  updated = true;
+                }
+                else {
+                  updated |= updatePersistentKey(updatedKey);
                 }
               }
               getFactory().keyChanged(this, prefKey);
@@ -760,10 +780,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
           }
         }
 
-        for (DbPreferences child: childMap.values()) {
-          child.flushImpl(db);
+        for (Iterator<Map.Entry<String,DbPreferences>> iter = childMap.entrySet().iterator();
+             iter.hasNext(); ) {
+          DbPreferences child = iter.next().getValue();
+          updated |= child.flushImpl(db);
+          if (child.getPersistentNode().isRemoved()) {
+            iter.remove();
+          }
         }
       }
+      return updated;
     }
     finally {
       prefNode.setSession(null);

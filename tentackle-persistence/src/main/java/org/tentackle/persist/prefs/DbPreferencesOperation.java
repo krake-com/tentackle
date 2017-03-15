@@ -172,16 +172,20 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * Flushes a node back to storage.
    *
    * @param node the node
+   * @return true if some nodes or keys were updated from storage
    */
-  public void flush(DbPreferences node) {
+  public boolean flush(DbPreferences node) {
     // go up the tree until the first persisted node or the root node
     while (!node.isRootNode() && node.getPersistentNode().isNew()) {
       node = node.parent();
     }
 
+    DbPreferences topNode = node;
+    boolean updated = false;
+
     if (getSession().isRemote()) {
       try {
-        getRemoteDelegate().flush(node);
+        updated = getRemoteDelegate().flush(node);
         // updated ids and serials will be provided by the mod listeners
       }
       catch (RemoteException rex) {
@@ -191,18 +195,13 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     else {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
         Db db = getSession();
-        long txVoucher = db.begin("flush");
-        try {
-          node.flushImpl(db);
-          db.commit(txVoucher);
-        }
-        catch (Exception ex) {
-          db.rollback(txVoucher);
-          LOGGER.severe("root node of " + node + " removed from preferences repository", ex);
-          throw ex;
-        }
+        updated = db.transaction(() -> {
+          return topNode.flushImpl(db);
+        } , "flush");
       }
     }
+
+    return updated;
   }
 
 

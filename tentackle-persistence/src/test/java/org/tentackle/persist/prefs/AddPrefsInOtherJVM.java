@@ -18,6 +18,8 @@
 
 package org.tentackle.persist.prefs;
 
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.Session;
@@ -30,6 +32,11 @@ import org.tentackle.prefs.PersistedPreferences;
  * @author harald
  */
 public class AddPrefsInOtherJVM {
+
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(AddPrefsInOtherJVM.class);
 
   // not annotated with @Test because invoked from shell!
   private static void addNode() throws Exception {
@@ -53,7 +60,9 @@ public class AddPrefsInOtherJVM {
       addNode();
     }
     catch (Exception ex) {
-      System.err.println("execution failed" + ex);
+      System.out.println("execution failed:");
+      ex.printStackTrace();
+      System.exit(1);
     }
   }
 }

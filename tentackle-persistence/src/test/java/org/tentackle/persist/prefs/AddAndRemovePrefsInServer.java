@@ -121,7 +121,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
         try {
           PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
           prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
-          PersistedPreferences.systemRoot().flush();
+          prefs.flush();
         }
         catch (Exception bx) {
           LOGGER.severe("adding prefs failed", bx);
@@ -140,7 +140,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
         try {
           PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
           prefs.removeNode();
-          PersistedPreferences.systemRoot().flush();
+          prefs.flush();
         }
         catch (Exception bx) {
           LOGGER.severe("removing prefs failed", bx);
@@ -200,10 +200,16 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
    * @param args command line arguments
    */
   public static void main(final String[] args) {
-    AddAndRemovePrefsInServer server = new AddAndRemovePrefsInServer();
-    server.start(args);
-    server.runTests();
-    server.stop();
+    try {
+      AddAndRemovePrefsInServer server = new AddAndRemovePrefsInServer();
+      server.start(args);
+      server.runTests();
+      server.stop();
+    }
+    catch (Exception ex) {
+      ex.printStackTrace();
+      System.exit(1);
+    }
   }
 
 }
