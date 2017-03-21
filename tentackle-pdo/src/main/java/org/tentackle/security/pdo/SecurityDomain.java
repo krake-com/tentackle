@@ -37,7 +37,7 @@ public interface SecurityDomain extends DomainObject<Security> {
    * <p>
    * The method is only invoked for rules that apply to the object and/or class in question.
    * Notice further, that the given {@link DomainContext} may point to a different
-   * {@link org.tentackle.pdo.Session} than this security rule belongs to.
+   * {@link org.tentackle.session.Session} than this security rule belongs to.
    *
    * @param context the domain context the object or class is used in, null = all
    * @param permission the requested permission
