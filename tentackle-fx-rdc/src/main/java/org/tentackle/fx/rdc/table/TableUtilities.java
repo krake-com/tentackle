@@ -259,6 +259,7 @@ public class TableUtilities {
    * Tables need a special handling for multiple pages.
    *
    * @param table the table to print
+   * @param title the optional title, null if take from table's configuration
    */
   public void print(FxTableView<?> table, String title) {
     final PrinterJob job = PrinterJob.createPrinterJob();
