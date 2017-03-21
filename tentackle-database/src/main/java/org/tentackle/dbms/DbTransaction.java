@@ -436,7 +436,7 @@ public class DbTransaction {
    * @param object the persistence object
    * @param modType the modification type
    * @return true if allowed
-   * @see #registerPersistenceVisitor(org.tentackle.persist.PersistenceVisitor)
+   * @see #registerPersistenceVisitor(org.tentackle.dbms.PersistenceVisitor) 
    */
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
     if (visitors != null) {

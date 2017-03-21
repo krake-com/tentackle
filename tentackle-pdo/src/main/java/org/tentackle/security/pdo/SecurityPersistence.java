@@ -288,7 +288,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
   /**
    * Makes sure that the remote security manager is up to date.
    * The method is necessary to avoid situations where
-   * {@link org.tentackle.security.DefaultSecurityManager#initialize(org.tentackle.pdo.Session)}
+   * {@link org.tentackle.security.DefaultSecurityManager#initialize(org.tentackle.session.Session)}
    * at the client side will need some data that in turn is security-checked and
    * that would trigger the remote SecurityManager to be initialized as well.
    * This could lead to a statement being marked ready twice in the server

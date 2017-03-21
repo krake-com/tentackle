@@ -1527,7 +1527,7 @@ public class Db implements Session, Cloneable {
   /**
    * Undoes all changes made after the given <code>Savepoint</code> object was set.
    *
-   * @param savepointHandle the savepoint handle
+   * @param handle the savepoint handle
    */
   @Override
   public void rollback(SavepointHandle handle) {
@@ -1553,7 +1553,7 @@ public class Db implements Session, Cloneable {
    * Removes the specified <code>Savepoint</code> and subsequent <code>Savepoint</code> objects from the current
    * transaction.
    *
-   * @param savepointHandle the savepoint handle
+   * @param handle the savepoint handle
    */
   @Override
   public void releaseSavepoint(SavepointHandle handle) {
@@ -1651,7 +1651,7 @@ public class Db implements Session, Cloneable {
    *
    * @param visitor the visitor to register
    * @return a handle uniquely referring to the visitor
-   * @see #isPersistenceOperationAllowed(org.tentackle.persist.AbstractDbObject, char)
+   * @see #isPersistenceOperationAllowed(AbstractDbObject, char)
    */
   public DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor) {
     if (isRemote()) {
@@ -1717,7 +1717,7 @@ public class Db implements Session, Cloneable {
    * @param object the persistence object
    * @param modType the modification type
    * @return true if allowed
-   * @see #registerPersistenceVisitor(org.tentackle.persist.PersistenceVisitor)
+   * @see #registerPersistenceVisitor(PersistenceVisitor)
    */
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
     return transaction == null || transaction.isPersistenceOperationAllowed(object, modType);
@@ -2963,7 +2963,7 @@ public class Db implements Session, Cloneable {
    * Works for local and remote databases.
    *
    * @return the logs, null = no logs
-   * @see #pushModificationLogOfTransaction(org.tentackle.persist.ModificationLog)
+   * @see #pushModificationLogOfTransaction(ModificationLog)
    */
   public List<ModificationLog> popModificationLogsOfTransaction() {
     assertOpen();

@@ -110,7 +110,7 @@ public class StatementWrapper implements AutoCloseable {
   /**
    * Returns whether parallel execution on same connection should be logged.
    *
-   * @see ManagedConnection#logNestedResultSets
+   * @see ManagedConnection#logLevelForParallelOpenResultSets
    * @return true if parallel is select ok
    */
   public boolean isParallelOk() {

@@ -152,9 +152,9 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * Checks the client's version information.
    * <p>
    * The default implementation does nothing.
-   * It is invoked from {@link org.tentackle.persist.Db#open()} for remote connections.
+   * It is invoked from {@link org.tentackle.dbms.Db#open()} for remote connections.
    *
-   * @param clientVersionInfo the server's version info from {@link org.tentackle.persist.rmi.RemoteDbConnection}.
+   * @param clientVersionInfo the server's version info from {@link org.tentackle.dbms.rmi.RemoteDbConnection}.
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
   public void checkClientVersionInfo(Serializable clientVersionInfo) throws VersionInfoIncompatibleException {

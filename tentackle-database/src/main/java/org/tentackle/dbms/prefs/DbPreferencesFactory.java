@@ -352,7 +352,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Listeners have to be removed by the application explicitly.
    *
    * @param node the node
-   * @param pcl the listener
+   * @param ncl the listener
    */
   public synchronized void addNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);
@@ -368,7 +368,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Removes a node listener.
    *
    * @param node the node
-   * @param pcl the listener
+   * @param ncl the listener
    */
   public synchronized void removeNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);

@@ -26,9 +26,8 @@ import org.tentackle.log.LoggerFactory;
 
 /**
  * A visitor to ignore duplicates within a persistence operation.<br>
- * Used to avoid duplicate key errors
- * (for example in {@link org.tentackle.pdo.AbstractPersistentObject#insertPlainWithComponents()}),
- * if components are referenced more than once within the same root entity.
+ * Used to avoid duplicate key errors, for example, if components are referenced more than once
+ * within the same root entity.
  *
  * @author harald
  */

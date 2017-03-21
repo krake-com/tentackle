@@ -32,7 +32,7 @@ import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.SavepointHandle;
 
 /**
- * Remote delegate interface for {@link org.tentackle.persist.Db}.
+ * Remote delegate interface for {@link org.tentackle.dbms.Db}.
  *
  * @author harald
  */

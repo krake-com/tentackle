@@ -23,7 +23,7 @@ import java.util.TreeSet;
 import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.common.Service;
-import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
 import org.tentackle.swing.bind.FormComponentBinding;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
@@ -38,7 +38,8 @@ import org.tentackle.validate.ValidationUtilities;
 public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
 
   @Override
-  public InteractiveError createInteractiveError(TreeSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult) {
+  public InteractiveError createInteractiveError(TreeSet<ValidationMapper> mappers, Binder binder,
+                                                 ValidationResult validationResult) {
 
     DefaultInteractiveError error = new DefaultInteractiveError();
     error.setValidationResult(validationResult);
@@ -57,8 +58,8 @@ public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
   }
 
   @Override
-  public InteractiveError createInteractiveError(String text, Logger.Level level, String errorCode,
-          ValidationResult validationResult, Object uiComponent) {
+  public InteractiveError createInteractiveError(String text, Level level, String errorCode,
+                                                 ValidationResult validationResult, Object uiComponent) {
     return new DefaultInteractiveError(text, level, errorCode, validationResult, uiComponent);
   }
 

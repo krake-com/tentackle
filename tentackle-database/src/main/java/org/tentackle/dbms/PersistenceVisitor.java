@@ -33,11 +33,11 @@ import org.tentackle.reflect.ReflectiveVisitor;
  * <p>
  * The methods are invoked in the following order:
  * <ol>
- * <li>{@code visit(org.tentackle.db.DbObject, Character)} which in turn invokes the type-specific visit method</li>
- * <li>{@code isPersistenceOperationAllowed(org.tentackle.db.DbObject, char)}</li>
+ * <li>{@code visit(org.tentackle.dbms.AbstractDbObject, Character)} which in turn invokes the type-specific visit method</li>
+ * <li>{@code isPersistenceOperationAllowed(org.tentackle.dbms.AbstractDbObject, char)}</li>
  * </ol>
  *
- * A visitor may also throw a {@link org.tentackle.pdo.PersistenceException} if the operation must not continue.
+ * A visitor may also throw a {@link org.tentackle.session.PersistenceException} if the operation must not continue.
  * <p>
  * The effective visit method for the concrete persistence class is determined by reflection.
  * The most specific method will be used, which allows to use a method for a class hierarchy.

@@ -808,14 +808,10 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /**
    * Gets the db object referenced by this ModificationLog.<br>
-   * The object is lazily cached if the given db equals
-   * the db of this modlog.
-   * <p>
-   * If the returned object is a {@link org.tentackle.pdo.PersistentObject},
-   * it's getPdo() (or pdo()) method will point to the PDO.
-   * Otherwise it's a low level {@link AbstractDbObject}.
+   * The object is lazily cached if the given session equals
+   * the session of this modlog.
    *
-   * @param <T> the expected type
+   * @param <T> the expected returned type
    * @param session is the session from which to load the object.
    * @return the object or null if not found
    */
@@ -847,12 +843,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * Gets the object referenced by this ModificationLog.
+   * Gets the object referenced by this ModificationLog.<br>
    * The object is lazily cached.
-   * <p>
-   * If the returned object is a {@link org.tentackle.pdo.PersistentObject},
-   * it's getPdo() (or pdo()) method will point to the PDO.
-   * Otherwise it's a low level {@link AbstractDbObject}.
    *
    * @return the object or null if not found.
    */

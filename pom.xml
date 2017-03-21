@@ -77,6 +77,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.version.src>1.8</javac.version.src>
     <javac.version.target>1.8</javac.version.target>
     <javac.version.require>1.8.0-45</javac.version.require>

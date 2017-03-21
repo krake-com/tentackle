@@ -38,9 +38,7 @@ import org.tentackle.session.SessionPool;
  * The pool can be used with any ConnectionManager.
  * If used with the {@link DefaultConnectionManager}, each {@link Db} instance corresponds to a
  * physical JDBC-connection. If used with an {@link MpxConnectionManager}, the {@link Db} instances
- * map to virtual connections that will be attached temporarily during db-operations,
- * i.e. the {@link org.tentackle.pdo.PdoCache} will retain its data across sessions
- * (if not closed due to idle timeout).
+ * map to virtual connections that will be attached temporarily during db-operations.
  * This is the preferred configuration in server applications with a lot of clients.
  * In order to clear the PdoCache on db-close, you have to override the closeDb method.
  */

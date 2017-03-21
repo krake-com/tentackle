@@ -115,7 +115,8 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   /**
    * {@inheritDoc}
    * <p>
-   * In fact, {@link PersistentOperationClassVariables} is an extension of {@link DbObjectClassVariables}.
+   * In fact, {@link PersistentOperationClassVariables} is an extension of
+   * {@link org.tentackle.dbms.DbOperationClassVariables}.
    * So this fullfills the requirements for AbstractDbObject
    */
   @Override

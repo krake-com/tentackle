@@ -2057,9 +2057,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Does any update postprocessing for objects not being updated (because not modified
-   * for some reason, e.g. only components modified).
-   * The default implementation does nothing. See {@link org.tentackle.persist.pdo.AbstractPersistentObject}.
+   * Does any update postprocessing for objects not being updated.<br>
+   * Necessary, because not modified for some reason, e.g. only components modified.<br>
+   * The default implementation does nothing.
    *
    * @param modType is the modification type: DELETE, INSERT or UPDATE
    */
