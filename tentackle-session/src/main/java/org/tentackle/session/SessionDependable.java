@@ -20,7 +20,7 @@
 package org.tentackle.session;
 
 /**
- * Interface all {@link PersistentObject}s must implement.<br>
+ * Interface for objects depending on sessions.<br>
  *
  * @see Session
  * @author harald

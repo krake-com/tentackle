@@ -20,7 +20,7 @@ package org.tentackle.session;
 
 /**
  * An envelope for the execution within a transaction.<br>
- * Provided as an alternative to the {@link Transaction}-interceptor
+ * Provided as an alternative to the {@code @Transaction}-interceptor
  * if the class holding the implementation of the transaction is no {@link org.tentackle.reflect.Interceptable}.
  * <p>
  * Usage:
