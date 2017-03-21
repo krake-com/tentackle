@@ -35,7 +35,7 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 /**
  * Bundle control to use stored bundles.

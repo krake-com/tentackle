@@ -19,6 +19,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.session.SessionProvider;
+
 /**
  * The domain interface.
  *

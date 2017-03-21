@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.session.Session;
 
 
 interface PdoFactory$Singleton {

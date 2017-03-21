@@ -40,10 +40,10 @@ import org.tentackle.maven.ProjectClassLoader;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
 
 
 /**
@@ -162,7 +162,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       session.open();
       context = Pdo.createDomainContext(session);
 
-      PdoTracker pdoTracker = PdoTracker.getInstance();   // create tracker but don't start the thread
+      ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
       pdoTracker.setSession(session);
 
       ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);

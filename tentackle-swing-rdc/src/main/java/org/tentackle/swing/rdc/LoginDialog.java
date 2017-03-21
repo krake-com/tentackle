@@ -19,7 +19,8 @@
 
 package org.tentackle.swing.rdc;
 
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.SessionInfo;
+
 
 /**
  * A generic login dialog.

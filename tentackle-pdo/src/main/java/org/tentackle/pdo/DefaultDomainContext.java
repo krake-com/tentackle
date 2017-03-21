@@ -24,6 +24,9 @@ package org.tentackle.pdo;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
 
 
 /**

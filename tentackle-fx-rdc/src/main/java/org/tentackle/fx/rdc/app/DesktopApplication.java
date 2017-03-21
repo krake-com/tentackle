@@ -41,12 +41,12 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
 
 /**
  * Java FX tentackle desktop application.
@@ -356,7 +356,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * In deskop client apps there are 2 threads using their own session:
    * <ol>
    * <li>the FX thread</li>
-   * <li>the PdoTracker thread</li>
+   * <li>the ModificationTracker thread</li>
    * </ol>
    * By using the thread-local session, PDOs can be used from both threads
    * without having to worry about the correct session.
@@ -450,12 +450,12 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   }
 
   @Override
-  protected void configurePdoTracker() {
+  protected void configureModificationTracker() {
     showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE MONITORING..."), 0.2);
-    super.configurePdoTracker();
+    super.configureModificationTracker();
     Session trackerSession = getSession().clone();          // already open
     trackerSession.groupWith(getSession().getSessionId());  // build group
-    PdoTracker.getInstance().setSession(trackerSession);
+    ModificationTracker.getInstance().setSession(trackerSession);
   }
 
 
@@ -475,8 +475,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     FxUtilities.getInstance().addTentackleStyleSheet();
 
     // add a shutdown handler in case the modthread terminates unexpectedly
-    PdoTracker.getInstance().addShutdownRunnable(() -> {
-      if (!PdoTracker.getInstance().isTerminationRequested()) {
+    ModificationTracker.getInstance().addShutdownRunnable(() -> {
+      if (!ModificationTracker.getInstance().isTerminationRequested()) {
         LOGGER.severe("*** emergency shutdown ***");
         doStop(5);
       }

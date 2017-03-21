@@ -20,6 +20,8 @@
 package org.tentackle.pdo;
 
 import java.io.Serializable;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 
 /**

@@ -21,13 +21,14 @@ package org.tentackle.persist;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 /**
  * A cursor for a {@link ResultSetWrapper}.

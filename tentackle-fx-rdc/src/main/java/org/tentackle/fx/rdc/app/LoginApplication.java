@@ -31,8 +31,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
-import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.SessionInfo;
 
 /**
  * The doLogin FX application.

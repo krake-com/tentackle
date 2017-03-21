@@ -23,21 +23,23 @@ import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.prefs.DbPreferencesKey;
+import org.tentackle.dbms.prefs.DbPreferencesNode;
+import org.tentackle.dbms.rmi.DbServer;
+import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
+import org.tentackle.dbms.rmi.RemoteDbSession;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.AbstractSessionTask;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.LoginFailedException;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.SessionInfo;
-import org.tentackle.persist.Db;
 import org.tentackle.persist.app.ServerApplication;
-import org.tentackle.persist.rmi.DbServer;
-import org.tentackle.persist.rmi.RemoteDbConnectionImpl;
-import org.tentackle.persist.rmi.RemoteDbSession;
-import org.tentackle.persist.rmi.RemoteDbSessionImpl;
 import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.SessionInfo;
 
 /**
  *
@@ -98,9 +100,9 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   }
 
   @Override
-  protected void configurePdoTracker() {
-    super.configurePdoTracker();
-    PdoTracker.getInstance().setSleepInterval(250);
+  protected void configureModificationTracker() {
+    super.configureModificationTracker();
+    ModificationTracker.getInstance().setSleepInterval(250);
   }
 
 
@@ -114,13 +116,13 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
 
   private void addPreferences() {
-    PdoTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+    ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {
         try {
-          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
-          prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
+          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class).node("other");
+          prefs.put(RemotePreferencesTest.KEY_4, RemotePreferencesTest.VALUE_4);
           prefs.flush();
         }
         catch (Exception bx) {
@@ -133,12 +135,12 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
 
   private void removePreferences() {
-    PdoTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+    ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {
         try {
-          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
+          PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddAndRemovePrefsInServer.class).node("other");
           prefs.removeNode();
           prefs.flush();
         }
@@ -152,7 +154,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
 
   private void cleanup() {
-    PdoTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
+    ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {

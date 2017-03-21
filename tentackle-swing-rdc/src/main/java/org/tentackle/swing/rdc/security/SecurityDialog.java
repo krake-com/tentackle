@@ -32,6 +32,7 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.swing.AcceptDenyCheckBox;
 import org.tentackle.swing.FormDialog;
 import org.tentackle.swing.FormError;
@@ -101,7 +102,7 @@ public class SecurityDialog extends FormDialog {
 
     initComponents();
 
-    pdoClassId = PdoUtilities.getInstance().getClassId(clazz.getName());
+    pdoClassId = SessionUtilities.getInstance().getClassId(clazz.getName());
     className = pdoClassId != 0 ? null : clazz.getName();
 
     // create empty instance of a Security object to load the rules

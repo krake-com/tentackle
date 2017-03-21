@@ -26,8 +26,8 @@ import java.io.Reader;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -76,21 +76,21 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   @BeforeSuite
-  public static void openSessionsAndStartPdoTracker() throws Exception {
+  public static void openSessionsAndStartModificationTracker() throws Exception {
     session = Pdo.createSession();
     session.open();
     session.makeCurrent();
     context = Pdo.createDomainContext();
 
-    PdoTracker tracker = PdoTracker.getInstance();
+    ModificationTracker tracker = ModificationTracker.getInstance();
     tracker.setSession(session.clone());
     tracker.setSleepInterval(500);   // fast polling for tests
     tracker.start();
   }
 
   @AfterSuite
-  public static void closeSessionsAndTerminatePdoTracker() throws Exception {
-    PdoTracker.getInstance().terminate();
+  public static void closeSessionsAndTerminateModificationTracker() throws Exception {
+    ModificationTracker.getInstance().terminate();
     session.close();
   }
 

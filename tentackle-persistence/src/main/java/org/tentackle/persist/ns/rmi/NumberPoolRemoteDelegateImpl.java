@@ -10,7 +10,7 @@ import org.tentackle.persist.ns.NumberPoolPersistenceImpl;
 import java.rmi.RemoteException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegateImpl;
-import org.tentackle.persist.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 
 
 /**

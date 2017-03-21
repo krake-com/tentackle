@@ -24,7 +24,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 /**
  * The abstract domain operation.

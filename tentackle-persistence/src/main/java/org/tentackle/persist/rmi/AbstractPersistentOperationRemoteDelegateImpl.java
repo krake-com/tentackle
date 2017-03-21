@@ -20,11 +20,13 @@
 package org.tentackle.persist.rmi;
 
 import java.rmi.RemoteException;
+import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegateImpl;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistenceException;
+import org.tentackle.session.PersistenceException;
 
 
 

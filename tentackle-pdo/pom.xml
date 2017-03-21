@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-core</artifactId>
+      <artifactId>tentackle-session</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -103,6 +103,7 @@
           <filesets>
             <fileset>
               <includes>
+                <!-- wurb files must come first (because in same module) -->
                 <include>**/*.wurb</include>
               </includes>
               <followSymlinks>false</followSymlinks>

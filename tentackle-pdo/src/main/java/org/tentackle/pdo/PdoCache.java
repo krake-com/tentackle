@@ -38,6 +38,8 @@ import org.tentackle.misc.ImmutableArrayList;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.permissions.ReadPermission;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
 
 
 
@@ -595,7 +597,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * update minTableSerial
    */
   private long selectCurrentTableSerial(Session session) {
-    return PdoTracker.getInstance().getSerial(clazz);
+    return ModificationTracker.getInstance().getSerial(clazz);
   }
 
 

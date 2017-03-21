@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import org.tentackle.common.Service;
+import org.tentackle.session.Session;
 
 /**
  * Default domain context factory.

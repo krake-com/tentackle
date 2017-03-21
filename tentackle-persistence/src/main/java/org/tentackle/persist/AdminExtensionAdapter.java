@@ -23,8 +23,8 @@ import java.util.List;
 import org.tentackle.common.Service;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.rmi.AdminExtensionRemoteDelegate;
+import org.tentackle.persist.rmi.AdminExtensionRemoteDelegate;
+import org.tentackle.session.PersistenceException;
 
 /**
  * Adapter hiding the rmi-stuff for the admin session extension.
@@ -40,7 +40,7 @@ public class AdminExtensionAdapter implements AdminExtension {
   /**
    * {@inheritDoc}
    * <p>
-   * Invoked from {@link RemoteSessionAdapter}.
+   * Invoked from {@link PdoRemoteSessionAdapter}.
    *
    * @param context the domain context of the client user
    */
@@ -51,7 +51,7 @@ public class AdminExtensionAdapter implements AdminExtension {
     }
     this.context = context;
     try {
-      RemoteSessionAdapter adapter = (RemoteSessionAdapter) context.getSession().getRemoteSession();
+      PdoRemoteSessionAdapter adapter = (PdoRemoteSessionAdapter) context.getSession().getRemoteSession();
       adminExt = adapter.getRemoteDbSession().getRemoteDelegate(AdminExtension.class.getName());
     }
     catch (RemoteException rex) {

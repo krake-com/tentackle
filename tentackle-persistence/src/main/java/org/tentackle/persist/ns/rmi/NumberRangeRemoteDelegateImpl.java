@@ -11,7 +11,7 @@ import java.rmi.RemoteException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegateImpl;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.persist.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 
 
 /**

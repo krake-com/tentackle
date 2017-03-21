@@ -40,13 +40,13 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
-import org.tentackle.pdo.SessionProvider;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.security.SecurityFactory;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionProvider;
 
 
 
@@ -498,11 +498,11 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Configures the pdo tracker singleton.<br>
+   * Configures the modification tracker singleton.<br>
    */
-  protected void configurePdoTracker() {
-    PdoTracker pdoTracker = PdoTracker.getInstance();
-    pdoTracker.setSession(getDomainContext().getSession());
+  protected void configureModificationTracker() {
+    ModificationTracker tracker = ModificationTracker.getInstance();
+    tracker.setSession(getDomainContext().getSession());
   }
 
 
@@ -616,7 +616,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * @throws ApplicationException if failed
    */
   protected void doConfigureApplication() throws ApplicationException {
-    configurePdoTracker();
+    configureModificationTracker();
     configurePreferences();
     configureSecurityManager();
   }
@@ -635,7 +635,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
     // start the modification thread
     if (getProperty("nomodthread") == null) {   // NOI18N
-      PdoTracker.getInstance().start();
+      ModificationTracker.getInstance().start();
     }
     else  {
       PdoCache.setAllEnabled(false);    // disable caching globally

@@ -21,6 +21,8 @@ package org.tentackle.pdo;
 
 import org.tentackle.log.Loggable;
 import org.tentackle.log.Logger;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 
 /**

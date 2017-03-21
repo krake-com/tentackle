@@ -26,13 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.tentackle.app.ConsoleApplication;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.prefs.DbPreferencesKey;
+import org.tentackle.dbms.prefs.DbPreferencesNode;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.Db;
-import org.tentackle.persist.prefs.DbPreferencesKey;
-import org.tentackle.persist.prefs.DbPreferencesNode;
 
 /**
  * A tool to fix the persisted preferences stored in a database.

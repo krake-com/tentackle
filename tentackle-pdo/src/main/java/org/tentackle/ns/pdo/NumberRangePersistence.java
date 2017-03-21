@@ -21,8 +21,8 @@ package org.tentackle.ns.pdo;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.pdo.Persistent;
 import org.tentackle.pdo.PersistentObject;
+import org.tentackle.session.Persistent;
 
 /**
  * Persistence interface for security rules.

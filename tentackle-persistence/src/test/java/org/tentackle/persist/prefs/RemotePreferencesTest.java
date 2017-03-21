@@ -24,16 +24,17 @@ import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.AbstractSessionTask;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.SessionInfo;
-import org.tentackle.persist.AbstractDbTest;
-import org.tentackle.persist.Db;
+import org.tentackle.persist.AbstractPersistenceTest;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.SessionInfo;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
@@ -92,7 +93,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   @Test(priority = 999)   // must be the last test!
   public void writePreferences() throws Exception {
 
-    process = AbstractDbTest.runClass(AddAndRemovePrefsInServer.class);
+    process = AbstractPersistenceTest.runClass(AddAndRemovePrefsInServer.class);
     Thread.sleep(1500);
 
     try {
@@ -100,7 +101,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       session = (Db) Pdo.createSession(sessionInfo);
       session.open();
       session.makeCurrent();
-      PdoTracker tracker = PdoTracker.getInstance();
+      ModificationTracker tracker = ModificationTracker.getInstance();
       if (tracker.isAlive()) {
           // open from previous tests (we're in testsuite), else single test
           tracker.addTaskAndWait(new AbstractSessionTask() {
@@ -179,9 +180,9 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(otherPrefs.keys().length, 0);
     }
     finally {
-      PdoTracker.getInstance().terminate();
+      ModificationTracker.getInstance().terminate();
       session.close();
-      AbstractDbTest.waitForProcess(process);
+      AbstractPersistenceTest.waitForProcess(process);
     }
   }
 

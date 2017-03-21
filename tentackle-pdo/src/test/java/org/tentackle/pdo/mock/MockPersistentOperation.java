@@ -22,9 +22,9 @@ package org.tentackle.pdo.mock;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.Operation;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentOperation;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 /**
  * A mocked persistence object.

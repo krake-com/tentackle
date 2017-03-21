@@ -30,6 +30,11 @@ import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.AbstractDbObject;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.ModificationLog;
+import org.tentackle.dbms.PreparedStatementWrapper;
+import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
@@ -39,16 +44,11 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.LockException;
-import org.tentackle.pdo.NotFoundException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoRuntimeException;
-import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.Persistent;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
-import org.tentackle.pdo.Session;
 import org.tentackle.pdo.TokenLock;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
@@ -56,6 +56,11 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
+import org.tentackle.session.NotFoundException;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Persistent;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
@@ -66,9 +71,6 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
-import static org.tentackle.persist.AbstractDbObject.CN_ID;
-import static org.tentackle.persist.AbstractDbObject.CN_SERIAL;
-import static org.tentackle.persist.AbstractDbObject.CN_TABLESERIAL;
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
 import static org.tentackle.sql.Backend.SQL_COMMA;
@@ -1346,7 +1348,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       if (classId == 0) {
         throw new PersistenceException(po, "class id is 0 in " + po.toGenericString());
       }
-      String className = PdoUtilities.getInstance().getPdoClassName(classId);
+      String className = SessionUtilities.getInstance().getClassName(classId);
       if (className == null) {
         throw new PersistenceException(po, "no such PDO class for classId " + classId + " in " + po.toGenericString());
       }

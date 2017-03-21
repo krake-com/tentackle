@@ -19,6 +19,9 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+
 
 /**
  * PDO runtime exception.<br>

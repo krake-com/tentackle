@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.rmi;
 
+import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
 import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.Operation;
 

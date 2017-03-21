@@ -19,6 +19,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.session.Session;
+
 
 /**
  * PDO cache exception.<br>

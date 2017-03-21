@@ -28,8 +28,8 @@ import java.util.TreeSet;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 /**
  * The default implementation of a number source.<br>

@@ -22,6 +22,7 @@ package org.tentackle.persist.rmi;
 import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;

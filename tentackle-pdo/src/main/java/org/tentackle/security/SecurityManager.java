@@ -21,7 +21,7 @@
 package org.tentackle.security;
 
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 /**
  * The SecurityManager applies security rules to {@link org.tentackle.pdo.PersistentDomainObject}s

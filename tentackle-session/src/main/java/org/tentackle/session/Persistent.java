@@ -1,0 +1,57 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.session;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Persistent fields and methods are annotated with this annotation.
+ * <p>
+ * Allows examining the model by reflection from within the persistence layer.
+ *
+ * @author harald
+ */
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.TYPE})
+public @interface Persistent {
+
+  /**
+   * Optional comment.
+   *
+   * @return the comment
+   */
+  String value() default "";
+
+  /**
+   * Returns whether this is a component of the PDO.<br>
+   * This is true for all members/attributes and composite relations.
+   * It is false for all non-composite relations.
+   *
+   * @return true if this is a component, false if a non-composite relation
+   */
+  boolean component() default true;
+
+}

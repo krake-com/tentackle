@@ -21,6 +21,14 @@ package org.tentackle.pdo;
 
 import java.util.Collection;
 import java.util.Properties;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionCloseHandler;
+import org.tentackle.session.SessionFactory;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionInfoFactory;
+import org.tentackle.session.SessionManager;
+import org.tentackle.session.SessionUtilities;
 
 /**
  * Collected factory methods for the PDOs and related objects.<br>
@@ -636,7 +644,7 @@ public class Pdo {
    * @param session the session
    */
   public static void keepAliveIntervalChanged(Session session) {
-    PdoUtilities.getInstance().keepAliveIntervalChanged(session);
+    SessionUtilities.getInstance().keepAliveIntervalChanged(session);
   }
 
 
@@ -644,8 +652,8 @@ public class Pdo {
    * Terminates all helper threads.
    */
   public static void terminateHelperThreads() {
-    PdoUtilities.getInstance().terminateHelperThreads();
-    PdoTracker.getInstance().terminate();
+    SessionUtilities.getInstance().terminateHelperThreads();
+    ModificationTracker.getInstance().terminate();
   }
 
 

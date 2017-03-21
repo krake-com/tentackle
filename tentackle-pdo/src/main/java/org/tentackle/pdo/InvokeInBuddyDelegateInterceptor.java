@@ -23,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import org.tentackle.common.Constants;
 import org.tentackle.reflect.AbstractInterceptor;
+import org.tentackle.session.PersistenceException;
 
 /**
  * Implementation for the invoke-in-buddy-delegate interception.
@@ -44,7 +45,7 @@ public class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor {
   @Override
   public Object proceed(Object delegate, Method method, Object[] args,
                         Object orgDelegate, Method orgMethod, Object[] orgArgs) throws Throwable {
-    
+
     if (method != orgMethod) {
       throw new PdoRuntimeException("@InvokeInBuddyDelegate must be the last interceptor for " + orgMethod);
     }

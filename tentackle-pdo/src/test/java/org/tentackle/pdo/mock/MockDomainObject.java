@@ -23,7 +23,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainObject;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 /**
  * A mocked domain object.

@@ -68,9 +68,9 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PdoHolder;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
 
 /**
@@ -415,7 +415,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     filterField.clear();
     if (finder.isSearchRunningInBackground()) {
       getView().setCursor(Cursor.WAIT);
-      PdoTracker.getInstance().addTask(new AbstractTask() {
+      ModificationTracker.getInstance().addTask(new AbstractTask() {
         @Override
         public void run() {
           ObservableList<T> result = finder.runSearch();

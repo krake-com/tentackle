@@ -23,10 +23,10 @@ import java.text.MessageFormat;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import org.tentackle.fx.Fx;
-import org.tentackle.pdo.AlreadyLoggedInException;
-import org.tentackle.pdo.LoginFailedException;
-import org.tentackle.pdo.SessionInfo;
-import org.tentackle.pdo.VersionInfoIncompatibleException;
+import org.tentackle.session.AlreadyLoggedInException;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.VersionInfoIncompatibleException;
 
 /**
  * To handle login failed exceptions.

@@ -19,6 +19,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.session.SessionDependable;
+
 /**
  * A persistent operation.<br>
  * POs usually contain persistent-relevant methods that can not or should not be

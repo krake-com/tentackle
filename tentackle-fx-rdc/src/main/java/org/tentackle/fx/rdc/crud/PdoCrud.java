@@ -67,9 +67,9 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LockException;
-import org.tentackle.pdo.NotFoundException;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 

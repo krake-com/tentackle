@@ -20,8 +20,8 @@
 package org.tentackle.persist;
 
 import org.tentackle.pdo.Operation;
-import org.tentackle.persist.DbObjectClassVariables;
-import org.tentackle.persist.DbOperationClassVariables;
+import org.tentackle.dbms.DbObjectClassVariables;
+import org.tentackle.dbms.DbOperationClassVariables;
 
 
 

@@ -1,0 +1,496 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.dbms;
+
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Binary;
+import org.tentackle.common.DMoney;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.Convertible;
+import org.tentackle.session.PersistenceException;
+
+
+
+/**
+ * A database query.
+ * <p>
+ * Combines the generation of an sql-string and parameter set for
+ * the ResultSetWrapper. Useful for one-time queries entered by the user.<br>
+ * Notice that by default the underlying prepared statement is closed
+ * when the resultset (or cursor) is closed by the application.
+ * You can change that behaviour, however.
+ * <p>
+ * Notice further, that the columns returned by the select
+ * must be provided by the application via add() _before_ execution.
+ * The SELECT, however, and LIMIT/OFFSET clauses are provided by the query automatically,
+ * because they are backend-specific.
+ *
+ * @author harald
+ */
+public class Query {
+
+  /** The logger for this class. */
+  private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
+
+
+  private final List<QueryItem> items;    // query parameters
+  private int fetchSize;                  // fetchsize, 0 = default
+  private int maxRows;                    // max. number of rows fetched at all, 0 = no limit
+  private int offset;                     // != 0 if add an offset clause
+  private int limit;                      // != 0 if add a limit clause
+  private boolean statementCached;        // true if cache prepared statement
+
+
+  /**
+   * Creates a query.
+   */
+  public Query() {
+    items = new ArrayList<>();
+  }
+
+
+  /**
+   * Enables caching of the prepared statement.<br>
+   * By default, queries are one-time prepared statements that will be closed
+   * when the resultset is closed. However, if a query uses a fixed SQL string
+   * and is executed a significant number of times, the prepared statement
+   * can be prepared only once and re-used afterwards. Please notice, that once
+   * prepared with caching, the statement will remain open until it is closed
+   * explicitly.
+   *
+   * @param statementCached true if prepare only once and reuse cached statement, false if one-shot
+   */
+  public void setStatementCached(boolean statementCached) {
+    this.statementCached = statementCached;
+  }
+
+  /**
+   * Returns whether statement caching is enabled.
+   *
+   * @return true if prepare only once and reuse cached statement, false if one-shot (default)
+   */
+  public boolean isStatementCached() {
+    return statementCached;
+  }
+
+
+  /**
+   * Sets an offset, i.e. number of rows to skip in a query.
+   * By default the offset is 0.
+   * @param offset the offset, 0 to disable
+   */
+  public void setOffset(int offset) {
+    this.offset = offset;
+  }
+
+  /**
+   * Gets the offset of this query.
+   *
+   * @return the number of rows to skip, 0 if no offset
+   */
+  public int getOffset() {
+    return offset;
+  }
+
+
+  /**
+   * Sets the maximum number of rows to retrieve for this query.
+   *e
+   * @param limit the maximum number of rows, 0 if ulimited (default)
+   */
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
+
+  /**
+   * Gets the maximum number of rows for this query.
+   *
+   * @return the maximum number of rows, 0 if ulimited (default)
+   */
+  public int getLimit() {
+    return limit;
+  }
+
+
+  /**
+   * Appends an sql-part and corresponding parameters to this query.
+   * <pre>
+   * Example: add(" AND CN_ID=?", object.getId());
+   *          add(" AND CN_MONEY=?", object.getAmount());
+   * </pre>
+   *
+   * @param sql is the SQL-string
+   * @param data is an array of parameters
+   */
+  public void add(String sql, Object... data) {
+    items.add(new QueryItem(sql, data));
+  }
+
+
+  /**
+   * Sets the optional fetchsize. 0 = drivers default.
+   *
+   * @param fetchSize the fetchsize
+   * @see ResultSetWrapper#setFetchSize(int)
+   */
+  public void setFetchSize(int fetchSize) {
+    this.fetchSize = fetchSize;
+  }
+
+  /**
+   * Gets the fetchsize.
+   *
+   * @return the fetchsize
+   * @see ResultSetWrapper#getFetchSize()
+   */
+  public int getFetchSize() {
+    return fetchSize;
+  }
+
+
+  /**
+   * Sets the optional maximum row count for this cursor.
+   *
+   * @param maxRows the max rows, 0 = no limit
+   */
+  public void setMaxRows(int maxRows) {
+    this.maxRows = maxRows;
+  }
+
+  /**
+   * Gets the maximum row count for this cursor
+   *
+   * @return the max rows, 0 = no limit
+   */
+  public int getMaxRows() {
+    return maxRows;
+  }
+
+
+  /**
+   * Executes the query.
+   *
+   * @param db is the database connection
+   * @param resultSetType is one of ResultSet.TYPE_...
+   * @param resultSetConcurrency is one of ResultSet.CONCUR_..
+   *
+   * @return the result set
+   */
+  public ResultSetWrapper execute(Db db, int resultSetType, int resultSetConcurrency) {
+
+    PreparedStatementWrapper st;
+    String sql = createSql(db);
+
+    if (statementCached) {
+      StatementKey key = createStatementKey(sql);
+      // prepare if new, else re-use
+      st = db.getPreparedStatement(key, false, resultSetType, resultSetConcurrency, () -> sql);
+    }
+    else {
+      st = db.createPreparedStatement(sql, resultSetType, resultSetConcurrency);
+    }
+
+    // apply parameters to statement
+    apply(db, st);
+
+    /**
+     * set fetchsize and maxrows if != 0
+     */
+    if (fetchSize != 0) {
+      st.setFetchSize(fetchSize);
+    }
+    if (maxRows != 0) {
+      st.setMaxRows(maxRows);
+    }
+
+    /**
+     * for postgres: run the query in an extra tx. Otherwise postgres will ignore fetchsize
+     * and load everything into memory.
+     */
+    ResultSetWrapper rs = null;
+
+    try {
+      if (db.getBackend().needTxForFetchsize() && fetchSize != 0 &&
+          resultSetType == ResultSet.TYPE_FORWARD_ONLY &&
+          resultSetConcurrency == ResultSet.CONCUR_READ_ONLY) {
+        rs = st.executeQuery(true);   // true = commit tx when closing resultset
+      }
+      else {
+        // standard dbms
+        rs = st.executeQuery();
+      }
+
+      if (!statementCached) {
+        rs.setCloseStatementOnclose(true);
+      }
+    }
+    catch (RuntimeException ex) {
+      if (rs != null) {
+        try {
+          rs.close();
+        }
+        catch (RuntimeException rex) {
+          LOGGER.warning("closing resultset failed: " + rex.getMessage());
+        }
+      }
+
+      try {
+        st.consume();
+      }
+      catch (RuntimeException rex) {
+        LOGGER.warning("marking statement consumed failed: " + rex.getMessage());
+      }
+
+      if (!st.isClosed()) {
+        try {
+          st.close();
+        }
+        catch (RuntimeException rex) {
+          LOGGER.warning("closing statement failed: " + rex.getMessage());
+        }
+      }
+
+      throw ex;
+    }
+
+    return rs;
+  }
+
+  /**
+   * Executes the query with ResultSet.CONCUR_READ_ONLY.
+   *
+   * @param db is the database connection
+   * @param resultSetType is one of ResultSet.TYPE_...
+   *
+   * @return the result set
+   */
+  public ResultSetWrapper execute(Db db, int resultSetType) {
+    return execute(db, resultSetType, ResultSet.CONCUR_READ_ONLY);
+  }
+
+  /**
+   * Executes the query with ResultSet.TYPE_FORWARD_ONLY and ResultSet.CONCUR_READ_ONLY.
+   *
+   * @param db is the database connection
+   *
+   * @return the result set
+   */
+  public ResultSetWrapper execute(Db db) {
+    return execute(db, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+  }
+
+
+  /**
+   * Gets the number of objects returned by this query.
+   * <p>
+   * This is not done by retrieving all rows but by a {@code "SELECT COUNT(1)"}.
+   * Applications may use this in conjunction with limit and offset for pagination
+   * (in web pages, for example).
+   *
+   * @param db the db connection
+   * @return the number of rows for this query
+   */
+  public int getRowCount(Db db) {
+    StringBuilder buf = buildInnerSql();
+    buf.insert(0, "SELECT COUNT(*) FROM (");
+    buf.append(')');
+    if (db.getBackend().needAliasForSubselect()) {
+      buf.append(" AS F_O_O");
+    }
+    int count = 0;
+    try (PreparedStatementWrapper st = db.createPreparedStatement(buf.toString())) {
+      applyParameters(st, 1);
+      try (ResultSetWrapper rs = st.executeQuery()) {
+        if (rs.next()) {
+          count = rs.getInt(1);
+        }
+      }
+    }
+    return count;
+  }
+
+
+  /**
+   * Applies the query parameters to the statement.<br>
+   * Optionally applies limit, offset as well.
+   *
+   * @param db the database connection
+   * @param st the prepared statement
+   */
+  public void apply(Db db, PreparedStatementWrapper st) {
+    int ndx = db.getBackend().setLeadingSelectParameters(st, limit, offset);  // optionally prepend limit/offset
+    ndx = applyParameters(st, ndx);                                           // set the query parameters
+    db.getBackend().setTrailingSelectParameters(st, ndx, limit, offset);      // optionally append limit/offset
+  }
+
+
+  /**
+   * Apply the query parameters only.
+   *
+   * @param st the statement
+   * @param ndx the starting index
+   * @return the next paramater index
+   */
+  public int applyParameters(PreparedStatementWrapper st, int ndx) {
+
+    for (QueryItem item : items) {
+      if (item.data != null) {    // just in case somebody passed in (Object[])null for data
+        for (int dataIndex = 0; dataIndex < item.data.length; dataIndex++) {
+          Object data = item.data[dataIndex];
+          if (data instanceof Convertible<?>) {
+            data = ((Convertible<?>) data).toExternal();
+          }
+          if (data instanceof Number) {
+            if (data instanceof DMoney) {
+              st.setDMoney(ndx, (DMoney) data);
+              ndx += 2;
+            }
+            else if (data instanceof BMoney) {
+              st.setBMoney(ndx, (BMoney) data);
+              ndx += 2;
+            }
+            else if (data instanceof Double) {
+              st.setDouble(ndx++, (Double) data);
+            }
+            else if (data instanceof Float) {
+              st.setFloat(ndx++, (Float) data);
+            }
+            else if (data instanceof Long) {
+              st.setLong(ndx++, (Long) data);
+            }
+            else if (data instanceof Integer) {
+              st.setInteger(ndx++, (Integer) data);
+            }
+            else if (data instanceof Short) {
+              st.setShort(ndx++, (Short) data);
+            }
+            else if (data instanceof Byte) {
+              st.setByte(ndx++, (Byte) data);
+            }
+            else if (data instanceof BigDecimal) {
+              st.setBigDecimal(ndx++, (BigDecimal) data);
+            }
+          }
+          else if (data instanceof String) {
+            st.setString(ndx++, (String) data);
+          }
+          else if (data instanceof Character) {
+            st.setChar(ndx++, (Character) data);
+          }
+          else if (data instanceof Boolean) {
+            st.setBoolean(ndx++, (Boolean) data);
+          }
+          else if (data instanceof Timestamp) {
+            st.setTimestamp(ndx++, (Timestamp) data);
+          }
+          else if (data instanceof Date) {
+            st.setDate(ndx++, (Date) data);
+          }
+          else if (data instanceof Time) {
+            st.setTime(ndx++, (Time) data);
+          }
+          else if (data instanceof Binary<?>) {
+            st.setBinary(ndx++, (Binary<?>) data);
+          }
+          else {
+            // unsupported type
+            if (data == null) {
+              throw new PersistenceException("null value in '" + item + "' arg[" + dataIndex + "]");
+            }
+            else {
+              throw new PersistenceException(
+                      "unsupported type " + data.getClass() + " in '" + item + "' arg[" + dataIndex + "]");
+            }
+          }
+        }
+      }
+    }
+
+    return ndx;
+  }
+
+
+
+
+  /**
+   * Creates the SQL-String of this query.<br>
+   * Optionally modifies the sql query according to limit and offset.
+   *
+   * @param db the db connection
+   * @return the sql string
+   */
+  public String createSql(Db db) {
+    StringBuilder sql = buildInnerSql();
+    db.getBackend().buildSelectSql(sql, false, limit, offset);
+    return sql.toString();
+  }
+
+  /**
+   * Creates the statement key.
+   *
+   * @param sql the SQL string sent to the backend
+   * @return the key
+   */
+  public StatementKey createStatementKey(String sql) {
+    return new StatementKey(sql);
+  }
+
+  /**
+   * Builds the inner sql query string.
+   *
+   * @return the sql string
+   */
+  public StringBuilder buildInnerSql() {
+    StringBuilder buf = new StringBuilder();
+    for (QueryItem item : items) {
+      buf.append(item.sql);
+    }
+    return buf;
+  }
+
+
+
+  /**
+   * bundles sql + parameters
+   */
+  private static class QueryItem {
+
+    private final String sql;         // sql string
+    private final Object[] data;      // data items
+
+    private QueryItem(String sql, Object... data) {
+      this.sql = sql;
+      this.data = data;
+    }
+
+    @Override
+    public String toString() {
+      return sql;
+    }
+  }
+}

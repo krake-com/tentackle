@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 
 import java.lang.reflect.Proxy;
 import org.tentackle.reflect.ClassMapper;
+import org.tentackle.session.Session;
 
 /**
  * Base implementation of a {@link PdoFactory}.
@@ -65,7 +66,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     return new PdoInvocationHandler<>(getPersistenceMapper(), getDomainMapper(), clazz);
   }
 
-  
+
 
   @SuppressWarnings("unchecked")
   private <T extends PersistentDomainObject<T>> T createPdo(Class<T> clazz, DomainContext context) {

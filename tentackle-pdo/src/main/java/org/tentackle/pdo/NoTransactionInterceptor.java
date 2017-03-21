@@ -22,6 +22,9 @@ package org.tentackle.pdo;
 import java.lang.reflect.Method;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionProvider;
 
 /**
  * Implementation for the no-transaction interception.

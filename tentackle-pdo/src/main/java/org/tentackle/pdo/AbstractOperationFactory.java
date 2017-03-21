@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 
 import java.lang.reflect.Proxy;
 import org.tentackle.reflect.ClassMapper;
+import org.tentackle.session.Session;
 
 /**
  * Base implementation of a {@link OperationFactory}.

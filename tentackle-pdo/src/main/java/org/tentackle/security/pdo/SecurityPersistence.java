@@ -22,9 +22,9 @@ package org.tentackle.security.pdo;
 import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.pdo.Persistent;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
+import org.tentackle.session.Persistent;
 import org.tentackle.validate.validator.NotNull;
 
 /**

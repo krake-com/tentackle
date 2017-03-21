@@ -18,6 +18,8 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.session.ModificationListenerAdapter;
+
 /**
  * A listener for PDO modifications.
  *

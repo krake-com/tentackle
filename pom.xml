@@ -44,6 +44,7 @@
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
     <module>tentackle-core</module>
+    <module>tentackle-session</module>
     <module>tentackle-pdo</module>
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-log-util</module>
@@ -53,6 +54,7 @@
     <module>tentackle-script-ruby</module>
     <module>tentackle-domain</module>
     <module>tentackle-persistence-wurblets</module>
+    <module>tentackle-database</module>
     <module>tentackle-persistence</module>
     <module>tentackle-i18n</module>
     <module>tentackle-i18n-maven-plugin</module>

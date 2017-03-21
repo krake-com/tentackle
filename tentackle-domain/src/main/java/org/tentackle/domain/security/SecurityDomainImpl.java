@@ -26,13 +26,13 @@ import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainObjectService;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityDomain;
+import org.tentackle.session.SessionUtilities;
 
 /**
  * Security domain implementation.
@@ -81,7 +81,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
     StringBuilder buf = new StringBuilder();
     if (pdo().getObjectClassId() != 0) {
       // is a PDO
-      String className = PdoUtilities.getInstance().getPdoClassName(pdo().getObjectClassId());
+      String className = SessionUtilities.getInstance().getClassName(pdo().getObjectClassId());
       PersistentDomainObject<?> securedPdo = Pdo.create(className, getDomainContext());
       if (pdo().getObjectId() != 0) {
         buf.append(securedPdo.getSingular()).append(' ');

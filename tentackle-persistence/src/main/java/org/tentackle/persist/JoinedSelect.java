@@ -23,9 +23,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
 

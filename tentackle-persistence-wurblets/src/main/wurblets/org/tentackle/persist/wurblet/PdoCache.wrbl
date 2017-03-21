@@ -444,7 +444,7 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
 
-      PdoTracker.getInstance().addModificationListener(new PdoListener(@(pdoName)@.class) {
+      ModificationTracker.getInstance().addModificationListener(new PdoListener(@(pdoName)@.class) {
 
         \@Override
         public void dataChanged(ModificationEvent ev) {

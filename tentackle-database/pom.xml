@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>2.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>tentackle-dbms</artifactId>
+  <version>2.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Tentackle Database</name>
+  <description>Tentackle Low-Level DBMS Layer</description>
+  <url>http://www.tentackle.org</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-session</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-sql</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>analyze</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <showCompileOutput>false</showCompileOutput>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wurbelizer</groupId>
+        <artifactId>wurbelizer-maven-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <goals>
+              <goal>wurbel</goal>
+            </goals>
+          </execution>
+        </executions>
+
+        <configuration>
+          <wurbletDependencies>
+            <wurbletDependency>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>tentackle-persistence-wurblets</artifactId>
+              <version>${project.version}</version>
+            </wurbletDependency>
+          </wurbletDependencies>
+
+          <verbosity>info</verbosity>
+
+          <wurbletPaths>
+            <param>org.tentackle.wurblet</param>
+            <param>org.tentackle.persist.wurblet</param>
+          </wurbletPaths>
+
+          <wurbletProperties>
+            <property>
+              <name>guardtype</name>
+              <value>netbeans</value>
+            </property>
+            <property>
+              <name>foldtype</name>
+              <value>collapsed</value>
+            </property>
+            <property>
+              <name>model</name>
+              <value>${wurbel.wurbelDir}/model</value>
+            </property>
+            <property>
+              <name>backends</name>
+              <value>all</value>
+            </property>
+          </wurbletProperties>
+
+          <filesets>
+            <!-- wurbel PDOs first -->
+            <fileset>
+              <includes>
+                <include>**/*.wurb</include>
+                <include>**/*.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+            <!-- wurbel rmis last -->
+            <fileset>
+              <includes>
+                <include>**/rmi/*.java</include>
+              </includes>
+              <followSymlinks>false</followSymlinks>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <sourceFileExcludes>
+            <exclude>**/rmi/*Delegate.java</exclude>
+            <exclude>**/rmi/*DelegateImpl.java</exclude>
+          </sourceFileExcludes>
+          <tags>
+            <tag>
+              <name>wurblet</name>
+              <placement>a</placement>
+              <head>Wurblet:</head>
+            </tag>
+          </tags>
+          <!-- don't complain about wurblet args -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+        </configuration>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>
+
+
+
+
+

@@ -24,8 +24,8 @@ import org.tentackle.common.Service;
 import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.SessionUtilities;
 
 /**
  * Default implementation of the {@link SecurityDialogFactory}.
@@ -65,7 +65,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   public void showDialog(int classId, DomainContext context) {
     try {
       Class<PersistentDomainObject> cls = (Class<PersistentDomainObject>)
-              Class.forName(PdoUtilities.getInstance().getPdoClassName(classId));
+              Class.forName(SessionUtilities.getInstance().getClassName(classId));
       SecurityRulesView.show(null, Pdo.create(cls, context));
     }
     catch (ClassNotFoundException ex) {

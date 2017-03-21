@@ -26,12 +26,12 @@ import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
-import org.tentackle.pdo.Session;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityResult;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 

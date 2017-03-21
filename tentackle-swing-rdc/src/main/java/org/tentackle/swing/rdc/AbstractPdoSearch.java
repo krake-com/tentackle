@@ -26,12 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tentackle.misc.ScrollableResource;
-import org.tentackle.pdo.AbstractSessionTask;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.swing.FormInfo;
 import org.tentackle.swing.GUIRuntimeException;
 import org.tentackle.task.Task;
@@ -84,7 +84,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
    */
   public AbstractPdoSearch(Class<T> pdoClass, DomainContext context, int fetchSize, int warnRowCount, int maxRowCount) {
     this.pdoClass = pdoClass;
-    this.pdoClassId = PdoUtilities.getInstance().getClassId(pdoClass.getName());
+    this.pdoClassId = SessionUtilities.getInstance().getClassId(pdoClass.getName());
     this.context = context;
     this.warnRowCount = warnRowCount;
     this.maxRowCount = maxRowCount;
@@ -145,7 +145,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
       final boolean runInDispatchThread = isSearchImmediate() &&
               (isDialogNotShownIfSearchImmediateFindsSingleMatch() || !isDialogShownIfSearchImmediateFails());
 
-      // search in PdoTracker
+      // search in ModificationTracker
       Task searchTask = new AbstractSessionTask() {
         private static final long serialVersionUID = 1L;
 
@@ -210,7 +210,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
         searchTask.run();     // execute in AWT-Thread
       }
       else  {
-        PdoTracker.getInstance().addTask(searchTask);
+        ModificationTracker.getInstance().addTask(searchTask);
       }
     }
   }

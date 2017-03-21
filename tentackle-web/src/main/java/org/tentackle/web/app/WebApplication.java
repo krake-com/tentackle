@@ -32,22 +32,22 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
+import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DefaultDbPool;
+import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
-import org.tentackle.pdo.SessionManager;
-import org.tentackle.pdo.SessionManagerProvider;
-import org.tentackle.pdo.SessionPool;
-import org.tentackle.pdo.SessionPoolProvider;
-import org.tentackle.persist.ConnectionManager;
-import org.tentackle.persist.Db;
-import org.tentackle.persist.DefaultDbPool;
-import org.tentackle.persist.MpxConnectionManager;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionManager;
+import org.tentackle.session.SessionManagerProvider;
+import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionPoolProvider;
 
 /**
  * Web AbstractApplication.
@@ -490,7 +490,7 @@ public abstract class WebApplication<T> extends AbstractApplication
     super.doFinishStartup();
 
     // add a shutdown handler in case the modthread terminates unexpectedly
-    PdoTracker.getInstance().addShutdownRunnable(() -> {
+    ModificationTracker.getInstance().addShutdownRunnable(() -> {
       LOGGER.severe("*** emergency shutdown ***");
       doStop(5);
     });

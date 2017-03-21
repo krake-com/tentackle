@@ -30,8 +30,8 @@ import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.SessionUtilities;
 
 /**
  * Default implementation of a {@link GuiProvider}.<br>
@@ -143,7 +143,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
         int classId = Integer.parseInt(stok.nextToken());
         if (stok.hasMoreTokens()) {
           int id = Integer.parseInt(stok.nextToken());
-          String className = PdoUtilities.getInstance().getPdoClassName(classId);
+          String className = SessionUtilities.getInstance().getClassName(classId);
           if (className != null && id != 0) {
             try {
               return new IdentifiableKey<>(className, id);

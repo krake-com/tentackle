@@ -19,11 +19,11 @@
 
 package org.tentackle.i18n.pdo;
 
-import org.tentackle.pdo.ClassId;
+import org.tentackle.session.ClassId;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
-import org.tentackle.pdo.TableName;
+import org.tentackle.session.TableName;
 
 
 /**

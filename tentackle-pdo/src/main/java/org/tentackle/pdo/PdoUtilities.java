@@ -23,15 +23,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
-import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.TrackedList;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
 
 
 interface PdoUtilities$Singleton {
@@ -56,21 +56,15 @@ public class PdoUtilities {
   }
 
 
-  /** minimum keep alive interval in milliseconds. */
-  public static long minSessionKeepAliveMillis = 1000;
-
-
-
-  /**
-   * The keep alive thread.<br>
-   * null if not started yet
-   */
-  private SessionKeepAliveDaemon keepAliveDaemon;
-
   /**
    * The map of tablenames.
    */
-  private final Map<Class<? extends PersistentDomainObject<?>>, String> tableNameMap = new ConcurrentHashMap<>();
+  private final Map<Class<?>, String> tableNameMap = new ConcurrentHashMap<>();
+
+  /**
+   * The map of class ids.
+   */
+  private final Map<Class<?>, Integer> tableClassIdMap = new ConcurrentHashMap<>();
 
   /**
    * The map of singlenames (class -> singlename)
@@ -82,30 +76,6 @@ public class PdoUtilities {
    */
   private final Map<String, String> pluralMap;
 
-  /**
-   * map of pdo class names to tablenames.
-   */
-  private final Map<String,String> pdoTableMap;
-
-  /**
-   * map of tablenames to pdo class names.
-   */
-  private final Map<String,String> tablePdoMap;
-
-  /**
-   * map of pdo class names to class IDs.
-   */
-  private final Map<String,Integer> pdoIdMap;
-
-  /**
-   * map of class IDs to pdo class names.
-   */
-  private final Map<Integer,String> idPdoMap;
-
-  /**
-   * List of all pdo class names.
-   */
-  private final Collection<String> pdoNames;
 
 
   /**
@@ -113,27 +83,6 @@ public class PdoUtilities {
    */
   public PdoUtilities() {
     ServiceFinder finder = ServiceFactory.getServiceFinder();
-    pdoTableMap = new HashMap<>();
-    tablePdoMap = new HashMap<>();
-
-    Set<String> sortedNames = new TreeSet<>();
-    for (Map.Entry<String,String> entry: finder.createNameMap(TableName.class.getName()).entrySet()) {
-      String tableName = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-      pdoTableMap.put(entry.getValue(), tableName);
-      tablePdoMap.put(tableName, entry.getValue());
-      sortedNames.add(entry.getValue());
-    }
-
-    Map<String,String> idMap = finder.createNameMap(ClassId.class.getName());
-    pdoIdMap = new HashMap<>();
-    idPdoMap = new HashMap<>();
-    for (Map.Entry<String,String> entry: idMap.entrySet()) {
-      Integer classId = Integer.valueOf(entry.getKey());
-      sortedNames.add(entry.getValue());
-      pdoIdMap.put(entry.getValue(), classId);
-      idPdoMap.put(classId, entry.getValue());
-    }
-    pdoNames = new ArrayList<>(sortedNames);
 
     singularMap = new HashMap<>();
     for (Map.Entry<String,String> entry: finder.createNameMap(Singular.class.getName()).entrySet()) {
@@ -150,117 +99,118 @@ public class PdoUtilities {
 
 
   /**
-   * Gets the tablename of a pdo class.
-   *
-   * @param pdoClassName the classname of the pdo
-   * @return the tablename, null if no such class
-   */
-  public String getTableName(String pdoClassName) {
-    return pdoTableMap.get(pdoClassName);
-  }
-
-  /**
-   * Gets the pdo classname for tablename.
-   *
-   * @param tableName the tablename
-   * @return the name of the pdo class, null if no such tablename
-   */
-  public String getPdoClassName(String tableName) {
-    return tablePdoMap.get(tableName);
-  }
-
-  /**
-   * Gets the classid of a pdo class.
-   *
-   * @param pdoClassName the classname of the pdo
-   * @return the classid, 0 if no such class
-   */
-  public int getClassId(String pdoClassName) {
-    Integer classId = pdoIdMap.get(pdoClassName);
-    return classId == null ? 0 : classId;
-  }
-
-  /**
-   * Gets the pdo classname for a classid.
-   *
-   * @param classId the classid
-   * @return the name of the pdo class, null if no such classid
-   */
-  public String getPdoClassName(int classId) {
-    return idPdoMap.get(classId);
-  }
-
-  /**
-   * Gets a list of all pdo class names.<br>
-   * Sorted by name.
-   *
-   * @return the classnames
-   */
-  public Collection<String> getPdoClassNames() {
-    return pdoNames;
-  }
-
-
-  /**
    * Gets the singular of given class.
    *
    * @param clazz the class
-   * @return the singular, null if not annotated with @Singular
+   * @return the singular, null if not annotated with @Singular or singular not implemented
    */
+  @SuppressWarnings("unchecked")
   public String getSingular(Class<?> clazz) {
-    return singularMap.get(clazz.getName());
+    String singular = singularMap.get(clazz.getName());
+    if (singular == null) {   // not annotated with @Plural
+      if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
+        // not in extra list: get from pdo instance
+        singular = Pdo.create((Class) clazz).getSingular();
+      }
+      if (singular == null) {
+        singular = "";
+      }
+      singularMap.put(clazz.getName(), singular);
+    }
+    return singular.isEmpty() ? null : singular;
   }
+
 
   /**
    * Gets the plural of given class.
    *
    * @param clazz the class
-   * @return the plural, null if not annotated with @Plural
+   * @return the plural, "" if not annotated with @Plural or plural not implemented
    */
+  @SuppressWarnings("unchecked")
   public String getPlural(Class<?> clazz) {
-    return pluralMap.get(clazz.getName());
+    String plural = pluralMap.get(clazz.getName());
+    if (plural == null) {   // not annotated with @Plural
+      if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
+        // not in extra list: get from pdo instance
+        plural = Pdo.create((Class) clazz).getPlural();
+      }
+      if (plural == null) {
+        plural = "";
+      }
+      pluralMap.put(clazz.getName(), plural);
+    }
+    return plural.isEmpty() ? null : plural;
+  }
+
+
+    /**
+   * Gets the table name of given class.
+   *
+   * @param <T> the pdo type
+   * @param clazz the pdo class
+   * @return the tablename, null if no tablename
+   */
+  public <T extends PersistentDomainObject<T>> String getTableName(Class<T> clazz) {
+    String className = clazz.getName();
+    String tableName = tableNameMap.get(clazz);  // try extra list first
+    if (tableName == null) {  // not determined yet
+      tableName = SessionUtilities.getInstance().getTableName(className);
+      if (tableName == null) {  // not annotated with @TableName
+        // get from pdo instance
+        tableName = Pdo.create(clazz).getTableName();
+        if (tableName == null) {
+          tableName = "";
+        }
+        tableNameMap.put(clazz, tableName);
+      }
+    }
+    return tableName.isEmpty() ? null : tableName;
   }
 
 
   /**
-   * Determines the tablename from the @TableName annotation.
+   * Gets the table name of given class.
    *
-   * @param pdoClass the PDO class
-   * @return the tablename, null if no such annotation
+   * @param <T> the pdo type
+   * @param clazz the pdo class
+   * @return the class id, 0 if no class id
    */
-  public String determineTablename(Class<?> pdoClass) {
-    // determine from @TableName annotation
-    TableName tablenameAnno = pdoClass.getAnnotation(TableName.class);
-    if (tablenameAnno != null) {
-      String tablename = tablenameAnno.value();   // cannot be null
-      if (tablenameAnno.mapSchema()) {
-        tablename = tablename.replace('.', '_');
-      }
-      tablename = tablenameAnno.prefix() + tablename;
-      if (!tablename.isEmpty()) {
-        return tablename;
+  public <T extends PersistentDomainObject<T>> int getClassId(Class<T> clazz) {
+    String pdoClassName = clazz.getName();
+    Integer classId = tableClassIdMap.get(clazz);  // try extra list
+    if (classId == null) {   // not determined yet
+      classId = SessionUtilities.getInstance().getClassId(pdoClassName);
+      if (classId == 0) {  // not annotated with @ClassId
+        // get from pdo instance
+        classId = Pdo.create(clazz).getClassId();
+        tableClassIdMap.put(clazz, classId);
       }
     }
-    return null;   // may be SINGLE-inherited
+    return classId;
   }
 
 
   /**
-   * Determines the classid from the @ClassId annotation.
+   * Gets the table name of given classes.
    *
-   * @param pdoClass the PDO class
-   * @return the tablename, null if no such annotation
+   * @param classes the PDO classes
+   * @return the names, null if classes is null or empty
    */
-  public int determineClassId(Class<?> pdoClass) {
-    // determine from @TableName annotation
-    ClassId idAnno = pdoClass.getAnnotation(ClassId.class);
-    if (idAnno != null) {
-      int classId = idAnno.value();
-      if (classId != 0) {
-        return classId;
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public String[] getTableNames(Class<?>... classes) {
+    String[] names;
+    if (classes != null && classes.length > 0) {
+      names = new String[classes.length];
+      int i=0;
+      for (Class<?> clazz: classes) {
+        names[i++] = getTableName((Class<? extends PersistentDomainObject>) clazz);
       }
     }
-    return 0;   // may be an abstract class
+    else  {
+      names = null;
+    }
+    return names;
   }
 
 
@@ -293,38 +243,6 @@ public class PdoUtilities {
     return null;
   }
 
-  /**
-   * Starts the keep alive thread if not already running.
-   */
-  public synchronized void startKeepAliveDaemonIfNotRunning() {
-    if (keepAliveDaemon == null || !keepAliveDaemon.isAlive()) {
-      keepAliveDaemon = new SessionKeepAliveDaemon(minSessionKeepAliveMillis);
-      keepAliveDaemon.start();
-    }
-  }
-
-
-  /**
-   * Stops all helper threads.
-   */
-  public synchronized void terminateHelperThreads() {
-    if (keepAliveDaemon != null && keepAliveDaemon.isAlive()) {
-      keepAliveDaemon.terminate();
-    }
-    keepAliveDaemon = null;
-  }
-
-
-  /**
-   * Handles the change of a keep alive interval of a session.
-   *
-   * @param session the session
-   */
-  public synchronized void keepAliveIntervalChanged(Session session) {
-    startKeepAliveDaemonIfNotRunning();
-    keepAliveDaemon.keepAliveIntervalChanged(session);
-  }
-
 
 
   /**
@@ -345,8 +263,6 @@ public class PdoUtilities {
     }
     return list;
   }
-
-
 
 
   /**
@@ -445,7 +361,6 @@ public class PdoUtilities {
   }
 
 
-
   /**
    * Checks whether some of the objects in the list are modified.
    * Useful for recursive optimizations.
@@ -468,52 +383,6 @@ public class PdoUtilities {
       }
     }
     return false;
-  }
-
-
-
-  /**
-   * Gets the table name of given class.
-   *
-   * @param <T> the pdo type
-   * @param clazz the pdo class
-   * @return the name
-   */
-  public <T extends PersistentDomainObject<T>> String getTableName(Class<T> clazz) {
-    String pdoClassName = clazz.getName();
-    String tableName = getTableName(pdoClassName);
-    if (tableName == null) {  // not annotated with @TableName
-      tableName = tableNameMap.get(clazz);  // try extra list
-      if (tableName == null) {
-        // not in extra list: get from pdo instance
-        tableName = Pdo.create(clazz).getTableName();
-        tableNameMap.put(clazz, tableName);
-      }
-    }
-    return tableName;
-  }
-
-
-  /**
-   * Gets the table name of given classes.
-   *
-   * @param classes the PDO classes
-   * @return the names, null if classes is null or empty
-   */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  public String[] getTableNames(Class<?>... classes) {
-    String[] names;
-    if (classes != null && classes.length > 0) {
-      names = new String[classes.length];
-      int i=0;
-      for (Class<?> clazz: classes) {
-        names[i++] = getTableName((Class<? extends PersistentDomainObject>) clazz);
-      }
-    }
-    else  {
-      names = null;
-    }
-    return names;
   }
 
 
@@ -627,32 +496,6 @@ public class PdoUtilities {
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos) {
     return saveCollection(pdos, false);
-  }
-
-
-  /**
-   * Inspects an expiration set and determines whether at least one PDO has been removed.
-   *
-   * @param expireSet the expiration set
-   * @param maxSerial the current tableserial
-   * @return true if some object removed
-   */
-  public boolean isSomePdoRemoved(List<IdSerialTuple> expireSet, long maxSerial) {
-    // determine whether some objects have been removed or not
-    boolean someRemoved = false;
-    long lastSerial = -1;
-    for (IdSerialTuple idSer: expireSet) {
-      if (lastSerial != -1 && idSer.getSerial() - lastSerial > 1) {
-        // gap in tableSerials: delete() invoked at least once
-        someRemoved = true;
-        break;
-      }
-      lastSerial = idSer.getSerial();
-    }
-    if (maxSerial - lastSerial > 1) {
-      someRemoved = true;  // lastserial == -1 (no expired pdos found) or gap at end
-    }
-    return someRemoved;
   }
 
 }

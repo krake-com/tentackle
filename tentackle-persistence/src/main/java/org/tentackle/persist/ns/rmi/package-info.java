@@ -17,6 +17,6 @@
  */
 
 /**
- * Remoting for number sources.
+ * Number sources remoting.
  */
 package org.tentackle.persist.ns.rmi;

@@ -30,14 +30,15 @@ import java.util.TreeMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.ModificationEvent;
-import org.tentackle.pdo.ModificationListener;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.pdo.Session;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationListener;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
 
 
 
@@ -418,12 +419,12 @@ public class DefaultSecurityManager implements SecurityManager {
       for (Security rule: createSecurityInstance(Pdo.createDomainContext(session)).selectAll()) {
         if (rule.getObjectId() != 0 &&
             // pdo vanished
-            Pdo.create(PdoUtilities.getInstance().getPdoClassName(
+            Pdo.create(SessionUtilities.getInstance().getClassName(
                     rule.getObjectClassId()), session).selectSerial(rule.getObjectId()) == -1
                 ||
             rule.getGranteeId() != 0 &&
             // grantee vanished
-            Pdo.create(PdoUtilities.getInstance().getPdoClassName(
+            Pdo.create(SessionUtilities.getInstance().getClassName(
                     rule.getGranteeClassId()), session).selectSerial(rule.getGranteeId()) == -1) {
 
           rule.delete();
@@ -681,7 +682,7 @@ public class DefaultSecurityManager implements SecurityManager {
     if (securityListener == null) {
       // register listener once
       securityListener = createModificationListener();
-      PdoTracker.getInstance().addModificationListener(securityListener);
+      ModificationTracker.getInstance().addModificationListener(securityListener);
     }
 
     LOGGER.fine("security manager initialized");

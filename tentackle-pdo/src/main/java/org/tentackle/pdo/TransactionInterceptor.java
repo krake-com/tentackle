@@ -27,6 +27,9 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionProvider;
 
 /**
  * Implementation for the transaction interception.

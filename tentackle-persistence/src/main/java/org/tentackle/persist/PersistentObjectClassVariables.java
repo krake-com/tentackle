@@ -20,15 +20,19 @@
 package org.tentackle.persist;
 
 import java.util.List;
+import org.tentackle.dbms.AbstractDbObject;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DbObjectClassVariables;
+import org.tentackle.dbms.StatementId;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
+import org.tentackle.session.SessionUtilities;
 
 
 
@@ -164,8 +168,8 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
                                         PersistentObjectClassVariables<? super T, ? super P> superClassVariables,
                                         List<Join<T,?>> eagerJoins)  {
     super(poClass,
-          PdoUtilities.getInstance().determineClassId(pdoClass),
-          PdoUtilities.getInstance().determineTablename(pdoClass));
+          SessionUtilities.getInstance().determineClassId(pdoClass),
+          SessionUtilities.getInstance().determineTablename(pdoClass));
     this.pdoClass = pdoClass;
     this.tableAlias = tableAlias;
     this.superClassVariables = superClassVariables;

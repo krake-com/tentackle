@@ -36,7 +36,7 @@ import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 import static javax.lang.model.SourceVersion.RELEASE_8;
 

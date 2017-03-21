@@ -26,8 +26,8 @@ import org.tentackle.pdo.DomainObject;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.Session;
 
 /**
  * The abstract domain object.

@@ -21,6 +21,8 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 /**
  * Domain logic runtime exception.

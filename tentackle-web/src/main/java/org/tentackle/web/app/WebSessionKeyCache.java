@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.misc.ApplicationException;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.SessionInfo;
 
 /**
  * A cache mapping user session infos to the web container's session keys.

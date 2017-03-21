@@ -17,6 +17,6 @@
  */
 
 /**
- * Persistence layer implementation.
+ * Higher-level PDO-aware persistence implementation.
  */
 package org.tentackle.persist;

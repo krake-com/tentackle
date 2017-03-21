@@ -28,12 +28,12 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.LoginFailedException;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.Session;
-import org.tentackle.pdo.SessionInfo;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionInfo;
 
 
 
@@ -99,9 +99,9 @@ public abstract class ConsoleApplication extends AbstractApplication {
    * other threads.
    */
   @Override
-  protected void configurePdoTracker() {
-    super.configurePdoTracker();
-    PdoTracker.getInstance().setSession(getSession());
+  protected void configureModificationTracker() {
+    super.configureModificationTracker();
+    ModificationTracker.getInstance().setSession(getSession());
   }
 
 
@@ -253,8 +253,8 @@ public abstract class ConsoleApplication extends AbstractApplication {
     super.doFinishStartup();
 
     // add a shutdown handler in case the modthread terminates unexpectedly
-    PdoTracker.getInstance().addShutdownRunnable(() -> {
-      if (!PdoTracker.getInstance().isTerminationRequested()) {
+    ModificationTracker.getInstance().addShutdownRunnable(() -> {
+      if (!ModificationTracker.getInstance().isTerminationRequested()) {
         LOGGER.severe("*** emergency shutdown ***");
         doStop(5);
       }

@@ -7,10 +7,10 @@ package org.tentackle.i18n.pdo.rmi;
 import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.i18n.pdo.StoredBundleKeyPersistenceImpl;
 import java.rmi.RemoteException;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegateImpl;
-import org.tentackle.persist.rmi.RemoteDbSessionImpl;
 
 
 /**

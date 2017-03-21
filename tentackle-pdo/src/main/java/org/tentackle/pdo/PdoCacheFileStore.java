@@ -36,6 +36,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.UserHomeJavaDir;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
 
 
 /**
@@ -63,7 +65,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
   // persisted data
   private final String applicationName;   // the application name (null if file-backup disabled, i.e. not a client application)
-  private final String serverName;        // the name of the backend
+  private final String backendName;       // the name of the backend
   private final String fileName;          // the filename
 
   private long tableSerial;               // the serial version of the table
@@ -83,16 +85,11 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     if (application != null) {
       Session session = application.getSession();
       applicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
-      if (session != null && session.isRemote()) {
-        serverName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
-      }
-      else {
-        serverName = null;
-      }
+      backendName = StringHelper.toAsciiLetterOrDigit(session.getUrl());
     }
     else {
       applicationName = null;
-      serverName = null;
+      backendName = null;
     }
     fileName = StringHelper.toAsciiLetterOrDigit(cache.getObjectClass().getName()) + CACHE_FILE_EXTENSION;
   }
@@ -201,13 +198,13 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    */
   private void verifyAfterRead() throws PdoRuntimeException {
     String expectedApplicationName = null;
-    String expectedServerName = null;
+    String expectedBackendName = null;
     AbstractApplication application = AbstractApplication.getRunningApplication();
     if (application != null) {
       expectedApplicationName = StringHelper.toAsciiLetterOrDigit(application.getName());
       Session session = application.getSession();
       if (session.isRemote()) {
-        expectedServerName = StringHelper.toAsciiLetterOrDigit(session.getRemoteSession().getServerName());
+        expectedBackendName = StringHelper.toAsciiLetterOrDigit(session.getUrl());
       }
     }
 
@@ -218,9 +215,9 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
               "', expected (running) application is '" + expectedApplicationName + "'");
     }
 
-    if (!Objects.equals(expectedServerName, serverName)) {
-      throw new PdoRuntimeException("cache data belongs to backend '" + serverName +
-              "', expected (running) backend is '" + expectedServerName + "'");
+    if (!Objects.equals(expectedBackendName, backendName)) {
+      throw new PdoRuntimeException("cache data belongs to backend '" + backendName +
+              "', expected (running) backend is '" + expectedBackendName + "'");
     }
 
     if (!Objects.equals(expectedFileName, fileName)) {
@@ -252,9 +249,14 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
   }
 
 
+  /**
+   * Gets the current table serial.
+   *
+   * @return the serial, 0 if no access made yet
+   */
   private long getTableSerial() {
     if (objects != null && objects.size() > 0) {
-      return PdoTracker.getInstance().getSerial(cache.getObjectClass());
+      return ModificationTracker.getInstance().getSerial(cache.getObjectClass());
     }
     else  {
       return 0;
@@ -273,8 +275,8 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
       file.mkdir();
       LOGGER.info("Created cache application directory " + file.getAbsolutePath());
     }
-    if (serverName != null) {
-      file = new File(file, serverName);
+    if (backendName != null) {
+      file = new File(file, backendName);
       if (!file.exists()) {
         file.mkdir();
         LOGGER.info("Created cache backend application directory " + file.getAbsolutePath());

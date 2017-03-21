@@ -23,6 +23,9 @@ import java.rmi.RemoteException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import org.tentackle.dbms.PreparedStatementWrapper;
+import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -31,21 +34,18 @@ import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.Join;
 import org.tentackle.persist.JoinedSelect;
-import org.tentackle.pdo.ModificationEvent;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoCacheIndex;
 import org.tentackle.pdo.PdoListener;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PersistenceException;
-import org.tentackle.pdo.Persistent;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
-import org.tentackle.pdo.Session;
-import org.tentackle.persist.PreparedStatementWrapper;
-import org.tentackle.persist.ResultSetWrapper;
-import org.tentackle.persist.StatementId;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Persistent;
+import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
 import org.tentackle.validate.ValidationResult;
@@ -645,7 +645,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
           }
         };
 
-      PdoTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
+      ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
 
         @Override
         public void dataChanged(ModificationEvent ev) {

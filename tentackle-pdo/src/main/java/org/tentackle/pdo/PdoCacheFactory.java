@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 
 import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.session.Session;
 
 
 interface PdoCacheFactory$Singleton {

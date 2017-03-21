@@ -34,7 +34,7 @@ import javax.swing.JPasswordField;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.SessionInfo;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.StringFormField;
 

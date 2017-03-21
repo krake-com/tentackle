@@ -10,7 +10,7 @@ import java.util.List;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegateImpl;
-import org.tentackle.persist.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.persist.security.SecurityPersistenceImpl;

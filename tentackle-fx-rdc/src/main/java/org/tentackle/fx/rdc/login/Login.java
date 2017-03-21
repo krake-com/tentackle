@@ -37,7 +37,7 @@ import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.SessionInfo;
 
 /**
  * Login controller.

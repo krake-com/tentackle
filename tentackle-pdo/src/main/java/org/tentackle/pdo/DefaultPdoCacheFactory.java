@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.tentackle.common.Service;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionCloseHandler;
 
 /**
  * The default Pdo-Cache factory.

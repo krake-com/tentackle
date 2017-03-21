@@ -19,14 +19,16 @@
 
 package org.tentackle.persist;
 
+import org.tentackle.dbms.AbstractDbOperation;
+import org.tentackle.dbms.Db;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceDelegate;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentOperation;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 
 
 /**
