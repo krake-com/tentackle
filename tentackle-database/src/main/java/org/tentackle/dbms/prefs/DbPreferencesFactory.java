@@ -737,6 +737,17 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
 
     long rootId = root.node.getPersistentNode().getId();
 
+    if (rootId == 0) {
+      // special handling if this is the first node for this user at all:
+      // in this case the changedNodes contain the root id
+      for (DbPreferencesNode node: changedNodes) {
+        if (Objects.equals(root.node.getUser(), node.getUser())) {
+          rootId = node.getRootNodeId();
+          break;
+        }
+      }
+    }
+
     // add or update nodes
     for (DbPreferencesNode prefNode: changedNodes) {
       if (prefNode.getRootNodeId() == rootId) {   // only nodes belonging to this root

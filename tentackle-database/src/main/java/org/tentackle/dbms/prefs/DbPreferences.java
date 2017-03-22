@@ -446,6 +446,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         else {
           childNode.setName(currentPrefs.absolutePath() + "/" + subName);
         }
+        childNode.setUser(currentPrefs.getUser());
         childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
         currentPrefs.putChild(childPrefs);
       }

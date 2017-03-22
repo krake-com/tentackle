@@ -106,25 +106,26 @@ public class FormEventQueue extends EventQueue {
   @Override
   public AWTEvent getNextEvent() throws InterruptedException {
 
-    AWTEvent event = super.getNextEvent();
+    AWTEvent event;
 
     if (dropEventTime != 0 && eventFilter != null) {
-      for (;;) {
-        if (event instanceof InputEvent) {
-          InputEvent ie = (InputEvent) event;
-          if (ie.getWhen() <= dropEventTime) {
-            if (!eventFilter.test(ie)) {
-              break;  // pass to application
-            }
-            // else: skip this event
-          }
-          else {  // time reached
-            eventFilter = null;
-            dropEventTime = 0;
+      while ((event = super.getNextEvent()) instanceof InputEvent) {
+        InputEvent ie = (InputEvent) event;
+        if (ie.getWhen() <= dropEventTime) {
+          if (!eventFilter.test(ie)) {
             break;  // pass to application
           }
+          // else: skip this event
+        }
+        else {  // time reached
+          eventFilter = null;
+          dropEventTime = 0;
+          break;  // pass to application
         }
       }
+    }
+    else {
+      event = super.getNextEvent();
     }
 
     /**
