@@ -39,13 +39,12 @@ public class AddPrefsInOtherJVM {
     session.makeCurrent();
 
     ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(session.clone());
-    tracker.start();
+    tracker.setSession(session);
+    // no need to start the tracker, we just need the session to register the counter
 
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
     prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
     prefs.flush();
-    tracker.terminate();
     session.close();
   }
 
