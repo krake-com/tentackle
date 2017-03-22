@@ -102,22 +102,12 @@ public class PdoUtilities {
    * Gets the singular of given class.
    *
    * @param clazz the class
-   * @return the singular, null if not annotated with @Singular or singular not implemented
+   * @return the singular, null if not annotated with @Singular
    */
   @SuppressWarnings("unchecked")
   public String getSingular(Class<?> clazz) {
-    String singular = singularMap.get(clazz.getName());
-    if (singular == null) {   // not annotated with @Plural
-      if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
-        // not in extra list: get from pdo instance
-        singular = Pdo.create((Class) clazz).getSingular();
-      }
-      if (singular == null) {
-        singular = "";
-      }
-      singularMap.put(clazz.getName(), singular);
-    }
-    return singular.isEmpty() ? null : singular;
+    return singularMap.get(clazz.getName());
+    // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
   }
 
 
@@ -125,22 +115,12 @@ public class PdoUtilities {
    * Gets the plural of given class.
    *
    * @param clazz the class
-   * @return the plural, "" if not annotated with @Plural or plural not implemented
+   * @return the plural, null if not annotated with @Plural
    */
   @SuppressWarnings("unchecked")
   public String getPlural(Class<?> clazz) {
-    String plural = pluralMap.get(clazz.getName());
-    if (plural == null) {   // not annotated with @Plural
-      if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
-        // not in extra list: get from pdo instance
-        plural = Pdo.create((Class) clazz).getPlural();
-      }
-      if (plural == null) {
-        plural = "";
-      }
-      pluralMap.put(clazz.getName(), plural);
-    }
-    return plural.isEmpty() ? null : plural;
+    return pluralMap.get(clazz.getName());
+    // don't refer to Pdo because default implementation uses PdoUtilities in return (-> would loop)
   }
 
 

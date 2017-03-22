@@ -571,20 +571,15 @@ public class DefaultFormComponentBinder extends AbstractBinder implements FormCo
    * @return the form component or container, null if field is not a form object
    */
   private Object getFormObject(Container container, Field formField) {
-    Object formObject = null;
     try {
       if (!formField.isAccessible()) {
         formField.setAccessible(true);
       }
-      formObject = formField.get(container);
-      if (formObject == null) {
-        throw new BindingException(formField + " is null");
-      }
+      return formField.get(container);
     }
     catch (Exception ex) {
       throw new BindingException("cannot access " + formField, ex);
     }
-    return formObject;
   }
 
 
