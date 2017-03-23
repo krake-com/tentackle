@@ -226,7 +226,7 @@ For more options, see {\@link DbModelWurblet}.
       for (Relation join: getJoins()) {
         joinCount++;
         String joinClass = join.getForeignEntity().getName();
-        String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
+        String joinAlias = join.getForeignEntity().getTableProvidingEntity().getTableAlias();
         if (join.getRelationType() == RelationType.LIST) {
 ]@
     js.addJoin(
