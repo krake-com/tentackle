@@ -54,7 +54,7 @@ public class FormEventQueue extends EventQueue {
    * Filter to drop events.<br>
    * null if none or timed out (default).
    */
-  private Predicate<InputEvent> eventFilter;
+  private Predicate<AWTEvent> eventFilter;
 
   /**
    * Epochal time in ms until events described by eventFilter should be dropped.<br>
@@ -78,7 +78,7 @@ public class FormEventQueue extends EventQueue {
    * @param millis the time in milliseconds to add the current system time
    * @param eventFilter the filter describing the events to drop
    */
-  public void dropEvents(long millis, Predicate<InputEvent> eventFilter) {
+  public void dropEvents(long millis, Predicate<AWTEvent> eventFilter) {
     dropEventTime = System.currentTimeMillis() + millis;
     this.eventFilter = eventFilter;
   }
@@ -101,31 +101,18 @@ public class FormEventQueue extends EventQueue {
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to drop keyboard events.
+   * Overridden to drop keyboard or mouse events.
    */
   @Override
   public AWTEvent getNextEvent() throws InterruptedException {
 
-    AWTEvent event;
+    AWTEvent event = super.getNextEvent();
 
-    if (dropEventTime != 0 && eventFilter != null) {
-      while ((event = super.getNextEvent()) instanceof InputEvent) {
-        InputEvent ie = (InputEvent) event;
-        if (ie.getWhen() <= dropEventTime) {
-          if (!eventFilter.test(ie)) {
-            break;  // pass to application
-          }
-          // else: skip this event
-        }
-        else {  // time reached
-          eventFilter = null;
-          dropEventTime = 0;
-          break;  // pass to application
-        }
+    while (eventFilter != null && eventFilter.test(event)) {
+      long eventTime = event instanceof InputEvent ? ((InputEvent) event).getWhen() : System.currentTimeMillis();
+      if (eventTime > dropEventTime) {
+        eventFilter = null;   // time elapsed: deactivate filter and pass event to application
       }
-    }
-    else {
-      event = super.getNextEvent();
     }
 
     /**
