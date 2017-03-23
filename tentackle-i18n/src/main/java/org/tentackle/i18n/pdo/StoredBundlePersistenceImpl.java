@@ -757,15 +757,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     }
     // else: local mode
-    JoinedSelect<StoredBundle> js = new JoinedSelect<>();
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
-        (bndl, bkey) -> {
-          ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-          ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
-        }
-      )
-    );
+    JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
+      .addJoin(
+        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
+          (bndl, bkey) -> {
+            ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
+            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
+          }
+        )
+      );
     PreparedStatementWrapper st = getPreparedStatement(FIND_BY_NAME_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -807,15 +807,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     }
     // else: local mode
-    JoinedSelect<StoredBundle> js = new JoinedSelect<>();
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
-        (bndl, bkey) -> {
-          ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-          ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
-        }
-      )
-    );
+    JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
+      .addJoin(
+        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
+          (bndl, bkey) -> {
+            ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
+            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
+          }
+        )
+      );
     PreparedStatementWrapper st = getPreparedStatement(FIND_BY_NAME_AND_LOCALE_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();

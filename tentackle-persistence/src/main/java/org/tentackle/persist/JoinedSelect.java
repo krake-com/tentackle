@@ -75,9 +75,11 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
    * Adds a join.
    *
    * @param join the join
+   * @return me (to allow fluent style setup)
    */
-  public void addJoin(Join<? super T,?> join) {
+  public JoinedSelect<T> addJoin(Join<? super T,?> join) {
     joins.add(join);
+    return this;
   }
 
   /**

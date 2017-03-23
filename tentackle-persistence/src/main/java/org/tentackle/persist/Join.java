@@ -19,8 +19,10 @@
 
 package org.tentackle.persist;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -80,6 +82,11 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final BiConsumer<T,J> joiner;
 
   /**
+   * Cascaded joined selects.
+   */
+  private final List<JoinedSelect<J>> cascadedJoinedSelects;
+
+  /**
    * A map of object ids to detect whether a pdo has already been joined or not.
    * The key is the ID of the PDO that gets other PDOs joined.
    * The set contains the IDs of the already joined PDOs.
@@ -113,7 +120,8 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @param joinAlias the alias of the joined pdo
    * @param joiner the joiner
    */
-  public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass, String joinAlias, BiConsumer<T, J> joiner) {
+  public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
+              String joinAlias, BiConsumer<T, J> joiner) {
     this.type = type;
     this.columnName = columnName;
     this.joinedColumnName = joinedColumnName;
@@ -121,6 +129,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
     this.joinAlias = joinAlias;
     this.joiner = joiner;
 
+    cascadedJoinedSelects = new ArrayList<>();
     idMap = new HashMap<>();
     listJoin = columnName.endsWith(ENDS_WITH_ID);
     explicitIdAliasRequired = !listJoin &&
@@ -199,6 +208,27 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   public BiConsumer<T, J> getJoiner() {
     return joiner;
   }
+
+  /**
+   * Adds another joined select that is cascaded as joins on this join.
+   *
+   * @param joinedSelect the joined select
+   * @return me (to allow fluent style setup)
+   */
+  public Join<T,J> addCascadedJoins(JoinedSelect<J> joinedSelect) {
+    cascadedJoinedSelects.add(joinedSelect);
+    return this;
+  }
+
+  /**
+   * Gets the cascaded joined selects.
+   *
+   * @return the cascaded selects, never null
+   */
+  public List<JoinedSelect<J>> getCascadedJoins() {
+    return cascadedJoinedSelects;
+  }
+
 
   /**
    * Initializes the join.

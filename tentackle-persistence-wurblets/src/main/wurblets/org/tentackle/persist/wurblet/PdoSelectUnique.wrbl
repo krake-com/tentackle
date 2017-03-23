@@ -147,7 +147,7 @@ For more options, see {\@link DbModelWurblet}.
 
     if (!getJoins().isEmpty()) {
 ]@
-    JoinedSelect<@(returnType)@> js = new JoinedSelect<>();
+    JoinedSelect<@(returnType)@> js = new JoinedSelect<@(returnType)@>()
 @[
       int joinCount = 0;
       for (Relation join: getJoins()) {
@@ -156,41 +156,41 @@ For more options, see {\@link DbModelWurblet}.
         String joinAlias = join.getForeignEntity().getTableProvidingEntity().getTableAlias();
         if (join.getRelationType() == RelationType.LIST) {
 ]@
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
-        (@(alias)@, @(joinAlias)@) -> {
+      .addJoin(
+        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
+          (@(alias)@, @(joinAlias)@) -> {
 @[
           if (join.isReversed()) {
 ]@
-          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
+            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
 @[
           }
           else {
 ]@
-          ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
+            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
 @[
             if (join.getLinkMethodName() != null) {
               String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
 ]@
-          ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
+            ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
 @[
             }
           }
 ]@
-        }
-      )
-    );
+          }
+        )
+      )@(joinCount == getJoins().size() ? ";" : "")@
 @[
         }
         else  {
 ]@
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_@(join.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
-        (@(alias)@, @(joinAlias)@) -> {
-          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
-        }
-      )
-    );
+      .addJoin(
+        new Join<>(JoinType.LEFT, getColumnName(CN_@(join.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
+          (@(alias)@, @(joinAlias)@) -> {
+            @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+          }
+        )
+      )@(joinCount == getJoins().size() ? ";" : "")@
 @[
         }
       }
