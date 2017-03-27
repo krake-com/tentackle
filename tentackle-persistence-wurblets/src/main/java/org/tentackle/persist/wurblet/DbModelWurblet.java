@@ -19,7 +19,9 @@
 package org.tentackle.persist.wurblet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.tentackle.common.StringHelper;
@@ -59,8 +61,8 @@ public class DbModelWurblet extends ModelWurblet {
   private boolean attracked;
   private boolean fullTracked;
   private Attribute contextAttribute;
-  private Set<ComponentJoin> componentJoins;
-  private List<Relation> joinedRelations;
+  private Set<InnerComponentJoin> componentJoins;
+  private List<Relation> nonComponentRelations;
 
 
   @Override
@@ -237,24 +239,24 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Gets the component joins.
+   * Gets the inner component joins.
    *
    * @return the joins, empty if none
    * @throws WurbelException if a join could not be created
    */
-  public Set<ComponentJoin> getComponentJoins() throws WurbelException {
+  public Set<InnerComponentJoin> getInnerComponentJoins() throws WurbelException {
     if (componentJoins == null) {
       componentJoins = new HashSet<>();
       for (WurbletParameter par: getExpressionParameters()) {
         if (par.isComponentKey() ||
             par.isRelationKey() && par.getRelationComponentEntityName() != null) {
-          ComponentJoin join = new ComponentJoin(this,
+          InnerComponentJoin join = new InnerComponentJoin(this,
                                                  par.isComponentKey() ? getEntity() : par.getRelation().getForeignEntity(),
                                                  par.getAttribute().getEntity());
           componentJoins.add(join);
         }
         else if (par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-          ComponentJoin join = new ComponentJoin(this,
+          InnerComponentJoin join = new InnerComponentJoin(this,
                                                  par.getRelation().getForeignEntity(),
                                                  par.getRelation().getEntity());
           componentJoins.add(join);
@@ -266,20 +268,82 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Gets the non-component joined relations.
+   * Gets the non-component relations.
    *
-   * @return the non-component joined relations
+   * @return the non-component relations
    */
-  public List<Relation> getJoinedRelations() {
-    if (joinedRelations == null) {
-      joinedRelations = new ArrayList<>();
+  public List<Relation> getNonComponentRelations() {
+    if (nonComponentRelations == null) {
+      nonComponentRelations = new ArrayList<>();
       for (WurbletParameter par: getExpressionParameters()) {
         if (par.isRelationKey()) {
-          joinedRelations.add(par.getRelation());
+          nonComponentRelations.add(par.getRelation());
         }
       }
     }
-    return joinedRelations;
+    return nonComponentRelations;
+  }
+
+
+  /**
+   * Parses the joins defined in the wurblet anchor.
+   *
+   * @return the parsed joins
+   */
+  public List<LeftJoin> getLeftJoins() {
+
+    // convert relations to linked lists of leftjoins
+    List<List<LeftJoin>> joinPaths = new ArrayList<>();
+    int maxLength = 0;
+    for (List<Relation> relations: super.getJoinedRelations()) {
+      List<LeftJoin> joinPath = new ArrayList<>();
+      LeftJoin parentJoin = null;
+      for (Relation relation: relations) {
+        LeftJoin join = new LeftJoin(relation);
+        if (parentJoin != null) {
+          parentJoin.getJoins().add(join);
+        }
+        joinPath.add(join);
+        parentJoin = join;
+      }
+      joinPaths.add(joinPath);
+      if (joinPath.size() > maxLength) {
+        maxLength = joinPath.size();
+      }
+    }
+
+    // sort by path length (longest path comes first)
+    Collections.sort(joinPaths, (o1, o2) -> o2.size() - o1.size());
+
+    // merge matching join paths
+    outer:
+    while (maxLength > 0) {
+      for (List<LeftJoin> joinPath: joinPaths) {
+        if (joinPath.size() >= maxLength) {
+          List<LeftJoin> subPath = joinPath.subList(0, maxLength);
+          for (Iterator<List<LeftJoin>> iter = joinPaths.iterator(); iter.hasNext(); ) {
+            List<LeftJoin> otherJoinPath = iter.next();
+            if (otherJoinPath != joinPath && otherJoinPath.size() >= maxLength) {
+              List<LeftJoin> otherSubPath = otherJoinPath.subList(0, maxLength);
+              if (subPath.equals(otherSubPath)) {
+                if (otherJoinPath.size() > maxLength) {
+                  joinPath.get(maxLength - 1).getJoins().add(otherJoinPath.get(maxLength));
+                }
+                iter.remove();
+                continue outer;   // start over
+              }
+            }
+          }
+        }
+      }
+      maxLength--;
+    }
+
+    List<LeftJoin> leftJoins = new ArrayList<>();
+    for (List<LeftJoin> joinPath: joinPaths) {
+      leftJoins.add(joinPath.get(0));
+    }
+    return leftJoins;
   }
 
 
@@ -801,7 +865,7 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * The TT persistence layer provides an optimized select for a single eager relations via a Join.
+   * The TT persistence layer provides an optimized select for a single eager relations via a LeftJoin.
    *
    * @return the eager relations, empty list if no optimization possible or no eagers at all
    */

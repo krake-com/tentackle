@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.tentackle.common.Constants;
@@ -93,7 +94,7 @@ public class ModelWurblet extends AbstractWurblet {
   private WurbletParameterParser parser;
 
   /** the joins. */
-  private List<Relation> joins;
+  private List<List<Relation>> joins;
 
 
   /**
@@ -485,7 +486,7 @@ public class ModelWurblet extends AbstractWurblet {
    *
    * @return the joins
    */
-  public List<Relation> getJoins() {
+  public List<List<Relation>> getJoinedRelations() {
     return joins;
   }
 
@@ -765,22 +766,33 @@ public class ModelWurblet extends AbstractWurblet {
     }
 
     // setup joins
-    for (String joinName: parser.getJoinNames()) {
-      Relation join = entity.getRelation(joinName, true);
-      if (join == null) {
-        throw new WurbelException("no such relation to join: " + joinName);
+    for (String joinPath : parser.getJoinPaths()) {
+      List<Relation> joinedJoins = new ArrayList<>();
+      StringTokenizer stok = new StringTokenizer(joinPath, "*");
+      Entity leftEntity = entity;
+      while (stok.hasMoreTokens()) {
+        String joinName = stok.nextToken();
+        Relation join = leftEntity.getRelation(joinName, true);
+        if (join == null) {
+          throw new WurbelException("no relation '" + joinName + "' in '" + leftEntity + "'");
+        }
+        if (join.getSelectionType() != SelectionType.LAZY && join.getSelectionType() != SelectionType.EAGER) {
+          throw new WurbelException("joined relation '" + join.getName() + "' must be lazy or eager");
+        }
+        if (remote && !join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
+          throw new WurbelException("joined non-composite relation '" + join.getName() +
+                  "' must be serialized for remote access");
+        }
+        // verify that join is not used by a component key
+        if (componentKeyEntities.contains(join.getForeignEntity())) {
+          throw new WurbelException("join '" + join.getName() + "' is already used by a component key");
+        }
+        joinedJoins.add(join);
+        leftEntity = join.getForeignEntity();
       }
-      if (join.getSelectionType() != SelectionType.LAZY && join.getSelectionType() != SelectionType.EAGER) {
-        throw new WurbelException("joined relation '" + join.getName() + "' must be lazy or eager");
+      if (!joinedJoins.isEmpty() && !joins.contains(joinedJoins)) {
+        joins.add(joinedJoins);
       }
-      if (remote && !join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
-        throw new WurbelException("joined non-composite relation '" + join.getName() + "' must be serialized for remote access");
-      }
-      // verify that join is not used by a component key
-      if (componentKeyEntities.contains(join.getForeignEntity())) {
-        throw new WurbelException("join '" + join.getName() + "' is already used by a component key");
-      }
-      joins.add(join);
     }
 
 

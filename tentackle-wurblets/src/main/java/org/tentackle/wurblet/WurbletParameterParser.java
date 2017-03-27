@@ -185,11 +185,11 @@ public class WurbletParameterParser {
   }
 
   /**
-   * Gets the relation names of the joins.
+   * Gets the paths of the joins.
    *
-   * @return the join names
+   * @return the join paths
    */
-  public List<String> getJoinNames() {
+  public List<String> getJoinPaths() {
     return joinNames;
   }
 

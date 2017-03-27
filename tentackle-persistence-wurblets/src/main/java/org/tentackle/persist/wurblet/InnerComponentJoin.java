@@ -26,11 +26,11 @@ import org.tentackle.model.InheritanceType;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * Describes the join to a component's attribute.
+ * Describes the inner join to a component's attribute.
  *
  * @author harald
  */
-public class ComponentJoin {
+public class InnerComponentJoin {
 
   private final Entity entity;                      // the left side of the join
   private final Entity joinedEntity;                // the right side of the join
@@ -48,7 +48,7 @@ public class ComponentJoin {
    * @param joinedEntity the entity to join (right side of the join)
    * @throws WurbelException if given parameter is not a component key
    */
-  public ComponentJoin(DbModelWurblet wurblet, Entity entity, Entity joinedEntity) throws WurbelException {
+  public InnerComponentJoin(DbModelWurblet wurblet, Entity entity, Entity joinedEntity) throws WurbelException {
 
     this.entity = entity;
     this.joinedEntity = joinedEntity;
@@ -156,7 +156,7 @@ public class ComponentJoin {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final ComponentJoin other = (ComponentJoin) obj;
+    final InnerComponentJoin other = (InnerComponentJoin) obj;
     return Objects.equals(this.rootIdClassName, other.rootIdClassName);
   }
 

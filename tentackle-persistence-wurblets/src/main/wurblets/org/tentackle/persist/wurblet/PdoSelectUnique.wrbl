@@ -145,52 +145,54 @@ For more options, see {\@link DbModelWurblet}.
 @[
     } // end if remote
 
-    if (!getJoins().isEmpty()) {
+    Collection<LeftJoin> joins = getLeftJoins();
+    if (!joins.isEmpty()) {
 ]@
     JoinedSelect<@(returnType)@> js = new JoinedSelect<@(returnType)@>()
 @[
       int joinCount = 0;
-      for (Relation join: getJoins()) {
+      for (LeftJoin join: joins) {
+        Relation rel = join.getRelation();
         joinCount++;
-        String joinClass = join.getForeignEntity().getName();
-        String joinAlias = join.getForeignEntity().getTableProvidingEntity().getTableAlias();
-        if (join.getRelationType() == RelationType.LIST) {
+        String joinClass = rel.getForeignEntity().getName();
+        String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
+        if (rel.getRelationType() == RelationType.LIST) {
 ]@
       .addJoin(
-        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
+        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(rel.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
           (@(alias)@, @(joinAlias)@) -> {
 @[
-          if (join.isReversed()) {
+          if (rel.isReversed()) {
 ]@
-            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
+            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getSetterName())@(@(joinAlias)@);
 @[
           }
           else {
 ]@
-            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
+            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
 @[
-            if (join.getLinkMethodName() != null) {
-              String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
+            if (rel.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(rel.getForeignEntity());
 ]@
-            ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
+            ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(rel, alias))@;
 @[
             }
           }
 ]@
           }
         )
-      )@(joinCount == getJoins().size() ? ";" : "")@
+      )@(joinCount == getJoinedRelations().size() ? ";" : "")@
 @[
         }
         else  {
 ]@
       .addJoin(
-        new Join<>(JoinType.LEFT, getColumnName(CN_@(join.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
+        new Join<>(JoinType.LEFT, getColumnName(CN_@(rel.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
           (@(alias)@, @(joinAlias)@) -> {
-            @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+            @(alias)@.@(rel.getSetterName())@(@(joinAlias)@);
           }
         )
-      )@(joinCount == getJoins().size() ? ";" : "")@
+      )@(joinCount == getJoinedRelations().size() ? ";" : "")@
 @[
         }
       }
@@ -233,7 +235,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (!getJoins().isEmpty()) {
+    if (!getJoinedRelations().isEmpty()) {
 ]@
     ndx = js.setClassIdsInStatement(st, ndx);
 @[
@@ -246,7 +248,7 @@ For more options, see {\@link DbModelWurblet}.
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
 @[
     }
-    if (getJoins().isEmpty()) {
+    if (getJoinedRelations().isEmpty()) {
 ]@
     return executeFirstPdoQuery(st);
 @[
