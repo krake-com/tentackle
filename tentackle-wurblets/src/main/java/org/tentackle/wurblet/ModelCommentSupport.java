@@ -137,32 +137,27 @@ public class ModelCommentSupport {
                                      String indent, PrintStream out) {
 
     for (Relation relation: compositeRelations) {
-      boolean relationIsNotAlreadyPrinted = allRelations.add(relation);
+
+      boolean relationNotAlreadyPrinted = allRelations.add(relation);
       Entity component = relation.getForeignEntity();
-      for (Entity sub: subEntities) {
-        if (!sub.getComponents().isEmpty()) {
-          out.print(indent);
-          out.print("^ ");
-          out.println(sub);
-          List<Relation> subCompositeRelations = new ArrayList<>();
-          for (Relation subRelation : sub.getRelationsIncludingInherited()) {
-            if (subRelation.isComposite()) {
-              subCompositeRelations.add(subRelation);
+
+      if (relationNotAlreadyPrinted) {
+        for (Entity sub: subEntities) {
+          if (!sub.getComponents().isEmpty()) {
+            out.print(indent);
+            out.print("^ ");
+            out.println(sub);
+            List<Relation> subCompositeRelations = new ArrayList<>();
+            for (Relation subRelation : sub.getRelationsIncludingInherited()) {
+              if (subRelation.isComposite()) {
+                subCompositeRelations.add(subRelation);
+              }
             }
-          }
-          if (relationIsNotAlreadyPrinted) {
             printComponents(allRelations, subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
-          }
-          else {
-            if (relation.getForeignEntity().isComposite()) {
-              out.println(" ...");
-            }
-            else {
-              out.println();
-            }
           }
         }
       }
+
       out.print(indent);
       out.print("+ ");
       out.print(component);
@@ -197,7 +192,7 @@ public class ModelCommentSupport {
         }
       }
 
-      if (relationIsNotAlreadyPrinted) {
+      if (relationNotAlreadyPrinted) {
         out.println();
         printComponents(allRelations, componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
       }
