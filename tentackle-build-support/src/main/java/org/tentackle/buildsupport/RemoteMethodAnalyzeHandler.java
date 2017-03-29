@@ -117,13 +117,14 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
           }
         }
         else {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "enclosing element '" + enclosingElement + "' of annotated method is not a class", element);
+          processor.getProcessingEnvironment().getMessager().printMessage(Kind.WARNING,
+                  "enclosing element '" + enclosingElement + "' of annotated method '" +
+                  methodElement.getSimpleName() + "' is not a class -> ignored", element);
         }
       }
       else {
         processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "annotated element '" + element + "' is not a method", element);
+                  Kind.WARNING, "annotated element '" + element + "' is not a method -> ignored", element);
       }
     }
   }
