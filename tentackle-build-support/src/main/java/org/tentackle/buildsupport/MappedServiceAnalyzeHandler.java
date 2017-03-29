@@ -131,7 +131,7 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         if (processor.isDebugLogging()) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "appending '" + configuration + "' to " + relativeName);
+                  Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
         }
 
         try {
@@ -143,7 +143,7 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "file generation error: " + ex);
+                  Kind.ERROR, "file generation error: " + ex, element);
           return;
         }
       }

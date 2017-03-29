@@ -63,7 +63,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
     }
     catch (ClassNotFoundException nfe) {
       processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe);
+                  Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe, annotationType);
       return;
     }
 
@@ -92,7 +92,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
           }
           if (getProcessor().isDebugLogging()) {
             processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "found annotated method " + methodName + " in class " + className);
+                  Kind.NOTE, "found annotated method " + methodName + " in class " + className, element);
           }
           try {
             // create info object
@@ -108,17 +108,17 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
             }
             if (getProcessor().isDebugLogging()) {
               processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "created " + outputFile);
+                  Kind.NOTE, "created " + outputFile, element);
             }
           }
           catch (Exception ex) {
             processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "extracting AnalyzeInfo failed: " + ex);
+                  Kind.ERROR, "extracting AnalyzeInfo failed: " + ex, element);
           }
         }
         else {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "enclosing element '" + enclosingElement + "'of annotated method is not a class", enclosingElement);
+                  Kind.ERROR, "enclosing element '" + enclosingElement + "' of annotated method is not a class", element);
         }
       }
       else {
@@ -127,6 +127,5 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
       }
     }
   }
-
 
 }

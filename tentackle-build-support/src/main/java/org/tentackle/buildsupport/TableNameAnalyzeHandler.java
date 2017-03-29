@@ -130,7 +130,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
 
         if (processor.isDebugLogging()) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName);
+                  Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
         }
 
         try {
@@ -142,7 +142,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "file generation error: " + ex);
+                  Diagnostic.Kind.ERROR, "file generation error: " + ex, element);
           return;
         }
       }
