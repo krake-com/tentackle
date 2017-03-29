@@ -28,8 +28,7 @@ public enum InheritanceType {
   /**
    * There is no inheritance at all.<br>
    * This is the default.<br>
-   * The concrete entities, i.e. the leafs of the inheritance hierarchy are of the type {@code NONE} because they
-   * inherit nothing.
+   * The concrete entities, i.e. the leafs of the inheritance hierarchy are of type {@code NONE}.
    */
   NONE(false, true, true),
 
