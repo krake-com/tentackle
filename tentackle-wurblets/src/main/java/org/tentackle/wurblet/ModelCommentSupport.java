@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
@@ -125,15 +126,18 @@ public class ModelCommentSupport {
   /**
    * Recursively prints the components and sub-entities of an entity.
    *
+   * @param allRelations set to avoid recursion loops
    * @param compositeRelations the composite relations
    * @param subEntities the sub entities
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printComponents(Collection<Relation> compositeRelations, Collection<Entity> subEntities,
+  public static void printComponents(Set<Relation> allRelations,
+                                     Collection<Relation> compositeRelations, Collection<Entity> subEntities,
                                      String indent, PrintStream out) {
 
     for (Relation relation: compositeRelations) {
+      boolean relationIsNotAlreadyPrinted = allRelations.add(relation);
       Entity component = relation.getForeignEntity();
       for (Entity sub: subEntities) {
         if (!sub.getComponents().isEmpty()) {
@@ -146,7 +150,17 @@ public class ModelCommentSupport {
               subCompositeRelations.add(subRelation);
             }
           }
-          printComponents(subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
+          if (relationIsNotAlreadyPrinted) {
+            printComponents(allRelations, subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
+          }
+          else {
+            if (relation.getForeignEntity().isComposite()) {
+              out.println(" ...");
+            }
+            else {
+              out.println();
+            }
+          }
         }
       }
       out.print(indent);
@@ -166,14 +180,13 @@ public class ModelCommentSupport {
             !relation.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
           out.print(" as " + StringHelper.firstToLower(relation.getNmMethodName()));
         }
-        out.println();
       }
       else  {
         if (relation.getRelationType() == RelationType.LIST) {
-          out.println(" [1:N]");
+          out.print(" [1:N]");
         }
         else {
-          out.println(" [1:1]");
+          out.print(" [1:1]");
         }
       }
 
@@ -183,7 +196,19 @@ public class ModelCommentSupport {
           componentCompositeRelations.add(subRelation);
         }
       }
-      printComponents(componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
+
+      if (relationIsNotAlreadyPrinted) {
+        out.println();
+        printComponents(allRelations, componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
+      }
+      else {
+        if (relation.getForeignEntity().isComposite()) {
+          out.println(" ...");
+        }
+        else {
+          out.println();
+        }
+      }
     }
   }
 

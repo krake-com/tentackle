@@ -70,7 +70,8 @@ For more options, see {\@link ModelWurblet}.
    *
    * @(getEntity())@ is a composite with the components:
 @[
-      ModelCommentSupport.printComponents(compositeRelations, subEntities, "   *    ", out);
+      Set<Relation> allRelations = new HashSet<>();
+      ModelCommentSupport.printComponents(allRelations, compositeRelations, subEntities, "   *    ", out);
     }
 
     List<Relation> outRels = new ArrayList<>();
