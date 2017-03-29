@@ -105,7 +105,7 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
 
       // add node and key in other jvm
       runInOtherJVM(AddPrefsInOtherJVM.class);
-      Thread.sleep(2000);   // give time for modtracker to fire events
+      Thread.sleep(3000);   // give time for modtracker to fire events
 
       dumpSerials();
 
