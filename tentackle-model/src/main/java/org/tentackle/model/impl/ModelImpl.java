@@ -1093,7 +1093,7 @@ public class ModelImpl implements Model {
    */
   protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases)
             throws ModelException {
-    return new ModelDirectory(modelDir, defaults, aliases);
+    return new ModelDirectoryImpl(modelDir, defaults, aliases);
   }
 
   /**

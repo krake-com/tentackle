@@ -19,102 +19,55 @@
 
 package org.tentackle.model.impl;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
-import org.tentackle.model.ModelException;
 
 /**
  * A directory holding model files.
  *
  * @author harald
  */
-public class ModelDirectory {
-
-  private final File dir;                       // the directory file
-  private final ModelDefaults modelDefaults;    // the model defaults used for that directory
-  private final EntityAliases entityAliases;    // the aliases used for that directory
-
-  private long lastModified;                    // the last modification time
-
-
-  /**
-   * Creates a model directory object.
-   *
-   * @param modelDir the directory name
-   * @param defaults optional model defaults, null if none
-   * @param aliases optional entity aliases, null if none
-   * @throws ModelException if directory does not exist or is not a directory
-   */
-  public ModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
-    dir = new File(modelDir);
-    if (!dir.exists()) {
-      throw new ModelException(modelDir + " does not exist");
-    }
-    if (!dir.isDirectory()) {
-      throw new ModelException(modelDir + " is not a directory");
-    }
-    lastModified = dir.lastModified();
-    modelDefaults = defaults;
-    entityAliases = aliases;
-  }
+public interface ModelDirectory {
 
   /**
    * Gets the directory path.
    *
    * @return the path
    */
-  public String getPath() {
-    return dir.getAbsolutePath();
-  }
+  public String getPath();
 
   /**
    * Gets the model file names.
    *
    * @return the list of names, never null
    */
-  public List<String> getFileNames() {
-    List<String> names = new ArrayList<>();
-    for (File file: dir.listFiles()) {
-      names.add(file.getAbsolutePath());
-    }
-    return names;
-  }
+  List<String> getFileNames();
 
   /**
    * Gets the model defaults.
    *
    * @return the defaults, null if none
    */
-  public ModelDefaults getModelDefaults() {
-    return modelDefaults;
-  }
+  ModelDefaults getModelDefaults();
 
   /**
    * Gets the entity aliases.
    *
    * @return the aliases, null if none
    */
-  public EntityAliases getEntityAliases() {
-    return entityAliases;
-  }
+  EntityAliases getEntityAliases();
 
   /**
    * Returns whether the directory has changed.
    *
    * @return true if changed
    */
-  public boolean hasChanged() {
-    return dir.lastModified() > lastModified;
-  }
+  boolean hasChanged();
 
   /**
    * Marks this directory dirty.
    */
-  public void markDirty() {
-    lastModified = 0;
-  }
+  void markDirty();
 
 }
