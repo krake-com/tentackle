@@ -51,12 +51,12 @@ public class TentackleWurbletsModel extends ModelImpl {
   private WurbelException loadingException;
 
   @Override
-  protected Reader createFileReader(String fileName) throws ModelException {
+  protected Reader createReader(String name) throws ModelException {
     try {
-      return WurbelHelper.openReader(fileName);
+      return WurbelHelper.openReader(name);
     }
     catch (WurbelException wex) {
-      throw new ModelException("cannot create reader for " + fileName, wex);
+      throw new ModelException("cannot create reader for " + name, wex);
     }
   }
 

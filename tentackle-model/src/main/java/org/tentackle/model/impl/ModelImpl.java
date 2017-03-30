@@ -293,7 +293,7 @@ public class ModelImpl implements Model {
    */
   protected Entity parseEntity(ModelDefaults defaults, String fileName) throws ModelException {
     StringBuilder modelSource = new StringBuilder();
-    try (Reader reader = createFileReader(fileName)) {
+    try (Reader reader = createReader(fileName)) {
       char[] buf = new char[1024];
       int len;
       while ((len = reader.read(buf)) != -1)  {
@@ -1096,18 +1096,18 @@ public class ModelImpl implements Model {
   }
 
   /**
-   * Creates a reader for given filename.
+   * Creates a reader for given name.
    *
-   * @param fileName the filename
+   * @param name the file- or resource name
    * @return the reader
    * @throws ModelException if creating the reader failed (because file not found)
    */
-  protected Reader createFileReader(String fileName) throws ModelException {
+  protected Reader createReader(String name) throws ModelException {
     try {
-      return new BufferedReader(new InputStreamReader(new FileInputStream(fileName), Settings.encodingCharset));
+      return new BufferedReader(new InputStreamReader(new FileInputStream(name), Settings.encodingCharset));
     }
     catch (IOException ex) {
-      throw new ModelException("cannot open reader for " + fileName, ex);
+      throw new ModelException("cannot open reader for " + name, ex);
     }
   }
 
