@@ -118,7 +118,8 @@ public class ModelImpl implements Model {
     if (dir == null || dir.hasChanged()) {
       dir = createModelDirectory(modelDir, defaults, aliases);
       modelDirs.put(modelDir, dir);
-      for (File file : dir.getFiles()) {
+      for (String fileName : dir.getFileNames()) {
+        File file = new File(fileName);
         if (!file.isHidden()) {
           loadByFileName(file.getPath(), defaults, aliases, false);
         }
@@ -170,7 +171,7 @@ public class ModelImpl implements Model {
   public void refreshModel() throws ModelException {
     for (ModelDirectory modelDir: modelDirs.values()) {
       modelDir.markDirty();
-      loadModel(modelDir.getFile().getAbsolutePath(), modelDir.getModelDefaults(), modelDir.getEntityAliases());
+      loadModel(modelDir.getPath(), modelDir.getModelDefaults(), modelDir.getEntityAliases());
     }
   }
 

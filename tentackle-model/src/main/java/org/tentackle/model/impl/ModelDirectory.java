@@ -21,7 +21,6 @@ package org.tentackle.model.impl;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
@@ -63,22 +62,25 @@ public class ModelDirectory {
   }
 
   /**
-   * Gets the directory file.
+   * Gets the directory path.
    *
-   * @return the file
+   * @return the path
    */
-  public File getFile() {
-    return dir;
+  public String getPath() {
+    return dir.getAbsolutePath();
   }
 
   /**
-   * Gets the model files.
+   * Gets the model file names.
    *
-   * @return the list of files, never null
+   * @return the list of names, never null
    */
-  public List<File> getFiles() {
-    File[] files = getFile().listFiles();
-    return files == null ? new ArrayList<>() : Arrays.asList(files);
+  public List<String> getFileNames() {
+    List<String> names = new ArrayList<>();
+    for (File file: dir.listFiles()) {
+      names.add(file.getAbsolutePath());
+    }
+    return names;
   }
 
   /**
