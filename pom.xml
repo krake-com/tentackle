@@ -376,7 +376,7 @@
 
     <resources>
       <resource>
-        <directory>${basedir}/src/main/resources</directory>
+        <directory>${project.basedir}/src/main/resources</directory>
       </resource>
       <!--  additional source directory for generated service files -->
       <resource>
@@ -386,7 +386,7 @@
 
     <testResources>
       <testResource>
-        <directory>${basedir}/src/test/resources</directory>
+        <directory>${project.basedir}/src/test/resources</directory>
       </testResource>
       <testResource>
         <directory>${tentackle.testServiceDir}</directory>

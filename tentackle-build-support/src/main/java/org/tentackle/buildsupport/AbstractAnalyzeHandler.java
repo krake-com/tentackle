@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// $Id: AbstractAnalyzeHandler.java 2450 2016-01-04 11:21:35Z svn $
-
 package org.tentackle.buildsupport;
 
 import java.io.File;

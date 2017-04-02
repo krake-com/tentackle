@@ -2,8 +2,6 @@
 
 # collects and sums up statistics info from a server-logfile
 # the tab-separated output can be easily imported by excel or similar spreadsheet app
-#
-# $Id: sumup_statistics.sh 2366 2015-11-19 12:39:42Z svn $
 
 
 usage()
