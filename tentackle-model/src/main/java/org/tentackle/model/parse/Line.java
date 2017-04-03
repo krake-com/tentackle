@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.parser;
+package org.tentackle.model.parse;
 
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;

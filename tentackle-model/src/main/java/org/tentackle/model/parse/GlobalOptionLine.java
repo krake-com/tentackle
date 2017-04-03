@@ -16,52 +16,60 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.parser;
+package org.tentackle.model.parse;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.tentackle.model.ModelException;
 
 /**
- * A comment line.
+ * Global options line.
+ * <p>
+ * Example:
+ * <pre>
+ * [bind, autoselect, tracked, editedby, tableserial, generated]
+ * </pre>
  *
  * @author harald
  */
-public class CommentLine extends SingleLine {
+public class GlobalOptionLine extends SingleLine {
 
-  private String comment;   // the comment (trimmed and without leading hash)
+  private List<String> options;
 
 
   /**
-   * Creates a comment line.<br>
+   * Creates a global options line.<br>
    * This line always spans only one line.
    *
    * @param document the whole document
    * @param offset offset to first character within document
    * @param lineType the line type
    */
-  public CommentLine(Document document, int offset, LineType lineType) {
+  public GlobalOptionLine(Document document, int offset, LineType lineType) {
     super(document, offset, lineType);
   }
 
   @Override
   public void parse() throws ModelException {
     super.parse();
-    comment = getText().trim();
-    // cut leading hash
-    if (comment.charAt(0) == '#') {
-      comment = comment.substring(1).trim();
+    OptionParser parser = new OptionParser(getText(), true);
+    options = new ArrayList<>();
+    String option;
+    while ((option = parser.nextOption()) != null) {
+      options.add(option);
     }
   }
 
+
   /**
-   * Gets the comment.<br>
-   * The leading hash and whitespaces and trailing whitespaces are removed.
+   * Gets the option strings.
    *
-   * @return the comment
+   * @return the options
    * @throws ModelException if not parsed
    */
-  public String getComment() throws ModelException {
+  public List<String> getOptions() throws ModelException {
     assertParsed();
-    return comment;
+    return options;
   }
 
 }

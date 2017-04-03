@@ -769,8 +769,9 @@ public class ModelImpl implements Model {
         for (Entity child: entity.getAllSubEntities()) {
           allAttributes.addAll(child.getAttributes());
         }
-        for (Attribute attribute: allAttributes) {
-          Attribute oldAttribute = nameMap.put(attribute.getJavaName().toLowerCase(), attribute);
+        for (Attribute attrib: allAttributes) {
+          AttributeImpl attribute = (AttributeImpl) attrib;
+          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getJavaName().toLowerCase(), attribute);
           if (oldAttribute != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             if (exMsg.length() > 0) {
               exMsg.append('\n');
@@ -788,7 +789,7 @@ public class ModelImpl implements Model {
             exEntities.add(attribute.getEntity());
             exEntities.add(oldAttribute.getEntity());
           }
-          Attribute oldColumn = columnMap.put(attribute.getColumnName().toLowerCase(), attribute);
+          AttributeImpl oldColumn = (AttributeImpl) columnMap.put(attribute.getColumnName().toLowerCase(), attribute);
           if (oldAttribute == null && // log same attrib only once
               oldColumn != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
             if (exMsg.length() > 0) {

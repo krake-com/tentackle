@@ -37,7 +37,7 @@ import org.tentackle.model.Integrity;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.ConfigurationLine;
+import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
 
 /**

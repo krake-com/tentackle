@@ -16,60 +16,52 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.parser;
+package org.tentackle.model.parse;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.model.ModelException;
 
 /**
- * Global options line.
- * <p>
- * Example:
- * <pre>
- * [bind, autoselect, tracked, editedby, tableserial, generated]
- * </pre>
+ * A line consisting of multiple physical lines.<br>
+ * Such lines are concatenated by trailing commas or colons.
+ * The first empty line ends the multiline.
  *
  * @author harald
  */
-public class GlobalOptionLine extends SingleLine {
-
-  private List<String> options;
-
+abstract public class MultiLine extends Line {
 
   /**
-   * Creates a global options line.<br>
-   * This line always spans only one line.
+   * Creates a multi-line.<br>
    *
    * @param document the whole document
    * @param offset offset to first character within document
    * @param lineType the line type
    */
-  public GlobalOptionLine(Document document, int offset, LineType lineType) {
+  public MultiLine(Document document, int offset, LineType lineType) {
     super(document, offset, lineType);
   }
 
   @Override
   public void parse() throws ModelException {
-    super.parse();
-    OptionParser parser = new OptionParser(getText(), true);
-    options = new ArrayList<>();
-    String option;
-    while ((option = parser.nextOption()) != null) {
-      options.add(option);
+    String text = getDocument().getText().substring(getOffset());
+    boolean nextSectionFound = false;
+    int length = 0;
+    char lastC = 0;
+    while (length < text.length()) {
+      char c = text.charAt(length);
+      if (c == '\n' && (!nextSectionFound || lastC == '\n')) {
+        // this is the last in the block
+        break;
+      }
+      if (c == ',' || c == ':') {
+        nextSectionFound = true;
+      }
+      else if (!Character.isWhitespace(c)) {
+        nextSectionFound = false;
+      }
+      lastC = c;
+      length++;
     }
-  }
-
-
-  /**
-   * Gets the option strings.
-   *
-   * @return the options
-   * @throws ModelException if not parsed
-   */
-  public List<String> getOptions() throws ModelException {
-    assertParsed();
-    return options;
+    setLength(length);
   }
 
 }

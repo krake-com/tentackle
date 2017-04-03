@@ -19,7 +19,6 @@
 package org.tentackle.model;
 
 import java.util.List;
-import org.tentackle.model.parser.Line;
 
 /**
  * A relation to an entity.
@@ -302,13 +301,6 @@ public interface Relation {
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
 
   /**
    * Gets the variable name.<br>

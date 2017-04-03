@@ -19,7 +19,6 @@
 package org.tentackle.model;
 
 import java.util.List;
-import org.tentackle.model.parser.Line;
 import org.tentackle.sql.Backend;
 
 /**
@@ -85,13 +84,6 @@ public interface Index {
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
 
   /**
    * Creates the index creation sql code.

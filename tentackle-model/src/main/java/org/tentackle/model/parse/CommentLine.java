@@ -16,65 +16,52 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.parser;
+package org.tentackle.model.parse;
 
 import org.tentackle.model.ModelException;
 
 /**
- * The configuration line.
+ * A comment line.
  *
  * @author harald
  */
-public class ConfigurationLine extends SingleLine {
+public class CommentLine extends SingleLine {
 
-  private String key;     // the keyword
-  private String value;   // the value
+  private String comment;   // the comment (trimmed and without leading hash)
 
 
   /**
-   * Creates a configuration line.<br>
+   * Creates a comment line.<br>
    * This line always spans only one line.
    *
    * @param document the whole document
    * @param offset offset to first character within document
    * @param lineType the line type
    */
-  public ConfigurationLine(Document document, int offset, LineType lineType) {
+  public CommentLine(Document document, int offset, LineType lineType) {
     super(document, offset, lineType);
   }
 
   @Override
   public void parse() throws ModelException {
     super.parse();
-    String[] tokens = getText().split(":=", 2);
-    if (tokens.length != 2) {
-      throw createModelException("misconfigured configuration line");
+    comment = getText().trim();
+    // cut leading hash
+    if (comment.charAt(0) == '#') {
+      comment = comment.substring(1).trim();
     }
-    key = tokens[0].trim();
-    value = tokens[1].trim();
-  }
-
-
-  /**
-   * Gets the key's name.
-   *
-   * @return the key
-   * @throws ModelException if not parsed
-   */
-  public String getKey() throws ModelException {
-    assertParsed();
-    return key;
   }
 
   /**
-   * Gets the key's value.
+   * Gets the comment.<br>
+   * The leading hash and whitespaces and trailing whitespaces are removed.
    *
-   * @return the value
+   * @return the comment
    * @throws ModelException if not parsed
    */
-  public String getValue() throws ModelException {
+  public String getComment() throws ModelException {
     assertParsed();
-    return value;
+    return comment;
   }
 
 }

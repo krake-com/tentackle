@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,20 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.model.parser;
-
 /**
- * A parser for a line according to line type.
- *
- * @author harald
+ * Model printing.
  */
-public interface LineParser {
-
-  /**
-   * Parses a line.
-   *
-   * @param line the line to parse
-   */
-  void parse(Line line);
-
-}
+package org.tentackle.model.print;

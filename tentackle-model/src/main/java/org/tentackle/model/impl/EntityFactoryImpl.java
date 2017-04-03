@@ -34,14 +34,14 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SortType;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.AttributeLine;
-import org.tentackle.model.parser.CommentLine;
-import org.tentackle.model.parser.ConfigurationLine;
-import org.tentackle.model.parser.Document;
-import org.tentackle.model.parser.GlobalOptionLine;
-import org.tentackle.model.parser.Line;
-import org.tentackle.model.parser.OptionLine;
-import org.tentackle.model.parser.RelationLine;
+import org.tentackle.model.parse.AttributeLine;
+import org.tentackle.model.parse.CommentLine;
+import org.tentackle.model.parse.ConfigurationLine;
+import org.tentackle.model.parse.Document;
+import org.tentackle.model.parse.GlobalOptionLine;
+import org.tentackle.model.parse.Line;
+import org.tentackle.model.parse.OptionLine;
+import org.tentackle.model.parse.RelationLine;
 import org.tentackle.sql.Backend;
 
 

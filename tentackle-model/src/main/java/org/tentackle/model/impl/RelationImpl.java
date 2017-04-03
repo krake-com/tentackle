@@ -33,7 +33,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.RelationLine;
+import org.tentackle.model.parse.RelationLine;
 
 /**
  * Relation implementation.
@@ -619,11 +619,20 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.name = name;
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public RelationLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(RelationLine sourceLine) {
     this.sourceLine = sourceLine;
   }

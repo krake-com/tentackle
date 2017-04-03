@@ -18,8 +18,6 @@
 
 package org.tentackle.model;
 
-import org.tentackle.model.parser.Line;
-
 /**
  * An attribute.
  * <p>
@@ -168,7 +166,6 @@ public interface Attribute {
    */
   boolean isNullable() throws ModelException;
 
-
   /**
    * Gets the associated relation.
    *
@@ -176,21 +173,12 @@ public interface Attribute {
    */
   Relation getRelation();
 
-
   /**
    * Validates the attribute.
    *
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
-
 
   /**
    * Gets the suffix to be used in methodnames.

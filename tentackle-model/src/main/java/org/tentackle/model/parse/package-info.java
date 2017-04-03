@@ -17,6 +17,6 @@
  */
 
 /**
- * Model parser.
+ * Model parsing.
  */
-package org.tentackle.model.parser;
+package org.tentackle.model.parse;

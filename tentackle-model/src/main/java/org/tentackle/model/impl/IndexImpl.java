@@ -28,7 +28,7 @@ import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.ConfigurationLine;
+import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
 
 /**
@@ -266,11 +266,20 @@ public class IndexImpl implements Index {
     }
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public ConfigurationLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(ConfigurationLine sourceLine) {
     this.sourceLine = sourceLine;
   }

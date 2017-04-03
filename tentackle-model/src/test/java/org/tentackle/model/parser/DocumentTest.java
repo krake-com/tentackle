@@ -18,6 +18,15 @@
 
 package org.tentackle.model.parser;
 
+import org.tentackle.model.parse.OptionLine;
+import org.tentackle.model.parse.LineType;
+import org.tentackle.model.parse.GlobalOptionLine;
+import org.tentackle.model.parse.ConfigurationLine;
+import org.tentackle.model.parse.CommentLine;
+import org.tentackle.model.parse.Line;
+import org.tentackle.model.parse.RelationLine;
+import org.tentackle.model.parse.AttributeLine;
+import org.tentackle.model.parse.Document;
 import java.util.Iterator;
 import java.util.List;
 import org.tentackle.model.ModelException;

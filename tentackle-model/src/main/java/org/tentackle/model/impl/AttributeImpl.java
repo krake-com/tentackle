@@ -28,7 +28,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.AttributeLine;
+import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
 
 /**
@@ -146,7 +146,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     getOptions().applyEntityOptions(entity.getOptions(), getDataType());
     getOptions().setComment(line.getComment());
-    
+
     for (String option: line.getOptions()) {
       if (!getOptions().processOption(option)) {
         throw line.createModelException("illegal attribute option: " + option);
@@ -422,11 +422,20 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     getOptions().validate();
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public AttributeLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(AttributeLine sourceLine) {
     this.sourceLine = sourceLine;
   }
