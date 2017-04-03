@@ -18,6 +18,8 @@
 
 package org.tentackle.model.print;
 
+import org.tentackle.model.ModelDefaults;
+
 /**
  * Holds parameters to configure the generated output.
  *
@@ -27,16 +29,22 @@ public class PrintConfiguration {
 
   private final boolean printingAsComment;      // print as a comment block
   private final boolean usingVariables;         // use variables in model
+  private final ModelDefaults modelDefaults;    // optional model defaults
+  private final int columnGap;                  // minimum number of spaces between columns in attribute section
 
   /**
    * Creates a printing configuration.
    *
    * @param printingAsComment create a comment block
    * @param usingVariables use variables for tablename, classid and mapping
+   * @param modelDefaults the model defaults, null if none
+   * @param columnGap minimum number of spaces between columns in attribute section
    */
-  public PrintConfiguration(boolean printingAsComment, boolean usingVariables) {
+  public PrintConfiguration(boolean printingAsComment, boolean usingVariables, ModelDefaults modelDefaults, int columnGap) {
     this.printingAsComment = printingAsComment;
     this.usingVariables = usingVariables;
+    this.modelDefaults = modelDefaults;
+    this.columnGap = columnGap < 1 ? 1 : columnGap;
   }
 
   /**
@@ -55,6 +63,24 @@ public class PrintConfiguration {
    */
   public boolean isUsingVariables() {
     return usingVariables;
+  }
+
+  /**
+   * Gets the model defaults.
+   *
+   * @return the defaults, null if none
+   */
+  public ModelDefaults getModelDefaults() {
+    return modelDefaults;
+  }
+
+  /**
+   * Gets the minimum number of spaces between columns in attribute section.
+   *
+   * @return the gap (always &ge; 1)
+   */
+  public int getColumnGap() {
+    return columnGap;
   }
 
 }

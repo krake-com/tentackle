@@ -35,16 +35,16 @@ import org.tentackle.model.SourceInfo;
 public class AttributeOptionsImpl extends CommonOptionsImpl implements AttributeOptions {
 
   /** generate SQL DEFAULT. */
-  static final String OPTION_DEFAULT = "DEFAULT";
+  public static final String OPTION_DEFAULT = "DEFAULT";
 
   /** this is the object id holding the context. */
-  static final String OPTION_CONTEXT = "CONTEXT";
+  public static final String OPTION_CONTEXT = "CONTEXT";
 
   /** this is a unique domain key (or part of it). */
-  static final String OPTION_DOMAINKEY = "KEY";
+  public static final String OPTION_DOMAINKEY = "KEY";
 
   /** timestamp, date or time with database timezone. */
-  static final String OPTION_TZ = "TZ";
+  public static final String OPTION_TZ = "TZ";
 
 
 

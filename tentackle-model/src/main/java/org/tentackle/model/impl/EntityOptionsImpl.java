@@ -36,31 +36,31 @@ import org.tentackle.model.TrackType;
 public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOptions {
 
   /** don't apply model defaults. */
-  static final String OPTION_NO_MODELDEFAULTS = "NODEFAULTS";
+  public static final String OPTION_NO_MODELDEFAULTS = "NODEFAULTS";
 
   /** don't generate ID as primary key. */
-  static final String OPTION_NO_PRIMARY = "NOPKEY";
+  public static final String OPTION_NO_PRIMARY = "NOPKEY";
 
   /** column tableserial is provided. */
-  static final String OPTION_TABLESERIAL = "TABLESERIAL";
+  public static final String OPTION_TABLESERIAL = "TABLESERIAL";
 
   /** token lock columns editedBy/Since/Expiry are provided. */
-  static final String OPTION_TOKENLOCK = "TOKENLOCK";
+  public static final String OPTION_TOKENLOCK = "TOKENLOCK";
 
   /** normText is provided. */
-  static final String OPTION_NORMTEXT = "NORMTEXT";
+  public static final String OPTION_NORMTEXT = "NORMTEXT";
 
   /** root entity. */
-  static final String OPTION_ROOT = "ROOT";
+  public static final String OPTION_ROOT = "ROOT";
 
   /** rootid is provided. */
-  static final String OPTION_ROOTID = "ROOTID";
+  public static final String OPTION_ROOTID = "ROOTID";
 
   /** rootclassid is provided. */
-  static final String OPTION_ROOTCLASSID = "ROOTCLASSID";
+  public static final String OPTION_ROOTCLASSID = "ROOTCLASSID";
 
   /** enable remoting. */
-  static final String OPTION_REMOTE = "REMOTE";
+  public static final String OPTION_REMOTE = "REMOTE";
 
 
 

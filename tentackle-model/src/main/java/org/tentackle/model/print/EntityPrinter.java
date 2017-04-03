@@ -29,6 +29,7 @@ public class EntityPrinter {
 
   private final Entity entity;
   private final PrintConfiguration configuration;
+  private final StringBuilder buf;
 
   /**
    * Creates an entity printer.
@@ -39,6 +40,7 @@ public class EntityPrinter {
   public EntityPrinter(Entity entity, PrintConfiguration configuration) {
     this.entity = entity;
     this.configuration = configuration;
+    buf = new StringBuilder();
   }
 
   /**
@@ -47,7 +49,7 @@ public class EntityPrinter {
    * @return the printed entity model
    */
   public String print() {
-    StringBuilder buf = new StringBuilder();
+    buf.setLength(0);
 
     if (configuration.isPrintingAsComment()) {
       buf.append("/**\n");
@@ -55,15 +57,79 @@ public class EntityPrinter {
         buf.append(" * @> $mapping\n");
       }
       else {
-        buf.append(" * @> ").append(entity.getTableName()).append(".map");
+        buf.append(" * @> ").append(entity.getTableName()).append(".map\n");
       }
     }
 
+    line("\n");
+    line("# ").append(entity.getOptions().getComment()).append('\n');
+    line("name := ");
+    if (configuration.isUsingVariables()) {
+      buf.append("$classname\n");
+    }
+    else {
+      buf.append(entity.getName()).append('\n');
+    }
+    if (entity.getTableName() != null) {
+      line("table := ");
+      if (configuration.isUsingVariables()) {
+        buf.append("$tablename\n");
+      }
+      else {
+        buf.append(entity.getTableName()).append('\n');
+      }
+    }
+    if (entity.getClassId() != 0) {
+      line("id := ");
+      if (configuration.isUsingVariables()) {
+        buf.append("$classid\n");
+      }
+      else {
+        buf.append(entity.getClassId()).append('\n');
+      }
+    }
+    line("integrity := ");
+    if (configuration.isUsingVariables()) {
+      buf.append("$integrity\n");
+    }
+    else {
+      buf.append(entity.getIntegrity()).append('\n');
+    }
+
+    line("\n");
+    line("## attributes\n");
+    line(new GlobalOptionsPrinter(entity, configuration.getModelDefaults()).print()).append('\n');
+    buf.append(new AttributeSectionPrinter(entity, configuration).print());
+
+    line("\n");
+    line("## indexes\n");
+
+    line("\n");
+    line("## relations\n");
+
+    line("\n");
+    line("## validations\n");
+
+    line("\n");
     if (configuration.isPrintingAsComment()) {
-      buf.append("*/\n");
+      buf.append(" * @<\n */\n");
     }
 
     return buf.toString();
+  }
+
+
+  /**
+   * Begin a new line.
+   *
+   * @param str the leading part of the line
+   */
+  private StringBuilder line(String str) {
+    if (configuration.isPrintingAsComment()) {
+      buf.append(" * ");
+    }
+    buf.append(str);
+    return buf;
   }
 
 }

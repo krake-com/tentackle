@@ -44,8 +44,8 @@ import org.testng.annotations.Test;
  */
 public class ModelTest {
 
-
-  private static final String MODEL_FILENAME = "org/tentackle/model/model.txt";
+  /** resource file holding the test model. */
+  public static final String MODEL_FILENAME = "org/tentackle/model/model.txt";
 
 
   @Test
