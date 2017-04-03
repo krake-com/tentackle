@@ -264,7 +264,7 @@ public class ModelImpl implements Model {
       // load from file
       try {
         Entity entity = parseEntity(defaults, fileName);
-        modelEntity = new ModelEntity(entity, fileName);
+        modelEntity = createModelEntity(entity, fileName);
       }
       catch (ModelException mex) {
         String msg = "parsing '" + fileName + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
@@ -1095,6 +1095,18 @@ public class ModelImpl implements Model {
   protected ModelDirectory createModelDirectory(String modelDir, ModelDefaults defaults, EntityAliases aliases)
             throws ModelException {
     return new ModelDirectoryImpl(modelDir, defaults, aliases);
+  }
+
+  /**
+   * Creates a model entity wrapper.
+   *
+   * @param entity the entity
+   * @param fileName the model file name
+   * @return the model entity
+   * @throws ModelException if creation failed
+   */
+  protected ModelEntity createModelEntity(Entity entity, String fileName) throws ModelException {
+    return new ModelEntityImpl(entity, fileName);
   }
 
   /**

@@ -19,82 +19,34 @@
 
 package org.tentackle.model.impl;
 
-import java.io.File;
 import org.tentackle.model.Entity;
-import org.tentackle.model.ModelException;
 
 /**
  * Entity as a component of a model.
  *
  * @author harald
  */
-public class ModelEntity {
-
-  private final Entity entity;      // the entity
-  private final String fileName;    // the filename
-  private final File file;          // its source file
-  private final long lastModified;  // the last modification time
-
-
-  /**
-   * Creates a model entity.
-   *
-   * @param entity the entity
-   * @param fileName the modelfile's filename
-   * @throws ModelException if file does not exist or is not a regular file
-   */
-  public ModelEntity(Entity entity, String fileName) throws ModelException {
-    this.entity = entity;
-    this.fileName = fileName;
-    file = new File(fileName);
-    if (!file.exists()) {
-      throw new ModelException(fileName + " does not exist");
-    }
-    if (!file.isFile()) {
-      throw new ModelException(fileName + " is not a regular file");
-    }
-    lastModified = file.lastModified();
-  }
-
-  @Override
-  public String toString() {
-    return entity.toString();
-  }
+public interface ModelEntity {
 
   /**
    * Gets the entity.
    *
    * @return the entity
    */
-  public Entity getEntity() {
-    return entity;
-  }
+  Entity getEntity();
 
   /**
    * Gets the filename.
    *
    * @return the filename
    */
-  public String getFileName() {
-    return fileName;
-  }
-
-  /**
-   * Gets the model file.
-   *
-   * @return the file
-   */
-  public File getFile() {
-    return file;
-  }
+  String getFileName();
 
   /**
    * Returns whether the modelfile has changed.
    *
    * @return true if changed
    */
-  public boolean hasChanged() {
-    return file.lastModified() > lastModified;
-  }
+  boolean hasChanged();
 
 }

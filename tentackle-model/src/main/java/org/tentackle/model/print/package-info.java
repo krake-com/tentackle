@@ -17,6 +17,6 @@
  */
 
 /**
- * Model printing.
+ * Model pretty printing.
  */
 package org.tentackle.model.print;
