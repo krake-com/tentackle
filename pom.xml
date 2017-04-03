@@ -111,8 +111,8 @@
 
   <distributionManagement>
     <site>
-      <id>${project.url}</id>
-      <url>scp://${project.url}/docs/${project.version}</url>
+      <id>${site.id}</id>
+      <url>scp://${site.url}/tentackle/${project.version}</url>
     </site>
     <repository>
       <id>${repo.id}</id>
