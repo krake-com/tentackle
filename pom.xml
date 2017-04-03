@@ -99,9 +99,9 @@
   </properties>
 
   <scm>
-    <connection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</connection>
+    <connection>scm:git:https://bitbucket.org/krake-oss/tentackle.git</connection>
     <developerConnection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</developerConnection>
-    <url>https://bitbucket.org/krake-oss/tentackle.git/</url>
+    <url>https://bitbucket.org/krake-oss/tentackle/</url>
   </scm>
 
   <issueManagement>
