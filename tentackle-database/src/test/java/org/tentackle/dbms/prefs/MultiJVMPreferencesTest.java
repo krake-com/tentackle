@@ -100,8 +100,8 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
       prefs.addNodeChangeListener(this);
       prefs.node("other").addPreferenceChangeListener(this);    // not persisted so far!
       // so events are still empty
-      assertTrue(nodeEvents.isEmpty());
-      assertTrue(keyEvents.isEmpty());
+      assertTrue(getNodeEvents().isEmpty());
+      assertTrue(getKeyEvents().isEmpty());
 
       // add node and key in other jvm
       assertEquals(runInOtherJVM(AddPrefsInOtherJVM.class), 0);
@@ -109,20 +109,20 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
 
       dumpSerials();
 
-      assertEquals(nodeEvents.size(), 1);
-      NodeChangeEvent nodeEvent = nodeEvents.get(0);
+      assertEquals(getNodeEvents().size(), 1);
+      NodeChangeEvent nodeEvent = getNodeEvents().get(0);
       assertEquals(nodeEvent.getParent(), prefs);
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/dbms/prefs/other");
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
-      nodeEvents.clear();
+      getNodeEvents().clear();
 
-      assertEquals(keyEvents.size(), 1);
-      PreferenceChangeEvent keyEvent = keyEvents.get(0);
+      assertEquals(getKeyEvents().size(), 1);
+      PreferenceChangeEvent keyEvent = getKeyEvents().get(0);
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/dbms/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertEquals(keyEvent.getNewValue(), VALUE_4);
-      keyEvents.clear();
+      getKeyEvents().clear();
 
       // remove node and key in other jvm
       assertEquals(runInOtherJVM(RemovePrefsInOtherJVM.class), 0);
@@ -130,15 +130,15 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
 
       dumpSerials();
 
-      assertEquals(nodeEvents.size(), 1);
-      nodeEvent = nodeEvents.get(0);
+      assertEquals(getNodeEvents().size(), 1);
+      nodeEvent = getNodeEvents().get(0);
       assertEquals(nodeEvent.getParent(), prefs);
       assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/dbms/prefs/other");
       assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
 
-      assertEquals(keyEvents.size(), 1);
-      keyEvent = keyEvents.get(0);
+      assertEquals(getKeyEvents().size(), 1);
+      keyEvent = getKeyEvents().get(0);
       assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/dbms/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertNull(keyEvent.getNewValue());
@@ -156,6 +156,14 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
     }
   }
 
+
+  private synchronized List<NodeChangeEvent> getNodeEvents() {
+    return nodeEvents;
+  }
+
+  private synchronized List<PreferenceChangeEvent> getKeyEvents() {
+    return keyEvents;
+  }
 
   private void dumpSerials() {
     for (DbModification mod : new DbModification(getSession()).selectAllObjects()) {
