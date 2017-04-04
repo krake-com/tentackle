@@ -87,6 +87,8 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
   public void writePreferences() throws Exception {
     try {
 
+      Thread.sleep(2000);   // give time to startup modtracker thread
+      
       dumpSerials();
 
       PersistedPreferencesFactory.getInstance().invalidate();
@@ -102,8 +104,6 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
       // so events are still empty
       assertTrue(getNodeEvents().isEmpty());
       assertTrue(getKeyEvents().isEmpty());
-
-      Thread.sleep(2000);   // give time to startup modtracker thread
 
       // add node and key in other jvm
       assertEquals(runInOtherJVM(AddPrefsInOtherJVM.class), 0);
