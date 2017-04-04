@@ -148,11 +148,13 @@ public abstract class AbstractPersistenceTest {
    * The testclass must have a main method.
    *
    * @param testClass the test class
+   * @return the exit value
    * @throws IOException if some IO operation failed
    */
-  public void runInOtherJVM(Class<?> testClass) throws IOException {
+  public int runInOtherJVM(Class<?> testClass) throws IOException {
     Process process = runClass(testClass);
     waitForProcess(process);
+    return process.exitValue();
   }
 
 
