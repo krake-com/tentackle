@@ -88,7 +88,7 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
     try {
 
       Thread.sleep(2000);   // give time to startup modtracker thread
-      
+
       dumpSerials();
 
       PersistedPreferencesFactory.getInstance().invalidate();
@@ -98,9 +98,12 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
       prefs.put(KEY_2, VALUE_2);
       prefs.flush();
 
+      Thread.sleep(1000);
+
       // register after flush
       prefs.addNodeChangeListener(this);
       prefs.node("other").addPreferenceChangeListener(this);    // not persisted so far!
+
       // so events are still empty
       assertTrue(getNodeEvents().isEmpty());
       assertTrue(getKeyEvents().isEmpty());

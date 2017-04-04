@@ -40,11 +40,15 @@ public class RemovePrefsInOtherJVM {
 
     ModificationTracker tracker = ModificationTracker.getInstance();
     tracker.setSession(session.clone());
+    tracker.setSleepInterval(500);
     tracker.start();
 
     PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(RemovePrefsInOtherJVM.class).node("other");
     prefs.removeNode();
-    PersistedPreferences.systemRoot().flush();
+    prefs.flush();
+
+    Thread.sleep(1000);
+
     tracker.terminate();
     session.close();
   }
