@@ -103,6 +103,8 @@ public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChang
       assertTrue(getNodeEvents().isEmpty());
       assertTrue(getKeyEvents().isEmpty());
 
+      Thread.sleep(2000);   // give time to startup modtracker thread
+
       // add node and key in other jvm
       assertEquals(runInOtherJVM(AddPrefsInOtherJVM.class), 0);
       Thread.sleep(2000);   // give time for modtracker to fire events
