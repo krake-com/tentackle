@@ -71,10 +71,18 @@ public interface Entity {
   /**
    * Gets the table alias for joined selects.<br>
    * The alias is unique among all tables.
+   * If the model does not provide an alias, a unique alias will be generated.
    *
    * @return the table alias
    */
   String getTableAlias();
+
+  /**
+   * Gets the table alias originally configured in the model.<br>
+   *
+   * @return the fixed alias, null if automatic
+   */
+  String getDefinedTableAlias();
 
   /**
    * Gets the referential integrity mode.

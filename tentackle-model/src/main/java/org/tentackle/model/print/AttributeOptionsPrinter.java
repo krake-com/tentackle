@@ -58,6 +58,10 @@ public class AttributeOptionsPrinter {
 
     buf.append(printBindOptions());
 
+    if (entityOptions.isBind() != options.isBind()) {
+      
+    }
+
     if (buf.length() > 0 && buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);
     }

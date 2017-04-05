@@ -19,6 +19,7 @@
 package org.tentackle.model.print;
 
 import org.tentackle.model.Entity;
+import org.tentackle.model.InheritanceType;
 
 /**
  * Prints the model of an entity.
@@ -94,6 +95,15 @@ public class EntityPrinter {
     }
     else {
       buf.append(entity.getIntegrity()).append('\n');
+    }
+    if (entity.getInheritanceType() != InheritanceType.NONE) {
+      line("inheritance := ").append(entity.getInheritanceType()).append('\n');
+    }
+    if (entity.getSuperEntityName() != null) {
+      line("extends := ").append(entity.getSuperEntityName()).append('\n');
+    }
+    if (entity.getDefinedTableAlias() != null) {
+      line("alias := ").append(entity.getDefinedTableAlias()).append('\n');
     }
 
     line("\n");

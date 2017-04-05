@@ -20,62 +20,82 @@
 package org.tentackle.common;
 
 import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Factory for services based on {@link ServiceFinder}.<br>
- * This is the only factory that cannot be replaced by a {@code @Service}-annotation.
+ * Factory for services based on {@link ServiceFinder}.
+ * <p>
+ * The factory itself is loaded via the standard JDK {@link ServiceLoader} and can
+ * be replaced via META-INF/services. If no such configuration is found, for whatever reason,
+ * an instance of {@link ServiceFactory} is used.
+ * As a consequence, the fallback and default implementation <em>is</em> {@link ServiceFactory} itself.
+ * However, applications can replace it, if necessary.
  *
  * @author harald
  */
 public class ServiceFactory {
 
+  /**
+   * the logger for this class.
+   * We must use java.util logging because we cannot use the service factory yet.
+   */
+  private static final Logger LOGGER = Logger.getLogger(ServiceFactory.class.getName());
+
+  /**
+   * Creates the singleton via {@link ServiceLoader}.
+   *
+   * @return the instance, never null (fallback to this class)
+   */
+  private static ServiceFactory createServiceFactory() {
+
+    if (Constants.SERVICE_FACTORY_CLASSNAME != null) {
+      try {
+        @SuppressWarnings("unchecked")
+        Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) Class.forName(
+                Constants.SERVICE_FACTORY_CLASSNAME);
+        return clazz.newInstance();
+      }
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+        LOGGER.log(Level.WARNING,
+                "creating instance of Constants.SERVICE_FACTORY_CLASSNAME failed -> trying ServiceLoader...",
+                ex);
+      }
+    }
+
+    try {
+      ServiceLoader<ServiceFactory> loader = ServiceLoader.load(ServiceFactory.class);
+      for (ServiceFactory factory: loader) {
+        if (factory != null) {
+          return factory;
+        }
+      }
+    }
+    catch (ServiceConfigurationError cx) {
+      LOGGER.log(Level.WARNING,
+                 "locating the service factory failed -> fallback to ServiceFactory",
+                 cx);
+
+    }
+
+    return new ServiceFactory();
+  }
+
   /** the singleton instance. */
-  public static final ServiceFactory INSTANCE = new ServiceFactory();
+  public static final ServiceFactory INSTANCE = createServiceFactory();
+
+
 
 
   // the bootstrap finder (by default finds an instance of iself, see @Service annotation in DefaultServiceFinder)
-  private Class<? extends ServiceFinder> serviceFinderClass;
+  private Class<? extends ServiceFinder> bootstrapFinderClass;
 
-
-  // hash key for the finder map
-  private static final class Key {
-
-    private final ClassLoader loader;
-    private final String servicePath;
-
-    private Key(ClassLoader loader, String servicePath) {
-      this.loader = loader;
-      this.servicePath = servicePath;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final Key other = (Key) obj;
-      if (this.loader != other.loader && (this.loader == null || !this.loader.equals(other.loader))) {
-        return false;
-      }
-      return !((this.servicePath == null) ? (other.servicePath != null) : !this.servicePath.equals(other.servicePath));
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 89 * hash + (this.loader != null ? this.loader.hashCode() : 0);
-      hash = 89 * hash + (this.servicePath != null ? this.servicePath.hashCode() : 0);
-      return hash;
-    }
-
-  }
 
   // map of finders for different classloaders and service paths
-  private final Map<Key,ServiceFinder> finderMap;
+  private final Map<ServiceFinderKey,ServiceFinder> finderMap;
 
   /**
    * Use another classloader, if set.<br>
@@ -84,18 +104,18 @@ public class ServiceFactory {
   private ClassLoader classLoader;
 
   /**
-   * Singleton.
+   * Creates the factory.
    */
-  private ServiceFactory() {
+  public ServiceFactory() {
     try {
       // bootstrap finder used to load the effective finder class
-      serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
+      bootstrapFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
     }
     catch (Exception ex) {
       // we cannot use LOGGER here because this may use the createService as well
       java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
               "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
-      serviceFinderClass = DefaultServiceFinder.class;
+      bootstrapFinderClass = DefaultServiceFinder.class;
     }
 
     finderMap = new ConcurrentHashMap<>();
@@ -123,6 +143,28 @@ public class ServiceFactory {
 
 
   /**
+   * Gets the finder map.<br>
+   * Allows applications to modify or add finders programmatically.<br>
+   * The map is threadsafe.
+   *
+   * @return the finder map
+   */
+  public Map<ServiceFinderKey,ServiceFinder> getFinderMap() {
+    return finderMap;
+  }
+
+
+  /**
+   * Gets the class of the bootstrap finder.
+   *
+   * @return the class of the bootstrap finder, never null
+   */
+  protected Class<? extends ServiceFinder> getBootstrapFinderClass() {
+    return bootstrapFinderClass;
+  }
+
+
+  /**
    * Gets a service finder for a given classloader and service path.<br>
    * If the finder does not exist yet, it will be created.
    *
@@ -130,19 +172,13 @@ public class ServiceFactory {
    * @param servicePath the service path prefix
    * @return the finder
    */
-  private ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
-    if (loader == null) {
-      throw new IllegalArgumentException("loader must not be null");
-    }
-    if (servicePath == null) {
-      throw new IllegalArgumentException("service path must not be null");
-    }
-    Key key = new Key(loader, servicePath);
-    ServiceFinder finder = finderMap.get(key);
+  protected ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
+    ServiceFinderKey key = new ServiceFinderKey(loader, servicePath);
+    ServiceFinder finder = getFinderMap().get(key);
     if (finder == null) {
       try {
-        finder = serviceFinderClass.getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
-        finderMap.put(key, finder);
+        finder = getBootstrapFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
+        getFinderMap().put(key, finder);
       }
       catch (Exception ex) {
         throw new TentackleRuntimeException("cannot instantiate service finder", ex);
@@ -161,7 +197,7 @@ public class ServiceFactory {
    * @param servicePath the service path prefix
    * @return the finder
    */
-  private ServiceFinder getServiceFinderImpl(String servicePath) {
+  protected ServiceFinder getServiceFinderImpl(String servicePath) {
     return getServiceFinderImpl(classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader,
                                 servicePath);
   }
@@ -175,7 +211,7 @@ public class ServiceFactory {
    *
    * @return the finder
    */
-  private ServiceFinder getServiceFinderImpl() {
+  protected ServiceFinder getServiceFinderImpl() {
     return getServiceFinderImpl(Constants.DEFAULT_SERVICE_PATH);
   }
 

@@ -47,28 +47,28 @@ import org.tentackle.sql.Backend;
  */
 public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
-  /** name = ... */
+  /** name := ... */
   static final String NAME = "NAME";
 
-  /** id = ... */
+  /** id := ... */
   static final String ID = "ID";
 
-  /** table = ... */
+  /** table := ... */
   static final String TABLE = "TABLE";
 
-  /** alias = ... */
+  /** alias := ... */
   static final String ALIAS = "ALIAS";
 
-  /** integrity = ... */
+  /** integrity := ... */
   static final String INTEGRITY = "INTEGRITY";
 
-  /** inheritance = ... */
+  /** inheritance := ... */
   static final String INHERITANCE = "INHERITANCE";
 
-  /** extends = ... */
+  /** extends := ... */
   static final String EXTENDS = "EXTENDS";
 
-  /** comment = ... */
+  /** comment := ... */
   static final String COMMENT = "COMMENT";
 
 
@@ -81,6 +81,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private String schemaName;                                // the schema name
   private String tableNameWithoutSchema;                    // schema relative table name
   private String tableAlias;                                // the table alias
+  private String definedTableAlias;                         // the fixed table alias (from model specs)
   private Integrity integrity;                              // referential integrity
   private InheritanceType inheritanceType;                  // the inheritance type
   private String superEntityName;                           // the name of the extended super class
@@ -187,6 +188,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         break;
 
       case ALIAS:
+        setDefinedTableAlias(line.getValue());
         setTableAlias(line.getValue());
         break;
 
@@ -274,6 +276,13 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     return tableAlias;
   }
 
+  @Override
+  public String getDefinedTableAlias() {
+    return definedTableAlias;
+  }
+
+
+
   /**
    * Sets the tablename.
    *
@@ -306,6 +315,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public void setTableAlias(String tableAlias) {
     this.tableAlias = tableAlias;
   }
+
+  /**
+   * Sets the table alias defined by the model specification.
+   *
+   * @param definedTableAlias the original alias, null if automatic
+   */
+  public void setDefinedTableAlias(String definedTableAlias) {
+    this.definedTableAlias = definedTableAlias;
+  }
+
 
   @Override
   public Integrity getIntegrity() {
