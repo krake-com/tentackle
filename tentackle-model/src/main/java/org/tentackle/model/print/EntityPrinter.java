@@ -18,8 +18,12 @@
 
 package org.tentackle.model.print;
 
+import java.util.List;
+import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
+import org.tentackle.model.Relation;
 
 /**
  * Prints the model of an entity.
@@ -113,12 +117,56 @@ public class EntityPrinter {
 
     line("\n");
     line("## indexes\n");
+    for (Index index: entity.getIndexes()) {
+      buf.append(new IndexPrinter(index, configuration).print());
+    }
 
     line("\n");
     line("## relations\n");
+    boolean needBlankLine = false;
+    for (Relation relation: entity.getRelations()) {
+      if (needBlankLine) {
+        line("\n");
+      }
+      else {
+        needBlankLine = true;
+      }
+      buf.append(new RelationPrinter(relation, configuration).print());
+    }
 
     line("\n");
     line("## validations\n");
+    needBlankLine = false;
+    for (Attribute attribute: entity.getAttributes()) {
+      List<String> annotations = attribute.getOptions().getAnnotations();
+      if (annotations != null && !annotations.isEmpty()) {
+        if (needBlankLine) {
+          line("\n");
+        }
+        else {
+          needBlankLine = true;
+        }
+        line(attribute.getJavaName()).append(":\n");
+        for (String annotation: annotations) {
+          line("    ").append(new AnnotationPrinter(annotation).print()).append('\n');
+        }
+      }
+    }
+    for (Relation relation: entity.getRelations()) {
+      List<String> annotations = relation.getAnnotations();
+      if (annotations != null && !annotations.isEmpty()) {
+        if (needBlankLine) {
+          line("\n");
+        }
+        else {
+          needBlankLine = true;
+        }
+        line(relation.getClassName()).append(":\n");
+        for (String annotation: annotations) {
+          line("    ").append(new AnnotationPrinter(annotation).print()).append('\n');
+        }
+      }
+    }
 
     line("\n");
     if (configuration.isPrintingAsComment()) {

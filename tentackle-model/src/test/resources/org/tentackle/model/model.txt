@@ -24,7 +24,7 @@ Binary<Blah>     blah            blah
 Boolean          testBool        testbool          some boolean [default true]
 
 ## indexes
-unique index invoice_no := subsidiary_id, invoice_no
+unique index invoice_no := subsidiary_id desc, invoice_no
 index invoice_customer := customer_id
 # to show latest invoices
 index invoice_date := invoice_date
