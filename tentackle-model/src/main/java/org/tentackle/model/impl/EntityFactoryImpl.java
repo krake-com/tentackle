@@ -175,7 +175,7 @@ public class EntityFactoryImpl implements EntityFactory {
           break;
 
         case GLOBAL_OPTION:
-          processGlobalOption(entity, (GlobalOptionLine) line);
+          processGlobalOptions(entity, (GlobalOptionLine) line);
           break;
 
         case ATTRIBUTE_OPTION:
@@ -282,7 +282,7 @@ public class EntityFactoryImpl implements EntityFactory {
 
     // creates the sorting info, if any
     List<String> sortOpts = entity.getOptions().getSorting();
-    if (sortOpts != null) {
+    if (sortOpts != null && !sortOpts.isEmpty()) {
       List<AttributeSorting> sorting = new ArrayList<>();
       for (String sortOpt: sortOpts) {
         String name = sortOpt.substring(1);
@@ -346,7 +346,7 @@ public class EntityFactoryImpl implements EntityFactory {
    * @param line the global option line
    * @throws ModelException if processing failed
    */
-  protected void processGlobalOption(EntityImpl entity, GlobalOptionLine line) throws ModelException {
+  protected void processGlobalOptions(EntityImpl entity, GlobalOptionLine line) throws ModelException {
     if (!entity.getAttributes().isEmpty()) {
       line.createModelException("global options must appear before attributes declaration section");
     }
@@ -354,6 +354,11 @@ public class EntityFactoryImpl implements EntityFactory {
     for (String option: line.getOptions()) {
       if (!options.processOption(option)) {
         throw line.createModelException("illegal global option: " + option);
+      }
+    }
+    for (String sorting: line.getSortings()) {
+      if (!options.processSorting(sorting)) {
+        throw line.createModelException("illegal global sorting: " + sorting);
       }
     }
     consumePendingComment();

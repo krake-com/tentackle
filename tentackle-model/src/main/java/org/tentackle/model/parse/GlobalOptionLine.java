@@ -20,6 +20,7 @@ package org.tentackle.model.parse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import org.tentackle.model.ModelException;
 
 /**
@@ -35,6 +36,7 @@ import org.tentackle.model.ModelException;
 public class GlobalOptionLine extends SingleLine {
 
   private List<String> options;
+  private List<String> sortings;
 
 
   /**
@@ -52,11 +54,31 @@ public class GlobalOptionLine extends SingleLine {
   @Override
   public void parse() throws ModelException {
     super.parse();
-    OptionParser parser = new OptionParser(getText(), true);
+    String optionsText = getText();
+    String sortingText = null;
+    int ndx = optionsText.lastIndexOf('|');   // sorting?
+    if (ndx >= 0 && optionsText.length() > ndx) {
+      boolean endsWithBracket = optionsText.endsWith("]");
+      sortingText = optionsText.substring(ndx + 1);
+      optionsText = optionsText.substring(0, ndx);
+      if (endsWithBracket) {
+        optionsText += "]";
+        sortingText = sortingText.substring(0, sortingText.length()-1);
+      }
+    }
+    OptionParser parser = new OptionParser(optionsText, true);
     options = new ArrayList<>();
     String option;
     while ((option = parser.nextOption()) != null) {
       options.add(option);
+    }
+
+    sortings = new ArrayList<>();
+    if (sortingText != null) {
+      StringTokenizer stok = new StringTokenizer(sortingText);
+      while (stok.hasMoreTokens()) {
+        sortings.add(stok.nextToken());
+      }
     }
   }
 
@@ -70,6 +92,17 @@ public class GlobalOptionLine extends SingleLine {
   public List<String> getOptions() throws ModelException {
     assertParsed();
     return options;
+  }
+
+  /**
+   * Gets the sorting strings.
+   *
+   * @return the sortings
+   * @throws ModelException if not parsed
+   */
+  public List<String> getSortings() throws ModelException {
+    assertParsed();
+    return sortings;
   }
 
 }

@@ -249,24 +249,31 @@ public abstract class CommonOptionsImpl implements CommonOptions {
 
 
   /**
-   * Processes an option string.
+   * Processes an option string.<br>
+   * If the option string starts with ! or -, the option is considered to be turned off.
+   * If the option starts with '+' it is forced to be turned on.
+   * In all other cases it is left to the implementation of {@link #applyOption(java.lang.String, java.lang.Boolean)}
+   * how the option should be treated.
    *
    * @param option the option string
    * @return true if option applied, false if not known
    * @throws ModelException if option malformed
    */
   public boolean processOption(String option) throws ModelException {
-    boolean applied;
-    switch (option.charAt(0)) {
-      case '-':
-        applied = applyOption(option.substring(1), Boolean.FALSE);
-        break;
-      case '+':
-        applied = applyOption(option.substring(1), Boolean.TRUE);
-        break;
-      default:
-        applied = applyOption(option, null);
-        break;
+    boolean applied = false;
+    if (option != null && !option.isEmpty()) {
+      switch (option.charAt(0)) {
+        case '!':
+        case '-':
+          applied = applyOption(option.substring(1), Boolean.FALSE);
+          break;
+        case '+':
+          applied = applyOption(option.substring(1), Boolean.TRUE);
+          break;
+        default:
+          applied = applyOption(option, null);
+          break;
+      }
     }
     return applied;
   }

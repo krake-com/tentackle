@@ -7,7 +7,7 @@ table := invoice
 integrity := related
 
 ## attributes
-[size, autoselect, tracked, tokenlock, tableserial]
+[size, autoselect, tracked, tokenlock, tableserial | -id]
 
 long             subsidiaryId    subsidiary_id     subsidiary ID [context]
 String(10)       invoiceNo       invoice_no        the unique invoice number [uc]

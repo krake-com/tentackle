@@ -30,6 +30,7 @@ import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
 
 /**
+ * Entity options.
  *
  * @author harald
  */
@@ -79,7 +80,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   private boolean rootIdProvided;
   private boolean rootClassIdProvided;
   private boolean remote;
-  private List<String> sorting;
+  private List<String> sorting;   // != null if '|' found
 
 
 
@@ -224,6 +225,8 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         default:
           // sorted column?
+          // this is just a convenience hack to allow ommitting the pipe sign.
+          // works, however, only if the column to sort is not an option keyword.
           if (ctrl != null) {
             if (sorting == null) {
               sorting = new ArrayList<>();
@@ -242,6 +245,29 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             }
           }
           applied = false;
+      }
+    }
+    return applied;
+  }
+
+
+  /**
+   * Checks that the sorting string starts with a + or -.
+   *
+   * @param token the sorting token
+   * @return true if applied
+   */
+  public boolean processSorting(String token) {
+    boolean applied = false;
+    if (sorting == null) {
+      sorting = new ArrayList<>();
+    }
+    if (token != null && !token.isEmpty()) {
+      // must start with + or -
+      char c = token.charAt(0);
+      if (c == '-' || c == '+') {
+        sorting.add(token);
+        applied = true;
       }
     }
     return applied;

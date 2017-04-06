@@ -21,8 +21,9 @@ package org.tentackle.model.parse;
 import java.util.Iterator;
 import java.util.List;
 import org.tentackle.model.ModelException;
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Document model parser test.
@@ -89,188 +90,189 @@ public class DocumentTest {
 
       //  "# model for invoice headers\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.COMMENT, line.getLineType());
-      Assert.assertEquals("model for invoice headers", ((CommentLine) line).getComment());
+      assertEquals(line.getLineType(), LineType.COMMENT);
+      assertEquals(((CommentLine) line).getComment(), "model for invoice headers");
 
       //  "name = Invoice\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
-      Assert.assertEquals("name", ((ConfigurationLine) line).getKey());
-      Assert.assertEquals("Invoice", ((ConfigurationLine) line).getValue());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
+      assertEquals(((ConfigurationLine) line).getKey(), "name");
+      assertEquals(((ConfigurationLine) line).getValue(), "Invoice");
 
       //  "table = $tablename\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
 
       //  "integrity = related\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
 
       //  "\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "# indexes\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.COMMENT, line.getLineType());
+      assertEquals(line.getLineType(), LineType.COMMENT);
 
       //  "unique index ${tablename}_no = subsidiary_id, invoice_no\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
-      Assert.assertEquals("unique index ${tablename}_no", ((ConfigurationLine) line).getKey());
-      Assert.assertEquals("subsidiary_id, invoice_no", ((ConfigurationLine) line).getValue());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
+      assertEquals(((ConfigurationLine) line).getKey(), "unique index ${tablename}_no");
+      assertEquals(((ConfigurationLine) line).getValue(), "subsidiary_id, invoice_no");
 
       //  "index ${tablename}_customer = customer_id\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
 
       //  "index ${tablename}_date = invoice_date\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.CONFIGURATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.CONFIGURATION);
 
       //  "\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "# attributes\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.COMMENT, line.getLineType());
+      assertEquals(line.getLineType(), LineType.COMMENT);
 
       //  "[bind, autoselect, tracked, editedby, tableserial, generated]\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.GLOBAL_OPTION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.GLOBAL_OPTION);
       List<String> options = ((GlobalOptionLine) line).getOptions();
-      Assert.assertEquals(6, options.size());
-      Assert.assertEquals("generated", options.get(5));
+      assertEquals(options.size(), 6);
+      assertEquals(options.get(5), "generated");
 
       //  "\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "long             subsidiaryId    subsidiary_id     subsidiary ID [contextid]\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       AttributeLine al = (AttributeLine) line;
-      Assert.assertEquals("long", al.getJavaType());
-      Assert.assertEquals("subsidiaryId", al.getJavaName());
-      Assert.assertEquals("subsidiary_id", al.getColumnName());
-      Assert.assertEquals("subsidiary ID", al.getComment());
-      Assert.assertEquals(1, al.getOptions().size());
-      Assert.assertEquals("contextid", al.getOptions().get(0));
+      assertEquals(al.getJavaType(), "long");
+      assertEquals(al.getJavaName(), "subsidiaryId");
+      assertEquals(al.getColumnName(), "subsidiary_id");
+      assertEquals(al.getComment(), "subsidiary ID");
+      assertEquals(al.getOptions().size(), 1);
+      assertEquals(al.getOptions().get(0), "contextid");
 
       //  "String(10)       invoiceNo       invoice_no        the unique invoice number [uc]\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;
-      Assert.assertEquals(Integer.valueOf(10), al.getSize());
+      assertEquals(al.getSize(), Integer.valueOf(10));
 
       //  "Date             invoiceDate     invoice_date      the invoice's date\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
 
       //  "long             customerId      customer_id       object ID of the customer [uc]\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
 
       //  "String(200)      address         address           the address (multiline) [default 'blah', @MyAnno]\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;
-      Assert.assertEquals(2, al.getOptions().size());
-      Assert.assertEquals("default 'blah'", al.getOptions().get(0));
-      Assert.assertEquals("@MyAnno", al.getOptions().get(1));
+      assertEquals(al.getOptions().size(), 2);
+      assertEquals(al.getOptions().get(0), "default 'blah'");
+      assertEquals(al.getOptions().get(1), "@MyAnno");
 
       //  "DMoney           total           total             sum (without tax)\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
 
       //  "DMoney           tax             tax               tax (vat)\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
 
       //  "Timestamp        printed         printed           first printed\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
 
       //  "Double (10,2 )     someDouble      some_double       digits with scale\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;
-      Assert.assertEquals(Integer.valueOf(10), al.getSize());
-      Assert.assertEquals(Integer.valueOf(2), al.getScale());
+      assertEquals(al.getSize(), Integer.valueOf(10));
+      assertEquals(al.getScale(), Integer.valueOf(2));
 
       //  "MyType<int>      extra           extra             some application specific type\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE);
       al = (AttributeLine) line;
-      Assert.assertEquals("MyType", al.getJavaType());
-      Assert.assertEquals("int", al.getInnerName());
+      assertEquals(al.getJavaType(), "MyType");
+      assertEquals(al.getInnerName(), "int");
 
       //  "\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "# validations\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.COMMENT, line.getLineType());
+      assertEquals(line.getLineType(), LineType.COMMENT);
 
       //  "invoiceNo:    @NotNull(message=\"{ @('please_enter_the_invoice-number') }\")\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE_OPTION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE_OPTION);
 
       //  "invoiceDate:  @NotNull(scope=AllScope.class, message=\"{ @('please_enter_the_invoice-date') }\", condition=\"{ object?.printed == null }\")\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE_OPTION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE_OPTION);
 
       //  "total:        @NotNull(scope=PersistenceScope.class),\n" +
       //  "              @Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.ATTRIBUTE_OPTION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.ATTRIBUTE_OPTION);
       OptionLine aol = (OptionLine) line;
-      Assert.assertEquals("total", aol.getName());
-      Assert.assertEquals(2, aol.getOptions().size());
-      Assert.assertEquals("@NotNull(scope=PersistenceScope.class)", aol.getOptions().get(0));
-      Assert.assertEquals("@Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")", aol.getOptions().get(1));
+      assertEquals(aol.getName(), "total");
+      assertEquals(aol.getOptions().size(), 2);
+      assertEquals(aol.getOptions().get(0), "@NotNull(scope=PersistenceScope.class)");
+      assertEquals(aol.getOptions().get(1),
+                   "@Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")");
 
       //  "   \n" +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "#relations\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.COMMENT, line.getLineType());
+      assertEquals(line.getLineType(), LineType.COMMENT);
 
       //  "InvoiceLine:\n" +
       //  "     relation = composite referenced list,\n" +
       //  "     link = setInvoice indexed,\n" +
       //  "     select = lazy\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.RELATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.RELATION);
       RelationLine rl = (RelationLine) line;
-      Assert.assertEquals("InvoiceLine", rl.getClassName());
-      Assert.assertEquals(3, rl.getProperties().size());
-      Assert.assertEquals("composite referenced list", rl.getProperties().get("relation"));
+      assertEquals(rl.getClassName(), "InvoiceLine");
+      assertEquals(rl.getProperties().size(), 3);
+      assertEquals(rl.getProperties().get("relation"), "composite referenced list");
 
       //  "\n   " +
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
       //  "Customer: select = cached,\n" +
       //  "          @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")\n" +
       line = iter.next();
-      Assert.assertEquals(LineType.RELATION, line.getLineType());
+      assertEquals(line.getLineType(), LineType.RELATION);
       rl = (RelationLine) line;
-      Assert.assertEquals(2, rl.getProperties().size());
-      Assert.assertEquals("@NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")",
-                   rl.getProperties().keySet().toArray()[1]);
+      assertEquals(rl.getProperties().size(), 2);
+      assertEquals(rl.getProperties().keySet().toArray()[1],
+                   "@NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")");
 
       //  "  \n  ";
       line = iter.next();
-      Assert.assertEquals(LineType.EMPTY, line.getLineType());
+      assertEquals(line.getLineType(), LineType.EMPTY);
 
     }
     catch (ModelException me) {
-      Assert.fail(me.toString());
+      fail(me.toString());
     }
 
   }
