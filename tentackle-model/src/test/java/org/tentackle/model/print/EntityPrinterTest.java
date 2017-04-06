@@ -21,6 +21,7 @@ package org.tentackle.model.print;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
+import org.tentackle.model.ModelDefaults;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -41,8 +42,10 @@ public class EntityPrinterTest {
    public void printEntity() throws Exception {
      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
      Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
-     PrintConfiguration configuration = new PrintConfiguration(true, true, null, 2);
+     ModelDefaults defaults = new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT");
+     PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, 2);
      String text = new EntityPrinter(entity, configuration).print();
+
      System.out.println(text);
    }
 }

@@ -21,9 +21,12 @@ package org.tentackle.model.print;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
 import org.tentackle.model.EntityOptions;
+import org.tentackle.model.impl.AttributeOptionsImpl;
+import org.tentackle.model.impl.CommonOptionsImpl;
 
 import static org.tentackle.common.Constants.BIND_MAXCOL;
 import static org.tentackle.common.Constants.BIND_SCALE;
@@ -58,9 +61,36 @@ public class AttributeOptionsPrinter {
 
     buf.append(printBindOptions());
 
-    if (entityOptions.isBind() != options.isBind()) {
-      
+    if (attribute.getDataType().isNumeric()) {
+      printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), entityOptions.isAutoSelect());
     }
+    printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), entityOptions.isBind());
+    printBool(buf, CommonOptionsImpl.OPTION_NODECLARE, options.isNoDeclare(), entityOptions.isNoDeclare());
+    printBool(buf, CommonOptionsImpl.OPTION_NOMETHOD, options.isNoMethod(), entityOptions.isNoMethod());
+    printBool(buf, CommonOptionsImpl.OPTION_NOCONSTANT, options.isNoConstant(), entityOptions.isNoConstant());
+    printBool(buf, CommonOptionsImpl.OPTION_DERIVED, options.isDerived(), entityOptions.isDerived());
+    printBool(buf, CommonOptionsImpl.OPTION_SUPER, options.isFromSuper(), entityOptions.isFromSuper());
+    printBool(buf, CommonOptionsImpl.OPTION_READONLY, options.isReadOnly(), entityOptions.isReadOnly());
+    printBool(buf, CommonOptionsImpl.OPTION_WRITEONLY, options.isWriteOnly(), entityOptions.isWriteOnly());
+    printBool(buf, CommonOptionsImpl.OPTION_MAPNULL, options.isMapNull(), entityOptions.isMapNull());
+    printBool(buf, CommonOptionsImpl.OPTION_SETGET, options.isSetGet(), entityOptions.isSetGet());
+
+    if (options.isTrimRead() == options.isTrimWrite() &&
+        entityOptions.isTrimRead() == entityOptions.isTrimWrite()) {
+      printBool(buf, CommonOptionsImpl.OPTION_TRIM, options.isTrimRead(), entityOptions.isTrimRead());
+    }
+    else {
+      printBool(buf, CommonOptionsImpl.OPTION_TRIM_READ, options.isTrimRead(), entityOptions.isTrimRead());
+      printBool(buf, CommonOptionsImpl.OPTION_TRIM_WRITE, options.isTrimWrite(), entityOptions.isTrimWrite());
+    }
+
+    if (options.getAccessScope() != entityOptions.getAccessScope()) {
+      buf.append(options.getAccessScope()).append(',');
+    }
+
+    printBool(buf, AttributeOptionsImpl.OPTION_CONTEXT, options.isContextId());
+    printBool(buf, AttributeOptionsImpl.OPTION_DOMAINKEY, options.isDomainKey());
+    printBool(buf, AttributeOptionsImpl.OPTION_TZ, options.isWithTimezone());
 
     if (buf.length() > 0 && buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);
@@ -112,6 +142,35 @@ public class AttributeOptionsPrinter {
       }
     }
     return buf.toString();
+  }
+
+
+  /**
+   * Prints a boolean option according to the entity global option.
+   *
+   * @param buf the builder
+   * @param name the option's name
+   * @param optionValue the attribute option's value
+   * @param entityValue the entity option's value
+   */
+  private void printBool(StringBuilder buf, String name, boolean optionValue, boolean entityValue) {
+    if (optionValue != entityValue) {
+      if (!optionValue) {
+        buf.append('!');
+      }
+      buf.append(name).append(',');
+    }
+  }
+
+  /**
+   * Prints a boolean option with np global pendant.
+   *
+   * @param buf the builder
+   * @param name the option's name
+   * @param optionValue the attribute option's value
+   */
+  private void printBool(StringBuilder buf, String name, boolean optionValue) {
+    printBool(buf, name, optionValue, false);
   }
 
 }

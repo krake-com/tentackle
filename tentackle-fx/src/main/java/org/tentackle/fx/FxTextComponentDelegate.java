@@ -66,6 +66,11 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
   private boolean unsigned;
 
   /**
+   * UTC timezone field.
+   */
+  private boolean utc;
+
+  /**
    * The case conversion.
    */
   private CaseConversion caseConversion;
@@ -419,6 +424,16 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
   @Override
   public void setUnsigned(boolean unsigned) {
     this.unsigned = unsigned;
+  }
+
+  @Override
+  public boolean isUTC() {
+    return utc;
+  }
+
+  @Override
+  public void setUTC(boolean utc) {
+    this.utc = utc;
   }
 
   @Override

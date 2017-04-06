@@ -157,6 +157,20 @@ public interface FxTextComponent extends FxComponent {
   boolean isUnsigned();
 
   /**
+   * Sets whether this is a UTC timestamp.
+   *
+   * @param utc true if UTC
+   */
+  void setUTC(boolean utc);
+
+  /**
+   * Returns whether this is a UTC timestamp.
+   *
+   * @return true if UTC
+   */
+  boolean isUTC();
+
+  /**
    * Sets the case conversion.
    *
    * @param caseConversion the conversion, null if no conversion (default)

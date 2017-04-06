@@ -18,11 +18,13 @@
 
 package org.tentackle.model.print;
 
+import java.util.Objects;
 import org.tentackle.common.Constants;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.TrackType;
 import org.tentackle.model.impl.CommonOptionsImpl;
 import org.tentackle.model.impl.EntityOptionsImpl;
 
@@ -125,6 +127,13 @@ public class GlobalOptionsPrinter {
       }
     }
 
+    if (options.isRootEntity() != entity.isRootEntityAccordingToModel()) {
+      if (!options.isRootEntity()) {
+        buf.append('!');
+      }
+      buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
+    }
+
     if (options.noModelDefaults() || modelDefaults == null) {
       if (sizeOption) {
         buf.append(CommonOptionsImpl.BIND_SIZE).append(',');
@@ -132,27 +141,21 @@ public class GlobalOptionsPrinter {
       if (options.isBind()) {
         buf.append(CommonOptionsImpl.OPTION_BIND).append(',');
       }
-      if (options.getTrackType() != null) {
+      if (options.getTrackType() != TrackType.NONE) {
         buf.append(options.getTrackType()).append(',');
       }
       if (options.isAutoSelect()) {
         buf.append(Constants.BIND_AUTOSELECT).append(',');
       }
-      if (options.isRootEntity() != entity.isRootEntityAccordingToModel()) {
-        if (!options.isRootEntity()) {
-          buf.append('-');
-        }
-        buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
-      }
       if (options.isRootIdProvided() != entity.isProvidingRootIdAccordingToModel()) {
         if (!options.isRootIdProvided()) {
-          buf.append('-');
+          buf.append('!');
         }
         buf.append(EntityOptionsImpl.OPTION_ROOTID).append(',');
       }
       if (options.isRootClassIdProvided() != entity.isProvidingRootClassIdAccordingToModel()) {
         if (!options.isRootClassIdProvided()) {
-          buf.append('-');
+          buf.append('!');
         }
         buf.append(EntityOptionsImpl.OPTION_ROOTCLASSID).append(',');
       }
@@ -161,52 +164,18 @@ public class GlobalOptionsPrinter {
       }
     }
     else {
-      if (modelDefaults.getSize() != null && modelDefaults.getSize() != sizeOption) {
-        if (!sizeOption) {
-          buf.append('-');
-        }
-        buf.append(CommonOptionsImpl.BIND_SIZE).append(',');
-      }
-      if (modelDefaults.getBind() != null && modelDefaults.getBind() != options.isBind()) {
-        if (!options.isBind()) {
-          buf.append('-');
-        }
-        buf.append(CommonOptionsImpl.OPTION_BIND).append(',');
-      }
-      if (modelDefaults.getTrackType() != null && options.getTrackType() != null &&
-          modelDefaults.getTrackType() != options.getTrackType()) {
+      printBool(buf, CommonOptionsImpl.BIND_SIZE, sizeOption, modelDefaults.getSize());
+      printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), modelDefaults.getBind());
+
+      if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.NONE ||
+          !Objects.equals(modelDefaults.getTrackType(), options.getTrackType())) {
         buf.append(options.getTrackType()).append(',');
       }
-      if (modelDefaults.getAutoSelect() != null && modelDefaults.getAutoSelect() != options.isAutoSelect()) {
-        if (!options.isAutoSelect()) {
-          buf.append('-');
-        }
-        buf.append(Constants.BIND_AUTOSELECT).append(',');
-      }
-      if (modelDefaults.getRoot() != null && modelDefaults.getRoot() != options.isRootEntity()) {
-        if (!options.isRootEntity()) {
-          buf.append('-');
-        }
-        buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
-      }
-      if (modelDefaults.getRootId() != null && modelDefaults.getRootId() != options.isRootIdProvided()) {
-        if (!options.isRootIdProvided()) {
-          buf.append('-');
-        }
-        buf.append(EntityOptionsImpl.OPTION_ROOTID).append(',');
-      }
-      if (modelDefaults.getRootClassId() != null && modelDefaults.getRootClassId() != options.isRootClassIdProvided()) {
-        if (!options.isRootClassIdProvided()) {
-          buf.append('-');
-        }
-        buf.append(EntityOptionsImpl.OPTION_ROOTCLASSID).append(',');
-      }
-      if (modelDefaults.getRemote() != null && modelDefaults.getRemote() != options.isRemote()) {
-        if (!options.isRemote()) {
-          buf.append('-');
-        }
-        buf.append(EntityOptionsImpl.OPTION_REMOTE).append(',');
-      }
+
+      printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), modelDefaults.getAutoSelect());
+      printBool(buf, EntityOptionsImpl.OPTION_ROOTID, options.isRootIdProvided(), modelDefaults.getRootId());
+      printBool(buf, EntityOptionsImpl.OPTION_ROOTCLASSID, options.isRootClassIdProvided(), modelDefaults.getRootClassId());
+      printBool(buf, EntityOptionsImpl.OPTION_REMOTE, options.isRemote(), modelDefaults.getRemote());
     }
 
 
@@ -223,6 +192,25 @@ public class GlobalOptionsPrinter {
 
     buf.append(']');
     return buf.toString();
+  }
+
+
+  /**
+   * Prints a boolean value with respect to the model default's setting.
+   *
+   * @param buf the builder
+   * @param name the option's name
+   * @param optionValue the option's value
+   * @param defaultValue the model default value
+   */
+  private void printBool(StringBuilder buf, String name, boolean optionValue, Boolean defaultValue) {
+    if (defaultValue == null && optionValue ||
+        defaultValue != null && defaultValue != optionValue) {
+      if (!optionValue && defaultValue != null) {
+        buf.append('!');
+      }
+      buf.append(name).append(',');
+    }
   }
 
 }

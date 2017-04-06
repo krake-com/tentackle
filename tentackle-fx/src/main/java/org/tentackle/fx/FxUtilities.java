@@ -457,8 +457,12 @@ public class FxUtilities {
       processed = true;
     }
     else if (Constants.BIND_UTC.equals(option)) {
+      comp.setUTC(true);
       processed = true;
-      // nothing to do any further
+    }
+    else if (("-" + Constants.BIND_UTC).equals(option)) {
+      comp.setUTC(false);
+      processed = true;
     }
     else if (Constants.BIND_UNSIGNED.equals(option)) {
       comp.setUnsigned(true);

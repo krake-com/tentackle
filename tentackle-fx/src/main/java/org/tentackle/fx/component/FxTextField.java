@@ -424,6 +424,16 @@ public class FxTextField extends TextField implements FxTextComponent {
   }
 
   @Override
+  public void setUTC(boolean utc) {
+    getDelegate().setUTC(utc);
+  }
+
+  @Override
+  public boolean isUTC() {
+    return getDelegate().isUTC();
+  }
+
+  @Override
   public void setCaseConversion(CaseConversion caseConversion) {
     getDelegate().setCaseConversion(caseConversion);
   }
