@@ -51,6 +51,7 @@ import static javax.lang.model.SourceVersion.RELEASE_8;
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
   private static final int MAX_HANDLERS = 1000;   // to detect endless loops
+  private static final int MAX_DEPTH = 100;       // dto...
   private static final String ANALYZE_CLASSNAME = Analyze.class.getName();
 
 
@@ -130,7 +131,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
                   Kind.NOTE, "processing annotation " + annotationType);
         }
         List<AnalyzeHandler> handlers = new ArrayList<>();
-        findHandlers(annotationType, handlers);
+        findHandlers(annotationType, handlers, 0);
         for (AnalyzeHandler handler: handlers) {
           handler.processAnnotation(annotationType, roundEnv);
           claimed = true;
@@ -147,8 +148,9 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
    *
    * @param annotationType the annotation type
    * @param handlers the collected handlers
+   * @param depth to detect annotation loops
    */
-  private void findHandlers(TypeElement annotationType, List<AnalyzeHandler> handlers) {
+  private void findHandlers(TypeElement annotationType, List<AnalyzeHandler> handlers, int depth) {
 
     if (!annotationType.toString().startsWith("java.lang.")) {
 
@@ -184,8 +186,11 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
         }
         else {
           // recursively scan inherited annotation
+          if (++depth > MAX_DEPTH) {
+            throw new TentackleRuntimeException("annotation-loop detected while processing " + annotationType);
+          }
           TypeElement parentAnnotation = (TypeElement) mi.getAnnotationType().asElement();
-          findHandlers(parentAnnotation, handlers);
+          findHandlers(parentAnnotation, handlers, depth);
         }
       }
     }
