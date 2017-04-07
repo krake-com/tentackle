@@ -91,7 +91,7 @@ public class ModelTest {
 
       assertEquals(entity.getOptions().getBindOptions(), "SIZE,AUTOSELECT");
 
-      assertEquals(entity.getSorting().size(), 1);
+      assertEquals(entity.getSorting().size(), 2);
       AttributeSorting sorting = entity.getSorting().get(0);
       assertEquals(sorting.getAttribute().getJavaName(), "id");
       assertEquals(sorting.getSortType(), SortType.DESC);
@@ -119,14 +119,17 @@ public class ModelTest {
 
       attribute = entity.getAttributes().get(7);
       assertEquals(attribute.getDataType(), DataType.LONG);
+      assertEquals(attribute.getColumnName(), "customer_id");
       assertNull(attribute.getSize());
       assertTrue(attribute.getOptions().isUpperCase());
       assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,UC");
+      assertEquals(attribute.getOptions().getAnnotations().size(), 1);
+      assertEquals(attribute.getOptions().getAnnotations().get(0), "@NotNull");
 
       attribute = entity.getAttributes().get(8);
       assertEquals(attribute.getDataType(), DataType.STRING);
       assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOL=200");
-      assertEquals(attribute.getOptions().getDefaultValue(), "blah x");
+      assertEquals(attribute.getOptions().getDefaultValue(), "blah\nx ");
 
       attribute = entity.getAttributes().get(9);
       assertEquals(attribute.getOptions().getAnnotations().size(), 2);
@@ -164,16 +167,18 @@ public class ModelTest {
       Relation relation;
       relation = entity.getRelations().get(0);
       assertEquals(relation.getComment(), "the invoice lines");
-      assertEquals(relation.getName(), "invoiceLine");
+      assertEquals(relation.getName(), "Lines");
       assertEquals(relation.getRelationType(), RelationType.LIST);
       assertTrue(relation.isComposite());
       assertTrue(relation.isReferenced());
       assertEquals(relation.getLinkMethodName(), "setInvoice");
       assertEquals(relation.getLinkMethodIndex(), "position");
       assertEquals(relation.getSelectionType(), SelectionType.LAZY);
+      assertEquals(relation.getAnnotations().size(), 1);
+      assertEquals(relation.getAnnotations().get(0), "@NotNull");
 
       relation = entity.getRelations().get(1);
-      assertEquals(relation.getName(), "customer");
+      assertEquals(relation.getName(), "Customer");
       assertEquals(relation.getRelationType(), RelationType.OBJECT);
       assertFalse(relation.isComposite());
       assertFalse(relation.isReferenced());

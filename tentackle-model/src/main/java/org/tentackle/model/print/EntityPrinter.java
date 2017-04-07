@@ -147,8 +147,14 @@ public class EntityPrinter {
           needBlankLine = true;
         }
         line(attribute.getJavaName()).append(":\n");
+        int size = annotations.size();
+        int ndx = 0;
         for (String annotation: annotations) {
-          line("    ").append(new AnnotationPrinter(annotation).print()).append('\n');
+          line("    ").append(new AnnotationPrinter(annotation).print());
+          if (++ndx < size) {
+            buf.append(',');
+          }
+          buf.append('\n');
         }
       }
     }
@@ -161,9 +167,15 @@ public class EntityPrinter {
         else {
           needBlankLine = true;
         }
-        line(relation.getClassName()).append(":\n");
+        line(relation.getName()).append(":\n");
+        int size = annotations.size();
+        int ndx = 0;
         for (String annotation: annotations) {
-          line("    ").append(new AnnotationPrinter(annotation).print()).append('\n');
+          line("    ").append(new AnnotationPrinter(annotation).print());
+          if (++ndx < size) {
+            buf.append(',');
+          }
+          buf.append('\n');
         }
       }
     }

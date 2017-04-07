@@ -269,6 +269,11 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         sorting.add(token);
         applied = true;
       }
+      else if (Character.isLetter(c)) {
+        // prepend +
+        sorting.add("+" + token);
+        applied = true;
+      }
     }
     return applied;
   }

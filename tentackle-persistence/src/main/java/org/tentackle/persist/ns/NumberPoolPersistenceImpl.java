@@ -786,11 +786,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /**
    * # Relations for NumberPool:
    *
-   * NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
+   * NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
    */
 
-  // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange)
-  @Persistent("numberRange")
+  // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
+  @Persistent("NumberRange")
   private TrackedList<NumberRange> numberRangeList;
   private boolean numberRangeListLoaded;
   private transient TrackedList<NumberRange> numberRangeListSnapshot;
@@ -798,7 +798,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /**
    * Gets numberRangeList via NumberRange#numberPoolId.
    *
-   * @return numberRangeList numberRange
+   * @return numberRangeList NumberRange
    */
   @Override
   public TrackedList<NumberRange> getNumberRangeList()  {
@@ -818,7 +818,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /**
    * Gets numberRangeList without performing a select if not loaded.
    *
-   * @return numberRangeList numberRange
+   * @return numberRangeList NumberRange
    */
   public TrackedList<NumberRange> getNumberRangeListBlunt() {
     if (!numberRangeListLoaded) {
@@ -870,7 +870,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    * @param delete is true if invoked from deleteReferencingRelations()
    */
   private void deleteReferencingRelations(boolean delete)  {
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (delete) {
       delete(getNumberRangeList());
     }
@@ -888,7 +888,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     if (update) {
       deleteReferencingRelations(false);
     }
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       getDomainContext().applyTo(numberRangeList);
       for (NumberRange obj: numberRangeList)  {
@@ -908,7 +908,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       results.addAll(ValidationUtilities.getInstance().validateCollection(
                 numberRangeList, validationPath + ".numberRangeList", scope));
@@ -924,7 +924,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public void setImmutable(boolean immutable) {
     super.setImmutable(immutable);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       numberRangeList.setImmutable(immutable);
     }
@@ -938,7 +938,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public boolean isModified()  {
     return super.isModified()
-           // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+           // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
            || isModified(numberRangeList)
            ;
   }
@@ -969,7 +969,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded)  {
     int count = 0;
     count += super.addComponents(components, onlyLoaded);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (!onlyLoaded || numberRangeListLoaded) {
       count += addComponents(components, getNumberRangeList(), onlyLoaded);
     }
@@ -983,7 +983,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void insertPlainWithComponents()  {
     // NumberPool
     insertPlain();
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     insertPlainWithComponents(getNumberRangeList());
   }
 
@@ -992,7 +992,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   @Override
   public void deletePlainWithComponents()  {
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     deletePlainWithComponents(getNumberRangeList());
     // NumberPool
     deletePlain();
@@ -1004,7 +1004,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public void markDeleted() {
     super.markDeleted();
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     markDeleted(numberRangeList);
   }
 
@@ -1016,7 +1016,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void createComponentsInSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       snapshot.numberRangeListSnapshot = numberRangeList.createSnapshot();
     }
@@ -1029,7 +1029,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void revertComponentsToSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (numberRange). numberRange
+    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     numberRangeList = snapshot.numberRangeList;
     if (numberRangeList != null) {
       numberRangeList.revertToSnapshot(snapshot.numberRangeListSnapshot);

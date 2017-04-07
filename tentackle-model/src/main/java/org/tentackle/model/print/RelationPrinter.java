@@ -61,6 +61,7 @@ public class RelationPrinter {
       buf.append(" * ");
     }
     buf.append(relation.getClassName()).append(":\n");
+
     // @todo...
     return buf.toString();
   }

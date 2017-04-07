@@ -612,10 +612,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public String getName() {
-    return name == null ? StringHelper.firstToLower(className) : name;
+    return name == null ? className : name;
   }
 
   public void setName(String name) {
+    if (name != null) {
+      name = StringHelper.firstToUpper(name);
+    }
     this.name = name;
   }
 

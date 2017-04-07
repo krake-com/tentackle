@@ -55,9 +55,12 @@ public class OptionParser {
     while (pos < max) {
       char c = text.charAt(pos++);
       if (c == '\\' && pos < max - 1) {
-        // quote whatever the next char is
+        // escape if next char is not []()
         c = text.charAt(pos++);
         if (optionLevel > 0) {
+          if (c != ']' && c != ']' && c != '(' && c != ')') {
+            option.append('\\');
+          }
           option.append(c);
         }
         // else discard

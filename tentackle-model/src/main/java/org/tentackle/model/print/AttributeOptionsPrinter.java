@@ -25,6 +25,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
 import org.tentackle.model.EntityOptions;
+import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.AttributeOptionsImpl;
 import org.tentackle.model.impl.CommonOptionsImpl;
 
@@ -91,6 +92,16 @@ public class AttributeOptionsPrinter {
     printBool(buf, AttributeOptionsImpl.OPTION_CONTEXT, options.isContextId());
     printBool(buf, AttributeOptionsImpl.OPTION_DOMAINKEY, options.isDomainKey());
     printBool(buf, AttributeOptionsImpl.OPTION_TZ, options.isWithTimezone());
+
+    if (options.getDefaultValue() != null) {
+      buf.append(AttributeOptionsImpl.OPTION_DEFAULT).append(' ');
+      try {
+        buf.append(attribute.getEffectiveType().print(options.getDefaultValue()));
+      }
+      catch (ModelException mx) {
+        buf.append("?" + mx.getMessage() + "?");
+      }
+    }
 
     if (buf.length() > 0 && buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);

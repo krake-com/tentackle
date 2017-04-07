@@ -149,7 +149,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     for (String option: line.getOptions()) {
       if (!getOptions().processOption(option)) {
-        throw line.createModelException("illegal attribute option: " + option);
+        if (option.startsWith("@")) {
+          // treat as annotation
+          getOptions().getAnnotations().add(option);
+        }
+        else {
+          throw line.createModelException("illegal attribute option: " + option);
+        }
       }
     }
 

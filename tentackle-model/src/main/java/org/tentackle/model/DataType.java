@@ -120,6 +120,23 @@ public enum DataType {
   APPLICATION("<application>", false, false, false, false, false, SqlType.JAVA_OBJECT);
 
 
+  /**
+   * Creates a datatype from a java type string.
+   *
+   * @param javaType the java type
+   * @return the datatype, null if no such type
+   */
+  public static DataType createFromJavaType(String javaType) {
+    for (DataType dataType: DataType.values()) {
+      if (dataType.javaType.equals(javaType)) {
+        return dataType;
+      }
+    }
+    return null;
+  }
+
+
+
 
   /**
    * Pair of SqlType and its name postfix.
@@ -182,7 +199,8 @@ public enum DataType {
    * @param dateOrTime true if data and/or time
    * @param sqlTypes the sql type(s)
    */
-  DataType(String javaType, boolean primitive, boolean mutable, boolean numeric, boolean dateOrTime, boolean bool, SqlType... sqlTypes) {
+  DataType(String javaType, boolean primitive, boolean mutable, boolean numeric,
+           boolean dateOrTime, boolean bool, SqlType... sqlTypes) {
     this.javaType = javaType;
     this.primitive = primitive;
     this.mutable = mutable;
@@ -426,6 +444,36 @@ public enum DataType {
   }
 
 
+  /**
+   * Takes an object and converts it to a string that can in turn be parsed with {@link #parse(java.lang.String)}.
+   *
+   * @param object the object of this DataType
+   * @return
+   */
+  public String print(Object object) {
+    DataType type = isPrimitive() ? toNonPrimitive() : this;
+    try {
+      String str;
+      switch (type) {
+        case DATE:
+          str = printDate((java.util.Date) object);
+          break;
+        case TIME:
+          str = printTime((java.util.Date) object);
+          break;
+        case TIMESTAMP:
+          str = printTimestamp((java.util.Date) object);
+          break;
+        default:
+          str = object.toString();
+      }
+      return StringHelper.toParsableString(str);
+    }
+    catch (RuntimeException rx) {
+      throw new TentackleRuntimeException("cannot print '" + object + "' as type " + type);
+    }
+  }
+
 
   private static final String DATE_PATTERN = "yyyy-MM-dd";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat(DATE_PATTERN);
@@ -463,20 +511,27 @@ public enum DataType {
     }
   }
 
+  private static String printDate(java.util.Date date) {
+    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
+      return DATE_FORMAT.format(date);
+    }
+  }
 
-  /**
-   * Creates a datatype from a java type string.
-   *
-   * @param javaType the java type
-   * @return the datatype, null if no such type
-   */
-  public static DataType createFromJavaType(String javaType) {
-    for (DataType dataType: DataType.values()) {
-      if (dataType.javaType.equals(javaType)) {
-        return dataType;
+  private static String printTime(java.util.Date time) {
+    synchronized(TIME_FORMAT) {
+      return TIME_FORMAT.format(time);
+    }
+  }
+
+  private static String printTimestamp(java.util.Date timestamp) {
+    if (timestamp.getTime() % 1000 != 0) {
+      synchronized(MS_TIMESTAMP_FORMAT) {
+        return MS_TIMESTAMP_FORMAT.format(timestamp);
       }
     }
-    return null;
+    synchronized(TIMESTAMP_FORMAT) {
+      return TIMESTAMP_FORMAT.format(timestamp);
+    }
   }
 
 }

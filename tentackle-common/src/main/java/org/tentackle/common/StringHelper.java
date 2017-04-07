@@ -271,6 +271,54 @@ public final class StringHelper {
 
 
   /**
+   * Converts a string to a string parsable by {@link #parseString(java.lang.String)}.
+   *
+   * @param str the string
+   * @return the parsable string
+   */
+  public static String toParsableString(String str) {
+    StringBuilder buf = new StringBuilder();
+    boolean needQuotes = false;
+    for (int i=0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (c == '\'' || c == '"' || c == '\\') {
+        buf.append('\\').append(c);
+        needQuotes = true;
+      }
+      else {
+        if (Character.isWhitespace(c)) {
+          needQuotes = true;
+          switch(c) {
+            case '\n':
+              buf.append("\\n");
+              break;
+            case '\r':
+              buf.append("\\r");
+              break;
+            case '\t':
+              buf.append("\\t");
+              break;
+            case '\f':
+              buf.append("\\f");
+              break;
+            default:
+              buf.append(c);
+          }
+        }
+        else {
+          buf.append(c);
+        }
+      }
+    }
+    if (needQuotes) {
+      buf.insert(0, '"');
+      buf.append('"');
+    }
+    return buf.toString();
+  }
+
+
+  /**
    * Splits a string keeping strings together.<br>
    * The strings may be enclosed in double- or single quotes which
    * will not be removed. Those special characters may be escaped

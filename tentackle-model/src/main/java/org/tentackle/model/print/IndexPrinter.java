@@ -75,6 +75,9 @@ public class IndexPrinter {
       if (attr.isDescending()) {
         buf.append('-');
       }
+      else {
+        buf.append('+');
+      }
       buf.append(attr.getAttribute().getColumnName());
     }
     if (index.getFilterCondition() != null) {

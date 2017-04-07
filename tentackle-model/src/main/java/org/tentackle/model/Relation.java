@@ -78,7 +78,7 @@ public interface Relation {
 
   /**
    * Gets the name of this relation.<br>
-   * By default the name is the className with the first character in lowercase.
+   * If no explicit name set, it defaults to the className.<br>
    *
    * @return the name
    */
