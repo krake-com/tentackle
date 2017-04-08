@@ -19,6 +19,7 @@
 package org.tentackle.model.print;
 
 import org.tentackle.model.Attribute;
+import org.tentackle.model.DataType;
 import org.tentackle.model.ModelException;
 
 /**
@@ -51,6 +52,9 @@ public class AttributePrinter {
       StringBuilder buf = new StringBuilder();
       try {
         buf.append(attribute.getJavaType());
+        if (attribute.getDataType() == DataType.APPLICATION) {
+          buf.append('<').append(attribute.getInnerName()).append('>');
+        }
         if (attribute.getSize() != null || attribute.getScale() != null) {
           buf.append('(');
           if (attribute.getSize() != null) {
