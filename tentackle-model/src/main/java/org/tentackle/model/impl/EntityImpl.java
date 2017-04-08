@@ -19,8 +19,10 @@
 package org.tentackle.model.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -1259,14 +1261,32 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
-    Set<String> javaNames = new HashSet<>();
-    Set<String> columnNames = new HashSet<>();
+    Map<String,Attribute> javaNames = new HashMap<>();
     for (Attribute attribute: getAttributes()) {
       attribute.validate();
-      if (!javaNames.add(attribute.getJavaName())) {
-        throw new ModelException("duplicate Java name '" + attribute.getJavaName() + "'", this);
+      Attribute other = javaNames.put(normalizeName(attribute.getJavaName()), attribute);
+      if (other != null) {
+        if (other.getJavaName().equals(attribute.getJavaName())) {
+          throw new ModelException("duplicate Java name '" + attribute.getJavaName() + "'", this);
+        }
+        else {
+          throw new ModelException("Java name '" + attribute.getJavaName() + "' too close to '" +
+                                   other.getJavaName() + "' -> danger of confusion", this);
+        }
       }
-      if (!columnNames.add(attribute.getColumnName())) {
+    }
+
+    Set<String> columnNames = new HashSet<>();
+    for (Attribute attribute: getAttributes()) {
+      String normalizedColumnName = normalizeName(attribute.getColumnName());
+      Attribute other = javaNames.get(normalizedColumnName);
+      if (other != null && !other.equals(attribute)) {
+        throw new ModelException("misleading column name '" + attribute.getColumnName() +
+                                 "' for Java name '" + attribute.getJavaName() +
+                                 "' -> danger of confusion with '" +
+                                 other.getJavaName() + " / " + other.getColumnName() + "'", this);
+      }
+      if (!columnNames.add(normalizedColumnName)) {
         throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
       }
     }
@@ -1274,16 +1294,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Set<String> indexNames = new HashSet<>();
     for (Index index: getIndexes()) {
       index.validate();
-      if (!indexNames.add(index.getName())) {
-        throw new ModelException("duplicate index '" + index.getName() + "'", this);
+      if (!indexNames.add(normalizeName(index.getName()))) {
+        throw new ModelException("duplicate index name '" + index.getName() + "'", this);
       }
     }
 
     Set<String> relationNames = new HashSet<>();
     for (Relation relation: getRelations()) {
       relation.validate();
-      if (!relationNames.add(relation.getName())) {
-        throw new ModelException("duplicate relation '" + relation.getName() + "'", this);
+      if (!relationNames.add(normalizeName(relation.getName()))) {
+        throw new ModelException("duplicate relation name '" + relation.getName() + "'", this);
       }
     }
 
@@ -1506,6 +1526,24 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   @Override
   public String toString() {
     return getName();
+  }
+
+
+  /**
+   * Normalizes a name to detect misleading java- or column names.
+   *
+   * @param name the name
+   * @return the normalized name
+   */
+  private String normalizeName(String name) {
+    StringBuilder buf = new StringBuilder(name.length());
+    for (int i=0; i < name.length(); i++) {
+      char c = name.charAt(i);
+      if (Character.isLetterOrDigit(c)) {
+        buf.append(Character.toUpperCase(c));
+      }
+    }
+    return buf.toString();
   }
 
 }

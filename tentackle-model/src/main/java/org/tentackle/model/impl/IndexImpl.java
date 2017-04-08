@@ -164,7 +164,8 @@ public class IndexImpl implements Index {
         }
         // check if column name exists
         for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getColumnName().equals(token)) {
+          if (attribute.getColumnName().equals(token) ||
+              attribute.getJavaName().equals(token)) {
             // found
             indexAttribute = factory.createIndexAttribute(this, sourceInfo);
             indexAttribute.setAttribute(attribute);
