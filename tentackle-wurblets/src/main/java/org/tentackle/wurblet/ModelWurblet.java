@@ -754,7 +754,11 @@ public class ModelWurblet extends AbstractWurblet {
 
       Attribute attribute = parEntity.getAttributeByJavaName(par.getName(), true);
       if (attribute == null) {
-        throw new WurbelException("no such attribute '" + par.getName() + "' in " + parEntity + ": " + par);
+        // try column name
+        attribute = parEntity.getAttributeByColumnName(par.getName(), true);
+        if (attribute == null) {
+          throw new WurbelException("no such attribute '" + par.getName() + "' in " + parEntity + ": " + par);
+        }
       }
       par.setAttribute(attribute);
 
