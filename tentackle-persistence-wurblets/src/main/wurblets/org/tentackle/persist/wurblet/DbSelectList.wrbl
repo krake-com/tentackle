@@ -26,6 +26,8 @@ For more options, see {\@link DbModelWurblet}.
 @[
   private void wurbel() throws WurbelException {
 
+    moveExtraToSortingParameters();
+
     if (!getExtraParameters().isEmpty()) {
       String msg = "unexpected extra parameters:";
       for (WurbletParameter par: getExtraParameters()) {

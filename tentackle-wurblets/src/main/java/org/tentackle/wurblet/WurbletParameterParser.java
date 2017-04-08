@@ -208,6 +208,7 @@ public class WurbletParameterParser {
     WurbletParameterOperator operator = null;       // last operator
     WurbletParameterExpression expr = expression;   // current expression
     boolean expressionFinished = false;             // true if expression evaluation finished
+    int parIndex = 0;                               // wurblet parameter index
 
     for (String arg : args) {
       if (arg != null) {
@@ -220,7 +221,7 @@ public class WurbletParameterParser {
         }
         else {
           if (expressionFinished) {
-            WurbletParameter par = new WurbletParameter(arg);
+            WurbletParameter par = new WurbletParameter(++parIndex, arg);
             if (par.isSortKey()) {
               sortingParameters.add(par);
             }
@@ -278,7 +279,7 @@ public class WurbletParameterParser {
                 operator = oper;
               }
               else {
-                WurbletParameter operand = new WurbletParameter(subArg);
+                WurbletParameter operand = new WurbletParameter(++parIndex, subArg);
                 if (operand.isSortKey()) {
                   if (expressionLevel == 0) {
                     sortingParameters.add(operand);

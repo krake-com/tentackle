@@ -29,6 +29,7 @@ For more options, see {\@link DbModelWurblet}.
   private void wurbel() throws WurbelException {
 
     assertEntityIsPersistable();
+    moveExtraToSortingParameters();
 
     if (!getExtraParameters().isEmpty()) {
       String msg = "unexpected extra parameters:";

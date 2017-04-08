@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -845,6 +846,28 @@ public class ModelWurblet extends AbstractWurblet {
 
   // ----------------- utility methods to simplify writing wurblets ----------------------------------
 
+
+  /**
+   * Moves remaining extra parameters to sorting parameters.<br>
+   * The method should only be used in finder-wurblets (PdoSelect...) that
+   * don't expect any extra parameters. This is just a convenience
+   * for users that forget to prepend a '+' to a sorting parameter.
+   */
+  public void moveExtraToSortingParameters() {
+    for (Iterator<WurbletParameter> iter = parser.getExtraParameters().iterator(); iter.hasNext(); ) {
+      WurbletParameter par = iter.next();
+      if (par.getAttribute() != null) {
+        // move to sorting parameters
+        par.setSortMode(Backend.SQL_SORTASC);
+        parser.getSortingParameters().add(par);
+        // sort by index
+        Collections.sort(parser.getSortingParameters(), (o1, o2) -> {
+          return o1.getIndex() - o2.getIndex();
+        });
+        iter.remove();
+      }
+    }
+  }
 
   /**
    * Checks whether attribute is the pdo ID.

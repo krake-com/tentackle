@@ -218,8 +218,9 @@ public class DbModelWurblet extends ModelWurblet {
     List<WurbletParameter> sortKeys = new ArrayList<>();
     List<AttributeSorting> sorting = getDefaultSorting();
     if (sorting != null) {
+      int parIndex = 1000;    // large enough to be logically appended to all paramaters
       for (AttributeSorting as: sorting) {
-        WurbletParameter key = new WurbletParameter(as.toString());
+        WurbletParameter key = new WurbletParameter(++parIndex, as.toString());
         key.setAttribute(as.getAttribute());
         sortKeys.add(key);
       }

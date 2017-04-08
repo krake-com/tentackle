@@ -31,6 +31,9 @@ import org.tentackle.sql.Backend;
  */
 public class WurbletParameter implements WurbletParameterOperand {
 
+  /** the position among all parameters. */
+  private final int index;
+
   /** the original text. */
   private final String text;
 
@@ -130,7 +133,8 @@ public class WurbletParameter implements WurbletParameterOperand {
    *
    * @param text the wurblet arg
    */
-  public WurbletParameter(String text) {
+  public WurbletParameter(int index, String text) {
+    this.index = index;
     this.text = text;
     int ndx = text.indexOf(':');
     if (ndx > 0) {
@@ -236,6 +240,15 @@ public class WurbletParameter implements WurbletParameterOperand {
 
 
   /**
+   * Gets the index within the wurblet anchor.
+   *
+   * @return the index, lower comes first
+   */
+  public int getIndex() {
+    return index;
+  }
+
+  /**
    * Returns whether this is a component key.
    *
    * @return true if component key
@@ -292,10 +305,19 @@ public class WurbletParameter implements WurbletParameterOperand {
 
   /**
    * Returns the sortmode if !isKey().
-   * @return the sortmode, null if isKey
+   * @return the sortmode (either {@link Backend#SQL_SORTASC} or {@link Backend#SQL_SORTDESC}) or null if isKey
    */
   public String getSortMode() {
     return sortMode;
+  }
+
+  /**
+   * Sets the sortmode.
+   *
+   * @param sortMode either {@link Backend#SQL_SORTASC} or {@link Backend#SQL_SORTDESC}
+   */
+  public void setSortMode(String sortMode) {
+    this.sortMode = sortMode;
   }
 
   /**
