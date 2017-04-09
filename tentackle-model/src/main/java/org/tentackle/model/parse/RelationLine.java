@@ -93,7 +93,13 @@ import org.tentackle.model.ModelException;
  *
  * name = &lt;name&gt;
  * <ul>
- *    <li>name: name of the attribute in main class. Defaults to &lt;class&gt;.</li>
+ *    <li>name: name of the relation. Defaults to &lt;class&gt;.</li>
+ * </ul>
+ *
+ * nm = &lt;entity&gt; [mnMethodName]
+ * <ul>
+ *    <li>entity: name of opposite entity the N:M relation.</li>
+ *    <li>mnMethodName: optional method name to access the list of opposite entities.</li>
  * </ul>
  *
  * scope = &lt;public|private|protected|package&gt;

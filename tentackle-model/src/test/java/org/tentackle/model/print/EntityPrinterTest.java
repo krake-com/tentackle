@@ -22,11 +22,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
-import org.testng.Reporter;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
@@ -38,6 +33,71 @@ import static org.testng.Assert.*;
  */
 public class EntityPrinterTest {
 
+  private static final String expected =
+"/**\n" +
+" * @> $mapping\n" +
+" * \n" +
+" * # the invoice header\n" +
+" * name := $classname\n" +
+" * table := $tablename\n" +
+" * id := $classid\n" +
+" * integrity := $integrity\n" +
+" * \n" +
+" * ## attributes\n" +
+" * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED | -id +total]\n" +
+" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT]\n" +
+" * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]\n" +
+" * Date          invoiceDate   invoice_date   the invoice's date\n" +
+" * Long          customerId    customer_id    object ID of the customer [UC]\n" +
+" * String(200)   address       address        the address (multiline) [UC,DEFAULT \"blah\\nx \"]\n" +
+" * DMoney        total         total          sum (without tax)\n" +
+" * DMoney        tax           tax            tax (vat)\n" +
+" * Timestamp     printed       printed        first printed [UTC,DEFAULT \"1970-01-01 00:00:00\"]\n" +
+" * Double(10,2)  someDouble    some_double    digits with scale\n" +
+" * MyType<int>   extra         extra          some application specific type\n" +
+" * Binary<Blah>  blah          blah           some binary object\n" +
+" * Boolean       testBool      testbool       some boolean [DEFAULT true]\n" +
+" * \n" +
+" * ## indexes\n" +
+" * unique index invoice_no := -subsidiary_id, +invoice_no\n" +
+" * index invoice_customer := +customer_id\n" +
+" * # to show latest invoices\n" +
+" * index invoice_date := +invoice_date\n" +
+" * \n" +
+" * ## relations\n" +
+" * # the invoice lines\n" +
+" * InvoiceLine:\n" +
+" *     relation = composite referenced list,\n" +
+" *     link = setInvoice position,\n" +
+" *     name = Lines\n" +
+" * \n" +
+" * # the customer object\n" +
+" * Customer:\n" +
+" *     select = cached\n" +
+" * \n" +
+" * ## validations\n" +
+" * invoiceNo:\n" +
+" *     @NotNull(message=\"{ @('please_enter_the_invoice-number') }\")\n" +
+" * \n" +
+" * invoiceDate:\n" +
+" *     @NotNull(scope=AllScope.class, message=\"{ @('please_enter_the_invoice-date') }\", condition=\"{ object?.printed == null }\")\n" +
+" * \n" +
+" * customerId:\n" +
+" *     @NotNull\n" +
+" * \n" +
+" * total:\n" +
+" *     @NotNull(scope=PersistenceScope.class),\n" +
+" *     @Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")\n" +
+" * \n" +
+" * Lines:\n" +
+" *     @NotNull\n" +
+" * \n" +
+" * Customer:\n" +
+" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")\n" +
+" * \n" +
+" * @<\n" +
+" */\n";
+
    @Test
    public void printEntity() throws Exception {
      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
@@ -45,7 +105,7 @@ public class EntityPrinterTest {
      ModelDefaults defaults = new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT");
      PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, 2);
      String text = new EntityPrinter(entity, configuration).print();
-
      System.out.println(text);
+     assertEquals(text, expected);
    }
 }

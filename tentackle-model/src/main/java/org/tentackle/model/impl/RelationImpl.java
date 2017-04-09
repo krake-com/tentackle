@@ -43,80 +43,77 @@ import org.tentackle.model.parse.RelationLine;
 public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   /** property default (if object non-composite lazy). */
-  static final String DEFAULT = "DEFAULT";
+  public static final String DEFAULT = "default";
 
   /** property relation = ... */
-  static final String RELATION = "RELATION";
+  public static final String RELATION = "relation";
 
   /** property select = ... */
-  static final String SELECT = "SELECT";
+  public static final String SELECT = "select";
 
   /** property delete = ... */
-  static final String DELETE = "DELETE";
+  public static final String DELETE = "delete";
 
   /** property link = ... */
-  static final String LINK = "LINK";
+  public static final String LINK = "link";
 
   /** property args = ... */
-  static final String ARGS = "ARGS";
+  public static final String ARGS = "args";
 
   /** property nm = ... */
-  static final String NM = "NM";
+  public static final String NM = "nm";
 
   /** property method = ... */
-  static final String METHOD = "METHOD";
+  public static final String METHOD = "method";
 
   /** property name = ... */
-  static final String NAME = "NAME";
+  public static final String NAME = "name";
 
   /** property scope = ... */
-  static final String SCOPE = "SCOPE";
+  public static final String SCOPE = "scope";
 
   /** property comment = ... */
-  static final String COMMENT = "COMMENT";
+  public static final String COMMENT = "comment";
 
 
   /** composite relation flag. */
-  static final String COMPOSITE = "COMPOSITE";
+  public static final String COMPOSITE = "composite";
 
   /** tracked relation flag. */
-  static final String TRACKED = "TRACKED";
+  public static final String TRACKED = "tracked";
 
   /** referenced relation flag. */
-  static final String REFERENCED = "REFERENCED";
+  public static final String REFERENCED = "referenced";
 
   /** processed relation flag. */
-  static final String PROCESSED = "PROCESSED";
+  public static final String PROCESSED = "processed";
 
   /** readonly relation flag. */
-  static final String READONLY = "READONLY";
+  public static final String READONLY = "readonly";
 
   /** writeonly relation flag. */
-  static final String WRITEONLY = "WRITEONLY";
+  public static final String WRITEONLY = "writeonly";
 
   /** readonly + writeonly. */
-  static final String NOMETHOD = "NOMETHOD";
+  public static final String NOMETHOD = "nomethod";
 
   /** serialized relation flag. */
-  static final String SERIALIED = "SERIALIZED";
+  public static final String SERIALIZED = "serialized";
 
   /** clear-on-remote-save relation flag. */
-  static final String REMOTECLEAR = "REMOTECLEAR";
+  public static final String REMOTECLEAR = "remoteclear";
 
   /** map list relation to reversed 1:1 object relation. */
-  static final String REVERSED = "REVERSED";
+  public static final String REVERSED = "reversed";
 
   /** cached selection flag. */
-  static final String CACHED = "CACHED";
+  public static final String CACHED = "cached";
 
   /** invocation from main class flag. */
-  static final String MAIN = "MAIN";
+  public static final String MAIN = "main";
 
   /** cascade delete flag. */
-  static final String CASCADE = "CASCADE";
-
-  /** indexed link method flag. */
-  static final String INDEXED = "INDEXED";
+  public static final String CASCADE = "cascade";
 
 
 
@@ -145,6 +142,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private String selectionWurbletArguments;
   private String methodName;
   private List<String> methodArgs;
+  private boolean methodArgsSet;
   private String nmName;
   private String nmMethodName;
   private String linkMethodName;
@@ -264,7 +262,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
       StringTokenizer stok = new StringTokenizer(entry.getValue());
 
-      switch(prop.toUpperCase()) {
+      switch(prop.toLowerCase()) {
 
         case DEFAULT:
           break;    // do nothing, just white noise (looks better ;))
@@ -273,7 +271,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case RELATION:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
+            switch(token.toLowerCase()) {
               case COMPOSITE:
                 setComposite(true);
                 break;
@@ -303,7 +301,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
                 setWriteOnly(true);
                 break;
 
-              case SERIALIED:
+              case SERIALIZED:
                 setSerialized(true);
                 break;
 
@@ -330,7 +328,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case SELECT:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
+            switch(token.toLowerCase()) {
               case MAIN:
                 setSelectionFromMainClass(true);
                 break;
@@ -360,7 +358,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case DELETE:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
+            switch(token.toLowerCase()) {
               case MAIN:
                 setDeletionFromMainClass(true);
                 break;
@@ -395,6 +393,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case ARGS:
           while (stok.hasMoreTokens()) {
             getMethodArgs().add(stok.nextToken());
+            methodArgsSet = true;
           }
           break;
 
@@ -406,7 +405,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property nm = ... */
         case NM:
-          // nm = &lt;N:M relation name&lt [mnMethodName];
+          // nm = &lt;N:M relation name&lt [mnMethodName]
           setNmName(stok.nextToken());
           if (stok.hasMoreTokens()) {
             setNmMethodName(stok.nextToken());
@@ -765,6 +764,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public List<String> getMethodArgs() {
     return methodArgs;
+  }
+
+  @Override
+  public boolean isDefaultMethodArgs() {
+    return !methodArgsSet;
   }
 
   @Override

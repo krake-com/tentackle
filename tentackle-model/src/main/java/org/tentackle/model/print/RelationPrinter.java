@@ -18,8 +18,13 @@
 
 package org.tentackle.model.print;
 
+import java.util.Objects;
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.AccessScope;
 import org.tentackle.model.Relation;
+import org.tentackle.model.RelationType;
+import org.tentackle.model.SelectionType;
+import org.tentackle.model.impl.RelationImpl;
 
 
 /**
@@ -62,8 +67,147 @@ public class RelationPrinter {
     }
     buf.append(relation.getClassName()).append(":\n");
 
-    // @todo...
+    boolean needComma = false;
+
+    if (relation.getRelationType() != RelationType.OBJECT || relation.isReversed() ||
+        relation.isComposite() || relation.isReferenced() || relation.isProcessed() ||
+        relation.isSerialized() && !relation.isComposite() ||
+        relation.isClearOnRemoteSave() ||
+        relation.isTracked() && !relation.getEntity().isTracked()) {
+      // need relation line
+      lead(buf).append(RelationImpl.RELATION).append(" =");
+      if (relation.isComposite()) {
+        buf.append(' ').append(RelationImpl.COMPOSITE);
+      }
+      if (relation.isTracked() && !relation.getEntity().isTracked()) {
+        buf.append(' ').append(RelationImpl.TRACKED);
+      }
+      if (relation.isReversed()) {
+        buf.append(' ').append(RelationImpl.REVERSED);
+      }
+      if (relation.isReferenced()) {
+        buf.append(' ').append(RelationImpl.REFERENCED);
+      }
+      if (relation.isProcessed()) {
+        buf.append(' ').append(RelationImpl.PROCESSED);
+      }
+      if (relation.isSerialized() && !relation.isComposite()) {
+        buf.append(' ').append(RelationImpl.SERIALIZED);
+      }
+      if (relation.isClearOnRemoteSave()) {
+        buf.append(' ').append(RelationImpl.REMOTECLEAR);
+      }
+      buf.append(' ').append(relation.getRelationType().toString().toLowerCase());
+      needComma = true;
+    }
+
+    if (relation.getSelectionType() != SelectionType.LAZY && !relation.isSelectionCached() ||
+        relation.getSelectionType() != SelectionType.ALWAYS && relation.isSelectionCached() ||
+        relation.isSelectionFromMainClass() ||
+        relation.isSelectionCached() || relation.getSelectionWurbletArguments() != null) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.SELECT).append(" =");
+      if (relation.isSelectionCached()) {
+        if (relation.getSelectionType() != SelectionType.ALWAYS) {
+          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+        }
+        buf.append(' ').append(RelationImpl.CACHED);
+      }
+      else if (relation.getSelectionType() != SelectionType.LAZY) {
+        buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+      }
+      if (relation.isSelectionFromMainClass()) {
+        buf.append(' ').append(RelationImpl.MAIN);
+      }
+      if (relation.getSelectionWurbletArguments() != null) {
+        buf.append(" | ").append(relation.getSelectionWurbletArguments());
+      }
+      needComma = true;
+    }
+
+    if (relation.isDeletionFromMainClass() ||
+        relation.isDeletionCascaded() &&
+            (configuration.getModelDefaults() == null || !configuration.getModelDefaults().getDeletionCascaded())) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.DELETE).append(" =");
+      if (relation.isDeletionCascaded() &&
+            (configuration.getModelDefaults() == null || !configuration.getModelDefaults().getDeletionCascaded())) {
+        buf.append(' ').append(RelationImpl.CASCADE);
+      }
+      if (relation.isDeletionFromMainClass()) {
+        buf.append(' ').append(RelationImpl.MAIN);
+      }
+      needComma = true;
+    }
+
+    if (relation.getLinkMethodName() != null || relation.getLinkMethodIndex() != null) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.LINK).append(" =");
+      if (relation.getLinkMethodName() != null) {
+        buf.append(' ').append(relation.getLinkMethodName());
+      }
+      if (relation.getLinkMethodIndex() != null) {
+        buf.append(' ').append(relation.getLinkMethodIndex());
+      }
+      needComma = true;
+    }
+
+    if (!relation.isDefaultMethodArgs()) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.ARGS).append(" =");
+      for (String arg: relation.getMethodArgs()) {
+        buf.append(' ').append(arg);
+      }
+      needComma = true;
+    }
+
+    if (!Objects.equals(relation.getClassName(), relation.getName())) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.NAME).append(" = ").append(relation.getName());
+      needComma = true;
+    }
+
+    if (relation.getNmName() != null) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.NM).append(" = ").append(relation.getNmName());
+      if (relation.getNmMethodName() != null) {
+        buf.append(' ').append(relation.getNmMethodName());
+      }
+      needComma = true;
+    }
+
+    if (relation.getAccessScope() != AccessScope.PUBLIC) {
+      if (needComma) {
+        buf.append(",\n");
+      }
+      lead(buf).append(RelationImpl.SCOPE).append(" = ").append(relation.getAccessScope().toString().toLowerCase());
+      needComma = true;
+    }
+
+    buf.append('\n');
+
     return buf.toString();
+  }
+
+
+  private StringBuilder lead(StringBuilder buf) {
+    if (configuration.isPrintingAsComment()) {
+      buf.append(" * ");
+    }
+    buf.append("    ");
+    return buf;
   }
 
 }

@@ -275,6 +275,13 @@ public interface Relation {
    */
   List<String> getMethodArgs();
 
+  /**
+   * Returns true whether the method args are the default values.
+   *
+   * @return true if default, else explicitly defined by model
+   */
+  boolean isDefaultMethodArgs();
+
 
   // nm = ...
 
