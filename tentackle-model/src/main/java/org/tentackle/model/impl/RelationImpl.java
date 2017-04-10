@@ -141,8 +141,8 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean selectionFromMainClass;
   private String selectionWurbletArguments;
   private String methodName;
+  private List<String> args;
   private List<String> methodArgs;
-  private boolean methodArgsSet;
   private String nmName;
   private String nmMethodName;
   private String linkMethodName;
@@ -392,8 +392,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         /** property args = ... */
         case ARGS:
           while (stok.hasMoreTokens()) {
-            getMethodArgs().add(stok.nextToken());
-            methodArgsSet = true;
+            if (args == null) {
+              args = new ArrayList<>();
+            }
+            args.add(stok.nextToken());
           }
           break;
 
@@ -438,14 +440,17 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     }
 
     // init defaults
-    if (methodArgs.isEmpty()) {
-      // setup defaults if not yet done
+    if (args == null) {
+      // setup default args
       if (getRelationType() == RelationType.LIST) {
         methodArgs.add("getId()");
       }
       else {
         methodArgs.add(buildName(true) + "Id");
       }
+    }
+    else {
+      methodArgs.addAll(args);
     }
 
   }
@@ -762,13 +767,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   @Override
-  public List<String> getMethodArgs() {
-    return methodArgs;
+  public List<String> getArgs() {
+    return args;
   }
 
   @Override
-  public boolean isDefaultMethodArgs() {
-    return !methodArgsSet;
+  public List<String> getMethodArgs() {
+    return methodArgs;
   }
 
   @Override

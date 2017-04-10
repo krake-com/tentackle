@@ -19,11 +19,14 @@
 
 package org.tentackle.maven.sql;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -45,9 +48,13 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
+import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.print.EntityPrinter;
+import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.tentackle.sql.BackendInfo;
@@ -120,6 +127,32 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter
   protected List<BackendInfoParameter> backends;
+
+  /**
+   * Optional directory where to dump the model.<br>
+   * Useful for debugging to verify that the model was interpreted correctly
+   * or to pretty-print the model source.
+   */
+  @Parameter
+  protected File dumpDir;
+
+  /**
+   * Model dump should be dumped as comment blocks (default).
+   */
+  @Parameter(defaultValue = "true")
+  protected boolean dumpAsComment;
+
+  /**
+   * Model dump should include variables (default).
+   */
+  @Parameter(defaultValue = "true")
+  protected boolean dumpVariables;
+
+  /**
+   * Minimum number of spaces between columns in attribute section (default = 2).
+   */
+  @Parameter(defaultValue = "2")
+  protected int dumpColumnGap;
 
 
   /**
@@ -214,7 +247,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     }
   }
 
-  
+
   /**
    * Gets the entity aliases.
    *
@@ -439,6 +472,26 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       }
       finally {
         closeResources(backendInfo);
+      }
+    }
+
+    if (dumpDir != null) {
+      dumpDir.mkdirs();
+      try {
+        ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
+        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults, dumpColumnGap);
+        for (Entity entity: Model.getInstance().getAllEntitites()) {
+          File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+          try (BufferedWriter writer =
+                  new BufferedWriter(
+                    new OutputStreamWriter(
+                      new FileOutputStream(dumpFile), Settings.encodingCharset))) {
+            writer.write(new EntityPrinter(entity, configuration).print());
+          }
+        }
+      }
+      catch (IOException | ModelException ex) {
+        throw new MojoFailureException("creating model dump failed", ex);
       }
     }
   }

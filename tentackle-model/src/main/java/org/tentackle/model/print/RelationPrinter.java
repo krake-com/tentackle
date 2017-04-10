@@ -56,7 +56,8 @@ public class RelationPrinter {
    */
   public String print() {
     StringBuilder buf = new StringBuilder();
-    if (!StringHelper.isAllWhitespace(relation.getComment())) {
+    if (!StringHelper.isAllWhitespace(relation.getComment()) &&
+        !relation.getComment().equals(relation.getName())) {
       if (configuration.isPrintingAsComment()) {
         buf.append(" * ");
       }
@@ -82,9 +83,6 @@ public class RelationPrinter {
       if (relation.isTracked() && !relation.getEntity().isTracked()) {
         buf.append(' ').append(RelationImpl.TRACKED);
       }
-      if (relation.isReversed()) {
-        buf.append(' ').append(RelationImpl.REVERSED);
-      }
       if (relation.isReferenced()) {
         buf.append(' ').append(RelationImpl.REFERENCED);
       }
@@ -97,7 +95,12 @@ public class RelationPrinter {
       if (relation.isClearOnRemoteSave()) {
         buf.append(' ').append(RelationImpl.REMOTECLEAR);
       }
-      buf.append(' ').append(relation.getRelationType().toString().toLowerCase());
+      if (relation.isReversed()) {
+        buf.append(' ').append(RelationImpl.REVERSED);
+      }
+      else {
+        buf.append(' ').append(relation.getRelationType().toString().toLowerCase());
+      }
       needComma = true;
     }
 
@@ -109,20 +112,32 @@ public class RelationPrinter {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.SELECT).append(" =");
+      boolean selectionTypePrinted = false;
       if (relation.isSelectionCached()) {
         if (relation.getSelectionType() != SelectionType.ALWAYS) {
           buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+          selectionTypePrinted = true;
         }
         buf.append(' ').append(RelationImpl.CACHED);
       }
       else if (relation.getSelectionType() != SelectionType.LAZY) {
         buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+        selectionTypePrinted = true;
       }
       if (relation.isSelectionFromMainClass()) {
         buf.append(' ').append(RelationImpl.MAIN);
       }
       if (relation.getSelectionWurbletArguments() != null) {
-        buf.append(" | ").append(relation.getSelectionWurbletArguments());
+        if (!selectionTypePrinted) {
+          buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
+        }
+        if (relation.getSelectionWurbletArguments().startsWith("|")) {
+          buf.append(' ');
+        }
+        else {
+          buf.append(" | ");
+        }
+        buf.append(relation.getSelectionWurbletArguments());
       }
       needComma = true;
     }
@@ -158,12 +173,12 @@ public class RelationPrinter {
       needComma = true;
     }
 
-    if (!relation.isDefaultMethodArgs()) {
+    if (relation.getArgs() != null) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.ARGS).append(" =");
-      for (String arg: relation.getMethodArgs()) {
+      for (String arg: relation.getArgs()) {
         buf.append(' ').append(arg);
       }
       needComma = true;
@@ -196,7 +211,9 @@ public class RelationPrinter {
       needComma = true;
     }
 
-    buf.append('\n');
+    if (needComma) {
+      buf.append('\n');
+    }
 
     return buf.toString();
   }

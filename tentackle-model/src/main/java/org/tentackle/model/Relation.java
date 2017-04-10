@@ -271,16 +271,17 @@ public interface Relation {
   /**
    * Gets the method arguments for select- and delete-methods.
    *
-   * @return the args
+   * @return the args, null if no args defined and the defaults apply
+   * @see #getMethodArgs()
    */
-  List<String> getMethodArgs();
+  List<String> getArgs();
 
   /**
-   * Returns true whether the method args are the default values.
+   * Gets the effective method arguments for select- and delete-methods.<br>
    *
-   * @return true if default, else explicitly defined by model
+   * @return the args, never null
    */
-  boolean isDefaultMethodArgs();
+  List<String> getMethodArgs();
 
 
   // nm = ...

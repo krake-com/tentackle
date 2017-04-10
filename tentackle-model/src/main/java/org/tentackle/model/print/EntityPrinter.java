@@ -98,10 +98,10 @@ public class EntityPrinter {
       buf.append("$integrity\n");
     }
     else {
-      buf.append(entity.getIntegrity()).append('\n');
+      buf.append(entity.getIntegrity().toString().toLowerCase()).append('\n');
     }
     if (entity.getInheritanceType() != InheritanceType.NONE) {
-      line("inheritance := ").append(entity.getInheritanceType()).append('\n');
+      line("inheritance := ").append(entity.getInheritanceType().toString().toLowerCase()).append('\n');
     }
     if (entity.getSuperEntityName() != null) {
       line("extends := ").append(entity.getSuperEntityName()).append('\n');
@@ -112,7 +112,10 @@ public class EntityPrinter {
 
     line("\n");
     line("## attributes\n");
-    line(new GlobalOptionsPrinter(entity, configuration.getModelDefaults()).print()).append('\n');
+    String globalOptions = new GlobalOptionsPrinter(entity, configuration.getModelDefaults()).print();
+    if (!"[]".equals(globalOptions)) {
+      line(globalOptions).append('\n');
+    }
     buf.append(new AttributeSectionPrinter(entity, configuration).print());
 
     line("\n");
