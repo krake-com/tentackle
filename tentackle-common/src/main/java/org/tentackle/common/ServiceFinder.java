@@ -131,4 +131,11 @@ public interface ServiceFinder {
    */
   Map<String, Set<String>> createNameMapToAll(String serviceName);
 
+  /**
+   * Gets the classloader used by this finder.
+   *
+   * @return the classloader, never null
+   */
+  ClassLoader getClassLoader();
+
 }

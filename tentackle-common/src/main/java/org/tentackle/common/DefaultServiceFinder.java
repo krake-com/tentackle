@@ -37,15 +37,16 @@ import java.util.Set;
 /**
  * Default implementation of a {@link ServiceFinder}.
  * <p>
- * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
- * on tentackle-common, i.e. this cannot be analyzed.
- * META-INF/services must be edited manually!
  *
  * @author harald
  */
 @Service(ServiceFinder.class)
 public class DefaultServiceFinder implements ServiceFinder {
-
+  /**
+   * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
+   * on tentackle-common, i.e. this cannot be analyzed.
+   * META-INF/services must be edited manually!
+   */
 
   private final ClassLoader loader;                         // optional classloader, null = default
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
@@ -56,12 +57,16 @@ public class DefaultServiceFinder implements ServiceFinder {
   /**
    * Creates a service finder.<br>
    *
-   * @param loader optional classloader, null if use {@link ClassLoader#getSystemResources}
+   * @param loader optional classloader, null if use {@link ClassLoader#getSystemClassLoader()}
    * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
    */
   public DefaultServiceFinder(ClassLoader loader, String servicePath) {
 
-    this.loader = loader;
+    this.loader = loader == null ? ClassLoader.getSystemClassLoader() : loader;
+
+    if (this.loader == null) {
+      throw new TentackleRuntimeException("cannot determine classloader");
+    }
 
     if (servicePath == null) {
       this.servicePath = Constants.DEFAULT_SERVICE_PATH;
@@ -104,6 +109,16 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
 
+  /**
+   * Gets the classloader used by this finder.
+   *
+   * @return the classloader, never null
+   */
+  @Override
+  public ClassLoader getClassLoader() {
+    return loader;
+  }
+
 
   /**
    * Finds URLs of a service by name.<br>
@@ -114,10 +129,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public Enumeration<URL> findServiceURLs(String serviceName) {
     try {
-      String fullName = servicePath + serviceName;
-      return loader == null ?
-                ClassLoader.getSystemResources(fullName) :
-                loader.getResources(fullName);
+      return loader.getResources(servicePath + serviceName);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
@@ -215,7 +227,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       serviceImplClasses = new ArrayList<>();
       for (Map.Entry<String,URL> entry: findServiceConfigurations(serviceName).entrySet()) {
         String serviceImplName = entry.getKey();
-        Class<T> provider = (Class<T>) Class.forName(serviceImplName);
+        Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, loader);
         // check that provides really implements service
         checkProvider(provider, service, entry.getValue());
         serviceImplClasses.add(provider);
@@ -240,7 +252,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public <T> Class<T> findFirstServiceProvider(Class<T> service) throws ClassNotFoundException {
     Map.Entry<String,URL> entry = findFirstServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey());
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, loader);
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
@@ -258,7 +270,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public <T> Class<T> findUniqueServiceProvider(Class<T> service) throws ClassNotFoundException {
     Map.Entry<String,URL> entry = findUniqueServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey());
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, loader);
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
