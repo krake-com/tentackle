@@ -36,6 +36,13 @@ public class Constants {
    */
   public static String SERVICE_FACTORY_CLASSNAME;
 
+  /**
+   * The classloader to load the service factorty.
+   * <p>
+   * If this value is null, the the {@link ServiceFactory} is loaded via a default classloader.
+   */
+  public static ClassLoader SERVICE_FACTORY_CLASSLOADER;
+
 
   /** the directory for mapped service provider configurations. */
   public static final String MAPPED_SERVICE_PATH = "META-INF/mapped-services/";

@@ -55,8 +55,11 @@ public class ServiceFactory {
     if (Constants.SERVICE_FACTORY_CLASSNAME != null) {
       try {
         @SuppressWarnings("unchecked")
-        Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) Class.forName(
-                Constants.SERVICE_FACTORY_CLASSNAME);
+        Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) (
+          Constants.SERVICE_FACTORY_CLASSLOADER == null ?
+            Class.forName(Constants.SERVICE_FACTORY_CLASSNAME) :
+            Class.forName(Constants.SERVICE_FACTORY_CLASSNAME, true, Constants.SERVICE_FACTORY_CLASSLOADER));
+
         return clazz.newInstance();
       }
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
@@ -67,7 +70,9 @@ public class ServiceFactory {
     }
 
     try {
-      ServiceLoader<ServiceFactory> loader = ServiceLoader.load(ServiceFactory.class);
+      ServiceLoader<ServiceFactory> loader = Constants.SERVICE_FACTORY_CLASSLOADER == null ?
+              ServiceLoader.load(ServiceFactory.class) :
+              ServiceLoader.load(ServiceFactory.class, Constants.SERVICE_FACTORY_CLASSLOADER);
       for (ServiceFactory factory: loader) {
         if (factory != null) {
           return factory;
@@ -191,15 +196,25 @@ public class ServiceFactory {
   /**
    * Gets a service finder for a given service path.<br>
    * If the finder does not exist yet, it will be created.
-   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}, except
-   * if a fixed classloader is set.
+   * The classloader to use is determined as follows:
+   * <ol>
+   * <li> use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
+   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
+   * </ol>
    *
    * @param servicePath the service path prefix
    * @return the finder
    */
   protected ServiceFinder getServiceFinderImpl(String servicePath) {
-    return getServiceFinderImpl(classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader,
-                                servicePath);
+    ClassLoader loader = classLoader;
+    if (loader == null) {
+      loader = Thread.currentThread().getContextClassLoader();
+    }
+    if (loader == null) {
+      loader = getClass().getClassLoader();
+    }
+    return getServiceFinderImpl(loader, servicePath);
   }
 
 
