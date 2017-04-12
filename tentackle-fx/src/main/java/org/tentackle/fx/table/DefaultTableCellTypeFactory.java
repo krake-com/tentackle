@@ -19,6 +19,7 @@
 package org.tentackle.fx.table;
 
 import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.FxRuntimeException;
@@ -48,7 +49,10 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
    * Creates the factory.
    */
   public DefaultTableCellTypeFactory() {
-    cellTypeMapper = new DefaultClassMapper("table cell type", ServiceFactory.getServiceFinder().createNameMap(TableCellType.class.getName()), null);
+    cellTypeMapper = new DefaultClassMapper(
+            "table cell type",
+            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, TableCellType.class.getName()),
+            ServiceFactory.getServiceFinder().createNameMap(TableCellType.class.getName()), null);
   }
 
 

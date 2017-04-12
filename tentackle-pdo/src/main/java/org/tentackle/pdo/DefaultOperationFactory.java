@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
@@ -42,10 +43,17 @@ public class DefaultOperationFactory extends AbstractOperationFactory {
    */
   public DefaultOperationFactory() {
     final ServiceFinder finder = ServiceFactory.getServiceFinder();
-    domainClassMapper = new DefaultClassMapper("operation domain",
-                                               finder.createNameMap(DomainOperation.class.getName()), null);
-    persistenceClassMapper = new DefaultClassMapper("operation persistence",
-                                                    finder.createNameMap(PersistentOperation.class.getName()), null);
+
+    domainClassMapper = new DefaultClassMapper(
+        "operation domain",
+        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainOperation.class.getName()),
+        finder.createNameMap(DomainOperation.class.getName()), null);
+
+    persistenceClassMapper = new DefaultClassMapper(
+        "operation persistence",
+        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentOperation.class.getName()),
+        finder.createNameMap(PersistentOperation.class.getName()), null);
+    
     // if there is no persistence delegate (which is allowed for operations in contrast to PDOs),
     // map to a dummy delegate
     persistenceClassMapper.setDefaultClass(DummyPersistentOperation.class);

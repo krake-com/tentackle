@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc;
 
 import java.lang.reflect.Constructor;
 import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.pdo.PdoRuntimeException;
@@ -49,7 +50,10 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
    * Creates the factory.
    */
   public DefaultGuiProviderFactory() {
-    guiClassMapper = new DefaultClassMapper("FX GUI-provider", ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
+    guiClassMapper = new DefaultClassMapper(
+            "FX GUI-provider",
+            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
+            ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
   }
 
 

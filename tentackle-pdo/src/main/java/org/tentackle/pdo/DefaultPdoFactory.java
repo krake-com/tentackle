@@ -18,6 +18,7 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
@@ -42,10 +43,16 @@ public class DefaultPdoFactory extends AbstractPdoFactory {
    */
   public DefaultPdoFactory() {
     ServiceFinder finder = ServiceFactory.getServiceFinder();
-    domainClassMapper = new DefaultClassMapper("pdo domain",
-                                               finder.createNameMap(DomainObject.class.getName()), null);
-    persistenceClassMapper = new DefaultClassMapper("pdo persistence",
-                                                    finder.createNameMap(PersistentObject.class.getName()), null);
+
+    domainClassMapper = new DefaultClassMapper(
+        "pdo domain",
+        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainObject.class.getName()),
+        finder.createNameMap(DomainObject.class.getName()), null);
+    
+    persistenceClassMapper = new DefaultClassMapper(
+        "pdo persistence",
+        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentObject.class.getName()),
+        finder.createNameMap(PersistentObject.class.getName()), null);
   }
 
 

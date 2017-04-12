@@ -42,6 +42,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClassMapper.class);
 
   private Class<?> defaultClass;                      // the optional default class
+  private final ClassLoader classLoader;              // the classloader
   private final Map<String,Class<?>> classMap;        // the internal map to speed-up lookup
   private final Map<String,String> nameMap;           // the service name map
   private final String[] packageNames;                // the optional package names
@@ -51,11 +52,13 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * Constructs a class mapper.
    *
    * @param name the mapper's name
+   * @param classLoader the classloader
    * @param nameMap the mapping of classnames
    * @param packageNames the package names, null or empty array if none
    */
-  public DefaultClassMapper(String name, Map<String,String> nameMap, String packageNames[]) {
+  public DefaultClassMapper(String name, ClassLoader classLoader, Map<String,String> nameMap, String packageNames[]) {
     super(name);
+    this.classLoader = classLoader;
     this.packageNames = packageNames;
     this.nameMap = nameMap;
     classMap = new ConcurrentHashMap<>();
@@ -65,11 +68,12 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * Constructs a class mapper.
    *
    * @param name the mapper's name
+   * @param classLoader the classloader
    * @param nameProps the properties holding the mapping.
    * @param packageNames the package names, null or empty array if none
    */
-  public DefaultClassMapper(String name, Properties nameProps, String packageNames[]) {
-    this(name, new HashMap<>(), packageNames);
+  public DefaultClassMapper(String name, ClassLoader classLoader, Properties nameProps, String packageNames[]) {
+    this(name, classLoader, new HashMap<>(), packageNames);
     for (String key: nameProps.stringPropertyNames()) {
       nameMap.put(key, nameProps.getProperty(key));
     }
@@ -135,7 +139,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
         }
       }
       // mappedName resolved:
-      clazz = Class.forName(mappedName);    // may throw ClassNotFoundException!
+      clazz = Class.forName(mappedName, true, classLoader);    // may throw ClassNotFoundException!
       // found: remember mapping
       classMap.put(className, clazz);
     }

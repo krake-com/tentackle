@@ -37,7 +37,8 @@ public class ClassMapperTest {
     Map<String, String> nameMap = new TreeMap<>();
     nameMap.put("org.tentackle.reflect.classmappertest.Invoice", "org.tentackle.reflect.classmappertest.InvoicePersistence");
 
-    ClassMapper mapper = new DefaultClassMapper("test", nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
+    ClassMapper mapper = new DefaultClassMapper(
+            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
 
     try {
       Assert.assertEquals("org.tentackle.reflect.classmappertest.InvoicePersistence", mapper.map(Invoice.class).getName());
@@ -58,7 +59,8 @@ public class ClassMapperTest {
     nameMap.put("org.tentackle.reflect.classmappertest.Invoice", "org.tentackle.reflect.classmappertest.InvoicePersistence");
     nameMap.put("org.tentackle.reflect.classmappertest.CollectiveInvoice",
             "org.tentackle.reflect.classmappertest.CollectiveInvoicePersistence");
-    mapper = new DefaultClassMapper("test", nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
+    mapper = new DefaultClassMapper(
+            "test", getClass().getClassLoader(), nameMap, new String[]{"org.tentackle.reflect.classmappertest"});
 
     try {
       Assert.assertEquals("org.tentackle.reflect.classmappertest.CollectiveInvoicePersistence", mapper.map(
