@@ -48,7 +48,8 @@ public class DefaultServiceFinder implements ServiceFinder {
    * META-INF/services must be edited manually!
    */
 
-  private final ClassLoader loader;                         // optional classloader, null = default
+  private final ClassLoader loader;                         // the default classloader, never null
+  private Map<String,ClassLoader> explicitLoaders;          // optional explicit loaders for named services
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
@@ -83,8 +84,8 @@ public class DefaultServiceFinder implements ServiceFinder {
       this.servicePath = servicePath;
     }
 
-    this.serviceMap = new HashMap<>();
-    this.classMap   = new HashMap<>();
+    serviceMap = new HashMap<>();
+    classMap = new HashMap<>();
   }
 
 
@@ -119,6 +120,46 @@ public class DefaultServiceFinder implements ServiceFinder {
     return loader;
   }
 
+  /**
+   * Gets the finder' service path it is responsible for.
+   *
+   * @return the service path
+   */
+  @Override
+  public String getServicePath() {
+    return servicePath;
+  }
+
+  @Override
+  public synchronized void setClassLoader(String serviceName, ClassLoader classLoader) {
+    if (classLoader == null) {
+      if (explicitLoaders != null) {
+        explicitLoaders.remove(serviceName);
+        if (explicitLoaders.isEmpty()) {
+          explicitLoaders = null;
+        }
+      }
+    }
+    else {
+      if (explicitLoaders == null) {
+        explicitLoaders = new HashMap<>();
+      }
+      explicitLoaders.put(serviceName, classLoader);
+    }
+  }
+
+  @Override
+  public synchronized ClassLoader getClassLoader(String serviceName) {
+    ClassLoader cl = loader;
+    if (explicitLoaders != null) {
+      ClassLoader explicitLoader = explicitLoaders.get(serviceName);
+      if (explicitLoader != null) {
+        cl = explicitLoader;
+      }
+    }
+    return cl;
+  }
+
 
   /**
    * Finds URLs of a service by name.<br>
@@ -129,7 +170,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public Enumeration<URL> findServiceURLs(String serviceName) {
     try {
-      return loader.getResources(servicePath + serviceName);
+      return getClassLoader(serviceName).getResources(servicePath + serviceName);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
@@ -147,7 +188,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return a map of the configured services and their corresponding URLs
    */
   @Override
-  public Map<String,URL> findServiceConfigurations(String serviceName) {
+  public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
     Map<String,URL> services = serviceMap.get(serviceName);
     if (services == null) {
       services = new LinkedHashMap<>();   // linked hashmap to preserve order
@@ -170,7 +211,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the service configuation entry
    */
   @Override
-  public Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
+  public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
     Map<String,URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -188,7 +229,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the service configuation entry
    */
   @Override
-  public Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
+  public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
     Map<String,URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -220,14 +261,14 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
+  public synchronized <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();
     Collection<Class<T>> serviceImplClasses = (Collection) classMap.get(serviceName);
     if (serviceImplClasses == null) {
       serviceImplClasses = new ArrayList<>();
       for (Map.Entry<String,URL> entry: findServiceConfigurations(serviceName).entrySet()) {
         String serviceImplName = entry.getKey();
-        Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, loader);
+        Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, getClassLoader(serviceName));
         // check that provides really implements service
         checkProvider(provider, service, entry.getValue());
         serviceImplClasses.add(provider);
@@ -251,15 +292,16 @@ public class DefaultServiceFinder implements ServiceFinder {
   @SuppressWarnings("unchecked")
   @Override
   public <T> Class<T> findFirstServiceProvider(Class<T> service) throws ClassNotFoundException {
-    Map.Entry<String,URL> entry = findFirstServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, loader);
+    String serviceName = service.getName();
+    Map.Entry<String,URL> entry = findFirstServiceConfiguration(serviceName);
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
 
 
   /**
-   * Finds the unique service provider by service name.<br>
+   * Finds the unique service provider by service class.<br>
    *
    * @param <T> the service type
    * @param service the service class
@@ -269,8 +311,9 @@ public class DefaultServiceFinder implements ServiceFinder {
   @SuppressWarnings("unchecked")
   @Override
   public <T> Class<T> findUniqueServiceProvider(Class<T> service) throws ClassNotFoundException {
-    Map.Entry<String,URL> entry = findUniqueServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, loader);
+    String serviceName = service.getName();
+    Map.Entry<String,URL> entry = findUniqueServiceConfiguration(serviceName);
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
@@ -286,7 +329,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the map
    */
   @Override
-  public Map<String, String> createNameMap(String serviceName) {
+  public synchronized Map<String, String> createNameMap(String serviceName) {
 
     Map<String, String> nameMap = new HashMap<>();
 
@@ -314,7 +357,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the map
    */
   @Override
-  public Map<String, Set<String>> createNameMapToAll(String serviceName) {
+  public synchronized Map<String, Set<String>> createNameMapToAll(String serviceName) {
     Map<String, Set<String>> nameMap = new HashMap<>();
 
     for (Map.Entry<String, URL> entry :

@@ -29,9 +29,9 @@ import java.util.Set;
  * Finds service configurations.
  * <p>
  * Very similar to {@link java.util.ServiceLoader} but provides additional methods to
- * load configurations without being forced to load the classes.
+ * load configurations without being forced to load the classes.<br>
  * Furthermore, it is not restricted to {@code META-INF/services} and the contents
- * of the configuration file.
+ * of the configuration file. Supports dedicated classloaders for services as well.
  * <p>
  * Applications should use the {@link ServiceFactory} to allow replacement of the
  * finder (see {@link Service}-annotation)
@@ -39,6 +39,36 @@ import java.util.Set;
  * @author harald
  */
 public interface ServiceFinder {
+
+  /**
+   * Gets the default classloader used by this finder.
+   *
+   * @return the classloader, never null
+   */
+  ClassLoader getClassLoader();
+
+  /**
+   * Gets an explicit classloader for a given service name.
+   *
+   * @param serviceName the classloader to be used for the given service name
+   * @return the classloader, never null
+   */
+  ClassLoader getClassLoader(String serviceName);
+
+  /**
+   * Sets an explicit classloader for a given service name.
+   *
+   * @param serviceName the service name
+   * @param classLoader the classloader to be used for that service, null to use the defailt classloader
+   */
+  void setClassLoader(String serviceName, ClassLoader classLoader);
+
+  /**
+   * Gets the finder' service path it is responsible for.
+   *
+   * @return the service path
+   */
+  String getServicePath();
 
   /**
    * Finds the first service configurations by service name.<br>
@@ -130,12 +160,5 @@ public interface ServiceFinder {
    * @return the map
    */
   Map<String, Set<String>> createNameMapToAll(String serviceName);
-
-  /**
-   * Gets the classloader used by this finder.
-   *
-   * @return the classloader, never null
-   */
-  ClassLoader getClassLoader();
 
 }

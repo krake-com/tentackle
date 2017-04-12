@@ -30,12 +30,12 @@ import org.tentackle.common.Compare;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.dbms.rmi.RemoteDelegateImpl;
+import org.tentackle.persist.AdminExtensionAdapter;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.SessionInfo;
@@ -45,13 +45,13 @@ import org.tentackle.session.SessionInfo;
  *
  * @author harald
  */
-public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminExtension>
-       implements AdminExtensionRemoteDelegate {
+public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<AdminExtensionAdapter>
+       implements AdminExtensionAdapterRemoteDelegate {
 
   /**
    * the logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AdminExtensionRemoteDelegateImpl.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(AdminExtensionAdapterRemoteDelegateImpl.class);
 
   /**
    * Creates the admin extension implementation.
@@ -59,7 +59,7 @@ public class AdminExtensionRemoteDelegateImpl extends RemoteDelegateImpl<AdminEx
    * @param session the server session
    * @throws RemoteException if failed
    */
-  public AdminExtensionRemoteDelegateImpl(RemoteDbSessionImpl session, Class<AdminExtension> clazz)
+  public AdminExtensionAdapterRemoteDelegateImpl(RemoteDbSessionImpl session, Class<AdminExtensionAdapter> clazz)
          throws RemoteException {
 
     super(session, clazz);

@@ -29,7 +29,7 @@ import org.tentackle.dbms.rmi.RemoteDelegate;
  *
  * @author harald
  */
-public interface AdminExtensionRemoteDelegate extends RemoteDelegate {
+public interface AdminExtensionAdapterRemoteDelegate extends RemoteDelegate {
 
   /**
    * Gets the session data of all sessions currenly logged into the middle tier.

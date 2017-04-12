@@ -19,6 +19,11 @@
 
 package org.tentackle.common;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -93,146 +98,7 @@ public class ServiceFactory {
   public static final ServiceFactory INSTANCE = createServiceFactory();
 
 
-
-
-  // the bootstrap finder (by default finds an instance of iself, see @Service annotation in DefaultServiceFinder)
-  private Class<? extends ServiceFinder> bootstrapFinderClass;
-
-
-  // map of finders for different classloaders and service paths
-  private final Map<ServiceFinderKey,ServiceFinder> finderMap;
-
-  /**
-   * Use another classloader, if set.<br>
-   * Default is to use Thread.currentThread().getContextClassLoader().
-   */
-  private ClassLoader classLoader;
-
-  /**
-   * Creates the factory.
-   */
-  public ServiceFactory() {
-    try {
-      // bootstrap finder used to load the effective finder class
-      bootstrapFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
-    }
-    catch (Exception ex) {
-      // we cannot use LOGGER here because this may use the createService as well
-      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
-              "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
-      bootstrapFinderClass = DefaultServiceFinder.class;
-    }
-
-    finderMap = new ConcurrentHashMap<>();
-  }
-
-
-  /**
-   * Gets the fixed classloader.
-   *
-   * @return the classloader, null if default
-   */
-  public ClassLoader getClassLoader() {
-    return classLoader;
-  }
-
-  /**
-   * Sets the fixed classloader.<br>
-   * Default is Thread.currentThread().getContextClassLoader().
-   *
-   * @param classLoader the classloader, null if default
-   */
-  public void setClassLoader(ClassLoader classLoader) {
-    this.classLoader = classLoader;
-  }
-
-
-  /**
-   * Gets the finder map.<br>
-   * Allows applications to modify or add finders programmatically.<br>
-   * The map is threadsafe.
-   *
-   * @return the finder map
-   */
-  public Map<ServiceFinderKey,ServiceFinder> getFinderMap() {
-    return finderMap;
-  }
-
-
-  /**
-   * Gets the class of the bootstrap finder.
-   *
-   * @return the class of the bootstrap finder, never null
-   */
-  protected Class<? extends ServiceFinder> getBootstrapFinderClass() {
-    return bootstrapFinderClass;
-  }
-
-
-  /**
-   * Gets a service finder for a given classloader and service path.<br>
-   * If the finder does not exist yet, it will be created.
-   *
-   * @param loader the classloader
-   * @param servicePath the service path prefix
-   * @return the finder
-   */
-  protected ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
-    ServiceFinderKey key = new ServiceFinderKey(loader, servicePath);
-    ServiceFinder finder = getFinderMap().get(key);
-    if (finder == null) {
-      try {
-        finder = getBootstrapFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
-        getFinderMap().put(key, finder);
-      }
-      catch (Exception ex) {
-        throw new TentackleRuntimeException("cannot instantiate service finder", ex);
-      }
-    }
-    return finder;
-  }
-
-
-  /**
-   * Gets a service finder for a given service path.<br>
-   * If the finder does not exist yet, it will be created.
-   * The classloader to use is determined as follows:
-   * <ol>
-   * <li> use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
-   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
-   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
-   * </ol>
-   *
-   * @param servicePath the service path prefix
-   * @return the finder
-   */
-  protected ServiceFinder getServiceFinderImpl(String servicePath) {
-    ClassLoader loader = classLoader;
-    if (loader == null) {
-      loader = Thread.currentThread().getContextClassLoader();
-    }
-    if (loader == null) {
-      loader = getClass().getClassLoader();
-    }
-    return getServiceFinderImpl(loader, servicePath);
-  }
-
-
-  /**
-   * Gets a service finder.<br>
-   * If the finder does not exist yet, it will be created.
-   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}
-   * and the service path is {@code "META_INF/services/"}.
-   *
-   * @return the finder
-   */
-  protected ServiceFinder getServiceFinderImpl() {
-    return getServiceFinderImpl(Constants.DEFAULT_SERVICE_PATH);
-  }
-
-
-
-  /**
+    /**
    * Gets a service finder for a given classloader and service path.<br>
    * If the finder does not exist yet, it will be created.
    *
@@ -251,7 +117,7 @@ public class ServiceFactory {
    * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
    *
    * @param servicePath the service path prefix
-   * @return the finder
+   * @return the finder, never null
    */
   public static ServiceFinder getServiceFinder(String servicePath) {
     return INSTANCE.getServiceFinderImpl(servicePath);
@@ -332,6 +198,218 @@ public class ServiceFactory {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);
       }
     }
+  }
+
+
+
+
+
+
+  /**
+   * The bootstrap finder (by default finds an instance of iself.<br>
+   * See @Service annotation in DefaultServiceFinder.
+   */
+  private Class<? extends ServiceFinder> bootstrapFinderClass;
+
+  /**
+   * map of finders for different classloaders and service paths.
+   */
+  private final Map<ServiceFinderKey,ServiceFinder> finderMap;
+
+  /**
+   * Use another classloader, if set.<br>
+   * Default is to use Thread.currentThread().getContextClassLoader().
+   */
+  private ClassLoader classLoader;
+
+
+  /**
+   * Creates the factory.
+   */
+  public ServiceFactory() {
+    try {
+      // bootstrap finder used to load the effective finder class
+      bootstrapFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
+    }
+    catch (Exception ex) {
+      // we cannot use LOGGER here because this may use the createService as well
+      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
+              "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
+      bootstrapFinderClass = DefaultServiceFinder.class;
+    }
+
+    finderMap = new ConcurrentHashMap<>();
+  }
+
+
+  /**
+   * Gets the fixed classloader.
+   *
+   * @return the classloader, null if default
+   */
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  /**
+   * Sets the fixed classloader.<br>
+   * Default is Thread.currentThread().getContextClassLoader().
+   *
+   * @param classLoader the classloader, null if default
+   */
+  public void setClassLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
+  }
+
+
+  /**
+   * Gets the fixed classloader for a given service path and name.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, never null
+   */
+  public ClassLoader getClassLoader(String servicePath, String serviceName) {
+    return getServiceFinderImpl(servicePath).getClassLoader(serviceName);
+  }
+
+  /**
+   * Sets the fixed classloader.<br>
+   * Default is Thread.currentThread().getContextClassLoader().
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if default
+   */
+  public void setClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    getServiceFinderImpl(servicePath).setClassLoader(serviceName, classLoader);
+  }
+
+
+  /**
+   * Apply a given resource index.<br>
+   * The index is usually created via the tentackle-maven-plugin's analyze goal
+   * with the index option set to something like {@code "META-INF/RESOURCES-INDEX.LIST"}.
+   * <p>
+   * This is a utility method, that can be used during the activation within an
+   * OSGI-bundle, for example.
+   *
+   * @param classLoader the classloader to load the index resource
+   * @param indexName the name of the index resource
+   * @param set true if set loaders, else remove loaders from the services index
+   */
+  public void applyResourceIndex(ClassLoader classLoader, String indexName, boolean set) {
+    try {
+      Enumeration<URL> urls = classLoader.getResources(indexName);
+      if (urls.hasMoreElements()) {
+        // we take only the first
+        URL url = urls.nextElement();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            int ndx = line.lastIndexOf('/');
+            String servicePath;
+            String serviceName;
+            if (ndx > 0 && ndx < line.length() - 1) {
+              servicePath = line.substring(0, ndx + 1);   // including trailing slash
+              serviceName = line.substring(ndx + 1);
+            }
+            else {
+              servicePath = "";
+              serviceName = line;
+            }
+            setClassLoader(servicePath, serviceName, set ? classLoader : null);
+          }
+        }
+      }
+    }
+    catch (IOException ix) {
+      throw new TentackleRuntimeException("applying index failed", ix);
+    }
+  }
+
+
+  /**
+   * Gets the finder map.<br>
+   * Allows applications to modify or add finders programmatically.<br>
+   * The map is threadsafe.
+   *
+   * @return the finder map
+   */
+  public Map<ServiceFinderKey,ServiceFinder> getFinderMap() {
+    return finderMap;
+  }
+
+
+  /**
+   * Gets the class of the bootstrap finder.
+   *
+   * @return the class of the bootstrap finder, never null
+   */
+  protected Class<? extends ServiceFinder> getBootstrapFinderClass() {
+    return bootstrapFinderClass;
+  }
+
+
+  /**
+   * Gets a service finder for a given classloader and service path.<br>
+   * If the finder does not exist yet, it will be created.
+   *
+   * @param loader the classloader
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  protected ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
+    ServiceFinderKey key = new ServiceFinderKey(loader, servicePath);
+    ServiceFinder finder = getFinderMap().get(key);
+    if (finder == null) {
+      try {
+        finder = getBootstrapFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
+        getFinderMap().put(key, finder);
+      }
+      catch (Exception ex) {
+        throw new TentackleRuntimeException("cannot instantiate service finder", ex);
+      }
+    }
+    return finder;
+  }
+
+
+  /**
+   * Gets a service finder for a given service path.<br>
+   * If the finder does not exist yet, it will be created.
+   * The classloader to use is determined as follows:
+   * <ol>
+   * <li> use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
+   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
+   * </ol>
+   *
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  protected ServiceFinder getServiceFinderImpl(String servicePath) {
+    ClassLoader loader = classLoader;
+    if (loader == null) {
+      loader = Thread.currentThread().getContextClassLoader();
+    }
+    if (loader == null) {
+      loader = getClass().getClassLoader();
+    }
+    return getServiceFinderImpl(loader, servicePath);
+  }
+
+
+  /**
+   * Gets a service finder.<br>
+   * If the finder does not exist yet, it will be created.
+   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}
+   * and the service path is {@code "META_INF/services/"}.
+   *
+   * @return the finder
+   */
+  protected ServiceFinder getServiceFinderImpl() {
+    return getServiceFinderImpl(Constants.DEFAULT_SERVICE_PATH);
   }
 
 }
