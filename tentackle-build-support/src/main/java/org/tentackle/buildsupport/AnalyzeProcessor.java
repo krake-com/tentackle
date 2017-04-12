@@ -186,10 +186,14 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
         }
         else {
           // recursively scan inherited annotation
-          if (++depth > MAX_DEPTH) {
-            throw new TentackleRuntimeException("annotation-loop detected while processing " + annotationType);
-          }
           TypeElement parentAnnotation = (TypeElement) mi.getAnnotationType().asElement();
+          if (++depth > MAX_DEPTH) {
+            getProcessingEnvironment().getMessager().printMessage(
+                  Kind.ERROR,
+                  "annotation-loop detected while processing " + parentAnnotation + " -> ignored",
+                  annotationType);
+            return;
+          }
           findHandlers(parentAnnotation, handlers, depth);
         }
       }
