@@ -81,7 +81,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Annotation processors.
    */
-  private List<AbstractTentackleProcessor> processors;
+  protected List<AbstractTentackleProcessor> processors;
 
   /**
    * A class loader that searches also the classpath elements.
@@ -254,6 +254,16 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   }
 
 
+  /**
+   * Cleans up the processors.
+   *
+   * @param srcDir the current file set directory
+   * @throws MojoFailureException if cleanup failed
+   */
+  protected void cleanupProcessors(File srcDir) throws MojoFailureException {
+    // the default does nothing
+  }
+  
 
   /**
    * Filters the files to be processed.<br>
@@ -366,6 +376,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
       }
     }
+
+    cleanupProcessors(dir);
 
     getLog().info(getPathRelativeToBasedir(dirName) + ": " +
                   fileNames.length + " files analyzed, " +

@@ -20,12 +20,18 @@
 package org.tentackle.maven;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.tentackle.buildsupport.AnalyzeProcessor;
+import org.tentackle.buildsupport.ResourceManager;
 
 
 
@@ -50,6 +56,18 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * Directory holding the generated services.
    */
   private File servicesDir;
+
+  /**
+   * Optional generated index holding the generated services.<br>
+   * Example: &lt;index&gt;META-INF/RESOURCE-INDEX.LIST&lt;/index&gt;
+   */
+  @Parameter
+  protected String index;
+
+  /**
+   * The generated services names.
+   */
+  private Set<String> generatedServices;
 
 
   /**
@@ -114,6 +132,25 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     p.setProcessingClassLoader(getProcessingClassloader());
   }
 
+  
+  @Override
+  protected void cleanupProcessors(File srcDir) throws MojoFailureException {
+    if (index != null && processors != null) {
+      if (generatedServices == null) {
+        generatedServices = new TreeSet<>();
+      }
+      for (AbstractTentackleProcessor processor: processors) {
+        for (ResourceManager rm: processor.getResourceManagers()) {
+          if (rm.getLocation().equals(servicesDir)) {
+            generatedServices.addAll(rm.getResourceNames());
+          }
+        }
+      }
+    }
+    super.cleanupProcessors(srcDir);
+  }
+
+
   @Override
   protected String[] filterFileNames(String dirName, String[] fileNames) {
     List<String> filteredNames = new ArrayList<>();
@@ -156,6 +193,21 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     }
 
     return filteredNames.toArray(new String[filteredNames.size()]);
+  }
+
+  @Override
+  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+    if (index != null && generatedServices != null && !generatedServices.isEmpty()) {
+      try (PrintWriter writer = new ResourceManager(servicesDir).getWriter(index)) {
+        for (String generatedService: generatedServices) {
+          writer.println(generatedService);
+        }
+      }
+      catch (IOException ix) {
+        throw new MojoFailureException("cannot create resource index", ix);
+      }
+    }
+    super.finishExecute();
   }
 
 }

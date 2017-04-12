@@ -21,6 +21,7 @@ package org.tentackle.buildsupport;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.processing.AbstractProcessor;
@@ -98,12 +99,20 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
   public ResourceManager getResourceManager(File directory) {
     ResourceManager resourceManager = resourceManagers.get(directory);
     if (resourceManager == null) {
-      resourceManager = new ResourceManager(this, directory);
+      resourceManager = new ResourceManager(directory);
       resourceManagers.put(directory, resourceManager);
     }
     return resourceManager;
   }
 
+  /**
+   * Gets the resource managers.
+   *
+   * @return the resource managers, never null
+   */
+  public Collection<ResourceManager> getResourceManagers() {
+    return resourceManagers.values();
+  }
 
 
   /**
@@ -115,6 +124,7 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
     for (ResourceManager resourceManager: resourceManagers.values()) {
       resourceManager.close();
     }
+    resourceManagers.clear();
   }
 
 

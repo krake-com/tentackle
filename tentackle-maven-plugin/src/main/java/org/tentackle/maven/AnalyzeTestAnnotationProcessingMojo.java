@@ -73,7 +73,7 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
   /**
    * Directory generated services.
    */
-  @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/service",
+  @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/services",
              property = "tentackle.testServiceDir",
              required = true)
   protected File servicesDir;

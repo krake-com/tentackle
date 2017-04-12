@@ -30,12 +30,14 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
-import javax.tools.FileObject;
+
 
 /**
- * A manager for {@link FileObject} resources.
+ * A manager for resources.
  *
  * @author harald
  */
@@ -100,7 +102,6 @@ public class ResourceManager {
   }
 
 
-  private final AbstractTentackleProcessor processor;   // annotation processor
   private final File location;                          // resource location
   private final Map<String,Resource> resourceMap;       // (generated) resources
 
@@ -108,23 +109,22 @@ public class ResourceManager {
   /**
    * Creates a resource manager.
    *
-   * @param processor the annotation processor
    * @param location the resource location
    */
-  public ResourceManager(AbstractTentackleProcessor processor, File location) {
-    this.processor = processor;
+  public ResourceManager(File location) {
     this.location = location;
     this.resourceMap = new HashMap<>();
   }
 
   /**
-   * Gets the annotation processor.
+   * Gets the resource names.
    *
-   * @return the processor
+   * @return the names, never null
    */
-  public AbstractTentackleProcessor getProcessor() {
-    return processor;
+  public Set<String> getResourceNames() {
+    return new HashSet<>(resourceMap.keySet());
   }
+
 
   /**
    * Gets the resource location.
