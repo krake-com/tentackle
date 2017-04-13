@@ -44,6 +44,7 @@
         <configuration>
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
         </configuration>
       </plugin>
 
