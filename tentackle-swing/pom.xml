@@ -53,7 +53,7 @@
         </executions>
         <configuration>
           <verbosity>info</verbosity>
-          <showCompileOutput>false</showCompileOutput>
+          <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
         </configuration>
       </plugin>

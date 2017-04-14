@@ -60,8 +60,7 @@
         </executions>
         <configuration>
           <verbosity>info</verbosity>
-          <showCompileOutput>false</showCompileOutput>
-          <index>META-INF/RESOURCE-INDEX.LIST</index>
+          <showCompileOutput>true</showCompileOutput>
         </configuration>
       </plugin>
     </plugins>
