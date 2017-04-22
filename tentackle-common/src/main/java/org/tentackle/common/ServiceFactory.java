@@ -307,18 +307,20 @@ public class ServiceFactory {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
           String line;
           while ((line = reader.readLine()) != null) {
-            int ndx = line.lastIndexOf('/');
-            String servicePath;
-            String serviceName;
-            if (ndx > 0 && ndx < line.length() - 1) {
-              servicePath = line.substring(0, ndx + 1);   // including trailing slash
-              serviceName = line.substring(ndx + 1);
+            if (!line.startsWith("#")) {
+              int ndx = line.lastIndexOf('/');
+              String servicePath;
+              String serviceName;
+              if (ndx > 0 && ndx < line.length() - 1) {
+                servicePath = line.substring(0, ndx + 1);   // including trailing slash
+                serviceName = line.substring(ndx + 1);
+              }
+              else {
+                servicePath = "";
+                serviceName = line;
+              }
+              setClassLoader(servicePath, serviceName, set ? classLoader : null);
             }
-            else {
-              servicePath = "";
-              serviceName = line;
-            }
-            setClassLoader(servicePath, serviceName, set ? classLoader : null);
           }
         }
       }

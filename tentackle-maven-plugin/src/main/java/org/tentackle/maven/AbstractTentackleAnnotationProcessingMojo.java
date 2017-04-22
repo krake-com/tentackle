@@ -103,7 +103,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       processingClassloader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
     }
     catch (MalformedURLException mx) {
-      throw new MojoFailureException("cannot create bundle classloader", mx);
+      throw new MojoFailureException("cannot create project classloader", mx);
     }
   }
 
@@ -263,7 +263,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   protected void cleanupProcessors(File srcDir) throws MojoFailureException {
     // the default does nothing
   }
-  
+
 
   /**
    * Filters the files to be processed.<br>
