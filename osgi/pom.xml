@@ -51,6 +51,14 @@
     <module>tentackle.session.osgi</module>
     <module>tentackle-database-osgi-activator</module>
     <module>tentackle.database.osgi</module>
+    <module>tentackle-model-osgi-activator</module>
+    <module>tentackle.model.osgi</module>
+    <module>tentackle-pdo-osgi-activator</module>
+    <module>tentackle.pdo.osgi</module>
+    <module>tentackle-domain-osgi-activator</module>
+    <module>tentackle.domain.osgi</module>
+    <module>tentackle-persistence-osgi-activator</module>
+    <module>tentackle.persistence.osgi</module>
   </modules>
 
   <properties>
