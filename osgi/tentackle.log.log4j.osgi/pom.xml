@@ -1,0 +1,59 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent-osgi</artifactId>
+    <version>2.1-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle.log-log4j.osgi</artifactId>
+  <version>2.1-SNAPSHOT</version>
+  <packaging>bundle</packaging>
+
+  <name>Tentackle Logging Log4J OSGi Bundle</name>
+  <description>OSGi Bundle for the Tentackle Logging Log4J Module</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-log-log4j</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- activator in sub-module to avoid inclusion of org.tentackle.common -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-log-log4j-osgi-activator</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <unpackBundle>true</unpackBundle>   <!-- necessary to include all packages for exports and imports -->
+          <instructions>
+            <Bundle-Activator>org.tentackle.log.log4j.Activator</Bundle-Activator>
+            <Import-Package>*;resolution:=optional</Import-Package>
+            <Eclipse-BuddyPolicy>global</Eclipse-BuddyPolicy>
+            <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
+            <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
+            <!-- create OSGI-OPT/src/... -->
+            <_sourcepath>../tentackle-log-log4j-osgi-activator/src/main/java,../../tentackle-log-log4j/src/main/java</_sourcepath>
+            <_sources>true</_sources>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

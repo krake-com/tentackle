@@ -59,6 +59,12 @@
     <module>tentackle.domain.osgi</module>
     <module>tentackle-persistence-osgi-activator</module>
     <module>tentackle.persistence.osgi</module>
+    <module>tentackle-log-util-osgi-activator</module>
+    <module>tentackle.log.util.osgi</module>
+    <module>tentackle-log-log4j-osgi-activator</module>
+    <module>tentackle.log.log4j.osgi</module>
+    <module>tentackle-log-slf4j-osgi-activator</module>
+    <module>tentackle.log.slf4j.osgi</module>
   </modules>
 
   <properties>
