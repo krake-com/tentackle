@@ -65,6 +65,12 @@
     <module>tentackle.log.log4j.osgi</module>
     <module>tentackle-log-slf4j-osgi-activator</module>
     <module>tentackle.log.slf4j.osgi</module>
+    <module>tentackle-i18n-osgi-activator</module>
+    <module>tentackle.i18n.osgi</module>
+    <module>tentackle-script-groovy-osgi-activator</module>
+    <module>tentackle.script.groovy.osgi</module>
+    <module>tentackle-script-ruby-osgi-activator</module>
+    <module>tentackle.script.ruby.osgi</module>
   </modules>
 
   <properties>
