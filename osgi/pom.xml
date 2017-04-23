@@ -71,6 +71,12 @@
     <module>tentackle.script.groovy.osgi</module>
     <module>tentackle-script-ruby-osgi-activator</module>
     <module>tentackle.script.ruby.osgi</module>
+    <module>tentackle-web-osgi-activator</module>
+    <module>tentackle.web.osgi</module>
+    <module>tentackle-fx-osgi-activator</module>
+    <module>tentackle.fx.osgi</module>
+    <module>tentackle-fx-rdc-osgi-activator</module>
+    <module>tentackle.fx.rdc.osgi</module>
   </modules>
 
   <properties>
