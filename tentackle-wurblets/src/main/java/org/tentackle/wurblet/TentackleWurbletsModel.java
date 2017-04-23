@@ -23,8 +23,8 @@ import org.tentackle.common.Service;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.ModelImpl;
-import org.wurbelizer.wurbel.WurbelHelper;
 import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelHelper;
 
 /**
  * Extended model aware of heap-files and global loading exception.
@@ -41,7 +41,7 @@ public class TentackleWurbletsModel extends ModelImpl {
    */
   public TentackleWurbletsModel() {
     // use the charset from the wurbelizer plugin
-    org.tentackle.buildsupport.Settings.encodingCharset = org.wurbelizer.misc.Settings.encodingCharset;
+    org.tentackle.common.Settings.encodingCharset = org.wurbelizer.misc.Settings.encodingCharset;
   }
 
 

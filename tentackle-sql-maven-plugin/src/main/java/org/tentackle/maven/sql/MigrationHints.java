@@ -37,7 +37,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.buildsupport.Settings;
+import org.tentackle.common.Settings;
 import org.tentackle.model.migrate.ColumnMigration;
 
 /**

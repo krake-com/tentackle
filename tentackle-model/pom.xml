@@ -21,11 +21,6 @@
       <artifactId>tentackle-sql</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-build-support</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 
   <properties>

@@ -1,7 +1,6 @@
 @{package org.tentackle.wurblet}@
 @{import java.io.*}@
 @{import java.util.*}@
-@{import org.tentackle.buildsupport.*}@
 @{import org.tentackle.common.*}@
 @{import org.tentackle.model.*}@
 @{import org.wurbelizer.wurbel.*}@
