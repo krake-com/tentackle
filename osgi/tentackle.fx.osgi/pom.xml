@@ -48,7 +48,7 @@
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
             <!-- create OSGI-OPT/src/... -->
-            <_sourcepath>../tentackle-fx-osgi-activator/src/main/java,../../tentackle-fx/src/main/java</_sourcepath>
+            <_sourcepath>../tentackle-osgi-activators/tentackle-fx-osgi-activator/src/main/java,../../tentackle-fx/src/main/java</_sourcepath>
             <_sources>true</_sources>
           </instructions>
         </configuration>

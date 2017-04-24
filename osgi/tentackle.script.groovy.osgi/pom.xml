@@ -48,7 +48,7 @@
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
             <!-- create OSGI-OPT/src/... -->
-            <_sourcepath>../tentackle-script-groovy-osgi-activator/src/main/java,../../tentackle-script-groovy/src/main/java</_sourcepath>
+            <_sourcepath>../tentackle-osgi-activators/tentackle-script-groovy-osgi-activator/src/main/java,../../tentackle-script-groovy/src/main/java</_sourcepath>
             <_sources>true</_sources>
           </instructions>
         </configuration>
