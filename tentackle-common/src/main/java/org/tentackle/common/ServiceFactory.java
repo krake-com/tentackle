@@ -330,21 +330,34 @@ public class ServiceFactory {
 
   /**
    * Gets the classloader for a given service path and name.<br>
-   * If an explicit classloader is set, the last set classloader for the given path and name is returned.
+   * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
    * Otherwise the default classloader is returned.
    *
    * @param servicePath the service path
    * @param serviceName the service name
    * @return the classloader, never null
    */
-  public synchronized ClassLoader getClassLoader(String servicePath, String serviceName) {
-    ClassLoader cl;
+  public ClassLoader getClassLoader(String servicePath, String serviceName) {
+    ClassLoader cl = getExplicitClassLoader(servicePath, serviceName);
+    if (cl == null) {
+      cl = getClassLoader();
+    }
+    return cl;
+  }
+
+
+  /**
+   * Gets the explicit classloader for a given service path and name.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, null if no explicit classloader set
+   */
+  public synchronized ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
+    ClassLoader cl = null;
     LinkedList<ClassLoader> cList = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
     if (cList != null && !cList.isEmpty()) {
       cl = cList.getFirst();
-    }
-    else {
-      cl = getClassLoader();
     }
     return cl;
   }
@@ -361,7 +374,7 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @param classLoader the classloader, null if remove
    */
-  public synchronized void setClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+  public synchronized void setExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
     ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
     LinkedList<ClassLoader> cList = explicitLoaders.get(key);
     if (classLoader == null) {
@@ -417,7 +430,7 @@ public class ServiceFactory {
                 servicePath = "";
                 serviceName = line;
               }
-              setClassLoader(servicePath, serviceName, set ? classLoader : null);
+              setExplicitClassLoader(servicePath, serviceName, set ? classLoader : null);
             }
           }
         }
