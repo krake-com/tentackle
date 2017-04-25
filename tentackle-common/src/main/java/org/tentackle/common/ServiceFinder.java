@@ -48,22 +48,6 @@ public interface ServiceFinder {
   ClassLoader getClassLoader();
 
   /**
-   * Gets an explicit classloader for a given service name.
-   *
-   * @param serviceName the classloader to be used for the given service name
-   * @return the classloader, never null
-   */
-  ClassLoader getClassLoader(String serviceName);
-
-  /**
-   * Sets an explicit classloader for a given service name.
-   *
-   * @param serviceName the service name
-   * @param classLoader the classloader to be used for that service, null to use the defailt classloader
-   */
-  void setClassLoader(String serviceName, ClassLoader classLoader);
-
-  /**
    * Gets the finder' service path it is responsible for.
    *
    * @return the service path

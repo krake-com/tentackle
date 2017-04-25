@@ -24,7 +24,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -201,15 +204,54 @@ public class ServiceFactory {
   }
 
 
+  /**
+   * Key to maintain explicit classloaders.
+   */
+  private static class ClassLoaderKey {
+    private final String servicePath;
+    private final String serviceName;
+
+    public ClassLoaderKey(String servicePath, String serviceName) {
+      this.servicePath = servicePath;
+      this.serviceName = serviceName;
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 3;
+      hash = 37 * hash + Objects.hashCode(this.servicePath);
+      hash = 37 * hash + Objects.hashCode(this.serviceName);
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final ClassLoaderKey other = (ClassLoaderKey) obj;
+      if (!Objects.equals(this.servicePath, other.servicePath)) {
+        return false;
+      }
+      return Objects.equals(this.serviceName, other.serviceName);
+    }
+  }
 
 
+  private final Map<ClassLoaderKey,LinkedList<ClassLoader>> explicitLoaders;          // optional explicit loaders for named services
 
 
   /**
-   * The bootstrap finder (by default finds an instance of iself.<br>
+   * The service finder (by default finds an instance of iself.<br>
    * See @Service annotation in DefaultServiceFinder.
    */
-  private Class<? extends ServiceFinder> bootstrapFinderClass;
+  private Class<? extends ServiceFinder> serviceFinderClass;
 
   /**
    * map of finders for different classloaders and service paths.
@@ -220,7 +262,7 @@ public class ServiceFactory {
    * Use another classloader, if set.<br>
    * Default is to use Thread.currentThread().getContextClassLoader().
    */
-  private ClassLoader classLoader;
+  private ClassLoader fixedClassLoader;
 
 
   /**
@@ -228,17 +270,18 @@ public class ServiceFactory {
    */
   public ServiceFactory() {
     try {
-      // bootstrap finder used to load the effective finder class
-      bootstrapFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
+      // service finder used to load the effective finder class
+      serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
     }
     catch (Exception ex) {
       // we cannot use LOGGER here because this may use the createService as well
       java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
               "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
-      bootstrapFinderClass = DefaultServiceFinder.class;
+      serviceFinderClass = DefaultServiceFinder.class;
     }
 
     finderMap = new ConcurrentHashMap<>();
+    explicitLoaders = new HashMap<>();
   }
 
 
@@ -247,8 +290,8 @@ public class ServiceFactory {
    *
    * @return the classloader, null if default
    */
-  public ClassLoader getClassLoader() {
-    return classLoader;
+  public ClassLoader getFixedClassLoader() {
+    return fixedClassLoader;
   }
 
   /**
@@ -257,32 +300,87 @@ public class ServiceFactory {
    *
    * @param classLoader the classloader, null if default
    */
-  public void setClassLoader(ClassLoader classLoader) {
-    this.classLoader = classLoader;
+  public void setFixedClassLoader(ClassLoader classLoader) {
+    this.fixedClassLoader = classLoader;
   }
 
 
   /**
-   * Gets the fixed classloader for a given service path and name.
+   * Gets the default classloader.<br>
+   * The classloader to use is determined as follows:
+   * <ol>
+   * <li>use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
+   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
+   * </ol>
+   *
+   * @return the loader, never null
+   */
+  public ClassLoader getClassLoader() {
+    ClassLoader loader = fixedClassLoader;
+    if (loader == null) {
+      loader = Thread.currentThread().getContextClassLoader();
+    }
+    if (loader == null) {
+      loader = getClass().getClassLoader();
+    }
+    return loader;
+  }
+
+
+  /**
+   * Gets the classloader for a given service path and name.<br>
+   * If an explicit classloader is set, the last set classloader for the given path and name is returned.
+   * Otherwise the default classloader is returned.
    *
    * @param servicePath the service path
    * @param serviceName the service name
    * @return the classloader, never null
    */
-  public ClassLoader getClassLoader(String servicePath, String serviceName) {
-    return getServiceFinderImpl(servicePath).getClassLoader(serviceName);
+  public synchronized ClassLoader getClassLoader(String servicePath, String serviceName) {
+    ClassLoader cl;
+    LinkedList<ClassLoader> cList = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
+    if (cList != null && !cList.isEmpty()) {
+      cl = cList.getFirst();
+    }
+    else {
+      cl = getClassLoader();
+    }
+    return cl;
   }
 
+
   /**
-   * Sets the fixed classloader.<br>
-   * Default is Thread.currentThread().getContextClassLoader().
+   * Sets an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
    *
    * @param servicePath the service path
    * @param serviceName the service name
-   * @param classLoader the classloader, null if default
+   * @param classLoader the classloader, null if remove
    */
-  public void setClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
-    getServiceFinderImpl(servicePath).setClassLoader(serviceName, classLoader);
+  public synchronized void setClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
+    LinkedList<ClassLoader> cList = explicitLoaders.get(key);
+    if (classLoader == null) {
+      if (cList != null) {
+        if (!cList.isEmpty()) {
+          cList.pop();
+        }
+        if (cList.isEmpty()) {
+          explicitLoaders.remove(key);
+        }
+      }
+    }
+    else {
+      if (cList == null) {
+        cList = new LinkedList<>();
+        explicitLoaders.put(key, cList);
+      }
+      cList.push(classLoader);
+    }
   }
 
 
@@ -344,14 +442,13 @@ public class ServiceFactory {
 
 
   /**
-   * Gets the class of the bootstrap finder.
+   * Gets the class of the service finder.
    *
-   * @return the class of the bootstrap finder, never null
+   * @return the class of the service finder, never null
    */
-  protected Class<? extends ServiceFinder> getBootstrapFinderClass() {
-    return bootstrapFinderClass;
+  protected Class<? extends ServiceFinder> getServiceFinderClass() {
+    return serviceFinderClass;
   }
-
 
   /**
    * Gets a service finder for a given classloader and service path.<br>
@@ -366,7 +463,7 @@ public class ServiceFactory {
     ServiceFinder finder = getFinderMap().get(key);
     if (finder == null) {
       try {
-        finder = getBootstrapFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
+        finder = getServiceFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
         getFinderMap().put(key, finder);
       }
       catch (Exception ex) {
@@ -375,7 +472,6 @@ public class ServiceFactory {
     }
     return finder;
   }
-
 
   /**
    * Gets a service finder for a given service path.<br>
@@ -391,16 +487,8 @@ public class ServiceFactory {
    * @return the finder, never null
    */
   protected ServiceFinder getServiceFinderImpl(String servicePath) {
-    ClassLoader loader = classLoader;
-    if (loader == null) {
-      loader = Thread.currentThread().getContextClassLoader();
-    }
-    if (loader == null) {
-      loader = getClass().getClassLoader();
-    }
-    return getServiceFinderImpl(loader, servicePath);
+    return getServiceFinderImpl(getClassLoader(), servicePath);
   }
-
 
   /**
    * Gets a service finder.<br>

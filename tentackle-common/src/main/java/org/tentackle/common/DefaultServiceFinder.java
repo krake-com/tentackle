@@ -49,7 +49,6 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
 
   private final ClassLoader loader;                         // the default classloader, never null
-  private Map<String,ClassLoader> explicitLoaders;          // optional explicit loaders for named services
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
@@ -130,36 +129,6 @@ public class DefaultServiceFinder implements ServiceFinder {
     return servicePath;
   }
 
-  @Override
-  public synchronized void setClassLoader(String serviceName, ClassLoader classLoader) {
-    if (classLoader == null) {
-      if (explicitLoaders != null) {
-        explicitLoaders.remove(serviceName);
-        if (explicitLoaders.isEmpty()) {
-          explicitLoaders = null;
-        }
-      }
-    }
-    else {
-      if (explicitLoaders == null) {
-        explicitLoaders = new HashMap<>();
-      }
-      explicitLoaders.put(serviceName, classLoader);
-    }
-  }
-
-  @Override
-  public synchronized ClassLoader getClassLoader(String serviceName) {
-    ClassLoader cl = loader;
-    if (explicitLoaders != null) {
-      ClassLoader explicitLoader = explicitLoaders.get(serviceName);
-      if (explicitLoader != null) {
-        cl = explicitLoader;
-      }
-    }
-    return cl;
-  }
-
 
   /**
    * Finds URLs of a service by name.<br>
@@ -176,8 +145,6 @@ public class DefaultServiceFinder implements ServiceFinder {
       throw new TentackleRuntimeException("loading service information failed", iox);
     }
   }
-
-
 
 
   /**
@@ -381,6 +348,16 @@ public class DefaultServiceFinder implements ServiceFinder {
     return nameMap;
   }
 
+
+  /**
+   * Gets the classloader for the given service name.
+   *
+   * @param serviceName the service name
+   * @return the loader, never null
+   */
+  protected ClassLoader getClassLoader(String serviceName) {
+    return ServiceFactory.INSTANCE.getClassLoader(servicePath, serviceName);
+  }
 
   /**
    * Parses a service URL.<br>

@@ -258,9 +258,7 @@ public class DefaultLogger implements Logger {
       if (params != null && params.length > 0) {
         final String msg = message;
         logger.logp(juLevel, se.getClassName(), se.getMethodName(), cause,
-                () -> {
-                  return MessageFormat.format(msg, params);
-                });
+                    () -> MessageFormat.format(msg, params));
       }
       else  {
         logger.logp(juLevel, se.getClassName(), se.getMethodName(), message, cause);
