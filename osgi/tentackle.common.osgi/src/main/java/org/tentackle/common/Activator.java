@@ -30,7 +30,7 @@ public class Activator implements BundleActivator {
 
   @Override
   public void stop(BundleContext context) throws Exception {
-    // deactivation not supported
+    ServiceFactory.INSTANCE.applyResourceIndex(getClass().getClassLoader(), "META-INF/RESOURCE-INDEX.LIST", false);
   }
 
 }
