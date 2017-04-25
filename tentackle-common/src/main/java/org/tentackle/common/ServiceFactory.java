@@ -309,7 +309,7 @@ public class ServiceFactory {
    * Gets the default classloader.<br>
    * The classloader to use is determined as follows:
    * <ol>
-   * <li>use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>use the fixed classloader set by {@link #setFixedClassLoader(java.lang.ClassLoader)}, if not null</li>
    * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
    * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
    * </ol>
@@ -478,7 +478,7 @@ public class ServiceFactory {
    * If the finder does not exist yet, it will be created.
    * The classloader to use is determined as follows:
    * <ol>
-   * <li> use the fixed classloader set by {@link #setClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li> use the fixed classloader set by {@link #setFixedClassLoader(java.lang.ClassLoader)}, if not null</li>
    * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
    * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
    * </ol>
