@@ -273,10 +273,10 @@ public class ServiceFactory {
       // service finder used to load the effective finder class
       serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
     }
-    catch (Exception ex) {
+    catch (Exception ex) {  // OSGi container?
       // we cannot use LOGGER here because this may use the createService as well
-      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
-              "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
+      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.INFO,
+              "{0} -> fallback to {1}", new Object[]{ex.toString(), DefaultServiceFinder.class.getName()});
       serviceFinderClass = DefaultServiceFinder.class;
     }
 
