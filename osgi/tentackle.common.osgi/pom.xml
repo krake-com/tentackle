@@ -43,7 +43,6 @@
           <instructions>
             <Bundle-Activator>org.tentackle.common.Activator</Bundle-Activator>
             <Import-Package>*;resolution:=optional</Import-Package>
-            <Eclipse-BuddyPolicy>global</Eclipse-BuddyPolicy>
             <Include-Resource>../../tentackle-common/src/main/resources</Include-Resource>
             <!-- create OSGI-OPT/src/... -->
             <_sourcepath>src/main/java,../../tentackle-common/src/main/java</_sourcepath>

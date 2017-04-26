@@ -44,7 +44,6 @@
           <instructions>
             <Bundle-Activator>org.tentackle.log.slf4j.Activator</Bundle-Activator>
             <Import-Package>*;resolution:=optional</Import-Package>
-            <Eclipse-BuddyPolicy>global</Eclipse-BuddyPolicy>
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
             <!-- create OSGI-OPT/src/... -->
