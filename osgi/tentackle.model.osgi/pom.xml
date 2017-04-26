@@ -43,7 +43,8 @@
           <unpackBundle>true</unpackBundle>   <!-- necessary to include all packages for exports and imports -->
           <instructions>
             <Bundle-Activator>org.tentackle.model.Activator</Bundle-Activator>
-            <Import-Package>*;resolution:=optional</Import-Package>
+            <Import-Package>*;resolution:=optional,org.tentackle.model.impl;resolution:=optional</Import-Package>
+            <Export-Package>org.tentackle.model,org.tentackle.model.*</Export-Package>  <!-- include impl-package -->
             <Eclipse-BuddyPolicy>global</Eclipse-BuddyPolicy>
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
