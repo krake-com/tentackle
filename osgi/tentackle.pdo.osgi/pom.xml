@@ -43,6 +43,7 @@
           <unpackBundle>true</unpackBundle>   <!-- necessary to include all packages for exports and imports -->
           <instructions>
             <Bundle-Activator>org.tentackle.pdo.Activator</Bundle-Activator>
+            <DynamicImport-Package>*</DynamicImport-Package>
             <Import-Package>*;resolution:=optional</Import-Package>
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
