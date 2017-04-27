@@ -205,6 +205,86 @@ public class ServiceFactory {
 
 
   /**
+   * Gets the classloader for a given service path and name.<br>
+   * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
+   * Otherwise the default classloader is returned.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, never null
+   */
+  public static ClassLoader getClassLoader(String servicePath, String serviceName) {
+    return INSTANCE.getClassLoaderImpl(servicePath, serviceName);
+  }
+
+
+  /**
+   * Gets the explicit classloader for a given service path and name.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, null if no explicit classloader set
+   */
+  public static ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
+    return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
+  }
+
+
+  /**
+   * Adds an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  public static void addExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    INSTANCE.addExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+  }
+
+
+  /**
+   * Remove]s an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  public static void removeExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    INSTANCE.removeExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+  }
+
+
+  /**
+   * Apply a given resource index.<br>
+   * The index is usually created via the tentackle-maven-plugin's analyze goal
+   * with the index option set to something like {@code "META-INF/RESOURCES-INDEX.LIST"}.
+   * <p>
+   * This is a utility method, that can be used during the activation within an
+   * OSGI-bundle, for example.
+   *
+   * @param classLoader the classloader to load the index resource
+   * @param indexName the name of the index resource
+   * @param set true if set loaders, else remove loaders from the services index
+   */
+  public static void applyResourceIndex(ClassLoader classLoader, String indexName, boolean set) {
+    INSTANCE.applyResourceIndexImpl(classLoader, indexName, set);
+  }
+
+
+
+
+  // --------------------------- implementation goes here -------------------------------------
+
+
+  /**
    * Key to maintain explicit classloaders.
    */
   private static class ClassLoaderKey {
@@ -316,7 +396,7 @@ public class ServiceFactory {
    *
    * @return the loader, never null
    */
-  public ClassLoader getClassLoader() {
+  protected ClassLoader getClassLoader() {
     ClassLoader loader = fixedClassLoader;
     if (loader == null) {
       loader = Thread.currentThread().getContextClassLoader();
@@ -337,7 +417,7 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @return the classloader, never null
    */
-  public ClassLoader getClassLoader(String servicePath, String serviceName) {
+  protected ClassLoader getClassLoaderImpl(String servicePath, String serviceName) {
     ClassLoader cl = getExplicitClassLoader(servicePath, serviceName);
     if (cl == null) {
       cl = getClassLoader();
@@ -353,7 +433,7 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @return the classloader, null if no explicit classloader set
    */
-  public synchronized ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
+  protected synchronized ClassLoader getExplicitClassLoaderImpl(String servicePath, String serviceName) {
     ClassLoader cl = null;
     LinkedList<ClassLoader> cList = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
     if (cList != null && !cList.isEmpty()) {
@@ -364,7 +444,7 @@ public class ServiceFactory {
 
 
   /**
-   * Sets an explict classloader for a given service path and name.<br>
+   * Adds an explict classloader for a given service path and name.<br>
    * Loaders are kept in a linked list for each path and name combination.
    * Setting a classloader performs a push, clearing a pop.
    * Thus, removing a loader activates the previously set loader, if any.
@@ -374,25 +454,39 @@ public class ServiceFactory {
    * @param serviceName the service name
    * @param classLoader the classloader, null if remove
    */
-  public synchronized void setExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+  protected synchronized void addExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
     ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
-    LinkedList<ClassLoader> cList = explicitLoaders.get(key);
-    if (classLoader == null) {
-      if (cList != null) {
-        if (!cList.isEmpty()) {
-          cList.pop();
-        }
-        if (cList.isEmpty()) {
-          explicitLoaders.remove(key);
-        }
-      }
+    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
+    if (loaders == null) {
+      loaders = new LinkedList<>();
+      explicitLoaders.put(key, loaders);
     }
-    else {
-      if (cList == null) {
-        cList = new LinkedList<>();
-        explicitLoaders.put(key, cList);
+    // remove previously added loader (-> Set)
+    // if the same classloader is added twice, the cl is moved to the start of the list
+    loaders.remove(classLoader);
+    loaders.push(classLoader);
+  }
+
+
+  /**
+   * Remove]s an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  protected synchronized void removeExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
+    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
+    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
+    if (loaders != null) {
+      loaders.remove(classLoader);
+      if (loaders.isEmpty()) {
+        explicitLoaders.remove(key);
       }
-      cList.push(classLoader);
     }
   }
 
@@ -409,7 +503,7 @@ public class ServiceFactory {
    * @param indexName the name of the index resource
    * @param set true if set loaders, else remove loaders from the services index
    */
-  public void applyResourceIndex(ClassLoader classLoader, String indexName, boolean set) {
+  protected void applyResourceIndexImpl(ClassLoader classLoader, String indexName, boolean set) {
     try {
       Enumeration<URL> urls = classLoader.getResources(indexName);
       if (urls.hasMoreElements()) {
@@ -430,7 +524,12 @@ public class ServiceFactory {
                 servicePath = "";
                 serviceName = line;
               }
-              setExplicitClassLoader(servicePath, serviceName, set ? classLoader : null);
+              if (set) {
+                addExplicitClassLoader(servicePath, serviceName, classLoader);
+              }
+              else {
+                removeExplicitClassLoader(servicePath, serviceName, classLoader);
+              }
             }
           }
         }

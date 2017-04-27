@@ -27,13 +27,13 @@ public class Activator implements BundleActivator {
   @Override
   public void start(BundleContext context) throws Exception {
       // currently nothing to do, but that may change in future releases
-      //    ServiceFactory.INSTANCE.applyResourceIndex(getClass().getClassLoader(), "META-INF/RESOURCE-INDEX.LIST", true);
+      //    ServiceFactory.applyResourceIndex(getClass().getClassLoader(), "META-INF/RESOURCE-INDEX.LIST", true);
   }
 
   @Override
   public void stop(BundleContext context) throws Exception {
       // currently nothing to do, but that may change in future releases
-      //    ServiceFactory.INSTANCE.applyResourceIndex(getClass().getClassLoader(), "META-INF/RESOURCE-INDEX.LIST", false);
+      //    ServiceFactory.applyResourceIndex(getClass().getClassLoader(), "META-INF/RESOURCE-INDEX.LIST", false);
   }
 
 }

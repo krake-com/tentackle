@@ -46,12 +46,12 @@ public class DefaultPdoFactory extends AbstractPdoFactory {
 
     domainClassMapper = new DefaultClassMapper(
         "pdo domain",
-        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainObject.class.getName()),
+        ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainObject.class.getName()),
         finder.createNameMap(DomainObject.class.getName()), null);
-    
+
     persistenceClassMapper = new DefaultClassMapper(
         "pdo persistence",
-        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentObject.class.getName()),
+        ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentObject.class.getName()),
         finder.createNameMap(PersistentObject.class.getName()), null);
   }
 

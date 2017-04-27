@@ -52,7 +52,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   public DefaultGuiProviderFactory() {
     guiClassMapper = new DefaultClassMapper(
             "FX GUI-provider",
-            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
             ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
   }
 

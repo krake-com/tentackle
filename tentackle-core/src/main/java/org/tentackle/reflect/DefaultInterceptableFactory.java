@@ -40,7 +40,7 @@ public class DefaultInterceptableFactory implements InterceptableFactory {
   public DefaultInterceptableFactory() {
     classMapper = new DefaultClassMapper(
             "interception",
-            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, Interceptable.class.getName()),
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, Interceptable.class.getName()),
             ServiceFactory.getServiceFinder().createNameMap(Interceptable.class.getName()), null);
   }
 

@@ -46,14 +46,14 @@ public class DefaultOperationFactory extends AbstractOperationFactory {
 
     domainClassMapper = new DefaultClassMapper(
         "operation domain",
-        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainOperation.class.getName()),
+        ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, DomainOperation.class.getName()),
         finder.createNameMap(DomainOperation.class.getName()), null);
 
     persistenceClassMapper = new DefaultClassMapper(
         "operation persistence",
-        ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentOperation.class.getName()),
+        ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, PersistentOperation.class.getName()),
         finder.createNameMap(PersistentOperation.class.getName()), null);
-    
+
     // if there is no persistence delegate (which is allowed for operations in contrast to PDOs),
     // map to a dummy delegate
     persistenceClassMapper.setDefaultClass(DummyPersistentOperation.class);

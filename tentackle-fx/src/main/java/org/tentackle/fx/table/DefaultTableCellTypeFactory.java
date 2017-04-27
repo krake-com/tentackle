@@ -51,7 +51,7 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
   public DefaultTableCellTypeFactory() {
     cellTypeMapper = new DefaultClassMapper(
             "table cell type",
-            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, TableCellType.class.getName()),
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, TableCellType.class.getName()),
             ServiceFactory.getServiceFinder().createNameMap(TableCellType.class.getName()), null);
   }
 

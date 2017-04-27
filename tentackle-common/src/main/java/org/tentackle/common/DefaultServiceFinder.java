@@ -356,7 +356,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the loader, never null
    */
   protected ClassLoader getClassLoader(String serviceName) {
-    ClassLoader cl = ServiceFactory.INSTANCE.getExplicitClassLoader(servicePath, serviceName);
+    ClassLoader cl = ServiceFactory.getExplicitClassLoader(servicePath, serviceName);
     if (cl == null) {
       cl = getClassLoader();
     }

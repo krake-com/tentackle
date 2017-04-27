@@ -169,7 +169,7 @@ public class DefaultFxFactory implements FxFactory {
       if (translators == null) {
         translators = new DefaultClassMapper(
                 ReflectionHelper.getClassBaseName(viewClass) + "-translator",
-                ServiceFactory.INSTANCE.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
+                ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
                 new HashMap<>(), null);
         viewTranslatorMap.put(viewClass, translators);
       }

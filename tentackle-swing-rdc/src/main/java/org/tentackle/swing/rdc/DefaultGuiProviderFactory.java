@@ -39,7 +39,7 @@ public class DefaultGuiProviderFactory extends AbstractGuiProviderFactory {
   public DefaultGuiProviderFactory() {
     guiClassMapper = new DefaultClassMapper(
             "Swing GUI-provider",
-            ServiceFactory.INSTANCE.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
             ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
   }
 
