@@ -197,11 +197,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     setDaemonNum(daemonNum);
   }
 
-  @Override
-  public boolean isScavenging() {
-    return true;
-  }
-
   /**
    * Creates a supervisor for one daemon.
    *

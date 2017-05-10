@@ -88,11 +88,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     interrupt();
   }
 
-  @Override
-  public boolean isScavenging() {
-    return true;
-  }
-
+  
   @Override
   public void run() {
 

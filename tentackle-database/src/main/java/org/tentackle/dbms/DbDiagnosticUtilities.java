@@ -80,7 +80,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
         buf.append("\n    ");
         buf.append(db);
         buf.append(": ");
-        ManagedConnection con = db.getConnection();
+        ManagedConnection con = db.getConnectionUnsafe();   // unsynchronized to avoid locks!
         if (con != null) {
           doCreateConnectionDump(buf, con);
           buf.append('\n');

@@ -668,11 +668,6 @@ public class DefaultDbPool implements SessionPool {
     }
 
     @Override
-    public boolean isScavenging() {
-      return true;
-    }
-
-    @Override
     public void run() {
       LOGGER.info(this + " started");
       while (!shutdownRequested) {

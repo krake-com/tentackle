@@ -249,28 +249,24 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Registers a Db.
-   *
-   * @param db the db to register
+   * Registers this Db.
    */
-  private static void registerDb(Db db) {
-    DB_SET.add(new WeakReference<>(db));
+  private void registerDb() {
+    DB_SET.add(new WeakReference<>(this));
   }
 
 
   /**
-   * Unregisters a Db.
+   * Unregisters this Db.
    * <p>
    * Also cleans up the set by removing unreferenced or closed db sessions.
-   *
-   * @param db the db to unregister
    */
-  private static void unregisterDb(Db db) {
+  private void unregisterDb() {
     for (Iterator<WeakReference<Db>> iter = DB_SET.iterator(); iter.hasNext(); ) {
       WeakReference<Db> ref = iter.next();
       Db refDb = ref.get();
       // if closed or unreferenced or the db to remove
-      if (refDb == null || !refDb.isOpen() || refDb == db) {   // == is okay here
+      if (refDb == null || !refDb.isOpen() || refDb == this) {   // == is okay here
         iter.remove();
       }
     }
@@ -1061,7 +1057,7 @@ public class Db implements Session, Cloneable {
         LOGGER.info("connection {0} established", this);
       }
 
-      registerDb(this);
+      registerDb();
     }
 
     // warning causes
@@ -1104,87 +1100,108 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public synchronized void close () {
+  public void close() {
     if (isOpen()) {
-      try {
+      if (Scavenger.isScavenger(Thread.currentThread())) {
+        crashed = true;
+      }
+      if (crashed) {
+        // non-blocking close to cleanup crashed session
+        closeImpl();
+      }
+      else {
+        // regular close
+        synchronized (this) {
+          closeImpl();
+        }
+      }
+    }
+  }
 
-        for (SessionCloseHandler closeHandler : closeHandlers) {
-          try {
-            closeHandler.beforeClose(this);
-          }
-          catch (Exception ex) {
-            LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
-          }
+  private void closeImpl() {
+    try {
+      for (SessionCloseHandler closeHandler : closeHandlers) {
+        try {
+          closeHandler.beforeClose(this);
         }
-        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-          try {
-            closeHandler.beforeClose(this);
-          }
-          catch (Exception ex) {
-            LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
-          }
+        catch (Exception ex) {
+          LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
         }
+      }
+      for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+        try {
+          closeHandler.beforeClose(this);
+        }
+        catch (Exception ex) {
+          LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
+        }
+      }
 
-        if (isRemote()) {
-          if (rcon != null && rses != null) {
-            rcon.logout(rses);      // close the session
-            LOGGER.info("remote db {0} closed", this);
+      if (isRemote()) {
+        if (rcon != null && rses != null) {
+          // don't rcon.logout if crashed, because connection may block.
+          // remote side must timeout anyway. (or has already timed out)
+          if (!crashed) {
+            rcon.logout(rses);
           }
+          LOGGER.info("remote db {0} closed", this);
         }
-        else {
-          if (conId > 0) {
-            if (con != null) {
-              try {
-                con.closePreparedStatements(true);   // cleanup all pending statements
-              }
-              catch (Exception ex) {
-                LOGGER.warning("closing prepared statements failed for " + this, ex);
-              }
+      }
+      else {
+        if (conId > 0) {
+          if (con != null) {
+            try {
+              con.closePreparedStatements(true);   // cleanup all pending statements
             }
-            conMgr.logout(this);
-            LOGGER.info("db {0} closed", this);
+            catch (Exception ex) {
+              LOGGER.warning("closing prepared statements failed for " + this, ex);
+            }
           }
+          conMgr.logout(this);
+          LOGGER.info("db {0} closed", this);
         }
+      }
 
-        for (SessionCloseHandler closeHandler : closeHandlers) {
-          try {
-            closeHandler.afterClose(this);
-          }
-          catch (Exception ex) {
-            LOGGER.warning("closehandler.afterClose failed for " + this, ex);
-          }
+      for (SessionCloseHandler closeHandler : closeHandlers) {
+        try {
+          closeHandler.afterClose(this);
         }
-        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-          try {
-            closeHandler.afterClose(this);
-          }
-          catch (Exception ex) {
-            LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
-          }
+        catch (Exception ex) {
+          LOGGER.warning("closehandler.afterClose failed for " + this, ex);
         }
       }
-      catch (Exception e) {
-        throw new PersistenceException(this, "closing db failed", e);
+      for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+        try {
+          closeHandler.afterClose(this);
+        }
+        catch (Exception ex) {
+          LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
+        }
       }
-      finally {
-        // whatever happened: make it unusable
-        clearMembers(this);   // clear members for re-open
-        unregisterDb(this);
-      }
+    }
+    catch (Exception e) {
+      throw new PersistenceException(this, "closing db failed", e);
+    }
+    finally {
+      // whatever happened: make it unusable
+      clearMembers();   // clear members for re-open
+      unregisterDb();
     }
   }
 
 
   /**
-   * finalizer if connection is broken
+   * Cleanup if unreferenced connection is still open.
+   * <p>
+   * {@inheritDoc}
    */
   @Override
   protected void finalize() throws Throwable {
     try {
       if (isOpen()) {
         LOGGER.warning("closing unreferenced open db: " + this);
+        closeImpl();
       }
-      close();    // cleanup for sure
     }
     catch (Exception ex) {
        try {
@@ -1204,11 +1221,10 @@ public class Db implements Session, Cloneable {
   /**
    * Sets the crash flag.<br>
    * The db may be marked as crashed to reduce logging of succeeding errors.
-   * May be invoked from any thread.
    *
    * @param crashed the crash flag
    */
-  public synchronized void setCrashed(boolean crashed) {
+  public void setCrashed(boolean crashed) {
     this.crashed = crashed;
   }
 
@@ -1219,7 +1235,7 @@ public class Db implements Session, Cloneable {
    *
    * @return true if Db is marked as crashed
    */
-  public synchronized boolean isCrashed() {
+  public boolean isCrashed() {
     return crashed;
   }
 
@@ -2171,12 +2187,22 @@ public class Db implements Session, Cloneable {
     return con;
   }
 
+  /**
+   * Gets the current connection.<br>
+   * Same as {@link #getConnection() } but unsynchronized.
+   *
+   * @return the connection, null = not attached
+   */
+  public ManagedConnection getConnectionUnsafe() {
+    return con;
+  }
+
 
   /**
    * Detach the db.<br>
    * Used in execption handling to cleanup all pending statements and result sets.
    */
-  public synchronized void forceDetached() {
+  public void forceDetached() {
     if (con != null) {
       conMgr.forceDetach(this);
     }
@@ -2559,27 +2585,27 @@ public class Db implements Session, Cloneable {
   /**
    * clears the db local data for close/clone
    */
-  private static void clearMembers(Db db) {
-    if (db.isRemote()) {
+  private void clearMembers() {
+    if (isRemote()) {
       // cloning a remote connection involves creating an entire new connection via open()!
       // notice that a remote db is always open (otherwise it wouldn't be remote ;-))
-      db.rdel               = null;
-      db.rses               = null;
-      db.rcon               = null;
-      db.delegates          = null;
+      rdel               = null;
+      rses               = null;
+      rcon               = null;
+      delegates          = null;
       // returning to GC will also GC on server-side (if invoked from close())
     }
     else  {
-      db.defaultIdSource     = null;
-      db.transaction         = null;
+      defaultIdSource     = null;
+      transaction         = null;
     }
 
-    db.groupConId  = 0;
-    db.conId       = 0;
-    db.ownerThread = null;
+    groupConId  = 0;
+    conId       = 0;
+    ownerThread = null;
 
-    if (db.sessionInfo != null && !db.sessionInfo.isImmutable()) {
-      db.sessionInfo.setSince(0);    // not logged in anymore
+    if (sessionInfo != null && !sessionInfo.isImmutable()) {
+      sessionInfo.setSince(0);    // not logged in anymore
     }
   }
 
@@ -2606,7 +2632,7 @@ public class Db implements Session, Cloneable {
         newDb.setSessionInfo(sessionInfo.clone());
       }
 
-      clearMembers(newDb);
+      newDb.clearMembers();
 
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
@@ -2629,7 +2655,7 @@ public class Db implements Session, Cloneable {
 
       LOGGER.info("connection {0} cloned from {1}, state={2}", newDb, this, newDb.isOpen() ? "open" : "closed");
 
-      registerDb(newDb);
+      newDb.registerDb();
       return newDb;
     }
     catch (Exception e)  {
