@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.StringTokenizer;
 import org.tentackle.common.TentackleRuntimeException;
@@ -260,6 +259,11 @@ public abstract class AbstractBackend implements Backend {
     return 0;
   }
 
+
+  @Override
+  public String getDefaultSchema() {
+    return null;
+  }
 
 
   @Override
@@ -943,7 +947,7 @@ public abstract class AbstractBackend implements Backend {
     return false;
   }
 
-  
+
   /**
    * Checks if the exception's state starts with a given string.
    *

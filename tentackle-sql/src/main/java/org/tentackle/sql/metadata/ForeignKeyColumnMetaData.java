@@ -116,11 +116,17 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
    */
   public void setupForeignKeyColumnFromMetaData(ResultSet resultSet) throws SQLException {
 
+
+    String defaultSchema = getForeignKeyMetaData().getTableMetaData().getModelMetaData().getBackend().getDefaultSchema();
+
     position = resultSet.getShort("KEY_SEQ");
     foreignKeyColumn = StringHelper.toLower(resultSet.getString("FKCOLUMN_NAME"));
     primaryKeyColumn = StringHelper.toLower(resultSet.getString("PKCOLUMN_NAME"));
 
     String val = StringHelper.toLower(resultSet.getString("FKTABLE_SCHEM"));
+    if (defaultSchema != null && defaultSchema.equals(val)) {
+      val = null;
+    }
     if (!Objects.equals(val, foreignKeyMetaData.getForeignKeySchema())) {
       throw new BackendException("inconsistent referencing schema in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +
@@ -137,6 +143,9 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
     }
 
     val = StringHelper.toLower(resultSet.getString("PKTABLE_SCHEM"));
+    if (defaultSchema != null && defaultSchema.equals(val)) {
+      val = null;
+    }
     if (!Objects.equals(val, foreignKeyMetaData.getPrimaryKeySchema())) {
       throw new BackendException("inconsistent referenced schema in " + foreignKeyMetaData.getTableMetaData().
               getFullTableName() +

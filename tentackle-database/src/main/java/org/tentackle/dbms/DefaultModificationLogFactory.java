@@ -46,7 +46,7 @@ public class DefaultModificationLogFactory implements ModificationLogFactory {
   }
 
   @Override
-  public <P extends AbstractDbObject<P>> ModificationLog createModificationLog(AbstractDbObject<P> object, char modType) {
+  public ModificationLog createModificationLog(ModificationLoggable object, char modType) {
     return new ModificationLog(object, modType);
   }
 

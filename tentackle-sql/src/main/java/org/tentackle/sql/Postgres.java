@@ -47,6 +47,9 @@ import org.tentackle.sql.metadata.TableMetaData;
 @Service(Backend.class)
 public class Postgres extends AbstractSql92Backend {
 
+  /** postgres' default schema. */
+  public static final String DEFAULT_SCHEMA = "public";
+
   /** LIMIT string. */
   public static final String SQL_LIMIT = " LIMIT ";
 
@@ -180,6 +183,11 @@ public class Postgres extends AbstractSql92Backend {
       return 0;
     }
     return super.getDefaultSize(sqlType);
+  }
+
+  @Override
+  public String getDefaultSchema() {
+    return DEFAULT_SCHEMA;
   }
 
   @Override

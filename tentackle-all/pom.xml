@@ -176,7 +176,6 @@
               <url>jdbc:postgresql://localhost/tentackle</url>
               <user>tentackle</user>
               <password>tentackle</password>
-              <schemaNames>public</schemaNames>
             </backend>
           </backends>
         </configuration>

@@ -226,7 +226,10 @@ public class ServiceFactory {
    * @return the classloader, null if no explicit classloader set
    */
   public static ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
-    return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
+    if (INSTANCE != null) {   // chicken/egg (may be called during init of ServiceFactory itself)
+      return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
+    }
+    return null;
   }
 
 

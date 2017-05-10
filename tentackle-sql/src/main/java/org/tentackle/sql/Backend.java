@@ -485,6 +485,14 @@ public interface Backend {
   int getDefaultSize(SqlType sqlType);
 
   /**
+   * Gets the default schema name.<br>
+   * Some backends store the objects in a default schema, if no explicit schema is given.
+   *
+   * @return the defailt schema, null if none
+   */
+  String getDefaultSchema();
+
+  /**
    * Gets the list of reserved words for this backend.
    *
    * @return the list of reserved words

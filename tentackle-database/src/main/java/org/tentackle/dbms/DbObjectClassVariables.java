@@ -288,7 +288,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * Throws IllegalStateException if already constructed.
    *
    * @param clazz is the class of the derived DbObject
-   * @param classId the unique class id, 0 if get from @ClassId annotation
+   * @param classId the unique class id, 0 if abstract
    * @param tableName is the SQL tablename
    */
   public DbObjectClassVariables(Class<P> clazz, int classId, String tableName)  {

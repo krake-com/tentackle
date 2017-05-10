@@ -71,7 +71,6 @@ public class TableMetaData {
    * @throws BackendException if logical meta data processing error
    */
   public void setupTableFromMetaData(DatabaseMetaData metaData, String[] schemas, String schemaPattern, String tablePattern) throws SQLException {
-
     try (ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null)) {
       boolean valid = false;    // true if valid table found
       outer:
@@ -290,6 +289,10 @@ public class TableMetaData {
    * Validates and postprocesses the table data.
    */
   public void validate() {
+    String defaultSchema = getModelMetaData().getBackend().getDefaultSchema();
+    if (defaultSchema != null && defaultSchema.equalsIgnoreCase(schemaName)) {
+      schemaName = null;
+    }
     if (comment != null && comment.isEmpty()) {
       comment = null;
     }

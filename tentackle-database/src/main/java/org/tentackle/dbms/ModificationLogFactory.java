@@ -75,12 +75,11 @@ public interface ModificationLogFactory {
   /**
    * Creates a modification log from an object.
    *
-   * @param <P> the logged object type
    * @param object is the logged object
    * @param modType is the modification type (INSERT, UPDATE...)
    * @return the created modlog
    */
-  <P extends AbstractDbObject<P>> ModificationLog createModificationLog(AbstractDbObject<P> object, char modType);
+  ModificationLog createModificationLog(ModificationLoggable object, char modType);
 
 
   /**

@@ -21,7 +21,6 @@ package org.tentackle.dbms;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,16 +32,13 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.Immutable;
 import org.tentackle.misc.ImmutableException;
-import org.tentackle.misc.SerialNumbered;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 
@@ -96,7 +92,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @param <P> the persistent class type
  */
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
-       implements Immutable, Identifiable, SerialNumbered, SessionDependable, Serializable, Comparable<P>, Cloneable {
+       implements Immutable, ModificationLoggable, Comparable<P>, Cloneable {
 
 
 
@@ -2691,17 +2687,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       return exp;
     }
-  }
-
-
-  /**
-   * Creates a {@link ModificationLog}.
-   *
-   * @param modType is the modification type
-   * @return the created ModificationLog ready for saveObject()
-   */
-  public ModificationLog createModificationLog(char modType)  {
-    return ModificationLogFactory.getInstance().createModificationLog(this, modType);
   }
 
 

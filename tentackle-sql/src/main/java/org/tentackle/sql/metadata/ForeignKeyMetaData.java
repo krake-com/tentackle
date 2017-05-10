@@ -208,6 +208,15 @@ public class ForeignKeyMetaData {
    * Validates and postprocesses the foreign key data.
    */
   public void validate() {
+    String defaultSchema = getTableMetaData().getModelMetaData().getBackend().getDefaultSchema();
+    if (defaultSchema != null) {
+      if (defaultSchema.equalsIgnoreCase(foreignKeySchema)) {
+        foreignKeySchema = null;
+      }
+      if (defaultSchema.equalsIgnoreCase(primaryKeySchema)) {
+        primaryKeySchema = null;
+      }
+    }
   }
 
 
