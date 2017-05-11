@@ -10,3 +10,6 @@ alter table prefkey alter rootnodeid set not null;
 comment on column prefkey.rootnodeid is 'ID of the root node';
 create index prefkey_root on prefkey (rootnodeid);
 
+ALTER TABLE modlog ADD COLUMN classname VARCHAR(192);
+COMMENT ON COLUMN modlog.classname IS 'object classname (if classid == 0)';
+
