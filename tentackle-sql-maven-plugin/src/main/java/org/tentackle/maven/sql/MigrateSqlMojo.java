@@ -31,11 +31,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ForeignKey;
@@ -55,6 +57,8 @@ import org.tentackle.sql.metadata.TableMetaData;
  */
 @Mojo(name = "migrate")
 public class MigrateSqlMojo extends AbstractSqlMojo {
+
+  private static final String DEFAULT_SCHEMA = "<default>";     // default schema name
 
   /**
    * The name of the created sql file.
@@ -78,6 +82,20 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private StringBuilder sqlCode;
 
+  /**
+   * Number of processed tables per schema.
+   */
+  private Map<String,Integer> tableStats;
+
+  /**
+   * Number of processed entities.
+   */
+  private int processedEntites;
+
+  /**
+   * Number of skipped entities.
+   */
+  private int skippedEntites;
 
 
   @Override
@@ -101,8 +119,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
-
     try {
+      sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema()));
+      sqlWriter.append("-- entities in model: processed=")
+               .append(Integer.toString(processedEntites))
+               .append(", skipped=")
+               .append(Integer.toString(skippedEntites)).append("\n");
+
       if (sqlCode.length() > 0) {
         String sql = backendMigrationHints.getBeforeAll();
         if (!sql.isEmpty()) {
@@ -220,6 +243,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               if (entity.getTableProvidingEntity() != entity) {
                 continue;   // skip
               }
+
               // check schema, if set
               if (!mapSchemas && backendInfo.getSchemas() != null) {
                 boolean add = false;
@@ -231,12 +255,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                 }
                 if (!add) {
                   getLog().debug(entity + " skipped because of wrong schema " + entity.getSchemaName());
+                  skippedEntites++;
                   continue;   // skip
                 }
               }
+
+              processedEntites++;
+
               TableMetaData table = backendInfo.getBackend().getTableMetaData(modelMetaData, entity.getTableName());
               if (table != null) {
                 modelMetaData.addTableMetaData(table);
+                countTableStats(table);
               }
 
               StringBuilder tableSql = new StringBuilder();
@@ -375,6 +404,52 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
     }
     return pending;
+  }
+
+  /**
+   * Counts a processed table.
+   *
+   * @param table the table meta data
+   */
+  private void countTableStats(TableMetaData table) {
+    if (tableStats == null) {
+      tableStats = new TreeMap<>();    // sorted by schema name
+    }
+    String schema = StringHelper.isAllWhitespace(table.getSchemaName()) ? DEFAULT_SCHEMA : table.getSchemaName();
+    Integer count = tableStats.get(schema);
+    if (count == null) {
+      count = 0;
+    }
+    tableStats.put(schema, ++count);
+  }
+
+  private String printTableStats(String defaultSchema) {
+    StringBuilder buf = new StringBuilder();
+    if (tableStats == null) {
+      buf.append("-- no tables found in database!\n");
+    }
+    else {
+      buf.append("-- schemas/tables in database: ");
+      boolean needComma = false;
+      int total = 0;
+      for (Map.Entry<String, Integer> entry : tableStats.entrySet()) {
+        String schema = entry.getKey();
+        if (defaultSchema != null && DEFAULT_SCHEMA.equals(schema)) {
+          schema = defaultSchema;
+        }
+        if (needComma) {
+          buf.append(", ");
+        }
+        buf.append(schema).append('=').append(entry.getValue());
+        needComma = true;
+        total += entry.getValue();
+      }
+      if (tableStats.size() > 1) {
+        buf.append(", total=").append(total);
+      }
+      buf.append('\n');
+    }
+    return buf.toString();
   }
 
 }
