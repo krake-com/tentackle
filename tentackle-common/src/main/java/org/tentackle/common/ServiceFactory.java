@@ -193,8 +193,11 @@ public class ServiceFactory {
     catch (TentackleRuntimeException re) {
       try {
         // we cannot use LOGGER here because this may use the createService as well
-        java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
-                "{0} -> creating default {1}", new Object[]{re.getMessage(), defaultClass.getName()});
+        java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(
+                java.util.logging.Level.WARNING,
+                "creating service for " + serviceClass.getName() +
+                " failed -> creating default " + defaultClass.getName(),
+                re);
         return defaultClass.newInstance();
       }
       catch (Exception ex) {
@@ -356,10 +359,10 @@ public class ServiceFactory {
       // service finder used to load the effective finder class
       serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
     }
-    catch (Exception ex) {  // OSGi container?
+    catch (Exception ex) {
       // we cannot use LOGGER here because this may use the createService as well
       java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.INFO,
-              "{0} -> fallback to {1}", new Object[]{ex.toString(), DefaultServiceFinder.class.getName()});
+              "cannot load ServiceFinder class -> fallback to " + DefaultServiceFinder.class.getName(), ex);
       serviceFinderClass = DefaultServiceFinder.class;
     }
 
