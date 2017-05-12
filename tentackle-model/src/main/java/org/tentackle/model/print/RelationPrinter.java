@@ -144,13 +144,17 @@ public class RelationPrinter {
 
     if (relation.isDeletionFromMainClass() ||
         relation.isDeletionCascaded() &&
-            (configuration.getModelDefaults() == null || !configuration.getModelDefaults().getDeletionCascaded())) {
+            (configuration.getModelDefaults() == null ||
+             configuration.getModelDefaults().getDeletionCascaded() == null ||
+             !configuration.getModelDefaults().getDeletionCascaded())) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.DELETE).append(" =");
       if (relation.isDeletionCascaded() &&
-            (configuration.getModelDefaults() == null || !configuration.getModelDefaults().getDeletionCascaded())) {
+            (configuration.getModelDefaults() == null ||
+             configuration.getModelDefaults().getDeletionCascaded() == null ||
+             !configuration.getModelDefaults().getDeletionCascaded())) {
         buf.append(' ').append(RelationImpl.CASCADE);
       }
       if (relation.isDeletionFromMainClass()) {

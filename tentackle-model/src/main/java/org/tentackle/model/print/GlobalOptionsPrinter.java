@@ -118,15 +118,6 @@ public class GlobalOptionsPrinter {
       buf.append(EntityOptionsImpl.OPTION_NORMTEXT).append(',');
     }
 
-    boolean sizeOption = false;
-    String bindOptions = options.getBindOptions();
-    if (bindOptions != null) {
-      // special handing for SIZE option
-      if (bindOptions.contains(CommonOptionsImpl.BIND_SIZE)) {
-        sizeOption = true;
-      }
-    }
-
     if (entity.getSuperEntityName() == null &&
         options.isRootEntity() != entity.isRootEntityAccordingToModel()) {
       if (!options.isRootEntity()) {
@@ -136,7 +127,7 @@ public class GlobalOptionsPrinter {
     }
 
     if (options.noModelDefaults() || modelDefaults == null) {
-      if (sizeOption) {
+      if (options.isMaxCol()) {
         buf.append(CommonOptionsImpl.BIND_SIZE).append(',');
       }
       if (options.isBind()) {
@@ -165,7 +156,7 @@ public class GlobalOptionsPrinter {
       }
     }
     else {
-      printBool(buf, CommonOptionsImpl.BIND_SIZE, sizeOption, modelDefaults.getSize());
+      printBool(buf, CommonOptionsImpl.BIND_SIZE, options.isMaxCol(), modelDefaults.getSize());
       printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), modelDefaults.getBind());
 
       if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.NONE ||
