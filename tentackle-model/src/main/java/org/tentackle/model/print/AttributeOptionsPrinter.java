@@ -103,7 +103,7 @@ public class AttributeOptionsPrinter {
         buf.append(attribute.getEffectiveType().print(options.getDefaultValue()));
       }
       catch (ModelException mx) {
-        buf.append("?" + mx.getMessage() + "?");
+        buf.append("?").append(mx.getMessage()).append("?");
       }
       buf.append(',');
     }
