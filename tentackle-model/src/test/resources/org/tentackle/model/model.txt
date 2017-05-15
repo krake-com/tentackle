@@ -9,7 +9,7 @@ integrity := related
 ## attributes
 [size, autoselect, tracked, tokenlock, tableserial | -id total]
 
-long             subsidiaryId    subsidiary_id     subsidiary ID [context, @MyAnno]
+long             subsidiaryId    subsidiary_id     subsidiary ID [context, @MyAnno("blah")]
 String(10)       invoiceNo       invoice_no        the unique invoice number [uc]
 Date             invoiceDate     invoice_date      the invoice's date
 Long             customerId      customer_id       object ID of the customer [uc, @NotNull]

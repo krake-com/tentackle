@@ -18,6 +18,7 @@
 
 package org.tentackle.model.print;
 
+import java.util.List;
 import java.util.Objects;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
@@ -213,6 +214,16 @@ public class RelationPrinter {
       }
       lead(buf).append(RelationImpl.SCOPE).append(" = ").append(relation.getAccessScope().toString().toLowerCase());
       needComma = true;
+    }
+
+    List<String> annotations = relation.getAnnotations();
+    if (annotations != null && !annotations.isEmpty()) {
+      for (String annotation : annotations) {
+        if (needComma) {
+          buf.append(",\n");
+        }
+        lead(buf).append(new AnnotationPrinter(annotation).print());
+      }
     }
 
     if (needComma) {

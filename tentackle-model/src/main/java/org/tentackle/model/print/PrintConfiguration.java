@@ -99,4 +99,22 @@ public class PrintConfiguration {
     return columnGap;
   }
 
+  /**
+   * Returns whether given annotation should be printed as an attribute option.
+   *
+   * @param annotation the annotation string
+   * @return true if attribute option
+   */
+  public boolean isOptionAnnotation(String annotation) {
+    for (String anno: optionAnnotations) {
+      if (annotation.startsWith(anno) &&
+          (annotation.equals(anno) ||
+          // is longer and followed by some args
+          !Character.isJavaIdentifierPart(annotation.charAt(anno.length())))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }

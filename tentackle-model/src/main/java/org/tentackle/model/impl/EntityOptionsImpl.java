@@ -231,7 +231,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             if (sorting == null) {
               sorting = new ArrayList<>();
             }
-            sorting.add((on ? "+" : "-") + uco.toLowerCase());
+            sorting.add((on ? "+" : "-") + option);
             break;
           }
           else  {

@@ -109,8 +109,8 @@ public class AttributeOptionsPrinter {
     }
 
     for (String anno: options.getAnnotations()) {
-      if (configuration.getOptionAnnotations().contains(anno)) {
-        buf.append(anno).append(',');
+      if (configuration.isOptionAnnotation(anno)) {
+        buf.append(new AnnotationPrinter(anno).print()).append(',');
       }
     }
 

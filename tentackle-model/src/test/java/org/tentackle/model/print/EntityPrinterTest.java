@@ -47,7 +47,7 @@ public class EntityPrinterTest {
 " * \n" +
 " * ## attributes\n" +
 " * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED | -id +total]\n" +
-" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno]\n" +
+" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno(\"blah\")]\n" +
 " * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]\n" +
 " * Date          invoiceDate   invoice_date   the invoice's date\n" +
 " * Long          customerId    customer_id    object ID of the customer [UC]\n" +
@@ -71,13 +71,15 @@ public class EntityPrinterTest {
 " * InvoiceLine:\n" +
 " *     relation = composite referenced list,\n" +
 " *     link = setInvoice position,\n" +
-" *     name = Lines\n" +
+" *     name = Lines,\n" +
+" *     @NotNull\n" +
 " * \n" +
 " * # the customer object\n" +
 " * Customer:\n" +
-" *     select = cached\n" +
+" *     select = cached,\n" +
+" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")\n" +
 " * \n" +
-" * ## validations\n" +
+" * ## annotations\n" +
 " * invoiceNo:\n" +
 " *     @NotNull(message=\"{ @('please_enter_the_invoice-number') }\")\n" +
 " * \n" +
@@ -90,12 +92,6 @@ public class EntityPrinterTest {
 " * total:\n" +
 " *     @NotNull(scope=PersistenceScope.class),\n" +
 " *     @Greater(value=\"0\", scope=PersistenceScope.class, condition=\"{ object.printed != null }\")\n" +
-" * \n" +
-" * Lines:\n" +
-" *     @NotNull\n" +
-" * \n" +
-" * Customer:\n" +
-" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")\n" +
 " * \n" +
 " * @<\n" +
 " */\n";

@@ -144,7 +144,7 @@ public class EntityPrinter {
     for (Attribute attribute: entity.getAttributes()) {
       List<String> annotations = new ArrayList<>();
       for (String anno: attribute.getOptions().getAnnotations()) {
-        if (!configuration.getOptionAnnotations().contains(anno)) {
+        if (!configuration.isOptionAnnotation(anno)) {
           annotations.add(anno);
         }
       }
@@ -156,27 +156,6 @@ public class EntityPrinter {
           needBlankLine = true;
         }
         line(attribute.getJavaName()).append(":\n");
-        int size = annotations.size();
-        int ndx = 0;
-        for (String annotation: annotations) {
-          line("    ").append(new AnnotationPrinter(annotation).print());
-          if (++ndx < size) {
-            buf.append(',');
-          }
-          buf.append('\n');
-        }
-      }
-    }
-    for (Relation relation: entity.getRelations()) {
-      List<String> annotations = relation.getAnnotations();
-      if (annotations != null && !annotations.isEmpty()) {
-        if (needBlankLine) {
-          line("\n");
-        }
-        else {
-          needBlankLine = true;
-        }
-        line(relation.getName()).append(":\n");
         int size = annotations.size();
         int ndx = 0;
         for (String annotation: annotations) {
