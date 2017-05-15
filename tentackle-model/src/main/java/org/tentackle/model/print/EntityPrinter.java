@@ -18,6 +18,7 @@
 
 package org.tentackle.model.print;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
@@ -112,7 +113,7 @@ public class EntityPrinter {
 
     line("\n");
     line("## attributes\n");
-    String globalOptions = new GlobalOptionsPrinter(entity, configuration.getModelDefaults()).print();
+    String globalOptions = new GlobalOptionsPrinter(entity, configuration).print();
     if (!"[]".equals(globalOptions)) {
       line(globalOptions).append('\n');
     }
@@ -138,10 +139,15 @@ public class EntityPrinter {
     }
 
     line("\n");
-    line("## validations\n");
+    line("## annotations\n");
     needBlankLine = false;
     for (Attribute attribute: entity.getAttributes()) {
-      List<String> annotations = attribute.getOptions().getAnnotations();
+      List<String> annotations = new ArrayList<>();
+      for (String anno: attribute.getOptions().getAnnotations()) {
+        if (!configuration.getOptionAnnotations().contains(anno)) {
+          annotations.add(anno);
+        }
+      }
       if (annotations != null && !annotations.isEmpty()) {
         if (needBlankLine) {
           line("\n");

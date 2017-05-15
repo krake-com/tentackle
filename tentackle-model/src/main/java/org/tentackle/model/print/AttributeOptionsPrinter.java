@@ -40,14 +40,18 @@ import static org.tentackle.common.Constants.BIND_SCALE;
 public class AttributeOptionsPrinter {
 
   private final Attribute attribute;
+  private final PrintConfiguration configuration;
+
 
   /**
    * Creates an options printer.
    *
    * @param attribute the attribute
+   * @param configuration the printing configuration
    */
-  public AttributeOptionsPrinter(Attribute attribute) {
+  public AttributeOptionsPrinter(Attribute attribute, PrintConfiguration configuration) {
     this.attribute = attribute;
+    this.configuration = configuration;
   }
 
   /**
@@ -100,6 +104,13 @@ public class AttributeOptionsPrinter {
       }
       catch (ModelException mx) {
         buf.append("?" + mx.getMessage() + "?");
+      }
+      buf.append(',');
+    }
+
+    for (String anno: options.getAnnotations()) {
+      if (configuration.getOptionAnnotations().contains(anno)) {
+        buf.append(anno).append(',');
       }
     }
 

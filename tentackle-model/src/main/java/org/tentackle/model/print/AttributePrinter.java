@@ -30,6 +30,7 @@ import org.tentackle.model.ModelException;
 public class AttributePrinter {
 
   private final Attribute attribute;
+  private final PrintConfiguration configuration;
   private String printedType;
   private String printedComment;
 
@@ -37,9 +38,11 @@ public class AttributePrinter {
    * Creates an attribute printer.
    *
    * @param attribute the attribute
+   * @param configuration the printing configuration
    */
-  public AttributePrinter(Attribute attribute) {
+  public AttributePrinter(Attribute attribute, PrintConfiguration configuration) {
     this.attribute = attribute;
+    this.configuration = configuration;
   }
 
   /**
@@ -101,7 +104,7 @@ public class AttributePrinter {
     if (printedComment == null) {
       StringBuilder buf = new StringBuilder();
       buf.append(attribute.getOptions().getComment());
-      String options = new AttributeOptionsPrinter(attribute).print();
+      String options = new AttributeOptionsPrinter(attribute, configuration).print();
       if (!options.isEmpty()) {
         buf.append(" [").append(options).append(']');
       }

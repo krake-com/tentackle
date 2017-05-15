@@ -18,6 +18,8 @@
 
 package org.tentackle.model.print;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
@@ -33,7 +35,7 @@ import static org.testng.Assert.*;
  */
 public class EntityPrinterTest {
 
-  private static final String expected =
+  private static final String EXPECTED =
 "/**\n" +
 " * @> $mapping\n" +
 " * \n" +
@@ -45,7 +47,7 @@ public class EntityPrinterTest {
 " * \n" +
 " * ## attributes\n" +
 " * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED | -id +total]\n" +
-" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT]\n" +
+" * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno]\n" +
 " * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]\n" +
 " * Date          invoiceDate   invoice_date   the invoice's date\n" +
 " * Long          customerId    customer_id    object ID of the customer [UC]\n" +
@@ -103,9 +105,11 @@ public class EntityPrinterTest {
      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
      Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
      ModelDefaults defaults = new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT");
-     PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, 2);
+     List<String> optionAnnos = new ArrayList<>();
+     optionAnnos.add("@MyAnno");
+     PrintConfiguration configuration = new PrintConfiguration(true, true, defaults, optionAnnos, 2);
      String text = new EntityPrinter(entity, configuration).print();
      System.out.println(text);
-     assertEquals(text, expected);
+     assertEquals(text, EXPECTED);
    }
 }

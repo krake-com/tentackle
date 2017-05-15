@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -153,6 +154,12 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter(defaultValue = "2")
   protected int dumpColumnGap;
+
+  /**
+   * Optional annotations that should be printed as attribute options.
+   */
+  @Parameter
+  protected String dumpAnnotationsAsOptions;
 
 
   /**
@@ -479,7 +486,15 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       dumpDir.mkdirs();
       try {
         ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
-        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults, dumpColumnGap);
+        List<String> optionAnnotations = new ArrayList<>();
+        if (dumpAnnotationsAsOptions != null) {
+          StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
+          while (stok.hasMoreTokens()) {
+            optionAnnotations.add(stok.nextToken());
+          }
+        }
+        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
+                                                                  optionAnnotations, dumpColumnGap);
         for (Entity entity: Model.getInstance().getAllEntitites()) {
           File dumpFile = new File(dumpDir, entity.getName() + ".txt");
           try (BufferedWriter writer =

@@ -45,7 +45,7 @@ public class AttributeSectionPrinter {
     printers = new ArrayList<>();
     for (Attribute attribute: entity.getAttributes()) {
       if (!attribute.isImplicit()) {
-        printers.add(new AttributePrinter(attribute));
+        printers.add(new AttributePrinter(attribute, configuration));
       }
     }
   }

@@ -18,6 +18,8 @@
 
 package org.tentackle.model.print;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.tentackle.model.ModelDefaults;
 
 /**
@@ -30,7 +32,9 @@ public class PrintConfiguration {
   private final boolean printingAsComment;      // print as a comment block
   private final boolean usingVariables;         // use variables in model
   private final ModelDefaults modelDefaults;    // optional model defaults
+  private final List<String> optionAnnotations; // annotations that should be printed as attribute options
   private final int columnGap;                  // minimum number of spaces between columns in attribute section
+
 
   /**
    * Creates a printing configuration.
@@ -38,12 +42,15 @@ public class PrintConfiguration {
    * @param printingAsComment create a comment block
    * @param usingVariables use variables for tablename, classid and mapping
    * @param modelDefaults the model defaults, null if none
+   * @param optionAnnotations annotations that should be printed as attribute options
    * @param columnGap minimum number of spaces between columns in attribute section
    */
-  public PrintConfiguration(boolean printingAsComment, boolean usingVariables, ModelDefaults modelDefaults, int columnGap) {
+  public PrintConfiguration(boolean printingAsComment, boolean usingVariables, ModelDefaults modelDefaults,
+                            List<String> optionAnnotations, int columnGap) {
     this.printingAsComment = printingAsComment;
     this.usingVariables = usingVariables;
     this.modelDefaults = modelDefaults;
+    this.optionAnnotations = optionAnnotations == null ? new ArrayList<>() : optionAnnotations;
     this.columnGap = columnGap < 1 ? 1 : columnGap;
   }
 
@@ -72,6 +79,15 @@ public class PrintConfiguration {
    */
   public ModelDefaults getModelDefaults() {
     return modelDefaults;
+  }
+
+  /**
+   * Gets the annotations that should be printed as attribute options.
+   *
+   * @return the options, empty if none
+   */
+  public List<String> getOptionAnnotations() {
+    return optionAnnotations;
   }
 
   /**

@@ -36,17 +36,17 @@ import org.tentackle.model.impl.EntityOptionsImpl;
 public class GlobalOptionsPrinter {
 
   private final Entity entity;
-  private final ModelDefaults modelDefaults;
+  private final PrintConfiguration configuration;
 
   /**
    * Creates the printer.
    *
    * @param entity the entity
-   * @param modelDefaults the model defaults, null if none
+   * @param configuration the printing configuration
    */
-  public GlobalOptionsPrinter(Entity entity, ModelDefaults modelDefaults) {
+  public GlobalOptionsPrinter(Entity entity, PrintConfiguration configuration) {
     this.entity = entity;
-    this.modelDefaults = modelDefaults;
+    this.configuration = configuration;
   }
 
   /**
@@ -125,6 +125,8 @@ public class GlobalOptionsPrinter {
       }
       buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');
     }
+
+    ModelDefaults modelDefaults = configuration.getModelDefaults();
 
     if (options.noModelDefaults() || modelDefaults == null) {
       if (options.isMaxCol()) {
