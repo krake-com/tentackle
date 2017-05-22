@@ -33,7 +33,8 @@ import static javax.lang.model.SourceVersion.RELEASE_8;
  */
 @SupportedAnnotationTypes({
   "org.tentackle.pdo.Transaction",
-  "org.tentackle.pdo.NoTransaction"
+  "org.tentackle.pdo.NoTransaction",
+  "org.tentackle.security.Secured"
 })
 @SupportedSourceVersion(RELEASE_8)
 @AnnotationProcessor

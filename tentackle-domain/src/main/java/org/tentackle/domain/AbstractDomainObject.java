@@ -20,12 +20,14 @@
 package org.tentackle.domain;
 
 import java.io.Serializable;
+import java.util.List;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainException;
 import org.tentackle.pdo.DomainObject;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 
@@ -37,7 +39,7 @@ import org.tentackle.session.Session;
  * @author harald
  */
 public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, D extends AbstractDomainObject<T,D>>
-       implements DomainObject<T>, Cloneable, Serializable {
+       implements DomainObject<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -81,6 +83,16 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   @Override
   public void setPdo(T pdo) {
     this.pdo = pdo;
+  }
+
+  @Override
+  public Class<T> getEffectiveClass() {
+    return pdo.getEffectiveClass();
+  }
+
+  @Override
+  public List<Class<? super T>> getEffectiveSuperClasses() {
+    return pdo.getEffectiveSuperClasses();
   }
 
   @Override

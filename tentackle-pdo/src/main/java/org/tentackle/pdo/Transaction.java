@@ -33,9 +33,8 @@ import org.tentackle.reflect.Interception;
 /**
  * Annotation to flag a method as a transaction.
  * <p>
- * Methods of the PDO-interfaces annotated
- * with {@code @Transaction} will be encapsulated by a transaction
- * by the {@link PdoInvocationHandler}.
+ * Methods of the PDO- or Operation-interfaces annotated
+ * with {@code @Transaction} will be encapsulated by a transaction.
  */
 @Documented
 @Inherited

@@ -52,6 +52,7 @@ import org.tentackle.pdo.PersistentObject;
 import org.tentackle.pdo.TokenLock;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityException;
 import org.tentackle.security.SecurityFactory;
@@ -108,7 +109,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @author harald
  */
 public abstract class AbstractPersistentObject<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
-       extends AbstractDbObject<P> implements PersistentObject<T> {
+       extends AbstractDbObject<P> implements PersistentObject<T>, EffectiveClassProvider<T> {
 
   private static final long serialVersionUID = 1921941642168910515L;
 
@@ -271,10 +272,20 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return pdo;
   }
 
-
   @Override
   public void setPdo(T pdo) {
     this.pdo = pdo;
+  }
+
+
+  @Override
+  public Class<T> getEffectiveClass() {
+    return pdo.getEffectiveClass();
+  }
+
+  @Override
+  public List<Class<? super T>> getEffectiveSuperClasses() {
+    return pdo.getEffectiveSuperClasses();
   }
 
 

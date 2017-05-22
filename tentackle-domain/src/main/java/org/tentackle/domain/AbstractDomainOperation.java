@@ -20,10 +20,12 @@
 package org.tentackle.domain;
 
 import java.io.Serializable;
+import java.util.List;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.Session;
 
 /**
@@ -34,7 +36,7 @@ import org.tentackle.session.Session;
  * @param <D> the domain implementation type
  */
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
-       implements DomainOperation<T>, Cloneable, Serializable {
+       implements DomainOperation<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -107,4 +109,13 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
     return operation.getPersistenceDelegate().getSession();
   }
 
+  @Override
+  public Class<T> getEffectiveClass() {
+    return operation.getEffectiveClass();
+  }
+
+  @Override
+  public List<Class<? super T>> getEffectiveSuperClasses() {
+    return operation.getEffectiveSuperClasses();
+  }
 }

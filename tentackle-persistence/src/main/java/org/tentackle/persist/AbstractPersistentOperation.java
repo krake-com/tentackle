@@ -19,6 +19,7 @@
 
 package org.tentackle.persist;
 
+import java.util.List;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
 import org.tentackle.pdo.DomainContext;
@@ -27,6 +28,7 @@ import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentOperation;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
@@ -41,7 +43,7 @@ import org.tentackle.session.Session;
  * @author harald
  */
 public abstract class AbstractPersistentOperation<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
-       extends AbstractDbOperation<P> implements PersistenceDelegate<T>, PersistentOperation<T> {
+       extends AbstractDbOperation<P> implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T> {
 
   private static final long serialVersionUID = 1L;
 
@@ -96,6 +98,17 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   @Override
   public DomainDelegate<T> getDomainDelegate() {
     return operation.getDomainDelegate();
+  }
+
+
+  @Override
+  public Class<T> getEffectiveClass() {
+    return operation.getEffectiveClass();
+  }
+
+  @Override
+  public List<Class<? super T>> getEffectiveSuperClasses() {
+    return operation.getEffectiveSuperClasses();
   }
 
 

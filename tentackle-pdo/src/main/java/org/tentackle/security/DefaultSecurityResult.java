@@ -60,4 +60,22 @@ public class DefaultSecurityResult implements SecurityResult {
     return byDefault;
   }
 
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    if (accepted) {
+      buf.append("accepted");
+    }
+    else {
+      buf.append("denied");
+    }
+    if (byDefault) {
+      buf.append(" by default");
+    }
+    if (message != null) {
+      buf.append(" '").append(message).append("'");
+    }
+    return buf.toString();
+  }
+
 }
