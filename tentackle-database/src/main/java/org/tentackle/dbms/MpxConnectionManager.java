@@ -19,9 +19,7 @@
 
 package org.tentackle.dbms;
 
-import java.sql.SQLException;
 import java.util.Date;
-import java.util.Random;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
@@ -57,11 +55,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /** minimum size. */
   final protected int minSize;
 
-  /** min hours to close connections. */
-  final protected int minMinutes;
-
-  /** max hours to close connections. */
-  final protected int maxMinutes;
 
 
 
@@ -72,9 +65,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   /** number of entries in unConList. */
   protected int unConCount;
-
-  /** randomizer. */
-  protected Random random;
 
   /** true if initialized. */
   protected boolean initialized;
@@ -110,27 +100,22 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public MpxConnectionManager(String name, BackendInfo backendInfo, int maxDb, int idOffset, int iniSize, int incSize,
                               int minSize, int maxSize, int minMinutes, int maxMinutes) {
 
-    super(name, iniSize, maxSize, idOffset);
+    super(name, iniSize, maxSize, idOffset, minMinutes, maxMinutes);
 
-    if (minSize > maxSize ||
-        minMinutes > maxMinutes ||
-        incSize < 0 ||
-        incSize > (maxSize - iniSize) ||
-        (maxDb > 0 && maxDb < iniSize)) {
-      throw new IllegalArgumentException("illegal or conflicting parameters");
+    if (minSize > maxSize) {
+      throw new IllegalArgumentException("maxSize must be >= minSize");
     }
-
+    if (maxDb > 0 && maxDb < iniSize) {
+      throw new IllegalArgumentException("maxDb must be 0 or >= iniSize");
+    }
+    
     this.backendInfo = backendInfo;
     this.maxDbSize = maxDb;
     this.incSize = incSize;
     this.minSize = minSize;
-    this.minMinutes = minMinutes;
-    this.maxMinutes = maxMinutes;
 
     infoLogSize = maxConSize / 4;
     warnLogSize = maxConSize / 2;
-
-    random = new Random();
 
     // setup initial connections
     unConList = new int[iniSize];
@@ -265,61 +250,57 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * @return the number of connections created
    */
   protected int createConnections(int count) {
-    try {
-      int conSize;
-      synchronized(this) {
-        conSize = getConnectionCount();
+    int conSize;
+
+    synchronized(this) {
+      conSize = getConnectionCount();
+    }
+
+    if (conSize + count < minSize) {
+      // at least to minsize
+      count = minSize - conSize;
+    }
+
+    // align count before we run into DbRuntimeException in addConnection()
+    if (maxConSize > 0) {
+      if (conSize + count > maxConSize) {
+        count = maxConSize - conSize;
       }
-      if (conSize + count < minSize) {
-        // at least to minsize
-        count = minSize - conSize;
+      if (count == 0) {
+        LOGGER.severe(this + ": *** maximum number of connections reached: " + maxConSize + " ***");
       }
-      // align count before we run into DbRuntimeException in addConnection()
-      if (maxConSize > 0) {
-        if (conSize + count > maxConSize) {
-          count = maxConSize - conSize;
-        }
-        if (count == 0) {
-          LOGGER.severe(this + ": *** maximum number of connections reached: " + maxConSize + " ***");
-        }
-        else  {
-          if (conSize + count > getInfoLogSize()) {
-            String msg = this + ": increasing number of connections by " + count + " to " + (conSize + count) + " of " +
-                         maxConSize + " (unattached=" + unConCount + ")";
-            if (conSize + count > getWarnLogSize()) {
-              // Half of the connections concurrently in use in most cases tells us that the db-server
-              // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
-              // Log attached connections.
-              StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
-              for (ManagedConnection con: ManagedConnection.getManagedConnections()) {
-                if (con.getManager() == this && con.isAttached()) {
-                  buf.append("\n\n  ").append(con.toDiagnosticString());
-                }
+      else  {
+        if (conSize + count > getInfoLogSize()) {
+          String msg = this + ": increasing number of connections by " + count + " to " + (conSize + count) + " of " +
+                       maxConSize + " (unattached=" + unConCount + ")";
+          if (conSize + count > getWarnLogSize()) {
+            // Half of the connections concurrently in use in most cases tells us that the db-server
+            // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
+            // Log attached connections.
+            StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
+            for (ManagedConnection con: ManagedConnection.getManagedConnections()) {
+              if (con.getManager() == this && con.isAttached()) {
+                buf.append("\n\n  ").append(con.toDiagnosticString());
               }
-              LOGGER.warning(buf.toString());
             }
-            else {
-              // pre warning
-              LOGGER.info(msg);
-            }
+            LOGGER.warning(buf.toString());
+          }
+          else {
+            // pre warning
+            LOGGER.info(msg);
           }
         }
       }
-      for (int i=0; i < count; i++) {
-        ManagedConnection con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
-        // may take some time dep. on the db backend...
-        con.setExpireAt(con.getEstablishedSince() + (minMinutes*60 + random.nextInt((maxMinutes - minMinutes)*60)) * 1000L);
-        LOGGER.info("{0}: open connection {1}, valid until {2}",
-                    this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
-        synchronized(this) {
-          pushUnattached(addConnection(con));   // add to established connections and unattached freelist
-        }
+    }
+
+    for (int i=0; i < count; i++) {
+      ManagedConnection con = createConnection(backendInfo);  // may take some time dep. on the db backend...
+      synchronized(this) {
+        pushUnattached(addConnection(con));   // add to established connections and unattached freelist
       }
-      return count;
     }
-    catch (SQLException ex) {
-      throw new PersistenceException(this + ": creating connection failed", ex);
-    }
+
+    return count;
   }
 
 
@@ -526,7 +507,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             LOGGER.warning("closing Db failed", rex);
           }
         }
-        else if (con.getExpireAt() > 0 && con.getExpireAt() < con.getDetachedSince()) {
+        else if (con.isExpired()) {
           // connection time elapsed: close it
           removeConnection(con.getIndex());
           closeIt = true;    // will close below

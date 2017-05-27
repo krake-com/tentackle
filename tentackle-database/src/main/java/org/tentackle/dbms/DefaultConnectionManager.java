@@ -22,10 +22,14 @@ package org.tentackle.dbms;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
+import java.util.Random;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+import org.tentackle.sql.BackendInfo;
 
 
 /**
@@ -48,6 +52,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
   private static final long LOOP_MS = 1000;     // minimum loop time for timeout checks
 
+
   /** name of the connection manager. */
   final protected String name;
 
@@ -56,6 +61,20 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
   /** offset for connection IDs. */
   final protected int idOffset;
+
+  /** min hours to close connections. */
+  final protected int minMinutes;
+
+  /** max hours to close connections. */
+  final protected int maxMinutes;
+
+  /** randomizer. */
+  final protected Random random;
+
+  /** maximum number of connections, 0 = unlimited. */
+  final protected int maxConSize;
+
+
 
   /** current allocation size for {@link Db}s logged in. **/
   protected int dbSize;
@@ -71,9 +90,6 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
   /** managed connections. */
   protected ManagedConnection[] conList;
-
-  /** maximum number of connections, 0 = unlimited. */
-  protected final int maxConSize;
 
   /** free list for conList (unused entries in conList). */
   protected int[] freeConList;
@@ -96,8 +112,11 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    * @param iniSize the initial iniSize of the db table
    * @param maxSize the maximum number of connections, 0 = unlimited (dangerous!)
    * @param idOffset the offset for connection ids (&gt; 0)
+   * @param minMinutes minimum minutes a connection should be used, 0 if keep connection forever
+   * @param maxMinutes maximum minutes a connection should be used
    */
-  public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset) {
+  public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset,
+                                  int minMinutes, int maxMinutes) {
 
     super(name);
 
@@ -110,14 +129,19 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
     if (maxSize != 0 && maxSize < iniSize) {
       throw new IllegalArgumentException("maxSize must be 0 or >= iniSize");
     }
-    // name != null already checked by super(name)
+    if (minMinutes > maxMinutes) {
+      throw new IllegalArgumentException("maxMinutes must be >= minMinutes");
+    }
 
     this.name = name;
     this.iniSize = iniSize;
     this.idOffset = idOffset;
     this.maxDbSize = maxSize;     // Db and Cons use the same max-setting!
     this.maxConSize = maxSize;
+    this.minMinutes = minMinutes;
+    this.maxMinutes = maxMinutes;
 
+    random = new Random();
     dbSize = iniSize;
     conList = new ManagedConnection[iniSize];
     freeDbList = new int[iniSize];
@@ -138,9 +162,11 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    * The max connections will prevent ill behaving applications from tearing down the dbserver
    * by opening connections excessively. The usual application holds 2 connections and temporarily
    * 1 or 2 more. If you need more, change the connection manager in Db.
+   * Within 12 to 36h (approx. once a day), close and reopen connections
+   * (allows updates of the database servers's QEPs, prepared statements cache, etc...).
    */
   public DefaultConnectionManager() {
-    this("default-mgr", 2, 8, 1);
+    this("default-mgr", 2, 8, 1, 720, 2160);
   }
 
 
@@ -337,7 +363,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   @Override
   public int login(Session session) {
 
-    ManagedConnection con = createConnection((Db) session);
+    ManagedConnection con = createConnection(((Db) session).getBackendInfo());
 
     synchronized(this) {
       int id = addDb((Db) session);
@@ -375,19 +401,26 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
-    if (con.isDead()) {
-      // try to reopen
-      LOGGER.warning(this + ": closing **DEAD** connection " + con);
+    if (con.isDead() || con.isExpired()) {
+      // dead or expired -> reopen
+      if (con.isDead()) {
+        LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
+      }
+      else {
+        LOGGER.info("{0}: closing connection {1}, open since {2}",
+                    this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+      }
       try {
         con.close();
       }
       catch (RuntimeException ex) {
-        LOGGER.warning("closing DEAD connection failed: ignored...", ex);
+        LOGGER.warning("closing connection failed -> ignored", ex);
       }
+
       // reopen the connection
-      con = createConnection((Db) session);
+      con = createConnection(((Db) session).getBackendInfo());
       conList[index] = con;
-      LOGGER.warning(this + ": connection " + con + " reopened");
+      LOGGER.info("{0}: connection {1} reopened", this, con);
     }
     con.attachSession((Db) session);
   }
@@ -514,26 +547,36 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   /**
-   * Creates a connection for a given db.
+   * Creates a managed connection.
    *
-   * @param db the db
-   * @return the connection
+   * @param backendInfo the backend info
+   * @return the managed connection
    */
-  private ManagedConnection createConnection(Db db) {
-    ManagedConnection con;
+  protected ManagedConnection createConnection(BackendInfo backendInfo) {
+    if (!backendInfo.isConnectable()) {
+      throw new PersistenceException(this + ": backend info " + backendInfo + " is not connectable");
+    }
 
+    ManagedConnection con;
     try {
-      con = new ManagedConnection(this, db.getBackend(), db.getBackendInfo().connect());
+      con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
     }
     catch (SQLException e) {
-      throw new PersistenceException(e);
+      throw new PersistenceException(this + ": creating connection failed", e);
     }
 
     if (!con.getAutoCommit()) {
       con.close();
       throw new PersistenceException(this + ": connection " + con + " is not in autoCommit mode");
     }
+
     con.setMaxCountForClearWarnings(maxCountForClearWarnings);
+    if (minMinutes > 0) {
+      con.setExpireAt(con.getEstablishedSince() +
+                      (minMinutes * 60 + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
+    }
+    LOGGER.info("{0}: open connection {1}, valid until {2}",
+                this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
     return con;
   }
 

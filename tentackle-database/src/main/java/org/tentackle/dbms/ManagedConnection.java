@@ -385,6 +385,17 @@ public class ManagedConnection {
 
 
   /**
+   * Returns whether connection has expired.<br>
+   * Expired connections should be closed and reopened.
+   *
+   * @return true if expired
+   */
+  public boolean isExpired() {
+    return expireAt > 0 && expireAt < detachedSince;
+  }
+
+
+  /**
    * Detaches a session from a connection.
    * Connections must be detached before they can be used by another Db.
    * The method must only be invoked by a connection manager!
