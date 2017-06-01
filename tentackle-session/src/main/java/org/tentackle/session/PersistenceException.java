@@ -105,6 +105,7 @@ public class PersistenceException extends TentackleRuntimeException {
 
   private transient Session session;        // the db connection this exception belongs to
   private Identifiable identifiable;        // the db object this execption belongs to
+  private String lazyMessage;               // null if messsage not computed yet
 
 
   /**
@@ -340,21 +341,31 @@ public class PersistenceException extends TentackleRuntimeException {
    */
   @Override
   public String getMessage() {
-    String msg = super.getMessage();
-    if (session != null || identifiable != null) {
-      msg += " {";
-      if (identifiable != null) {
-        msg += identifiable.toGenericString();    // toString may fail!
-        if (session != null) {
-          msg += " at ";
+    if (lazyMessage == null) {
+      StringBuilder buf = new StringBuilder();
+      buf.append(super.getMessage());
+      if (session != null || identifiable != null) {
+        buf.append(" {");
+        if (identifiable != null) {
+          buf.append(identifiable.toGenericString());    // toString may fail!
+          if (session != null) {
+            buf.append(" at ");
+          }
         }
+        if (session != null) {
+          buf.append(session.toString());
+        }
+        buf.append('}');
       }
-      if (session != null) {
-        msg += session.toString();
+      if (getCause() instanceof SQLException) {
+        SQLException sx = (SQLException) getCause();
+        buf.append("\nSQL-Message: ").append(sx.getMessage())
+           .append("\nSQL-Code:    ").append(sx.getErrorCode())
+           .append("\nSQL-State:   ").append(sx.getSQLState());
       }
-      msg += "}";
+      lazyMessage = buf.toString();
     }
-    return msg;
+    return lazyMessage;
   }
 
 

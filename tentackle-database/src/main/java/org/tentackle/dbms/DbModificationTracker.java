@@ -32,12 +32,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.ModificationEvent;
@@ -48,6 +48,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.task.Task;
 import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
+import org.tentackle.io.ReconnectedException;
 import org.tentackle.session.SessionUtilities;
 
 
@@ -545,7 +546,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     if (name == null) {
       // not annotated with @TableName: try to instantiate and get from AbstractDbObject
       @SuppressWarnings("unchecked")
-      AbstractDbObject obj = (AbstractDbObject) DbUtilities.getInstance().createObject((Class) clazz);
+      AbstractDbObject<?> obj = (AbstractDbObject) DbUtilities.getInstance().createObject((Class) clazz);
       if (obj != null) {
         name = obj.getTableName();
       }
@@ -632,10 +633,25 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
   @Override
   protected void lockInternal() {
-    poll();
-    invokeDelayedListeners();
+    try {
+      poll();
+      invokeDelayedListeners();
+    }
+    catch (Throwable t) {
+      ReconnectedException rx  = ExceptionHelper.extractException(ReconnectedException.class, true, t);
+      if (rx != null) {
+        // reconnected: just log and start over.
+        // requires Db.enableReconnection(true, >0) on the tracker's session
+        LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
+      }
+      else {
+        throw t;  // all other exceptions will be thrown
+      }
+    }
+
     super.lockInternal();
   }
+
 
   @Override
   protected void unlockInternal(long sleepMs) {

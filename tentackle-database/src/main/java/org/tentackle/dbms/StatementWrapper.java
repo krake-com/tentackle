@@ -24,8 +24,8 @@ import java.lang.ref.WeakReference;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.ConstraintException;
 import org.tentackle.session.PersistenceException;
@@ -313,8 +313,8 @@ public class StatementWrapper implements AutoCloseable {
     }
     catch (SQLException e)  {
       Db db = getAttachedSession();
-      if (!db.checkForDeadLink(e) &&
-          db.getBackend().isConstraintException(e)) {
+      boolean dead = db.checkForDeadLink(e);
+      if (!dead && db.getBackend().isConstraintException(e)) {
         throw new ConstraintException(db, this.toString(), e);
       }
       else  {
@@ -325,7 +325,11 @@ public class StatementWrapper implements AutoCloseable {
          * Hence, it doesn't make sense to check for an access violation in order to
          * give the user a more detailed error message.
          */
-        throw new PersistenceException(db, this.toString(), e);
+        PersistenceException px = new PersistenceException(db, this.toString(), e);
+        if (dead && db.optionallyReconnect()) {
+          throw new ReconnectedException(px);
+        }
+        throw px;
       }
     }
   }
@@ -402,21 +406,31 @@ public class StatementWrapper implements AutoCloseable {
     }
     catch (SQLException e)  {
       Db db = getAttachedSession();
-      db.checkForDeadLink(e);
+      boolean dead = db.checkForDeadLink(e);
       if (withinTx) {
         try {
           db.rollback(txVoucher);
         }
         catch (RuntimeException rex) {
           // just log
-          db.logException(LOGGER, Level.SEVERE, "statement failed", e);
+          LOGGER.severe("statement failed", e);
         }
       }
       else  {
-        // not within a transaction: application cannot rollback -> force cleanup
-        db.forceDetached();
+        // dead or not within a transaction: application cannot rollback -> force cleanup
+        try {
+          db.forceDetached();
+        }
+        catch (RuntimeException rex) {
+          // just log
+          LOGGER.severe("detach failed", e);
+        }
       }
-      throw new PersistenceException(getSession(), this.toString(), e);
+      PersistenceException px = new PersistenceException(getSession(), this.toString(), e);
+      if (dead && db.optionallyReconnect()) {
+        throw new ReconnectedException(px);
+      }
+      throw px;
     }
   }
 

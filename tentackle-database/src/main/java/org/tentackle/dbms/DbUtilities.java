@@ -18,8 +18,11 @@
 
 package org.tentackle.dbms;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
 
@@ -142,6 +145,45 @@ public class DbUtilities {
   public Class<?> getServicedClass(Class<?> implementingClass) {
     // overridden in PersistenceUtilities
     return null;
+  }
+
+
+  /**
+   * Creates a reconnection policy for a given session.
+   *
+   * @param session the session
+   * @param blocking true if reconnection blocks the current thread, else non-blocking in background
+   * @param millis the (minimum) time in milliseconds between retries
+   * @return the policy
+   */
+  public ReconnectionPolicy<Db> createReconnectionPolicy(Db session, boolean blocking, long millis) {
+    return new ReconnectionPolicy<Db>() {
+
+      @Override
+      public String toString() {
+        return session.toString();
+      }
+
+      @Override
+      public boolean isBlocking() {
+        return blocking;
+      }
+
+      @Override
+      public long timeToReconnect() {
+        return millis;
+      }
+
+      @Override
+      public Supplier<Db> getConnector() {
+        return () -> session;
+      }
+
+      @Override
+      public Consumer<Db> getConsumer() {
+        return (db) -> db.reOpen();
+      }
+    };
   }
 
 }

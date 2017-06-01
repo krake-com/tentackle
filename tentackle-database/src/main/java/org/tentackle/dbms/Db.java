@@ -21,7 +21,6 @@
 package org.tentackle.dbms;
 
 import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -56,12 +55,12 @@ import org.tentackle.dbms.rmi.DbRemoteDelegate;
 import org.tentackle.dbms.rmi.RemoteDbConnection;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDelegate;
+import org.tentackle.io.ReconnectionPolicy;
+import org.tentackle.io.Reconnector;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
@@ -332,6 +331,7 @@ public class Db implements Session, Cloneable {
   private volatile Thread ownerThread;                    // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
   private Map<String,Serializable> applicationProperties; // application-specific properties
+  private ReconnectionPolicy<Db> reconnectionPolicy;      // reconnection policy, null if none (default)
 
   // for RMI remote connections
   private RMIClientSocketFactory csf;                     // client socket factory, null if system default
@@ -823,36 +823,6 @@ public class Db implements Session, Cloneable {
     return dispatcher;
   }
 
-  /**
-   * Logs an exception.
-   *
-   * @param e the exception head, null if none
-   * @param msg the optional message, null if none
-   * @param logger the logger
-   * @param level the logging level
-   */
-  public void logException(Logger logger, Level level, String msg, Throwable e)  {
-    if (e == null)  {
-      // avoid "Nullpointer Exception" cause it isn't one!
-      e = new Exception("unknown (exception was null)");
-    }
-    try (PrintStream ps = new PrintStream(new LoggerOutputStream(logger, level))) {
-      ps.println();
-      if (msg != null) {
-        ps.println(msg);
-      }
-      SQLException sqlEx = ExceptionHelper.extractException(SQLException.class, true, e);
-      msg = ">>>DB>>>> " + this;
-      if (sqlEx != null) {
-        msg += "\n>>>SQL>>> " + sqlEx.getMessage() +
-               "\n>>>Code>> " + sqlEx.getErrorCode() +
-               "\n>>>State> " + sqlEx.getSQLState();
-      }
-      ps.println(msg);
-      e.printStackTrace(ps);
-    }
-  }
-
 
   /**
    * Checks for a dead communications link.<br>
@@ -952,12 +922,8 @@ public class Db implements Session, Cloneable {
     }
 
     if (e instanceof LoginFailedException) {
-      LOGGER.warning("remote login failed: " + e.getMessage());
       return (LoginFailedException) e;
     }
-
-    // severe error: no new login attempt anymore
-    logException(LOGGER, Level.WARNING, "login failed", e);
 
     if (e instanceof PersistenceException) {
       return (PersistenceException) e;
@@ -976,7 +942,7 @@ public class Db implements Session, Cloneable {
    * the method {@link #handleConnectException} is invoked.
    */
   @Override
-  public void open () {
+  public void open() {
 
     if (isOpen()) {
       throw new PersistenceException(this, "session is already open");
@@ -1049,7 +1015,9 @@ public class Db implements Session, Cloneable {
       transaction = null;
 
       setupIdSource();
-      sessionInfo.setSince(System.currentTimeMillis());
+      if (!sessionInfo.isImmutable()) {
+        sessionInfo.setSince(System.currentTimeMillis());
+      }
 
       alive = true;   // all db start alive!
 
@@ -1064,6 +1032,57 @@ public class Db implements Session, Cloneable {
     catch (Exception e)  {
       throw handleConnectException(e);
     }
+  }
+
+
+  /**
+   * Re-opens the session.
+   */
+  public void reOpen() {
+    if (isOpen()) {
+      try {
+        close();
+      }
+      catch (PersistenceException ex) {
+        // nothing to log
+      }
+    }
+    clearMembers();
+    unregisterDb();
+    open();
+  }
+
+
+  /**
+   * Enables the automatic reconnection capability.<br>
+   * If the backend is shutdown or not available for some other reason,
+   * the application will retry to connect periodically.
+   *
+   * @param blocking true if reconnection blocks the current thread
+   * @param millis the milliseconds between connection retries
+   */
+  public void enableReconnection(boolean blocking, long millis) {
+    reconnectionPolicy = DbUtilities.getInstance().createReconnectionPolicy(this, blocking, millis);
+  }
+
+  /**
+   * Disables the automatic reconnection capability.
+   */
+  public void disableReconnection() {
+    reconnectionPolicy = null;
+  }
+
+  /**
+   * Reconnects the session if a reconnection policy is defined.
+   *
+   * @return true if reconnected, false if reconnection disabled or non-blocking in background
+   */
+  public boolean optionallyReconnect() {
+    if (reconnectionPolicy != null) {
+      Reconnector.getInstance().submit(reconnectionPolicy);
+      return reconnectionPolicy.isBlocking();
+    }
+    return false;
   }
 
 

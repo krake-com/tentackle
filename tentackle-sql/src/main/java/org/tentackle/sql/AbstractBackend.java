@@ -218,7 +218,8 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isCommunicationLinkException(SQLException ex) {
-    return isExceptionStateStartingWith(ex, "08");
+    return isExceptionStateStartingWith(ex, "08") ||    // initial connection failed
+           isExceptionStateStartingWith(ex, "57");      // connection vanished or became unusable
   }
 
   @Override
