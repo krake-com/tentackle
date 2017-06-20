@@ -24,6 +24,7 @@ package org.tentackle.pdo;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
@@ -134,15 +135,17 @@ public class DefaultDomainContext implements DomainContext {
         // A thread-local session cannot be changed to another fixed session.
         // To do so, a new context is necessary.
         // Same session as thread-local is ok, however.
-        throw new PersistenceException("illegal attempt to change the thread-local session of " + this +
-                                       " from " + getSession() + " to " + session);
+        throw new PersistenceException("illegal attempt to change the thread-local session of " +
+                                       ReflectionHelper.getClassBaseName(getClass()) + " '" + this +
+                                       "' from " + getSession() + " to " + session);
       }
       // else no change: requested session is null or the same as the thread-local session
     }
     else  {
       if (isSessionImmutable() && this.session != session) {
-          throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " + this +
-                                         " from " + this.session + " to " + session);
+          throw new PersistenceException(this.session, "illegal attempt to change the immutable session of " +
+                                         ReflectionHelper.getClassBaseName(getClass()) + " '" + this +
+                                         "' from " + this.session + " to " + session);
       }
       this.session = session;
       if (nonRootContext != null) {
