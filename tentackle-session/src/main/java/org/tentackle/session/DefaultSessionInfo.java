@@ -458,16 +458,10 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
     if (properties == null) {
       try {
         try {
-          properties = FileHelper.loadProperties(propertiesName, false);
+          properties = FileHelper.loadProperties(propertiesName);
         }
         catch (FileNotFoundException e1) {
-          // try as resource
-          try {
-            properties = FileHelper.loadProperties(propertiesName, true);
-          }
-          catch (FileNotFoundException e2) {
-            throw new PersistenceException("backend properties '" + propertiesName + "' not found");
-          }
+          throw new PersistenceException("backend properties '" + propertiesName + "' not found");
         }
       }
       catch (IOException ex) {

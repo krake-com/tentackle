@@ -365,16 +365,10 @@ public class Db implements Session, Cloneable {
       if (technicalBackendInfoName != null) {
         // programmatically predefined (usually technical) backend info
         try {
-          backendProperties = FileHelper.loadProperties(technicalBackendInfoName, false);
+          backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
         }
         catch (FileNotFoundException e1) {
-          // try as resource
-          try {
-            backendProperties = FileHelper.loadProperties(technicalBackendInfoName, true);
-          }
-          catch (FileNotFoundException e2) {
-            throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' not found");
-          }
+          throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' not found");
         }
       }
 
