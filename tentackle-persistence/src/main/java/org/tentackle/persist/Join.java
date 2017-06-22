@@ -104,9 +104,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final boolean explicitIdAliasRequired;
 
   /**
-   * Holds the last joined pdo.
+   * Holds the last joined pdo per pdo that gets the join
    */
-  private J lastJoinedPdo;
+  private final Map<T,J> lastJoinedPdoMap;
 
 
 
@@ -131,6 +131,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
 
     cascadedJoinedSelects = new ArrayList<>();
     idMap = new HashMap<>();
+    lastJoinedPdoMap = new HashMap<>();
     listJoin = columnName.endsWith(ENDS_WITH_ID);
     explicitIdAliasRequired = !listJoin &&
             ((AbstractPersistentObject) Pdo.create(joinedClass).getPersistenceDelegate()).isExplicitIdAliasRequiredInJoins();
@@ -234,7 +235,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * Initializes the join.
    */
   public void initialize() {
-    lastJoinedPdo = null;
+    lastJoinedPdoMap.clear();
     idMap.clear();
   }
 
@@ -252,11 +253,11 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * Joins a pdo with another pdo.<br>
    * The last joined pdo is remembered and can be retrieved via {@link #getLastJoinedPdo()}.
    *
-   * @param pdo the pdo, null if none
+   * @param pdo the pdo that gets the join
    * @param pdoToJoin the pdo to join, null to finish the joining process
    */
   public void join(T pdo, J pdoToJoin) {
-    lastJoinedPdo = pdoToJoin;
+    lastJoinedPdoMap.put(pdo, pdoToJoin);
     if (pdoToJoin != null) {
       Long pdoId = pdo.getPersistenceDelegate().getId();
       Long pdoToJoinId = pdoToJoin.getPersistenceDelegate().getId();
@@ -275,10 +276,11 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   /**
    * Gets the last PDO joined to the last PDO.
    *
+   * @param pdo the pdo that got the joins
    * @return the last joined PDO, null if nothing joined so far
    */
-  public J getLastJoinedPdo() {
-    return lastJoinedPdo;
+  public J getLastJoinedPdo(T pdo) {
+    return lastJoinedPdoMap.get(pdo);
   }
 
 }

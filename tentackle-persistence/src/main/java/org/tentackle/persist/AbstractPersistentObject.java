@@ -1530,11 +1530,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           // This is the case if ID is null (which is not nullable)
           // -> this one is valid:
           joinedPo = joinedPo.readFromResultSetWrapper(rs);
-          if (joinedPo != null &&
-              (join.getLastJoinedPdo() == null ||
-               join.getLastJoinedPdo().getPersistenceDelegate().getId() != joinedPo.getId())) {
-            joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
-            ((Join) join).join(nextPdo, joinedPdo);
+          if (joinedPo != null) {
+            PersistentDomainObject lastJoinedPdo = join.getLastJoinedPdo(nextPdo);
+            if (lastJoinedPdo == null ||
+                lastJoinedPdo.getPersistenceDelegate().getId() != joinedPo.getId()) {
+              joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
+              ((Join) join).join(nextPdo, joinedPdo);
+            }
           }
         }
         // skip to next join
