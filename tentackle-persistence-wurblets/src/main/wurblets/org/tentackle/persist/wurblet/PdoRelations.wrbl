@@ -482,9 +482,8 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   }
 @[
-
-        if (rel.getRelationType() == RelationType.LIST && !rel.isReversed() &&
-            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
+          if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
 ]@
 
   /**
@@ -500,6 +499,20 @@ For more options, see {\@link DbModelWurblet}.
     return @(var)@;
   }
 @[
+          }
+          else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized()) {
+]@
+
+  /**
+   * Gets @(var)@ without performing a select if not loaded.
+   *
+   * \@return @(var)@ @(rel.getComment())@
+   */
+  @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
+    return @(var)@;
+  }
+@[
+          }
         }
 
         if (nmRel != null) {
@@ -647,6 +660,23 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
       }
+
+      if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized() &&
+          (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+]@
+
+  /**
+   * Sets @(var)@ without setting any attributes.
+   *
+   * \@param @(var)@ @(rel.getComment())@
+   */
+  @(scope)@ void @(rel.getSetterName())@Blunt(@(type)@ @(var)@) {
+    this.@(var)@ = @(var)@;
+    @(var)@Loaded = true;
+  }
+@[
+      }
+
     }
 
 
