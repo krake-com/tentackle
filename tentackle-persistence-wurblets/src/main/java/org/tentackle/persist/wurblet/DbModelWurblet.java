@@ -368,20 +368,39 @@ public class DbModelWurblet extends ModelWurblet {
           String name = "CN_" + attr.getJavaName().toUpperCase() + sp.getPostfix();
           buf.append(".append(");
           if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
-            buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()));
-            buf.append(".CLASSVARIABLES.getColumnName(").append(name).append(')');
+            buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()))
+               .append(".CLASSVARIABLES.getColumnName(").append(name).append(')');
           }
           else  {
-            if (isPdo()) {
-              buf.append("getColumnName(").append(name).append(')');
+            if (!getEntity().equals(attr.getEntity())) {
+              // must be a joined component (otherwise the column is not in the result set)
+              int joinCount = 0;
+              boolean joinFound = false;
+              for (LeftJoin leftJoin: getLeftJoins()) {
+                joinCount++;
+                if (leftJoin.getRelation().getForeignEntity().equals(attr.getEntity())) {
+                  buf.append('"').append("j_").append(joinCount)
+                     .append('.').append(attr.getColumnName()).append('"');
+                  joinFound = true;
+                  break;
+                }
+              }
+              if (!joinFound) {
+                throw new WurbelException("missing join for sort key: " + key);
+              }
             }
-            else  {
-              buf.append(name);
+            else {
+              if (isPdo()) {
+                buf.append("getColumnName(").append(name).append(')');
+              }
+              else  {
+                buf.append(name);
+              }
             }
           }
-          buf.append(").append(");
-          buf.append(key.getSortMode().equals(Backend.SQL_SORTASC) ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC");
-          buf.append(')');
+          buf.append(").append(")
+             .append(key.getSortMode().equals(Backend.SQL_SORTASC) ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC")
+             .append(')');
           needComma = true;
         }
       }

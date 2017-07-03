@@ -24,10 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -670,8 +668,6 @@ public class ModelWurblet extends AbstractWurblet {
 
     contextIdAttributeValid = entity.getContextIdAttribute() != null;
 
-    Set<Entity> componentKeyEntities = new HashSet<>();
-
     // setup wurblet parameters
     for (WurbletParameter par: getAllParameters()) {
 
@@ -679,9 +675,7 @@ public class ModelWurblet extends AbstractWurblet {
 
       if (par.isComponentKey() ||
           par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-        if (par.isSortKey()) {
-          throw new WurbelException("sorting not allowed for component keys: " + par);
-        }
+
         if (!entity.isRootEntityAccordingToModel()) {
           throw new WurbelException("component keys are only allowed for root-entities: " + par);
         }
@@ -716,10 +710,6 @@ public class ModelWurblet extends AbstractWurblet {
         if (!rootOk) {
           throw new WurbelException(parEntity + " is not a component of " + entity + ": " + par);
         }
-        // remember related entities for check against joins later
-        Entity topEntity = parEntity.getTopSuperEntity();
-        componentKeyEntities.add(topEntity);
-        componentKeyEntities.addAll(parEntity.getAllSubEntities());
       }
 
       if (par.isRelationKey()) {
@@ -738,17 +728,6 @@ public class ModelWurblet extends AbstractWurblet {
           }
           if (parEntity == null) {
             throw new WurbelException("no such related entity '" + par.getRelationComponentEntityName() + "' in " + par);
-          }
-        }
-        if (relation.isComposite()) {
-          // misuse of .relation as a component key?
-          for (Entity root: parEntity.getRootEntities()) {
-            if (root.equals(entity)) {
-              Entity topEntity = parEntity.getTopSuperEntity();
-              componentKeyEntities.add(topEntity);
-              componentKeyEntities.addAll(parEntity.getAllSubEntities());
-              break;
-            }
           }
         }
       }
@@ -787,10 +766,6 @@ public class ModelWurblet extends AbstractWurblet {
         if (remote && !join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
           throw new WurbelException("joined non-composite relation '" + join.getName() +
                   "' must be serialized for remote access");
-        }
-        // verify that join is not used by a component key
-        if (componentKeyEntities.contains(join.getForeignEntity())) {
-          throw new WurbelException("join '" + join.getName() + "' is already used by a component key");
         }
         joinedJoins.add(join);
         leftEntity = join.getForeignEntity();
