@@ -25,6 +25,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -52,6 +53,7 @@ interface PdoEditDialogPool$Singleton {
  *
  * @author harald
  */
+@Service(PdoEditDialogPool.class)
 public class PdoEditDialogPool {
 
   /**
