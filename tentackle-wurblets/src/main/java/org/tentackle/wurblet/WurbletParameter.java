@@ -106,8 +106,18 @@ public class WurbletParameter implements WurbletParameterOperand {
    *          +poolId -kurzname -&gt; ORDER BY poolId ASC, kurzname DESC
    * </pre>
    *
-   * The <code>&lt;attribute-path&gt;</code> describes the path to the attribute and is of the following form:
+   * The <code>&lt;attribute-path&gt;</code> describes the path to the attribute.<br>
+   * The persistence layer is able to reference any component of a PDO by only one join
+   * (resp. two if multi-class inheritance), regardless how deep it is located within
+   * the component tree. This is possible due to the optional columns rootId and rootClassId.<br>
+   * Non-components, i.e. simple relations, can also be used. However, those are limited to
+   * the direct relations to the entity, i.e. max. one join.<br>
+   * Futhermore, all components of such a non-composite relations can also be referenced.<br>
+   * As a result, a join chain may consist of an optional component, followed by an optional
+   * non-composite relation, followed by an optional component of that relation.
    *
+   * <p>
+   * The path is of the following form:
    * <ul>
    * <li><code>&lt;component-entity&gt;.</code><br>
    * The entity name of one of the PDO's components. May be any component in the composite's hierarchy.<br>
