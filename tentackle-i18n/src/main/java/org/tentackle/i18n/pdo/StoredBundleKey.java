@@ -52,6 +52,7 @@ import org.tentackle.session.TableName;
  *
  * ## relations
  * StoredBundle:
+ *    relation = serialized,
  *    name = Bundle
  *
  * @<

@@ -101,7 +101,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
               if (join.isReversed()) {
 ]@
-                        ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@(@(joinAlias)@);
+                        ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(join.getSetterName())@@(join.isSerialized()?"Blunt":"")@(@(joinAlias)@);
 @[
               }
               else {
@@ -124,7 +124,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
                       new Join<@(pdoName)@,@(joinClass)@>(JoinType.LEFT, "@(alias)@.@(join.getAttribute().getColumnName())@", "e_@(joinCount)@.id", @(joinClass)@.class, "e_@(joinCount)@",
                         (@(alias)@, @(joinAlias)@) -> {
-                          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
+                          @(alias)@.@(join.getSetterName())@@(join.isSerialized()?"Blunt":"")@(@(joinAlias)@);
                         }
                       @(joinCount < joins.size() ? ")," : ")")@
 @[

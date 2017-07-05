@@ -81,7 +81,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
                       new Join<StoredBundle,StoredBundleKey>(JoinType.LEFT, "bndl.id", "e_1.bundle_id", StoredBundleKey.class, "e_1",
                         (bndl, bkey) -> {
                         ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-                        ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
+                        ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
                         }
                       )
                     )
@@ -762,7 +762,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
           (bndl, bkey) -> {
             ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
+            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
           }
         )
       );
@@ -812,7 +812,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
           (bndl, bkey) -> {
             ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundle(bndl);
+            ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
           }
         )
       );

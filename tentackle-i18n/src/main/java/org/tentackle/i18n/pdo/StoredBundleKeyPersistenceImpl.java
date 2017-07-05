@@ -345,8 +345,8 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
    */
 
   // StoredBundleKey: StoredBundle bundle via bundleId (Bundle)
-  private transient StoredBundle bundle;
-  private transient boolean bundleLoaded;
+  private StoredBundle bundle;
+  private boolean bundleLoaded;
 
   /**
    * Gets bundle via bundleId.
@@ -363,6 +363,15 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
   }
 
   /**
+   * Gets bundle without performing a select if not loaded.
+   *
+   * @return bundle Bundle
+   */
+  public StoredBundle getBundleBlunt() {
+    return bundle;
+  }
+
+  /**
    * Sets bundle via bundleId.
    *
    * @param bundle Bundle
@@ -372,6 +381,16 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     assertMutable();
     this.bundle = bundle;
     setBundleId(bundle == null ? 0 : bundle.getId());
+    bundleLoaded = true;
+  }
+
+  /**
+   * Sets bundle without setting any attributes.
+   *
+   * @param bundle Bundle
+   */
+  public void setBundleBlunt(StoredBundle bundle) {
+    this.bundle = bundle;
     bundleLoaded = true;
   }
 

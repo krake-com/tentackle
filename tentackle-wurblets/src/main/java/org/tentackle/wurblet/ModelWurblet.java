@@ -778,9 +778,16 @@ public class ModelWurblet extends AbstractWurblet {
         if (join.getSelectionType() != SelectionType.LAZY && join.getSelectionType() != SelectionType.EAGER) {
           throw new WurbelException("joined relation '" + join.getName() + "' must be lazy or eager");
         }
-        if (remote && !join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
-          throw new WurbelException("joined non-composite relation '" + join.getName() +
-                  "' must be serialized for remote access");
+        if (remote) {
+          if (!join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
+            throw new WurbelException("joined non-composite relation '" + join.getName() +
+                    "' must be serialized for remote access");
+          }
+          Relation opRel = join.getForeignRelation();
+          if (opRel != null && !opRel.isSerialized()) {
+            throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
+                    "' must be serialized for remote access");
+          }
         }
         joinedJoins.add(join);
         leftEntity = join.getForeignEntity();
