@@ -731,6 +731,21 @@ public class ModelWurblet extends AbstractWurblet {
           }
         }
       }
+      else {
+        Relation relation = entity.getRelation(par.getComponentEntityName(), true);
+        if (relation != null) {
+          par.setRelation(relation);
+        }
+        else {
+          // find relation to that component
+          for (Relation rel: entity.getAllRelations()) {
+            if (rel.isComposite() && rel.getForeignEntity().getName().equals(par.getComponentEntityName())) {
+              par.setRelation(rel);
+              break;
+            }
+          }
+        }
+      }
 
       Attribute attribute = parEntity.getAttributeByJavaName(par.getName(), true);
       if (attribute == null) {

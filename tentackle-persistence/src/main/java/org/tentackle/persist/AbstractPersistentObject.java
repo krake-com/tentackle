@@ -1491,7 +1491,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Reads the next row from a result set within a joined select.
+   * Reads the next row from a result set within a joined select.<br>
+   * The results may come in any order. Thus, it is possible to sort the results
+   * according the to the domain's requirements.
    *
    * @param js the joined select
    * @param rs the result set
@@ -1531,10 +1533,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           // -> this one is valid:
           joinedPo = joinedPo.readFromResultSetWrapper(rs);
           if (joinedPo != null) {
-            PersistentDomainObject lastJoinedPdo = join.getLastJoinedPdo(nextPdo);
-            if (lastJoinedPdo == null ||
-                lastJoinedPdo.getPersistenceDelegate().getId() != joinedPo.getId()) {
-              joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
+            joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
+            if (joinedPdo != null) {
               ((Join) join).join(nextPdo, joinedPdo);
             }
           }

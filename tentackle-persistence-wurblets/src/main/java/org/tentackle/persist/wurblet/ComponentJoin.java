@@ -23,20 +23,23 @@ import java.util.Objects;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
+import org.tentackle.sql.JoinType;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * Describes the inner join to a component's attribute.
+ * Describes the join to a component's attribute.
  *
  * @author harald
  */
-public class InnerComponentJoin {
+public class ComponentJoin {
 
   private final Entity entity;                      // the left side of the join
   private final Entity joinedEntity;                // the right side of the join
+  private final JoinType joinType;                  // the join type (inner or left)
   private final String rootIdColumnName;            // the CN_... name of the rootid
-  private final String rootIdClassName;             // the peristence implementation class name holding the rootid (and optional rootclassid)
-  private final String extraClassName;              // != null if attribute belongs to a table that needs an extra join to the rootid's table
+  private final String rootIdClassName;             // the impl class name holding the rootid (and optional rootclassid)
+  private final String extraClassName;              // != null if attribute belongs to a table that needs an extra
+                                                    // join to the rootid's table
 
 
 
@@ -46,14 +49,17 @@ public class InnerComponentJoin {
    * @param wurblet the wurblet
    * @param entity the entity to join to (left side of the join)
    * @param joinedEntity the entity to join (right side of the join)
+   * @param joinType the join type (inner or left)
    * @throws WurbelException if given parameter is not a component key
    */
-  public InnerComponentJoin(DbModelWurblet wurblet, Entity entity, Entity joinedEntity) throws WurbelException {
+  public ComponentJoin(DbModelWurblet wurblet, Entity entity, Entity joinedEntity, JoinType joinType) throws WurbelException {
 
     this.entity = entity;
     this.joinedEntity = joinedEntity;
+    this.joinType = joinType;
 
-    Entity topEntity = joinedEntity.getHierarchyInheritanceType() == InheritanceType.PLAIN ? joinedEntity : joinedEntity.getTopSuperEntity();
+    Entity topEntity = joinedEntity.getHierarchyInheritanceType() == InheritanceType.PLAIN ?
+            joinedEntity : joinedEntity.getTopSuperEntity();
     Attribute rootAttribute = null;
     if (topEntity.equals(joinedEntity)) {
       extraClassName = null;
@@ -100,6 +106,15 @@ public class InnerComponentJoin {
    */
   public Entity getJoinedEntity() {
     return joinedEntity;
+  }
+
+  /**
+   * Gets the join type.
+   *
+   * @return the join type
+   */
+  public JoinType getJoinType() {
+    return joinType;
   }
 
 
@@ -156,7 +171,7 @@ public class InnerComponentJoin {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final InnerComponentJoin other = (InnerComponentJoin) obj;
+    final ComponentJoin other = (ComponentJoin) obj;
     return Objects.equals(this.rootIdClassName, other.rootIdClassName);
   }
 

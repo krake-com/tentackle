@@ -87,13 +87,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final List<JoinedSelect<J>> cascadedJoinedSelects;
 
   /**
-   * A map of object ids to detect whether a pdo has already been joined or not.
-   * The key is the ID of the PDO that gets other PDOs joined.
-   * The set contains the IDs of the already joined PDOs.
-   */
-  private final Map<Long,Set<Long>> idMap;
-
-  /**
    * True if this is a list join.
    */
   private final boolean listJoin;
@@ -104,9 +97,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final boolean explicitIdAliasRequired;
 
   /**
-   * Holds the last joined pdo per pdo that gets the join
+   * Holds the joined pdos per pdo that gets the join
    */
-  private final Map<T,J> lastJoinedPdoMap;
+  private final Map<T,Set<J>> lastJoinedPdoMap;
 
 
 
@@ -122,6 +115,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    */
   public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
               String joinAlias, BiConsumer<T, J> joiner) {
+    
     this.type = type;
     this.columnName = columnName;
     this.joinedColumnName = joinedColumnName;
@@ -130,7 +124,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
     this.joiner = joiner;
 
     cascadedJoinedSelects = new ArrayList<>();
-    idMap = new HashMap<>();
     lastJoinedPdoMap = new HashMap<>();
     listJoin = columnName.endsWith(ENDS_WITH_ID);
     explicitIdAliasRequired = !listJoin &&
@@ -236,7 +229,6 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    */
   public void initialize() {
     lastJoinedPdoMap.clear();
-    idMap.clear();
   }
 
   /**
@@ -251,36 +243,19 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
 
   /**
    * Joins a pdo with another pdo.<br>
-   * The last joined pdo is remembered and can be retrieved via {@link #getLastJoinedPdo()}.
    *
    * @param pdo the pdo that gets the join
    * @param pdoToJoin the pdo to join, null to finish the joining process
    */
   public void join(T pdo, J pdoToJoin) {
-    lastJoinedPdoMap.put(pdo, pdoToJoin);
-    if (pdoToJoin != null) {
-      Long pdoId = pdo.getPersistenceDelegate().getId();
-      Long pdoToJoinId = pdoToJoin.getPersistenceDelegate().getId();
-      Set<Long> idSet = idMap.get(pdoId);
-      if (idSet == null) {
-        idSet = new HashSet<>();
-        idMap.put(pdoId, idSet);
-      }
-      if (!idSet.contains(pdoToJoinId)) {
-        joiner.accept(pdo, pdoToJoin);
-        idSet.add(pdoToJoinId);
-      }
+    Set<J> lastJoined = lastJoinedPdoMap.get(pdo);
+    if (lastJoined == null) {
+      lastJoined = new HashSet<>();
+      lastJoinedPdoMap.put(pdo, lastJoined);
     }
-  }
-
-  /**
-   * Gets the last PDO joined to the last PDO.
-   *
-   * @param pdo the pdo that got the joins
-   * @return the last joined PDO, null if nothing joined so far
-   */
-  public J getLastJoinedPdo(T pdo) {
-    return lastJoinedPdoMap.get(pdo);
+    if (lastJoined.add(pdoToJoin)) {
+      joiner.accept(pdo, pdoToJoin);
+    }
   }
 
 }

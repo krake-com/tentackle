@@ -111,7 +111,7 @@ For more options, see {\@link DbModelWurblet}.
                 if (join.getLinkMethodName() != null) {
                   String joinImpl = deriveClassNameForEntity(join.getForeignEntity());
 ]@
-                        ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias))@;
+                        ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(join, alias, true))@;
 @[
                 }
               }

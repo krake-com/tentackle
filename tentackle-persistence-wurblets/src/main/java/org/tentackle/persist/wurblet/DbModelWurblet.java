@@ -36,6 +36,7 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.JoinType;
 import org.tentackle.wurblet.ModelWurblet;
 import org.tentackle.wurblet.WurbletParameter;
 import org.wurbelizer.wurbel.WurbelException;
@@ -61,7 +62,7 @@ public class DbModelWurblet extends ModelWurblet {
   private boolean attracked;
   private boolean fullTracked;
   private Attribute contextAttribute;
-  private Set<InnerComponentJoin> componentJoins;
+  private Set<ComponentJoin> componentJoins;
   private List<Relation> nonComponentRelations;
 
 
@@ -240,26 +241,30 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
-   * Gets the inner component joins.
+   * Gets the component joins.
    *
    * @return the joins, empty if none
    * @throws WurbelException if a join could not be created
    */
-  public Set<InnerComponentJoin> getInnerComponentJoins() throws WurbelException {
+  public Set<ComponentJoin> getComponentJoins() throws WurbelException {
     if (componentJoins == null) {
       componentJoins = new HashSet<>();
       for (WurbletParameter par: getExpressionParameters()) {
+        JoinType joinType = par.getRelation() != null && par.getRelation().getRelationType() == RelationType.LIST ?
+                JoinType.LEFT : JoinType.INNER;
         if (par.isComponentKey() ||
             par.isRelationKey() && par.getRelationComponentEntityName() != null) {
-          InnerComponentJoin join = new InnerComponentJoin(this,
+          ComponentJoin join = new ComponentJoin(this,
                                                  par.isComponentKey() ? getEntity() : par.getRelation().getForeignEntity(),
-                                                 par.getAttribute().getEntity());
+                                                 par.getAttribute().getEntity(),
+                                                 joinType);
           componentJoins.add(join);
         }
         else if (par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-          InnerComponentJoin join = new InnerComponentJoin(this,
+          ComponentJoin join = new ComponentJoin(this,
                                                  par.getRelation().getForeignEntity(),
-                                                 par.getRelation().getEntity());
+                                                 par.getRelation().getEntity(),
+                                                 joinType);
           componentJoins.add(join);
         }
       }
@@ -806,15 +811,27 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param relation the relation
    * @param pdo the PDO name
+   * @param blunt use the blunt setter method, if provided
    * @return the java code
    */
-  public String createRelationUpdateReferenceCode(Relation relation, String pdo) {
-    if (relation.getLinkMethodName() != null) {
+  public String createRelationUpdateReferenceCode(Relation relation, String pdo, boolean blunt) {
+    Relation foreignRel = relation.getForeignRelation();
+    if (blunt &&
+        (foreignRel == null ||
+         foreignRel.getRelationType() != RelationType.OBJECT || !foreignRel.isSerialized() ||
+         (foreignRel.getSelectionType() != SelectionType.LAZY && foreignRel.getSelectionType() != SelectionType.EAGER))) {
+      blunt = false;
+    }
+
+    if (!blunt && relation.getLinkMethodName() != null) {
       return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ?
               ("(" + pdo + ", ndx++)") : ("(" + pdo + ")"));
     }
     else {
-      return "set" + relation.getEntity().getName() + "(pdo())";
+      if (foreignRel != null) {
+        return foreignRel.getSetterName() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
+      }
+      return "set" + relation.getForeignEntity() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
     }
   }
 
@@ -826,7 +843,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationUpdateReferenceCode(Relation relation) {
-    return createRelationUpdateReferenceCode(relation, "pdo()");
+    return createRelationUpdateReferenceCode(relation, "pdo()", false);
   }
 
   /**

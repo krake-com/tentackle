@@ -161,7 +161,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
   }
 
   /**
-   * Finishes the current pdo and switched to the next.
+   * Finishes the current pdo and switches to the next.
    *
    * @param pdo the next pdo
    * @return the pdo possibly changed if already in list
