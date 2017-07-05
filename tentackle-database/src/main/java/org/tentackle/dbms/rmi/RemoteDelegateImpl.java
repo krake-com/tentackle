@@ -86,7 +86,6 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    *
    * @return the class
    */
-  @Override
   public Class<T> getServicedClass() {
     return servicedClass;
   }
