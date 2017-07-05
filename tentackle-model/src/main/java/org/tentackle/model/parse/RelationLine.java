@@ -107,6 +107,11 @@ import org.tentackle.model.ModelException;
  *    <li>sets the scope of the generated setter/getter-methods. Defaults to public.</li>
  * </ul>
  *
+ * count = &lt;counter attribute&gt;
+ * <ul>
+ *    <li>sets the counter attribute. Must be numeric. Only available for composite non-reversed list relations.</li>
+ * </ul>
+ *
  * comment = &lt;comment&gt;
  * <ul>
  *    <li>to include in getter/setter comment</li>

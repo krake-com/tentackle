@@ -779,7 +779,7 @@ For more options, see {\@link DbModelWurblet}.
    * \@return @(attr.getOptions().getComment())@
    */
 @[
-          if (!noif) {
+          if (!noif && !attr.getOptions().isHidden()) {
 ]@
   \@Override
 @[
@@ -799,7 +799,7 @@ For more options, see {\@link DbModelWurblet}.
         }
         else {
           String setterProtection = protection;
-          boolean useOverride = !noif && "public".equals(protection);
+          boolean useOverride = !noif && "public".equals(protection) && !attr.getOptions().isHidden();
           // check to make setter for lazy or eager object relations private
           Relation rel = attr.getRelation();
           if (rel != null && rel.getSelectionType() != SelectionType.ALWAYS) {
@@ -877,7 +877,7 @@ For more options, see {\@link DbModelWurblet}.
    * \@return true if @(attr)@ has been modified
    */
 @[
-            if (!noif) {
+            if (!noif && !attr.getOptions().isHidden()) {
 ]@
   \@Override
 @[
@@ -897,7 +897,7 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the last persisted value
    */
 @[
-            if (!noif) {
+            if (!noif && !attr.getOptions().isHidden()) {
 ]@
   \@Override
 @[

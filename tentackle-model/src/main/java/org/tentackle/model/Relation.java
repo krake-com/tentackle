@@ -190,6 +190,17 @@ public interface Relation {
    */
   boolean isReversed();
 
+  /**
+   * Returns the attribute that holds the number of elements of a 1:N relation.<br>
+   * Applies only to composite non-reversed list relations.<br>
+   * If set, this column gets the number of elements in the list when the PDO is persisted.
+   * This avoids an initial select when the list is accessed the first time and the list is empty.
+   *
+   * @return the counter attribute, null if none
+   */
+  Attribute getCountAttribute();
+  
+
   // select = ...
 
   /**

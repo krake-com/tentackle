@@ -823,6 +823,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public TrackedList<NumberRange> getNumberRangeListBlunt() {
     if (!numberRangeListLoaded) {
       numberRangeList = new TrackedArrayList<>(false);
+      if (isImmutable()) {
+        numberRangeList.setImmutable(true);
+      }
       numberRangeListLoaded = true;
     }
     return numberRangeList;
@@ -938,7 +941,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public boolean isModified()  {
     return super.isModified()
-           // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
            || isModified(numberRangeList)
            ;
   }

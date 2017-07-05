@@ -19,7 +19,8 @@ For more options, see {\@link ModelWurblet}.
     for (Attribute attr: getEntity().getAttributes())  {
 
       if (attr.getOptions().getAccessScope() != AccessScope.PUBLIC ||
-          attr.getOptions().isFromSuper()) {
+          attr.getOptions().isFromSuper() ||
+          attr.getOptions().isHidden()) {
         continue; // skip
       }
 
@@ -98,8 +99,7 @@ For more options, see {\@link ModelWurblet}.
   void @(setter)@(@(type)@ @(attr.getJavaName())@);
 @[
           }
-        }
-        if (getEntity().getOptions().getTrackType().isAttracked()) {
+          if (getEntity().getOptions().getTrackType().isAttracked()) {
 ]@
 
   /**
@@ -109,8 +109,8 @@ For more options, see {\@link ModelWurblet}.
    */
   boolean is@(methodSuffix)@Modified();
 @[
-        }
-        if (getEntity().getOptions().getTrackType() == TrackType.FULLTRACKED) {
+          }
+          if (getEntity().getOptions().getTrackType() == TrackType.FULLTRACKED) {
 ]@
 
   /**
@@ -120,6 +120,7 @@ For more options, see {\@link ModelWurblet}.
    */
   @(attr.getJavaType())@ @(getter)@Persisted();
 @[
+          }
         }
         if (attr.getOptions().isWithTimezone()) {
 ]@

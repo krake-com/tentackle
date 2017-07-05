@@ -46,6 +46,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /** timestamp, date or time with database timezone. */
   public static final String OPTION_TZ = "TZ";
 
+  /** hidden attribute (no interface definition). */
+  public static final String OPTION_HIDDEN = "HIDDEN";
+
 
 
   private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
@@ -57,6 +60,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean utc;
   private boolean withTimezone;
   private boolean unsigned;
+  private boolean hidden;
 
 
   /**
@@ -220,6 +224,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   public void setUnsigned(boolean unsigned) {
     this.unsigned = unsigned;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return hidden;
+  }
+
+  public void setHidden(boolean hidden) {
+    this.hidden = hidden;
   }
 
 

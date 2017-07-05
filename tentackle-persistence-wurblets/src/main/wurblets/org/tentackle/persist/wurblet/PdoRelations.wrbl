@@ -374,8 +374,13 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (rel.isComposite())  {
             if (rel.getRelationType() == RelationType.LIST) {
+              String condition = "isNew()";
+              Attribute countAttribute = rel.getCountAttribute();
+              if (countAttribute != null) {
+                condition += " || " + countAttribute.getJavaName() + " == 0";
+              }
 ]@
-      @(var)@ = isNew() ? new @(effType)@(@(rel.isTracked() ? "false" : "")@) : @(createRelationSelectCode(rel))@;
+      @(var)@ = @(condition)@ ? new @(effType)@(@(rel.isTracked() ? "false" : "")@) : @(createRelationSelectCode(rel))@;
 @[
               if (rel.isReferenced()) {
                 if (rel.getLinkMethodIndex() != null) {
@@ -494,6 +499,9 @@ For more options, see {\@link DbModelWurblet}.
   @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
     if (!@(var)@Loaded) {
       @(var)@ = new @(effType)@(@(rel.isTracked() ? "false" : "")@);
+      if (isImmutable()) {
+        @(var)@.setImmutable(true);
+      }
       @(var)@Loaded = true;
     }
     return @(var)@;
@@ -1236,13 +1244,20 @@ For more options, see {\@link DbModelWurblet}.
    */
   \@Override
   public boolean isModified()  {
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        Attribute countAttribute = rel.getCountAttribute();
+        if (countAttribute != null) {
+]@
+    @(countAttribute.getSetterName())@(@(rel.getVariableName())@ == null ? 0 : @(rel.getVariableName())@.size());
+@[
+        }
+      }
+]@
     return super.isModified()
 @[
       for (Relation rel: getEntity().getRelations()) {
         if (rel.isComposite()) {
-]@
-           // @(rel)@. @(rel.getComment())@
-@[
           if (rel.getRelationType() == RelationType.LIST) {
 ]@
            || isModified(@(rel.getVariableName())@)

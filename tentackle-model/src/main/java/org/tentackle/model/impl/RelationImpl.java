@@ -75,6 +75,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** property comment = ... */
   public static final String COMMENT = "comment";
 
+  /** property count = ... */
+  public static final String COUNT = "count";
+
 
   /** composite relation flag. */
   public static final String COMPOSITE = "composite";
@@ -136,6 +139,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean serialized;
   private boolean clearOnRemoteSave;
   private boolean reversed;
+  private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
   private boolean selectionFromMainClass;
@@ -429,6 +433,22 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
+        /** property count = ... */
+        case COUNT:
+          Attribute ca = entity.getAttributeByJavaName(entry.getValue(), false);
+          if (ca == null) {
+            throw createModelException("unknown counter attribute: " + entry.getValue());
+          }
+          if (!ca.getDataType().isNumeric()) {
+            throw createModelException("counter attribute " + ca + " must be numeric");
+          }
+          if (ca.isNullable()) {
+            throw createModelException("counter attribute " + ca + " must not be nullable");
+          }
+          ((AttributeOptionsImpl) ca.getOptions()).setHidden(true);
+          setCountAttribute(ca);
+          break;
+
         /** property comment = ... */
         case COMMENT:
           setComment(entry.getValue());
@@ -611,6 +631,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
               "extra wurblet arguments are only allowed for list relations (in select property): " +
                       selectionWurbletArguments);
     }
+
+    if (countAttribute != null &&
+        (relationType != RelationType.LIST || reversed || !composite)) {
+      throw createModelException(
+              "counter attribute only allowed for composite non-reversed list relations");
+    }
   }
 
 
@@ -762,6 +788,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   @Override
+  public Attribute getCountAttribute() {
+    return countAttribute;
+  }
+
+  @Override
   public String getMethodName() {
     return methodName;
   }
@@ -909,6 +940,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setReversed(boolean reversed) {
     this.reversed = reversed;
+  }
+
+  public void setCountAttribute(Attribute countAttribute) {
+    this.countAttribute = countAttribute;
   }
 
   public void setTracked(boolean tracked) {

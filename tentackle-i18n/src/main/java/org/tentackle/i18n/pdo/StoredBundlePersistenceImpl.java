@@ -415,6 +415,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   public TrackedList<StoredBundleKey> getKeysBlunt() {
     if (!keysLoaded) {
       keys = new TrackedArrayList<>(false);
+      if (isImmutable()) {
+        keys.setImmutable(true);
+      }
       keysLoaded = true;
     }
     return keys;
@@ -512,7 +515,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public boolean isModified()  {
     return super.isModified()
-           // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
            || isModified(keys)
            ;
   }
