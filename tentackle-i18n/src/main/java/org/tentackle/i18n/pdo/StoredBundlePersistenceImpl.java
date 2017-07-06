@@ -170,28 +170,16 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     return (StoredBundleRemoteDelegate) super.getRemoteDelegate();
   }
 
-  /**
-   * Object is a root entity.
-   * @return true
-   */
   @Override
   public boolean isRootEntity() {
     return true;
   }
 
-  /**
-   * Object provides the tableserial.
-   * @return true
-   */
   @Override
   public boolean isTableSerialProvided() {
     return true;
   }
 
-  /**
-   * Overridden cause of "--tracked".
-   * @return true = setters check for modification
-   */
   @Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
@@ -255,21 +243,11 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
   }
 
-  /**
-   * Gets the attribute name.
-   *
-   * @return the resource bundle name
-   */
   @Override
   public String getName()    {
     return name;
   }
 
-  /**
-   * Sets the attribute name.
-   *
-   * @param name the resource bundle name
-   */
   @Override
   public void setName(String name) {
     assertMutable();
@@ -279,21 +257,11 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     this.name = name;
   }
 
-  /**
-   * Gets the attribute locale.
-   *
-   * @return the locale, null if default
-   */
   @Override
   public String getLocale()    {
     return locale;
   }
 
-  /**
-   * Sets the attribute locale.
-   *
-   * @param locale the locale, null if default
-   */
   @Override
   public void setLocale(String locale) {
     assertMutable();
@@ -378,20 +346,15 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   /**
    * # Relations for StoredBundle:
    *
-   * StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
+   * composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
    */
 
-  // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
+  // composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
   @Persistent("Keys")
   private TrackedList<StoredBundleKey> keys;
   private boolean keysLoaded;
   private transient TrackedList<StoredBundleKey> keysSnapshot;
 
-  /**
-   * Gets keys via StoredBundleKey#bundleId.
-   *
-   * @return keys Keys
-   */
   @Override
   public TrackedList<StoredBundleKey> getKeys()  {
     if (!keysLoaded) {
@@ -423,22 +386,12 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     return keys;
   }
 
-  /**
-   * Sets the session in this and all related objects.
-   *
-   * @param session the session
-   */
   @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(keys);
   }
 
-  /**
-   * Sets the context in this and all related objects.
-   *
-   * @param context the domain context
-   */
   @Override
   public void setDomainContext(DomainContext context)  {
     super.setDomainContext(context);
@@ -450,22 +403,17 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    * The database cascades down via referential integrity.
    */
   public void deleteRemovedReferencingRelations() {
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (keys != null && keys.isSomeRemoved()) {
       delete(keys.getRemovedObjects());
     }
   }
 
-  /**
-   * Saves composite relations referencing StoredBundle.
-   */
   @Override
   public void saveReferencingRelations(boolean update)  {
     super.saveReferencingRelations(update);
     if (update) {
       deleteRemovedReferencingRelations();
     }
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (keys != null) {
       getDomainContext().applyTo(keys);
       for (StoredBundleKey obj: keys)  {
@@ -475,17 +423,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     }
   }
 
-  /**
-   * Validates the object.
-   *
-   * @param validationPath the validation path
-   * @param scope the validation scope
-   * @return the list of validation results, never null
-   */
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (keys != null) {
       results.addAll(ValidationUtilities.getInstance().validateCollection(
                 keys, validationPath + ".keys", scope));
@@ -493,25 +433,14 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     return results;
   }
 
-  /**
-   * Sets the mutable flag for this object and all its components.
-   *
-   * @param immutable true if object is immutable
-   */
   @Override
   public void setImmutable(boolean immutable) {
     super.setImmutable(immutable);
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (keys != null) {
       keys.setImmutable(immutable);
     }
   }
 
-  /**
-   * Checks composite relations for modification recursively.
-   *
-   * @return true if this or any composition is modified
-   */
   @Override
   public boolean isModified()  {
     return super.isModified()
@@ -519,21 +448,12 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
            ;
   }
 
-  /**
-   * This is a composite object.
-   */
   @Override
   public boolean isComposite()  {
     return true;
   }
 
 
-  /**
-   * Loads components.<br>
-   *
-   * @param onlyLoaded true if return only already loaded components
-   * @return the map of all components, including this object.
-   */
   @Override
   public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
     IdentifiableMap<PersistentDomainObject<?>> components = new IdentifiableMap<>();
@@ -545,41 +465,27 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded)  {
     int count = 0;
     count += super.addComponents(components, onlyLoaded);
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (!onlyLoaded || keysLoaded) {
       count += addComponents(components, getKeys(), onlyLoaded);
     }
     return count;
   }
 
-  /**
-   * Inserts this object and all components.
-   */
   @Override
   public void insertPlainWithComponents()  {
-    // StoredBundle
     insertPlain();
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     insertPlainWithComponents(getKeys());
   }
 
-  /**
-   * Deletes this object and all components.
-   */
   @Override
   public void deletePlainWithComponents()  {
     // components are deleted via database referential integrity constraints
-    // StoredBundle
     deletePlain();
   }
 
-  /**
-   * Marks this object and all its components to be deleted.
-   */
   @Override
   public void markDeleted() {
     super.markDeleted();
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     markDeleted(keys);
   }
 
@@ -591,7 +497,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   protected void createComponentsInSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     if (keys != null) {
       snapshot.keysSnapshot = keys.createSnapshot();
     }
@@ -604,7 +509,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   protected void revertComponentsToSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    // StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys). Keys
     keys = snapshot.keys;
     if (keys != null) {
       keys.revertToSnapshot(snapshot.keysSnapshot);

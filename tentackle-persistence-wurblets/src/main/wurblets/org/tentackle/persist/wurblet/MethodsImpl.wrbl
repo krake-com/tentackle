@@ -86,10 +86,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isRootEntity()) {
 ]@
 
-  /**
-   * Object is a root entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootEntity() {
     return true;
@@ -100,10 +96,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isTableSerialProvided()) {
 ]@
 
-  /**
-   * Object provides the tableserial.
-   * \@return true
-   */
   \@Override
   public boolean isTableSerialProvided() {
     return true;
@@ -114,10 +106,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isTokenLockProvided()) {
 ]@
 
-  /**
-   * PDO provides the token lock columns.
-   * \@return true
-   */
   \@Override
   public boolean isTokenLockProvided() {
     return true;
@@ -128,10 +116,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isNormTextProvided()) {
 ]@
 
-  /**
-   * Object provides the normtext.
-   * \@return true
-   */
   \@Override
   public boolean isNormTextProvided() {
     return true;
@@ -142,10 +126,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isRootIdProvided()) {
 ]@
 
-  /**
-   * Object provides the id of the root-entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootIdProvided() {
     return true;
@@ -158,10 +138,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
 
-  /**
-   * The root entity id is @(rootAttribute)@.
-   * \@return the ID of the root entity
-   */
   \@Override
   public long getRootId() {
     return @(rootAttribute.getJavaName())@;
@@ -173,10 +149,6 @@ For more options, see {\@link DbModelWurblet}.
       if (getEntity().getOptions().isRootClassIdProvided()) {
 ]@
 
-  /**
-   * Object provides the class-id of the root-entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootClassIdProvided() {
     return true;
@@ -188,10 +160,6 @@ For more options, see {\@link DbModelWurblet}.
         if (rootEntity != null) {
 ]@
 
-  /**
-   * The root entity class is @(rootEntity)@.
-   * \@return the class ID of the root entity
-   */
   \@Override
   public int getRootClassId() {
     return @(rootEntity.getClassId())@;
@@ -203,10 +171,6 @@ For more options, see {\@link DbModelWurblet}.
       if (isTracked())  {
 ]@
 
-  /**
-   * Overridden cause of "--tracked".
-   * \@return true = setters check for modification
-   */
   \@Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
@@ -218,9 +182,6 @@ For more options, see {\@link DbModelWurblet}.
       if (isAttracked()) {
 ]@
 
-  /**
-   * Overridden cause of "--attracked".
-   */
   \@Override
   public void setModified(boolean modified) {
     super.setModified(modified);
@@ -248,9 +209,6 @@ For more options, see {\@link DbModelWurblet}.
     if (isFullTracked()) {
 ]@
 
-  /**
-   * Overridden cause of "--fulltracked".
-   */
   \@Override
   public boolean differsPersisted() {
     return super.differsPersisted()
@@ -771,6 +729,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
         else  {
+          if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
@@ -779,8 +738,10 @@ For more options, see {\@link DbModelWurblet}.
    * \@return @(attr.getOptions().getComment())@
    */
 @[
-          if (!noif && !attr.getOptions().isHidden()) {
+          }
+          else {
 ]@
+
   \@Override
 @[
           }
@@ -806,6 +767,7 @@ For more options, see {\@link DbModelWurblet}.
             setterProtection = getEntity().isAbstract() ? "protected" : "private";
             useOverride = false;
           }
+          if (!useOverride) {
 ]@
 
   /**
@@ -814,8 +776,10 @@ For more options, see {\@link DbModelWurblet}.
    * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
    */
 @[
-          if (useOverride) {
+          }
+          else {
 ]@
+
   \@Override
 @[
           }
@@ -869,6 +833,7 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
           if (isAttracked()) {
+            if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
@@ -877,8 +842,10 @@ For more options, see {\@link DbModelWurblet}.
    * \@return true if @(attr)@ has been modified
    */
 @[
-            if (!noif && !attr.getOptions().isHidden()) {
+            }
+            else {
 ]@
+
   \@Override
 @[
             }
@@ -889,6 +856,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           if (isFullTracked()) {
+            if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
@@ -897,8 +865,10 @@ For more options, see {\@link DbModelWurblet}.
    * \@return the last persisted value
    */
 @[
-            if (!noif && !attr.getOptions().isHidden()) {
+            }
+            else {
 ]@
+
   \@Override
 @[
             }

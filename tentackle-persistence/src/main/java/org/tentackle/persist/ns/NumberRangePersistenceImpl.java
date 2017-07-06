@@ -178,36 +178,21 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     return (NumberRangeRemoteDelegate) super.getRemoteDelegate();
   }
 
-  /**
-   * The root entity id is numberPoolId.
-   * @return the ID of the root entity
-   */
   @Override
   public long getRootId() {
     return numberPoolId;
   }
 
-  /**
-   * The root entity class is NumberPool.
-   * @return the class ID of the root entity
-   */
   @Override
   public int getRootClassId() {
     return 6;
   }
 
-  /**
-   * Overridden cause of "--tracked".
-   * @return true = setters check for modification
-   */
   @Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
   }
 
-  /**
-   * Overridden cause of "--attracked".
-   */
   @Override
   public void setModified(boolean modified) {
     super.setModified(modified);
@@ -221,9 +206,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     }
   }
 
-  /**
-   * Overridden cause of "--fulltracked".
-   */
   @Override
   public boolean differsPersisted() {
     return super.differsPersisted()
@@ -291,11 +273,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
   }
 
-  /**
-   * Gets the attribute numberPoolId.
-   *
-   * @return ID of the number pool
-   */
   @Override
   public long getNumberPoolId()    {
     return numberPoolId;
@@ -316,41 +293,21 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     this.numberPoolId = numberPoolId;
   }
 
-  /**
-   * Gets the modification state of numberPoolId.
-   *
-   * @return true if numberPoolId has been modified
-   */
   @Override
   public boolean isNumberPoolIdModified() {
     return numberPoolIdModified;
   }
 
-  /**
-   * Gets the last persisted value of numberPoolId.
-   *
-   * @return the last persisted value
-   */
   @Override
   public long getNumberPoolIdPersisted() {
     return numberPoolIdPersisted;
   }
 
-  /**
-   * Gets the attribute begin.
-   *
-   * @return begin of range
-   */
   @Override
   public long getBegin()    {
     return begin;
   }
 
-  /**
-   * Sets the attribute begin.
-   *
-   * @param begin begin of range
-   */
   @Override
   public void setBegin(long begin) {
     assertMutable();
@@ -362,41 +319,21 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     this.begin = begin;
   }
 
-  /**
-   * Gets the modification state of begin.
-   *
-   * @return true if begin has been modified
-   */
   @Override
   public boolean isBeginModified() {
     return beginModified;
   }
 
-  /**
-   * Gets the last persisted value of begin.
-   *
-   * @return the last persisted value
-   */
   @Override
   public long getBeginPersisted() {
     return beginPersisted;
   }
 
-  /**
-   * Gets the attribute end.
-   *
-   * @return end of range
-   */
   @Override
   public long getEnd()    {
     return end;
   }
 
-  /**
-   * Sets the attribute end.
-   *
-   * @param end end of range
-   */
   @Override
   public void setEnd(long end) {
     assertMutable();
@@ -408,21 +345,11 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     this.end = end;
   }
 
-  /**
-   * Gets the modification state of end.
-   *
-   * @return true if end has been modified
-   */
   @Override
   public boolean isEndModified() {
     return endModified;
   }
 
-  /**
-   * Gets the last persisted value of end.
-   *
-   * @return the last persisted value
-   */
   @Override
   public long getEndPersisted() {
     return endPersisted;
@@ -468,18 +395,13 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   /**
    * # Relations for NumberRange:
    *
-   * NumberRange: NumberPool numberPool via numberPoolId (NumberPool)
+   * NumberPool numberPool via numberPoolId (NumberPool)
    */
 
-  // NumberRange: NumberPool numberPool via numberPoolId (NumberPool)
+  // NumberPool numberPool via numberPoolId (NumberPool)
   private transient NumberPool numberPool;
   private transient boolean numberPoolLoaded;
 
-  /**
-   * Gets numberPool via numberPoolId.
-   *
-   * @return numberPool NumberPool
-   */
   @Override
   public NumberPool getNumberPool()  {
     if (!numberPoolLoaded) {
@@ -489,11 +411,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     return numberPool;
   }
 
-  /**
-   * Sets numberPool via numberPoolId.
-   *
-   * @param numberPool NumberPool
-   */
   @Override
   public void setNumberPool(NumberPool numberPool)  {
     assertMutable();
@@ -502,29 +419,19 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     numberPoolLoaded = true;
   }
 
-  /**
-   * Sets the session in this and all related objects.
-   *
-   * @param session the session
-   */
   @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(numberPool);
   }
 
-  /**
-   * Sets the context in this and all related objects.
-   *
-   * @param context the domain context
-   */
   @Override
   public void setDomainContext(DomainContext context)  {
     super.setDomainContext(context);
     context.applyTo(numberPool);
   }
 
-  // selects NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
+  // selects composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
   // @wurblet selectByNumberPoolId PdoSelectList --tracked numberPoolId
 
   // </editor-fold>//GEN-END:relations

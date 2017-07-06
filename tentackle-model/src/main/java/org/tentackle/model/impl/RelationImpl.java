@@ -538,9 +538,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    if (!reversed) {
-      buf.append(entity).append(": ");
-    }
     if (composite) {
       buf.append("composite ");
     }

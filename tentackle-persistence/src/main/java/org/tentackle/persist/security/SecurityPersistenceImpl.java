@@ -791,19 +791,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     return (SecurityRemoteDelegate) super.getRemoteDelegate();
   }
 
-  /**
-   * Object is a root entity.
-   * @return true
-   */
   @Override
   public boolean isRootEntity() {
     return true;
   }
 
-  /**
-   * Overridden cause of "--tracked".
-   * @return true = setters check for modification
-   */
   @Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
@@ -922,21 +914,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
   }
 
-  /**
-   * Gets the attribute objectClassName.
-   *
-   * @return the protected classname, null if an entity
-   */
   @Override
   public String getObjectClassName()    {
     return objectClassName;
   }
 
-  /**
-   * Sets the attribute objectClassName.
-   *
-   * @param objectClassName the protected classname, null if an entity
-   */
   @Override
   public void setObjectClassName(String objectClassName) {
     assertMutable();
@@ -946,21 +928,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.objectClassName = objectClassName;
   }
 
-  /**
-   * Gets the attribute objectClassId.
-   *
-   * @return the protected object's class id, 0 if not an entity
-   */
   @Override
   public int getObjectClassId()    {
     return objectClassId;
   }
 
-  /**
-   * Sets the attribute objectClassId.
-   *
-   * @param objectClassId the protected object's class id, 0 if not an entity
-   */
   @Override
   public void setObjectClassId(int objectClassId) {
     assertMutable();
@@ -970,21 +942,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.objectClassId = objectClassId;
   }
 
-  /**
-   * Gets the attribute objectId.
-   *
-   * @return the id of the protected object, 0 if all instances or not an entity
-   */
   @Override
   public long getObjectId()    {
     return objectId;
   }
 
-  /**
-   * Sets the attribute objectId.
-   *
-   * @param objectId the id of the protected object, 0 if all instances or not an entity
-   */
   @Override
   public void setObjectId(long objectId) {
     assertMutable();
@@ -994,21 +956,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.objectId = objectId;
   }
 
-  /**
-   * Gets the attribute domainContextClassId.
-   *
-   * @return the class id of the DomainContext's context entity, 0 if all contexts
-   */
   @Override
   public int getDomainContextClassId()    {
     return domainContextClassId;
   }
 
-  /**
-   * Sets the attribute domainContextClassId.
-   *
-   * @param domainContextClassId the class id of the DomainContext's context entity, 0 if all contexts
-   */
   @Override
   public void setDomainContextClassId(int domainContextClassId) {
     assertMutable();
@@ -1018,21 +970,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.domainContextClassId = domainContextClassId;
   }
 
-  /**
-   * Gets the attribute domainContextId.
-   *
-   * @return the id of DomainContext's context object, 0 if all instances
-   */
   @Override
   public long getDomainContextId()    {
     return domainContextId;
   }
 
-  /**
-   * Sets the attribute domainContextId.
-   *
-   * @param domainContextId the id of DomainContext's context object, 0 if all instances
-   */
   @Override
   public void setDomainContextId(long domainContextId) {
     assertMutable();
@@ -1042,21 +984,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.domainContextId = domainContextId;
   }
 
-  /**
-   * Gets the attribute granteeClassId.
-   *
-   * @return the class id of the entity the permissions are granted to, null if all classes
-   */
   @Override
   public int getGranteeClassId()    {
     return granteeClassId;
   }
 
-  /**
-   * Sets the attribute granteeClassId.
-   *
-   * @param granteeClassId the class id of the entity the permissions are granted to, null if all classes
-   */
   @Override
   public void setGranteeClassId(int granteeClassId) {
     assertMutable();
@@ -1066,21 +998,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.granteeClassId = granteeClassId;
   }
 
-  /**
-   * Gets the attribute granteeId.
-   *
-   * @return the id of the entity the permissions are granted to, 0 if all grantees
-   */
   @Override
   public long getGranteeId()    {
     return granteeId;
   }
 
-  /**
-   * Sets the attribute granteeId.
-   *
-   * @param granteeId the id of the entity the permissions are granted to, 0 if all grantees
-   */
   @Override
   public void setGranteeId(long granteeId) {
     assertMutable();
@@ -1090,21 +1012,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.granteeId = granteeId;
   }
 
-  /**
-   * Gets the attribute priority.
-   *
-   * @return the priority or evaluation order, 0 is highest or first
-   */
   @Override
   public int getPriority()    {
     return priority;
   }
 
-  /**
-   * Sets the attribute priority.
-   *
-   * @param priority the priority or evaluation order, 0 is highest or first
-   */
   @Override
   public void setPriority(int priority) {
     assertMutable();
@@ -1114,21 +1026,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.priority = priority;
   }
 
-  /**
-   * Gets the attribute permissions.
-   *
-   * @return the permissions as a comma-separated list
-   */
   @Override
   public String getPermissions()    {
     return permissions;
   }
 
-  /**
-   * Sets the attribute permissions.
-   *
-   * @param permissions the permissions as a comma-separated list
-   */
   @Override
   public void setPermissions(String permissions) {
     assertMutable();
@@ -1138,21 +1040,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.permissions = permissions;
   }
 
-  /**
-   * Gets the attribute allowed.
-   *
-   * @return the false if denied, true if allowed
-   */
   @Override
   public boolean isAllowed()    {
     return allowed;
   }
 
-  /**
-   * Sets the attribute allowed.
-   *
-   * @param allowed the false if denied, true if allowed
-   */
   @Override
   public void setAllowed(boolean allowed) {
     assertMutable();
@@ -1162,21 +1054,11 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     this.allowed = allowed;
   }
 
-  /**
-   * Gets the attribute message.
-   *
-   * @return the user message
-   */
   @Override
   public String getMessage()    {
     return message;
   }
 
-  /**
-   * Sets the attribute message.
-   *
-   * @param message the user message
-   */
   @Override
   public void setMessage(String message) {
     assertMutable();

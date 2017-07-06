@@ -58,6 +58,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateSetImmutable                    = false;
     boolean generateSnapshot                        = false;
     boolean generateClearOnRemoteSave               = false;
+    boolean generateIsUpdateNecessary               = false;
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
@@ -125,6 +126,9 @@ For more options, see {\@link DbModelWurblet}.
           generateDeleteReferencingRelations = true;
           if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
             generateLazyDeleteReferencingRelations = true;
+            if (rel.getCountAttribute() != null) {
+              generateIsUpdateNecessary = true;
+            }
           }
         }
       }
@@ -286,11 +290,6 @@ For more options, see {\@link DbModelWurblet}.
         }
 ]@
 
-  /**
-   * Gets @(rel.getGetterSetterComment())@.
-   *
-   * \@return @(var)@ @(rel.getComment())@
-   */
   \@Override
 @[
         if (rel.getForeignEntity().isAbstract()) { // needs a cast
@@ -526,11 +525,6 @@ For more options, see {\@link DbModelWurblet}.
         if (nmRel != null) {
 ]@
 
-  /**
-   * Gets list of @(nmRel.getDeclaredJavaType())@ joined via @(rel)@.
-   *
-   * \@return list of @(nmRel.getVariableName())@
-   */
   \@Override
   public TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@() {
     if (@(nmVar)@ == null) {
@@ -579,18 +573,6 @@ For more options, see {\@link DbModelWurblet}.
         String linkMethodIndex = rel.getForeignRelation() != null ? rel.getForeignRelation().getLinkMethodIndex() : null;
 ]@
 
-  /**
-   * Sets @(rel.getGetterSetterComment())@.
-   *
-   * \@param @(var)@ @(rel.getComment())@
-@[
-        if (linkMethodIndex != null) {
-]@
-   * \@param index the index starting at 0
-@[
-        }
-]@
-   */
   \@Override
 @[
         if (linkMethodIndex != null) {
@@ -692,11 +674,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateSetSession)  {
 ]@
 
-  /**
-   * Sets the session in this and all related objects.
-   *
-   * \@param session the session
-   */
   \@Override
   public void setSession(Session session)  {
     super.setSession(session);
@@ -711,11 +688,6 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   }
 
-  /**
-   * Sets the context in this and all related objects.
-   *
-   * \@param context the domain context
-   */
   \@Override
   public void setDomainContext(DomainContext context)  {
     super.setDomainContext(context);
@@ -753,7 +725,6 @@ For more options, see {\@link DbModelWurblet}.
               }
               String var = rel.getVariableName();
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(var)@ != null && @(var)@.isSomeRemoved()) {
       delete(@(var)@.getRemovedObjects());
     }
@@ -768,9 +739,6 @@ For more options, see {\@link DbModelWurblet}.
         if (generateLazyDeleteReferencingRelations)  {
 ]@
 
-  /**
-   * Deletes all referencing composite relations from storage.
-   */
   \@Override
   public void deleteReferencingRelations() {
     super.deleteReferencingRelations();
@@ -792,9 +760,6 @@ For more options, see {\@link DbModelWurblet}.
           for (Relation rel: getEntity().getRelations()) {
             String var = rel.getVariableName();
             if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
               if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
                 if (rel.isTracked())  {
 ]@
@@ -849,9 +814,6 @@ For more options, see {\@link DbModelWurblet}.
         else  {   // no lazy loading at all
 ]@
 
-  /**
-   * Deletes all referencing composite relations from storage.
-   */
   \@Override
   public void deleteReferencingRelations() {
     super.deleteReferencingRelations();
@@ -859,9 +821,6 @@ For more options, see {\@link DbModelWurblet}.
           for (Relation rel: getEntity().getRelations()) {
             String var = rel.getVariableName();
             if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
               if (rel.isDeletionCascaded()) {
 ]@
     delete(@(rel.getGetterName())@());
@@ -903,7 +862,6 @@ For more options, see {\@link DbModelWurblet}.
             String var = rel.getVariableName();
             String selectStmt = createRelationSelectCode(rel).replace(rel.getVariableName() + "Id", rel.getVariableName() + "RemovedId");
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(rel.getVariableName())@RemovedId != 0) {
       @(rel.getClassName())@ old = @(selectStmt)@;
       if (old != null) {
@@ -922,9 +880,6 @@ For more options, see {\@link DbModelWurblet}.
         if (generateLazyDeleteReferencedRelations)  {
 ]@
 
-  /**
-   * Deletes all referenced composite relations from storage.
-   */
   \@Override
   public void deleteReferencedRelations() {
     super.deleteReferencedRelations();
@@ -946,9 +901,6 @@ For more options, see {\@link DbModelWurblet}.
           for (Relation rel: getEntity().getRelations()) {
             String var = rel.getVariableName();
             if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
               if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {
 ]@
     if (delete && @(rel.getGetterName())@() != null && !@(var)@.isVirgin()) {
@@ -978,9 +930,6 @@ For more options, see {\@link DbModelWurblet}.
         else  {   // no lazy loading at all
 ]@
 
-  /**
-   * Deletes all referenced composite relations from storage.
-   */
   \@Override
   public void deleteReferencedRelations() {
     super.deleteReferencedRelations();
@@ -988,9 +937,6 @@ For more options, see {\@link DbModelWurblet}.
           for (Relation rel: getEntity().getRelations()) {
             String var = rel.getVariableName();
             if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
               if (rel.getSelectionType() == SelectionType.ALWAYS) {
                 throw new WurbelException("internal wurblet logic error");
               }
@@ -1016,9 +962,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateSaveReferencingRelations)  {
 ]@
 
-  /**
-   * Saves composite relations referencing @(pdoName)@.
-   */
   \@Override
   public void saveReferencingRelations(boolean update)  {
     super.saveReferencingRelations(update);
@@ -1040,9 +983,6 @@ For more options, see {\@link DbModelWurblet}.
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
         if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
           if (rel.isProcessed()) {
 ]@
     @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
@@ -1091,9 +1031,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateSaveReferencedRelations)  {
 ]@
 
-  /**
-   * Saves composite relations referenced by @(pdoName)@.
-   */
   \@Override
   public void saveReferencedRelations(boolean update)  {
 @[
@@ -1124,7 +1061,6 @@ For more options, see {\@link DbModelWurblet}.
         String var = rel.getVariableName();
         if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     getDomainContext().applyTo(@(var)@);
 @[
           if (rel.isProcessed()) {
@@ -1161,13 +1097,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateValidate)  {
 ]@
 
-  /**
-   * Validates the object.
-   *
-   * \@param validationPath the validation path
-   * \@param scope the validation scope
-   * \@return the list of validation results, never null
-   */
   \@Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
@@ -1176,7 +1105,6 @@ For more options, see {\@link DbModelWurblet}.
         String var = rel.getVariableName();
         if (rel.isComposite()) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(var)@ != null) {
 @[
           if (rel.getRelationType() == RelationType.LIST) {
@@ -1207,11 +1135,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateSetImmutable)  {
 ]@
 
-  /**
-   * Sets the mutable flag for this object and all its components.
-   *
-   * \@param immutable true if object is immutable
-   */
   \@Override
   public void setImmutable(boolean immutable) {
     super.setImmutable(immutable);
@@ -1219,7 +1142,6 @@ For more options, see {\@link DbModelWurblet}.
       for (Relation rel: getEntity().getRelations()) {
         if (rel.isComposite()) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(rel.getVariableName())@ != null) {
       @(rel.getVariableName())@.setImmutable(immutable);
     }
@@ -1237,23 +1159,8 @@ For more options, see {\@link DbModelWurblet}.
     if (generateIsModified)  {
 ]@
 
-  /**
-   * Checks composite relations for modification recursively.
-   *
-   * \@return true if this or any composition is modified
-   */
   \@Override
   public boolean isModified()  {
-@[
-      for (Relation rel: getEntity().getRelations()) {
-        Attribute countAttribute = rel.getCountAttribute();
-        if (countAttribute != null) {
-]@
-    @(countAttribute.getSetterName())@(@(rel.getVariableName())@ == null ? 0 : @(rel.getVariableName())@.size());
-@[
-        }
-      }
-]@
     return super.isModified()
 @[
       for (Relation rel: getEntity().getRelations()) {
@@ -1272,6 +1179,28 @@ For more options, see {\@link DbModelWurblet}.
       }
 ]@
            ;
+  }
+@[
+    }
+
+    if (generateIsUpdateNecessary) {
+]@
+
+  \@Override
+  protected boolean isUpdateNecessary()  {
+@[
+      for (Relation rel: getEntity().getRelations()) {
+        Attribute countAttribute = rel.getCountAttribute();
+        if (countAttribute != null) {
+]@
+    if (@(rel.getVariableName())@ != null) {
+      @(countAttribute.getSetterName())@(@(rel.getVariableName())@.size());
+    }
+@[
+        }
+      }
+]@
+    return super.isUpdateNecessary();
   }
 @[
     }
@@ -1325,9 +1254,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateIsComposite)  {
 ]@
 
-  /**
-   * This is a composite object.
-   */
   \@Override
   public boolean isComposite()  {
     return true;
@@ -1342,12 +1268,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
 
-  /**
-   * Loads components.<br>
-   *
-   * \@param onlyLoaded true if return only already loaded components
-   * \@return the map of all components, including this object.
-   */
   \@Override
   public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
     IdentifiableMap<PersistentDomainObject<?>> components = new IdentifiableMap<>();
@@ -1363,9 +1283,6 @@ For more options, see {\@link DbModelWurblet}.
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
         if (rel.isComposite()) {
-]@
-    // @(rel)@. @(rel.getComment())@
-@[
           if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
     if (!onlyLoaded || @(var)@Loaded) {
@@ -1415,9 +1332,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
 
-  /**
-   * Inserts this object and all components.
-   */
   \@Override
   public void insertPlainWithComponents()  {
 @[
@@ -1425,7 +1339,6 @@ For more options, see {\@link DbModelWurblet}.
         String var = rel.getVariableName();
         if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).insertPlainWithComponents();
     }
@@ -1433,14 +1346,12 @@ For more options, see {\@link DbModelWurblet}.
         }
       }
 ]@
-    // @(getEntity())@
     insertPlain();
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
         if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     insertPlainWithComponents(@(rel.getGetterName())@());
 @[
         }
@@ -1456,9 +1367,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
 
-  /**
-   * Deletes this object and all components.
-   */
   \@Override
   public void deletePlainWithComponents()  {
 @[
@@ -1472,14 +1380,12 @@ For more options, see {\@link DbModelWurblet}.
           String var = rel.getVariableName();
           if (rel.isComposite() && rel.getRelationType() == RelationType.LIST) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     deletePlainWithComponents(@(rel.getGetterName())@());
 @[
           }
         }
       }
 ]@
-    // @(getEntity())@
     deletePlain();
 @[
       if (!useDatabaseRefInt) {
@@ -1487,7 +1393,6 @@ For more options, see {\@link DbModelWurblet}.
           String var = rel.getVariableName();
           if (rel.isComposite() && rel.getRelationType() == RelationType.OBJECT) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(rel.getGetterName())@() != null) {
       ((AbstractPersistentObject<?,?>) @(var)@.getPersistenceDelegate()).deletePlainWithComponents();
     }
@@ -1506,9 +1411,6 @@ For more options, see {\@link DbModelWurblet}.
     if (generateMarkDeleted)  {
 ]@
 
-  /**
-   * Marks this object and all its components to be deleted.
-   */
   \@Override
   public void markDeleted() {
     super.markDeleted();
@@ -1517,7 +1419,6 @@ For more options, see {\@link DbModelWurblet}.
         String var = rel.getVariableName();
         if (rel.isComposite()) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     markDeleted(@(var)@);
 @[
         }
@@ -1546,7 +1447,6 @@ For more options, see {\@link DbModelWurblet}.
         if (rel.isComposite() &&
             (rel.getRelationType() == RelationType.OBJECT || rel.isTracked())) {
 ]@
-    // @(rel)@. @(rel.getComment())@
     if (@(var)@ != null) {
       snapshot.@(var)@Snapshot = @(var)@.createSnapshot();
     }
@@ -1578,7 +1478,6 @@ For more options, see {\@link DbModelWurblet}.
             }
           }
 ]@
-    // @(rel)@. @(rel.getComment())@
     @(var)@ = snapshot.@(var)@;
 @[
           if (rel.getRelationType() == RelationType.LIST) {

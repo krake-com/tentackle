@@ -229,27 +229,16 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     return (NumberPoolRemoteDelegate) super.getRemoteDelegate();
   }
 
-  /**
-   * Object is a root entity.
-   * @return true
-   */
   @Override
   public boolean isRootEntity() {
     return true;
   }
 
-  /**
-   * Overridden cause of "--tracked".
-   * @return true = setters check for modification
-   */
   @Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
   }
 
-  /**
-   * Overridden cause of "--attracked".
-   */
   @Override
   public void setModified(boolean modified) {
     super.setModified(modified);
@@ -271,9 +260,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     }
   }
 
-  /**
-   * Overridden cause of "--fulltracked".
-   */
   @Override
   public boolean differsPersisted() {
     return super.differsPersisted()
@@ -369,21 +355,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
   }
 
-  /**
-   * Gets the attribute name.
-   *
-   * @return the number pool name
-   */
   @Override
   public String getName()    {
     return name;
   }
 
-  /**
-   * Sets the attribute name.
-   *
-   * @param name the number pool name
-   */
   @Override
   public void setName(String name) {
     assertMutable();
@@ -395,41 +371,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.name = name;
   }
 
-  /**
-   * Gets the modification state of name.
-   *
-   * @return true if name has been modified
-   */
   @Override
   public boolean isNameModified() {
     return nameModified;
   }
 
-  /**
-   * Gets the last persisted value of name.
-   *
-   * @return the last persisted value
-   */
   @Override
   public String getNamePersisted() {
     return namePersisted;
   }
 
-  /**
-   * Gets the attribute realm.
-   *
-   * @return pool realm, optional
-   */
   @Override
   public String getRealm()    {
     return realm;
   }
 
-  /**
-   * Sets the attribute realm.
-   *
-   * @param realm pool realm, optional
-   */
   @Override
   public void setRealm(String realm) {
     assertMutable();
@@ -441,41 +397,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.realm = realm;
   }
 
-  /**
-   * Gets the modification state of realm.
-   *
-   * @return true if realm has been modified
-   */
   @Override
   public boolean isRealmModified() {
     return realmModified;
   }
 
-  /**
-   * Gets the last persisted value of realm.
-   *
-   * @return the last persisted value
-   */
   @Override
   public String getRealmPersisted() {
     return realmPersisted;
   }
 
-  /**
-   * Gets the attribute description.
-   *
-   * @return short description
-   */
   @Override
   public String getDescription()    {
     return description;
   }
 
-  /**
-   * Sets the attribute description.
-   *
-   * @param description short description
-   */
   @Override
   public void setDescription(String description) {
     assertMutable();
@@ -487,41 +423,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.description = description;
   }
 
-  /**
-   * Gets the modification state of description.
-   *
-   * @return true if description has been modified
-   */
   @Override
   public boolean isDescriptionModified() {
     return descriptionModified;
   }
 
-  /**
-   * Gets the last persisted value of description.
-   *
-   * @return the last persisted value
-   */
   @Override
   public String getDescriptionPersisted() {
     return descriptionPersisted;
   }
 
-  /**
-   * Gets the attribute online.
-   *
-   * @return true if online, else offline
-   */
   @Override
   public boolean isOnline()    {
     return online;
   }
 
-  /**
-   * Sets the attribute online.
-   *
-   * @param online true if online, else offline
-   */
   @Override
   public void setOnline(boolean online) {
     assertMutable();
@@ -533,41 +449,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.online = online;
   }
 
-  /**
-   * Gets the modification state of online.
-   *
-   * @return true if online has been modified
-   */
   @Override
   public boolean isOnlineModified() {
     return onlineModified;
   }
 
-  /**
-   * Gets the last persisted value of online.
-   *
-   * @return the last persisted value
-   */
   @Override
   public boolean isOnlinePersisted() {
     return onlinePersisted;
   }
 
-  /**
-   * Gets the attribute lowWaterMark.
-   *
-   * @return minimum number count before request to fill up from uplink, 0 if disable
-   */
   @Override
   public long getLowWaterMark()    {
     return lowWaterMark;
   }
 
-  /**
-   * Sets the attribute lowWaterMark.
-   *
-   * @param lowWaterMark minimum number count before request to fill up from uplink, 0 if disable
-   */
   @Override
   public void setLowWaterMark(long lowWaterMark) {
     assertMutable();
@@ -579,41 +475,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.lowWaterMark = lowWaterMark;
   }
 
-  /**
-   * Gets the modification state of lowWaterMark.
-   *
-   * @return true if lowWaterMark has been modified
-   */
   @Override
   public boolean isLowWaterMarkModified() {
     return lowWaterMarkModified;
   }
 
-  /**
-   * Gets the last persisted value of lowWaterMark.
-   *
-   * @return the last persisted value
-   */
   @Override
   public long getLowWaterMarkPersisted() {
     return lowWaterMarkPersisted;
   }
 
-  /**
-   * Gets the attribute requestSize.
-   *
-   * @return number count to request from uplink, 0 if disable
-   */
   @Override
   public long getRequestSize()    {
     return requestSize;
   }
 
-  /**
-   * Sets the attribute requestSize.
-   *
-   * @param requestSize number count to request from uplink, 0 if disable
-   */
   @Override
   public void setRequestSize(long requestSize) {
     assertMutable();
@@ -625,41 +501,21 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.requestSize = requestSize;
   }
 
-  /**
-   * Gets the modification state of requestSize.
-   *
-   * @return true if requestSize has been modified
-   */
   @Override
   public boolean isRequestSizeModified() {
     return requestSizeModified;
   }
 
-  /**
-   * Gets the last persisted value of requestSize.
-   *
-   * @return the last persisted value
-   */
   @Override
   public long getRequestSizePersisted() {
     return requestSizePersisted;
   }
 
-  /**
-   * Gets the attribute uplink.
-   *
-   * @return uplink configuration (optional)
-   */
   @Override
   public String getUplink()    {
     return uplink;
   }
 
-  /**
-   * Sets the attribute uplink.
-   *
-   * @param uplink uplink configuration (optional)
-   */
   @Override
   public void setUplink(String uplink) {
     assertMutable();
@@ -671,21 +527,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     this.uplink = uplink;
   }
 
-  /**
-   * Gets the modification state of uplink.
-   *
-   * @return true if uplink has been modified
-   */
   @Override
   public boolean isUplinkModified() {
     return uplinkModified;
   }
 
-  /**
-   * Gets the last persisted value of uplink.
-   *
-   * @return the last persisted value
-   */
   @Override
   public String getUplinkPersisted() {
     return uplinkPersisted;
@@ -786,20 +632,15 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /**
    * # Relations for NumberPool:
    *
-   * NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
+   * composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
    */
 
-  // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
+  // composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
   @Persistent("NumberRange")
   private TrackedList<NumberRange> numberRangeList;
   private boolean numberRangeListLoaded;
   private transient TrackedList<NumberRange> numberRangeListSnapshot;
 
-  /**
-   * Gets numberRangeList via NumberRange#numberPoolId.
-   *
-   * @return numberRangeList NumberRange
-   */
   @Override
   public TrackedList<NumberRange> getNumberRangeList()  {
     if (!numberRangeListLoaded) {
@@ -831,31 +672,18 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     return numberRangeList;
   }
 
-  /**
-   * Sets the session in this and all related objects.
-   *
-   * @param session the session
-   */
   @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(numberRangeList);
   }
 
-  /**
-   * Sets the context in this and all related objects.
-   *
-   * @param context the domain context
-   */
   @Override
   public void setDomainContext(DomainContext context)  {
     super.setDomainContext(context);
     context.applyTo(numberRangeList);
   }
 
-  /**
-   * Deletes all referencing composite relations from storage.
-   */
   @Override
   public void deleteReferencingRelations() {
     super.deleteReferencingRelations();
@@ -873,7 +701,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    * @param delete is true if invoked from deleteReferencingRelations()
    */
   private void deleteReferencingRelations(boolean delete)  {
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (delete) {
       delete(getNumberRangeList());
     }
@@ -882,16 +709,12 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     }
   }
 
-  /**
-   * Saves composite relations referencing NumberPool.
-   */
   @Override
   public void saveReferencingRelations(boolean update)  {
     super.saveReferencingRelations(update);
     if (update) {
       deleteReferencingRelations(false);
     }
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       getDomainContext().applyTo(numberRangeList);
       for (NumberRange obj: numberRangeList)  {
@@ -901,17 +724,9 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     }
   }
 
-  /**
-   * Validates the object.
-   *
-   * @param validationPath the validation path
-   * @param scope the validation scope
-   * @return the list of validation results, never null
-   */
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     List<ValidationResult> results = super.validate(validationPath, scope);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       results.addAll(ValidationUtilities.getInstance().validateCollection(
                 numberRangeList, validationPath + ".numberRangeList", scope));
@@ -919,25 +734,14 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     return results;
   }
 
-  /**
-   * Sets the mutable flag for this object and all its components.
-   *
-   * @param immutable true if object is immutable
-   */
   @Override
   public void setImmutable(boolean immutable) {
     super.setImmutable(immutable);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       numberRangeList.setImmutable(immutable);
     }
   }
 
-  /**
-   * Checks composite relations for modification recursively.
-   *
-   * @return true if this or any composition is modified
-   */
   @Override
   public boolean isModified()  {
     return super.isModified()
@@ -945,21 +749,12 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
            ;
   }
 
-  /**
-   * This is a composite object.
-   */
   @Override
   public boolean isComposite()  {
     return true;
   }
 
 
-  /**
-   * Loads components.<br>
-   *
-   * @param onlyLoaded true if return only already loaded components
-   * @return the map of all components, including this object.
-   */
   @Override
   public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
     IdentifiableMap<PersistentDomainObject<?>> components = new IdentifiableMap<>();
@@ -971,42 +766,27 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public int addComponents(IdentifiableMap<PersistentDomainObject<?>> components, boolean onlyLoaded)  {
     int count = 0;
     count += super.addComponents(components, onlyLoaded);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (!onlyLoaded || numberRangeListLoaded) {
       count += addComponents(components, getNumberRangeList(), onlyLoaded);
     }
     return count;
   }
 
-  /**
-   * Inserts this object and all components.
-   */
   @Override
   public void insertPlainWithComponents()  {
-    // NumberPool
     insertPlain();
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     insertPlainWithComponents(getNumberRangeList());
   }
 
-  /**
-   * Deletes this object and all components.
-   */
   @Override
   public void deletePlainWithComponents()  {
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     deletePlainWithComponents(getNumberRangeList());
-    // NumberPool
     deletePlain();
   }
 
-  /**
-   * Marks this object and all its components to be deleted.
-   */
   @Override
   public void markDeleted() {
     super.markDeleted();
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     markDeleted(numberRangeList);
   }
 
@@ -1018,7 +798,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void createComponentsInSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     if (numberRangeList != null) {
       snapshot.numberRangeListSnapshot = numberRangeList.createSnapshot();
     }
@@ -1031,7 +810,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void revertComponentsToSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    // NumberPool: composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange). NumberRange
     numberRangeList = snapshot.numberRangeList;
     if (numberRangeList != null) {
       numberRangeList.revertToSnapshot(snapshot.numberRangeListSnapshot);

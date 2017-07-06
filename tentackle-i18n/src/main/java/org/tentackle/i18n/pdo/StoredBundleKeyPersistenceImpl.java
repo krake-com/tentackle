@@ -151,28 +151,16 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     return (StoredBundleKeyRemoteDelegate) super.getRemoteDelegate();
   }
 
-  /**
-   * The root entity id is bundleId.
-   * @return the ID of the root entity
-   */
   @Override
   public long getRootId() {
     return bundleId;
   }
 
-  /**
-   * The root entity class is StoredBundle.
-   * @return the class ID of the root entity
-   */
   @Override
   public int getRootClassId() {
     return 8;
   }
 
-  /**
-   * Overridden cause of "--tracked".
-   * @return true = setters check for modification
-   */
   @Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
@@ -236,11 +224,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
   }
 
-  /**
-   * Gets the attribute bundleId.
-   *
-   * @return the bundle id
-   */
   @Override
   public long getBundleId()    {
     return bundleId;
@@ -259,21 +242,11 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     this.bundleId = bundleId;
   }
 
-  /**
-   * Gets the attribute key.
-   *
-   * @return the resource bundle key
-   */
   @Override
   public String getKey()    {
     return key;
   }
 
-  /**
-   * Sets the attribute key.
-   *
-   * @param key the resource bundle key
-   */
   @Override
   public void setKey(String key) {
     assertMutable();
@@ -283,21 +256,11 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     this.key = key;
   }
 
-  /**
-   * Gets the attribute value.
-   *
-   * @return the localized string
-   */
   @Override
   public String getValue()    {
     return value;
   }
 
-  /**
-   * Sets the attribute value.
-   *
-   * @param value the localized string
-   */
   @Override
   public void setValue(String value) {
     assertMutable();
@@ -341,18 +304,13 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
   /**
    * # Relations for StoredBundleKey:
    *
-   * StoredBundleKey: StoredBundle bundle via bundleId (Bundle)
+   * StoredBundle bundle via bundleId (Bundle)
    */
 
-  // StoredBundleKey: StoredBundle bundle via bundleId (Bundle)
+  // StoredBundle bundle via bundleId (Bundle)
   private StoredBundle bundle;
   private boolean bundleLoaded;
 
-  /**
-   * Gets bundle via bundleId.
-   *
-   * @return bundle Bundle
-   */
   @Override
   public StoredBundle getBundle()  {
     if (!bundleLoaded) {
@@ -371,11 +329,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     return bundle;
   }
 
-  /**
-   * Sets bundle via bundleId.
-   *
-   * @param bundle Bundle
-   */
   @Override
   public void setBundle(StoredBundle bundle)  {
     assertMutable();
@@ -394,29 +347,19 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
     bundleLoaded = true;
   }
 
-  /**
-   * Sets the session in this and all related objects.
-   *
-   * @param session the session
-   */
   @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(bundle);
   }
 
-  /**
-   * Sets the context in this and all related objects.
-   *
-   * @param context the domain context
-   */
   @Override
   public void setDomainContext(DomainContext context)  {
     super.setDomainContext(context);
     context.applyTo(bundle);
   }
 
-  // selects StoredBundle: composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
+  // selects composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
   // @wurblet selectByBundleId PdoSelectList --tracked bundleId
 
   // </editor-fold>//GEN-END:relations
