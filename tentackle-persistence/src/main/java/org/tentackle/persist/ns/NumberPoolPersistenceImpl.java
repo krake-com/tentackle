@@ -121,56 +121,42 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   /** the number pool name. */
   @Persistent("the number pool name")
   private String name;
-  /** true if name has been modified. */
-  private boolean nameModified;
   /** the last persisted value of name. */
   private String namePersisted;
 
   /** pool realm, optional. */
   @Persistent("pool realm, optional")
   private String realm;
-  /** true if realm has been modified. */
-  private boolean realmModified;
   /** the last persisted value of realm. */
   private String realmPersisted;
 
   /** short description. */
   @Persistent("short description")
   private String description;
-  /** true if description has been modified. */
-  private boolean descriptionModified;
   /** the last persisted value of description. */
   private String descriptionPersisted;
 
   /** true if online, else offline. */
   @Persistent("true if online, else offline")
   private boolean online;
-  /** true if online has been modified. */
-  private boolean onlineModified;
   /** the last persisted value of online. */
   private boolean onlinePersisted;
 
   /** minimum number count before request to fill up from uplink, 0 if disable. */
   @Persistent("minimum number count before request to fill up from uplink, 0 if disable")
   private long lowWaterMark;
-  /** true if lowWaterMark has been modified. */
-  private boolean lowWaterMarkModified;
   /** the last persisted value of lowWaterMark. */
   private long lowWaterMarkPersisted;
 
   /** number count to request from uplink, 0 if disable. */
   @Persistent("number count to request from uplink, 0 if disable")
   private long requestSize;
-  /** true if requestSize has been modified. */
-  private boolean requestSizeModified;
   /** the last persisted value of requestSize. */
   private long requestSizePersisted;
 
   /** uplink configuration (optional). */
   @Persistent("uplink configuration (optional)")
   private String uplink;
-  /** true if uplink has been modified. */
-  private boolean uplinkModified;
   /** the last persisted value of uplink. */
   private String uplinkPersisted;
 
@@ -243,19 +229,12 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setModified(boolean modified) {
     super.setModified(modified);
     if (!modified) {
-      nameModified = false;
       namePersisted = name;
-      realmModified = false;
       realmPersisted = realm;
-      descriptionModified = false;
       descriptionPersisted = description;
-      onlineModified = false;
       onlinePersisted = online;
-      lowWaterMarkModified = false;
       lowWaterMarkPersisted = lowWaterMark;
-      requestSizeModified = false;
       requestSizePersisted = requestSize;
-      uplinkModified = false;
       uplinkPersisted = uplink;
     }
   }
@@ -271,6 +250,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
            || requestSizePersisted != requestSize
            || !Objects.equals(uplinkPersisted, uplink)
            ;
+  }
+
+  @Override
+  public boolean attributesModified() {
+    return differsPersisted();
   }
 
   @Override
@@ -364,8 +348,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setName(String name) {
     assertMutable();
     if (!Objects.equals(this.name, name)) {
-      setModified(true);
-      nameModified = true;
       firePropertyChange(AN_NAME, this.name, name);
     }
     this.name = name;
@@ -373,7 +355,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isNameModified() {
-    return nameModified;
+    return !Objects.equals(name, namePersisted);
   }
 
   @Override
@@ -390,8 +372,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setRealm(String realm) {
     assertMutable();
     if (!Objects.equals(this.realm, realm)) {
-      setModified(true);
-      realmModified = true;
       firePropertyChange(AN_REALM, this.realm, realm);
     }
     this.realm = realm;
@@ -399,7 +379,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isRealmModified() {
-    return realmModified;
+    return !Objects.equals(realm, realmPersisted);
   }
 
   @Override
@@ -416,8 +396,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setDescription(String description) {
     assertMutable();
     if (!Objects.equals(this.description, description)) {
-      setModified(true);
-      descriptionModified = true;
       firePropertyChange(AN_DESCRIPTION, this.description, description);
     }
     this.description = description;
@@ -425,7 +403,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isDescriptionModified() {
-    return descriptionModified;
+    return !Objects.equals(description, descriptionPersisted);
   }
 
   @Override
@@ -442,8 +420,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setOnline(boolean online) {
     assertMutable();
     if (this.online != online) {
-      setModified(true);
-      onlineModified = true;
       firePropertyChange(AN_ONLINE, this.online, online);
     }
     this.online = online;
@@ -451,7 +427,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isOnlineModified() {
-    return onlineModified;
+    return online != onlinePersisted;
   }
 
   @Override
@@ -468,8 +444,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setLowWaterMark(long lowWaterMark) {
     assertMutable();
     if (this.lowWaterMark != lowWaterMark) {
-      setModified(true);
-      lowWaterMarkModified = true;
       firePropertyChange(AN_LOWWATERMARK, this.lowWaterMark, lowWaterMark);
     }
     this.lowWaterMark = lowWaterMark;
@@ -477,7 +451,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isLowWaterMarkModified() {
-    return lowWaterMarkModified;
+    return lowWaterMark != lowWaterMarkPersisted;
   }
 
   @Override
@@ -494,8 +468,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setRequestSize(long requestSize) {
     assertMutable();
     if (this.requestSize != requestSize) {
-      setModified(true);
-      requestSizeModified = true;
       firePropertyChange(AN_REQUESTSIZE, this.requestSize, requestSize);
     }
     this.requestSize = requestSize;
@@ -503,7 +475,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isRequestSizeModified() {
-    return requestSizeModified;
+    return requestSize != requestSizePersisted;
   }
 
   @Override
@@ -520,8 +492,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   public void setUplink(String uplink) {
     assertMutable();
     if (!Objects.equals(this.uplink, uplink)) {
-      setModified(true);
-      uplinkModified = true;
       firePropertyChange(AN_UPLINK, this.uplink, uplink);
     }
     this.uplink = uplink;
@@ -529,7 +499,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean isUplinkModified() {
-    return uplinkModified;
+    return !Objects.equals(uplink, uplinkPersisted);
   }
 
   @Override
@@ -556,31 +526,24 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     super.revertAttributesToSnapshot(snapshot);
     // the number pool name
     name = snapshot.name;
-    nameModified = snapshot.nameModified;
     namePersisted = snapshot.namePersisted;
     // pool realm, optional
     realm = snapshot.realm;
-    realmModified = snapshot.realmModified;
     realmPersisted = snapshot.realmPersisted;
     // short description
     description = snapshot.description;
-    descriptionModified = snapshot.descriptionModified;
     descriptionPersisted = snapshot.descriptionPersisted;
     // true if online, else offline
     online = snapshot.online;
-    onlineModified = snapshot.onlineModified;
     onlinePersisted = snapshot.onlinePersisted;
     // minimum number count before request to fill up from uplink, 0 if disable
     lowWaterMark = snapshot.lowWaterMark;
-    lowWaterMarkModified = snapshot.lowWaterMarkModified;
     lowWaterMarkPersisted = snapshot.lowWaterMarkPersisted;
     // number count to request from uplink, 0 if disable
     requestSize = snapshot.requestSize;
-    requestSizeModified = snapshot.requestSizeModified;
     requestSizePersisted = snapshot.requestSizePersisted;
     // uplink configuration (optional)
     uplink = snapshot.uplink;
-    uplinkModified = snapshot.uplinkModified;
     uplinkPersisted = snapshot.uplinkPersisted;
   }
 

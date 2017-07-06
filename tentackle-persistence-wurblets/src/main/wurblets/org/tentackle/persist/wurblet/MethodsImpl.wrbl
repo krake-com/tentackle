@@ -189,12 +189,14 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Attribute attr: getEntity().getAttributes())  {
         if (!attr.getOptions().isNoMethod())    {
-]@
-      @(attr.getJavaName())@Modified = false;
-@[
           if (isFullTracked()) {
 ]@
       @(attr.getJavaName())@Persisted = @(attr.getJavaName())@;
+@[
+          }
+          else {
+]@
+      @(attr.getJavaName())@Modified = false;
 @[
           }
         }
@@ -230,6 +232,11 @@ For more options, see {\@link DbModelWurblet}.
       }
 ]@
            ;
+  }
+
+  \@Override
+  public boolean attributesModified() {
+    return differsPersisted();
   }
 @[
     }
@@ -788,7 +795,24 @@ For more options, see {\@link DbModelWurblet}.
     assertMutable();
 @[
           if (isTracked())  {
-            if (attr.getDataType().isPrimitive()) {
+            if (isFullTracked()) {
+              if (attr.getDataType().isPrimitive()) {
+]@
+    if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
+      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+    }
+@[
+              }
+              else {
+]@
+    if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
+      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+    }
+@[
+              }
+            }
+            else {
+              if (attr.getDataType().isPrimitive()) {
 ]@
     if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
       setModified(true);
@@ -802,21 +826,22 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     }
 @[
-            }
-            else  {
+              }
+              else  {
 ]@
     if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
       setModified(true);
 @[
-              if (isAttracked()) {
+                if (isAttracked()) {
 ]@
       @(attr.getJavaName())@Modified = true;
       firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
 @[
-              }
+                }
 ]@
     }
 @[
+              }
             }
           }
 ]@
@@ -851,10 +876,29 @@ For more options, see {\@link DbModelWurblet}.
             }
 ]@
   @(protection)@ boolean is@(methodSuffix)@Modified() {
+@[
+            if (isFullTracked()) {
+              if (attr.getDataType().isPrimitive()) {
+]@
+    return @(attr.getJavaName())@ != @(attr.getJavaName())@Persisted;
+@[
+              }
+              else {
+]@
+    return !Objects.equals(@(attr.getJavaName())@, @(attr.getJavaName())@Persisted);
+@[
+              }
+            }
+            else {
+]@
     return @(attr.getJavaName())@Modified;
+@[
+            }
+]@
   }
 @[
           }
+
           if (isFullTracked()) {
             if (noif || attr.getOptions().isHidden()) {
 ]@
@@ -940,12 +984,14 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           if (isAttracked()) {
-]@
-    @(name)@Modified = snapshot.@(name)@Modified;
-@[
             if (isFullTracked()) {
 ]@
     @(name)@Persisted = snapshot.@(name)@Persisted;
+@[
+            }
+            else {
+]@
+    @(name)@Modified = snapshot.@(name)@Modified;
 @[
             }
           }

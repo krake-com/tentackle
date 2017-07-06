@@ -33,6 +33,7 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SourceInfo;
+import org.tentackle.model.TrackType;
 import org.tentackle.model.parse.RelationLine;
 
 /**
@@ -629,10 +630,14 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
                       selectionWurbletArguments);
     }
 
-    if (countAttribute != null &&
-        (relationType != RelationType.LIST || reversed || !composite)) {
-      throw createModelException(
+    if (countAttribute != null) {
+      if (relationType != RelationType.LIST || reversed || !composite) {
+        throw createModelException(
               "counter attribute only allowed for composite non-reversed list relations");
+      }
+      if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
+        throw createModelException("entity must be FULLTRACKED to support counter attributes");
+      }
     }
   }
 

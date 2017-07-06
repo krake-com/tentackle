@@ -107,24 +107,18 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   /** ID of the number pool. */
   @Persistent("ID of the number pool")
   private long numberPoolId;
-  /** true if numberPoolId has been modified. */
-  private boolean numberPoolIdModified;
   /** the last persisted value of numberPoolId. */
   private long numberPoolIdPersisted;
 
   /** begin of range. */
   @Persistent("begin of range")
   private long begin;
-  /** true if begin has been modified. */
-  private boolean beginModified;
   /** the last persisted value of begin. */
   private long beginPersisted;
 
   /** end of range. */
   @Persistent("end of range")
   private long end;
-  /** true if end has been modified. */
-  private boolean endModified;
   /** the last persisted value of end. */
   private long endPersisted;
 
@@ -197,11 +191,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   public void setModified(boolean modified) {
     super.setModified(modified);
     if (!modified) {
-      numberPoolIdModified = false;
       numberPoolIdPersisted = numberPoolId;
-      beginModified = false;
       beginPersisted = begin;
-      endModified = false;
       endPersisted = end;
     }
   }
@@ -213,6 +204,11 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
            || beginPersisted != begin
            || endPersisted != end
            ;
+  }
+
+  @Override
+  public boolean attributesModified() {
+    return differsPersisted();
   }
 
   @Override
@@ -286,8 +282,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   private void setNumberPoolId(long numberPoolId) {
     assertMutable();
     if (this.numberPoolId != numberPoolId) {
-      setModified(true);
-      numberPoolIdModified = true;
       firePropertyChange(AN_NUMBERPOOLID, this.numberPoolId, numberPoolId);
     }
     this.numberPoolId = numberPoolId;
@@ -295,7 +289,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public boolean isNumberPoolIdModified() {
-    return numberPoolIdModified;
+    return numberPoolId != numberPoolIdPersisted;
   }
 
   @Override
@@ -312,8 +306,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   public void setBegin(long begin) {
     assertMutable();
     if (this.begin != begin) {
-      setModified(true);
-      beginModified = true;
       firePropertyChange(AN_BEGIN, this.begin, begin);
     }
     this.begin = begin;
@@ -321,7 +313,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public boolean isBeginModified() {
-    return beginModified;
+    return begin != beginPersisted;
   }
 
   @Override
@@ -338,8 +330,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   public void setEnd(long end) {
     assertMutable();
     if (this.end != end) {
-      setModified(true);
-      endModified = true;
       firePropertyChange(AN_END, this.end, end);
     }
     this.end = end;
@@ -347,7 +337,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public boolean isEndModified() {
-    return endModified;
+    return end != endPersisted;
   }
 
   @Override
@@ -374,15 +364,12 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     super.revertAttributesToSnapshot(snapshot);
     // ID of the number pool
     numberPoolId = snapshot.numberPoolId;
-    numberPoolIdModified = snapshot.numberPoolIdModified;
     numberPoolIdPersisted = snapshot.numberPoolIdPersisted;
     // begin of range
     begin = snapshot.begin;
-    beginModified = snapshot.beginModified;
     beginPersisted = snapshot.beginPersisted;
     // end of range
     end = snapshot.end;
-    endModified = snapshot.endModified;
     endPersisted = snapshot.endPersisted;
   }
 

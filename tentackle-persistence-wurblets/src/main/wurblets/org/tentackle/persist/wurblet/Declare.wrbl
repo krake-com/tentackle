@@ -60,14 +60,16 @@ For more options, see {\@link DbModelWurblet}.
   @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@;
 @[
         if (isAttracked()) {
-]@
-  /** true if @(attr)@ has been modified. */
-  @(protection)@ boolean @(attr.getJavaName())@Modified;
-@[
           if (isFullTracked()) {
 ]@
   /** the last persisted value of @(attr)@. */
   @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@Persisted;
+@[
+          }
+          else {
+]@
+  /** true if @(attr)@ has been modified. */
+  @(protection)@ boolean @(attr.getJavaName())@Modified;
 @[
           }
         }
