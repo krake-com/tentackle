@@ -131,6 +131,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
     }
     catch (Exception ex) {
       LOGGER.severe("", ex);
+      throw ex;
     }
     finally {
       session.close();
