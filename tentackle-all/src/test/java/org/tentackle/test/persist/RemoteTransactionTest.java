@@ -18,32 +18,18 @@
 
 package org.tentackle.test.persist;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.prefs.NodeChangeEvent;
-import java.util.prefs.NodeChangeListener;
-import java.util.prefs.PreferenceChangeEvent;
-import java.util.prefs.PreferenceChangeListener;
 import org.tentackle.dbms.Db;
-import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.ns.pdo.NumberPool;
-import org.tentackle.ns.pdo.NumberPoolDomain;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.test.AbstractPdoTest;
-import org.tentackle.persist.ns.NumberPoolPersistenceImpl;
-import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.session.AbstractSessionTask;
-import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
 
 
 /**
