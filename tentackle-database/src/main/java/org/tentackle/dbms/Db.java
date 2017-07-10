@@ -82,7 +82,10 @@ import org.tentackle.sql.BackendInfo;
 
 /**
  * A logical database connection.
- *
+ * <p>
+ * Each thread must use its own Db. If threads must share the same db, access to the Db
+ * must be synchronized at the application-level!
+ * <p>
  * Db connections are an abstraction for a connection between a client
  * and a server, whereas "server" is not necessarily a database server,
  * because Db connections can be either local or remote.<br>
@@ -310,7 +313,7 @@ public class Db implements Session, Cloneable {
   private int poolId;                                     // the poolid if dbPool != null
   private SessionInfo sessionInfo;                        // user information
   private Db clonedFromDb;                                // the original db if this is a cloned one
-  private boolean autoCommit;                             // true if autocommit on, else false
+  private volatile boolean autoCommit;                    // true if autocommit on, else false
   private boolean countModificationAllowed = true;        // allow modification count
   private boolean logModificationAllowed = true;          // allow modification log
   private final Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
@@ -1446,25 +1449,29 @@ public class Db implements Session, Cloneable {
    */
   private long begin(String txName, boolean fromRemote)  {
 
-    LOGGER.finer("begin transaction requested on {0} from {1}, txName={2}",
-                 this, (fromRemote ? "remote client" : "local"), txName);
-
     assertOpen();
     assertOwnerThread();
 
     long txVoucher = 0;
 
     if (isRemote()) {
-      try {
-        txVoucher = rdel.begin(txName);
-        if (txVoucher != 0) {
-          // new transaction begun
-          autoCommit = false;           // we are now within a tx
+      if (autoCommit) {
+        try {
+          txVoucher = rdel.begin(txName);
+          if (txVoucher != 0) {
+            autoCommit = false;           // we are now within a tx
+          }
+          else {
+            throw new PersistenceException(this, "server transaction already running");
+          }
+        }
+        catch (RemoteException e)  {
+          throw PersistenceException.createFromRemoteException(this, e);
         }
       }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
+      // else: only the outermost transaction is initiated by the remote client
+      // there is no transaction nesting level at the client side!
+      // as a result: the nesting level at the server side is max. 1
     }
     else {
 
@@ -1643,32 +1650,6 @@ public class Db implements Session, Cloneable {
       logModificationTxId = 0;
     }
   }
-
-
-
-  /**
-   * Gets the number of objects modified since the last begin().
-   * The method is provided to check whether objects have been
-   * modified at all.
-   *
-   * @return the number of modified objects, 0 if none modified or no transaction running
-   */
-  public int getUpdateCount() {
-    return transaction == null ? 0 : transaction.getUpdateCount();
-  }
-
-
-  /**
-   * Add to updateCount.
-   *
-   * @param count the number of updates to add
-   */
-  void addToUpdateCount(int count) {
-    if (transaction != null) {
-      transaction.addToUpdateCount(count);
-    }
-  }
-
 
 
   /**
@@ -1894,23 +1875,28 @@ public class Db implements Session, Cloneable {
   @Override
   public boolean commit(long txVoucher)  {
 
-    LOGGER.finer("committing {0}", transaction);
-
     assertOpen();
     assertOwnerThread();
 
     boolean committed = false;
 
     if (isRemote()) {
-      try {
-        committed = rdel.commit(txVoucher);
-        if (committed) {
-          transaction = null;
-          autoCommit = true;   // now outside tx again
+      if (txVoucher != 0) {
+        try {
+          if (autoCommit) {
+            throw new PersistenceException(this, "no client transaction running");
+          }
+          committed = rdel.commit(txVoucher);
+          if (committed) {
+            autoCommit = true;   // now outside tx again
+          }
+          else {
+            throw new PersistenceException(this, "no server transaction running");
+          }
         }
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
+        catch (RemoteException e)  {
+          throw PersistenceException.createFromRemoteException(this, e);
+        }
       }
     }
 
@@ -1965,18 +1951,21 @@ public class Db implements Session, Cloneable {
   /**
    * Commits the current transaction, if pending.
    * <p>
+   * Only applicable to local sessions.
+   * <p>
    * Applications should use {@link #commit(long)}.
    * Invocations of this method will be logged as a warning.
    *
    * @return true if committed
    */
   public boolean commitImmediately() {
+
+    assertNotRemote();
+
     if (transaction != null) {
       int currentTxLevel = transaction.getTxLevel();
-      if(!isRemote()) {
-        immediatelyCommitted = 0;
-        immediatelyRolledBack = 0;
-      }
+      immediatelyCommitted = 0;
+      immediatelyRolledBack = 0;
       transaction.invalidateTxLevel();    // avoid misleading warnings
       if (!commit(transaction.getTxVoucher())) {
         throw new PersistenceException(this, transaction + " not committed despite valid voucher");
@@ -2015,23 +2004,28 @@ public class Db implements Session, Cloneable {
    */
   public boolean rollback(long txVoucher, boolean withLog)  {
 
-    LOGGER.finer("rolling back {0}", transaction);
-
     assertOpen();
     assertOwnerThread();
 
     boolean rolledBack = false;
 
     if (isRemote()) {
-      try {
-        rolledBack = rdel.rollback(txVoucher, withLog);
-        if (rolledBack) {
-          transaction = null;
-          autoCommit = true;   // now outside tx again
+      if (txVoucher != 0) {
+        try {
+          if (autoCommit) {
+            throw new PersistenceException(this, "no client transaction running");
+          }
+          rolledBack = rdel.rollback(txVoucher, withLog);
+          if (rolledBack) {
+            autoCommit = true;   // now outside tx again
+          }
+          else {
+            throw new PersistenceException(this, "no server transaction running");
+          }
         }
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
+        catch (RemoteException e)  {
+          throw PersistenceException.createFromRemoteException(this, e);
+        }
       }
     }
 

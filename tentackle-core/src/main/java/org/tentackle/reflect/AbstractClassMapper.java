@@ -205,8 +205,8 @@ public abstract class AbstractClassMapper<S> {
     if (mappedClazz == null) {
       mappedClazz = mapNameWithPackages(className, lenient);
       if (mappedClazz == null) {
-        throw new ClassNotFoundException("no mapping for '" + className +
-                                         (lenient ? "' in " + getPackageNamesAsString() : "'"));
+        throw new ClassNotFoundException("no " + name + " mapping for '" + className +
+                                         (lenient ? "' in packages " + getPackageNamesAsString() : "'"));
       }
       // this is ok unsynchronized cause of ConcurrentHashMap.
       // putting a key/value pair more than once in a multi-threaded application is ok as well.

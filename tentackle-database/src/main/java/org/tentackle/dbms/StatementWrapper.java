@@ -305,9 +305,6 @@ public class StatementWrapper implements AutoCloseable {
       int count = executeUpdateImpl(sql);
       history.end();
       setRunning(false);
-      if (count > 0) {
-        db.addToUpdateCount(count);
-      }
       detachSession();
       return count;
     }
