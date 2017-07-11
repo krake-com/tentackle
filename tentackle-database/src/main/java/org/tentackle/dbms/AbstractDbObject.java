@@ -224,13 +224,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private boolean immutable;            // true if object is immutable
   private Level immutableLoggingLevel;  // optional logging for immutable violations instead of exception
 
-  protected boolean preparePending;  // true if prepareDelete() or prepareSave() needs to be invoked
-
   // transient (not transferred to/from the application server)
-  private transient Db session;                           // database session (transient because it shouldn't be serialized)
-  private transient boolean sessionImmutable;             // true if Db is immutable
-  private SessionHolder sessionHolder;              // a redirector to retrieve the session
-  private transient boolean overloadable;                 // true if object can be loaded more than once from the database
+  private transient Db session;                       // database session (transient because it shouldn't be serialized)
+  private transient boolean sessionImmutable;         // true if Db is immutable
+  private SessionHolder sessionHolder;                // a redirector to retrieve the session
+  private transient final boolean fromThisJVM = true; // true if object created in this JVM, else remote
+  private transient boolean overloadable;             // true if object can be loaded more than once from the database
 
   // if this object is being replayed from a modification log
   private transient ModificationLog modlog;
@@ -348,6 +347,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
+   * Returns whether this object has been created in this JVM.
+   *
+   * @return true if this JVM, else from remote JVM
+   */
+  public boolean isFromThisJVM() {
+    return fromThisJVM;
+  }
+
+
+  /**
    * Clones an object.<p>
    * Cloning an object yields a copy with id=0 and serial=0.
    * Needs to be overridden if object references, etc... have to be cloned too.
@@ -397,7 +406,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     tableSerial = snapshot.tableSerial;
     modified = snapshot.modified;
     immutable = snapshot.immutable;
-    preparePending = snapshot.preparePending;
     session = snapshot.session;
     sessionImmutable = snapshot.sessionImmutable;
     sessionHolder = snapshot.sessionHolder;
@@ -2301,14 +2309,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   public void saveObject ()  {
 
-    preparePending = true;
-
     if (getSession().isRemote())  {
 
       // execute in 3-tier client
       clearOnRemoteSave();
       prepareSave();
-      preparePending = false;
 
       try {
         @SuppressWarnings("unchecked")
@@ -2324,10 +2329,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
 
     else  {
-      if (preparePending) {
-        // execute in 2-tier client
+      if (isFromThisJVM()) {
+        // not from remote client
         prepareSave();
-        preparePending = false;
       }
 
       long oldId = id;    // saveObject in case of error
@@ -2376,7 +2380,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
       // execute in 3-tier client
       clearOnRemoteSave();
-      preparePending = true;
       prepareSave();
 
       try {
@@ -2425,11 +2428,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     assertNotNew();
     assertPersistable();
 
-    preparePending = true;
-
     if (getSession().isRemote())  {
       prepareDelete();
-      preparePending = false;
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().deleteObject((P) this);
@@ -2444,9 +2444,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      if (preparePending) {
+      if (isFromThisJVM()) {
+        // not from remote client
         prepareDelete();
-        preparePending = false;
       }
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
 

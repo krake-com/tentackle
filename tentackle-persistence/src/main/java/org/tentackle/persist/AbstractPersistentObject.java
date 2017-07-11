@@ -2993,7 +2993,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   protected void deleteImpl() {
     if (getSession().isRemote())  {
       assertPersistable();
-      preparePending = true;
       try {
         prepareDelete();
         getRemoteDelegate().deleteImpl(pdo);    // this will do delete() in server, i.e. all checks
@@ -3027,7 +3026,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
       // execute in 3-tier client
       clearOnRemoteSave();
-      preparePending = true;
       prepareSave();
 
       try {
@@ -3135,7 +3133,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
       // execute in 3-tier client
       clearOnRemoteSave();
-      preparePending = true;
       prepareSave();
 
       /**
