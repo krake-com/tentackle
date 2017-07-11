@@ -2270,22 +2270,15 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Prepares this object for saveObject.<br>
-   * The method is invoked at the client-side only, i.e. 3-tier or 2-tier, but never at the server-side in 3-tier mode.
-   * The default implementation clears a non-transient flag that tells the server that prepareSave() already has been
-   * invoked on the client side. AbstractApplications may override the method to perform any modifications to the object
-   * before it is sent to the server (instead of {@link #prepareSetFields()} which is invoked at the server-side only).
+   * The method is invoked at the client-side only, i.e. 3-tier or 2-tier,
+   * but never at the server-side in 3-tier mode.<br>
+   * Applications may override the method to perform any modifications to the object
+   * before it is sent to the server (instead of {@link #prepareSetFields()} which is
+   * invoked at the server-side only).
    * <p>
-   * Example:
-   * <pre>
-   * public void prepareSave() {
-   *   // do something
-   *   ...
-   *   super.prepareSave();   // IMPORTANT!!!
-   * }
-   * </pre> Notice that the method is invoked outside of the transaction.
+   * Notice that the method is invoked outside of the save-transaction.
    */
   public void prepareSave() {
-    preparePending = false;
   }
 
 
@@ -2315,6 +2308,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       // execute in 3-tier client
       clearOnRemoteSave();
       prepareSave();
+      preparePending = false;
 
       try {
         @SuppressWarnings("unchecked")
@@ -2333,6 +2327,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       if (preparePending) {
         // execute in 2-tier client
         prepareSave();
+        preparePending = false;
       }
 
       long oldId = id;    // saveObject in case of error
@@ -2406,33 +2401,22 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Prepares this object for delete.<br>
    * The method is invoked at the client-side only, i.e. 3-tier or
-   * 2-tier, but never at the server-side in 3-tier mode.
-   * The default implementation clears a non-transient flag that tells
-   * the server that prepareDelete() already has been invoked on the client side.
-   * AbstractApplications may override the method to perform any modifications to the
+   * 2-tier, but never at the server-side in 3-tier mode.<br>
+   * Applications may override the method to perform any modifications to the
    * object before it is sent to the server.
    * <p>
-   * Example:
-   * <pre>
-   * public void prepareDelete() {
-   *   // do something
-   *   ...
-   *   super.prepareDelete();   // IMPORTANT!!!
-   * }
-   * </pre>
-   * Notice that the method is invoked outside of the transaction and that it
-   * is not invoked if the object is new or not saveable.
+   * Notice that the method is invoked outside of the delete-transaction.
    */
   public void prepareDelete() {
-    preparePending = false;
   }
 
 
   /**
-   * Removes this object from the database (with linked objects, i.e. standard-case).
+   * Removes this object from the database.<br>
+   * This includes all components, if any.<br>
    * A removed object will also get the modified attribute set by definition,
-   * because it {@link #isNew} again.
-   * It is also verified that the object {@link #isPersistable}.
+   * because it {@link #isNew} again.<br>
+   * It is also verified that the object {@link #isPersistable} and is not new.
    *
    * @throws NotFoundException if object is new or not saveable or not in database
    */
@@ -2445,6 +2429,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
     if (getSession().isRemote())  {
       prepareDelete();
+      preparePending = false;
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().deleteObject((P) this);
@@ -2461,6 +2446,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       // local
       if (preparePending) {
         prepareDelete();
+        preparePending = false;
       }
       if (getSession().isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
 
