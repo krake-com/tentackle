@@ -108,7 +108,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     if (maxDb > 0 && maxDb < iniSize) {
       throw new IllegalArgumentException("maxDb must be 0 or >= iniSize");
     }
-    
+
     this.backendInfo = backendInfo;
     this.maxDbSize = maxDb;
     this.incSize = incSize;
@@ -483,38 +483,46 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
       boolean closeIt = false;
 
-      synchronized(this) {
-
-        if (!con.getAutoCommit()) {
-          /**
-           * The connection has been detached even though a transaction is still running!
-           * This is bad and indicates some MT problem or that some thread keeps on using
-           * a Db even if there has been an exception causing a rollback.
-           * Anyway: mark the connection dead so that it is closed and cleaned up.
-           * The Db is also closed to prevent any further use.
-           */
-          LOGGER.severe("connection " + con + " detached while still in transaction -> marked dead");
-          con.setDead(true);
-        }
-
-        if (con.isDead()) {
-          cleanupDeadConnection(con);
-          try {
-            // close the db to make it unusable anymore
-            session.close();
-          }
-          catch (RuntimeException rex) {
-            LOGGER.warning("closing Db failed", rex);
+      synchronized (this) {
+        if (con.isClosed()) {
+          LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
+          int ndx = con.getIndex();
+          if (ndx >= 0) {
+            removeConnection(ndx);
           }
         }
-        else if (con.isExpired()) {
-          // connection time elapsed: close it
-          removeConnection(con.getIndex());
-          closeIt = true;    // will close below
-        }
-        else  {
-          // add unattached connection
-          pushUnattached(con.getIndex());
+        else {
+          if (!con.getAutoCommit()) {
+            /**
+             * The connection has been detached even though a transaction is still running!
+             * This is bad and indicates some MT problem or that some thread keeps on using
+             * a Db even if there has been an exception causing a rollback.
+             * Anyway: mark the connection dead so that it is closed and cleaned up.
+             * The Db is also closed to prevent any further use.
+             */
+            LOGGER.severe("connection {0} detached while still in transaction -> marked dead", con);
+            con.setDead(true);
+          }
+
+          if (con.isDead()) {
+            cleanupDeadConnection(con);
+            try {
+              // close the db to make it unusable anymore
+              session.close();
+            }
+            catch (RuntimeException rex) {
+              LOGGER.warning("closing Db failed", rex);
+            }
+          }
+          else if (con.isExpired()) {
+            // connection time elapsed: close it
+            removeConnection(con.getIndex());
+            closeIt = true;    // will close below
+          }
+          else {
+            // add unattached connection
+            pushUnattached(con.getIndex());
+          }
         }
       }
 
