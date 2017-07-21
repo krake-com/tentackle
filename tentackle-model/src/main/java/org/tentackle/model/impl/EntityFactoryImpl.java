@@ -97,8 +97,8 @@ public class EntityFactoryImpl implements EntityFactory {
   }
 
   @Override
-  public IndexAttributeImpl createIndexAttribute(Index index, SourceInfo sourceInfo) {
-    return new IndexAttributeImpl(index, sourceInfo);
+  public IndexAttributeImpl createIndexAttribute(Index index) {
+    return new IndexAttributeImpl(index);
   }
 
   @Override
@@ -134,7 +134,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl idAttribute = createAttribute(entity, document.getSourceInfo(), true);
     idAttribute.setDataType(DataType.LONG_PRIMITIVE);
     idAttribute.setColumnName(Constants.CN_ID);
-    idAttribute.setJavaName(Constants.AN_ID);
+    idAttribute.setName(Constants.AN_ID);
     idAttribute.getOptions().setComment("object id");
     idAttribute.getOptions().setFromSuper(true);
     idAttribute.getOptions().setSetGet(true);
@@ -143,7 +143,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl serialAttribute = createAttribute(entity, document.getSourceInfo(), true);
     serialAttribute.setDataType(DataType.LONG_PRIMITIVE);
     serialAttribute.setColumnName(Constants.CN_SERIAL);
-    serialAttribute.setJavaName(Constants.AN_SERIAL);
+    serialAttribute.setName(Constants.AN_SERIAL);
     serialAttribute.getOptions().setComment("object serial");
     serialAttribute.getOptions().setFromSuper(true);
     serialAttribute.getOptions().setSetGet(true);
@@ -194,13 +194,13 @@ public class EntityFactoryImpl implements EntityFactory {
           processRelationOption(entity, (OptionLine) line);
           break;
 
-        default: throw new ModelException("unknown linetype " + line.getLineType(),
+        default: throw new ModelException("unknown linetype " + line.getLineType() + " @ " +
                                           document.getSourceInfo().add(line.getLineNumber() - 1, 0));
       }
     }
 
     for (Attribute attribute: entity.getAttributes()) {
-      if (Constants.AN_TABLESERIAL.equals(attribute.getJavaName()) ||
+      if (Constants.AN_TABLESERIAL.equals(attribute.getName()) ||
           Constants.CN_TABLESERIAL.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [TABLESERIAL] option instead of explicit attribute", entity);
@@ -210,7 +210,7 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_NORMTEXT.equals(attribute.getJavaName()) ||
+      if (Constants.AN_NORMTEXT.equals(attribute.getName()) ||
           Constants.CN_NORMTEXT.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [NORMTEXT] option instead of explicit attribute", entity);
@@ -220,11 +220,11 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_EDITEDBY.equals(attribute.getJavaName()) ||
+      if (Constants.AN_EDITEDBY.equals(attribute.getName()) ||
           Constants.CN_EDITEDBY.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDSINCE.equals(attribute.getJavaName()) ||
+          Constants.AN_EDITEDSINCE.equals(attribute.getName()) ||
           Constants.CN_EDITEDSINCE.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDEXPIRY.equals(attribute.getJavaName()) ||
+          Constants.AN_EDITEDEXPIRY.equals(attribute.getName()) ||
           Constants.CN_EDITEDEXPIRY.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [EDITEDBY] option instead of explicit attribute", entity);
@@ -260,7 +260,7 @@ public class EntityFactoryImpl implements EntityFactory {
       AttributeImpl classIdAttribute = createAttribute(entity, document.getSourceInfo(), true);
       classIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
       classIdAttribute.setColumnName(Constants.CN_CLASSID);
-      classIdAttribute.setJavaName(Constants.AN_CLASSID);
+      classIdAttribute.setName(Constants.AN_CLASSID);
       classIdAttribute.getOptions().setComment("class id");
       classIdAttribute.getOptions().setFromSuper(true);
       classIdAttribute.getOptions().setSetGet(true);
@@ -292,7 +292,7 @@ public class EntityFactoryImpl implements EntityFactory {
           attribute = entity.getAttributeByColumnName(name, false);
         }
         if (attribute == null) {
-          throw new ModelException("no such attribute '" + name + "' to sort", entity.getOptions().getSourceInfo());
+          throw new ModelException("no such attribute '" + name + "' to sort", entity);
         }
         sorting.add(new AttributeSorting(attribute, sortType));
       }

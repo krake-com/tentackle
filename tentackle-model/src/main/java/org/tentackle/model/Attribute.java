@@ -25,7 +25,7 @@ package org.tentackle.model;
  *
  * @author harald
  */
-public interface Attribute {
+public interface Attribute extends ModelElement {
 
   /**
    * Gets the entity this attribute belongs to.
@@ -33,13 +33,6 @@ public interface Attribute {
    * @return the entity
    */
   Entity getEntity();
-
-  /**
-   * Gets the Java-Name of the attribute.
-   *
-   * @return the java name
-   */
-  String getJavaName();
 
 
   /**

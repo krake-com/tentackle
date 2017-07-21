@@ -163,10 +163,10 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Selects @(rel)@.
    *
-   * \@param @(attribute.getJavaName())@ @(attribute.getOptions().getComment())@
+   * \@param @(attribute.getName())@ @(attribute.getOptions().getComment())@
    * \@return @(rel.getComment())@
    */
-  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getJavaName())@);
+  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getName())@);
 @[
           if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
 ]@
@@ -174,10 +174,10 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Deletes @(rel)@.
    *
-   * \@param @(attribute.getJavaName())@ @(attribute.getOptions().getComment())@
+   * \@param @(attribute.getName())@ @(attribute.getOptions().getComment())@
    * \@return @(rel.getComment())@
    */
-  int @(createListRelationDeleteMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getJavaName())@);
+  int @(createListRelationDeleteMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getName())@);
 @[
           }
         }

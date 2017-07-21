@@ -81,7 +81,7 @@ public class ComponentJoin {
       Entity rootAttributeEntity = rootAttribute.getEntity().getInheritanceType() == InheritanceType.PLAIN ?
               joinedEntity : rootAttribute.getEntity();
       rootIdClassName = wurblet.deriveClassNameForEntity(rootAttributeEntity);
-      rootIdColumnName = rootIdClassName + ".CN_" + rootAttribute.getJavaName().toUpperCase();
+      rootIdColumnName = rootIdClassName + ".CN_" + rootAttribute.getName().toUpperCase();
     }
     else  {
       rootIdClassName = wurblet.deriveClassNameForEntity(joinedEntity);

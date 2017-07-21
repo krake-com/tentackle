@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{phase 2}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate a comment to document the relations and usage of the entity.
 <p>

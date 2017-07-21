@@ -540,7 +540,7 @@ public class TableMigrator {
     for (Index index: tableIndexes) {
       boolean found = false;
       for (IndexMetaData existingIndex: existingIndexes) {
-        if (existingIndex.getIndexName().equals(index.getName(entity))) {
+        if (existingIndex.getIndexName().equals(index.createDatabaseIndexName(entity))) {
           // found -> migrate
           result = result.sum(new IndexMigrator(entity, index, backend, existingIndex).migrate());
           found = true;
@@ -557,7 +557,7 @@ public class TableMigrator {
       if (!existingIndex.isPrimaryIdKey()) {
         boolean found = false;
         for (Index index: tableIndexes) {
-          if (index.getName(entity).equals(existingIndex.getIndexName())) {
+          if (index.createDatabaseIndexName(entity).equals(existingIndex.getIndexName())) {
             found = true;
             break;
           }

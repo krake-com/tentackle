@@ -8,7 +8,7 @@
     }
     if (getContextAttribute() != null) {
 ]@
-    st.@(createJdbcSetterName(getContextAttribute()))@(ndx++, @(getContextAttribute().getJavaName())@);
+    st.@(createJdbcSetterName(getContextAttribute()))@(ndx++, @(getContextAttribute().getName())@);
 @[
     }
     for (WurbletParameter par: getMethodParameters())  {

@@ -5,13 +5,13 @@
       String rightAttribute;
       String joinType;
       if (relation.getRelationType() == RelationType.OBJECT) {
-        leftAttribute = "CN_" + relation.getAttribute().getJavaName().toUpperCase();
+        leftAttribute = "CN_" + relation.getAttribute().getName().toUpperCase();
         rightAttribute = "CN_ID";
         joinType = "INNER";
       }
       else {
         leftAttribute = "CN_ID";
-        rightAttribute = "CN_" + relation.getForeignAttribute().getJavaName().toUpperCase();
+        rightAttribute = "CN_" + relation.getForeignAttribute().getName().toUpperCase();
         joinType = "LEFT";
       }
       String leftClass = relation.getEntity().equals(getEntity()) ? "" :

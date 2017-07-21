@@ -14,7 +14,7 @@
         andPrepended = true;
 ]@
         sql.append(Backend.SQL_AND);
-        sql.append(CN_@(getContextAttribute().getJavaName().toUpperCase())@);
+        sql.append(CN_@(getContextAttribute().getName().toUpperCase())@);
         sql.append(Backend.SQL_EQUAL_PAR);
 @[
     }
@@ -61,7 +61,7 @@
             if (par.isComponentKey() || par.isRelationKey()) {
               String compKeyClass = deriveClassNameForEntity(attr.getEntity());
               for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-                String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+                String name = attr.getName().toUpperCase() + sp.getPostfix();
                 boolean mainColumn = sp.getPostfix().isEmpty();
                 if (!mainColumn) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
@@ -79,7 +79,7 @@
             }
             else {
               for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-                String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+                String name = attr.getName().toUpperCase() + sp.getPostfix();
                 boolean mainColumn = sp.getPostfix().isEmpty();
                 if (!mainColumn) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");

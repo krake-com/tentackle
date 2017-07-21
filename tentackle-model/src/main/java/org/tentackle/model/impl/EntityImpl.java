@@ -36,6 +36,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
@@ -129,6 +130,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     deepReferences = new ArrayList<>();
     deepReferencesToComponents = new ArrayList<>();
     indexes = new ArrayList<>();
+  }
+
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return superEntity;
   }
 
 
@@ -643,8 +654,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     List<Attribute> subAttributes = new ArrayList<>();
     for (Entity sub: getAllSubEntities()) {
       for (Attribute attribute: sub.getAttributes()) {
-        if (!attribute.getJavaName().equals(Constants.AN_ID) &&
-            !attribute.getJavaName().equals(Constants.AN_SERIAL)) {
+        if (!attribute.getName().equals(Constants.AN_ID) &&
+            !attribute.getName().equals(Constants.AN_SERIAL)) {
           subAttributes.add(attribute);
         }
       }
@@ -756,11 +767,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Attribute serialAttribute = null;
     List<Attribute> filteredList = new ArrayList<>();
     for (Attribute attribute: attributes) {
-      if (Constants.CN_ID.equals(attribute.getJavaName())) {
+      if (Constants.CN_ID.equals(attribute.getName())) {
         idAttribute = attribute;
         continue;
       }
-      if (Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      if (Constants.CN_SERIAL.equals(attribute.getName())) {
         serialAttribute = attribute;
         continue;
       }
@@ -785,8 +796,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   protected List<Attribute> removeIdSerial(List<Attribute> attributes) {
     List<Attribute> filteredList = new ArrayList<>();
     for (Attribute attribute: attributes) {
-      if (!Constants.CN_ID.equals(attribute.getJavaName()) &&
-          !Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      if (!Constants.CN_ID.equals(attribute.getName()) &&
+          !Constants.CN_SERIAL.equals(attribute.getName())) {
         filteredList.add(attribute);
       }
     }
@@ -804,10 +815,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Attribute idAttribute = null;
     Attribute serialAttribute = null;
     for (Attribute attribute: entity.getAttributes()) {
-      if (Constants.CN_ID.equals(attribute.getJavaName())) {
+      if (Constants.CN_ID.equals(attribute.getName())) {
         idAttribute = attribute;
       }
-      else if (Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      else if (Constants.CN_SERIAL.equals(attribute.getName())) {
         serialAttribute = attribute;
       }
     }
@@ -1027,7 +1038,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       Entity entity = this;
       while (entity != null) {
         for (Attribute attribute: entity.getAttributes()) {
-          if (javaName.equalsIgnoreCase(attribute.getJavaName())) {
+          if (javaName.equalsIgnoreCase(attribute.getName())) {
             return attribute;
           }
         }
@@ -1264,14 +1275,14 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Map<String,Attribute> javaNames = new HashMap<>();
     for (Attribute attribute: getAttributes()) {
       attribute.validate();
-      Attribute other = javaNames.put(normalizeName(attribute.getJavaName()), attribute);
+      Attribute other = javaNames.put(normalizeName(attribute.getName()), attribute);
       if (other != null) {
-        if (other.getJavaName().equals(attribute.getJavaName())) {
-          throw new ModelException("duplicate Java name '" + attribute.getJavaName() + "'", this);
+        if (other.getName().equals(attribute.getName())) {
+          throw new ModelException("duplicate Java name '" + attribute.getName() + "'", this);
         }
         else {
-          throw new ModelException("Java name '" + attribute.getJavaName() + "' too close to '" +
-                                   other.getJavaName() + "' -> danger of confusion", this);
+          throw new ModelException("Java name '" + attribute.getName() + "' too close to '" +
+                                   other.getName() + "' -> danger of confusion", this);
         }
       }
     }
@@ -1282,9 +1293,9 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       Attribute other = javaNames.get(normalizedColumnName);
       if (other != null && !other.equals(attribute)) {
         throw new ModelException("misleading column name '" + attribute.getColumnName() +
-                                 "' for Java name '" + attribute.getJavaName() +
+                                 "' for Java name '" + attribute.getName() +
                                  "' -> danger of confusion with '" +
-                                 other.getJavaName() + " / " + other.getColumnName() + "'", this);
+                                 other.getName() + " / " + other.getColumnName() + "'", this);
       }
       if (!columnNames.add(normalizedColumnName)) {
         throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
@@ -1326,7 +1337,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           backend.assertValidName("table alias", getTableAlias());
         }
         catch (RuntimeException rex) {
-          throw new ModelException(rex.getMessage(), sourceInfo, rex);
+          throw new ModelException(rex.getMessage(), this, rex);
         }
       }
     }
@@ -1393,7 +1404,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           buf.append(backend.sqlCreateColumn(
                   columnName, comment, sp.getSqlType(), size, scale,
                   attribute.isNullable(), defaultValue,
-                  attribute.getJavaName().equals(Constants.AN_ID),
+                  attribute.getName().equals(Constants.AN_ID),
                   attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
           multiColumnIndex++;
         }

@@ -155,7 +155,7 @@ public class EntityPrinter {
         else {
           needBlankLine = true;
         }
-        line(attribute.getJavaName()).append(":\n");
+        line(attribute.getName()).append(":\n");
         int size = annotations.size();
         int ndx = 0;
         for (String annotation: annotations) {

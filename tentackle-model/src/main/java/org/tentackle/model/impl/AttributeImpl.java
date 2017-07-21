@@ -25,6 +25,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
@@ -72,6 +73,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     options = factory.createAttributeOptions(this, sourceInfo);
   }
 
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
+  }
 
 
   @Override
@@ -130,7 +140,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setSourceLine(line);
 
     setColumnName(line.getColumnName());
-    setJavaName(line.getJavaName());
+    setName(line.getJavaName());
     setScale(line.getScale());
     setSize(line.getSize());
     setDataType(DataType.createFromJavaType(line.getJavaType()));
@@ -303,7 +313,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public String getJavaName() {
+  public String getName() {
     return javaName;
   }
 
@@ -356,7 +366,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     this.relation = relation;
   }
 
-  public void setJavaName(String javaName) {
+  public void setName(String javaName) {
     this.javaName = javaName;
   }
 
@@ -389,18 +399,18 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String toString() {
-    return getJavaName();
+    return getName();
   }
 
 
   @Override
   public void validate() throws ModelException {
 
-    if (StringHelper.isAllWhitespace(getJavaName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing Java name");
     }
-    if (StringHelper.isReservedWord(getJavaName())) {
-      throw createModelException("'" + getJavaName() + "' is a reserved Java keyword");
+    if (StringHelper.isReservedWord(getName())) {
+      throw createModelException("'" + getName() + "' is a reserved Java keyword");
     }
     if (StringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
@@ -411,7 +421,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
         backend.assertValidName("column name", getColumnName());
       }
       catch (RuntimeException rex) {
-        throw new ModelException(rex.getMessage(), sourceInfo, rex);
+        throw new ModelException(rex.getMessage(), this, rex);
       }
     }
 
@@ -461,7 +471,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       ex = sourceLine.createModelException(message);
     }
     else  {
-      ex = new ModelException(message, sourceInfo);
+      ex = new ModelException(message, this);
     }
     return ex;
   }

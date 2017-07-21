@@ -43,6 +43,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.wurbelizer.wurbel.JavaSourceType;
 import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelTerminationException;
 import org.wurbelizer.wurbel.Wurbler;
 import org.wurbelizer.wurblet.AbstractWurblet;
 
@@ -94,6 +95,9 @@ public class ModelWurblet extends AbstractWurblet {
 
   /** the joins. */
   private List<List<Relation>> joins;
+
+  /** list of wurblet args starting with -- (-- cut off). */
+  private List<String> optionArgs;
 
 
   /**
@@ -388,7 +392,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the option args
    */
   public List<String> getOptionArgs() {
-    return parser.getOptionArgs();
+    return optionArgs;
   }
 
 
@@ -557,7 +561,18 @@ public class ModelWurblet extends AbstractWurblet {
     args = Arrays.asList(container.getArgs());
     joins = new ArrayList<>();
 
-    parser = new WurbletParameterParser(args);
+    List<String> parserArgs = new ArrayList<>();
+    optionArgs = new ArrayList<>();
+    for (String arg : args) {
+      if (arg != null) {
+        if (arg.startsWith("--")) {
+          optionArgs.add(arg.substring(2));
+        }
+        else {
+          parserArgs.add(arg);
+        }
+      }
+    }
 
     modelDirName = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "model");
     if (modelDirName == null) {
@@ -618,8 +633,10 @@ public class ModelWurblet extends AbstractWurblet {
       model.loadModel(modelDirName, modelDefaults, entityAliases);
     }
     catch (ModelException mex) {
-      WurbelException wex = new WurbelException("errors in model loaded from directory '" + modelDirName + "'", mex);
-      if (model instanceof TentackleWurbletsModel && !mex.getEntities().isEmpty() &&
+      // model exceptions cause the whole wurbel run to abort because it doesnt make any sense to clutter the sources
+      WurbelException wex = new WurbelTerminationException(
+              "errors in model loaded from directory '" + modelDirName + "'", true, mex);
+      if (model instanceof TentackleWurbletsModel && mex.getElement() != null &&
           ((TentackleWurbletsModel) model).getLoadingException() == null) {
         // delay first exception to concrete classes if exception could be associated to entities
         ((TentackleWurbletsModel) model).setLoadingException(wex);
@@ -656,6 +673,7 @@ public class ModelWurblet extends AbstractWurblet {
       throw new WurbelException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
     }
 
+    parser = new WurbletParameterParser(entity, parserArgs);
 
     remote = entity.getOptions().isRemote();
     // override global option
@@ -826,13 +844,13 @@ public class ModelWurblet extends AbstractWurblet {
     }
 
     /**
-     * Throw delayed wurbel execption if the real cause if related to this entity
+     * Throw delayed wurbel execption if the real cause is related to this entity
      */
     if (model instanceof TentackleWurbletsModel) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
       if (wex != null && wex.getCause() instanceof ModelException) {
         ModelException mex = (ModelException) wex.getCause();
-        if (mex.getEntities().contains(entity)) {
+        if (mex.isRelatedTo(entity)) {
           throw wex;
         }
       }
@@ -873,7 +891,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return true if pdo id
    */
   public boolean isIdAttribute(Attribute attribute) {
-    return attribute.getJavaName().equals(Constants.CN_ID);
+    return attribute.getName().equals(Constants.CN_ID);
   }
 
   /**
@@ -883,7 +901,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return true if pdo serial
    */
   public boolean isSerialAttribute(Attribute attribute) {
-    return attribute.getJavaName().equals(Constants.CN_SERIAL);
+    return attribute.getName().equals(Constants.CN_SERIAL);
   }
 
   /**

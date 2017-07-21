@@ -87,7 +87,7 @@ For more options, see {\@link ModelWurblet}.
   /**
    * Sets the attribute @(attr)@.
    *
-   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
    */
 @[
             if (attr.getOptions().isBind()) {
@@ -96,7 +96,7 @@ For more options, see {\@link ModelWurblet}.
 @[
             }
 ]@
-  void @(setter)@(@(type)@ @(attr.getJavaName())@);
+  void @(setter)@(@(type)@ @(attr.getName())@);
 @[
           }
           if (getEntity().getOptions().getTrackType().isAttracked()) {
@@ -154,9 +154,9 @@ For more options, see {\@link ModelWurblet}.
           StringBuilder params = new StringBuilder();
           for (Attribute attr: udk) {
             appendCommaSeparated(params, attr.getJavaType());
-            params.append(' ').append(attr.getJavaName());
+            params.append(' ').append(attr.getName());
 ]@
-   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
 @[
           }
 ]@

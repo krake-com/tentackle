@@ -140,7 +140,7 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   public long getRootId() {
-    return @(rootAttribute.getJavaName())@;
+    return @(rootAttribute.getName())@;
   }
 @[
         }
@@ -191,12 +191,12 @@ For more options, see {\@link DbModelWurblet}.
         if (!attr.getOptions().isNoMethod())    {
           if (isFullTracked()) {
 ]@
-      @(attr.getJavaName())@Persisted = @(attr.getJavaName())@;
+      @(attr.getName())@Persisted = @(attr.getName())@;
 @[
           }
           else {
 ]@
-      @(attr.getJavaName())@Modified = false;
+      @(attr.getName())@Modified = false;
 @[
           }
         }
@@ -220,12 +220,12 @@ For more options, see {\@link DbModelWurblet}.
             !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
           if (attr.getDataType().isPrimitive()) {
 ]@
-           || @(attr.getJavaName())@Persisted != @(attr.getJavaName())@
+           || @(attr.getName())@Persisted != @(attr.getName())@
 @[
           }
           else {
 ]@
-           || !Objects.equals(@(attr.getJavaName())@Persisted, @(attr.getJavaName())@)
+           || !Objects.equals(@(attr.getName())@Persisted, @(attr.getName())@)
 @[
           }
         }
@@ -264,7 +264,7 @@ For more options, see {\@link DbModelWurblet}.
       for (Attribute attr: getEntity().getMappedAttributes())  {
         if (!attr.getOptions().isDerived())  {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
 ]@
       rs.configureColumn(CN_@(name)@);
 @[
@@ -280,7 +280,7 @@ For more options, see {\@link DbModelWurblet}.
       for (Attribute attr: getEntity().getMappedAttributes())  {
         if (!attr.getOptions().isDerived())  {
           String getterMethod = createJdbcGetterName(attr);
-          String name = attr.getJavaName().toUpperCase();
+          String name = attr.getName().toUpperCase();
           boolean useSetter = isSetGetRequired(attr);
 
           if (attr.getDataType() == DataType.BINARY) {
@@ -297,7 +297,7 @@ For more options, see {\@link DbModelWurblet}.
             }
             else  {
 ]@
-    @(attr.getJavaName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
+    @(attr.getName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
 @[
             }
           }
@@ -328,7 +328,7 @@ For more options, see {\@link DbModelWurblet}.
               modelCode = attr.getSetterName() + "(" + modelCode + ")";
             }
             else  {
-              modelCode = attr.getJavaName() + " = " + modelCode;
+              modelCode = attr.getName() + " = " + modelCode;
             }
 ]@
     @(modelCode)@;
@@ -338,7 +338,7 @@ For more options, see {\@link DbModelWurblet}.
                 modelCode = attr.getGetterName() + "()";
               }
               else  {
-                modelCode = attr.getJavaName();
+                modelCode = attr.getName();
               }
 ]@
     if (@(modelCode)@ != null) {
@@ -383,7 +383,7 @@ For more options, see {\@link DbModelWurblet}.
             modelCode = attr.getGetterName() + "()";
           }
           else {
-            modelCode = attr.getJavaName();
+            modelCode = attr.getName();
           }
 
           String jdbcCode = getJdbcCode(attr, modelCode);
@@ -434,7 +434,7 @@ For more options, see {\@link DbModelWurblet}.
       for (Attribute attr: attributes)  {
         if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
             names.add(name);
           }
         }
@@ -487,7 +487,7 @@ For more options, see {\@link DbModelWurblet}.
       for (Attribute attr: attributes)  {
         if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
             names.add(name);
           }
         }
@@ -740,7 +740,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets the attribute @(attr.getJavaName())@.
+   * Gets the attribute @(attr.getName())@.
    *
    * \@return @(attr.getOptions().getComment())@
    */
@@ -754,7 +754,7 @@ For more options, see {\@link DbModelWurblet}.
           }
 ]@
   @(protection)@ @(type)@ @(getter)@()    {
-    return @(attr.getJavaName())@;
+    return @(attr.getName())@;
   }
 @[
         }
@@ -778,9 +778,9 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Sets the attribute @(attr.getJavaName())@.
+   * Sets the attribute @(attr.getName())@.
    *
-   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
    */
 @[
           }
@@ -791,22 +791,22 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
 ]@
-  @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getJavaName())@) {
+  @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getName())@) {
     assertMutable();
 @[
           if (isTracked())  {
             if (isFullTracked()) {
               if (attr.getDataType().isPrimitive()) {
 ]@
-    if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+    if (this.@(attr.getName())@ != @(attr.getName())@) {
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
     }
 @[
               }
               else {
 ]@
-    if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+    if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
     }
 @[
               }
@@ -814,13 +814,13 @@ For more options, see {\@link DbModelWurblet}.
             else {
               if (attr.getDataType().isPrimitive()) {
 ]@
-    if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
+    if (this.@(attr.getName())@ != @(attr.getName())@) {
       setModified(true);
 @[
                 if (isAttracked()) {
 ]@
-      @(attr.getJavaName())@Modified = true;
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+      @(attr.getName())@Modified = true;
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                 }
 ]@
@@ -829,13 +829,13 @@ For more options, see {\@link DbModelWurblet}.
               }
               else  {
 ]@
-    if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
+    if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
       setModified(true);
 @[
                 if (isAttracked()) {
 ]@
-      @(attr.getJavaName())@Modified = true;
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+      @(attr.getName())@Modified = true;
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                 }
 ]@
@@ -845,12 +845,12 @@ For more options, see {\@link DbModelWurblet}.
             }
           }
 ]@
-    this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
+    this.@(attr.getName())@ = @(attr.getName())@;
 @[
           if (type.equals("Timestamp")) {
 ]@
-    if (@(attr.getJavaName())@ != null) {
-      @(attr.getJavaName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
+    if (@(attr.getName())@ != null) {
+      @(attr.getName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
     }
 @[
           }
@@ -862,7 +862,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   /**
-   * Gets the modification state of @(attr.getJavaName())@.
+   * Gets the modification state of @(attr.getName())@.
    *
    * \@return true if @(attr)@ has been modified
    */
@@ -880,18 +880,18 @@ For more options, see {\@link DbModelWurblet}.
             if (isFullTracked()) {
               if (attr.getDataType().isPrimitive()) {
 ]@
-    return @(attr.getJavaName())@ != @(attr.getJavaName())@Persisted;
+    return @(attr.getName())@ != @(attr.getName())@Persisted;
 @[
               }
               else {
 ]@
-    return !Objects.equals(@(attr.getJavaName())@, @(attr.getJavaName())@Persisted);
+    return !Objects.equals(@(attr.getName())@, @(attr.getName())@Persisted);
 @[
               }
             }
             else {
 ]@
-    return @(attr.getJavaName())@Modified;
+    return @(attr.getName())@Modified;
 @[
             }
 ]@
@@ -918,7 +918,7 @@ For more options, see {\@link DbModelWurblet}.
             }
 ]@
   @(protection)@ @(attr.getJavaType())@ @(getter)@Persisted() {
-    return @(attr.getJavaName())@Persisted;
+    return @(attr.getName())@Persisted;
   }
 @[
           }
@@ -940,7 +940,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Attribute attr: getEntity().getAttributes())  {
         if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
-          String name = attr.getJavaName();
+          String name = attr.getName();
           if (attr.getDataType().isMutable()) {
             String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
 ]@
@@ -964,7 +964,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Attribute attr: getEntity().getAttributes()) {
         if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
-          String name = attr.getJavaName();
+          String name = attr.getName();
 ]@
     // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
@@ -1019,7 +1019,7 @@ For more options, see {\@link DbModelWurblet}.
             if (components.contains(attribute.getEntity())) {
               attribs.append(attribute.getEntity()).append(".");
             }
-            attribs.append(attribute.getJavaName());
+            attribs.append(attribute.getName());
           }
 ]@
 

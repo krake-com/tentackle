@@ -236,7 +236,7 @@ public class Document {
       }
 
       // parsing error.
-      throw new ModelException("cannot determine line type",
+      throw new ModelException("cannot determine line type @ " +
                                getSourceInfo().add(getLineNumber(offset) - 1, 0));
     }
 

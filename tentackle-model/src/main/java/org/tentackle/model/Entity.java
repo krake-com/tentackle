@@ -29,14 +29,7 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
-public interface Entity {
-
-  /**
-   * Gets the name of the entity.
-   *
-   * @return the name
-   */
-  String getName();
+public interface Entity extends ModelElement {
 
   /**
    * Gets the unique id of this entity.<br>

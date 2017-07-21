@@ -25,11 +25,11 @@ For more options, see {\@link ModelWurblet}.
 
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper())    {
-          String name = attr.getJavaName().toUpperCase();
+          String name = attr.getName().toUpperCase();
 ]@
 
   /** attribute name for database column '@(attr.getColumnName())@'. */
-  @(lead)@String AN_@(name)@ = "@(attr.getJavaName())@";
+  @(lead)@String AN_@(name)@ = "@(attr.getName())@";
 @[
       }
     }

@@ -83,7 +83,7 @@ public class AttributePrinter {
    * @return the name
    */
   public String printJavaName() {
-    return attribute.getJavaName();
+    return attribute.getName();
   }
 
   /**

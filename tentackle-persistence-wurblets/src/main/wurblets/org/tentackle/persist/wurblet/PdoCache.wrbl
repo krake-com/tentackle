@@ -109,7 +109,7 @@ For more options, see {\@link DbModelWurblet}.
       if (!udk.isEmpty()) {
         if (udk.size() == 1) {
           udkType = udk.get(0).getJavaType();
-          udkName = udk.get(0).getJavaName();
+          udkName = udk.get(0).getName();
           udkSuffix = udk.get(0).getMethodNameSuffix();
         }
         else {

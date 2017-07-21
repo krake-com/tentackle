@@ -57,7 +57,7 @@ For more options, see {\@link ModelWurblet}.
           StringBuilder params = new StringBuilder();
           for (Attribute attr: udk) {
             appendCommaSeparated(params, "udk.");
-            params.append(attr.getJavaName());
+            params.append(attr.getName());
           }
 ]@
 
@@ -83,7 +83,7 @@ For more options, see {\@link ModelWurblet}.
 @[
           for (Attribute attr: udk) {
 ]@
-    pdo().@(attr.getSetterName())@(udk.@(attr.getJavaName())@);
+    pdo().@(attr.getSetterName())@(udk.@(attr.getName())@);
 @[
           }
 ]@

@@ -18,6 +18,7 @@
 
 package org.tentackle.model.impl;
 
+import org.tentackle.model.ModelError;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -268,7 +269,7 @@ public class ModelImpl implements Model {
       }
       catch (ModelException mex) {
         String msg = "parsing '" + fileName + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
-        throw new ModelException(msg, mex);
+        throw new ModelException(msg, mex.getElement(), mex);
       }
 
       addModelEntity(modelEntity);
@@ -362,8 +363,7 @@ public class ModelImpl implements Model {
   protected void updateRelations(ModelDefaults defaults, EntityAliases aliases, ModelEntity loadedModelEntity)
             throws ModelException {
 
-    StringBuilder exMsg = new StringBuilder();
-    Set<Entity> exEntities = new HashSet<>();
+    Set<ModelError> errors = new LinkedHashSet<>();
     Entity loadedEntity = loadedModelEntity == null ? null : loadedModelEntity.getEntity();
 
     // set inheritance entities links
@@ -378,31 +378,18 @@ public class ModelImpl implements Model {
         Entity superEntity = getByEntityName(translateAlias(aliases, entity.getSuperEntityName()));
         if (superEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-            if (exMsg.length() > 0) {
-              exMsg.append('\n');
-            }
-            exMsg.append("no such super entity '");
-            exMsg.append(entity.getSuperEntityName());
-            exMsg.append("' to be extended by '");
-            exMsg.append(entity);
-            exMsg.append("'");
-            exEntities.add(entity);
+            errors.add(new ModelError(entity,
+                    "no such super entity '" + entity.getSuperEntityName() +
+                    "' to be extended by '" + entity + "'"));
           }
         }
         else  {
           ((EntityImpl) entity).setSuperEntity(superEntity);
           if (superEntity.getInheritanceType() == InheritanceType.NONE) {
             if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-              if (exMsg.length() > 0) {
-                exMsg.append('\n');
-              }
-              exMsg.append("super entity '");
-              exMsg.append(superEntity);
-              exMsg.append("' extended by '");
-              exMsg.append(entity);
-              exMsg.append("' is not extensible (missing inheritance := ... ?)");
-              exEntities.add(entity);
-              exEntities.add(superEntity);
+              errors.add(new ModelError(entity,
+                      "super entity '" + superEntity + "' extended by '" + entity +
+                      "' is not extensible (missing inheritance := ... ?)"));
             }
           }
           superEntity.getSubEntities().add(entity);
@@ -428,12 +415,8 @@ public class ModelImpl implements Model {
         if (foreignEntity == null) {
           if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
             // log error only if class is associated to the updated one
-            if (exMsg.length() > 0) {
-              exMsg.append('\n');
-            }
-            exMsg.append("no such entity: ");
-            exMsg.append(relation.getClassName());
-            exEntities.add(entity);
+            errors.add(new ModelError(relation,
+                    "no such entity: " + relation.getClassName()));
           }
         }
         else  {
@@ -451,17 +434,9 @@ public class ModelImpl implements Model {
             if (foreignAttribute == null) {
               if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
                   (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-                if (exMsg.length() > 0) {
-                  exMsg.append('\n');
-                }
-                exMsg.append("no such attribute: ")
-                     .append(attributeName)
-                     .append(" in ")
-                     .append(foreignEntity)
-                     .append(" referenced by ")
-                     .append(entity);
-                exEntities.add(entity);
-                exEntities.add(foreignEntity);
+                errors.add(new ModelError(relation,
+                        "no such attribute: " + attributeName + " in " + foreignEntity +
+                        " referenced by " + entity));
               }
             }
             else  {
@@ -472,45 +447,23 @@ public class ModelImpl implements Model {
               Relation nmRelation = foreignEntity.getRelation(relation.getNmName(), false);
               if (nmRelation == null) {
                 if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-                  if (exMsg.length() > 0) {
-                    exMsg.append('\n');
-                  }
-                  exMsg.append("no such nm-relation: ");
-                  exMsg.append(relation.getNmName());
-                  exMsg.append(" in ");
-                  exMsg.append(foreignEntity);
-                  exEntities.add(entity);
-                  exEntities.add(foreignEntity);
+                  errors.add(new ModelError(relation,
+                       "no such nm-relation: " + relation.getNmName() + " in " + foreignEntity));
                 }
               }
               else  {
                 if (nmRelation.isComposite() || nmRelation.getRelationType() == RelationType.LIST) {
                   if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-                    if (exMsg.length() > 0) {
-                      exMsg.append('\n');
-                    }
-                    exMsg.append("nm-relation ");
-                    exMsg.append(nmRelation.getName());
-                    exMsg.append(" in ");
-                    exMsg.append(foreignEntity);
-                    exMsg.append(" must be non-composite object");
-                    exEntities.add(entity);
-                    exEntities.add(foreignEntity);
+                    errors.add(new ModelError(nmRelation,
+                            "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
+                            " must be non-composite object"));
                   }
                 }
                 if (translateAlias(aliases, nmRelation.getClassName()).equals(entity.getName())) {
                   if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-                    if (exMsg.length() > 0) {
-                      exMsg.append('\n');
-                    }
-                    exMsg.append("nm-relation ");
-                    exMsg.append(nmRelation.getName());
-                    exMsg.append(" in ");
-                    exMsg.append(foreignEntity);
-                    exMsg.append(" points back to ");
-                    exMsg.append(entity);
-                    exEntities.add(entity);
-                    exEntities.add(foreignEntity);
+                    errors.add(new ModelError(nmRelation,
+                            "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
+                            " points back to " + entity));
                   }
                 }
                 if (nmRelation.getSelectionType() == SelectionType.LAZY && !nmRelation.isSerialized()) {
@@ -723,14 +676,9 @@ public class ModelImpl implements Model {
             ((RelationImpl) relation).setReferenced(true);
           }
           if (!relation.isTracked() && entity.getIntegrity().isCompositesCheckedByDatabase()) {
-            if (exMsg.length() > 0) {
-              exMsg.append('\n');
-            }
-            exMsg.append("untracked relation ").append(relation).append(" not allowed in conjunction with ").
-                    append(entity.getIntegrity()).append("-integrity in ");
-            exMsg.append(entity);
-            exEntities.add(entity);
-            exEntities.add(relation.getForeignEntity());
+            errors.add(new ModelError(relation,
+                    "untracked relation " + relation + " not allowed in conjunction with " +
+                    entity.getIntegrity() + "-integrity in " + entity));
           }
         }
       }
@@ -745,14 +693,7 @@ public class ModelImpl implements Model {
       }
       catch (ModelException mex) {
         if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-          if (exMsg.length() > 0) {
-            exMsg.append('\n');
-          }
-          exMsg.append(mex.getMessage());
-          exMsg.append(" in ");
-          exMsg.append(entity);
-          exEntities.add(entity);
-          exEntities.addAll(mex.getEntities());
+          errors.add(new ModelError(entity, mex.getMessage() + " in " + entity));
         }
       }
     }
@@ -771,43 +712,29 @@ public class ModelImpl implements Model {
         }
         for (Attribute attrib: allAttributes) {
           AttributeImpl attribute = (AttributeImpl) attrib;
-          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getJavaName().toLowerCase(), attribute);
+          AttributeImpl oldAttribute = (AttributeImpl) nameMap.put(attribute.getName().toLowerCase(), attribute);
           if (oldAttribute != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-            if (exMsg.length() > 0) {
-              exMsg.append('\n');
-            }
-            exMsg.append("attribute '").append(attribute.getJavaName()).append("' in ").
+            StringBuilder exMsg = new StringBuilder();
+            exMsg.append("attribute '").append(attribute.getName()).append("' in ").
                   append(attribute.getEntity());
-            if (attribute.getSourceLine() != null) {
-              exMsg.append("(").append(attribute.getSourceLine()).append(")");
-            }
             exMsg.append(" already defined in ").append(oldAttribute.getEntity());
             if (oldAttribute.getSourceLine() != null) {
               exMsg.append("(").append(oldAttribute.getSourceLine()).append(")");
             }
-            exEntities.add(entity);
-            exEntities.add(attribute.getEntity());
-            exEntities.add(oldAttribute.getEntity());
+            errors.add(new ModelError(attribute, exMsg.toString()));
           }
           AttributeImpl oldColumn = (AttributeImpl) columnMap.put(attribute.getColumnName().toLowerCase(), attribute);
           if (oldAttribute == null && // log same attrib only once
               oldColumn != null && (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-            if (exMsg.length() > 0) {
-              exMsg.append('\n');
-            }
+            StringBuilder exMsg = new StringBuilder();
             exMsg.append("column '").append(attribute.getColumnName()).append("' in ").
                   append(attribute.getEntity());
-            if (attribute.getSourceLine() != null) {
-              exMsg.append("(").append(attribute.getSourceLine()).append(")");
-            }
             exMsg.append(" already defined in ").append(oldColumn.getEntity());
             if (oldColumn.getSourceLine() != null) {
               exMsg.append("(").append(oldColumn.getSourceLine()).append(")");
             }
             exMsg.append(" as attribute '").append(attribute).append("'");
-            exEntities.add(entity);
-            exEntities.add(attribute.getEntity());
-            exEntities.add(oldColumn.getEntity());
+            errors.add(new ModelError(attribute, exMsg.toString()));
           }
         }
       }
@@ -822,13 +749,9 @@ public class ModelImpl implements Model {
       if (entity.getTableAlias() != null) {
         Entity dupAliasEntity = aliasMap.get(entity.getTableAlias());
         if (dupAliasEntity != null) {
-          if (exMsg.length() > 0) {
-            exMsg.append('\n');
-          }
-          exMsg.append("table alias '").append(entity.getTableAlias()).append("' defined more than once in ");
-          exMsg.append(entity).append(" and ").append(dupAliasEntity);
-          exEntities.add(entity);
-          exEntities.add(dupAliasEntity);
+          errors.add(new ModelError(dupAliasEntity,
+                  "table alias '" + entity.getTableAlias() + "' defined more than once in " +
+                  entity + " and " + dupAliasEntity));
         }
         else  {
           aliasMap.put(entity.getTableAlias(), entity);
@@ -903,23 +826,21 @@ public class ModelImpl implements Model {
       // check the hierarchy the loaded entity belongs to
       Entity topEntity = loadedEntity.getTopSuperEntity();
       validateInheritanceHierarchy(topEntity, topEntity.getInheritanceType(), topEntity.getOptions().getTrackType(),
-                                   topEntity.getIntegrity(), exMsg, exEntities);
-      validateComponents(topEntity, topEntity.getIntegrity(), exMsg, exEntities);
+                                   topEntity.getIntegrity(), errors);
+      validateComponents(topEntity, topEntity.getIntegrity(), errors);
     }
     else  {
       // check that within each class hierarchy
       for (ModelEntity modelEntity: mapByEntityName.values()) {
         Entity entity = modelEntity.getEntity();
         validateInheritanceHierarchy(entity, entity.getInheritanceType(), entity.getOptions().getTrackType(),
-                                     entity.getIntegrity(), exMsg, exEntities);
-        validateComponents(entity, entity.getIntegrity(), exMsg, exEntities);
+                                     entity.getIntegrity(), errors);
+        validateComponents(entity, entity.getIntegrity(), errors);
       }
     }
 
-    if (exMsg.length() > 0) {
-      ModelException ex = new ModelException(exMsg.toString());
-      ex.getEntities().addAll(exEntities);
-      throw ex;
+    if (!errors.isEmpty()) {
+      throw new ModelException(errors);
     }
   }
 
@@ -954,8 +875,7 @@ public class ModelImpl implements Model {
 
     if (foreignKeys == null) {
       Map<ForeignKey, ForeignKey> foreignKeyMap = new TreeMap<>(); // map to update composite flag and sort
-      StringBuilder exMsg = new StringBuilder();
-      Set<Entity> exEntities = new HashSet<>();
+      Set<ModelError> errors = new LinkedHashSet<>();
 
       for (ModelEntity modelEntity : mapByEntityName.values()) {
         Entity entity = modelEntity.getEntity();
@@ -981,12 +901,7 @@ public class ModelImpl implements Model {
             if (relation.getAttribute() != null) {
               // object reference
               if (relation.getForeignEntity() == null) {
-                if (exMsg.length() > 0) {
-                  exMsg.append('\n');
-                }
-                exMsg.append("no foreign entity for ");
-                exMsg.append(relation);
-                exEntities.add(entity);
+                errors.add(new ModelError(relation, "no foreign entity for " + relation));
               }
               else {
                 referencingEntity = relation.getEntity();
@@ -1006,14 +921,8 @@ public class ModelImpl implements Model {
               if (!relation.getMethodArgs().isEmpty()) {
                 continue;   // complex relation, classname + id, whatever -> no foreign key possible
               }
-              if (exMsg.length() > 0) {
-                exMsg.append('\n');
-              }
-              exMsg.append("broken foreign key relation ");
-              exMsg.append(relation);
-              exMsg.append(" in ");
-              exMsg.append(entity);
-              exEntities.add(entity);
+              errors.add(new ModelError(relation,
+                      "broken foreign key relation " + relation + " in " + entity));
             }
 
             List<Entity> referencingEntities;
@@ -1060,10 +969,8 @@ public class ModelImpl implements Model {
         }
       }
 
-      if (exMsg.length() > 0) {
-        ModelException ex = new ModelException(exMsg.toString());
-        ex.getEntities().addAll(exEntities);
-        throw ex;
+      if (!errors.isEmpty()) {
+        throw new ModelException(errors);
       }
 
       foreignKeys = foreignKeyMap.values();
@@ -1134,64 +1041,38 @@ public class ModelImpl implements Model {
    * @param inheritanceType the inheritance type
    * @param trackType the tracking type
    * @param integrity the integrity type
-   * @param exMsg execption message buffer
-   * @param exEntities the entities related to the exception message
-   * @return the error string, empty if all is ok
+   * @param errors the collected model errors
    */
-  protected String validateInheritanceHierarchy(Entity entity, InheritanceType inheritanceType, TrackType trackType,
-                                                Integrity integrity, StringBuilder exMsg, Set<Entity> exEntities) {
+  protected void validateInheritanceHierarchy(Entity entity, InheritanceType inheritanceType, TrackType trackType,
+                                                Integrity integrity, Set<ModelError> errors) {
 
     if (entity.getOptions().getTrackType() != trackType) {
-      if (exMsg.length() > 0) {
-        exMsg.append('\n');
-      }
-      exMsg.append(entity);
-      exMsg.append(" has wrong track type ");
-      exMsg.append(entity.getOptions().getTrackType());
-      exMsg.append(", expected ");
-      exMsg.append(trackType);
-      exEntities.add(entity);
+      errors.add(new ModelError(entity,
+              entity + " has wrong track type " + entity.getOptions().getTrackType() +
+              ", expected " + trackType));
     }
     if (entity.getIntegrity() != integrity) {
-      if (exMsg.length() > 0) {
-        exMsg.append('\n');
-      }
-      exMsg.append(entity);
-      exMsg.append(" has wrong integrity type ");
-      exMsg.append(entity.getIntegrity());
-      exMsg.append(", expected ");
-      exMsg.append(integrity);
-      exEntities.add(entity);
+      errors.add(new ModelError(entity,
+              entity + " has wrong integrity type " + entity.getIntegrity() +
+              ", expected " + integrity));
     }
 
     if (entity.getSubEntities().isEmpty()) {
       if (entity.getInheritanceType() != InheritanceType.NONE) {
-        if (exMsg.length() > 0) {
-          exMsg.append('\n');
-        }
-        exMsg.append(entity);
-        exMsg.append(" without child entities must have an inheritance type of NONE");
-        exEntities.add(entity);
+        errors.add(new ModelError(entity,
+                entity + " without child entities must have an inheritance type of NONE"));
       }
     }
     else  {
       if (entity.getInheritanceType() != inheritanceType) {
-        if (exMsg.length() > 0) {
-          exMsg.append('\n');
-        }
-        exMsg.append(entity);
-        exMsg.append(" has wrong inheritance type ");
-        exMsg.append(entity.getInheritanceType());
-        exMsg.append(", expected ");
-        exMsg.append(inheritanceType);
-        exEntities.add(entity);
+        errors.add(new ModelError(entity,
+                entity + " has wrong inheritance type " + entity.getInheritanceType() +
+                ", expected " + inheritanceType));
       }
       for (Entity child: entity.getSubEntities()) {
-        validateInheritanceHierarchy(child, inheritanceType, trackType, integrity, exMsg, exEntities);
+        validateInheritanceHierarchy(child, inheritanceType, trackType, integrity, errors);
       }
     }
-
-    return exMsg.toString();
   }
 
 
@@ -1200,34 +1081,24 @@ public class ModelImpl implements Model {
    *
    * @param entity the entity to check
    * @param integrity the integrity type
-   * @param exMsg execption message buffer
-   * @param exEntities the entities related to the exception message
-   * @return the error string, empty if all is ok
+   * @param errors the collected model errors
    */
-  protected String validateComponents(Entity entity, Integrity integrity, StringBuilder exMsg, Set<Entity> exEntities) {
+  protected void validateComponents(Entity entity, Integrity integrity, Set<ModelError> errors) {
 
     if (entity.getIntegrity() != integrity) {
-      if (exMsg.length() > 0) {
-        exMsg.append('\n');
-      }
-      exMsg.append(entity);
-      exMsg.append(" has wrong integrity type ");
-      exMsg.append(entity.getIntegrity());
-      exMsg.append(", expected ");
-      exMsg.append(integrity);
-      exEntities.add(entity);
+      errors.add(new ModelError(entity,
+              entity + " has wrong integrity type " + entity.getIntegrity() +
+              ", expected " + integrity));
     }
 
     for (Relation relation: entity.getRelations()) {
       if (relation.isComposite()) {
         Entity foreignEntity = relation.getForeignEntity();
         if (foreignEntity != null && !foreignEntity.equals(entity)) {
-          validateComponents(foreignEntity, integrity, exMsg, exEntities);
+          validateComponents(foreignEntity, integrity, errors);
         }
       }
     }
-
-    return exMsg.toString();
   }
 
 

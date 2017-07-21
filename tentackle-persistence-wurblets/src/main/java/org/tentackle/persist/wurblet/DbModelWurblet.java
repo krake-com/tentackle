@@ -370,7 +370,7 @@ public class DbModelWurblet extends ModelWurblet {
           if (needComma) {
             buf.append("\n           .append(Backend.SQL_COMMA)");
           }
-          String name = "CN_" + attr.getJavaName().toUpperCase() + sp.getPostfix();
+          String name = "CN_" + attr.getName().toUpperCase() + sp.getPostfix();
           buf.append(".append(");
           if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
             buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()))

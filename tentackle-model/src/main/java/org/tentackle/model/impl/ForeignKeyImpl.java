@@ -95,7 +95,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
     else  {
       rv = Compare.compare(getReferencingEntity().getName(), o.getReferencingEntity().getName());
       if (rv == 0) {
-        rv = Compare.compare(getReferencingAttribute().getJavaName(), o.getReferencingAttribute().getJavaName());
+        rv = Compare.compare(getReferencingAttribute().getName(), o.getReferencingAttribute().getName());
       }
     }
     return rv;

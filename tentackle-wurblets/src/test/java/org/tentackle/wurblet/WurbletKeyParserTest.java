@@ -47,7 +47,7 @@ public class WurbletKeyParserTest {
 
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args1);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args1);
       WurbletParameterExpression expr = parser.getExpression();
       Assert.assertEquals(expr.getOperands().size(), 2);
       WurbletParameterOperand operand = expr.getOperands().get(1);
@@ -61,7 +61,7 @@ public class WurbletKeyParserTest {
     }
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args2);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args2);
       WurbletParameterExpression expr = parser.getExpression();
       Assert.assertEquals(expr.getOperands().size(), 1);
       WurbletParameterOperand operand = expr.getOperands().get(0);
@@ -79,7 +79,7 @@ public class WurbletKeyParserTest {
     }
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args3);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args3);
       WurbletParameterExpression expr = parser.getExpression();
       Assert.assertEquals(expr.getOperands().size(), 2);
       WurbletParameterOperand operand = expr.getOperands().get(1);
@@ -93,7 +93,7 @@ public class WurbletKeyParserTest {
     }
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args4);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args4);
       WurbletParameterExpression expr = parser.getExpression();
       Assert.assertEquals(expr.getOperands().size(), 2);
       WurbletParameterOperand operand = expr.getOperands().get(0);
@@ -112,7 +112,7 @@ public class WurbletKeyParserTest {
     }
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args5);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args5);
       WurbletParameterExpression expr = parser.getExpression();
       Assert.assertEquals(expr.getOperands().size(), 3);
       Assert.assertEquals(parser.getExpression().toString(), "processed:=:null AND user AND modType");
@@ -122,7 +122,7 @@ public class WurbletKeyParserTest {
     }
 
     try {
-      WurbletParameterParser parser = new WurbletParameterParser(args6);
+      WurbletParameterParser parser = new WurbletParameterParser(null, args6);
       Assert.assertEquals(parser.getExpression().toString(), "NOT processed:=:5");
       Assert.assertEquals(parser.getExtraParameters().size(), 2);
     }

@@ -93,21 +93,21 @@ public class ModelTest {
 
       assertEquals(entity.getSorting().size(), 2);
       AttributeSorting sorting = entity.getSorting().get(0);
-      assertEquals(sorting.getAttribute().getJavaName(), "id");
+      assertEquals(sorting.getAttribute().getName(), "id");
       assertEquals(sorting.getSortType(), SortType.DESC);
 
       assertEquals(18, entity.getAttributes().size());
       Attribute attribute;
       attribute = entity.getAttributes().get(4);
       assertEquals(attribute.getDataType(), DataType.LONG_PRIMITIVE);
-      assertEquals(attribute.getJavaName(), "subsidiaryId");
+      assertEquals(attribute.getName(), "subsidiaryId");
       assertEquals(attribute.getColumnName(), "subsidiary_id");
       assertEquals(attribute.getOptions().getComment(), "subsidiary ID");
       assertTrue(attribute.getOptions().isContextId());
 
       attribute = entity.getAttributes().get(5);
       assertEquals(attribute.getDataType(), DataType.STRING);
-      assertEquals(attribute.getJavaName(), "invoiceNo");
+      assertEquals(attribute.getName(), "invoiceNo");
       assertEquals(attribute.getColumnName(), "invoice_no");
       assertEquals(attribute.getOptions().getComment(), "the unique invoice number");
       assertEquals(attribute.getSize(), Integer.valueOf(10));
@@ -192,7 +192,7 @@ public class ModelTest {
       attribute = relation.getAttribute();
       assertNotNull(attribute);
       assertSame(attribute.getRelation(), relation);
-      assertEquals(attribute.getJavaName(), "customerId");
+      assertEquals(attribute.getName(), "customerId");
 
     }
     catch (IOException | ModelException ex) {

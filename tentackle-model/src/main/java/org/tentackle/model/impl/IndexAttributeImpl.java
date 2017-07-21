@@ -21,7 +21,6 @@ package org.tentackle.model.impl;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
-import org.tentackle.model.SourceInfo;
 
 /**
  * Index part.
@@ -31,11 +30,8 @@ import org.tentackle.model.SourceInfo;
 public class IndexAttributeImpl implements IndexAttribute {
 
   private final Index index;
-  private final SourceInfo sourceInfo;
-
+  
   private Attribute attribute;
-
-
   private boolean descending;
 
 
@@ -44,9 +40,8 @@ public class IndexAttributeImpl implements IndexAttribute {
    * @param index the index
    * @param sourceInfo the source
    */
-  public IndexAttributeImpl(Index index, SourceInfo sourceInfo) {
+  public IndexAttributeImpl(Index index) {
     this.index = index;
-    this.sourceInfo = sourceInfo;
   }
 
   /**
@@ -56,15 +51,6 @@ public class IndexAttributeImpl implements IndexAttribute {
    */
   public Index getIndex() {
     return index;
-  }
-
-  /**
-   * Gets the source info.
-   *
-   * @return the source info
-   */
-  public SourceInfo getSourceInfo() {
-    return sourceInfo;
   }
 
 

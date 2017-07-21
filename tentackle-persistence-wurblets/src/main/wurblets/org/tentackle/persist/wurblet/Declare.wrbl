@@ -57,19 +57,19 @@ For more options, see {\@link DbModelWurblet}.
 @[
         }
 ]@
-  @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@;
+  @(protection)@ @(attr.getJavaType())@ @(attr.getName())@;
 @[
         if (isAttracked()) {
           if (isFullTracked()) {
 ]@
   /** the last persisted value of @(attr)@. */
-  @(protection)@ @(attr.getJavaType())@ @(attr.getJavaName())@Persisted;
+  @(protection)@ @(attr.getJavaType())@ @(attr.getName())@Persisted;
 @[
           }
           else {
 ]@
   /** true if @(attr)@ has been modified. */
-  @(protection)@ boolean @(attr.getJavaName())@Modified;
+  @(protection)@ boolean @(attr.getName())@Modified;
 @[
           }
         }
@@ -77,7 +77,7 @@ For more options, see {\@link DbModelWurblet}.
         if (!attr.getOptions().isSetGet() && attr.getDataType().isMutable()) {
 ]@
   /** the snapshot of @(attr)@. */
-  private transient @(attr.getJavaType())@ @(attr.getJavaName())@Snapshot;
+  private transient @(attr.getJavaType())@ @(attr.getName())@Snapshot;
 @[
         }
       }

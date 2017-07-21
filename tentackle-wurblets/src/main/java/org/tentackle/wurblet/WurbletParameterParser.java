@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.Entity;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
@@ -66,8 +67,8 @@ import org.wurbelizer.wurbel.WurbelException;
  */
 public class WurbletParameterParser {
 
-  /** list of wurblet args starting with -- (-- cut off). */
-  private final List<String> optionArgs;
+  /** the entity the wurblet is applied to. */
+  private final Entity entity;
 
   /** the parsed expression. */
   private final WurbletParameterExpression expression;
@@ -96,11 +97,12 @@ public class WurbletParameterParser {
   /**
    * Creates a parser.
    *
+   * @param entity the entity the wurblet is applied to
    * @param args the wurblet arguments
    * @throws org.wurbelizer.wurbel.WurbelException if parsing failed
    */
-  public WurbletParameterParser(List<String> args) throws WurbelException {
-    optionArgs = new ArrayList<>();
+  public WurbletParameterParser(Entity entity, List<String> args) throws WurbelException {
+    this.entity = entity;
     expression = new WurbletParameterExpression(null);
     expressionParameters = new ArrayList<>();
     sortingParameters = new ArrayList<>();
@@ -110,12 +112,12 @@ public class WurbletParameterParser {
   }
 
   /**
-   * Gets the options.
+   * Gets the entity the wurblet is applied to.
    *
-   * @return the options
+   * @return the entity
    */
-  public List<String> getOptionArgs() {
-    return optionArgs;
+  public Entity getEntity() {
+    return entity;
   }
 
   /**
@@ -212,10 +214,7 @@ public class WurbletParameterParser {
 
     for (String arg : args) {
       if (arg != null) {
-        if (arg.startsWith("--")) {
-          optionArgs.add(arg.substring(2));
-        }
-        else if (arg.length() > 1 && arg.startsWith("*")) {
+        if (arg.length() > 1 && arg.startsWith("*")) {
           joinNames.add(arg.substring(1));
           expressionFinished = true;
         }

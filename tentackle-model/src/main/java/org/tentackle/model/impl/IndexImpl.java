@@ -26,6 +26,7 @@ import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
@@ -67,6 +68,17 @@ public class IndexImpl implements Index {
   public Entity getEntity() {
     return entity;
   }
+
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
+  }
+
 
   /**
    * Parses a configuration line.
@@ -165,9 +177,9 @@ public class IndexImpl implements Index {
         // check if column name exists
         for (Attribute attribute: entity.getAttributes()) {
           if (attribute.getColumnName().equals(token) ||
-              attribute.getJavaName().equals(token)) {
+              attribute.getName().equals(token)) {
             // found
-            indexAttribute = factory.createIndexAttribute(this, sourceInfo);
+            indexAttribute = factory.createIndexAttribute(this);
             indexAttribute.setAttribute(attribute);
             if (descending != null) {
               indexAttribute.setDescending(descending);
@@ -194,7 +206,7 @@ public class IndexImpl implements Index {
   }
 
   @Override
-  public String getName(Entity entity) {
+  public String createDatabaseIndexName(Entity entity) {
     return entity.getTableNameWithoutSchema() + "_" + name;
   }
 
@@ -255,10 +267,10 @@ public class IndexImpl implements Index {
 
     for (Backend backend: factory.getBackends()) {
       try {
-        backend.assertValidName("index name", getName(entity));
+        backend.assertValidName("index name", createDatabaseIndexName(entity));
       }
       catch (RuntimeException rex) {
-        throw new ModelException(rex.getMessage(), sourceInfo, rex);
+        throw new ModelException(rex.getMessage(), this, rex);
       }
     }
 
@@ -324,7 +336,7 @@ public class IndexImpl implements Index {
       }
       attributeCount++;
     }
-    buf.append(backend.sqlCreateIndex(entity.getTableName(), getName(entity), isUnique(), getFilterCondition(), columnNames));
+    buf.append(backend.sqlCreateIndex(entity.getTableName(), createDatabaseIndexName(entity), isUnique(), getFilterCondition(), columnNames));
 
     return buf.toString();
   }

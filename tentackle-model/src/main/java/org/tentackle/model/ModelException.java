@@ -18,8 +18,7 @@
 
 package org.tentackle.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * Model parsing exception.
@@ -30,34 +29,30 @@ public class ModelException extends Exception {
 
   private static final long serialVersionUID = 3405985077474898397L;
 
-  private SourceInfo sourceInfo;  // the optional source information, null if unknown
-  private Set<Entity> entities;   // related entities
+  private ModelElement element;   // the related model element
 
 
   /**
    * Creates a model exception.
    *
    * @param message the error message
-   * @param sourceInfo the source info, null if none
+   * @param element the related model element
    * @param cause the cause
    */
-  public ModelException(String message, SourceInfo sourceInfo, Throwable cause) {
+  public ModelException(String message, ModelElement element, Throwable cause) {
     super(message, cause);
-    this.sourceInfo = sourceInfo;
+    this.element = element;
   }
 
   /**
    * Creates a model exception.
    *
    * @param message the error message
-   * @param entity the related entity
-   * @param cause the cause
+   * @param element the related model element
    */
-  public ModelException(String message, Entity entity, Throwable cause) {
-    super(message, cause);
-    if (entity != null) {
-      getEntities().add(entity);
-    }
+  public ModelException(String message, ModelElement element) {
+    super(message);
+    this.element = element;
   }
 
   /**
@@ -74,86 +69,52 @@ public class ModelException extends Exception {
    * Creates a model exception.
    *
    * @param message the error message
-   * @param sourceInfo the source info, null if none
-   */
-  public ModelException(String message, SourceInfo sourceInfo) {
-    super(message);
-    this.sourceInfo = sourceInfo;
-  }
-
-  /**
-   * Creates a model exception.
-   *
-   * @param message the error message
-   * @param entity the related entity
-   */
-  public ModelException(String message, Entity entity) {
-    super(message);
-    if (entity != null) {
-      getEntities().add(entity);
-    }
-  }
-
-  /**
-   * Creates a model exception.
-   *
-   * @param message the error message
    */
   public ModelException(String message) {
     super(message);
   }
 
   /**
-   * Gets the source info.
+   * Creates a model exception from a collection of errors.
    *
-   * @return the source info, null if unknown
+   * @param errors the errors
    */
-  public SourceInfo getSourceInfo() {
-    return sourceInfo;
-  }
-
-  /**
-   * Gets the (first) related entity.
-   *
-   * @return the entity related to this exception, null if none
-   */
-  public Entity getEntity() {
-    return getEntities().isEmpty() ? null : getEntities().iterator().next();
-  }
-
-  /**
-   * Gets the related entities.<br>
-   * If related to more than one entity.
-   *
-   * @return the entities
-   */
-  public Set<Entity> getEntities() {
-    if (entities == null) {
-      entities = new HashSet<>();
-    }
-    return entities;
-  }
-
-  @Override
-  public String getMessage() {
-    StringBuilder msg = new StringBuilder(super.getMessage());
-    if (sourceInfo != null) {
-      msg.append(" (").append(sourceInfo).append(")");
-    }
-    if (!getEntities().isEmpty()) {
-      msg.append("\naffected Entities: ");
-      boolean first = true;
-      for (Entity entity: getEntities()) {
-        if (first) {
-          first = false;
-        }
-        else  {
-          msg.append(", ");
-        }
-        msg.append(entity);
+  public ModelException(Collection<ModelError> errors) {
+    super(ModelError.toString(errors));
+    // pick the first element
+    for (ModelError error: errors) {
+      if (error.getElement() != null) {
+        element = error.getElement();
+        break;
       }
     }
-    return msg.toString();
+  }
+
+
+  /**
+   * Gets the related model element.
+   *
+   * @return the element, may be null!
+   */
+  public ModelElement getElement() {
+    return element;
+  }
+
+  /**
+   * Returns whether given element is related to this exception.
+   *
+   * @param otherElement some other model element
+   * @return true if related
+   */
+  public boolean isRelatedTo(ModelElement otherElement) {
+    ModelElement elem = element;
+    while (elem != null) {
+      if (elem.equals(otherElement)) {
+        return true;
+      }
+      elem = elem.getParent();
+    }
+    return false;
   }
 
 }

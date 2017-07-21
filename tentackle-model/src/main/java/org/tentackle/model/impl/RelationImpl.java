@@ -28,6 +28,7 @@ import org.tentackle.common.Compare;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
@@ -185,8 +186,14 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
    *
    * @return the source info
    */
+  @Override
   public SourceInfo getSourceInfo() {
     return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
   }
 
 
@@ -642,6 +649,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
 
+  /**
+   * Gets the name of this relation.<br>
+   * If no explicit name set, it defaults to the className.<br>
+   *
+   * @return the name
+   */
   @Override
   public String getName() {
     return name == null ? className : name;

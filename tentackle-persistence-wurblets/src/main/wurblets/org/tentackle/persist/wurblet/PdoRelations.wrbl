@@ -376,7 +376,7 @@ For more options, see {\@link DbModelWurblet}.
               String condition = "isNew()";
               Attribute countAttribute = rel.getCountAttribute();
               if (countAttribute != null) {
-                condition += " || " + countAttribute.getJavaName() + " == 0";
+                condition += " || " + countAttribute.getName() + " == 0";
               }
 ]@
       @(var)@ = @(condition)@ ? new @(effType)@(@(rel.isTracked() ? "false" : "")@) : @(createRelationSelectCode(rel))@;
@@ -1574,12 +1574,12 @@ For more options, see {\@link DbModelWurblet}.
 @[
             if (rel.isReversed()) {
 ]@
-  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectUnique @(attribute.getJavaName())@@(joins)@@(extraWurbletOptions)@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectUnique @(attribute.getName())@@(joins)@@(extraWurbletOptions)@
 @[
             }
             else {
 ]@
-  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectList @(trackedOption)@@(attribute.getJavaName())@@(joins)@@(extraWurbletOptions)@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectList @(trackedOption)@@(attribute.getName())@@(joins)@@(extraWurbletOptions)@
 @[
             }
           }
@@ -1598,7 +1598,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   // deletes @(rel)@
-  // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(attribute.getJavaName())@
+  // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(attribute.getName())@
 @[
           }
         }

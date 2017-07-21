@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author harald
  */
-public interface Relation {
+public interface Relation extends ModelElement {
 
   /**
    * Gets the entity this relation belongs to.
@@ -75,14 +75,6 @@ public interface Relation {
    * @return the defining relation
    */
   Relation getDefiningNmRelation();
-
-  /**
-   * Gets the name of this relation.<br>
-   * If no explicit name set, it defaults to the className.<br>
-   *
-   * @return the name
-   */
-  String getName();
 
   /**
    * Gets the comment.
@@ -199,7 +191,7 @@ public interface Relation {
    * @return the counter attribute, null if none
    */
   Attribute getCountAttribute();
-  
+
 
   // select = ...
 

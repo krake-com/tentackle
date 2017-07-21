@@ -21,7 +21,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /** maximum number of characters for '@(attr)@'. */
-  @(lead)@int CL_@(attr.getJavaName().toUpperCase())@ = @(attr.getSize())@;
+  @(lead)@int CL_@(attr.getName().toUpperCase())@ = @(attr.getSize())@;
 @[
       }
     }
