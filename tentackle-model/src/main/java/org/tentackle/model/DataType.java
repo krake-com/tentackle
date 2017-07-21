@@ -448,7 +448,7 @@ public enum DataType {
    * Takes an object and converts it to a string that can in turn be parsed with {@link #parse(java.lang.String)}.
    *
    * @param object the object of this DataType
-   * @return
+   * @return the printable string
    */
   public String print(Object object) {
     DataType type = isPrimitive() ? toNonPrimitive() : this;

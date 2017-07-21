@@ -30,7 +30,7 @@ import org.tentackle.model.IndexAttribute;
 public class IndexAttributeImpl implements IndexAttribute {
 
   private final Index index;
-  
+
   private Attribute attribute;
   private boolean descending;
 
@@ -38,7 +38,6 @@ public class IndexAttributeImpl implements IndexAttribute {
   /**
    * Creates an index attribute.
    * @param index the index
-   * @param sourceInfo the source
    */
   public IndexAttributeImpl(Index index) {
     this.index = index;
