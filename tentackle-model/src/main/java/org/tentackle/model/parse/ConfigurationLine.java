@@ -21,7 +21,8 @@ package org.tentackle.model.parse;
 import org.tentackle.model.ModelException;
 
 /**
- * The configuration line.
+ * The configuration line.<br>
+ * {@code <key> := <config>[;]}
  *
  * @author harald
  */
@@ -52,6 +53,9 @@ public class ConfigurationLine extends SingleLine {
     }
     key = tokens[0].trim();
     value = tokens[1].trim();
+    if (value.endsWith(";")) {    // convenience: if terminated with a semicolon
+      value = value.substring(0, value.length() - 1).trim();
+    }
   }
 
 

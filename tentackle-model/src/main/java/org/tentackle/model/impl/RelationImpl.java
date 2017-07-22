@@ -338,30 +338,43 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property select = ... */
         case SELECT:
+          boolean pipeFound = false;
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toLowerCase()) {
-              case MAIN:
-                setSelectionFromMainClass(true);
-                break;
+            if (token.startsWith("|")) {
+              // lead for extra selection wurblet arguments
+              if (token.length() > 1) {
+                token = token.substring(1);   // remove leading |
+              }
+              pipeFound = true;
+            }
+            if (pipeFound) {
+              // add to wurblet args
+              if (selectionWurbletArguments == null) {
+                selectionWurbletArguments = token;
+              }
+              else {
+                selectionWurbletArguments += " " + token;
+              }
+            }
+            else {
+              switch(token.toLowerCase()) {
+                case MAIN:
+                  setSelectionFromMainClass(true);
+                  break;
 
-              case CACHED:
-                setSelectionCached(true);
-                break;
+                case CACHED:
+                  setSelectionCached(true);
+                  break;
 
-              default:
-                try {
-                  setSelectionType(SelectionType.valueOf(token.toUpperCase()));
-                }
-                catch (IllegalArgumentException ex) {
-                  // add to wurblet args
-                  if (selectionWurbletArguments == null) {
-                    selectionWurbletArguments = token;
+                default:
+                  try {
+                    setSelectionType(SelectionType.valueOf(token.toUpperCase()));
                   }
-                  else {
-                    selectionWurbletArguments += " " + token;
+                  catch (IllegalArgumentException ex) {
+                    throw createModelException("illegal keyword in select property: " + token);
                   }
-                }
+              }
             }
           }
           break;
