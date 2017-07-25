@@ -552,9 +552,16 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @SuppressWarnings("unchecked")
   @Override
   public boolean remove(Object obj) {
-    if (super.remove(obj)) {
-      addRemovedObject((E) obj);
-      return true;
+    // because of Object.equals in super.remove(obj) we cannot be
+    // sure that the reference is correct (for addRemovedObject).
+    // Hence, we must grab the object "equal" to obj from the list first.
+    int ndx = indexOf(obj);
+    if (ndx >= 0) {
+      obj = get(ndx);
+      if (super.remove(obj)) {
+        addRemovedObject((E) obj);
+        return true;
+      }
     }
     return false;
   }

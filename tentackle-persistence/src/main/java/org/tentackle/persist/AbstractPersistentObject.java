@@ -1725,11 +1725,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         return null;
       }
     }
-    else {
+    else {    // component
       // optional security checks for components (the root context is already checked by assertRootContextIsAccepted)
       if (po.getRootId() != 0 && po.getRootId() != context.getRootId() ||
           po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
-        // fast check failed!
+        // component not loaded from within its root entity context: make it immutable to
+        // prevent modifying the wrong object within the RE's component tree
+        po.setImmutable(true);
+        // explicitly check the root-entity's security rules (if any)
         if (po.getRootId() != 0 && po.getRootClassId() != 0) {
           // po provides both the rootClassId and the rootId -> check that explicitly
           // (useful for deep links)
