@@ -397,10 +397,11 @@ public class DefaultDomainContext implements DomainContext {
    * This does the trick to setup the non-transient rootId and rootClassId when sent via rmi the first time.
    *
    * @return me
-   * @throws IOException to fullfill the signature only
-   * @see Serializable
+   * @throws ObjectStreamException to fullfill the signature only
+   * @see ObjectStreamException
    */
-  public Object writeReplace() throws ObjectStreamException {   // public due to subclasses!!
+  public Object writeReplace() throws ObjectStreamException {
+  // public! Otherwise writeReplace would not be invoked in subclasses!
     if (rootEntity != null && rootClassId == 0) {
       rootClassId = rootEntity.getClassId();
       rootId = rootEntity.getId();
