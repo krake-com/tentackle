@@ -22,10 +22,7 @@
 
 package org.tentackle.pdo;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
-import java.io.Serializable;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
