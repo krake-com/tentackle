@@ -24,6 +24,7 @@ package org.tentackle.pdo;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
@@ -395,15 +396,16 @@ public class DefaultDomainContext implements DomainContext {
   /**
    * This does the trick to setup the non-transient rootId and rootClassId when sent via rmi the first time.
    *
+   * @return me
    * @throws IOException to fullfill the signature only
    * @see Serializable
    */
-  private void writeObject (ObjectOutputStream out) throws IOException {
+  public Object writeReplace() throws ObjectStreamException {   // public due to subclasses!!
     if (rootEntity != null && rootClassId == 0) {
       rootClassId = rootEntity.getClassId();
       rootId = rootEntity.getId();
     }
-    out.defaultWriteObject();
+    return this;
   }
 
   @Override
