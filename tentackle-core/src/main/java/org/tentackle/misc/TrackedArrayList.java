@@ -549,19 +549,16 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param obj element to be removed from this list, if present
    * @return <tt>true</tt> if this list contained the specified element
    */
-  @SuppressWarnings("unchecked")
   @Override
   public boolean remove(Object obj) {
     // because of Object.equals in super.remove(obj) we cannot be
     // sure that the reference is correct (for addRemovedObject).
-    // Hence, we must grab the object "equal" to obj from the list first.
+    // Hence, we must grab the object "equal" to obj from the list.
+    // This is achieved by using remove(int) instead of remove(obj).
     int ndx = indexOf(obj);
     if (ndx >= 0) {
-      obj = get(ndx);
-      if (super.remove(obj)) {
-        addRemovedObject((E) obj);
-        return true;
-      }
+      remove(ndx);
+      return true;
     }
     return false;
   }
