@@ -617,8 +617,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component) {
     return isRootEntity() &&
            component != null &&
-           component.getRootClassId() == getClassId() &&
-           component.getRootId() == getId();
+           component.getRootId() == getId() &&
+           component.getRootClassId() == getClassId();
   }
 
   @Override

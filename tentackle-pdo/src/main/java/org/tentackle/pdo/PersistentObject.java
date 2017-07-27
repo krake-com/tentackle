@@ -169,7 +169,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Returns whether this is a root entity of given component.
    *
    * @param <C> the type of the component
-   * @param pdo the component pdo
+   * @param component the component pdo
    * @return true if this is the root entity of given component
    */
   <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component);
