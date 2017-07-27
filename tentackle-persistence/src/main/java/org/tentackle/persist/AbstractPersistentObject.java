@@ -613,7 +613,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     this.rootClassId = rootClassId;
   }
 
-
+  @Override
+  public <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component) {
+    return isRootEntity() &&
+           component != null &&
+           component.getRootClassId() == getClassId() &&
+           component.getRootId() == getId();
+  }
 
   @Override
   public boolean isNormTextProvided() {

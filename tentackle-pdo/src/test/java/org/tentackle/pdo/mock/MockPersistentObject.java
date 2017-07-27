@@ -517,6 +517,14 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component) {
+    return isRootEntity() &&
+           component != null &&
+           component.getRootClassId() == getClassId() &&
+           component.getRootId() == getId();
+  }
+
+  @Override
   public boolean isComposite() {
     throw new UnsupportedOperationException("Not supported yet.");
   }

@@ -166,6 +166,15 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isRootEntity();
 
   /**
+   * Returns whether this is a root entity of given component.
+   *
+   * @param <C> the type of the component
+   * @param pdo the component pdo
+   * @return true if this is the root entity of given component
+   */
+  <C extends PersistentDomainObject<C>> boolean isRootEntityOf(C component);
+
+  /**
    * Indicates whether this entity's model provides a root-ID column.
    *
    * @return true if column provided, false if not
