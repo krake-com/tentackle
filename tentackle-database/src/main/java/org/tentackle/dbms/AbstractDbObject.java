@@ -3089,7 +3089,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   protected void assertPersistable() {
     if (!isPersistable()) {
-      throw new PersistenceException(this, "object is not persistable");
+      throw new PersistenceException(
+              this, (isImmutable() ? "immutable " : "") + "object is not persistable");
     }
   }
 

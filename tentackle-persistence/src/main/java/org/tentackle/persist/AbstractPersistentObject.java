@@ -564,12 +564,24 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to check {@link #assertMutable()}.
+   * Overridden to provide detailed exception message.
    */
   @Override
   protected void assertPersistable() {
-    super.assertPersistable();
-    assertMutable();
+    if (!isPersistable()) {
+      StringBuilder buf = new StringBuilder();
+      if (isImmutable()) {
+        buf.append("immutable ");
+      }
+      if (isAbstract()) {
+        buf.append("abstract ");
+      }
+      if (getDomainContext() == null) {
+        buf.append("contextless ");
+      }
+      buf.append("object is not persistable");
+      throw new PersistenceException(this, buf.toString());
+    }
   }
 
 
