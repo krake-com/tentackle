@@ -304,8 +304,6 @@ public class StatementWrapper implements AutoCloseable {
       StatementHistory history = con.logStatementHistory(this);
       int count = executeUpdateImpl(sql);
       history.end();
-      setRunning(false);
-      detachSession();
       return count;
     }
     catch (SQLException e)  {
@@ -328,6 +326,10 @@ public class StatementWrapper implements AutoCloseable {
         }
         throw px;
       }
+    }
+    finally {
+      setRunning(false);
+      detachSession();
     }
   }
 

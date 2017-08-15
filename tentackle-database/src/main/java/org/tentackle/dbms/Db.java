@@ -2390,9 +2390,15 @@ public class Db implements Session, Cloneable {
   public synchronized StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
-    StatementWrapper stmt = con.createStatement(resultSetType, resultSetConcurrency);
-    stmt.markReady();
-    return stmt;
+    try {
+      StatementWrapper stmt = con.createStatement(resultSetType, resultSetConcurrency);
+      stmt.markReady();
+      return stmt;
+    }
+    catch (RuntimeException rex) {
+      detach();
+      throw rex;
+    }
   }
 
 
@@ -2443,9 +2449,15 @@ public class Db implements Session, Cloneable {
           StatementKey stmtKey, boolean alwaysPrepare, int resultSetType, int resultSetConcurrency, Supplier<String> sqlSupplier) {
     assertNotRemote();
     attach();
-    PreparedStatementWrapper stmt = con.getPreparedStatement(stmtKey, alwaysPrepare, resultSetType, resultSetConcurrency, sqlSupplier);
-    stmt.markReady(); // mark ready for being used once
-    return stmt;
+    try {
+      PreparedStatementWrapper stmt = con.getPreparedStatement(stmtKey, alwaysPrepare, resultSetType, resultSetConcurrency, sqlSupplier);
+      stmt.markReady(); // mark ready for being used once
+      return stmt;
+    }
+    catch (RuntimeException rex) {
+      detach();
+      throw rex;
+    }
   }
 
 
@@ -2481,9 +2493,15 @@ public class Db implements Session, Cloneable {
   public synchronized PreparedStatementWrapper createPreparedStatement(String sql, int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
-    PreparedStatementWrapper stmt = con.createPreparedStatement(null, sql, resultSetType, resultSetConcurrency);
-    stmt.markReady(); // mark ready for being used once
-    return stmt;
+    try {
+      PreparedStatementWrapper stmt = con.createPreparedStatement(null, sql, resultSetType, resultSetConcurrency);
+      stmt.markReady(); // mark ready for being used once
+      return stmt;
+    }
+    catch (RuntimeException rex) {
+      detach();
+      throw rex;
+    }
   }
 
   /**
