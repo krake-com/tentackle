@@ -94,7 +94,8 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream implOut   = genInc.getImplStream();
       PrintStream remoteOut = genInc.getRemoteStream();
 ]@
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       // invoke remote method
       try {
 @{to remoteOut}@
@@ -113,7 +114,7 @@ For more options, see {\@link DbModelWurblet}.
 @{to}@
         @(className)@ obj = (@(delegateCast)@ getRemoteDelegate()).
                 @(methodName)@(@(iparms)@);
-        getSession().applyTo(obj);
+        db.applyTo(obj);
         return obj;
       }
       catch (RemoteException e) {

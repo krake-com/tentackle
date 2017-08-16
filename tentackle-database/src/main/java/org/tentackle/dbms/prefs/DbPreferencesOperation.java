@@ -158,7 +158,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       else if (serial != repoSerial) {
         // request from remote client: load from repo (persisted only!)
         synchronized(factory) {
-          node = factory.getRootTree(getSession(), node.getUser());
+          node = factory.getRootTree(db, node.getUser());
           List<DbPreferencesNode> prefNodes = new ArrayList<>();
           List<DbPreferencesKey> prefKeys = new ArrayList<>();
           addNodeToLists(node, prefNodes, prefKeys);

@@ -113,6 +113,7 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
   @(scope)@ @(listType)@ @(methodName)@(@(params)@) {
+    Db db = getSession();
 @[
     if (isRemote()) {
       // create includes
@@ -120,7 +121,7 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream implOut      = genInc.getImplStream();
       PrintStream remoteOut    = genInc.getRemoteStream();
 ]@
-    if (getSession().isRemote())  {
+    if (db.isRemote())  {
       // invoke remote method
       try {
 @{to remoteOut}@
@@ -139,11 +140,11 @@ For more options, see {\@link DbModelWurblet}.
 @{to}@
         @(listType)@ list = (@(delegateCast)@ getRemoteDelegate()).
                 @(methodName)@(@(iparms)@);
-        getSession().applyTo(list);
+        db.applyTo(list);
         return list;
       }
       catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(getSession(), e);
+        throw PersistenceException.createFromRemoteException(db, e);
       }
     }
     // else: local mode
@@ -218,7 +219,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
       boolean derived = getClass() != @(className)@.class;
       while (rs.next()) {
-        @(className)@ obj = derived ? newInstance() : new @(className)@(getSession());
+        @(className)@ obj = derived ? newInstance() : new @(className)@(db);
         obj = obj.readFromResultSetWrapper(rs);
         if (obj != null)  {
           list.add(obj);
