@@ -1028,7 +1028,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       Session session = null;
       long txVoucher = 0;
       try {
-        for (PersistentDomainObject<?> obj: objects) {
+        for (PersistentDomainObject<?> obj : objects) {
           if (obj != null) {
             if (session == null) {
               session = obj.getSession();
@@ -1037,11 +1037,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               }
               txVoucher = session.begin("delete plain with components collection");
             }
-            else if(obj.getSession() != session) {
+            else if (obj.getSession() != session) {
               // must be the same instance of Db!
               throw new PersistenceException(obj, "unexpected db connection: " + obj.getSession() + ", expected: " + session);
             }
-            ((AbstractPersistentObject<?,?>) obj.getPersistenceDelegate()).deletePlainWithComponents();
+            ((AbstractPersistentObject<?, ?>) obj.getPersistenceDelegate()).deletePlainWithComponents();
             count++;
           }
         }
@@ -3531,8 +3531,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param curTime is the current system time
    */
   public void updateTokenLock(Timestamp tokenExpiry, long userId, Timestamp curTime) {
-
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         TokenLock token = getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime);
         token.applyTo(this);
@@ -3557,7 +3557,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
 
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
                                                            this::createUpdateTokenLockSql);
@@ -3586,7 +3586,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               setEditedBy(rs.getLong(CN_EDITEDBY));
               setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
               setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
-              throw new LockException(getSession(), new TokenLock(editedBy, editedSince, editedExpiry));
+              throw new LockException(db, new TokenLock(editedBy, editedSince, editedExpiry));
             }
             else {
               throw new NotFoundException(this, "could not retrieve token lock");
@@ -3639,7 +3639,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * update and no modlog. Used by daemons to cleanup.
    */
   public void updateTokenLockOnly() {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().updateTokenLockOnly(getId(), getEditedBy(), getEditedSince(), getEditedExpiry());
       }
@@ -3653,7 +3654,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
                                                            this::createUpdateTokenLockOnlySql);
         st.setLong(1, getEditedBy());
@@ -3668,8 +3669,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public T transferTokenLock(long userId) {
-
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         T tPdo = getRemoteDelegate().transferTokenLock(pdo, userId);
         configureRemoteObject(getDomainContext(), tPdo);
@@ -3686,9 +3687,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         // within a TX cause of countModification to invalidateCache
-        long txVoucher = getSession().begin(TX_TRANSFER_TOKENLOCK);
+        long txVoucher = db.begin(TX_TRANSFER_TOKENLOCK);
         try {
           boolean withTableSerial = isTableSerialProvided();
           PreparedStatementWrapper st = getPreparedStatement(getClassVariables().transferTokenLockStatementId,
@@ -3712,11 +3713,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             // set/refresh the expiry
             updateTokenLock(DateHelper.now(getTokenLockTimeout()), userId, DateHelper.now());
           }
-          getSession().commit(txVoucher);
+          db.commit(txVoucher);
         }
         catch (RuntimeException ex) {
           setPersistable(false);
-          getSession().rollback(txVoucher);
+          db.rollback(txVoucher);
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
             throw ex;

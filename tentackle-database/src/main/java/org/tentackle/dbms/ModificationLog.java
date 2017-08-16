@@ -730,7 +730,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    */
   @Override
   public void saveObject() {
-    if (getSession().isRemote()) {
+    Db db = getSession();
+    if (db.isRemote()) {
       ModificationLoggable oldLazyObject = lazyObject;
       lazyObject = null;            // don't transfer the lazyObject to the remote server
       super.saveObject();
@@ -738,14 +739,14 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     }
     else  {
       if (isLogOfTransaction()) {
-        if (getSession().isLogModificationDeferred()) {
+        if (db.isLogModificationDeferred()) {
           newId();                    // obtain an Id to trigger BEGIN only once
           setSerial(getSerial() + 1); // increment serial as if it has been saved
         }
         else {
           super.saveObject();
         }
-        getSession().pushModificationLogOfTransaction(this);
+        db.pushModificationLogOfTransaction(this);
       }
       else  {
         super.saveObject();

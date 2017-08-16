@@ -113,7 +113,8 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * @return the node, never null
    */
   public DbPreferences loadRootTree(String user, boolean forced) {
-    if (getSession().isRemote()) {
+    Db db = getSession();
+    if (db.isRemote()) {
       try {
         return getRemoteDelegate().loadRootTree(user, forced);
       }
@@ -122,7 +123,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       }
     }
     else {
-      return forced ? loadRoot(getSession(), user) : DbPreferencesFactory.getInstance().getRootTree(getSession(), user);
+      return forced ? loadRoot(db, user) : DbPreferencesFactory.getInstance().getRootTree(db, user);
     }
   }
 
@@ -135,7 +136,8 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    * @return the nodes and keys if current serial outdated, null if serials match and no need to refresh
    */
   public RefreshInfo loadRefreshInfo(DbPreferences node, long serial) {
-    if (getSession().isRemote()) {
+    Db db = getSession();
+    if (db.isRemote()) {
       try {
         return getRemoteDelegate().loadRefreshInfo(node.getUser(), serial);
       }
@@ -150,8 +152,8 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
         // load all nodes and keys for this root (ordered by id, i.e. creation)
         long rootId = node.getPersistentNode().getId();
         return new RefreshInfo(repoSerial,
-                               new DbPreferencesNode(getSession()).selectByRootNodeId(rootId),
-                               new DbPreferencesKey(getSession()).selectByRootNodeId(rootId));
+                               new DbPreferencesNode(db).selectByRootNodeId(rootId),
+                               new DbPreferencesKey(db).selectByRootNodeId(rootId));
       }
       else if (serial != repoSerial) {
         // request from remote client: load from repo (persisted only!)
@@ -183,7 +185,8 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     DbPreferences topNode = node;
     boolean updated = false;
 
-    if (getSession().isRemote()) {
+    Db db = getSession();
+    if (db.isRemote()) {
       try {
         updated = getRemoteDelegate().flush(node);
         // updated ids and serials will be provided by the mod listeners
@@ -194,7 +197,6 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
     else {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-        Db db = getSession();
         updated = db.transaction(() -> {
           return topNode.flushImpl(db);
         } , "flush");

@@ -1178,7 +1178,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return true if referenced
    */
   public boolean isReferenced() {
-    if (getSession().isRemote()) {
+    Db db = getSession();
+    if (db.isRemote()) {
       if (isNew())  {
         // new objects are never referenced because they simply don't exist in the db!
         // so we can saveObject a roundtrip here
@@ -1195,7 +1196,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      return getClassVariables().isReferenced(getSession(), getId());
+      return getClassVariables().isReferenced(db, getId());
     }
   }
 
@@ -1362,19 +1363,20 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   @SuppressWarnings("unchecked")
   public P readFromResultSetWrapper(ResultSetWrapper rs)  {
     assertNotOverloaded();
-    getSession().setAlive(true);   // keep the (local) db alive for long running retrievals
+    Db db = getSession();
+    db.setAlive(true);   // keep the (local) db alive for long running retrievals
     try {
       getFields(rs);
       setModified(false);
       return (P) this;
     }
-    catch (PersistenceException de) {
-      throw de;   // no cleanup necessary: done in DbRuntimeException
+    catch (PersistenceException px) {
+      throw px;   // no cleanup necessary: done in DbRuntimeException
     }
     catch (RuntimeException re) {
-      if (!getSession().isTxRunning()) {
+      if (!db.isTxRunning()) {
         // no transaction running: application cannot invoke rollback -> force cleanup
-        getSession().forceDetached();
+        db.forceDetached();
       }
       throw re;
     }
@@ -1401,11 +1403,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public P selectObject (long id) {
     P obj = null;
     if (id > 0) {
-      if (getSession().isRemote())  {
+      Db db = getSession();
+      if (db.isRemote())  {
         try {
           obj = getRemoteDelegate().selectObject(id);
           if (obj != null)  {
-            obj.setSession(getSession());
+            obj.setSession(db);
           }
         }
         catch (RemoteException e) {
@@ -1439,11 +1442,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public P selectLockedObject (long id) {
     P obj = null;
     if (id > 0) {
-      if (getSession().isRemote())  {
+      Db db = getSession();
+      if (db.isRemote())  {
         try {
           obj = getRemoteDelegate().selectLockedObject(id);
           if (obj != null) {
-            obj.setSession(getSession());
+            obj.setSession(db);
           }
         }
         catch (RemoteException e) {
@@ -1588,11 +1592,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("unchecked")
   public List<P> selectAllObjects() {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         List<P> list = getRemoteDelegate().selectAllObjects();
         for (P obj : list) {
-          obj.setSession(getSession());
+          obj.setSession(db);
         }
         return list;
       }
@@ -1621,11 +1626,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the list of objects, never null
    */
   public List<P> selectObjectsWithExpiredTableSerials(long oldSerial) {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         List<P> list = getRemoteDelegate().selectObjectsWithExpiredTableSerials(oldSerial);
         for (P obj : list) {
-          obj.setSession(getSession());
+          obj.setSession(db);
         }
         return list;
       }
@@ -1823,7 +1829,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("unchecked")
   public void insertPlain()  {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().insertPlain((P) this);
       }
@@ -1833,7 +1840,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
         insertImpl(getClassVariables(), this::createInsertSql);
       }
     }
@@ -1859,7 +1866,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * (i.e. linked objcets, mod counting, logging, etc...).
    */
   public void deletePlain()  {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().deletePlain(id, serial);
       }
@@ -1869,7 +1877,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       // local
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
         deleteImpl(getClassVariables(), this::createDeleteSql);
       }
     }
@@ -1897,7 +1905,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("unchecked")
   public void updatePlain ()  {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().updatePlain((P) this);
       }
@@ -1906,7 +1915,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         updateImpl(getClassVariables(), this::createUpdateSql);
         serial++;
       }
@@ -1966,8 +1975,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @see #isUpdatingSerialEvenIfNotModified
    */
   public void updateSerial ()  {
-
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().updateSerial(id, serial);
         serial++;
@@ -1977,7 +1986,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialStatementId,
                                                            this::createUpdateSerialSql);
         st.setLong(1, id);
@@ -1995,7 +2004,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * but only in the database!
    */
   public void updateSerialAndTableSerial ()  {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         getRemoteDelegate().updateSerialAndTableSerial(id, serial, tableSerial);
         serial++;
@@ -2005,7 +2015,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
         PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateSerialAndTableSerialStatementId,
                                                            this::createUpdateSerialAndTableSerialSql);
         st.setLong(1, tableSerial);
@@ -2081,9 +2091,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return true if tx begun
    */
   protected long beginTx(String txName) {
-    long txVoucher = getSession().begin(txName);
+    Db db = getSession();
+    long txVoucher = db.begin(txName);
     if (txVoucher != 0) {
-      getSession().setTxObject(this);
+      db.setTxObject(this);
     }
     return txVoucher;
   }
@@ -2101,7 +2112,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     assertPersistable();
     prepareSetFields();
 
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().insertObject((P) this);
@@ -2117,7 +2129,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
     else  {
 
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
 
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
@@ -2137,7 +2149,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           insertImpl(getClassVariables(), this::createInsertSql);
           saveReferencingRelations(false);
           finishModification(ModificationLog.INSERT);
-          getSession().commit(txVoucher);
+          db.commit(txVoucher);
           setModified(false);
         }
         catch (RuntimeException ex) {
@@ -2146,7 +2158,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           // statements (marked ready) will be consumed.
           // If no rollback, the exception must be caught elsewhere in the path
           // until a valid rollback can be performed.
-          getSession().rollback(txVoucher);  // rollback if tx was begun
+          db.rollback(txVoucher);  // rollback if tx was begun
           serial = oldSerial;
           id = oldId;
           if (ex instanceof PersistenceException) {
@@ -2181,7 +2193,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     assertPersistable();
     prepareSetFields();
 
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         @SuppressWarnings("unchecked")
         DbObjectResult result = getRemoteDelegate().updateObject((P) this);
@@ -2197,7 +2210,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
     else  {
 
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
 
         long oldId = id;            // remember old id and serial
         long oldSerial = serial;
@@ -2248,7 +2261,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             finishModification(ModificationLog.UPDATE);
           }
 
-          getSession().commit(txVoucher);
+          db.commit(txVoucher);
 
           if (updated) {
             serial++; // serial is already incremented in the SQL-statement!
@@ -2262,7 +2275,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           // statements (marked ready) will be consumed.
           // If no rollback, the exception must be caught elsewhere in the path
           // until a valid rollback can be performed.
-          getSession().rollback(txVoucher);  // rollback if tx was begung
+          db.rollback(txVoucher);  // rollback if tx was begung
           id = oldId;
           serial = oldSerial;
           if (ex instanceof PersistenceException) {
@@ -2308,8 +2321,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * The modified attribute gets cleared if save() was successful.
    */
   public void saveObject ()  {
-
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
 
       // execute in 3-tier client
       clearOnRemoteSave();
@@ -2352,10 +2365,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           // object already exists in database
           updateObject();
         }
-        getSession().commit(txVoucher);
+        db.commit(txVoucher);
       }
       catch (RuntimeException ex) {
-        getSession().rollback(txVoucher);
+        db.rollback(txVoucher);
         id = oldId; // set back old Id in case it was changed
         if (ex instanceof PersistenceException) {
           ((PersistenceException) ex).updateDbObject(this);
@@ -2375,8 +2388,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("unchecked")
   public P persistObject() {
-
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
 
       // execute in 3-tier client
       clearOnRemoteSave();
@@ -2385,7 +2398,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       try {
         P obj = getRemoteDelegate().persistObject((P) this);
         if (obj != null)  {
-          obj.setSession(getSession());
+          obj.setSession(db);
         }
         return obj;     // obj != this !!!
       }
@@ -2428,7 +2441,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     assertNotNew();
     assertPersistable();
 
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       prepareDelete();
       try {
         @SuppressWarnings("unchecked")
@@ -2448,7 +2462,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         // not from remote client
         prepareDelete();
       }
-      if (getSession().isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.DELETE)) {
 
         long txVoucher = beginTx(TX_DELETE_OBJECT);
 
@@ -2458,7 +2472,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           deleteImpl(getClassVariables(), this::createDeleteSql);
           deleteReferencedRelations();
           finishModification(ModificationLog.DELETE);
-          getSession().commit(txVoucher);
+          db.commit(txVoucher);
           id = -id;     // make ID reserved again, i.e. mark object as being deleted
           setModified(false);
         }
@@ -2468,7 +2482,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
           // statements (marked ready) will be consumed.
           // If no rollback, the exception must be caught elsewhere in the path
           // until a valid rollback can be performed.
-          getSession().rollback(txVoucher);  // rollback if tx was begun
+          db.rollback(txVoucher);  // rollback if tx was begun
           if (ex instanceof PersistenceException) {
             ((PersistenceException) ex).updateDbObject(this);
             throw ex;
@@ -2511,7 +2525,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *          -1 if isCountModificationAllowed() == false
    */
   public long countModification ()  {
-    if (getSession().isRemote())  {
+    Db db = getSession();
+    if (db.isRemote())  {
       try {
         return getRemoteDelegate().countModification();
       }
@@ -2520,8 +2535,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
     }
     else  {
-      return getSession().isCountModificationAllowed() ?
-        ModificationTracker.getInstance().countModification(getSession(), getTableName()) : -1;
+      return db.isCountModificationAllowed() ?
+        ModificationTracker.getInstance().countModification(db, getTableName()) : -1;
     }
   }
 
@@ -2683,9 +2698,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param modType is the modification type (INSERT, DELETE or UPDATE)
    */
   public void logModification(char modType)  {
-    getSession().assertNotRemote();   // don't log locally if db is remote
-    if (getSession().isLogModificationAllowed()) {
-      getSession().logBeginTx();      // optionally create the begin log
+    Db db = getSession();
+    db.assertNotRemote();   // don't log locally if db is remote
+    if (db.isLogModificationAllowed()) {
+      db.logBeginTx();      // optionally create the begin log
       createModificationLog(modType).saveObject();
     }
   }
