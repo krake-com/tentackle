@@ -470,9 +470,11 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Compares two db instances.
-   * Implemented for trees, caches, etc... because they need a Comparable.
-   * We simply use the unique instanceNumber.
+   * Compares two db instances.<br>
+   * We simply use the unique instanceNumber.<br>
+   * Because the instanceNumber is unique, we don't need to override equals/hash.
+   * In fact, Db must not override equals because it may be used in WeakHashMaps, where
+   * the object reference counts, for example.
    *
    * @param session the session to compare this db with
    * @return  a negative integer, zero, or a positive integer as this object
@@ -481,28 +483,6 @@ public class Db implements Session, Cloneable {
   @Override
   public int compareTo(Session session) {
     return instanceNumber - ((Db) session).instanceNumber;
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 3;
-    hash = 43 * hash + this.instanceNumber;
-    return hash;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final Db other = (Db) obj;
-    return this.instanceNumber == other.instanceNumber;
   }
 
 

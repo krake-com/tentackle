@@ -67,10 +67,11 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * Counts the modification for a given name.<br>
    * Used to trigger modification events.
    *
+   * @param session the session persisting the modification, null if threadlocal session
    * @param name a unique name to track modifications
    * @return the modification serial
    */
-  long countModification(String name);
+  long countModification(Session session, String name);
 
   /**
    * Registers a pure runnable to be executed if the pdo tracker is terminated

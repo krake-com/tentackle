@@ -585,14 +585,15 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * Counts the modification for a table.<br>
    * Used by the persistence layer to update the modification table.
    *
+   * @param session the session persisting the modification, null if threadlocal session
    * @param tableName the table name
    * @return the (guessed lowest) table serial (may be higher already)
    */
   @Override
-  public long countModification (String tableName) {
+  public long countModification (Session session, String tableName) {
     ModificationTally counter = getCounter(tableName);
     // put pending count
-    counter.countPending();
+    counter.countPending(session);
     if (!isAlive()) {
       // no poll() -> persist now
       counter.performPendingCount();

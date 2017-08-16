@@ -600,7 +600,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       nodeTableSerial = nodeMaxSerial;
       keyTableSerial = keyMaxSerial;
       if (!db.isRemote()) {
-        ModificationTracker.getInstance().countModification(TRACKER_NAME);
+        ModificationTracker.getInstance().countModification(db, TRACKER_NAME);
       }
     }
   }

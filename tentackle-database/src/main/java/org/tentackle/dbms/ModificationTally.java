@@ -19,9 +19,9 @@
 
 package org.tentackle.dbms;
 
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.PersistenceException;
@@ -50,7 +50,7 @@ public class ModificationTally {
   private String tableSerialTableName;                // if tableSerialValid holds the tableserial's tablename
   private long lastSerial;                            // last (known) serial for the table
   private long pendingCount;                          // number of pending counts
-  private final Set<Session> sessionsInTx;            // sessions running a transaction during countPending()
+  private final Map<Session, Object> sessionsInTx;    // sessions running a transaction during countPending()
 
 
   /**
@@ -60,7 +60,7 @@ public class ModificationTally {
    * @param trackedName the tracked name
    */
   public ModificationTally(Db db, String trackedName) {
-    sessionsInTx = new HashSet<>();
+    sessionsInTx = new WeakHashMap<>();     // keys are weak! Db does not override equals!
     dbModification = new DbModification(db, trackedName);
     clazzVar = DbObjectClassVariables.getVariables(trackedName);
     if (clazzVar == null) {
@@ -105,17 +105,22 @@ public class ModificationTally {
     return dbModification.getId();
   }
 
-   /**
+  /**
    * Adds a pending count.
    *
-   * @return the new pending count
+   * @param session the session persisting the modification, null if threadlocal session
    */
-  public synchronized long countPending() {
-    Session session = Session.getCurrentSession();
-    if (session != null && session.isTxRunning()) {
-      sessionsInTx.add(session);
+  public synchronized void countPending(Session session) {
+    if (session == null) {
+      session = Session.getCurrentSession();
+      if (session == null) {
+        throw new PersistenceException("no thread-local session to count modification for " + dbModification);
+      }
     }
-    return ++pendingCount;
+    if (session.isTxRunning()) {
+      sessionsInTx.putIfAbsent(session, null);
+    }
+    ++pendingCount;
   }
 
 
@@ -156,7 +161,7 @@ public class ModificationTally {
   public synchronized void performPendingCount() {
     if (pendingCount > 0) {
       // don't flush to database because listeners could be triggered that may not see the uncommitted data
-      for (Iterator<Session> iter = sessionsInTx.iterator(); iter.hasNext(); ) {
+      for (Iterator<Session> iter = sessionsInTx.keySet().iterator(); iter.hasNext(); ) {
         Session session = iter.next();
         if (!session.isTxRunning()) {
           iter.remove();    // committed

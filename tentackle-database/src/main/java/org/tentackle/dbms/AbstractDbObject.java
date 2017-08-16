@@ -2521,7 +2521,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     else  {
       return getSession().isCountModificationAllowed() ?
-        ModificationTracker.getInstance().countModification(getTableName()) : -1;
+        ModificationTracker.getInstance().countModification(getSession(), getTableName()) : -1;
     }
   }
 
