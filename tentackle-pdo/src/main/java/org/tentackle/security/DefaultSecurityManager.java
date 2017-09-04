@@ -32,7 +32,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationListener;
@@ -305,6 +304,11 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
 
+  // messages for predefined results
+  private static final String DISABLED_SECURITY_MANAGER_MESSAGE = "security manager is disabled";
+  private static final String NO_IDENTIFIABLE_RULES_MESSAGE = "no identifiable-rules match";
+  private static final String NO_CLASS_RULES_MESSAGE = "no class-rules match";
+  private static final String NO_GRANTEE_MESSAGE = "no grantee";
 
 
   private final TreeMap<ClassKey,Security> classMap;          // non-pdo class rules
@@ -317,10 +321,18 @@ public class DefaultSecurityManager implements SecurityManager {
   private boolean acceptByDefault;                            // true if isAccepted() by default
   private ModificationListener securityListener;              // the listener to invalidate the security manager
 
+  private final SecurityResult disabledResult;                // accept result if sec manager is disabled -> grants all
+  private final SecurityResult identifiableAcceptedResult;    // accept result if no identifiable rules found
+  private final SecurityResult identifiableDeniedResult;      // denied result if no identifiable rules found
+  private final SecurityResult classAcceptedResult;           // accept result if no class rules found
+  private final SecurityResult classDeniedResult;             // denied result if no class rules found
+  private final SecurityResult noGranteeResult;               // accept result if no grantee (usually the system user)
+
 
   /**
    * Creates a security manager.<br>
    * The manager is disabled by default and must be enabled when the application is started up.
+   * When disabled, all requests are granted, no matter if accept by default or deny by default.
    */
   public DefaultSecurityManager() {
     invalid = true;
@@ -329,6 +341,14 @@ public class DefaultSecurityManager implements SecurityManager {
     pdoMap = new TreeMap<>();
     pdoClassMap = new TreeMap<>();
     granteeMap = new HashMap<>();
+
+    // create some predefined security results
+    disabledResult = createAcceptedSecurityResult(DISABLED_SECURITY_MANAGER_MESSAGE, true);
+    identifiableAcceptedResult = createAcceptedSecurityResult(NO_IDENTIFIABLE_RULES_MESSAGE, true);
+    identifiableDeniedResult = createDeniedSecurityResult(NO_IDENTIFIABLE_RULES_MESSAGE, true);
+    classAcceptedResult = createAcceptedSecurityResult(NO_CLASS_RULES_MESSAGE, true);
+    classDeniedResult = createDeniedSecurityResult(NO_CLASS_RULES_MESSAGE, true);
+    noGranteeResult = createAcceptedSecurityResult(NO_GRANTEE_MESSAGE, true);
   }
 
 
@@ -401,14 +421,20 @@ public class DefaultSecurityManager implements SecurityManager {
       // no explicit object rule fired: check class rules
       result = evaluateImpl(context, permission, objectClassId, 0, null);
     }
-    return result == null ? createDefaultSecurityResult("no identifiable-rules match") : result;
+    if (result == null) {
+      result = acceptByDefault ? identifiableAcceptedResult : identifiableDeniedResult;
+    }
+    return result;
   }
 
 
   @Override
   public SecurityResult evaluate(DomainContext context, Permission permission, Class<?> clazz) {
     SecurityResult result = evaluateImpl(context, permission, 0, 0, clazz);
-    return result == null ? createDefaultSecurityResult("no class-rules match") : result;
+    if (result == null) {
+      result = acceptByDefault ? classAcceptedResult : classDeniedResult;
+    }
+    return result;
   }
 
 
@@ -447,8 +473,8 @@ public class DefaultSecurityManager implements SecurityManager {
    * @return the result
    */
   protected SecurityResult createDefaultSecurityResult(String message) {
-    if (isAcceptByDefault()) {
-      return createdAcceptedSecurityResult(message, true);
+    if (acceptByDefault) {
+      return createAcceptedSecurityResult(message, true);
     }
     return createDeniedSecurityResult(message, true);
   }
@@ -460,7 +486,7 @@ public class DefaultSecurityManager implements SecurityManager {
    * @param byDefault true if accepted by default
    * @return the result
    */
-  protected SecurityResult createdAcceptedSecurityResult(String message, boolean byDefault) {
+  protected SecurityResult createAcceptedSecurityResult(String message, boolean byDefault) {
     return new DefaultSecurityResult(message, true, byDefault);
   }
 
@@ -528,6 +554,10 @@ public class DefaultSecurityManager implements SecurityManager {
   protected SecurityResult evaluateImpl(DomainContext context, Permission permission,
                                         int objectClassId, long objectId, Class<?> clazz) {
 
+    if (!isEnabled()) {
+      return disabledResult;
+    }
+
     if (context == null) {
       throw new SecurityException("invalid domain context: null");
     }
@@ -546,13 +576,6 @@ public class DefaultSecurityManager implements SecurityManager {
 
     boolean fineLoggable = LOGGER.isFineLoggable();   // little speedup
 
-    if (!isEnabled()) {
-      if (fineLoggable) {
-        LOGGER.fine("SecurityManager is disabled -> GRANT_DEFAULT");
-      }
-      return createDefaultSecurityResult("security manager is disabled");
-    }
-
     if (invalid) {
       if (context.getSession().isRemote()) {
         createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
@@ -562,7 +585,7 @@ public class DefaultSecurityManager implements SecurityManager {
 
     GranteeDescriptor sessionGrantee = determineGrantee(context);
     if (sessionGrantee == null) {
-      return createdAcceptedSecurityResult(null, true);
+      return noGranteeResult;
     }
 
     synchronized(this) {
@@ -612,7 +635,7 @@ public class DefaultSecurityManager implements SecurityManager {
               LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
             }
             if (sec.isAllowed()) {
-              return createdAcceptedSecurityResult(sec.getMessage(), false);
+              return createAcceptedSecurityResult(sec.getMessage(), false);
             }
             else {
               return createDeniedSecurityResult(sec.getMessage(), false);
