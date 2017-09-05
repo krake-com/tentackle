@@ -22,11 +22,11 @@ package org.tentackle.security;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
@@ -48,7 +48,7 @@ import org.tentackle.session.SessionUtilities;
  * <p>
  * The list of rules is interpreted as an ACL (access control list).
  * Whenever a permission is checked, the list is processed
- * until a rule fires. If no rule fires the default result is returned,
+ * until a rule fires. If no rule fires, the default result is returned,
  * which is ether granted or denied.<br>
  *
  * @author harald
@@ -56,18 +56,44 @@ import org.tentackle.session.SessionUtilities;
 public class DefaultSecurityManager implements SecurityManager {
 
   /**
-   * @todo: use new optimistic StampedLock.
-   * ReentrantReadWriteLock doesnt provide any significant advantage over synchronized.
-   * Maybe StampedLock does...
-   */
-
-  /**
    * logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSecurityManager.class);
 
 
-  // key for a non-pdo class-only rule
+  /**
+   * Security rule wrapper to hold the lazily generated security result.
+   */
+  private class Rule {
+    private final Security security;
+    private SecurityResult result;
+
+    public Rule(Security security) {
+      this.security = security;
+    }
+
+    /**
+     * Gets the cached result.
+     *
+     * @return the result, never null
+     */
+    public SecurityResult getResult() {
+      if (result == null) {
+        if (security.isAllowed()) {
+          result = createAcceptedSecurityResult(security.getMessage(), false);
+        }
+        else {
+          result = createDeniedSecurityResult(security.getMessage(), false);
+        }
+      }
+      return result;
+    }
+  }
+
+
+  /**
+   * key for a non-pdo class-only rule.
+   */
   private static class ClassKey implements Comparable<ClassKey> {
 
     private final int granteeClassId;
@@ -142,7 +168,10 @@ public class DefaultSecurityManager implements SecurityManager {
 
   }
 
-  // key for a pdo rule
+
+  /**
+   * key for a pdo rule.
+   */
   private static class PdoKey implements Comparable<PdoKey> {
 
     private final int granteeClassId;
@@ -228,7 +257,9 @@ public class DefaultSecurityManager implements SecurityManager {
   }
 
 
-  // key for a pdo class-only rule
+  /**
+   * key for a pdo class-only rule.
+   */
   private static class PdoClassKey implements Comparable<PdoClassKey> {
 
     private final int granteeClassId;
@@ -311,9 +342,9 @@ public class DefaultSecurityManager implements SecurityManager {
   private static final String NO_GRANTEE_MESSAGE = "no grantee";
 
 
-  private final TreeMap<ClassKey,Security> classMap;          // non-pdo class rules
-  private final TreeMap<PdoKey,Security> pdoMap;              // object rules
-  private final TreeMap<PdoClassKey,Security> pdoClassMap;    // pdo class-only rules
+  private TreeMap<ClassKey,Rule> classMap;                    // non-pdo class rules
+  private TreeMap<PdoKey,Rule> pdoMap;                        // object rules
+  private TreeMap<PdoClassKey,Rule> pdoClassMap;              // pdo class-only rules
   private final Map<GranteeDescriptor, Collection<GranteeDescriptor>> granteeMap;   // maps root grantee to grantee descriptors
 
   private volatile boolean invalid;                           // true if cache needs initialization
@@ -337,10 +368,7 @@ public class DefaultSecurityManager implements SecurityManager {
   public DefaultSecurityManager() {
     invalid = true;
     acceptByDefault = true;
-    classMap = new TreeMap<>();
-    pdoMap = new TreeMap<>();
-    pdoClassMap = new TreeMap<>();
-    granteeMap = new HashMap<>();
+    granteeMap = new ConcurrentHashMap<>();
 
     // create some predefined security results
     disabledResult = createAcceptedSecurityResult(DISABLED_SECURITY_MANAGER_MESSAGE, true);
@@ -364,7 +392,7 @@ public class DefaultSecurityManager implements SecurityManager {
   /**
    * Determines whether this manager is enabled.
    *
-   * @return true if enabled.
+   * @return true if enabled
    */
   @Override
   public boolean isEnabled() {
@@ -373,12 +401,9 @@ public class DefaultSecurityManager implements SecurityManager {
 
   /**
    * Enables/disables this security manager.<br>
-   * If it is disabled, all requests return GRANT_DEFAULT, which usually
-   * will be treated by the application as GRANT_ACCEPT.
-   * If enabled, the real GRANT will be returned.
-   * Notice that an enabled manager will return GRANT_DENY if the userId is 0!
+   * If disabled, all requests are accepted.
    *
-   * @param enabled New value of property enabled.
+   * @param enabled true to enable
    * @see #setAcceptByDefault(boolean)
    */
   @Override
@@ -554,41 +579,37 @@ public class DefaultSecurityManager implements SecurityManager {
   protected SecurityResult evaluateImpl(DomainContext context, Permission permission,
                                         int objectClassId, long objectId, Class<?> clazz) {
 
-    if (!isEnabled()) {
-      return disabledResult;
-    }
+    if (isEnabled()) {
 
-    if (context == null) {
-      throw new SecurityException("invalid domain context: null");
-    }
-
-    if (permission == null) {
-      throw new SecurityException("invalid permission: null");
-    }
-
-    if (objectId < 0) {
-      throw new SecurityException("invalid object ID: " + objectId);
-    }
-
-    if (objectClassId == 0 && clazz == null) {
-      throw new SecurityException("no class or classId given");
-    }
-
-    boolean fineLoggable = LOGGER.isFineLoggable();   // little speedup
-
-    if (invalid) {
-      if (context.getSession().isRemote()) {
-        createSecurityInstance(context).assertRemoteSecurityManagerInitialized();
+      if (context == null) {
+        throw new SecurityException("invalid domain context: null");
       }
-      initialize(context.getSession());
-    }
 
-    GranteeDescriptor sessionGrantee = determineGrantee(context);
-    if (sessionGrantee == null) {
-      return noGranteeResult;
-    }
+      if (permission == null) {
+        throw new SecurityException("invalid permission: null");
+      }
 
-    synchronized(this) {
+      if (objectId < 0) {
+        throw new SecurityException("invalid object ID: " + objectId);
+      }
+
+      if (objectClassId == 0 && clazz == null) {
+        throw new SecurityException("no class or classId given");
+      }
+
+      boolean fineLoggable = LOGGER.isFineLoggable();   // little speedup
+
+      if (invalid) {
+        if (context.getSession().isRemote()) {
+          createSecurityInstance(context).assertRemoteSecurityManagerInitialized(); // outside synchronized!
+        }
+        initialize(context.getSession());   // synchronized
+      }
+
+      GranteeDescriptor sessionGrantee = determineGrantee(context);
+      if (sessionGrantee == null) {
+        return noGranteeResult;
+      }
 
       Collection<GranteeDescriptor> granteesToCheck = granteeMap.get(sessionGrantee);
       if (granteesToCheck == null) {
@@ -596,59 +617,58 @@ public class DefaultSecurityManager implements SecurityManager {
         granteeMap.put(sessionGrantee, granteesToCheck);
       }
 
-      for (GranteeDescriptor grantee: granteesToCheck) {
+      for (GranteeDescriptor grantee : granteesToCheck) {
 
         if (fineLoggable) {
           LOGGER.fine("Checking grantee={0}[{1}], context={2}, permission={3}, object={4}[{5}], class={6}",
-                      sessionGrantee.getGranteeClassId(), sessionGrantee.getGranteeId(),
-                      context, permission, objectClassId, objectId, clazz);
+                  sessionGrantee.getGranteeClassId(), sessionGrantee.getGranteeId(),
+                  context, permission, objectClassId, objectId, clazz);
         }
 
         // the map of applicable security rules
-        SortedMap<?, Security> map;
+        SortedMap<?, Rule> map;
 
-        if (clazz != null) {
-          map = classMap.subMap(new ClassKey(grantee, clazz.getName(), 0),
-                                new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE));
-        }
-        else  {
-          if (objectId == 0) {
-            map = pdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, 0),
-                                     new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE));
+        synchronized (this) {
+          if (clazz != null) {
+            map = classMap.subMap(new ClassKey(grantee, clazz.getName(), 0),
+                    new ClassKey(grantee, clazz.getName(), Integer.MAX_VALUE));
           }
           else {
-            map = pdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, 0),
-                                new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE));
+            if (objectId == 0) {
+              map = pdoClassMap.subMap(new PdoClassKey(grantee, objectClassId, 0),
+                      new PdoClassKey(grantee, objectClassId, Integer.MAX_VALUE));
+            }
+            else {
+              map = pdoMap.subMap(new PdoKey(grantee, objectClassId, objectId, 0),
+                      new PdoKey(grantee, objectClassId, objectId, Integer.MAX_VALUE));
+            }
           }
         }
 
         // walk through the security settings of the map
         // they are sorted by priority!
-        for (Security sec : map.values()) {
+        for (Rule rule : map.values()) {
+          Security sec = rule.security;
           if (fineLoggable) {
             LOGGER.fine("evaluate {0}", sec);
           }
           // check if rule fires
           if (sec.evaluate(context, permission)) {
-            // rule applies!
             if (fineLoggable) {
               LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
             }
-            if (sec.isAllowed()) {
-              return createAcceptedSecurityResult(sec.getMessage(), false);
-            }
-            else {
-              return createDeniedSecurityResult(sec.getMessage(), false);
-            }
+            return rule.getResult();
           }
         }
       }
+
+      if (fineLoggable) {
+        LOGGER.fine("no rule matched");
+      }
+      return null;
     }
 
-    if (fineLoggable) {
-      LOGGER.fine("no rule matched");
-    }
-    return null;
+    return disabledResult;
   }
 
 
@@ -664,43 +684,33 @@ public class DefaultSecurityManager implements SecurityManager {
 
 
   /**
-   * Adds a rule to the ACL cache.
-   *
-   * @param rule the rule to add
-   */
-  public void addRule(Security rule) {
-    if (rule.getObjectClassId() == 0) {
-      classMap.put(new ClassKey(rule), rule);
-    }
-    else {
-      if (rule.getObjectId() == 0) {
-        pdoClassMap.put(new PdoClassKey(rule), rule);
-      }
-      else {
-        pdoMap.put(new PdoKey(rule), rule);
-      }
-    }
-  }
-
-
-  /**
-   * Initializes the ACL.
+   * Initializes the security manager.
    *
    * @param session the session to load the security rules
    */
   protected synchronized void initialize(Session session) {
 
-    classMap.clear();
-    pdoMap.clear();
-    pdoClassMap.clear();
+    classMap = new TreeMap<>();
+    pdoMap = new TreeMap<>();
+    pdoClassMap = new TreeMap<>();
+    invalid = false;
 
     // add all rules
-    Collection<? extends Security> rules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
-    for (Security rule : rules) {
-      addRule(rule);
+    Collection<? extends Security> secRules = createSecurityInstance(Pdo.createDomainContext(session)).selectAllCached();
+    for (Security sec : secRules) {
+      Rule rule = new Rule(sec);
+      if (sec.getObjectClassId() == 0) {
+        classMap.put(new ClassKey(sec), rule);
+      }
+      else {
+        if (sec.getObjectId() == 0) {
+          pdoClassMap.put(new PdoClassKey(sec), rule);
+        }
+        else {
+          pdoMap.put(new PdoKey(sec), rule);
+        }
+      }
     }
-
-    invalid = false;
 
     if (securityListener == null) {
       // register listener once
