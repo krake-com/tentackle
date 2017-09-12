@@ -3589,7 +3589,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               throw new LockException(db, new TokenLock(editedBy, editedSince, editedExpiry));
             }
             else {
-              throw new NotFoundException(this, "could not retrieve token lock");
+              throw new NotFoundException(this, "could not retrieve token lock", -1);
             }
           }
         }

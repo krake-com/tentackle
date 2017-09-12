@@ -31,6 +31,9 @@ public class NotFoundException extends PersistenceException {
 
   private static final long serialVersionUID = -5355906838551059054L;
 
+  private long persistedSerial;     // 0 if unknown, -1 if object not in database, else the object's serial in db
+
+
  /**
    * Constructs a new database object not found exception for a given session
    * with <code>null</code> as its detail message.
@@ -122,6 +125,23 @@ public class NotFoundException extends PersistenceException {
     super(object, message);
   }
 
+
+  /**
+   * Constructs a new database object not found exception for a given session with the specified detail message.
+   * The cause is not initialized, and may subsequently be initialized by a
+   * call to {@link #initCause}.
+   *
+   * @param   object the persistent object
+   * @param   message   the detail message. The detail message is saved for
+   *          later retrieval by the {@link #getMessage()} method.
+   * @param   persistedSerial the serial of the object in the database, -1 if no such object, 0 if unknown
+   */
+  public NotFoundException(Identifiable object, String message, long persistedSerial) {
+    super(object, message);
+    this.persistedSerial = persistedSerial;
+  }
+
+
   /**
    * Constructs a new database object not found exception for a given session with the specified detail message and
    * cause.  <p>Note that the detail message associated with
@@ -198,6 +218,16 @@ public class NotFoundException extends PersistenceException {
    */
   public NotFoundException(String message, Throwable cause) {
     super(message, cause);
+  }
+
+
+  /**
+   * Gets the effective serial of the object persisted in the database.
+   *
+   * @return 0 if unknown, -1 if no such object persisted at all, else the persisted serial
+   */
+  public long getPersistedSerial() {
+    return persistedSerial;
   }
 
 }

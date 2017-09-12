@@ -3079,9 +3079,10 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     if (count != 1) {
       if (count < 1) {
         String message = "no rows affected";
+        long persistedSerial = 0;
         if (!isVirgin()) {
           // read the serial to figure out whether object exists
-          long persistedSerial = selectSerial(getId());
+          persistedSerial = selectSerial(getId());
           if (persistedSerial > 0) {
             // object exists, but probably with wrong serial (depends on the statement)
             message += " (persisted serial=" + persistedSerial + ")";
@@ -3090,7 +3091,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
             message += " (object with id=" + id + " doesn't exist in table " + getTableName() + ")";
           }
         }
-        throw new NotFoundException(this, message);
+        throw new NotFoundException(this, message, persistedSerial);
       }
       else {
         throw new PersistenceException(this, "more than one row affected: " + count);
