@@ -66,6 +66,8 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   void updateSerial(long id, long serial) throws RemoteException;
 
+  void updateAndSetSerial(long id, long serial) throws RemoteException;
+
   void updateSerialAndTableSerial(long id, long serial, long tableSerial) throws RemoteException;
 
   List<IdSerialTuple> selectExpiredTableSerials(long oldSerial) throws RemoteException;

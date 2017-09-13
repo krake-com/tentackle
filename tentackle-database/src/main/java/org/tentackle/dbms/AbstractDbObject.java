@@ -1979,7 +1979,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     if (db.isRemote())  {
       try {
         getRemoteDelegate().updateSerial(id, serial);
-        serial++;
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1992,9 +1991,39 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         st.setLong(1, id);
         st.setLong(2, serial);
         assertThisRowAffected(st.executeUpdate());
-        serial++;   // SQL statement incremented serial successfully
       }
     }
+    serial++;   // SQL statement incremented serial successfully
+  }
+
+
+  /**
+   * Updates and sets the serial number of this object.<br>
+   * Caution: this is a low-level method provided to fix the serial
+   * if it is wrong for whatever reason.
+   *
+   * @param serial the new serial
+   */
+  public void updateSerial(long serial)  {
+    Db db = getSession();
+    if (db.isRemote())  {
+      try {
+        getRemoteDelegate().updateAndSetSerial(id, serial);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else  {
+      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateAndSetSerialStatementId,
+                                                           this::createUpdateAndSetSerialSql);
+        st.setLong(1, serial);
+        st.setLong(2, id);
+        assertThisRowAffected(st.executeUpdate());
+      }
+    }
+    this.serial = serial;
   }
 
 
@@ -2979,6 +3008,16 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public String createUpdateSerialSql() {
     return SQL_UPDATE + getTableName() + SQL_SET + CN_SERIAL + "=" + CN_SERIAL + "+1" + SQL_WHERE +
            CN_ID + SQL_EQUAL_PAR + SQL_AND + CN_SERIAL + SQL_EQUAL_PAR;
+  }
+
+  /**
+   * Creates the SQL code for the serial set and update statement.
+   *
+   * @return the sql code
+   */
+  public String createUpdateAndSetSerialSql() {
+    return SQL_UPDATE + getTableName() + SQL_SET + CN_SERIAL + SQL_EQUAL_PAR + SQL_WHERE +
+           CN_ID + SQL_EQUAL_PAR;
   }
 
   /**

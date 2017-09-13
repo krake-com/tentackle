@@ -251,6 +251,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final StatementId updateSerialStatementId = new StatementId();
 
   /**
+   * prepared statement ID for updateSerial(long).
+   */
+  public final StatementId updateAndSetSerialStatementId = new StatementId();
+
+  /**
    * prepared statement ID for updateTableSerial().
    */
   public final StatementId updateTableSerialStatementId = new StatementId();

@@ -215,6 +215,17 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
+  public void updateAndSetSerial(long id, long serial) throws RemoteException {
+    try {
+      dbObject.setId(id);
+      dbObject.updateSerial(serial);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+
+  @Override
   public void updateSerialAndTableSerial(long id, long serial, long tableSerial) throws RemoteException {
     try {
       dbObject.setId(id);

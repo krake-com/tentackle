@@ -162,6 +162,11 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
+  public void updateAndSetSerial(long id, long serial) throws RemoteException {
+    throw new RemoteException(ILLEGAL_METHOD_TEXT);
+  }
+
+  @Override
   public void updateSerialAndTableSerial(long id, long serial, long tableSerial) throws RemoteException {
     throw new RemoteException(ILLEGAL_METHOD_TEXT);
   }
