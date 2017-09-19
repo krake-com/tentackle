@@ -220,7 +220,7 @@ public class WurbletParameterParser {
         }
         else {
           if (expressionFinished) {
-            WurbletParameter par = new WurbletParameter(++parIndex, arg);
+            WurbletParameter par = new WurbletParameter(entity, ++parIndex, arg);
             if (par.isSortKey()) {
               sortingParameters.add(par);
             }
@@ -278,7 +278,7 @@ public class WurbletParameterParser {
                 operator = oper;
               }
               else {
-                WurbletParameter operand = new WurbletParameter(++parIndex, subArg);
+                WurbletParameter operand = new WurbletParameter(entity, ++parIndex, subArg);
                 if (operand.isSortKey()) {
                   if (expressionLevel == 0) {
                     sortingParameters.add(operand);

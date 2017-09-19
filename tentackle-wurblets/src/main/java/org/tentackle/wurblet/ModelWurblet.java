@@ -66,8 +66,22 @@ public class ModelWurblet extends AbstractWurblet {
 
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile("\\s*([\\w\\.]+)\\.class");  // only 1-line annos for now
 
-  /** the name of the model directory. */
+  /**
+   * The name of the model directory.
+   * This is the model of the project's current (maven) module.
+   */
   private String modelDirName;
+
+  /**
+   * Names of other model dirs.
+   * Those models will be loaded *before* the model in modelDirName and
+   * represent models of other modules that are dependencies of the current module
+   * (i.e. the current model refers to).
+   * <p>
+   * Important: the modelDefaults and entityAliases must be the same for all models
+   * including the current!
+   */
+  private List<String> otherModelDirNames;
 
   /** name of the model. */
   private String modelName;
@@ -587,6 +601,15 @@ public class ModelWurblet extends AbstractWurblet {
       throw new WurbelException(modelDir + " is not a directory");
     }
 
+    String otherModels = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "otherModels");
+    if (otherModels != null) {
+      otherModelDirNames = new ArrayList<>();
+      StringTokenizer stok = new StringTokenizer(otherModels, " \t\n\r\f,");
+      while (stok.hasMoreTokens()) {
+        otherModelDirNames.add(stok.nextToken());
+      }
+    }
+
     // set the backends to validate the model, if any.
     // this is a comma separated list of backends, null if none, all for all backends in classpath
     String backends = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "backends");
@@ -630,6 +653,11 @@ public class ModelWurblet extends AbstractWurblet {
     // load the model (if not yet done)
     Model model = Model.getInstance();
     try {
+      if (otherModelDirNames != null) {
+        for (String otherModelDirName: otherModelDirNames) {
+          model.loadModel(otherModelDirName, modelDefaults, entityAliases);
+        }
+      }
       model.loadModel(modelDirName, modelDefaults, entityAliases);
     }
     catch (ModelException mex) {

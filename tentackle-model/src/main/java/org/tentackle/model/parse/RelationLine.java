@@ -23,7 +23,7 @@ import java.util.Map;
 import org.tentackle.model.ModelException;
 
 /**
- * A relation line.
+ * Describes the relation to other entities.
  * <p>
  * Syntax:<br>
  * <pre>
@@ -35,9 +35,9 @@ import org.tentackle.model.ModelException;
  * relation = &lt;object|list|reversed&gt; [composite] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
  *            [serialized] [remoteclear] [reversed]
  * <ul>
- *    <li>object: single object association. This is the default.</li>
+ *    <li>object: single object association [1:1]. This is the default.</li>
  *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
- *    <li>list: list of objects.</li>
+ *    <li>list: list of objects [1:N]. ([N:M] see below nm = ...)</li>
  *    <li>composite: relation points to a component</li>
  *    <li>tracked: modification state of object or list is tracked</li>
  *    <li>referenced: set the parent reference on select and construction</li>
@@ -50,8 +50,9 @@ import org.tentackle.model.ModelException;
  * </ul>
  * If the relation is associated to an attribute the readonly and writeonly flags are overwritten
  * by the attribute.
+ * <p>
  *
- * select = &lt;always|eager|lazy&gt; [main] [cached] [wurbletargs]
+ * select = &lt;always|eager|lazy&gt; [main] [cached] [| wurbletargs]
  * <ul>
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
@@ -81,19 +82,26 @@ import org.tentackle.model.ModelException;
  *
  * args = &lt;arg1&gt; [&lt;arg2&gt; &lt;arg3&gt; ... &lt;argN&gt;]
  * <ul>
- *    <li>arg: arguments to pass to invoked method.
- *         If missing, defaults to "args=id" for lists and "args=&lt;name&gt;Id" for objects (see name below).</li>
+ *    <li>arg: arguments to pass to invoked select method.<br>
+ *     If missing, defaults to "args=getId()" for lists and "args=get&lt;name&gt;Id()" for objects (see name below).</li>
  * </ul>
  *
  * method = &lt;methodname&gt;
  * <ul>
- *    <li>methodname: is the part of the method names, i.e. select[By]&lt;methodname&gt;, delete[By]&lt;methodname&gt;, set&lt;methodname&gt;
- *                [By] is added for lists.</li>
+ *    <li>methodname: is the part of the method names, i.e. select[By]&lt;methodname&gt;, delete[By]&lt;methodname&gt;,
+ *    set&lt;methodname&gt;<br>
+ *    [By] is added for lists.</li>
  * </ul>
  *
  * name = &lt;name&gt;
  * <ul>
- *    <li>name: name of the relation. Defaults to &lt;class&gt;.</li>
+ *    <li>name: name of the relation. Defaults to &lt;class&gt;.<br>
+ *    The getter- and setter-names are generated as follows:<br>
+ *    get&lt;name&gt; and set&lt;name&gt; (always first letter in uppercase) for object-relations and
+ *    get&lt;name&gt;List, set&lt;name&gt;List for list-relations.<br>
+ *    If &lt;name&gt; is explicitly set, the methods will be named get&lt;name&gt; and set&lt;name&gt;
+ *    regardless of the relation type.
+ *    </li>
  * </ul>
  *
  * nm = &lt;entity&gt; [mnMethodName]
@@ -101,6 +109,7 @@ import org.tentackle.model.ModelException;
  *    <li>entity: name of opposite entity the N:M relation.</li>
  *    <li>mnMethodName: optional method name to access the list of opposite entities.</li>
  * </ul>
+ * The relation must be a list relation.<p>
  *
  * scope = &lt;public|private|protected|package&gt;
  * <ul>
@@ -116,14 +125,6 @@ import org.tentackle.model.ModelException;
  * <ul>
  *    <li>to include in getter/setter comment</li>
  * </ul>
- *
- * By default the get- and set-names are generated as follows:<br>
- *
- * get&lt;class&gt; and set&lt;class&gt; (always first letter in uppercase) for object-relations and
- * get&lt;class&gt;List, set&lt;class&gt;List for list-relations.<br>
- * If &lt;name&gt; is explicitly set, the methods will be named get&lt;name&gt; and set&lt;name&gt;
- * regardless of the relation type.
- *
  *
  * @author harald
  */

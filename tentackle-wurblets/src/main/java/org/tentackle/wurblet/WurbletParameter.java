@@ -19,6 +19,7 @@
 package org.tentackle.wurblet;
 
 import org.tentackle.model.Attribute;
+import org.tentackle.model.Entity;
 import org.tentackle.model.Relation;
 import org.tentackle.sql.Backend;
 
@@ -30,6 +31,9 @@ import org.tentackle.sql.Backend;
  * @author harald
  */
 public class WurbletParameter implements WurbletParameterOperand {
+
+  /** the entity the wurblet is applied to. */
+  private final Entity entity;
 
   /** the position among all parameters. */
   private final int index;
@@ -141,11 +145,15 @@ public class WurbletParameter implements WurbletParameterOperand {
    * </li>
    * </ul>
    *
+   * @param entity the entity the wurblet is applied to
+   * @param index the position among all parameters
    * @param text the wurblet arg
    */
-  public WurbletParameter(int index, String text) {
+  public WurbletParameter(Entity entity, int index, String text) {
+    this.entity = entity;
     this.index = index;
     this.text = text;
+
     int ndx = text.indexOf(':');
     if (ndx > 0) {
       name = text.substring(0, ndx);
@@ -248,6 +256,15 @@ public class WurbletParameter implements WurbletParameterOperand {
     }
   }
 
+
+  /**
+   * Gets the entity the wurblet is applied to.
+   *
+   * @return the entity
+   */
+  public Entity getEntity() {
+    return entity;
+  }
 
   /**
    * Gets the index within the wurblet anchor.
