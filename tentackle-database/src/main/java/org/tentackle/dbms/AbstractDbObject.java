@@ -19,12 +19,9 @@
 
 package org.tentackle.dbms;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Supplier;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
@@ -34,6 +31,8 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Immutable;
 import org.tentackle.misc.ImmutableException;
+import org.tentackle.misc.PropertyListener;
+import org.tentackle.misc.PropertySupport;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
@@ -234,8 +233,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   // if this object is being replayed from a modification log
   private transient ModificationLog modlog;
 
-  // for PropertyChangeListeners
-  private transient volatile PropertyChangeSupport changeSupport;
+  // for PropertyListeners
+  private transient volatile PropertySupport changeSupport;
 
 
 
@@ -432,146 +431,88 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Adds a PropertyChangeListener to the listener list.<br>
+   * Creates a property support object for this persistent object.
+   *
+   * @return the support object
+   */
+  protected PropertySupport createPropertySupport() {
+    return new PropertySupport(this);
+  }
+
+
+  /**
+   * Adds a {@link PropertyListener} to the listener list.<br>
    * The listener is registered for all bound properties of this class.
    * <p>
    * Please notice that all listeners are automatically removed after setModified(false)!
    *
    * @param  listener  the property change listener to be added
    *
-   * @see #removePropertyChangeListener
-   * @see #getPropertyChangeListeners
-   * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
    * @see #setModified(boolean)
-   * @see #removeAllPropertyChangeListeners()
    */
-  public void addPropertyChangeListener(PropertyChangeListener listener) {
+  public void addPropertyChangeListener(PropertyListener listener) {
     if (listener != null) {
       synchronized(this) {
         if (changeSupport == null) {
-          changeSupport = new PropertyChangeSupport(this);
+          changeSupport = createPropertySupport();
         }
-        changeSupport.addPropertyChangeListener(listener);
+        changeSupport.addPropertyListener(listener);
       }
     }
   }
 
   /**
-   * Removes a PropertyChangeListener from the listener list.
+   * Removes a {@link PropertyListener} from the listener list.
    *
    * @param listener the PropertyChangeListener to be removed
-   *
-   * @see #addPropertyChangeListener
-   * @see #getPropertyChangeListeners
-   * @see #removePropertyChangeListener(java.lang.String,java.beans.PropertyChangeListener)
    */
-  public void removePropertyChangeListener(PropertyChangeListener listener) {
+  public void removePropertyChangeListener(PropertyListener listener) {
     if (listener != null && changeSupport != null) {
-      changeSupport.removePropertyChangeListener(listener);
+      changeSupport.removePropertyListener(listener);
     }
   }
 
-  /**
-   * Returns an array of all the property change listeners
-   * registered on this PDO.
-   *
-   * @return all <code>PropertyChangeListener</code>s
-   *         or an empty array if no property change
-   *         listeners are currently registered
-   *
-   * @see      #addPropertyChangeListener
-   * @see      #removePropertyChangeListener
-   * @see      #getPropertyChangeListeners(java.lang.String)
-   * @see      java.beans.PropertyChangeSupport#getPropertyChangeListeners
-   */
-  public PropertyChangeListener[] getPropertyChangeListeners() {
-    synchronized (this) {
-      if (changeSupport == null) {
-        return new PropertyChangeListener[0];
-      }
-      return changeSupport.getPropertyChangeListeners();
-    }
-  }
 
   /**
-   * Adds a PropertyChangeListener to the listener list for a specific
+   * Adds a {@link PropertyListener} to the listener list for a specific
    * property.
-   * <p>
-   * Note that if this pdo is inheriting a bound property, then no
-   * event will be fired in response to a change in the inherited property.
-   * <p>
-   * If <code>propertyName</code> or <code>listener</code> is <code>null</code>,
-   * no exception is thrown and no action is taken.
    * <p>
    * Please notice that all listeners are automatically removed after setModified(false)!
    *
    * @param propertyName one of the property names listed above
    * @param listener the property change listener to be added
    *
-   * @see #removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
-   * @see #getPropertyChangeListeners(java.lang.String)
-   * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
    * @see #setModified(boolean)
-   * @see #removeAllPropertyChangeListeners()
    */
-  public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+  public void addPropertyListener(String propertyName, PropertyListener listener) {
     if (listener != null) {
       synchronized (this) {
         if (changeSupport == null) {
-          changeSupport = new PropertyChangeSupport(this);
+          changeSupport = createPropertySupport();
         }
-        changeSupport.addPropertyChangeListener(propertyName, listener);
+        changeSupport.addPropertyListener(propertyName, listener);
       }
     }
   }
 
   /**
-   * Removes a <code>PropertyChangeListener</code> from the listener
+   * Removes a {@link PropertyListener} from the listener
    * list for a specific property. This method should be used to remove
    * <code>PropertyChangeListener</code>s
    * that were registered for a specific bound property.
-   * <p>
-   * If <code>propertyName</code> or <code>listener</code> is <code>null</code>,
-   * no exception is thrown and no action is taken.
    *
    * @param propertyName a valid property name
    * @param listener the PropertyChangeListener to be removed
-   *
-   * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
-   * @see #getPropertyChangeListeners(java.lang.String)
-   * @see #removePropertyChangeListener(java.beans.PropertyChangeListener)
    */
-  public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener) {
+  public void removePropertyListener(String propertyName, PropertyListener listener) {
     if (listener != null && changeSupport != null) {
-      changeSupport.removePropertyChangeListener(propertyName, listener);
+      changeSupport.removePropertyListener(propertyName, listener);
     }
   }
 
-  /**
-   * Returns an array of all the listeners which have been associated
-   * with the named property.
-   *
-   * @param propertyName a valid property name
-   * @return all of the <code>PropertyChangeListener</code>s associated with
-   *         the named property; if no such listeners have been added or
-   *         if <code>propertyName</code> is <code>null</code>, an empty
-   *         array is returned
-   *
-   * @see #addPropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
-   * @see #removePropertyChangeListener(java.lang.String, java.beans.PropertyChangeListener)
-   * @see #getPropertyChangeListeners
-   */
-  public PropertyChangeListener[] getPropertyChangeListeners(String propertyName) {
-    synchronized (this) {
-      if (changeSupport == null) {
-        return new PropertyChangeListener[0];
-      }
-      return changeSupport.getPropertyChangeListeners(propertyName);
-    }
-  }
 
   /**
-   * Removes all <code>PropertyChangeListeners</code>.
+   * Removes all {@link PropertyListener}s.
    * <p>
    * Using <code>PropertyChangeListeners</code> implies the risk to "forget"
    * about such listeners for long living objects as it is the case in
@@ -595,8 +536,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param newValue the property's new value
    */
   protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
-    if (changeSupport != null && !Objects.equals(oldValue, newValue)) {
-      changeSupport.firePropertyChange(propertyName, oldValue, newValue);
+    if (changeSupport != null) {
+      changeSupport.firePropertyChanged(propertyName, oldValue, newValue);
     }
   }
 

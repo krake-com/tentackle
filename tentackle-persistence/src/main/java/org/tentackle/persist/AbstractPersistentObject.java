@@ -38,6 +38,7 @@ import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
+import org.tentackle.misc.PropertySupport;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -582,6 +583,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       buf.append("object is not persistable");
       throw new PersistenceException(this, buf.toString());
     }
+  }
+
+
+  @Override
+  protected PropertySupport createPropertySupport() {
+    // overridden to return the PDO as the source of the event
+    return new PropertySupport(pdo);
   }
 
 
