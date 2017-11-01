@@ -312,16 +312,6 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   }
 
 
-  /**
-   * Gets the number of established connections
-   *
-   * @return the number of connections
-   */
-  public synchronized int getConnectionCount() {
-    return conList.length - freeConCount;
-  }
-
-
 
   // ---------------- implements ConnectionManager -----------------
 

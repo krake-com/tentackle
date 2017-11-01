@@ -252,7 +252,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     int conSize;
 
     synchronized(this) {
-      conSize = getConnectionCount();
+      conSize = getNumConnections();
     }
 
     if (conSize + count < minSize) {
@@ -574,7 +574,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     synchronized(this) {
       if (conRequestCount == 0) {
         // no connect running
-        int num = minSize - getConnectionCount();
+        int num = minSize - getNumConnections();
         if (num > 0) {
           // we dropped below minSize: open connection(s)
           reopen = true;
