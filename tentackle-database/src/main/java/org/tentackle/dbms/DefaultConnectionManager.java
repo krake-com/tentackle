@@ -200,7 +200,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   /**
    * Gets the attach timeout.
    *
-   * @return the max. attach time, 0 if check is disabled
+   * @return the max. attach time, 0 if check is disabled (default)
    */
   public long getAttachTimeout() {
     return attachTimeout;
@@ -213,6 +213,9 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    */
   public void setAttachTimeout(long attachTimeout) {
     this.attachTimeout = attachTimeout;
+    if (attachTimeout > 0 && !isAlive()) {
+      start();
+    }
   }
 
 

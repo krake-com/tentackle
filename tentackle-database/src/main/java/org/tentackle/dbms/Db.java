@@ -2295,7 +2295,7 @@ public class Db implements Session, Cloneable {
    * <p>
    * Notice: package scope!
    */
-  synchronized void attach() {
+  void attach() {
     assertOpen();
     assertOwnerThread();
     if (conMgr == null) {
@@ -2313,7 +2313,7 @@ public class Db implements Session, Cloneable {
    * <p>
    * Notice: package scope!
    */
-  synchronized void detach() {
+  void detach() {
     if (conId > 0) {
       assertOwnerThread();
       conMgr.detach(this);
