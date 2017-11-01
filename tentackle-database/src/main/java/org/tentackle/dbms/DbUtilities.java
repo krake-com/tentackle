@@ -54,6 +54,10 @@ public class DbUtilities {
   }
 
 
+
+  private ConnectionManager connectionManager;
+
+
   /**
    * Creates a sessionless object for given class.
    *
@@ -118,12 +122,15 @@ public class DbUtilities {
 
 
   /**
-   * Gets the default session manager.
+   * Gets the default connection manager.
    *
-   * @return the session manager, never null
+   * @return the connection manager, never null
    */
-  public ConnectionManager getDefaultSessionManager() {
-    return new DefaultConnectionManager();
+  public synchronized ConnectionManager getDefaultConnectionManager() {
+    if (connectionManager == null) {
+      connectionManager = new DefaultConnectionManager();
+    }
+    return connectionManager;
   }
 
 

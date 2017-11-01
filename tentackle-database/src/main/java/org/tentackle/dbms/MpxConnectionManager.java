@@ -24,7 +24,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
 import org.tentackle.sql.BackendInfo;
 
 
@@ -305,26 +304,26 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   @Override
-  public synchronized int login(Session session) {
+  public synchronized int login(Db session) {
     if (!initialized) {
       createConnections(iniSize);
       connectThread.start();
       initialized = true;
     }
-    int id = addDb((Db) session) + idOffset;
+    int id = addDb(session) + idOffset;
     LOGGER.fine("{0} logged into {1}, id={2}", session, this, id);
     return id;
   }
 
 
   @Override
-  public synchronized void logout(Session session) {
+  public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     removeDb(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
     // check that connection is not attached, if so, detach it!
-    ManagedConnection con = ((Db) session).getConnection();
+    ManagedConnection con = session.getConnection();
     if (con != null) {
       con.forceDetached();
       if (con.isDead()) {
@@ -364,9 +363,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   @Override
-  public void attach(Session session) {
+  public void attach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = ((Db) session).getConnection();
+    ManagedConnection con = session.getConnection();
 
     int loopCount = 0;   // number of retries so far
 
@@ -466,18 +465,18 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
     }
 
-    con.attachSession((Db) session);
+    con.attachSession(session);
   }
 
 
   @Override
-  public void detach(Session session) {
+  public void detach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = ((Db) session).getConnection();
+    ManagedConnection con = session.getConnection();
     if (con == null) {
       throw new PersistenceException(this + ": no connection attached to " + session);
     }
-    con.detachSession((Db) session);
+    con.detachSession(session);
 
     if (!con.isAttached()) {
 
@@ -537,9 +536,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   @Override
-  public synchronized void forceDetach(Session session) {
+  public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = ((Db) session).getConnection();
+    ManagedConnection con = session.getConnection();
     if (con != null) {
       con.forceDetached();
       pushUnattached(con.getIndex());

@@ -16,21 +16,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.session;
-
+package org.tentackle.dbms;
 
 /**
- * An object maintaining a session manager.
+ * A provider for a connection manager.
  *
  * @author harald
  */
-public interface SessionManagerProvider {
+public interface ConnectionManagerProvider {
 
   /**
-   * Gets the session manager.<br>
+   * Gets the connection manager.<br>
    *
-   * @return the session manager, never null
+   * @return the connection manager, never null
    */
-  SessionManager getSessionManager();
+  ConnectionManager getConnectionManager();
 
 }

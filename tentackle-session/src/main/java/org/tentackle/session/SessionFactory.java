@@ -45,21 +45,12 @@ public interface SessionFactory {
 
 
   /**
-   * Creates a session using the default session manager.
+   * Creates a session.
    *
    * @param sessionInfo the session info
    * @return the created session (still closed)
    */
   Session create(SessionInfo sessionInfo);
-
-  /**
-   * Creates a session.
-   *
-   * @param sessionManager the session manager
-   * @param sessionInfo the session info
-   * @return the created session (still closed)
-   */
-  Session create(SessionManager sessionManager, SessionInfo sessionInfo);
 
   /**
    * Registers a global close handler for all sessions.

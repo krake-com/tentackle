@@ -24,8 +24,6 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionManager;
-import org.tentackle.session.SessionManagerProvider;
 
 /**
  * Session factory for Db instances.
@@ -33,20 +31,12 @@ import org.tentackle.session.SessionManagerProvider;
  * @author harald
  */
 @Service(SessionFactory.class)
-public class DbFactory implements SessionFactory, SessionManagerProvider {
-
-
-  private ConnectionManager connectionManager;    // the default connection manager
+public class DbFactory implements SessionFactory {
 
 
   @Override
   public Session create(SessionInfo sessionInfo) {
-    return new Db(getSessionManager(), sessionInfo);
-  }
-
-  @Override
-  public Session create(SessionManager sessionManager, SessionInfo sessionInfo) {
-    return new Db((ConnectionManager) sessionManager, sessionInfo);
+    return new Db(getConnectionManager(sessionInfo), sessionInfo);
   }
 
   @Override
@@ -59,12 +49,22 @@ public class DbFactory implements SessionFactory, SessionManagerProvider {
     return Db.unregisterGlobalCloseHandler(closeHandler);
   }
 
-  @Override
-  public synchronized ConnectionManager getSessionManager() {
-    if (connectionManager == null) {
-      connectionManager = DbUtilities.getInstance().getDefaultSessionManager();
-    }
-    return connectionManager;
+  /**
+   * Gets the connection manager.
+   * <p>
+   * If the application uses different connection managers, the session info
+   * must contain all the necessary information to distinguish the managers.
+   * The default implementation returns the single default connection manager.
+   * <p>
+   * Notice that only local connections need a connection manager and the method
+   * may return null in such a case.
+   *
+   * @param sessionInfo the session info
+   * @return the connection manager
+   * @see DbUtilities#getDefaultConnectionManager()
+   */
+  protected synchronized ConnectionManager getConnectionManager(SessionInfo sessionInfo) {
+    return DbUtilities.getInstance().getDefaultConnectionManager();
   }
 
 }

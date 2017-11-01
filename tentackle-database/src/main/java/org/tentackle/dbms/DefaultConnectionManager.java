@@ -28,7 +28,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
 import org.tentackle.sql.BackendInfo;
 
 
@@ -361,12 +360,12 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   @Override
-  public int login(Session session) {
+  public int login(Db session) {
 
-    ManagedConnection con = createConnection(((Db) session).getBackendInfo());
+    ManagedConnection con = createConnection(session.getBackendInfo());
 
     synchronized(this) {
-      int id = addDb((Db) session);
+      int id = addDb(session);
       /**
        * because we add the connections in the same order as the db (1:1 mapping), the
        * index returned after adding the conncetion must be the same as for the db.
@@ -385,7 +384,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   @Override
-  public synchronized void logout(Session session) {
+  public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
     int id = session.getSessionId();
     int index = convertConnectionIdToIndex(id);
@@ -397,7 +396,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
   @Override
-  public synchronized void attach(Session session) {
+  public synchronized void attach(Db session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
@@ -418,25 +417,25 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
       }
 
       // reopen the connection
-      con = createConnection(((Db) session).getBackendInfo());
+      con = createConnection(session.getBackendInfo());
       conList[index] = con;
       LOGGER.info("{0}: connection {1} reopened", this, con);
     }
-    con.attachSession((Db) session);
+    con.attachSession(session);
   }
 
 
   @Override
-  public synchronized void detach(Session session) {
+  public synchronized void detach(Db session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
-    con.detachSession((Db) session);
+    con.detachSession(session);
   }
 
 
   @Override
-  public synchronized void forceDetach(Session session) {
+  public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
     int index = convertConnectionIdToIndex(session.getSessionId());
     ManagedConnection con = conList[index];
@@ -538,10 +537,10 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    *
    * @param session the session
    */
-  protected void assertSessionBelongsToMe(Session session) {
-    if (session.getSessionManager() != this) {
+  protected void assertSessionBelongsToMe(Db session) {
+    if (session.getConnectionManager() != this) {
       throw new PersistenceException(session,
-              "session " + session + " does not belong to " + this + " but to " + session.getSessionManager());
+              "session " + session + " does not belong to " + this + " but to " + session.getConnectionManager());
     }
   }
 

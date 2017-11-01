@@ -37,7 +37,6 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
   private static final Logger LOGGER = LoggerFactory.getLogger(PooledSessionTaskDispatcher.class);
 
 
-  private final SessionManager sessionManager;    // the connection manager
   private final SessionInfo sessionInfo;          // the session info
   private final int poolSize;                     // the poolsize
 
@@ -47,7 +46,6 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
   /**
    * Creates a pooled db task dispatcher.<br>
    *
-   * @param sessionManager the session manager
    * @param sessionInfo the session info
    * @param poolSize the fixed pool size
    * @param name the pool name
@@ -56,12 +54,11 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
    * @param supervised true to use a {@link DaemonSupervisor} for each dispatcher
    * @param deadInterval interval in milliseconds to detect a dead dispatcher, 0 to disable detection (ignored if supervised = false)
    */
-  public PooledSessionTaskDispatcher(SessionManager sessionManager, SessionInfo sessionInfo, int poolSize,
+  public PooledSessionTaskDispatcher(SessionInfo sessionInfo, int poolSize,
                                      String name, boolean useMutexLocking, long sleepInterval, boolean supervised, long deadInterval) {
 
     super(poolSize, name, useMutexLocking, sleepInterval, supervised, deadInterval);
 
-    this.sessionManager = sessionManager;
     this.sessionInfo = sessionInfo;
     this.poolSize = poolSize;
   }
@@ -69,16 +66,15 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
   /**
    * Creates a non-supervising pooled db task dispatcher.<br>
    *
-   * @param sessionManager the session manager
    * @param sessionInfo the session info
    * @param poolSize the pool size
    * @param name the pool name
    * @param useMutexLocking true use a mutex for locking, else just a counter
    * @param sleepInterval keep alive in milliseconds
    */
-  public PooledSessionTaskDispatcher(SessionManager sessionManager, SessionInfo sessionInfo, int poolSize,
+  public PooledSessionTaskDispatcher(SessionInfo sessionInfo, int poolSize,
                                      String name, boolean useMutexLocking, long sleepInterval) {
-    this(sessionManager, sessionInfo, poolSize, name, useMutexLocking, sleepInterval, false, 0);
+    this(sessionInfo, poolSize, name, useMutexLocking, sleepInterval, false, 0);
   }
 
   /**
@@ -104,21 +100,12 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
 
 
   /**
-   * Gets the connection manager.
-   *
-   * @return the manager
-   */
-  public SessionManager getSessionManager() {
-    return sessionManager;
-  }
-
-  /**
    * Creates a new db session.
    *
    * @return the session
    */
   protected Session createSession() {
-    return SessionFactory.getInstance().create(getSessionManager(), getSessionInfo());
+    return SessionFactory.getInstance().create(getSessionInfo());
   }
 
 

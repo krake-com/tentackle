@@ -22,13 +22,13 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionManagerProvider;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 
@@ -104,14 +104,14 @@ public class PersistenceUtilities extends DbUtilities {
   }
 
   @Override
-  public ConnectionManager getDefaultSessionManager() {
+  public ConnectionManager getDefaultConnectionManager() {
     ConnectionManager manager = null;
     AbstractApplication application = AbstractApplication.getRunningApplication();
-    if (application instanceof SessionManagerProvider) {
-      manager = (ConnectionManager) ((SessionManagerProvider) application).getSessionManager();
+    if (application instanceof ConnectionManagerProvider) {
+      manager = ((ConnectionManagerProvider) application).getConnectionManager();
     }
     if (manager == null) {
-      manager = super.getDefaultSessionManager();
+      manager = super.getDefaultConnectionManager();
     }
     return manager;
   }

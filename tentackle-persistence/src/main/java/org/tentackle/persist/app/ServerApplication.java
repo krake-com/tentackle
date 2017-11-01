@@ -29,6 +29,7 @@ import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DefaultDbPool;
 import org.tentackle.dbms.MpxConnectionManager;
@@ -42,8 +43,6 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionManager;
-import org.tentackle.session.SessionManagerProvider;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 
@@ -55,7 +54,7 @@ import org.tentackle.session.SessionPoolProvider;
  * @author harald
  */
 public abstract class ServerApplication extends AbstractApplication
-       implements SessionPoolProvider, SessionManagerProvider {
+       implements SessionPoolProvider, ConnectionManagerProvider {
 
 
 
@@ -79,7 +78,7 @@ public abstract class ServerApplication extends AbstractApplication
 
   private CommandLine cmdLine;                        // command line
   private DbServer dbServer;                          // the RMI server instance
-  private SessionManager sessionManager;              // the connection manager
+  private ConnectionManager connectionManager;        // the connection manager
   private Db serverDb;                                // the primary server db
   private SessionPool sessionPool;                    // the session pool
   private boolean stopping;                           // true if server is stopping
@@ -224,7 +223,7 @@ public abstract class ServerApplication extends AbstractApplication
    *
    * @return the connection manager
    */
-  public SessionManager createSessionManager() {
+  public ConnectionManager createConnectionManager() {
     return new MpxConnectionManager(serverDb.getBackendInfo(), serverDb.getSessionId() + 1);
   }
 
@@ -235,8 +234,8 @@ public abstract class ServerApplication extends AbstractApplication
    * @return the connection manager.
    */
   @Override
-  public SessionManager getSessionManager() {
-    return sessionManager;
+  public ConnectionManager getConnectionManager() {
+    return connectionManager;
   }
 
 
@@ -248,7 +247,7 @@ public abstract class ServerApplication extends AbstractApplication
    */
   public SessionPool createSessionPool() {
 
-    return new DefaultDbPool((ConnectionManager) getSessionManager(), getSessionInfo()) {
+    return new DefaultDbPool(getConnectionManager(), getSessionInfo()) {
 
       @Override
       public Db getSession() {
@@ -390,7 +389,7 @@ public abstract class ServerApplication extends AbstractApplication
     // add a shutdown handler in case the modthread terminates unexpectedly
     ModificationTracker.getInstance().addShutdownRunnable(() -> doStop(5));
 
-    sessionManager = createSessionManager();
+    connectionManager = createConnectionManager();
     sessionPool = createSessionPool();
     dbServer = createDbServer(connectionClass);
   }
@@ -456,9 +455,9 @@ public abstract class ServerApplication extends AbstractApplication
         serverDb = null;
       }
 
-      if (sessionManager != null) {
-        sessionManager.shutdown();
-        sessionManager = null;
+      if (connectionManager != null) {
+        connectionManager.shutdown();
+        connectionManager = null;
       }
 
       if (dbServer != null) {

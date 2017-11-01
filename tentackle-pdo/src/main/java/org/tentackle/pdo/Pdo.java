@@ -27,7 +27,6 @@ import org.tentackle.session.SessionCloseHandler;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionInfoFactory;
-import org.tentackle.session.SessionManager;
 import org.tentackle.session.SessionUtilities;
 
 /**
@@ -536,7 +535,7 @@ public class Pdo {
 
 
   /**
-   * Creates a session for the default session manager.
+   * Creates a session.
    *
    * @param sessionInfo the session info
    * @return the created session (still closed)
@@ -546,18 +545,7 @@ public class Pdo {
   }
 
   /**
-   * Creates a session.
-   *
-   * @param sessionManager the session manager
-   * @param sessionInfo the session info
-   * @return the created session (still closed)
-   */
-  public static Session createSession(SessionManager sessionManager, SessionInfo sessionInfo) {
-    return SessionFactory.getInstance().create(sessionManager, sessionInfo);
-  }
-
-  /**
-   * Creates a session for the default session manager and a default session info {@code "backend"}.
+   * Creates a session with a default session info {@code "backend"}.
    *
    * @return the created session (still closed)
    */

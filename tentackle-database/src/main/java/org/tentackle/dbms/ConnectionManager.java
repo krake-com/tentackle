@@ -20,8 +20,6 @@
 package org.tentackle.dbms;
 
 import java.util.Collection;
-import org.tentackle.session.Session;
-import org.tentackle.session.SessionManager;
 
 
 /**
@@ -36,7 +34,63 @@ import org.tentackle.session.SessionManager;
  *
  * @author harald
  */
-public interface ConnectionManager extends SessionManager {
+public interface ConnectionManager {
+
+  /**
+   * The manager's name.
+   *
+   * @return the name
+   */
+  String getName();
+
+
+  /**
+   * Logs in a session.<br>
+   * It is up to the manager how to verify whether the session is allowed to open,
+   * a real connection is initiated or just an application level authorization
+   * is performed. Note that the ID may be recycled by the manager after a
+   * session is logged out.
+   *
+   * @param session the session to login
+   * @return the unique ID of the session (&gt; 0)
+   * @throws PersistenceException if login failed.
+   */
+  int login(Db session);
+
+
+  /**
+   * Logs out a session.<br>
+   * The session is not allowed to attach anymore. If the session is still attached,
+   * a rollback of any pending transaction is done and an exception thrown.
+   *
+   * @param session the session to logout
+   * @throws PersistenceException if logout failed.
+   */
+  void logout(Db session);
+
+
+  /**
+   * Gets the maximum number of allowed sessions managed by this manager.
+   *
+   * @return max. number of concurrent logins, 0 = unlimited
+   */
+  int getMaxSessions();
+
+
+  /**
+   * Gets the number of sessions.
+   *
+   * @return the number of concurrent logins
+   */
+  int getNumSessions();
+
+
+  /**
+   * Shuts down this connection manager.<br>
+   * All connections are closed and the threads stopped.
+   * Application servers should invoke this method when shut down.
+   */
+  void shutdown();
 
   /**
    * Attaches a {@link Db} to a connection.<br>
@@ -51,7 +105,7 @@ public interface ConnectionManager extends SessionManager {
    * @param session the session
    * @throws org.tentackle.pdo.PersistenceException if attach failed.
    */
-  void attach(Session session);
+  void attach(Db session);
 
 
   /**
@@ -65,7 +119,7 @@ public interface ConnectionManager extends SessionManager {
    * @param session the session
    * @throws org.tentackle.pdo.PersistenceException if detach failed.
    */
-  void detach(Session session);
+  void detach(Db session);
 
 
   /**
@@ -75,7 +129,7 @@ public interface ConnectionManager extends SessionManager {
    *
    * @param session the session
    */
-  void forceDetach(Session session);
+  void forceDetach(Db session);
 
 
   /**

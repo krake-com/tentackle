@@ -477,7 +477,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   protected Db openDb() throws LoginFailedException {
 
     SessionPool dbPool = DbUtilities.getInstance().getDefaultSessionPool();
-    ConnectionManager conMgr = DbUtilities.getInstance().getDefaultSessionManager();
+    ConnectionManager conMgr = DbUtilities.getInstance().getDefaultConnectionManager();
 
     if (dbPool != null) {
       // if pooled

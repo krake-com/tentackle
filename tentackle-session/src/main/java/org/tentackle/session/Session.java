@@ -155,16 +155,9 @@ public interface Session extends Comparable<Session> {
   String getName();
 
   /**
-   * Gets the session manager.
-   *
-   * @return the session manager
-   */
-  SessionManager getSessionManager();
-
-  /**
    * Gets the session ID.
    *
-   * @return the ID the session manager assigned to this session
+   * @return the ID assigned to this session
    */
   int getSessionId();
 

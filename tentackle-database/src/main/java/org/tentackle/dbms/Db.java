@@ -349,7 +349,7 @@ public class Db implements Session, Cloneable {
   /**
    * Creates an instance of a logical db connection.
    *
-   * @param conMgr the connection manager to use for this db, unused for local connections
+   * @param conMgr the connection manager if local connection (ignored if remote)
    * @param sessionInfo user information
    */
   public Db(ConnectionManager conMgr, SessionInfo sessionInfo) {
@@ -491,8 +491,7 @@ public class Db implements Session, Cloneable {
    *
    * @return the connection manager
    */
-  @Override
-  public ConnectionManager getSessionManager() {
+  public ConnectionManager getConnectionManager() {
     return conMgr;
   }
 

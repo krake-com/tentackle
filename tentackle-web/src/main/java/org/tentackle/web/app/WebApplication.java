@@ -33,6 +33,7 @@ import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DefaultDbPool;
 import org.tentackle.dbms.MpxConnectionManager;
@@ -44,8 +45,6 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionManager;
-import org.tentackle.session.SessionManagerProvider;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
 
@@ -78,7 +77,7 @@ import org.tentackle.session.SessionPoolProvider;
  * @param <T> the web session key type
  */
 public abstract class WebApplication<T> extends AbstractApplication
-       implements SessionPoolProvider, SessionManagerProvider {
+       implements SessionPoolProvider, ConnectionManagerProvider {
 
 
   /**
@@ -180,10 +179,10 @@ public abstract class WebApplication<T> extends AbstractApplication
 
 
 
-  private WebSessionKeyCache<T> sessionCache;  // the web session cache
-  private SessionManager sessionManager;       // the connection manager
-  private Db serverDb;                         // the primary server db
-  private SessionPool sessionPool;             // the session pool
+  private WebSessionKeyCache<T> sessionCache;   // the web session cache
+  private ConnectionManager connectionManager;  // the connection manager
+  private Db serverDb;                          // the primary server db
+  private SessionPool sessionPool;              // the session pool
 
 
 
@@ -362,9 +361,20 @@ public abstract class WebApplication<T> extends AbstractApplication
    *
    * @return the connection cache
    */
-  public ConnectionManager createSessionManager() {
+  public ConnectionManager createConnectionManager() {
     return new MpxConnectionManager("webmpx-mgr", serverDb.getBackendInfo(), 100, serverDb.getSessionId() + 1,
                                     1, 1, 1, 100, 720, 2160);
+  }
+
+
+  /**
+   * Gets the connection manager.<br>
+   *
+   * @return the connection manager.
+   */
+  @Override
+  public ConnectionManager getConnectionManager() {
+    return connectionManager;
   }
 
 
@@ -381,8 +391,8 @@ public abstract class WebApplication<T> extends AbstractApplication
    * @return the database pool, null if don't use a pool
    */
   public SessionPool createSessionPool() {
-    return new DefaultDbPool("web-pool", (ConnectionManager) sessionManager, getSessionInfo(), 2, 1, 2,
-                             sessionManager.getMaxSessions(), 60, 24*60);
+    return new DefaultDbPool("web-pool", connectionManager, getSessionInfo(), 2, 1, 2,
+                             connectionManager.getMaxSessions(), 60, 24*60);
   }
 
   @Override
@@ -495,7 +505,7 @@ public abstract class WebApplication<T> extends AbstractApplication
       doStop(5);
     });
 
-    sessionManager = createSessionManager();
+    connectionManager = createConnectionManager();
     sessionPool = createSessionPool();
 
     // start the session cache
@@ -541,8 +551,8 @@ public abstract class WebApplication<T> extends AbstractApplication
         serverDb = null;
       }
 
-      sessionManager.shutdown();
-      sessionManager = null;
+      connectionManager.shutdown();
+      connectionManager = null;
 
       if (isRunningInContainer()) {
         // deregister all JDBC drivers loaded by the server app's classloader
