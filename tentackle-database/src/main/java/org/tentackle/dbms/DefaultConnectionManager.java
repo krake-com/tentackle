@@ -33,11 +33,9 @@ import org.tentackle.sql.BackendInfo;
 
 /**
  * The default implementation of a connection manager.<br>
- * Each Db will get its own physical connection.
- * This kind of manager is useful for 2-tier applications directly connecting
- * to a database backend.
+ * Each session will get its own physical connection.
  * <p>
- * Although this manager implements a strict 1:1 mapping between dbs and connections
+ * Although this manager implements a strict 1:1 mapping between sessions and connections
  * it can be easily extended to implememt a M:N mapping, see the {@link MpxConnectionManager}.
  *
  * @author harald
@@ -312,18 +310,83 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   }
 
 
+  /**
+   * Converts the connection id to the internal Db-array index.
+   *
+   * @param id the connection id (&gt; 0)
+   * @return the array index
+   */
+  protected int convertConnectionIdToIndex(int id) {
+    int ndx = id - idOffset;
+    if (ndx < 0 || ndx >= dbSize) {
+      throw new PersistenceException(this + ": invalid connection id=" + id +
+              ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
+    }
+    return ndx;
+  }
+
+
+  /**
+   * Asserts that the session belongs to this manager.
+   *
+   * @param session the session
+   */
+  protected void assertSessionBelongsToMe(Db session) {
+    if (session.getConnectionManager() != this) {
+      throw new PersistenceException(session,
+              "session " + session + " does not belong to " + this + " but to " + session.getConnectionManager());
+    }
+  }
+
+
+  /**
+   * Creates a managed connection.
+   *
+   * @param backendInfo the backend info
+   * @return the managed connection
+   */
+  protected ManagedConnection createConnection(BackendInfo backendInfo) {
+    if (!backendInfo.isConnectable()) {
+      throw new PersistenceException(this + ": backend info " + backendInfo + " is not connectable");
+    }
+
+    ManagedConnection con;
+    try {
+      con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(this + ": creating connection failed", e);
+    }
+
+    if (!con.getAutoCommit()) {
+      con.close();
+      throw new PersistenceException(this + ": connection " + con + " is not in autoCommit mode");
+    }
+
+    con.setMaxCountForClearWarnings(maxCountForClearWarnings);
+    if (minMinutes > 0) {
+      con.setExpireAt(con.getEstablishedSince() +
+                      (minMinutes * 60 + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
+    }
+    LOGGER.info("{0}: open connection {1}, valid until {2}",
+                this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
+    return con;
+  }
+
+
+
 
   // ---------------- implements ConnectionManager -----------------
 
 
   @Override
-  public int getMaxSessions() {
+  public synchronized int getMaxSessions() {
     return maxDbSize;
   }
 
 
   @Override
-  public int getNumSessions() {
+  public synchronized int getNumSessions() {
     return dbSize - freeDbCount;
   }
 
@@ -452,6 +515,7 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   }
 
 
+
   // --------------------- implements Thread ---------------------------
 
   @Override
@@ -506,70 +570,6 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
       }
     }
 
-  }
-
-
-  /**
-   * Converts the connection id to the internal Db-array index.
-   *
-   * @param id the connection id (&gt; 0)
-   * @return the array index
-   */
-  protected int convertConnectionIdToIndex(int id) {
-    int ndx = id - idOffset;
-    if (ndx < 0 || ndx >= dbSize) {
-      throw new PersistenceException(this + ": invalid connection id=" + id +
-              ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
-    }
-    return ndx;
-  }
-
-
-  /**
-   * Asserts that the session belongs to this manager.
-   *
-   * @param session the session
-   */
-  protected void assertSessionBelongsToMe(Db session) {
-    if (session.getConnectionManager() != this) {
-      throw new PersistenceException(session,
-              "session " + session + " does not belong to " + this + " but to " + session.getConnectionManager());
-    }
-  }
-
-
-  /**
-   * Creates a managed connection.
-   *
-   * @param backendInfo the backend info
-   * @return the managed connection
-   */
-  protected ManagedConnection createConnection(BackendInfo backendInfo) {
-    if (!backendInfo.isConnectable()) {
-      throw new PersistenceException(this + ": backend info " + backendInfo + " is not connectable");
-    }
-
-    ManagedConnection con;
-    try {
-      con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
-    }
-    catch (SQLException e) {
-      throw new PersistenceException(this + ": creating connection failed", e);
-    }
-
-    if (!con.getAutoCommit()) {
-      con.close();
-      throw new PersistenceException(this + ": connection " + con + " is not in autoCommit mode");
-    }
-
-    con.setMaxCountForClearWarnings(maxCountForClearWarnings);
-    if (minMinutes > 0) {
-      con.setExpireAt(con.getEstablishedSince() +
-                      (minMinutes * 60 + random.nextInt((maxMinutes - minMinutes) * 60)) * 1000L);
-    }
-    LOGGER.info("{0}: open connection {1}, valid until {2}",
-                this, con, FormatHelper.formatTimestamp(new Date(con.getExpireAt())));
-    return con;
   }
 
 }

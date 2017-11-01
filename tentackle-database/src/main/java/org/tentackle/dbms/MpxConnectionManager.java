@@ -212,96 +212,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
 
-  /**
-   * Adds the index of an unused connection to the freelist.
-   *
-   * @param index the index of the connection in the connections list
-   */
-  protected void pushUnattached(int index) {
-    if (unConCount >= unConList.length) {
-      // list is full, enlarge it
-      int[] nUnConList = new int[unConList.length << 1];
-      System.arraycopy(unConList, 0, nUnConList, 0, unConList.length);
-      for (int j=unConList.length; j < nUnConList.length; j++) {
-        nUnConList[j] = -1;
-      }
-      unConList = nUnConList;
-    }
-    unConList[unConCount++] = index;    // add to freelist
-  }
-
-
-  /**
-   * Gets a connection from the unattached freelist.
-   *
-   * @return the index to the connections list, -1 if no more unattached found
-   */
-  protected int popUnattached() {
-    return unConCount > 0 ? unConList[--unConCount] : -1;
-  }
-
-
-
-  /**
-   * Create spare connections.
-   *
-   * @param count the number of connections to create
-   * @return the number of connections created
-   */
-  protected int createConnections(int count) {
-    int conSize;
-
-    synchronized(this) {
-      conSize = getNumConnections();
-    }
-
-    if (conSize + count < minSize) {
-      // at least to minsize
-      count = minSize - conSize;
-    }
-
-    // align count before we run into DbRuntimeException in addConnection()
-    if (maxConSize > 0) {
-      if (conSize + count > maxConSize) {
-        count = maxConSize - conSize;
-      }
-      if (count == 0) {
-        LOGGER.severe(this + ": *** maximum number of connections reached: " + maxConSize + " ***");
-      }
-      else  {
-        if (conSize + count > getInfoLogSize()) {
-          String msg = this + ": increasing number of connections by " + count + " to " + (conSize + count) + " of " +
-                       maxConSize + " (unattached=" + unConCount + ")";
-          if (conSize + count > getWarnLogSize()) {
-            // Half of the connections concurrently in use in most cases tells us that the db-server
-            // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
-            // Log attached connections.
-            StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
-            for (ManagedConnection con: ManagedConnection.getManagedConnections()) {
-              if (con.getManager() == this && con.isAttached()) {
-                buf.append("\n\n  ").append(con.toDiagnosticString());
-              }
-            }
-            LOGGER.warning(buf.toString());
-          }
-          else {
-            // pre warning
-            LOGGER.info(msg);
-          }
-        }
-      }
-    }
-
-    for (int i=0; i < count; i++) {
-      ManagedConnection con = createConnection(backendInfo);  // may take some time dep. on the db backend...
-      synchronized(this) {
-        pushUnattached(addConnection(con));   // add to established connections and unattached freelist
-      }
-    }
-
-    return count;
-  }
-
 
   @Override
   public synchronized int login(Db session) {
@@ -546,6 +456,97 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
 
+
+  /**
+   * Adds the index of an unused connection to the freelist.
+   *
+   * @param index the index of the connection in the connections list
+   */
+  protected void pushUnattached(int index) {
+    if (unConCount >= unConList.length) {
+      // list is full, enlarge it
+      int[] nUnConList = new int[unConList.length << 1];
+      System.arraycopy(unConList, 0, nUnConList, 0, unConList.length);
+      for (int j=unConList.length; j < nUnConList.length; j++) {
+        nUnConList[j] = -1;
+      }
+      unConList = nUnConList;
+    }
+    unConList[unConCount++] = index;    // add to freelist
+  }
+
+
+  /**
+   * Gets a connection from the unattached freelist.
+   *
+   * @return the index to the connections list, -1 if no more unattached found
+   */
+  protected int popUnattached() {
+    return unConCount > 0 ? unConList[--unConCount] : -1;
+  }
+
+
+  /**
+   * Create spare connections.
+   *
+   * @param count the number of connections to create
+   * @return the number of connections created
+   */
+  protected int createConnections(int count) {
+    int conSize;
+
+    synchronized(this) {
+      conSize = getNumConnections();
+    }
+
+    if (conSize + count < minSize) {
+      // at least to minsize
+      count = minSize - conSize;
+    }
+
+    // align count before we run into DbRuntimeException in addConnection()
+    if (maxConSize > 0) {
+      if (conSize + count > maxConSize) {
+        count = maxConSize - conSize;
+      }
+      if (count == 0) {
+        LOGGER.severe(this + ": *** maximum number of connections reached: " + maxConSize + " ***");
+      }
+      else  {
+        if (conSize + count > getInfoLogSize()) {
+          String msg = this + ": increasing number of connections by " + count + " to " + (conSize + count) + " of " +
+                       maxConSize + " (unattached=" + unConCount + ")";
+          if (conSize + count > getWarnLogSize()) {
+            // Half of the connections concurrently in use in most cases tells us that the db-server
+            // is reaching its limits, i.e. the operations take too long. Or maxConSize is simply too low.
+            // Log attached connections.
+            StringBuilder buf = new StringBuilder(msg).append("\n\n  attached connections:");
+            for (ManagedConnection con: ManagedConnection.getManagedConnections()) {
+              if (con.getManager() == this && con.isAttached()) {
+                buf.append("\n\n  ").append(con.toDiagnosticString());
+              }
+            }
+            LOGGER.warning(buf.toString());
+          }
+          else {
+            // pre warning
+            LOGGER.info(msg);
+          }
+        }
+      }
+    }
+
+    for (int i=0; i < count; i++) {
+      ManagedConnection con = createConnection(backendInfo);  // may take some time dep. on the db backend...
+      synchronized(this) {
+        pushUnattached(addConnection(con));   // add to established connections and unattached freelist
+      }
+    }
+
+    return count;
+  }
+
+
   /**
    * closes a dead connection and removes it from the
    * connection list.
@@ -562,8 +563,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-
-
+  
   /**
    * checks whether the number of connections dropped below minSize.
    * If so, reopen missing connections.
@@ -591,8 +591,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   }
 
 
+
   /**
-   * connection management thread
+   * The connection management thread.
    */
   private class ConnectionThread extends Thread {
 
