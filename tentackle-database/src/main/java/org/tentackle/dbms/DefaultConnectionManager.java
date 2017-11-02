@@ -40,14 +40,13 @@ import org.tentackle.sql.BackendInfo;
  *
  * @author harald
  */
-public class DefaultConnectionManager extends Thread implements ConnectionManager {
+public class DefaultConnectionManager implements ConnectionManager {
 
   /**
    * logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConnectionManager.class);
 
-  private static final long LOOP_MS = 1000;     // minimum loop time for timeout checks
 
 
   /** name of the connection manager. */
@@ -95,11 +94,10 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   protected int freeConCount;
 
 
-  private long attachTimeout;                   // max. attach timeout, 0 to disable check
-
   private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
-
-  private volatile boolean shutdownRequested;   // true if thread should shutdown
+  private volatile long attachTimeout;          // max. attach timeout, 0 to disable check (default)
+  private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shutdown
+  private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
 
 
   /**
@@ -115,7 +113,9 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
   public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset,
                                   int minMinutes, int maxMinutes) {
 
-    super(name);
+    if (name == null || name.isEmpty()) {
+      throw new IllegalArgumentException("missing name");
+    }
 
     if (iniSize < 1) {
       throw new IllegalArgumentException("initial size must be > 0");
@@ -166,10 +166,11 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
     this("default-mgr", 2, 8, 1, 720, 2160);
   }
 
+  @Override
+  public String getName() {
+    return name;
+  }
 
-  /**
-   * Gets the name of the manager.
-   */
   @Override
   public String toString() {
     return name;
@@ -211,8 +212,17 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
    */
   public void setAttachTimeout(long attachTimeout) {
     this.attachTimeout = attachTimeout;
-    if (attachTimeout > 0 && !isAlive()) {
-      start();
+    if (attachTimeout > 0) {
+      if (timeoutThread == null) {
+        timeoutThread = new AttachTimeoutThread(name + " Attach Timeout Thread");
+        timeoutThread.start();
+      }
+    }
+    else {
+      if (timeoutThread != null) {
+        timeoutThread.interrupt();
+        timeoutThread = null;
+      }
     }
   }
 
@@ -501,8 +511,20 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
   @Override
   public synchronized void shutdown() {
-    // shutdown monitoring thread (will shutdown anytime soon)
+
     shutdownRequested = true;
+
+    Thread t = timeoutThread;
+    if (t != null) {
+      // shutdown monitoring thread
+      t.interrupt();
+      try {
+        t.join();   // wait until thread terminates
+      }
+      catch (InterruptedException ex) {
+        LOGGER.warning(this + ": stopping the timeout thread failed", ex);
+      }
+    }
 
     // close all connections
     for (int i=0; i < conList.length; i++) {
@@ -516,43 +538,45 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
 
 
 
-  // --------------------- implements Thread ---------------------------
+  /**
+   * The attach timeout thread.<br>
+   * Detaches connections that have been attached for longer than attachTimeout milliseconds.
+   */
+  private class AttachTimeoutThread extends Thread {
 
-  @Override
-  public void run() {
+    public AttachTimeoutThread(String name) {
+      super(name);
+      setDaemon(true);
+    }
 
-    while (!shutdownRequested) {
-      if (getAttachTimeout() <= 0) {
-        // no timeout check, may be enabled later...
+    @Override
+    public void run() {
+
+      LOGGER.info("{0} started with timeout={1}ms", getName(), attachTimeout);
+
+      long timeout;
+      while (!shutdownRequested && (timeout = attachTimeout) > 0) {
         try {
-          sleep(LOOP_MS);
-        }
-        catch (InterruptedException iex) {
-          // simply continue
-        }
-      }
-      else  {
-        try {
-          sleep(attachTimeout);
+          sleep(timeout);
 
           // check for attached connections
           long curTime = System.currentTimeMillis();
 
           ManagedConnection[] connections;
-          synchronized(this) {
+          synchronized (this) {
             connections = conList.clone();    // fast array copy!
           }
-          for (ManagedConnection con: connections) {
+          for (ManagedConnection con : connections) {
             if (con != null) {
               long attachedMillis = curTime - con.getAttachedSince();
-              if (con.isAttached() && attachedMillis > attachTimeout) {
+              if (con.isAttached() && attachedMillis > timeout) {
                 Db db = con.getSession();
                 synchronized (db) {    // set/get connection is sync'd on Db
                   if (db.getConnection() == con && con.isAttached()) {
                     // timed out
                     try {
                       LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
-                                     " (" + attachedMillis + "ms)");
+                              " (" + attachedMillis + "ms)");
                       con.forceDetached();
                     }
                     catch (RuntimeException rex) {
@@ -565,9 +589,11 @@ public class DefaultConnectionManager extends Thread implements ConnectionManage
           }
         }
         catch (InterruptedException iex) {
-          // simply continue
+          // sleep interrupted -> check termination conditions above
         }
       }
+
+      LOGGER.info("{0} stopped", getName());
     }
 
   }

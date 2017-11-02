@@ -1012,8 +1012,9 @@ public class ManagedConnection {
   /**
    * Forces a detach of the db connection.
    * The method is used from connection managers only, hence package scope.
+   * Syncd because may be invoked from scavenger threads simultaneously.
    */
-  void forceDetached() {
+  synchronized void forceDetached() {
     if (isAttached()) {
       // database is still attached
       LOGGER.warning("forcing detach of connection " + this + " attached to " + db);

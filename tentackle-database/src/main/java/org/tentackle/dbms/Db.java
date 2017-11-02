@@ -1144,9 +1144,10 @@ public class Db implements Session, Cloneable {
       }
       else {
         if (conId > 0) {
-          if (con != null) {
+          ManagedConnection c = con;
+          if (c != null) {    // if attached
             try {
-              con.closePreparedStatements(true);   // cleanup all pending statements
+              c.closePreparedStatements(true);   // cleanup all pending statements
             }
             catch (Exception ex) {
               LOGGER.warning("closing prepared statements failed for " + this, ex);
@@ -1496,7 +1497,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = con.setSavepoint();
+      Savepoint savepoint = connection().setSavepoint();
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointId());
         transaction.addSavepoint(handle, savepoint);
@@ -1527,7 +1528,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = con.setSavepoint(name);
+      Savepoint savepoint = connection().setSavepoint(name);
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointName());
         transaction.addSavepoint(handle, savepoint);
@@ -1560,7 +1561,7 @@ public class Db implements Session, Cloneable {
       if (savepoint == null) {
         throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
       }
-      con.rollback(savepoint);
+      connection().rollback(savepoint);
     }
   }
 
@@ -1586,7 +1587,7 @@ public class Db implements Session, Cloneable {
       if (savepoint == null) {
         throw new PersistenceException(this, "no such savepoint to release: " + handle);
       }
-      con.releaseSavepoint(savepoint);
+      connection().releaseSavepoint(savepoint);
     }
   }
 
@@ -2034,8 +2035,9 @@ public class Db implements Session, Cloneable {
               LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
             }
             transaction.invokeRollbackTxRunnables();
-            if (con != null) {
-              con.rollback(withLog);  // avoid a commit ...
+            ManagedConnection c = con;
+            if (c != null) {
+              c.rollback(withLog);  // avoid a commit ...
               setAutoCommit(true);    // ... in setAutoCommit
             }
             else {
@@ -2086,8 +2088,9 @@ public class Db implements Session, Cloneable {
 
     try {
       // cancel all pending statements (usually max. 1)
-      if (con != null) {
-        con.cancelRunningStatements();
+      ManagedConnection c = con;
+      if (c != null) {
+        c.cancelRunningStatements();
       }
 
       if (transaction != null) {
@@ -2114,14 +2117,15 @@ public class Db implements Session, Cloneable {
       }
     }
     catch (RuntimeException rex) {
-      if (con != null && !con.isClosed()) {
+      ManagedConnection c = con;
+      if (c != null && !c.isClosed()) {
         // check low level transaction state
         boolean connectionInTransaction;
         try {
-          connectionInTransaction = con.getConnection().getAutoCommit();
+          connectionInTransaction = c.getConnection().getAutoCommit();
         }
         catch (SQLException ex) {
-          LOGGER.warning("cannot determine transaction state of " + con + ": assume transaction still running", ex);
+          LOGGER.warning("cannot determine transaction state of " + c + ": assume transaction still running", ex);
           connectionInTransaction = true;
         }
         if (connectionInTransaction) {
@@ -2130,24 +2134,24 @@ public class Db implements Session, Cloneable {
            * we need a low-level rollback and mark the connection dead
            * to avoid further use by the application.
            */
-          LOGGER.warning(con + " still in transaction: performing low-level rollback");
+          LOGGER.warning(c + " still in transaction: performing low-level rollback");
           try {
-            con.getConnection().rollback();
-            con.getConnection().setAutoCommit(true);
+            c.getConnection().rollback();
+            c.getConnection().setAutoCommit(true);
           }
           catch (SQLException ex) {
-            LOGGER.warning("low-level connection rollback failed for " + con, ex);
+            LOGGER.warning("low-level connection rollback failed for " + c, ex);
           }
           try {
             // this may yield some additional information
-            con.logAndClearWarnings();
+            c.logAndClearWarnings();
           }
           catch (PersistenceException ex) {
-            LOGGER.warning("clear warnings failed for " + con, ex);
+            LOGGER.warning("clear warnings failed for " + c, ex);
           }
         }
-        con.setDead(true);    // don't use this connection anymore!
-        LOGGER.warning("connection " + con + " marked dead");
+        c.setDead(true);    // don't use this connection anymore!
+        LOGGER.warning("connection " + c + " marked dead");
       }
       handleExceptionForScavenger(rex);
       return transaction != null;
@@ -2322,6 +2326,18 @@ public class Db implements Session, Cloneable {
   }
 
 
+  /**
+   * Asserts that that the connection is attached and returns it.
+   *
+   * @return the attached connection
+   */
+  ManagedConnection connection() {
+    ManagedConnection c = con;
+    if (c == null) {
+      throw new PersistenceException(this, "not attached");
+    }
+    return c;
+  }
 
 
   /**
@@ -2370,7 +2386,7 @@ public class Db implements Session, Cloneable {
     assertNotRemote();
     attach();
     try {
-      StatementWrapper stmt = con.createStatement(resultSetType, resultSetConcurrency);
+      StatementWrapper stmt = connection().createStatement(resultSetType, resultSetConcurrency);
       stmt.markReady();
       return stmt;
     }
@@ -2429,7 +2445,8 @@ public class Db implements Session, Cloneable {
     assertNotRemote();
     attach();
     try {
-      PreparedStatementWrapper stmt = con.getPreparedStatement(stmtKey, alwaysPrepare, resultSetType, resultSetConcurrency, sqlSupplier);
+      PreparedStatementWrapper stmt = connection().getPreparedStatement(
+              stmtKey, alwaysPrepare, resultSetType, resultSetConcurrency, sqlSupplier);
       stmt.markReady(); // mark ready for being used once
       return stmt;
     }
@@ -2473,7 +2490,7 @@ public class Db implements Session, Cloneable {
     assertNotRemote();
     attach();
     try {
-      PreparedStatementWrapper stmt = con.createPreparedStatement(null, sql, resultSetType, resultSetConcurrency);
+      PreparedStatementWrapper stmt = connection().createPreparedStatement(null, sql, resultSetType, resultSetConcurrency);
       stmt.markReady(); // mark ready for being used once
       return stmt;
     }
@@ -2514,13 +2531,13 @@ public class Db implements Session, Cloneable {
     if (this.autoCommit != autoCommit) {
       if (autoCommit && getBackend().sqlRequiresExtraCommit()) {
         // some dbms need a commit before setAutoCommit(true);
-        con.commit();
+        connection().commit();
       }
       if (!autoCommit) {
         // starting a tx
         attach();
       }
-      con.setAutoCommit(autoCommit);
+      connection().setAutoCommit(autoCommit);
       if (autoCommit) {
         // ending a tx
         detach();

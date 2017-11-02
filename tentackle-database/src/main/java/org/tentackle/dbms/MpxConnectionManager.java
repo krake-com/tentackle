@@ -157,12 +157,14 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public synchronized void shutdown() {
     shutdownRequested = true;
-    connectThread.interrupt();
-    try {
-      connectThread.join();   // wait until connect thread terminates
-    }
-    catch (InterruptedException ex) {
-      LOGGER.warning(this + ": stopping the connect thread failed", ex);
+    if (connectThread.isAlive()) {
+      connectThread.interrupt();
+      try {
+        connectThread.join();   // wait until connect thread terminates
+      }
+      catch (InterruptedException ex) {
+        LOGGER.warning(this + ": stopping the connect thread failed", ex);
+      }
     }
     // close all connections
     super.shutdown();
@@ -563,7 +565,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
   }
 
-  
+
   /**
    * checks whether the number of connections dropped below minSize.
    * If so, reopen missing connections.
@@ -605,6 +607,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
     @Override
     public void run() {
+
+      LOGGER.info("{0} started", getName());
+
       while (!shutdownRequested) {
         synchronized (connectGoMutex) {
           try {
@@ -636,6 +641,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
         }
       }
+
+      LOGGER.info("{0} stopped", getName());
     }
   }
 
