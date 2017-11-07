@@ -462,32 +462,54 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   @Override
-  public synchronized void attach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
-    ManagedConnection con = conList[index];
-    if (con.isDead() || con.isExpired()) {
-      // dead or expired -> reopen
-      if (con.isDead()) {
-        LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
-      }
-      else {
-        LOGGER.info("{0}: closing connection {1}, open since {2}",
-                    this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
-      }
+  public void attach(Db session) {
+    ManagedConnection con = attachImpl(session);
+    if (con != null) {    // need reopen
+      // not synchronized -> does not block the connection manager
       try {
         con.close();
       }
       catch (RuntimeException ex) {
         LOGGER.warning("closing connection failed -> ignored", ex);
       }
-
       // reopen the connection
       con = createConnection(session.getBackendInfo());
-      conList[index] = con;
-      LOGGER.info("{0}: connection {1} reopened", this, con);
+      
+      synchronized(this) {
+        int index = convertConnectionIdToIndex(session.getSessionId());
+        conList[index] = con;
+        LOGGER.info("{0}: connection {1} reopened", this, con);
+        con.attachSession(session);
+      }
+    }
+  }
+
+
+  /**
+   * Attaches the session to a connection.<br>
+   * The happy path is synchronized only once!
+   * Only in case of dead or expired connection we need a second synchronized (see above),
+   * however, the lengthy close and reopen will not block other threads from using the
+   * connection manager.
+   *
+   * @param session the session
+   * @return null if attached, the connection if it needs to be reopened
+   */
+  private synchronized ManagedConnection attachImpl(Db session) {
+    assertSessionBelongsToMe(session);
+    int index = convertConnectionIdToIndex(session.getSessionId());
+    ManagedConnection con = conList[index];
+    if (con.isDead()) {
+      LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
+      return con;    // need re-open
+    }
+    if (con.isExpired()) {
+      LOGGER.info("{0}: closing connection {1}, open since {2}",
+                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+      return con;    // need re-open
     }
     con.attachSession(session);
+    return null;
   }
 
 
