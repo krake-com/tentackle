@@ -133,19 +133,16 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * is created from a given context object.
    * <p>
    * The method is invoked from the security manager to check whether a
-   * security rule applies to a given context. Note that contextClass is the
-   * basename of the context object's class, for example "Tenant" or "FiscalYear",
-   * and not the classname of the DomainContext.
+   * security rule applies to a given context. Note that contextClassId is the
+   * class id of the context object's class.
    * <p>
    * The default implementation returns {@code contextId &lt; 0 || contextId == getContextId()}.<br>
    * This is sufficient for zero or one level of context inheritance. For more than one
-   * level this method must be overwridden in each level. Example for a hypothetical "TenantContext":
+   * level this method must be overwridden in each level. Example:
    * <pre>
-   *  boolean isWithinContext(long contextId, String contextClass) {
-   *    if (contextClass != null &amp;&amp; contextClass.equals("Tenant") &amp;&amp; contextId == getContextId()) {
-   *      return true;
-   *    }
-   *    return super.isWithinContext(contextId, contextClass);
+   *  boolean isWithinContext(long contextId, int contextClassId) {
+   *    return contextClassId == BLAH_CLASS_ID &amp;&amp; contextId == getContextId() ||
+   *           super.isWithinContext(contextId, contextClassId);
    *  }
    * </pre>
    * If the object IDs of the context objects are unique among all context entities the
