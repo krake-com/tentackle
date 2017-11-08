@@ -2192,7 +2192,7 @@ public class Db implements Session, Cloneable {
    * Detach the db.<br>
    * Used in execption handling to cleanup all pending statements and result sets.
    */
-  public void forceDetached() {
+  public synchronized void forceDetached() {
     if (con != null) {
       conMgr.forceDetach(this);
     }
