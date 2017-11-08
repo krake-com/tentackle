@@ -227,6 +227,156 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
 
+  @Override
+  public synchronized int getMaxSessions() {
+    return maxDbSize;
+  }
+
+
+  @Override
+  public synchronized int getNumSessions() {
+    return dbSize - freeDbCount;
+  }
+
+
+  @Override
+  public int getMaxConnections() {
+    return maxConSize;
+  }
+
+
+  @Override
+  public synchronized int getNumConnections() {
+    return conList.length - freeConCount;
+  }
+
+
+  @Override
+  public synchronized Collection<ManagedConnection> getConnections() {
+    Collection<ManagedConnection> connections = new ArrayList<>();
+    for (ManagedConnection con: conList) {
+      if (con != null) {
+        connections.add(con);
+      }
+    }
+    return connections;
+  }
+
+
+  @Override
+  public int login(Db session) {
+
+    ManagedConnection con = createConnection(session.getBackendInfo());
+
+    synchronized(this) {
+      int id = addDb(session);
+      /**
+       * because we add the connections in the same order as the db (1:1 mapping), the
+       * index returned after adding the conncetion must be the same as for the db.
+       */
+      if (addConnection(con) != id) {
+        con.close();
+        removeDb(id);
+        throw new PersistenceException(this + ": db- and connection-list out of sync");
+      }
+
+      id += idOffset;
+      LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session, con, id);
+      return id;
+    }
+  }
+
+
+  @Override
+  public synchronized void logout(Db session) {
+    assertSessionBelongsToMe(session);
+    int id = session.getSessionId();
+    int index = convertConnectionIdToIndex(id);
+    removeDb(index);
+    ManagedConnection con = removeConnection(index);
+    LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, id);
+    con.close();  // physically close the removed connection
+  }
+
+
+  @Override
+  public void attach(Db session) {
+    /**
+     * The happy path is synchronized only once.
+     * Only in case of a dead or expired connection, we need a second synchronized block.
+     * However, the lengthy close and reopen are not synchronized and therefore will not block other
+     * threads from using the connection manager.
+     */
+    ManagedConnection con = attachImpl(session);    // <<-- synchronized
+
+    if (con != null) {    // need reopen
+      // not synchronized -> does not block the connection manager
+      try {
+        con.close();
+      }
+      catch (RuntimeException ex) {
+        LOGGER.warning("closing connection failed -> ignored", ex);
+      }
+      // reopen the connection
+      con = createConnection(session.getBackendInfo());
+
+      synchronized(this) {
+        int index = convertConnectionIdToIndex(session.getSessionId());
+        conList[index] = con;
+        LOGGER.info("{0}: connection {1} reopened", this, con);
+        con.attachSession(session);
+      }
+    }
+  }
+
+
+  @Override
+  public synchronized void detach(Db session) {
+    assertSessionBelongsToMe(session);
+    int index = convertConnectionIdToIndex(session.getSessionId());
+    ManagedConnection con = conList[index];
+    con.detachSession(session);
+  }
+
+
+  @Override
+  public synchronized void forceDetach(Db session) {
+    assertSessionBelongsToMe(session);
+    int index = convertConnectionIdToIndex(session.getSessionId());
+    ManagedConnection con = conList[index];
+    con.forceDetached();
+  }
+
+
+  @Override
+  public synchronized void shutdown() {
+
+    shutdownRequested = true;
+
+    Thread t = timeoutThread;
+    if (t != null) {
+      // shutdown monitoring thread
+      t.interrupt();
+      try {
+        t.join();   // wait until thread terminates
+      }
+      catch (InterruptedException ex) {
+        LOGGER.warning(this + ": stopping the timeout thread failed", ex);
+      }
+    }
+
+    // close all connections
+    for (int i=0; i < conList.length; i++) {
+      if (conList[i] != null) {
+        ManagedConnection con = removeConnection(i);
+        LOGGER.info("{0}: close connection {1}", this, con);
+        con.close();
+      }
+    }
+  }
+
+
+
   /**
    * Adds a Db to the list.
    *
@@ -265,7 +415,6 @@ public class DefaultConnectionManager implements ConnectionManager {
   protected void removeDb(int index) {
     freeDbList[freeDbCount++] = index;
   }
-
 
 
   /**
@@ -384,113 +533,8 @@ public class DefaultConnectionManager implements ConnectionManager {
   }
 
 
-
-
-  // ---------------- implements ConnectionManager -----------------
-
-
-  @Override
-  public synchronized int getMaxSessions() {
-    return maxDbSize;
-  }
-
-
-  @Override
-  public synchronized int getNumSessions() {
-    return dbSize - freeDbCount;
-  }
-
-
-  @Override
-  public int getMaxConnections() {
-    return maxConSize;
-  }
-
-
-  @Override
-  public synchronized int getNumConnections() {
-    return conList.length - freeConCount;
-  }
-
-
-  @Override
-  public synchronized Collection<ManagedConnection> getConnections() {
-    Collection<ManagedConnection> connections = new ArrayList<>();
-    for (ManagedConnection con: conList) {
-      if (con != null) {
-        connections.add(con);
-      }
-    }
-    return connections;
-  }
-
-
-  @Override
-  public int login(Db session) {
-
-    ManagedConnection con = createConnection(session.getBackendInfo());
-
-    synchronized(this) {
-      int id = addDb(session);
-      /**
-       * because we add the connections in the same order as the db (1:1 mapping), the
-       * index returned after adding the conncetion must be the same as for the db.
-       */
-      if (addConnection(con) != id) {
-        con.close();
-        removeDb(id);
-        throw new PersistenceException(this + ": db- and connection-list out of sync");
-      }
-
-      id += idOffset;
-      LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session, con, id);
-      return id;
-    }
-  }
-
-
-  @Override
-  public synchronized void logout(Db session) {
-    assertSessionBelongsToMe(session);
-    int id = session.getSessionId();
-    int index = convertConnectionIdToIndex(id);
-    removeDb(index);
-    ManagedConnection con = removeConnection(index);
-    LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, id);
-    con.close();  // physically close the removed connection
-  }
-
-
-  @Override
-  public void attach(Db session) {
-    ManagedConnection con = attachImpl(session);
-    if (con != null) {    // need reopen
-      // not synchronized -> does not block the connection manager
-      try {
-        con.close();
-      }
-      catch (RuntimeException ex) {
-        LOGGER.warning("closing connection failed -> ignored", ex);
-      }
-      // reopen the connection
-      con = createConnection(session.getBackendInfo());
-      
-      synchronized(this) {
-        int index = convertConnectionIdToIndex(session.getSessionId());
-        conList[index] = con;
-        LOGGER.info("{0}: connection {1} reopened", this, con);
-        con.attachSession(session);
-      }
-    }
-  }
-
-
   /**
-   * Attaches the session to a connection.<br>
-   * The happy path is synchronized only once!
-   * Only in case of dead or expired connection we need a second synchronized (see above),
-   * however, the lengthy close and reopen will not block other threads from using the
-   * connection manager.
+   * Attaches the session to a connection.
    *
    * @param session the session
    * @return null if attached, the connection if it needs to be reopened
@@ -501,61 +545,16 @@ public class DefaultConnectionManager implements ConnectionManager {
     ManagedConnection con = conList[index];
     if (con.isDead()) {
       LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);
-      return con;    // need re-open
     }
-    if (con.isExpired()) {
+    else if (con.isExpired()) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
-      return con;    // need re-open
     }
-    con.attachSession(session);
-    return null;
-  }
-
-
-  @Override
-  public synchronized void detach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
-    ManagedConnection con = conList[index];
-    con.detachSession(session);
-  }
-
-
-  @Override
-  public synchronized void forceDetach(Db session) {
-    assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
-    ManagedConnection con = conList[index];
-    con.forceDetached();
-  }
-
-
-  @Override
-  public synchronized void shutdown() {
-
-    shutdownRequested = true;
-
-    Thread t = timeoutThread;
-    if (t != null) {
-      // shutdown monitoring thread
-      t.interrupt();
-      try {
-        t.join();   // wait until thread terminates
-      }
-      catch (InterruptedException ex) {
-        LOGGER.warning(this + ": stopping the timeout thread failed", ex);
-      }
+    else {
+      con.attachSession(session);
+      con = null;
     }
-
-    // close all connections
-    for (int i=0; i < conList.length; i++) {
-      if (conList[i] != null) {
-        ManagedConnection con = removeConnection(i);
-        LOGGER.info("{0}: close connection {1}", this, con);
-        con.close();
-      }
-    }
+    return con;
   }
 
 
@@ -617,7 +616,6 @@ public class DefaultConnectionManager implements ConnectionManager {
 
       LOGGER.info("{0} stopped", getName());
     }
-
   }
 
 }
