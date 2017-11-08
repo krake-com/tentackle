@@ -148,9 +148,9 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * If the object IDs of the context objects are unique among all context entities the
    * contextClass can be ignored and the method reduces to:
    * <pre>
-   *  boolean isWithinContext(long contextId, String contextClass) {
+   *  boolean isWithinContext(long contextId, int contextClassId) {
    *    return contextId == getContextId() ||
-   *           super.isWithinContext(contextId, contextClass);
+   *           super.isWithinContext(contextId, contextClassId);
    *  }
    * </pre>
    *
