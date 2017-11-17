@@ -13,7 +13,7 @@ arguments:
 <li><em>--noif:</em> not defined in an interface, i.e. no \@Override will be generated.</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@

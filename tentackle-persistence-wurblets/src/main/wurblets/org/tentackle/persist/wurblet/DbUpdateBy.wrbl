@@ -12,7 +12,7 @@ arguments:
 <li><em>--private:</em> makes the method private (default is public).</li>
 <li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 <li><em>&lt;values&gt;:</em> the attributes to be updated.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.

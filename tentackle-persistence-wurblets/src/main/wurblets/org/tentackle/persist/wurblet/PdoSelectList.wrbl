@@ -22,7 +22,7 @@ arguments:
 <li><em>--resultset:</em> returns the ResultSetWrapper instead of a List.</li>
 <li><em>--cursor:</em> returns a ScrollableResource instead of a List.</li>
 <li><em>--bounded:</em> returns a bounded List&lt;? extends mainClass&gt; instead of List&lt;mainClass&gt;.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@

@@ -17,7 +17,7 @@ arguments:
 <li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
 <li><em>--sort:</em> sort according to orderBy()-method.</li>
 <li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
-<li><em>&lt;expression&gt;:</em> see {\@link WurbletParameterParser}.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
