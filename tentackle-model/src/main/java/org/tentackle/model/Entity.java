@@ -543,6 +543,14 @@ public interface Entity extends ModelElement {
   Set<List<Relation>> getCompositePaths();
 
   /**
+   * Gets the paths of composite relations to this entity.<br>
+   * Notice that this inludes paths to sub-entities and super-entities as well.
+   *
+   * @return the paths, empty list if this is not a component of any other entity
+   */
+  Set<List<Relation>> getAllCompositePaths();
+
+  /**
    * Gets the direct components of this entity.
    *
    * @return the components

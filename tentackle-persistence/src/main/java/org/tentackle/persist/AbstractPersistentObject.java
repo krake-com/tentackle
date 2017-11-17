@@ -1804,10 +1804,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public StringBuilder createSelectAllInnerSql() {
     StringBuilder sql = new StringBuilder();
     String alias = getTableAlias();
-    sql.append(alias).append('.').append(SQL_ALLSTAR);
-    sql.append(SQL_FROM);
-    sql.append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(alias);
-    sql.append(SQL_WHEREALL);
+    sql.append(alias).append('.').append(SQL_ALLSTAR)
+       .append(SQL_FROM)
+       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(alias)
+       .append(SQL_WHEREALL);
     return sql;
   }
 
@@ -1816,21 +1816,21 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public StringBuilder createSelectAllIdSerialInnerSql() {
     StringBuilder sql = new StringBuilder();
     String alias = getTopSuperTableAlias();
-    sql.append(alias).append('.').append(CN_ID);
-    sql.append(SQL_COMMA);
-    sql.append(alias).append('.').append(CN_SERIAL);
-    sql.append(SQL_FROM);
-    sql.append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(alias);
-    sql.append(SQL_WHEREALL);
+    sql.append(alias).append('.').append(CN_ID)
+       .append(SQL_COMMA)
+       .append(alias).append('.').append(CN_SERIAL)
+       .append(SQL_FROM)
+       .append(getTableName()).append(getBackend().sqlAsBeforeTableAlias()).append(alias)
+       .append(SQL_WHEREALL);
     return sql;
   }
 
   @Override
   public StringBuilder createSelectAllByIdInnerSql() {
     StringBuilder sql = createSelectAllInnerSql();
-    sql.append(SQL_AND);
-    sql.append(getTopSuperTableAlias()).append('.').append(CN_ID);
-    sql.append(SQL_EQUAL_PAR);
+    sql.append(SQL_AND)
+       .append(getTopSuperTableAlias()).append('.').append(CN_ID)
+       .append(SQL_EQUAL_PAR);
     return sql;
   }
 
@@ -1843,22 +1843,44 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * </pre>
    *
    * @param classVariables the classvariables
+   * @param withAlias true if column name with table alias, else without
    * @return the sql text
    */
-  public StringBuilder createSelectIdInnerSql(PersistentObjectClassVariables<? super T, ? super P> classVariables) {
+  public StringBuilder createSelectIdInnerSql(PersistentObjectClassVariables<? super T, ? super P> classVariables,
+                                              boolean withAlias) {
     StringBuilder sql = new StringBuilder();
     String tName = classVariables.getTableName();
     String tAlias = classVariables.getTableAlias();
-    sql.append(tAlias).append('.').append(CN_ID);
-    sql.append(SQL_FROM);
-    sql.append(tName).append(getBackend().sqlAsBeforeTableAlias()).append(tAlias);
+    if (withAlias) {
+      sql.append(tAlias).append('.');
+    }
+    sql.append(CN_ID).append(SQL_FROM).append(tName);
+    if (withAlias) {
+      sql.append(getBackend().sqlAsBeforeTableAlias()).append(tAlias);
+    }
     sql.append(SQL_WHEREALL);
     return sql;
   }
 
+
+  /**
+   * Creates the inner sql text to select the ID field.
+   * <p>
+   * Returns something like:
+   * <pre>
+   *  "id FROM xytable WHERE 1=1"
+   * </pre>
+   *
+   * @param withAlias true if column name with table alias, else without
+   * @return the sql text
+   */
+  public StringBuilder createSelectIdInnerSql(boolean withAlias) {
+    return createSelectIdInnerSql(getClassVariables(), withAlias);
+  }
+
   @Override
   public StringBuilder createSelectIdInnerSql() {
-    return createSelectIdInnerSql(getClassVariables());
+    return createSelectIdInnerSql(getClassVariables(), true);
   }
 
   /**
@@ -1877,13 +1899,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (condition != null) {
       sql.append(condition);
     }
-    sql.append(SQL_AND);
-    sql.append(getTopSuperTableAlias()).append('.').append(CN_NORMTEXT);
-    sql.append(SQL_LIKE_PAR);
+    sql.append(SQL_AND)
+       .append(getTopSuperTableAlias()).append('.').append(CN_NORMTEXT)
+       .append(SQL_LIKE_PAR);
     String orderSuffix = orderBy();
     if (orderSuffix != null)  {
-      sql.append(SQL_ORDERBY);
-      sql.append(orderSuffix);
+      sql.append(SQL_ORDERBY).append(orderSuffix);
     }
     return sql.toString();
   }

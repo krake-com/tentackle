@@ -16,26 +16,33 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.wurblet;
+package org.tentackle.common;
 
-import org.wurbelizer.wurbel.WurbelException;
+import java.util.List;
 
 /**
- * Code generator for expressions.
+ * Generic path to something.
+ * <p>
+ * A path consists of elements and optional continuation paths.
  *
  * @author harald
- * @param <T> the type of object to generate code for
+ * @param <P> the path type
+ * @param <E> the path element type
  */
-@FunctionalInterface
-public interface CodeGenerator<T> {
+public interface Path<P extends Path<P,E>, E> {
 
   /**
-   * Generates code.
+   * Gets the elements describing the path.
    *
-   * @param t the object to generate code for
-   * @return the generated code
-   * @throws WurbelException if code generation failed
+   * @return the elements, empty if none (never null)
    */
-  String generate(T t) throws WurbelException;
+  List<E> getElements();
+
+  /**
+   * Gets the sub paths starting at end of this path.
+   *
+   * @return the sub paths, empty if end of path (never null)
+   */
+  List<P> getPaths();
 
 }

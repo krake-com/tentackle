@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config groupArgs}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate code to update low-level persistent objects.
 <p>
@@ -50,7 +51,6 @@ For more options, see {\@link DbModelWurblet}.
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean whereWithAliases = false;   // for genwhere.incl
 
 ]@
   @(scope)@ int @(methodName)@(@(params)@) {

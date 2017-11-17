@@ -45,14 +45,13 @@ For more options, see {\@link DbModelWurblet}.
       classVar += ".";    // add dot to access class var
     }
 
-    if (getExpressionParameters().isEmpty())  {
+    if (getExpressionArguments().isEmpty())  {
       throw new WurbelException("no select keys given");
     }
 
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean whereWithAliases = true;   // for genwhere.incl
 
 ]@
   @(scope)@ boolean @(methodName)@(@(params)@) {

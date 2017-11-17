@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config pathAllowed}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate code to select a list of low-level persistent objects.
 <p>
@@ -25,16 +26,6 @@ For more options, see {\@link DbModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException {
-
-    moveExtraToSortingParameters();
-
-    if (!getExtraParameters().isEmpty()) {
-      String msg = "unexpected extra parameters:";
-      for (WurbletParameter par: getExtraParameters()) {
-        msg += " " + par;
-      }
-      throw new WurbelException(msg);
-    }
 
     String className = getClassName();
     String methodName = getMethodName();
@@ -108,8 +99,6 @@ For more options, see {\@link DbModelWurblet}.
                             ((isTracked() ? "TrackedArrayList" : "List") + "<" + (bounded ? "? extends " : "") + className + ">");
     String varListType  = (isTracked() ? "TrackedArrayList" : "List") + "<" + className + ">";
     String rmiListType  = (isTracked() ? "TrackedArrayList" : "List") + "<" + (bounded ? "? extends " : "") + (isGenerified() ? "P" : className) + ">";
-
-    boolean whereWithAliases = true;   // for genwhere.incl
 
 ]@
   @(scope)@ @(listType)@ @(methodName)@(@(params)@) {

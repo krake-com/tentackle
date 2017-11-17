@@ -305,7 +305,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   }
 
   @Override
-  public boolean isRootEntity() {
+  public boolean isRoot() {
     return rootEntity;
   }
 

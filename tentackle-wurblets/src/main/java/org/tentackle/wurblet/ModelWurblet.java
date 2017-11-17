@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -38,7 +37,6 @@ import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
-import org.tentackle.model.SelectionType;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.wurbelizer.wurbel.JavaSourceType;
@@ -92,8 +90,11 @@ public class ModelWurblet extends AbstractWurblet {
   /** wurblet specific arguments. */
   private List<String> args;
 
-  /** whether context attribute is valid (even if set in model). */
-  private boolean contextIdAttributeValid;
+  /** list of wurblet args starting with -- (-- cut off). */
+  private List<String> optionArgs;
+
+  /** list of regular wurblet args (all args except the options). */
+  private List<String> wurbletArgs;
 
   /** != null if detected whether this is a pdo or not. */
   private Boolean isPdo;
@@ -104,14 +105,6 @@ public class ModelWurblet extends AbstractWurblet {
   /** the pdo classname if it's a pdo. */
   private String pdoClassName;
 
-  /** the wurblet key parser. */
-  private WurbletParameterParser parser;
-
-  /** the joins. */
-  private List<List<Relation>> joins;
-
-  /** list of wurblet args starting with -- (-- cut off). */
-  private List<String> optionArgs;
 
 
   /**
@@ -372,15 +365,6 @@ public class ModelWurblet extends AbstractWurblet {
   }
 
   /**
-   * Returns whether context attribute is valid (even if set in model).
-   *
-   * @return true if context id attribute is valid
-   */
-  public boolean isContextIdAttributeValid() {
-    return contextIdAttributeValid;
-  }
-
-  /**
    * Gets the model entity.
    *
    * @return the entity
@@ -436,76 +420,15 @@ public class ModelWurblet extends AbstractWurblet {
 
 
   /**
-   * Gets all parameters.
+   * Gets the wurblet arguments.<br>
+   * All arguments except the options.
    *
-   * @return the parameters
+   * @return the wurblet args
    */
-  public List<WurbletParameter> getAllParameters() {
-    return parser.getAllParameters();
+  public List<String> getWurbletArgs() {
+    return wurbletArgs;
   }
 
-  /**
-   * Gets the method parameters.
-   *
-   * @return the method parameters
-   */
-  public List<WurbletParameter> getMethodParameters() {
-    return parser.getMethodParameters();
-  }
-
-  /**
-   * Gets the expression parameters.
-   *
-   * @return the parameters used within the expression
-   */
-  public List<WurbletParameter> getExpressionParameters() {
-    return parser.getExpressionParameters();
-  }
-
-  /**
-   * Gets the select/where expression.
-   *
-   * @return the expression
-   */
-  public WurbletParameterExpression getExpression() {
-    return parser.getExpression();
-  }
-
-  /**
-   * Gets the extra parameters.
-   *
-   * @return the parameters used within the expression
-   */
-  public List<WurbletParameter> getExtraParameters() {
-    return parser.getExtraParameters();
-  }
-
-  /**
-   * Gets the sorting parameters.
-   *
-   * @return the sorting parameters, empty if no "order by"
-   */
-  public List<WurbletParameter> getSortingParameters() {
-    return parser.getSortingParameters();
-  }
-
-  /**
-   * Returns whether sorting is configured for this wurblet.
-   *
-   * @return true if sorting defined in args
-   */
-  public boolean isWithSorting() {
-    return !getSortingParameters().isEmpty();
-  }
-
-  /**
-   * Gets the joins.
-   *
-   * @return the joins
-   */
-  public List<List<Relation>> getJoinedRelations() {
-    return joins;
-  }
 
   /**
    * Creates the method name to select a relation.
@@ -573,9 +496,7 @@ public class ModelWurblet extends AbstractWurblet {
     super.run();
 
     args = Arrays.asList(container.getArgs());
-    joins = new ArrayList<>();
-
-    List<String> parserArgs = new ArrayList<>();
+    wurbletArgs = new ArrayList<>();
     optionArgs = new ArrayList<>();
     for (String arg : args) {
       if (arg != null) {
@@ -583,7 +504,7 @@ public class ModelWurblet extends AbstractWurblet {
           optionArgs.add(arg.substring(2));
         }
         else {
-          parserArgs.add(arg);
+          wurbletArgs.add(arg);
         }
       }
     }
@@ -701,7 +622,6 @@ public class ModelWurblet extends AbstractWurblet {
       throw new WurbelException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
     }
 
-    parser = new WurbletParameterParser(entity, parserArgs);
 
     remote = entity.getOptions().isRemote();
     // override global option
@@ -710,165 +630,6 @@ public class ModelWurblet extends AbstractWurblet {
     }
     if (getOption("noremote") != null) {
       remote = false;
-    }
-
-    contextIdAttributeValid = entity.getContextIdAttribute() != null;
-
-    // setup wurblet parameters
-    for (WurbletParameter par: getAllParameters()) {
-
-      Entity parEntity = entity;    // the parameter's entity
-
-      if (par.isComponentKey() ||
-          par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-
-        if (!entity.isRootEntityAccordingToModel()) {
-          throw new WurbelException("component keys are only allowed for root-entities: " + par);
-        }
-        try {
-          parEntity = model.getByEntityName(par.getComponentEntityName());
-        }
-        catch (ModelException mex) {
-          throw new WurbelException("model errors while loading '" + par.getComponentEntityName() + "'", mex);
-        }
-        if (parEntity == null && !par.isRelationKey()) {
-          // try relation-name instead of entity-name
-          Relation relation = entity.getRelation(par.getComponentEntityName(), true);
-          if (relation != null) {
-            parEntity = relation.getForeignEntity();
-          }
-        }
-        if (parEntity == null) {
-          throw new WurbelException("no such entity '" + par.getComponentEntityName() + "' in " + par);
-        }
-        boolean rootOk = false;
-        Entity joinedEntity = parEntity;
-        outer:
-        while (joinedEntity != null) {
-          for (Entity rootEntity: joinedEntity.getRootEntities()) {
-            if (rootEntity.equals(entity)) {
-              rootOk = true;
-              break outer;
-            }
-          }
-          joinedEntity = joinedEntity.getSuperEntity();
-        }
-        if (!rootOk) {
-          throw new WurbelException(parEntity + " is not a component of " + entity + ": " + par);
-        }
-      }
-
-      if (par.isRelationKey()) {
-        Relation relation = parEntity.getRelation(par.getRelationName(), true);
-        if (relation == null) {
-          throw new WurbelException("no such relation '" + par.getRelationName() +"' in " + parEntity + ": " + par);
-        }
-        par.setRelation(relation);
-        parEntity = relation.getForeignEntity();  // must work!
-        if (par.getRelationComponentEntityName() != null) {
-          try {
-            parEntity = model.getByEntityName(par.getRelationComponentEntityName());
-          }
-          catch (ModelException mex) {
-            throw new WurbelException("model errors while loading '" + par.getRelationComponentEntityName() + "'", mex);
-          }
-          if (parEntity == null) {
-            throw new WurbelException("no such related entity '" + par.getRelationComponentEntityName() + "' in " + par);
-          }
-        }
-      }
-      else {
-        Relation relation = entity.getRelation(par.getComponentEntityName(), true);
-        if (relation != null) {
-          par.setRelation(relation);
-        }
-        else {
-          // find relation to that component
-          for (Relation rel: entity.getAllRelations()) {
-            if (rel.isComposite() && rel.getForeignEntity().getName().equals(par.getComponentEntityName())) {
-              par.setRelation(rel);
-              break;
-            }
-          }
-        }
-      }
-
-      Attribute attribute = parEntity.getAttributeByJavaName(par.getName(), true);
-      if (attribute == null) {
-        // try column name
-        attribute = parEntity.getAttributeByColumnName(par.getName(), true);
-        if (attribute == null) {
-          throw new WurbelException("no such attribute '" + par.getName() + "' in " + parEntity + ": " + par);
-        }
-      }
-      par.setAttribute(attribute);
-
-      if (attribute.getEntity().equals(entity) && attribute.getOptions().isContextId()) {
-        // the contextId or an attribute with context scope is already part of the where-clause
-        // --> context-clause not necessary
-        contextIdAttributeValid = false;
-      }
-    }
-
-    // setup joins
-    for (String joinPath : parser.getJoinPaths()) {
-      List<Relation> joinedJoins = new ArrayList<>();
-      StringTokenizer stok = new StringTokenizer(joinPath, "*");
-      Entity leftEntity = entity;
-      while (stok.hasMoreTokens()) {
-        String joinName = stok.nextToken();
-        Relation join = leftEntity.getRelation(joinName, true);
-        if (join == null) {
-          throw new WurbelException("no relation '" + joinName + "' in '" + leftEntity + "'");
-        }
-        if (join.getSelectionType() != SelectionType.LAZY && join.getSelectionType() != SelectionType.EAGER) {
-          throw new WurbelException("joined relation '" + join.getName() + "' must be lazy or eager");
-        }
-        if (remote) {
-          if (!join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
-            throw new WurbelException("joined non-composite relation '" + join.getName() +
-                    "' must be serialized for remote access");
-          }
-          Relation opRel = join.getForeignRelation();
-          if (opRel != null && !opRel.isSerialized()) {
-            throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
-                    "' must be serialized for remote access");
-          }
-        }
-        joinedJoins.add(join);
-        leftEntity = join.getForeignEntity();
-      }
-      if (!joinedJoins.isEmpty() && !joins.contains(joinedJoins)) {
-        joins.add(joinedJoins);
-      }
-    }
-
-
-    if (contextIdAttributeValid) {  // if context id option set for an attribute
-
-      /**
-       * Furthermore, if _all_ unique parameters are part of the where-clause, we
-       * don't need a contextAttribute as well. However, in that case, we need
-       * to makeValidContext in selects.
-       */
-      int uniqueAttributeCount = 0;
-      for (Attribute attribute: entity.getAttributes()) {
-        if (attribute.getOptions().isDomainKey()) {
-          uniqueAttributeCount++;
-        }
-      }
-
-      int uniqueKeyCount = 0;
-      for (WurbletParameter key: getExpressionParameters()) {
-        Attribute attribute = key.getAttribute();
-        if (attribute != null && attribute.getOptions().isDomainKey()) {
-          uniqueKeyCount++;
-        }
-      }
-
-      if (uniqueAttributeCount > 0 && uniqueAttributeCount == uniqueKeyCount) {
-        contextIdAttributeValid = false;
-      }
     }
 
     /**
@@ -889,28 +650,6 @@ public class ModelWurblet extends AbstractWurblet {
 
   // ----------------- utility methods to simplify writing wurblets ----------------------------------
 
-
-  /**
-   * Moves remaining extra parameters to sorting parameters.<br>
-   * The method should only be used in finder-wurblets (PdoSelect...) that
-   * don't expect any extra parameters. This is just a convenience
-   * for users that forget to prepend a '+' to a sorting parameter.
-   */
-  public void moveExtraToSortingParameters() {
-    for (Iterator<WurbletParameter> iter = parser.getExtraParameters().iterator(); iter.hasNext(); ) {
-      WurbletParameter par = iter.next();
-      if (par.getAttribute() != null) {
-        // move to sorting parameters
-        par.setSortMode(Backend.SQL_SORTASC);
-        parser.getSortingParameters().add(par);
-        // sort by index
-        Collections.sort(parser.getSortingParameters(), (o1, o2) -> {
-          return o1.getIndex() - o2.getIndex();
-        });
-        iter.remove();
-      }
-    }
-  }
 
   /**
    * Checks whether attribute is the pdo ID.

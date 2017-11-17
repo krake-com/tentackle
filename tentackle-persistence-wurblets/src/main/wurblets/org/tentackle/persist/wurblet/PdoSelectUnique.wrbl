@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config pathAllowed}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate code to select an entity.
 <p>
@@ -24,14 +25,6 @@ For more options, see {\@link DbModelWurblet}.
   private void wurbel() throws WurbelException {
 
     assertEntityIsPersistable();
-
-    if (!getExtraParameters().isEmpty()) {
-      String msg = "unexpected extra parameters:";
-      for (WurbletParameter par: getExtraParameters()) {
-        msg += " " + par;
-      }
-      throw new WurbelException(msg);
-    }
 
     String className  = getClassName();
     String methodName = getMethodName();
@@ -83,7 +76,7 @@ For more options, see {\@link DbModelWurblet}.
     if (methodName == null) {
       throw new WurbelException("can't determine <methodname>");
     }
-    if (getExpressionParameters().isEmpty() && !sort && append == null && getContextAttribute() == null) {
+    if (getExpressionArguments().isEmpty() && !sort && append == null && getContextAttribute() == null) {
       throw new WurbelException("no keys given");
     }
 
@@ -92,8 +85,6 @@ For more options, see {\@link DbModelWurblet}.
     String statementId = createStatementId();
     String reflMethod = getGuardName() + "Method";
     boolean needLimit = sort || append != null || createOrderBy() != null;
-    boolean whereWithAliases = true;   // for genwhere.incl
-
     String alias = getEntity().getTopSuperEntity().getTableAlias();
     String poImpl = deriveClassNameForEntity(getEntity());
 
@@ -145,14 +136,15 @@ For more options, see {\@link DbModelWurblet}.
 @[
     } // end if remote
 
-    Collection<LeftJoin> joins = getLeftJoins();
+    List<RelationPath> joins = getJoinPaths();
     if (!joins.isEmpty()) {
 ]@
     JoinedSelect<@(returnType)@> js = new JoinedSelect<@(returnType)@>()
 @[
       int joinCount = 0;
-      for (LeftJoin join: joins) {
-        Relation rel = join.getRelation();
+      for (RelationPath join: joins) {
+        // @TODO: this must be refactored to support RelationPaths with more than one relation
+        Relation rel = join.getElements().get(0);
         joinCount++;
         String joinClass = rel.getForeignEntity().getName();
         String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
@@ -181,7 +173,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
           }
         )
-      )@(joinCount == getJoinedRelations().size() ? ";" : "")@
+      )@(joinCount == joins.size() ? ";" : "")@
 @[
         }
         else  {
@@ -192,7 +184,7 @@ For more options, see {\@link DbModelWurblet}.
             ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getSetterName())@@(rel.isSerialized()?"Blunt":"")@(@(joinAlias)@);
           }
         )
-      )@(joinCount == getJoinedRelations().size() ? ";" : "")@
+      )@(joinCount == joins.size() ? ";" : "")@
 @[
         }
       }
@@ -235,7 +227,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (!getJoinedRelations().isEmpty()) {
+    if (isWithJoins()) {
 ]@
     ndx = js.setClassIdsInStatement(st, ndx);
 @[
@@ -248,14 +240,14 @@ For more options, see {\@link DbModelWurblet}.
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
 @[
     }
-    if (getJoinedRelations().isEmpty()) {
+    if (isWithJoins()) {
 ]@
-    return executeFirstPdoQuery(st);
+    return executeFirstPdoQuery(st, js);
 @[
     }
     else  {
 ]@
-    return executeFirstPdoQuery(st, js);
+    return executeFirstPdoQuery(st);
 @[
     }
 ]@

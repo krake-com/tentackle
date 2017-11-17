@@ -21,7 +21,7 @@
 
     boolean needParentheses = false;
 
-    if (!getExpressionParameters().isEmpty()) {
+    if (!getExpressionArguments().isEmpty()) {
       needParentheses = getExpression().needParenthesesAfterAndOperator();
       if (andPrepended || needParentheses) {
 ]@
@@ -40,25 +40,105 @@
 @[
         }
       }
+
       // not a lambda because reference to instance of codeWriter within itself
       final CodeGenerator<Object> generator = new CodeGenerator<Object>() {
+
         \@Override
         public String generate(Object t) throws WurbelException {
-          if (t instanceof WurbletParameterOperator) {
-            return "        sql.append(Backend." + ((WurbletParameterOperator) t).getSql() + ");\n";
+          if (t instanceof WurbletArgumentOperator) {
+            return "        sql.append(Backend." + ((WurbletArgumentOperator) t).getSql() + ");\n";
           }
-          if (t instanceof WurbletParameterExpression) {
+          if (t instanceof WurbletArgumentExpression) {
             StringBuilder buf = new StringBuilder();
             buf.append("        sql.append(Backend.SQL_LEFT_PARENTHESIS);\n");
-            buf.append(((WurbletParameterExpression) t).toCode(this));
+            buf.append(((WurbletArgumentExpression) t).toCode(this));
             buf.append("        sql.append(Backend.SQL_RIGHT_PARENTHESIS);\n");
             return buf.toString();
           }
-          if (t instanceof WurbletParameter) {
+          if (t instanceof WurbletArgument) {
             StringBuilder buf = new StringBuilder();
-            WurbletParameter par = (WurbletParameter) t;
-            Attribute attr = par.getAttribute();
-            if (par.isComponentKey() || par.isRelationKey()) {
+            WurbletArgument arg = (WurbletArgument) t;
+            Attribute attr = arg.getAttribute();
+            if (arg.isPath()) {
+              Set<Relation> existsRels = arg.getExistsRelations();
+              if (existsRels != null) {
+                buf.append("        sql.append(Backend.SQL_EXISTS)\n");
+                // (FROM) table1 AS alias1, table2 AS alias 2, ...
+                String rightClass;
+                String comma = "";
+                for (Entity component: arg.getExistsComponents()) {
+                  ComponentInfo ci = createComponentInfo(component);
+                  rightClass = ci.getRootIdClassName();
+                  buf.append("           .append(").append(comma).append(rightClass)
+                     .append(".CLASSVARIABLES.getTableName())\n")
+                     .append("           .append(getBackend().sqlAsBeforeTableAlias())\n")
+                     .append("           .append(").append(rightClass)
+                     .append(".CLASSVARIABLES.getTableAlias())\n");
+                  comma = "Backend.SQL_COMMA).append(";
+                  if (ci.isExtraJoinNecessary()) {
+                    buf.append("           .append(").append(comma).append(ci.getExtraClassName())
+                       .append(".CLASSVARIABLES.getTableName())\n")
+                       .append("           .append(getBackend().sqlAsBeforeTableAlias())\n")
+                       .append("           .append(").append(ci.getExtraClassName())
+                       .append(".CLASSVARIABLES.getTableAlias())\n");
+                  }
+                }
+
+                for (Relation rel: existsRels) {
+                  rightClass = deriveClassNameForEntity(rel.getForeignEntity());
+                  buf.append("           .append(").append(comma).append(rightClass)
+                     .append(".CLASSVARIABLES.getTableName())\n")
+                     .append("           .append(getBackend().sqlAsBeforeTableAlias())\n")
+                     .append("           .append(").append(rightClass)
+                     .append(".CLASSVARIABLES.getTableAlias())\n");
+                  comma = "Backend.SQL_COMMA).append(";
+                }
+
+                buf.append("           .append(Backend.SQL_WHERE)\n");
+
+                for (Entity component: arg.getExistsComponents()) {
+                  ComponentInfo ci = createComponentInfo(component);
+                  rightClass = ci.getRootIdClassName();
+                  buf.append("           .append(getColumnName(CN_ID)).append(Backend.SQL_EQUAL)\n")
+                     .append("           .append(").append(rightClass).append(".CLASSVARIABLES.getColumnName(")
+                     .append(ci.getRootIdColumnName()).append("))\n")
+                     .append("           .append(Backend.SQL_AND)\n");
+                  if (ci.isExtraJoinNecessary()) {
+                    buf.append("           .append(").append(ci.getRootIdClassName())
+                       .append(".CLASSVARIABLES.getColumnName(CN_ID)).append(Backend.SQL_EQUAL)\n")
+                       .append("           .append(").append(ci.getExtraClassName())
+                       .append(".CLASSVARIABLES.getColumnName(CN_ID))\n")
+                       .append("           .append(Backend.SQL_AND)\n");
+                  }
+                }
+
+                for (Relation rel: existsRels) {
+                  String leftAttribute;
+                  String rightAttribute;
+                  if (rel.getRelationType() == RelationType.OBJECT) {
+                    leftAttribute = "CN_" + rel.getAttribute().getName().toUpperCase();
+                    rightAttribute = "CN_ID";
+                  }
+                  else {
+                    leftAttribute = "CN_ID";
+                    rightAttribute = "CN_" + rel.getForeignAttribute().getName().toUpperCase();
+                  }
+                  String leftClass = rel.getEntity().equals(getEntity()) ? "" :
+                                                (deriveClassNameForEntity(rel.getEntity()) + ".");
+                  String leftClassVariables = leftClass.isEmpty() ? "" : (leftClass + "CLASSVARIABLES.");
+                  rightClass = rel.getForeignEntity().equals(getEntity()) ? "" :
+                                                (deriveClassNameForEntity(rel.getForeignEntity()) + ".");
+                  buf.append("           .append(").append(leftClassVariables).append("getColumnName(")
+                     .append(leftAttribute).append(")).append(Backend.SQL_EQUAL)\n")
+                     .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
+                     .append(rightAttribute).append("))\n")
+                     .append("           .append(Backend.SQL_AND)\n");
+                }
+                buf.deleteCharAt(buf.length() - 1);
+                buf.append(";\n");
+              }
+
               String compKeyClass = deriveClassNameForEntity(attr.getEntity());
               for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
                 String name = attr.getName().toUpperCase() + sp.getPostfix();
@@ -68,12 +148,12 @@
                 }
                 buf.append("        sql.append(").append(compKeyClass).
                     append(".CLASSVARIABLES.getColumnName(").
-                    append(compKeyClass).append(".CN_").append(name).append(")).\n");
+                    append(compKeyClass).append(".CN_").append(name).append("))\n");
                 if (mainColumn) {
-                  buf.append("            append(").append(par.getRelop()).append(");\n");
+                  buf.append("           .append(").append(arg.getRelop()).append(");\n");
                 }
                 else {
-                  buf.append("            append(Backend.SQL_EQUAL_PAR);\n");
+                  buf.append("           .append(Backend.SQL_EQUAL_PAR);\n");
                 }
               }
             }
@@ -84,7 +164,7 @@
                 if (!mainColumn) {
                   buf.append("        sql.append(Backend.SQL_AND);\n");
                 }
-                if (whereWithAliases) {
+                if (isPathAllowed()) {
                   if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
                      buf.append("        sql.append(");
                      buf.append(deriveClassNameForEntity(attr.getEntity()));
@@ -104,18 +184,24 @@
                   buf.append("        sql.append(CN_").append(name).append(");\n");
                 }
                 if (mainColumn) {
-                  buf.append("        sql.append(").append(par.getRelop()).append(");\n");
+                  buf.append("        sql.append(").append(arg.getRelop()).append(");\n");
                 }
                 else  {
                   buf.append("        sql.append(Backend.SQL_EQUAL_PAR);\n");
                 }
               }
             }
+
+            if (arg.isEndOfExistsClause()) {
+              buf.append("        sql.append(Backend.SQL_RIGHT_PARENTHESIS);\n");
+            }
+
             return buf.toString();
           }
           return "        sql.append(" + t + ");\n";
         }
       };
+
       // generate it!
       String code = getExpression().toCode(generator);
       if (code.endsWith("\n")) {

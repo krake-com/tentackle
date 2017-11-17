@@ -21,6 +21,7 @@ package org.tentackle.pdo;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -58,9 +59,9 @@ public class TransactionInterceptor extends AbstractInterceptor {
 
     if (orgProxy instanceof SessionProvider) {
       Session session = ((SessionProvider) orgProxy).getSession();
-      String txName = transactionName != null ?
-                      transactionName :
-                      (ReflectionHelper.getClassBaseName(method.getDeclaringClass()) + "#" + method.getName());
+      String txName = Constants.NAME_UNKNOWN.equals(transactionName) ?
+                        (ReflectionHelper.getClassBaseName(method.getDeclaringClass()) + "#" + method.getName()) :
+                        transactionName;
       long txVoucher = session.begin(txName);
       if (txVoucher != 0) {
         LOGGER.fine("started transaction {0} on {1} with voucher {2}", txName, session, txVoucher);

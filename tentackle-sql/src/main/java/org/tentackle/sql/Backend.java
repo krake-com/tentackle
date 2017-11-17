@@ -199,6 +199,10 @@ public interface Backend {
   /** MAX function name. */
   String SQL_MIN = "MIN";
 
+  /** SQL EXISTS clause with SELECT 1 and opening left parenthesis. */
+  String SQL_EXISTS = "EXISTS (SELECT 1 FROM ";
+
+
 
   /**
    * Checks whether the backend belongs to the given jdbc url.

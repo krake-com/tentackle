@@ -83,7 +83,7 @@ For more options, see {\@link DbModelWurblet}.
 
     if (getEntity().getSuperEntity() == null) {
 
-      if (getEntity().getOptions().isRootEntity()) {
+      if (getEntity().getOptions().isRoot()) {
 ]@
 
   \@Override

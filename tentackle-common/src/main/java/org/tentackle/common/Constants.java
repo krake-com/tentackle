@@ -41,7 +41,7 @@ public class Constants {
   /** name for "none". */
   public static final String NAME_NONE = "NONE";
 
-  /** unnamed name. */
+  /** unknown name. */
   public static final String NAME_UNKNOWN = "<unknown>";
 
 

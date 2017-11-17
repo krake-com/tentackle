@@ -19,9 +19,7 @@
 package org.tentackle.persist.wurblet;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.tentackle.common.StringHelper;
@@ -34,12 +32,11 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
+import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
-import org.tentackle.sql.Backend;
-import org.tentackle.sql.JoinType;
 import org.tentackle.wurblet.ModelWurblet;
-import org.tentackle.wurblet.WurbletParameter;
 import org.wurbelizer.wurbel.WurbelException;
+
 
 /**
  * Base class for persistence wurblets.
@@ -58,16 +55,52 @@ import org.wurbelizer.wurbel.WurbelException;
  */
 public class DbModelWurblet extends ModelWurblet {
 
+  private boolean argumentGroupingEnabled;
+  private boolean pathAllowed;
   private boolean tracked;
   private boolean attracked;
   private boolean fullTracked;
   private Attribute contextAttribute;
-  private Set<ComponentJoin> componentJoins;
   private List<Relation> nonComponentRelations;
+
+  private WurbletArgumentParser parser;
+
+
+  /**
+   * Returns whether argument grouping is enabled.<br>
+   * By default, the grouping separator '|' just improves readability.<br>
+   * Some wurblet, however, need extra arguments separated from the main expression.
+   * This is true for the PdoUpdateBy or DbUpdateBy wurblets, for example.
+   * Grouping is turned on via the wurblet option "groupArgs".
+   *
+   * @return true if grouping enabled
+   */
+  public boolean isArgumentGroupingEnabled() {
+    return argumentGroupingEnabled;
+  }
+
+  /**
+   * Returns whether expression arguments may contain paths to other entities.
+   *
+   * @return true if allowed, false if not
+   */
+  public boolean isPathAllowed() {
+    return pathAllowed;
+  }
 
 
   @Override
   public void run() throws WurbelException {
+
+    String wurbletOptions = getConfiguration();
+    if (wurbletOptions != null) {
+      if (wurbletOptions.contains("groupArgs")) {
+        argumentGroupingEnabled = true;
+      }
+      else if (wurbletOptions.contains("pathAllowed")) {
+        pathAllowed = true;
+      }
+    }
 
     super.run();
 
@@ -104,6 +137,34 @@ public class DbModelWurblet extends ModelWurblet {
         }
         else {
           contextAttribute = getEntity().getAttributeByJavaName(arg.substring(8), false);
+        }
+      }
+    }
+
+    // analyze the wurblet arguments
+    parser = new WurbletArgumentParser(getEntity(), argumentGroupingEnabled, getWurbletArgs());
+
+    if (!pathAllowed) {
+      for (WurbletArgument arg: parser.getAllArguments()) {
+        if (arg.isPath()) {
+          throw new WurbelException("relation paths not allowed in wurblet " + this);
+        }
+      }
+    }
+
+    if (isRemote()) {
+      // check whether relations are not transient
+      for (WurbletArgument joinArgument: parser.getJoinArguments()) {
+        for (Relation relation: joinArgument.getRelations()) {
+          if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
+            throw new WurbelException("joined non-composite relation '" + relation.getName() +
+                    "' must be serialized for remote access");
+          }
+          Relation opRel = relation.getForeignRelation();
+          if (opRel != null && !opRel.isSerialized()) {
+            throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
+                    "' must be serialized for remote access");
+          }
         }
       }
     }
@@ -193,6 +254,64 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
+   * Gets the method arguments.
+   *
+   * @return the method arguments
+   */
+  public List<WurbletArgument> getMethodArguments() {
+    return parser.getMethodArguments();
+  }
+
+
+  /**
+   * Gets the expression arguments.
+   *
+   * @return the arguments used within the expression
+   */
+  public List<WurbletArgument> getExpressionArguments() {
+    return parser.getExpressionArguments();
+  }
+
+
+  /**
+   * Gets the extra arguments.<br>
+   * Those are not part of the expression and not sorting arguments.
+   *
+   * @return the extra arguments
+   */
+  public List<WurbletArgument> getExtraArguments() {
+    return parser.getExtraArguments();
+  }
+
+  /**
+   * Gets the select/where expression.
+   *
+   * @return the expression
+   */
+  public WurbletArgumentExpression getExpression() {
+    return parser.getExpression();
+  }
+
+  /**
+   * Gets the sorting arguments.
+   *
+   * @return the sorting arguments, empty if no "order by"
+   */
+  public List<WurbletArgument> getSortingArguments() {
+    return parser.getSortingArguments();
+  }
+
+  /**
+   * Returns whether sorting is configured for this wurblet.
+   *
+   * @return true if sorting defined in args
+   */
+  public boolean isWithSorting() {
+    return !getSortingArguments().isEmpty();
+  }
+
+
+  /**
    * Goes up the inheritance tree until a default sorting is found.
    *
    * @return the sorting, null if none
@@ -214,15 +333,14 @@ public class DbModelWurblet extends ModelWurblet {
    * Gets the default sorting keys.
    *
    * @return the sorting keys, empty if no "order by"
+   * @throws WurbelException if failed
    */
-  public List<WurbletParameter> getDefaultSortKeys() {
-    List<WurbletParameter> sortKeys = new ArrayList<>();
+  public List<WurbletArgument> getDefaultSortKeys() throws WurbelException {
+    List<WurbletArgument> sortKeys = new ArrayList<>();
     List<AttributeSorting> sorting = getDefaultSorting();
     if (sorting != null) {
-      int parIndex = 1000;    // large enough to be logically appended to all paramaters
       for (AttributeSorting as: sorting) {
-        WurbletParameter key = new WurbletParameter(getEntity(), ++parIndex, as.toString());
-        key.setAttribute(as.getAttribute());
+        WurbletArgument key = parser.createArgument(as.toString(), true, false);
         sortKeys.add(key);
       }
     }
@@ -240,116 +358,23 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
+
   /**
-   * Gets the component joins.
+   * Gets the consolidated relation paths for the join arguments.
    *
-   * @return the joins, empty if none
-   * @throws WurbelException if a join could not be created
+   * @return the join paths
    */
-  public Set<ComponentJoin> getComponentJoins() throws WurbelException {
-    if (componentJoins == null) {
-      componentJoins = new HashSet<>();
-      for (WurbletParameter par: getExpressionParameters()) {
-        JoinType joinType = par.getRelation() != null && par.getRelation().getRelationType() == RelationType.LIST ?
-                JoinType.LEFT : JoinType.INNER;
-        if (par.isComponentKey() ||
-            par.isRelationKey() && par.getRelationComponentEntityName() != null) {
-          ComponentJoin join = new ComponentJoin(this,
-                                                 par.isComponentKey() ? getEntity() : par.getRelation().getForeignEntity(),
-                                                 par.getAttribute().getEntity(),
-                                                 joinType);
-          componentJoins.add(join);
-        }
-        else if (par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-          ComponentJoin join = new ComponentJoin(this,
-                                                 par.getRelation().getForeignEntity(),
-                                                 par.getRelation().getEntity(),
-                                                 joinType);
-          componentJoins.add(join);
-        }
-      }
-    }
-    return componentJoins;
+  public List<RelationPath> getJoinPaths() {
+    return parser.getJoinPaths();
   }
 
-
   /**
-   * Gets the non-component relations.
+   * Returns whether there are load joins.
    *
-   * @return the non-component relations
+   * @return true if with load joins
    */
-  public List<Relation> getNonComponentRelations() {
-    if (nonComponentRelations == null) {
-      nonComponentRelations = new ArrayList<>();
-      for (WurbletParameter par: getExpressionParameters()) {
-        if (par.isRelationKey()) {
-          nonComponentRelations.add(par.getRelation());
-        }
-      }
-    }
-    return nonComponentRelations;
-  }
-
-
-  /**
-   * Parses the joins defined in the wurblet anchor.
-   *
-   * @return the parsed joins
-   */
-  public List<LeftJoin> getLeftJoins() {
-
-    // convert relations to linked lists of leftjoins
-    List<List<LeftJoin>> joinPaths = new ArrayList<>();
-    int maxLength = 0;
-    for (List<Relation> relations: super.getJoinedRelations()) {
-      List<LeftJoin> joinPath = new ArrayList<>();
-      LeftJoin parentJoin = null;
-      for (Relation relation: relations) {
-        LeftJoin join = new LeftJoin(relation);
-        if (parentJoin != null) {
-          parentJoin.getJoins().add(join);
-        }
-        joinPath.add(join);
-        parentJoin = join;
-      }
-      joinPaths.add(joinPath);
-      if (joinPath.size() > maxLength) {
-        maxLength = joinPath.size();
-      }
-    }
-
-    // sort by path length (longest path comes first)
-    Collections.sort(joinPaths, (o1, o2) -> o2.size() - o1.size());
-
-    // merge matching join paths
-    outer:
-    while (maxLength > 0) {
-      for (List<LeftJoin> joinPath: joinPaths) {
-        if (joinPath.size() >= maxLength) {
-          List<LeftJoin> subPath = joinPath.subList(0, maxLength);
-          for (Iterator<List<LeftJoin>> iter = joinPaths.iterator(); iter.hasNext(); ) {
-            List<LeftJoin> otherJoinPath = iter.next();
-            if (otherJoinPath != joinPath && otherJoinPath.size() >= maxLength) {
-              List<LeftJoin> otherSubPath = otherJoinPath.subList(0, maxLength);
-              if (subPath.equals(otherSubPath)) {
-                if (otherJoinPath.size() > maxLength) {
-                  joinPath.get(maxLength - 1).getJoins().add(otherJoinPath.get(maxLength));
-                }
-                iter.remove();
-                continue outer;   // start over
-              }
-            }
-          }
-        }
-      }
-      maxLength--;
-    }
-
-    List<LeftJoin> leftJoins = new ArrayList<>();
-    for (List<LeftJoin> joinPath: joinPaths) {
-      leftJoins.add(joinPath.get(0));
-    }
-    return leftJoins;
+  public boolean isWithJoins() {
+    return !getJoinPaths().isEmpty();
   }
 
 
@@ -360,11 +385,11 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the order by clause, null if unsorted
    * @throws WurbelException if failed
    */
-  public String createOrderBy(List<WurbletParameter> sortKeys) throws WurbelException {
+  public String createOrderBy(List<WurbletArgument> sortKeys) throws WurbelException {
     if (!sortKeys.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       boolean needComma = false;
-      for (WurbletParameter key: sortKeys) {
+      for (WurbletArgument key: sortKeys) {
         Attribute attr = key.getAttribute();
         for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
           if (needComma) {
@@ -381,9 +406,10 @@ public class DbModelWurblet extends ModelWurblet {
               // must be a joined component (otherwise the column is not in the result set)
               int joinCount = 0;
               boolean joinFound = false;
-              for (LeftJoin leftJoin: getLeftJoins()) {
+              for (RelationPath joinPath: getJoinPaths()) {
                 joinCount++;
-                if (leftJoin.getRelation().getForeignEntity().equals(attr.getEntity())) {
+                // @TODO: this must be refactored to support RelationPaths with more than one relation
+                if (joinPath.getElements().get(0).getForeignEntity().equals(attr.getEntity())) {
                   buf.append('"').append("j_").append(joinCount)
                      .append('.').append(attr.getColumnName()).append('"');
                   joinFound = true;
@@ -404,7 +430,7 @@ public class DbModelWurblet extends ModelWurblet {
             }
           }
           buf.append(").append(")
-             .append(key.getSortMode().equals(Backend.SQL_SORTASC) ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC")
+             .append(SortType.ASC == key.getSortType() ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC")
              .append(')');
           needComma = true;
         }
@@ -421,7 +447,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if failed
    */
   public String createOrderBy() throws WurbelException {
-    return createOrderBy(getSortingParameters());
+    return createOrderBy(getSortingArguments());
   }
 
 
@@ -467,17 +493,20 @@ public class DbModelWurblet extends ModelWurblet {
     }
 
     Set<String> argSet = new HashSet<>();     // each arg only once
-    for (WurbletParameter key: getMethodParameters())  {
-      if (key.isArg() && argSet.add(key.getArg())) {
-        Attribute attr = key.getAttribute();
-        try {
-          appendCommaSeparated(params, attr.getJavaType());
+    for (WurbletArgument key: getMethodArguments())  {
+      if (key.isMethodArgument()) {
+        String arg = key.getMethodArgumentName();
+        if (argSet.add(arg)) {
+          Attribute attr = key.getAttribute();
+          try {
+            appendCommaSeparated(params, attr.getJavaType());
+          }
+          catch (ModelException me) {
+            throw new WurbelException("cannot determine java type for key " + key, me);
+          }
+          params.append(' ');
+          params.append(arg);
         }
-        catch (ModelException me) {
-          throw new WurbelException("cannot determine java type for key " + key, me);
-        }
-        params.append(' ');
-        params.append(key.getArg());
       }
     }
 
@@ -502,8 +531,9 @@ public class DbModelWurblet extends ModelWurblet {
    * @param limit optional limit rows
    * @param offset optional skip rows
    * @return the invocation parameters
+   * @throws WurbelException if failed
    */
-  public String buildInvocationParameters(boolean limit, boolean offset) {
+  public String buildInvocationParameters(boolean limit, boolean offset) throws WurbelException {
 
     StringBuilder params = new StringBuilder();
 
@@ -515,9 +545,12 @@ public class DbModelWurblet extends ModelWurblet {
     }
 
     Set<String> argSet = new HashSet<>();     // each arg only once
-    for (WurbletParameter key: getMethodParameters())  {
-      if (key.isArg() && argSet.add(key.getArg())) {
-        appendCommaSeparated(params, key.getArg());
+    for (WurbletArgument key: getMethodArguments())  {
+      if (key.isMethodArgument()) {
+        String arg = key.getMethodArgumentName();
+        if (argSet.add(arg)) {
+          appendCommaSeparated(params, arg);
+        }
       }
     }
 
@@ -529,8 +562,9 @@ public class DbModelWurblet extends ModelWurblet {
    * Builds the string of invocation parameters.
    *
    * @return the invocation parameters
+   * @throws WurbelException if failed
    */
-  public String buildInvocationParameters() {
+  public String buildInvocationParameters() throws WurbelException {
     return buildInvocationParameters(false, false);
   }
 
@@ -933,6 +967,15 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-
+  /**
+   * Creates the component info for a given component.
+   *
+   * @param component the component of the wurblet's entity
+   * @return the info
+   * @throws WurbelException if failed
+   */
+  public ComponentInfo createComponentInfo(Entity component) throws WurbelException {
+    return new ComponentInfo(this, component);
+  }
 
 }

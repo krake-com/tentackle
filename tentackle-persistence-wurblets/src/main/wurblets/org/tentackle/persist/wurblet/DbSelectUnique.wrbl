@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config pathAllowed}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate code to select a low-level persistent object.
 <p>
@@ -21,14 +22,6 @@ For more options, see {\@link DbModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException {
-
-    if (!getExtraParameters().isEmpty()) {
-      String msg = "unexpected extra parameters:";
-      for (WurbletParameter par: getExtraParameters()) {
-        msg += " " + par;
-      }
-      throw new WurbelException(msg);
-    }
 
     String className = getClassName();
     String methodName = getMethodName();
@@ -74,7 +67,7 @@ For more options, see {\@link DbModelWurblet}.
       classVar += ".";    // add dot to access class var
     }
 
-    if (getExpressionParameters().isEmpty() && !sort && append == null)  {
+    if (getExpressionArguments().isEmpty() && !sort && append == null)  {
       throw new WurbelException("no keys given");
     }
 
@@ -83,7 +76,6 @@ For more options, see {\@link DbModelWurblet}.
     String statementId = createStatementId();
     boolean needLimit = sort || append != null || createOrderBy() != null;
     String rmiReturnType  = isGenerified() ? "P" : className;
-    boolean whereWithAliases = true;   // for genwhere.incl
 
 ]@
   @(scope)@ @(className)@ @(methodName)@(@(params)@) {

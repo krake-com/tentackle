@@ -119,8 +119,8 @@ public class GlobalOptionsPrinter {
     }
 
     if (entity.getSuperEntityName() == null &&
-        options.isRootEntity() != entity.isRootEntityAccordingToModel()) {
-      if (!options.isRootEntity()) {
+        options.isRoot() != entity.isRootEntityAccordingToModel()) {
+      if (!options.isRoot()) {
         buf.append('!');
       }
       buf.append(EntityOptionsImpl.OPTION_ROOT).append(',');

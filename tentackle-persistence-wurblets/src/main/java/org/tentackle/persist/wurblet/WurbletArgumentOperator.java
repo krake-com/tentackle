@@ -16,14 +16,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.wurblet;
+package org.tentackle.persist.wurblet;
 
 /**
- * Logical operator for {@link WurbletParameterExpression}.
+ * Logical operator for {@link WurbletArgumentExpression}.
  *
  * @author harald
  */
-public enum WurbletParameterOperator {
+public enum WurbletArgumentOperator {
 
   /** logical AND. */
   AND("AND", "SQL_AND"),
@@ -31,11 +31,13 @@ public enum WurbletParameterOperator {
   /** logical OR. */
   OR("OR", "SQL_OR"),
 
-  /** logical NOT at start of expression before another expression. */
+  /** logical NOT at the beginning of an expression. */
   NOT("NOT", "SQL_NOT"),
 
+  /** AND NOT combined as a single pseudo-operator. */
   ANDNOT("AND NOT", "SQL_ANDNOT"),
 
+  /** OR NOT combined as a single pseudo-operator. */
   ORNOT("OR NOT", "SQL_ORNOT");
 
 
@@ -51,7 +53,7 @@ public enum WurbletParameterOperator {
    *
    * @param text the operator text
    */
-  WurbletParameterOperator(String text, String sql) {
+  WurbletArgumentOperator(String text, String sql) {
     this.text = text;
     this.sql = sql;
   }
@@ -89,10 +91,10 @@ public enum WurbletParameterOperator {
    * @param str the string
    * @return the operator, null if not an operator
    */
-  public static WurbletParameterOperator toInternal(String str) {
-    WurbletParameterOperator operator = null;
+  public static WurbletArgumentOperator toInternal(String str) {
+    WurbletArgumentOperator operator = null;
     if (str != null) {
-      for (WurbletParameterOperator value : values()) {
+      for (WurbletArgumentOperator value : values()) {
         if (value.getText().equalsIgnoreCase(str)) {
           operator = value;
           break;

@@ -19,7 +19,6 @@
 package org.tentackle.common;
 
 import java.util.List;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;

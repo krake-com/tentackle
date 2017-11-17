@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config pathAllowed}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generate code to select a list of entities.
 <p>
@@ -29,15 +30,6 @@ For more options, see {\@link DbModelWurblet}.
   private void wurbel() throws WurbelException {
 
     assertEntityIsPersistable();
-    moveExtraToSortingParameters();
-
-    if (!getExtraParameters().isEmpty()) {
-      String msg = "unexpected extra parameters:";
-      for (WurbletParameter par: getExtraParameters()) {
-        msg += " " + par;
-      }
-      throw new WurbelException(msg);
-    }
 
     String className  = getClassName();
     String methodName = getMethodName();
@@ -117,8 +109,8 @@ For more options, see {\@link DbModelWurblet}.
       if (isTracked()) {
         throw new WurbelException("tracked not available with cursors!");
       }
-      if (!getJoinedRelations().isEmpty()) {
-        List<WurbletParameter> sortKeys = getSortingParameters();
+      if (isWithJoins()) {
+        List<WurbletArgument> sortKeys = getSortingArguments();
         if (sortKeys.isEmpty() || !sortKeys.get(0).getAttribute().getColumnName().equals(Constants.CN_ID)) {
           throw new WurbelException("cursors with joins must be sorted by ID");
         }
@@ -138,8 +130,6 @@ For more options, see {\@link DbModelWurblet}.
                           ((isTracked() ? "TrackedList" : "List") + "<" + (bounded ? "? extends " : "") + pdoType + ">"));
     String varListType = cursor != null ? cursor : ((isTracked() ? "TrackedList" : "List") + "<" + pdoType + ">");
     String rmiListType = cursor != null ? cursor : ((isTracked() ? "TrackedList" : "List") + "<" + (bounded ? "? extends " : "") + pdoType + ">");
-    boolean whereWithAliases = true;   // for genwhere.incl
-
     String alias = getEntity().getTopSuperEntity().getTableAlias();
 
 ]@
@@ -219,14 +209,15 @@ For more options, see {\@link DbModelWurblet}.
 @[
     } // end if remote
 
-    Collection<LeftJoin> joins = getLeftJoins();
+    List<RelationPath> joins = getJoinPaths();
     if (!joins.isEmpty()) {
 ]@
     JoinedSelect<@(pdoType)@> js = new JoinedSelect<@(pdoType)@>()
 @[
       int joinCount = 0;
-      for (LeftJoin join: joins) {
-        Relation rel = join.getRelation();
+      for (RelationPath join: joins) {
+        // @TODO: this must be refactored to support RelationPaths with more than one relation
+        Relation rel = join.getElements().get(0);
         joinCount++;
         String joinClass = rel.getForeignEntity().getName();
         String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
@@ -309,7 +300,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (!getJoinedRelations().isEmpty()) {
+    if (isWithJoins()) {
 ]@
     ndx = js.setClassIdsInStatement(st, ndx);
 @[
@@ -333,39 +324,39 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     ResultSetWrapper rs = st.executeQuery();
 @[
-        if (getJoinedRelations().isEmpty()) {
+        if (isWithJoins()) {
 ]@
-    return new ResultSetCursor<>(pdo(), rs);
+    return new ResultSetCursor<>(pdo(), rs, js));
 @[
         }
         else  {
 ]@
-    return new ResultSetCursor<>(pdo(), rs, js));
+    return new ResultSetCursor<>(pdo(), rs);
 @[
         }
       } // end if cursor
       else  { // list
         if (isTracked())  {
-          if (getJoinedRelations().isEmpty()) {
-]@
-    return executeTrackedListQuery(st);
-@[
-          }
-          else  {
+          if (isWithJoins()) {
 ]@
     return executeTrackedListQuery(st, js);
 @[
           }
+          else  {
+]@
+    return executeTrackedListQuery(st);
+@[
+          }
         }
         else  {
-          if (getJoinedRelations().isEmpty()) {
+          if (isWithJoins()) {
 ]@
-    return executeListQuery(st);
+    return executeListQuery(st, js);
 @[
           }
           else  {
 ]@
-    return executeListQuery(st, js);
+    return executeListQuery(st);
 @[
           }
         }

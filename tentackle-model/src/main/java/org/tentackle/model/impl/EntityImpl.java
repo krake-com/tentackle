@@ -100,9 +100,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private final List<Relation> referencingRelations;        // the referencing relations from other entities
   private final List<Index> indexes;                        // the indexes
   private final Set<List<Relation>> compositePaths;         // paths of composite relations to this entity
+  private Set<List<Relation>> allCompositePaths;            // paths of composite relations to this entity and super entities
   private final List<Relation> deepReferencesToComponents;  // deep references to components of this root entity
   private final List<Relation> deepReferences;              // deep references to this entity
   private boolean deeplyReferenced;                         // true if this or any component is deeply referenced
+  private Boolean rootEntity;                               // true if root entity (according to model or explicitly set)
   private boolean modelRoot;                                // is root entity according to model
   private boolean modelRootId;                              // provides a root-ID according to model
   private boolean modelRootClassId;                         // provides a root-class-ID according to model
@@ -965,6 +967,19 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
+  public Set<List<Relation>> getAllCompositePaths() {
+    if (allCompositePaths == null) {
+      allCompositePaths = new HashSet<>();
+      Entity currentEntity = this;
+      while (currentEntity != null) {
+        allCompositePaths.addAll(currentEntity.getCompositePaths());
+        currentEntity = currentEntity.getSuperEntity();
+      }
+    }
+    return allCompositePaths;
+  }
+
+  @Override
   public Set<Entity> getComponents() {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelations()) {
@@ -1084,7 +1099,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public List<Attribute> getUniqueDomainKey() {
     if (uniqueDomainKey == null) {
       uniqueDomainKey = new ArrayList<>();
-      if (isRootEntityAccordingToModel()) {
+      if (isRootEntity()) {
         getUniqueDomainKeyImpl(uniqueDomainKey, this);
       }
     }
@@ -1104,7 +1119,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
     for (Entity component: entity.getComponentsIncludingInherited()) {
-      if (!component.isRootEntityAccordingToModel()) {   // stop at sub-roots!
+      if (!component.isRootEntity()) {   // stop at sub-roots!
         getUniqueDomainKeyImpl(uniqueDomainKeys, component);
       }
     }
@@ -1260,7 +1275,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     getOptions().validate();
 
-    if (getOptions().isRootEntity()) {
+    if (getOptions().isRoot()) {
       if (getSuperEntityName() != null) {
         throw new ModelException("[ROOT] option cannot be applied to subclasses", this);
       }
@@ -1499,9 +1514,9 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public Entity getRootEntity() {
     Set<Entity> rootEntities = getRootEntities();
     if (rootEntities.size() == 1) {
-      Entity rootEntity = rootEntities.iterator().next();
-      if (!rootEntity.isAbstract()) {
-        return rootEntity;
+      Entity root = rootEntities.iterator().next();
+      if (!root.isAbstract()) {
+        return root;
       }
     }
     return null;
@@ -1509,14 +1524,19 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public boolean isRootEntity() {
-    Entity entity = this;
-    while (entity != null) {
-      if (entity.getOptions().isRootEntity()) {
-        return true;
+    if (rootEntity == null) {
+      // not determined yet
+      rootEntity = false;
+      Entity entity = this;
+      while (entity != null) {
+        if (entity.getOptions().isRoot()) {
+          rootEntity = true;
+          break;
+        }
+        entity = entity.getSuperEntity();
       }
-      entity = entity.getSuperEntity();
     }
-    return false;
+    return rootEntity;
   }
 
   @Override

@@ -21,7 +21,7 @@ For more options, see {\@link ModelWurblet}.
   // @(getEntity())@ inherits from @(getEntity().getSuperEntity())@
 @[
     }
-    else if (!getEntity().isRootEntityAccordingToModel()) {
+    else if (!getEntity().isRootEntity()) {
 ]@
 
   // @(getEntity())@ is not a root entity

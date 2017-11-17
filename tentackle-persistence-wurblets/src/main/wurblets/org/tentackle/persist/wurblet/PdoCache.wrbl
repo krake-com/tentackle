@@ -91,7 +91,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (secure && !getEntity().isRootEntityAccordingToModel()) {
+    if (secure && !getEntity().isRootEntity()) {
       throw new WurbelException(getEntity() + " is not a root-entity");
     }
 
@@ -198,27 +198,28 @@ For more options, see {\@link DbModelWurblet}.
 @[
       }
 
-      for (WurbletParameter key: getExpressionParameters()) {
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
         String type = key.getAttribute().getJavaType();
-        String suffix = Character.toUpperCase(key.getName().charAt(0)) + key.getName().substring(1);
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 ]@
 
   \@Override
   \@SuppressWarnings("unchecked")
-  public T selectCachedBy@(suffix)@(@(type)@ @(key.getName())@) {
+  public T selectCachedBy@(suffix)@(@(type)@ @(name)@) {
 @[
         first = true;
         for (Entity leaf: leafs) {
           if (first)  {
 ]@
-    T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(key.getName())@);
+    T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(name)@);
 @[
             first = false;
           }
           else {
 ]@
     if (pdo == null) {
-      pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(key.getName())@);
+      pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(name)@);
     }
 @[
           }
@@ -312,12 +313,13 @@ For more options, see {\@link DbModelWurblet}.
   /** the cache. */
   @(scope)@ static @(cache)@<@(pdoName)@> cache;
 @[
-      for (WurbletParameter key: getExpressionParameters()) {
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
         String type = key.getAttribute().getJavaType();
 ]@
 
-  /** index for @(key.getName())@. */
-  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(type)@> @(key.getName())@Index;
+  /** index for @(name)@. */
+  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(type)@> @(name)@Index;
 @[
       }
 
@@ -373,19 +375,20 @@ For more options, see {\@link DbModelWurblet}.
 @[
       }
 
-      for (WurbletParameter key: getExpressionParameters()) {
-        String type   = key.getAttribute().getJavaType();
-        String suffix = key.getAttribute().getMethodNameSuffix();
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         if (isRemote()) {
           suffix += "ForCache";
         }
 ]@
 
-      @(key.getName())@Index = new PdoCacheIndex<@(pdoName)@, @(type)@>("@(pdoName)@:@(key.getName())@") {
+      @(name)@Index = new PdoCacheIndex<@(pdoName)@, @(type)@>("@(pdoName)@:@(name)@") {
 
           \@Override
-          public @(pdoName)@ select(DomainContext context, @(type)@ @(key.getArg())@) {
-            return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(key.getArg())@);
+          public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
+            return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(name)@);
           }
 
           \@Override
@@ -497,31 +500,32 @@ For more options, see {\@link DbModelWurblet}.
     return getCache().select(getDomainContext(), id);
   }
 @[
-      for (WurbletParameter key: getExpressionParameters()) {
-        String type   = key.getAttribute().getJavaType();
-        String suffix = key.getAttribute().getMethodNameSuffix();
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 ]@
 
   /**
-   * Selects from cache by @(key.getName())@ but does not load from db if not in cache.
+   * Selects from cache by @(name)@ but does not load from db if not in cache.
    *
-   * \@param @(key.getArg())@ the unique key
+   * \@param @(name)@ the unique key
    * \@return the pdo, null if not in cache
    */
   \@Override
-  public @(pdoName)@ selectCachedOnlyBy@(suffix)@(@(type)@ @(key.getArg())@)  {
-    return getCache().select(@(key.getName())@Index, getDomainContext(), @(key.getArg())@, false);
+  public @(pdoName)@ selectCachedOnlyBy@(suffix)@(@(type)@ @(name)@)  {
+    return getCache().select(@(name)@Index, getDomainContext(), @(name)@, false);
   }
 
   /**
-   * Selects via cache by @(key.getName())@.
+   * Selects via cache by @(name)@.
    *
-   * \@param @(key.getArg())@ the unique key
+   * \@param @(name)@ the unique key
    * \@return the pdo, null if no such object
    */
   \@Override
-  public @(pdoName)@ selectCachedBy@(suffix)@(@(type)@ @(key.getArg())@)  {
-    return getCache().select(@(key.getName())@Index, getDomainContext(), @(key.getArg())@);
+  public @(pdoName)@ selectCachedBy@(suffix)@(@(type)@ @(name)@)  {
+    return getCache().select(@(name)@Index, getDomainContext(), @(name)@);
   }
 @[
       }

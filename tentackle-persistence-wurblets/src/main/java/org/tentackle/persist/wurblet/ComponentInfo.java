@@ -19,11 +19,9 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.Objects;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
-import org.tentackle.sql.JoinType;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
@@ -31,32 +29,24 @@ import org.wurbelizer.wurbel.WurbelException;
  *
  * @author harald
  */
-public class ComponentJoin {
+public class ComponentInfo {
 
-  private final Entity entity;                      // the left side of the join
-  private final Entity joinedEntity;                // the right side of the join
-  private final JoinType joinType;                  // the join type (inner or left)
-  private final String rootIdColumnName;            // the CN_... name of the rootid
-  private final String rootIdClassName;             // the impl class name holding the rootid (and optional rootclassid)
-  private final String extraClassName;              // != null if attribute belongs to a table that needs an extra
-                                                    // join to the rootid's table
-
+  private final Entity joinedEntity;      // the right side of the join
+  private final String rootIdColumnName;  // the CN_... name of the rootid
+  private final String rootIdClassName;   // the impl class name holding the rootid (and optional rootclassid)
+  private final String extraClassName;    // != null if need an extra join to the rootid's table
 
 
   /**
-   * Creates a component join from a wurblet parameter.
+   * Creates info for a component.
    *
    * @param wurblet the wurblet
-   * @param entity the entity to join to (left side of the join)
    * @param joinedEntity the entity to join (right side of the join)
-   * @param joinType the join type (inner or left)
-   * @throws WurbelException if given parameter is not a component key
+   * @throws WurbelException if failed
    */
-  public ComponentJoin(DbModelWurblet wurblet, Entity entity, Entity joinedEntity, JoinType joinType) throws WurbelException {
+  public ComponentInfo(DbModelWurblet wurblet, Entity joinedEntity) throws WurbelException {
 
-    this.entity = entity;
     this.joinedEntity = joinedEntity;
-    this.joinType = joinType;
 
     Entity topEntity = joinedEntity.getHierarchyInheritanceType() == InheritanceType.PLAIN ?
             joinedEntity : joinedEntity.getTopSuperEntity();
@@ -91,15 +81,6 @@ public class ComponentJoin {
 
 
   /**
-   * Gets the entity to join to (left side of the join).
-   *
-   * @return the entity
-   */
-  public Entity getEntity() {
-    return entity;
-  }
-
-  /**
    * Gets the entity to join (right side of the join).
    *
    * @return the joined entity
@@ -107,16 +88,6 @@ public class ComponentJoin {
   public Entity getJoinedEntity() {
     return joinedEntity;
   }
-
-  /**
-   * Gets the join type.
-   *
-   * @return the join type
-   */
-  public JoinType getJoinType() {
-    return joinType;
-  }
-
 
   /**
    * Returns whether the joined attribute belongs to another table than that holding the rootid.
@@ -153,26 +124,6 @@ public class ComponentJoin {
    */
   public String getRootIdColumnName() {
     return rootIdColumnName;
-  }
-
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 79 * hash + Objects.hashCode(this.rootIdClassName);
-    return hash;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final ComponentJoin other = (ComponentJoin) obj;
-    return Objects.equals(this.rootIdClassName, other.rootIdClassName);
   }
 
 }

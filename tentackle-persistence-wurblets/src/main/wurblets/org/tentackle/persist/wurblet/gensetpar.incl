@@ -11,17 +11,17 @@
     st.@(createJdbcSetterName(getContextAttribute()))@(ndx++, @(getContextAttribute().getName())@);
 @[
     }
-    for (WurbletParameter par: getMethodParameters())  {
-      if (par.isSqlArg()) {
+    for (WurbletArgument par: getMethodArguments())  {
+      if (!par.isValueLiterally()) {
         Attribute attr = par.getAttribute();
         if (attr.getOptions().isMapNull())  {
 ]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getSqlArg()))@, true);
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getJdbcValue()))@, true);
 @[
         }
         else  {
 ]@
-    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getSqlArg()))@);
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, par.getJdbcValue()))@);
 @[
         }
         // for multi column types, such as BMoney/DMoney

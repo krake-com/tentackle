@@ -16,13 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.wurblet;
+package org.tentackle.persist.wurblet;
 
 /**
- * An operand within a {@link WurbletParameterExpression}.
+ * An operand within a {@link WurbletArgumentExpression}.
  *
  * @author harald
  */
-public interface WurbletParameterOperand {
+public interface WurbletArgumentOperand {
 
 }

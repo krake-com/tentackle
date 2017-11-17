@@ -1,6 +1,6 @@
 @[
     boolean isFirstSetKey = true;
-    for (WurbletParameter key: getExtraParameters())  {
+    for (WurbletArgument key: getExtraArguments())  {
       Attribute attr = key.getAttribute();
       if (isFirstSetKey) {
         isFirstSetKey = false;

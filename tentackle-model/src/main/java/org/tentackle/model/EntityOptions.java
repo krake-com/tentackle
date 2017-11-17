@@ -81,7 +81,7 @@ public interface EntityOptions extends CommonOptions {
    *
    * @return true if this is a root entity
    */
-  boolean isRootEntity();
+  boolean isRoot();
 
   /**
    * true if [ROOTID]-option set.

@@ -19,7 +19,7 @@ For more options, see {\@link DbModelWurblet}.
 }@
 @[
   private void wurbel() throws WurbelException {
-    
+
     assertEntityIsPersistable();
 
     String className  = getClassName();
@@ -61,7 +61,6 @@ For more options, see {\@link DbModelWurblet}.
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean whereWithAliases = false;   // for genwhere.incl
 
     if (!noif) {
 ]@

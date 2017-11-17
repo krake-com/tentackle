@@ -53,16 +53,16 @@ For more options, see {\@link DbModelWurblet}.
     if (methodName == null)     throw new WurbelException("can't determine <methodname>");
     if (className == null)      throw new WurbelException("can't determine <classname>");
     if (pdoName == null)        throw new WurbelException("can't determine PDO interface");
-    if (getExpressionParameters().isEmpty()) {
+    if (getExpressionArguments().isEmpty()) {
       throw new WurbelException("no keys given");
     }
 
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean whereWithAliases = true;   // for genwhere.incl
+
     Entity selectingEntity = null;
-    for (WurbletParameter key : getExpressionParameters()) {
+    for (WurbletArgument key : getExpressionArguments()) {
       if (selectingEntity == null) {
         selectingEntity = key.getAttribute().getEntity();
       }
@@ -134,9 +134,9 @@ For more options, see {\@link DbModelWurblet}.
 @[
     } // end if remote
 
-    String cvars = "";
+    String cvars = "false";
     if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
-      cvars = deriveClassNameForEntity(selectingEntity) + ".CLASSVARIABLES";
+      cvars = deriveClassNameForEntity(selectingEntity) + ".CLASSVARIABLES, false";
     }
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
