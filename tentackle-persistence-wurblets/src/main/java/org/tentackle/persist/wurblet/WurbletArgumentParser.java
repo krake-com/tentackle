@@ -226,6 +226,7 @@ public class WurbletArgumentParser {
    * @param arg the argument string
    * @param expressionFinished true if expression is finished
    * @param argumentGroupingEnabled true if argument grouping is enabled
+   * @return the created argument
    *
    * @throws WurbelException if parsing arg failed
    */
