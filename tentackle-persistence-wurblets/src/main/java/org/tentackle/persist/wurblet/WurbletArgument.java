@@ -45,14 +45,14 @@ import org.wurbelizer.wurbel.WurbelException;
  * An argument is of the form:
  * <p>
  * <tt>[<b>*</b>|<b>+</b>|<b>-</b>][<b>{@link Relation}</b>|<b>.{@link Entity}</b>[<b>.{@link Relation}</b>...]][<b>{@link Attribute}</b>[<b>[name]</b>]][<b>:relop</b>[<b>:value</b>|<b>#value</b>]]</tt>
- * <p>
  * <ul>
- * <li>argument type:</li>
+ * <li>argument type:
  *  <ul>
  *    <li>default (missing): attribute as a condition or for update</li>
  *    <li>+ or -: sorting criteria (+ for ascending, - for descending)</li>
  *    <li>*: load join</li>
  *  </ul>
+ * </li>
  * <li>relation-path: list of relations.<br>
  * Optional for conditions, required for load joins. Illegal for updates and sorting.<br>
  If the current entity is a root-entity, the path starts with a dot and is followed by the name of
