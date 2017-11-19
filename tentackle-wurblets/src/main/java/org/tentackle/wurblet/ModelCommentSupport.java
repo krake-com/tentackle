@@ -114,7 +114,7 @@ public class ModelCommentSupport {
       else  {
         printVia(relation, out);
         if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
-          out.print(" as " + StringHelper.firstToLower(relation.getMethodNameSuffix()));
+          out.print(" as " + relation.getVariableName());
         }
         if (relation.getRelationType() == RelationType.LIST) {
           out.println(" [1:N]");

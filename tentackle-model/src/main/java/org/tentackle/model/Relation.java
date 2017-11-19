@@ -265,14 +265,6 @@ public interface Relation extends ModelElement {
   // args = ...
 
   /**
-   * Gets the method arguments for select- and delete-methods.
-   *
-   * @return the args, null if no args defined and the defaults apply
-   * @see #getMethodArgs()
-   */
-  List<String> getArgs();
-
-  /**
    * Gets the effective method arguments for select- and delete-methods.<br>
    *
    * @return the args, never null

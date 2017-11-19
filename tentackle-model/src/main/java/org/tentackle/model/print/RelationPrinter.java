@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
@@ -171,13 +172,17 @@ public class RelationPrinter {
       needComma = true;
     }
 
-    if (relation.getArgs() != null) {
+    if (relation.getMethodArgs().size() > 1) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.ARGS).append(" =");
-      for (String arg: relation.getArgs()) {
-        buf.append(' ').append(arg);
+      boolean firstSkipped = false;
+      for (MethodArgument arg: relation.getMethodArgs()) {
+        if (firstSkipped) {
+          buf.append(' ').append(arg.getForeignAttribute()).append('[').append(arg.getMethodArgument()).append(']');
+        }
+        firstSkipped = true;
       }
       needComma = true;
     }

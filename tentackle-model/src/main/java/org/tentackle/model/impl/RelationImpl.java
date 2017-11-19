@@ -478,7 +478,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
     }
     else {
-      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(buildName(true) + "Id", true)));
+      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(getVariableName() + "Id", true)));
     }
     if (args != null) {
       for (String arg: args) {
@@ -842,11 +842,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public String getMethodName() {
     return methodName;
-  }
-
-  @Override
-  public List<String> getArgs() {
-    return args;
   }
 
   @Override
