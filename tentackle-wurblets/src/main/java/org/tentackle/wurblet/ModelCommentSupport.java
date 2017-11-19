@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 
@@ -58,17 +59,20 @@ public class ModelCommentSupport {
       out.print(relation.getForeignAttribute());
     }
     else if (!relation.getMethodArgs().isEmpty()) {
-      boolean needComma = false;
-      for (String arg: relation.getMethodArgs()) {
-        if (needComma) {
-          out.print(',');
-        }
-        out.print(arg);
-        needComma = true;
-      }
+      out.print(relation.getMethodArgs().get(0));
     }
     else {
       out.print("?");
+    }
+    if (relation.getMethodArgs().size() > 1) {
+      boolean firstSkipped = false;
+      for (MethodArgument arg: relation.getMethodArgs()) {
+        if (firstSkipped) {
+          out.print(" & ");
+          out.print(arg);
+        }
+        firstSkipped = true;
+      }
     }
   }
 
@@ -110,7 +114,7 @@ public class ModelCommentSupport {
       else  {
         printVia(relation, out);
         if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
-          out.print(" as " + StringHelper.firstToLower(relation.getName()));
+          out.print(" as " + StringHelper.firstToLower(relation.getMethodNameSuffix()));
         }
         if (relation.getRelationType() == RelationType.LIST) {
           out.println(" [1:N]");

@@ -28,6 +28,7 @@ import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
@@ -771,51 +772,46 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-
-  /**
-   * Gets the relation arguments for delete or select methods.
-   *
-   * @param relation the relation
-   * @param select is true if args for select-method, else delete-method
-   * @return the arguments for select/delete methods
-   */
-  public List<String> getRelationArgs(Relation relation, boolean select) {
-    if (select) {
-      if (relation.isSelectionFromMainClass()) {
-        return new ArrayList<>(); // no args if invoke non-static in main class
-      }
-    }
-    else {
-      if (relation.isDeletionFromMainClass()) {
-        return new ArrayList<>(); // no args if invoke non-static in main class
-      }
-    }
-    return relation.getMethodArgs();
-  }
-
-
   /**
    * Creates the argument string for select- or delete statement of a relation.
    *
    * @param relation the relation.
-   * @param select is true if for selectStatement, else deleteStatement
    * @return the arg string
    */
-  public String createRelationArgString(Relation relation, boolean select) {
+  public String createRelationArgString(Relation relation) {
     StringBuilder buf = new StringBuilder();
     buf.append('(');
-    List<String> args = getRelationArgs(relation, select);
+    List<MethodArgument> args = relation.getMethodArgs();
     boolean first = true;
-    for (String arg: args) {
+    for (MethodArgument arg: args) {
       if (first) {
         first = false;
       }
       else  {
         buf.append(", ");
       }
-      buf.append(arg);
+      buf.append(arg.getMethodArgument());
     }
     buf.append(')');
+    return buf.toString();
+  }
+
+
+  /**
+   * Creates the wurblet argument string for select- or delete statement of a relation.
+   *
+   * @param relation the relation.
+   * @return the arg string
+   */
+  public String createRelationWurbletArgString(Relation relation) {
+    StringBuilder buf = new StringBuilder();
+    List<MethodArgument> args = relation.getMethodArgs();
+    for (MethodArgument arg: args) {
+      if (buf.length() > 0) {
+        buf.append(' ');
+      }
+      buf.append(arg.getForeignAttribute().getName());
+    }
     return buf.toString();
   }
 
@@ -827,16 +823,15 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationSelectCode(Relation relation) {
-
-    String text = "on(" + relation.getClassName() + ".class)." + createRelationSelectMethodName(relation);
-
-    text += createRelationArgString(relation, true);
-
+    StringBuilder text = new StringBuilder();
     if (relation.getForeignEntity().isAbstract()) {
       // we need a cast
-      text = "(" + relation.getClassName() + "<?>) " + text;
+      text.append("(").append(relation.getClassName()).append("<?>) ");
     }
-    return text;
+    text.append("on(").append(relation.getClassName()).append(".class).")
+        .append(createRelationSelectMethodName(relation))
+        .append(createRelationArgString(relation));
+    return text.toString();
   }
 
 
@@ -887,7 +882,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the set-method name
    */
   public String createRelationSetFirstArgMethodName(Relation relation) {
-    return "set" + StringHelper.firstToUpper(relation.getMethodArgs().get(0));
+    return "set" + StringHelper.firstToUpper(relation.getMethodArgs().get(0).getAttribute().getName());
   }
 
 
@@ -898,19 +893,11 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationDeleteCode(Relation relation) {
-    String text = "delete";
-    if (relation.getRelationType() == RelationType.LIST) {
-      text += "By";
-    }
-    if (relation.getMethodName() != null) {
-      text += relation.getMethodName();
-    }
-    else {
-      text += relation.getEntity().getName() + "Id";
-    }
-    text = "on(" + relation.getClassName() + ".class)." + text;
-    text += createRelationArgString(relation, false);
-    return text;
+    StringBuilder text = new StringBuilder();
+    text.append("on(").append(relation.getClassName()).append(".class).")
+        .append(createListRelationDeleteMethodName(relation))
+        .append(createRelationArgString(relation));
+    return text.toString();
   }
 
 
@@ -931,7 +918,7 @@ public class DbModelWurblet extends ModelWurblet {
     else {
       text += relation.getEntity().getName() + "Id";
     }
-    return text + createRelationArgString(relation, true);
+    return text + createRelationArgString(relation);
   }
 
 

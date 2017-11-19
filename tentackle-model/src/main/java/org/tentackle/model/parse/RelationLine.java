@@ -52,21 +52,19 @@ import org.tentackle.model.ModelException;
  * by the attribute.
  * <p>
  *
- * select = &lt;always|eager|lazy&gt; [main] [cached] [| wurbletargs]
+ * select = &lt;always|eager|lazy&gt; [cached] [| wurbletargs]
  * <ul>
  *    <li>always: fetched on every get (default if cached)</li>
  *    <li>eager: fetched in advance whenever the main class is fetched</li>
  *    <li>lazy: fetched within the first get only (default if not cached)</li>
- *    <li>main: invoke method in main class, not in &lt;class&gt;</li>
  *    <li>cached: use caching select methods if possible (only for objects-relations)</li>
  *    <li>wurbletargs: additional arguments passed to the PdoSelectList-wurblet (only for list-relations)<br>
  *        Example: <code>select = lazy | -pilePosition</code></li>
  * </ul>
  *
- * delete = [main] [cascade]
+ * delete = [cascade]
  * <ul>
- *    <li>main: invoke method in main class, not in &lt;class&gt;</li>
- *    <li>cascade: composition is a list that contains compositions</li>
+ *    <li>cascade: composition is a list that contains compositions (only if model without integrity checks)</li>
  * </ul>
  *
  * link = &lt;name-of-link-method&gt; [index]
@@ -80,10 +78,13 @@ import org.tentackle.model.ModelException;
  *    </li>
  * </ul>
  *
- * args = &lt;arg1&gt; [&lt;arg2&gt; &lt;arg3&gt; ... &lt;argN&gt;]
+ * args = &lt;foreign-attribute2&gt;[&lt;method&gt; | &lt;constant&gt;] &lt;foreign-attribute3&gt;[&lt;method&gt; | &lt;constant&gt;]...
  * <ul>
- *    <li>arg: arguments to pass to invoked select method.<br>
- *     If missing, defaults to "args=getId()" for lists and "args=get&lt;name&gt;Id()" for objects (see name below).</li>
+ *    <li>second and more arguments passed to selectBy- or deleteBy-method. Only applicable to list relations.<br>
+ *      Example: <code>args = forCreditor[isCreditor()] lineType[CalculationLineType.ON_CALCULATION]</code><br>
+ *      The first argument cannot be overwritten. For lists it is <code>&lt;name-of-current-entity&gt;Id[getId()]</code><br>
+ *      For object relations it is <code>id[get&lt;name-of-relation&gt;Id()]</code>
+ *    </li>
  * </ul>
  *
  * method = &lt;methodname&gt;

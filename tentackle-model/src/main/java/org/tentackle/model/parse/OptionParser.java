@@ -51,6 +51,17 @@ public class OptionParser {
    * @return the next option, null if end of text
    */
   public String nextOption() {
+    return nextOption(0);
+  }
+
+
+  /**
+   * Gets the next option as a string.
+   *
+   * @param stopAtOptionLevel option level to stop on closing bracket
+   * @return the next option, null if end of text
+   */
+  public String nextOption(int stopAtOptionLevel) {
     StringBuilder option = new StringBuilder();
     while (pos < max) {
       char c = text.charAt(pos++);
@@ -69,7 +80,10 @@ public class OptionParser {
       if (optionLevel > 0) {
         if (c == ']' && braceLevel == 0) {
           optionLevel--;
-          if (optionLevel == 0) {
+          if (optionLevel == stopAtOptionLevel) {
+            if (stopAtOptionLevel > 0) {
+              option.append(c);
+            }
             break;    // ] ends all options
           }
           else  {

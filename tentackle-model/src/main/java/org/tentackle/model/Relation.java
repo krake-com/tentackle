@@ -203,13 +203,6 @@ public interface Relation extends ModelElement {
   SelectionType getSelectionType();
 
   /**
-   * Returns whether select method is invoked on main class instead of relation class.
-   *
-   * @return true if select from main class
-   */
-  boolean isSelectionFromMainClass();
-
-  /**
    * Returns whether the select method is a caching one.
    *
    * @return true if cached
@@ -284,7 +277,7 @@ public interface Relation extends ModelElement {
    *
    * @return the args, never null
    */
-  List<String> getMethodArgs();
+  List<MethodArgument> getMethodArgs();
 
 
   // nm = ...

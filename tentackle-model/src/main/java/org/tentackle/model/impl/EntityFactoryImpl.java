@@ -29,9 +29,11 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.Index;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
+import org.tentackle.model.RelationType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.AttributeLine;
@@ -245,15 +247,16 @@ public class EntityFactoryImpl implements EntityFactory {
       }
     }
 
-    // find associated attributes associated to relations
+    // find associated attributes associated to object relations
     for (Relation relation: entity.getRelations()) {
-      String firstArg = relation.getMethodArgs().get(0);
-      Attribute attribute = entity.getAttributeByJavaName(firstArg, false);
-      if (attribute != null) {
-        ((RelationImpl) relation).setAttribute(attribute);
-        ((AttributeImpl) attribute).setRelation(relation);
+      if (relation.getRelationType() == RelationType.OBJECT) {
+        MethodArgument firstArg = relation.getMethodArgs().get(0);
+        Attribute attribute = firstArg.getAttribute();
+        if (attribute != null) {
+          ((RelationImpl) relation).setAttribute(attribute);
+          ((AttributeImpl) attribute).setRelation(relation);
+        }
       }
-      // else: some method like getId()
     }
 
     if (entity.isRootOfInheritanceHierarchy() && !entity.getInheritanceType().isMappingToNoTable()) {

@@ -107,7 +107,6 @@ public class RelationPrinter {
 
     if (relation.getSelectionType() != SelectionType.LAZY && !relation.isSelectionCached() ||
         relation.getSelectionType() != SelectionType.ALWAYS && relation.isSelectionCached() ||
-        relation.isSelectionFromMainClass() ||
         relation.isSelectionCached() || relation.getSelectionWurbletArguments() != null) {
       if (needComma) {
         buf.append(",\n");
@@ -124,9 +123,6 @@ public class RelationPrinter {
       else if (relation.getSelectionType() != SelectionType.LAZY) {
         buf.append(' ').append(relation.getSelectionType().toString().toLowerCase());
         selectionTypePrinted = true;
-      }
-      if (relation.isSelectionFromMainClass()) {
-        buf.append(' ').append(RelationImpl.MAIN);
       }
       if (relation.getSelectionWurbletArguments() != null) {
         if (!selectionTypePrinted) {
@@ -157,9 +153,6 @@ public class RelationPrinter {
              configuration.getModelDefaults().getDeletionCascaded() == null ||
              !configuration.getModelDefaults().getDeletionCascaded())) {
         buf.append(' ').append(RelationImpl.CASCADE);
-      }
-      if (relation.isDeletionFromMainClass()) {
-        buf.append(' ').append(RelationImpl.MAIN);
       }
       needComma = true;
     }

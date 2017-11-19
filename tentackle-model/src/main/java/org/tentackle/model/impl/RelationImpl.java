@@ -25,9 +25,11 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
+import org.tentackle.common.Constants;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
@@ -35,6 +37,7 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
+import org.tentackle.model.parse.OptionParser;
 import org.tentackle.model.parse.RelationLine;
 
 /**
@@ -114,9 +117,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
-  /** invocation from main class flag. */
-  public static final String MAIN = "main";
-
   /** cascade delete flag. */
   public static final String CASCADE = "cascade";
 
@@ -144,11 +144,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
-  private boolean selectionFromMainClass;
   private String selectionWurbletArguments;
   private String methodName;
   private List<String> args;
-  private List<String> methodArgs;
+  private List<MethodArgument> methodArgs;
   private String nmName;
   private String nmMethodName;
   private String linkMethodName;
@@ -359,10 +358,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
             }
             else {
               switch(token.toLowerCase()) {
-                case MAIN:
-                  setSelectionFromMainClass(true);
-                  break;
-
                 case CACHED:
                   setSelectionCached(true);
                   break;
@@ -384,10 +379,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
             switch(token.toLowerCase()) {
-              case MAIN:
-                setDeletionFromMainClass(true);
-                break;
-
               case CASCADE:
                 setDeletionCascaded(true);
                 break;
@@ -416,11 +407,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property args = ... */
         case ARGS:
-          while (stok.hasMoreTokens()) {
+          OptionParser op = new OptionParser(entry.getValue(), false);
+          String nextArg;
+          while ((nextArg = op.nextOption(1)) != null) {
             if (args == null) {
               args = new ArrayList<>();
             }
-            args.add(stok.nextToken());
+            args.add(nextArg);
           }
           break;
 
@@ -480,18 +473,43 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       }
     }
 
-    // init defaults
-    if (args == null) {
-      // setup default args
-      if (getRelationType() == RelationType.LIST) {
-        methodArgs.add("getId()");
-      }
-      else {
-        methodArgs.add(buildName(true) + "Id");
-      }
+    // setup default args
+    if (getRelationType() == RelationType.LIST) {
+      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
     }
     else {
-      methodArgs.addAll(args);
+      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(buildName(true) + "Id", true)));
+    }
+    if (args != null) {
+      for (String arg: args) {
+        int ndx = arg.indexOf('[');
+        if (ndx < 0) {
+          throw createModelException("invalid syntax: " + arg);
+        }
+        String foreignName = arg.substring(0, ndx).trim();
+        String attribName = arg.substring(ndx + 1);
+        if (attribName.endsWith("]")) {
+          attribName = attribName.substring(0, attribName.length() - 1);
+        }
+        if (attribName.endsWith("()")) {
+          // method name: determine attribute name
+          attribName = attribName.substring(0, attribName.length() - 2);
+          if (attribName.startsWith("is")) {
+            attribName = attribName.substring(2);
+          }
+          else if (attribName.startsWith("get")) {
+            attribName = attribName.substring(3);
+          }
+          else {
+            throw createModelException("invalid method name: " + arg);
+          }
+          methodArgs.add(new MethodArgument(this, foreignName, entity.getAttributeByJavaName(attribName, true)));
+        }
+        else {
+          // fixed value
+          methodArgs.add(new MethodArgument(this, foreignName, attribName));
+        }
+      }
     }
 
   }
@@ -538,19 +556,16 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         }
       }
     }
-    else {
-      if (!methodArgs.isEmpty()) {
-        boolean needComma = false;
-        for (String methodArg: methodArgs) {
-          if (needComma) {
-            buf.append(',');
-          }
-          buf.append(methodArg);
-          needComma = true;
+    else if (!methodArgs.isEmpty()) {
+      buf.append(methodArgs.get(0));
+    }
+    if (methodArgs.size() > 1) {
+      boolean firstSkipped = false;
+      for (MethodArgument methodArg: methodArgs) {
+        if (firstSkipped) {
+          buf.append(" & ").append(methodArg.getForeignAttribute());
         }
-      }
-      else {
-        buf.append('?');
+        firstSkipped = true;
       }
     }
     return buf.toString();
@@ -629,7 +644,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       if (linkMethodName != null && !referenced) {
         throw createModelException("object relations with link= option must be referenced");
       }
+      if (methodArgs.size() > 1) {
+        throw createModelException("object relations cannot have extra args");
+      }
     }
+
     if (composite && selectionCached) {
       throw createModelException("cached select is not allowed for composite relations");
     }
@@ -831,7 +850,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   @Override
-  public List<String> getMethodArgs() {
+  public List<MethodArgument> getMethodArgs() {
     return methodArgs;
   }
 
@@ -858,11 +877,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public SelectionType getSelectionType() {
     return selectionType;
-  }
-
-  @Override
-  public boolean isSelectionFromMainClass() {
-    return selectionFromMainClass;
   }
 
   @Override
@@ -926,7 +940,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.linkMethodName = linkMethodName;
   }
 
-  public void setMethodArgs(List<String> methodArgs) {
+  public void setMethodArgs(List<MethodArgument> methodArgs) {
     this.methodArgs = methodArgs;
   }
 
@@ -988,10 +1002,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setSelectionCached(boolean selectionCached) {
     this.selectionCached = selectionCached;
-  }
-
-  public void setSelectionFromMainClass(boolean selectionFromMainClass) {
-    this.selectionFromMainClass = selectionFromMainClass;
   }
 
   public void setSelectionWurbletArguments(String selectionWurbletArguments) {

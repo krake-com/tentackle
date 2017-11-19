@@ -29,9 +29,11 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
@@ -437,30 +439,30 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the method name
    */
   public String createRelationSelectMethodName(Relation relation) {
-    String text = "select";
+    StringBuilder text = new StringBuilder();
+    text.append("select");
 
     if (relation.getMethodName() != null) {
       if (relation.getRelationType() == RelationType.LIST) {
-        text += "By";
+        text.append("By");
       }
-      text += relation.getMethodName();
+      text.append(relation.getMethodName());
     }
     else {
       if (relation.getRelationType() == RelationType.LIST) {
-        text += "By" + relation.getEntity().getName() + "Id";
+        text.append("By");
+        for (MethodArgument arg: relation.getMethodArgs()) {
+          text.append(StringHelper.firstToUpper(arg.getForeignAttribute().getName()));
+        }
       }
       else {
         if (relation.isSelectionCached()) {
-          text += "Cached";
+          text.append("Cached");
         }
       }
     }
 
-    if (text.equals("select")) {
-      text = "select";
-    }
-
-    return text;
+    return text.toString();
   }
 
 
@@ -471,16 +473,38 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the method name
    */
   public String createListRelationDeleteMethodName(Relation relation) {
-    String text = "deleteBy";
+    StringBuilder text = new StringBuilder();
+    text.append("deleteBy");
     if (relation.getMethodName() != null) {
-      text += relation.getMethodName();
+      text.append(relation.getMethodName());
     }
     else  {
-      text += relation.getEntity().getName() + "Id";
+      for (MethodArgument arg : relation.getMethodArgs()) {
+        text.append(StringHelper.firstToUpper(arg.getForeignAttribute().getName()));
+      }
     }
-    return text;
+    return text.toString();
   }
 
+
+  /**
+   * Creates the method argument declaration for the select or delete method.
+   *
+   * @param relation the relation
+   * @return the argument declaration
+   * @throws ModelException
+   */
+  public String createDeclaredArgsForSelectOrDeleteMethod(Relation relation) throws ModelException {
+    StringBuilder text = new StringBuilder();
+    for (MethodArgument arg : relation.getMethodArgs()) {
+      if (text.length() > 0) {
+        text.append(", ");
+      }
+      Attribute attr = arg.getForeignAttribute();
+      text.append(attr.getJavaType()).append(' ').append(attr.getName());
+    }
+    return text.toString();
+  }
 
 
   /**

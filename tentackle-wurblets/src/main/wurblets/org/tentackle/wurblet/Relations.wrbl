@@ -33,7 +33,7 @@ For more options, see {\@link ModelWurblet}.
 
       String var = rel.getVariableName();
       String type = rel.getDeclaredJavaType();
-      String firstArg = rel.getMethodArgs().get(0);
+      String firstArg = rel.getMethodArgs().get(0).getMethodArgument();
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
                              (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
@@ -150,6 +150,7 @@ For more options, see {\@link ModelWurblet}.
     // creates the select- and delete-methods for list relations in foreign entities
     boolean useDatabaseRefInt = getEntity().getIntegrity().isCompositesCheckedByDatabase() &&
                                 Boolean.FALSE.equals(getEntity().isDeletionCascaded());
+    Set<String> declaredArgSet = new HashSet<>();   // to avoid duplicates if args= is used
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (rel.getAccessScope() != AccessScope.PUBLIC) {
@@ -158,27 +159,44 @@ For more options, see {\@link ModelWurblet}.
       if (rel.getRelationType() == RelationType.LIST) {
         Attribute attribute = rel.getForeignAttribute();
         if (attribute != null) {
+          String declaredArgs = createDeclaredArgsForSelectOrDeleteMethod(rel);
+          if (declaredArgSet.add(declaredArgs)) {
 ]@
 
   /**
    * Selects @(rel)@.
    *
-   * \@param @(attribute.getName())@ @(attribute.getOptions().getComment())@
+@[
+            for (MethodArgument arg : rel.getMethodArgs()) {
+              Attribute attr = arg.getForeignAttribute();
+]@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+@[
+            }
+]@
    * \@return @(rel.getComment())@
    */
-  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getName())@);
+  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
 @[
-          if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
+            if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
 ]@
 
   /**
    * Deletes @(rel)@.
    *
-   * \@param @(attribute.getName())@ @(attribute.getOptions().getComment())@
+@[
+              for (MethodArgument arg : rel.getMethodArgs()) {
+                Attribute attr = arg.getForeignAttribute();
+]@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+@[
+              }
+]@
    * \@return @(rel.getComment())@
    */
-  int @(createListRelationDeleteMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getName())@);
+  int @(createListRelationDeleteMethodName(rel))@(@(declaredArgs)@);
 @[
+            }
           }
         }
       }

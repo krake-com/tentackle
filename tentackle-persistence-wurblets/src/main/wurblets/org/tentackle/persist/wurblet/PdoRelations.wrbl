@@ -284,9 +284,9 @@ For more options, see {\@link DbModelWurblet}.
       // getter
 
       if (createGetter)  {
-        String checkNull = rel.getMethodArgs().get(0) + " == 0";
+        String checkNull = rel.getMethodArgs().get(0).getMethodArgument() + " == 0";
         if (attr != null && !attr.getDataType().isPrimitive()) {
-          checkNull = rel.getMethodArgs().get(0) + " == null || " + checkNull;
+          checkNull = rel.getMethodArgs().get(0).getMethodArgument() + " == null || " + checkNull;
         }
 ]@
 
@@ -612,12 +612,12 @@ For more options, see {\@link DbModelWurblet}.
           if (rel.isComposite())  {
             if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
-    @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0))@;
+    @(attr.getJavaType())@ oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
             }
             else {
 ]@
-    long oldId = @(rel.getMethodArgs().get(0))@;
+    long oldId = @(rel.getMethodArgs().get(0).getMethodArgument())@;
 @[
             }
           }
@@ -633,14 +633,14 @@ For more options, see {\@link DbModelWurblet}.
         if (rel.getRelationType() == RelationType.OBJECT && rel.isComposite())  {
           if (attr != null && !attr.getDataType().isPrimitive()) {
 ]@
-    if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0))@, oldId)) {
+    if (oldId != null && oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && !Objects.equals(@(rel.getMethodArgs().get(0).getMethodArgument())@, oldId)) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
           }
           else {
 ]@
-    if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0))@ != oldId) {
+    if (oldId != 0 && @(rel.getVariableName())@RemovedId == 0 && @(rel.getMethodArgs().get(0).getMethodArgument())@ != oldId) {
       @(rel.getVariableName())@RemovedId = oldId;
     }
 @[
@@ -992,31 +992,26 @@ For more options, see {\@link DbModelWurblet}.
     if (@(var)@ != null) {
       getDomainContext().applyTo(@(var)@);
 @[
-          if (rel.getLinkMethodName() != null)  {
-            if (rel.getLinkMethodIndex() != null) {
+          if (rel.getLinkMethodName() != null && rel.getLinkMethodIndex() != null) {
 ]@
       int ndx = 0;
-      for (@(rel.getClassName())@ obj: @(var)@)  {
-        obj.@(createRelationLinkCode(rel))@;
-      }
-@[
-            }
-            else  {
-]@
-      for (@(rel.getClassName())@ obj: @(var)@)  {
-        obj.@(createRelationLinkCode(rel))@;
-      }
-@[
-            }
-          }
-          else  {
-]@
-      for (@(rel.getClassName())@ obj: @(var)@)  {
-        obj.@(createRelationLinkCode(rel))@;
-      }
 @[
           }
 ]@
+      for (@(rel.getClassName())@ obj: @(var)@)  {
+        obj.@(createRelationLinkCode(rel))@;
+@[
+          boolean firstSkipped = false;
+          for (MethodArgument ma: rel.getMethodArgs()) {
+            if (firstSkipped)  {
+]@
+        obj.@(ma.getSetterMethod())@(@(ma.getMethodArgument())@);
+@[
+            }
+            firstSkipped = true;
+          }
+]@
+      }
       save(@(var)@, @(rel.isTracked() ? "true" : "false")@);
     }
 @[
@@ -1525,17 +1520,18 @@ For more options, see {\@link DbModelWurblet}.
             (rel.getForeignRelation() == null || !rel.getForeignRelation().isComposite()) &&
             rel.getForeignEntity() != null && rel.getForeignEntity().getIntegrity().isCheckedByApplication()) {
           String tagName = "isReferencing" + rel.getClassName() + "By" +
-                           StringHelper.firstToUpper(rel.getMethodArgs().get(0));
+                           StringHelper.firstToUpper(rel.getMethodArgs().get(0).getAttribute().getName());
 ]@
 
   // Determines whether any @(pdoName)@ references given @(rel.getClassName())@
-  // \@wurblet @(tagName)@ PdoIsReferencing @(rel.getMethodArgs().get(0))@
+  // \@wurblet @(tagName)@ PdoIsReferencing @(rel.getMethodArgs().get(0).getAttribute().getName())@
 @[
         }
       }
     }
 
     if (generateSelects && isEntityPersistable()) {
+      Set<String> wurbletArgSet = new HashSet<>();   // to avoid duplicates if args= is used
       for (Relation rel: getEntity().getReferencingRelations()) {
         if (rel.getAccessScope() != AccessScope.PUBLIC) {
           continue;   // skip non-public in interfaces
@@ -1568,19 +1564,22 @@ For more options, see {\@link DbModelWurblet}.
             else {
               extraWurbletOptions = " " + extraWurbletOptions;
             }
+            String wurbletArgs = createRelationWurbletArgString(rel);
+            if (wurbletArgSet.add(wurbletArgs)) {
 ]@
 
   // selects @(rel)@
 @[
-            if (rel.isReversed()) {
+              if (rel.isReversed()) {
 ]@
-  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectUnique @(attribute.getName())@@(joins)@@(extraWurbletOptions)@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectUnique @(wurbletArgs)@@(joins)@@(extraWurbletOptions)@
 @[
-            }
-            else {
+              }
+              else {
 ]@
-  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectList @(trackedOption)@@(attribute.getName())@@(joins)@@(extraWurbletOptions)@
+  // \@wurblet @(createRelationSelectMethodName(rel))@ PdoSelectList @(trackedOption)@@(wurbletArgs)@@(joins)@@(extraWurbletOptions)@
 @[
+              }
             }
           }
         }
@@ -1598,7 +1597,7 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   // deletes @(rel)@
-  // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(attribute.getName())@
+  // \@wurblet @(createListRelationDeleteMethodName(rel))@ PdoDeleteBy @(createRelationWurbletArgString(rel))@
 @[
           }
         }
@@ -1632,7 +1631,7 @@ For more options, see {\@link DbModelWurblet}.
       // register referencing classes and the methods
       for (Relation rel: refRels) {
         String methodName = "isReferencing" + rel.getClassName() + "By" +
-                            StringHelper.firstToUpper(rel.getMethodArgs().get(0));
+                            StringHelper.firstToUpper(rel.getMethodArgs().get(0).getAttribute().getName());
         for (Entity leaf: rel.getEntity().getLeafEntities()) {
 ]@
     po.addReferencingClass(@(leaf.getName())@.class, "@(methodName)@");
