@@ -454,6 +454,7 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code for {@code JoinedSelect}s.
    *
    * @return the generated java code
+   * @throws WurbelException if failed
    */
   public String createJoins() throws WurbelException {
     StringBuilder buf = new StringBuilder();
