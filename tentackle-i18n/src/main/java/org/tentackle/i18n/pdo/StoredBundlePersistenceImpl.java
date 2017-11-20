@@ -666,7 +666,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
-          (bndl, bkey) -> {
+          (StoredBundle bndl, StoredBundleKey bkey) -> {
             ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
             ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
           }
@@ -716,7 +716,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
-          (bndl, bkey) -> {
+          (StoredBundle bndl, StoredBundleKey bkey) -> {
             ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
             ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
           }
