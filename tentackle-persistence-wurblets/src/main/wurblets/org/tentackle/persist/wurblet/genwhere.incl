@@ -132,8 +132,23 @@
                   buf.append("           .append(").append(leftClassVariables).append("getColumnName(")
                      .append(leftAttribute).append(")).append(Backend.SQL_EQUAL)\n")
                      .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
-                     .append(rightAttribute).append("))\n")
+                     .append(rightClass).append(rightAttribute).append("))\n")
                      .append("           .append(Backend.SQL_AND)\n");
+
+                  List<MethodArgument> methodArgs = rel.getMethodArgs();
+                  for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+                    buf.append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
+                       .append(rightClass).append("CN_").append(methodArg.getForeignAttribute().getName().toUpperCase()).append("))\n");
+                    if (methodArg.isValue()) {
+                      buf.append("           .append(Backend.SQL_EQUAL_PAR)\n");
+                    }
+                    else {
+                      buf.append("           .append(Backend.SQL_EQUAL).append(")
+                         .append(leftClassVariables).append("getColumnName(").append(leftClassVariables)
+                         .append("CN_").append(methodArg.getAttribute().getName().toUpperCase()).append("))\n");
+                    }
+                    buf.append("           .append(Backend.SQL_AND)\n");
+                  }
                 }
                 buf.deleteCharAt(buf.length() - 1);
                 buf.append(";\n");

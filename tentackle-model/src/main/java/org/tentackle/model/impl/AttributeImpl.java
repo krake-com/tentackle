@@ -514,4 +514,26 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     return null;
   }
 
+  @Override
+  public String toMethodArgument(String value) {
+    if (getDataType().isNumeric()) {
+      // check to downcast for (short) or (byte)
+      switch (getDataType()) {
+        case BYTE:
+          value = "(Byte) " + value;
+          break;
+        case BYTE_PRIMITIVE:
+          value = "(byte) " + value;
+          break;
+        case SHORT:
+          value = "(Short) " + value;
+          break;
+        case SHORT_PRIMITIVE:
+          value = "(short) " + value;
+          break;
+      }
+    }
+    return value;
+  }
+
 }

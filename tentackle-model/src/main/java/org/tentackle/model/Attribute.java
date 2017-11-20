@@ -205,5 +205,14 @@ public interface Attribute extends ModelElement {
    */
   String getBindableAnnotation();
 
+  /**
+   * Conberts a given value string to a valid java method argument.<br>
+   * Adds downcasts, if necessary.
+   *
+   * @param value the value string
+   * @return the method argument string
+   */
+  String toMethodArgument(String value);
+
 }
 

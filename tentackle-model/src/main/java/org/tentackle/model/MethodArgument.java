@@ -136,7 +136,8 @@ public class MethodArgument {
       return value;
     }
     else {
-      if (attribute.getOptions().isFromSuper()) {
+      if (attribute.getOptions().isFromSuper() ||
+          !attribute.getEntity().equals(relation.getEntity())) {
         return "get" + StringHelper.firstToUpper(attribute.getName()) + "()";
       }
       else {

@@ -12,6 +12,38 @@
 @[
     }
     for (WurbletArgument par: getMethodArguments())  {
+      if (par.isPath()) {
+        // check for additional value-args in relations
+        Set<Relation> existsRels = par.getExistsRelations();
+        if (existsRels != null) {
+          for (Relation rel: existsRels) {
+            List<MethodArgument> methodArgs = rel.getMethodArgs();
+            for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+              if (methodArg.isValue()) {
+                Attribute attr = methodArg.getForeignAttribute();
+                if (attr.getOptions().isMapNull())  {
+]@
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())))@, true);
+@[
+                }
+                else  {
+]@
+    st.@(createJdbcSetterName(attr))@(ndx++, @(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())))@);
+@[
+                }
+                // for multi column types, such as BMoney/DMoney
+                for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+]@
+    ndx++;
+@[
+                }
+              }
+            }
+          }
+        }
+      }
+
+
       if (!par.isValueLiterally()) {
         Attribute attr = par.getAttribute();
         if (attr.getOptions().isMapNull())  {

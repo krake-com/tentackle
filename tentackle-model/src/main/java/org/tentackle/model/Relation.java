@@ -267,7 +267,7 @@ public interface Relation extends ModelElement {
   /**
    * Gets the effective method arguments for select- and delete-methods.<br>
    *
-   * @return the args, never null
+   * @return the args, never null, at least 1 element
    */
   List<MethodArgument> getMethodArgs();
 

@@ -471,8 +471,9 @@ public class WurbletArgument implements WurbletArgumentOperand {
       expressionRelations = new ArrayList<>();
       if (entity.isRootEntity() && component == null) { // check if path to component
         for (Relation relation: relations) {
-          if (relation.isComposite() && expressionRelations.isEmpty()) {
-            // in chain of component relations from the beginning
+          if (expressionRelations.isEmpty() &&
+              relation.isComposite() && relation.getMethodArgs().size() == 1) {
+            // in chain of component relations without extra args from the beginning
             component = relation.getForeignEntity(); // remember last component in path
           }
           else {
@@ -563,22 +564,8 @@ public class WurbletArgument implements WurbletArgumentOperand {
     String str;
     if (value != null) {
       str = value;
-      if (attribute != null && attribute.getDataType().isNumeric()) {
-        // check to downcast for (short) or (byte)
-        switch (attribute.getDataType()) {
-          case BYTE:
-            str = "(Byte) " + str;
-            break;
-          case BYTE_PRIMITIVE:
-            str = "(byte) " + str;
-            break;
-          case SHORT:
-            str = "(Short) " + str;
-            break;
-          case SHORT_PRIMITIVE:
-            str = "(short) " + str;
-            break;
-        }
+      if (attribute != null) {
+        str = attribute.toMethodArgument(value);
       }
     }
     else  {
