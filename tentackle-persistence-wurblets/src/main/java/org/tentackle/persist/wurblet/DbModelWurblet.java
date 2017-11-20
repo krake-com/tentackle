@@ -365,7 +365,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @return the join paths
    */
-  public List<RelationPath> getJoinPaths() {
+  public List<JoinPath> getJoinPaths() {
     return parser.getJoinPaths();
   }
 
@@ -405,13 +405,11 @@ public class DbModelWurblet extends ModelWurblet {
           else  {
             if (!getEntity().equals(attr.getEntity())) {
               // must be a joined component (otherwise the column is not in the result set)
-              int joinCount = 0;
               boolean joinFound = false;
-              for (RelationPath joinPath: getJoinPaths()) {
-                joinCount++;
-                // @TODO: this must be refactored to support RelationPaths with more than one relation
-                if (joinPath.getElements().get(0).getForeignEntity().equals(attr.getEntity())) {
-                  buf.append('"').append("j_").append(joinCount)
+              for (JoinPath joinPath: getJoinPaths()) {
+                Join join = joinPath.findJoin(key.getRelations());
+                if (join != null) {
+                  buf.append('"').append(join.getName())
                      .append('.').append(attr.getColumnName()).append('"');
                   joinFound = true;
                   break;
@@ -449,6 +447,115 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createOrderBy() throws WurbelException {
     return createOrderBy(getSortingArguments());
+  }
+
+
+  /**
+   * Creates the java code for {@code JoinedSelect}s.
+   *
+   * @return the generated java code
+   */
+  public String createJoins() throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    String pdoType = getPdoClassName();
+    if (isGenerified()) {
+      pdoType = "T";
+    }
+    String poImpl = deriveClassNameForEntity(getEntity());
+    buf.append("    JoinedSelect<").append(pdoType).append("> js = new JoinedSelect<")
+       .append(pdoType).append(">()\n");
+    createJoinsImpl(buf, "      ", getJoinPaths());
+    return buf.toString();
+  }
+
+  private void createJoinsImpl(StringBuilder buf, String inset, List<JoinPath> paths) throws WurbelException {
+    int pathCount = 0;
+    for (JoinPath path: paths) {
+      pathCount++;
+      int joinCount = 0;
+      String ins = inset;
+      for (Join join: path.getElements()) {
+        joinCount++;
+        Relation rel = join.getRelation();
+        String poImpl = deriveClassNameForEntity(rel.getEntity());
+        String alias = rel.getEntity().getTopSuperEntity().getTableAlias();
+        String joinClass = rel.getForeignEntity().getName();
+        String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
+        if (joinCount > 1) {
+          buf.append(ins).append(".addCascadedJoins(new JoinedSelect<").append(rel.getEntity()).append(">)\n");
+          ins += "  ";
+        }
+        buf.append(ins).append(".addJoin(\n");
+        if (rel.getRelationType() == RelationType.LIST) {
+          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          if (!getEntity().equals(rel.getEntity())) {
+            buf.append(poImpl).append(".CLASSVARIABLES.");
+          }
+          buf.append("getColumnName(CN_ID), \"")
+             .append(join.getName()).append('.').append(rel.getForeignAttribute().getColumnName())
+             .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
+             .append(ins).append("    (").append(alias).append(", ").append(joinAlias).append(") -> {\n");
+          if (rel.isReversed()) {
+            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+               .append(".getPersistenceDelegate()).").append(rel.getSetterName());
+            if (rel.isSerialized()) {
+              buf.append("Blunt");
+            }
+            buf.append("(").append(joinAlias).append(");\n");
+          }
+          else {
+            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+               .append(".getPersistenceDelegate()).").append(rel.getGetterName()).append("Blunt().addBlunt(")
+               .append(joinAlias).append(");\n");
+            if (rel.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(rel.getForeignEntity());
+              buf.append(ins).append("      ((").append(joinImpl).append(") ")
+                 .append(joinAlias).append(".getPersistenceDelegate()).")
+                 .append(createRelationUpdateReferenceCode(rel, alias, true)).append(";\n");
+            }
+          }
+        }
+        else {
+          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          if (!getEntity().equals(rel.getEntity())) {
+            buf.append(poImpl).append(".CLASSVARIABLES.");
+          }
+          buf.append("getColumnName(CN_")
+             .append(rel.getAttribute().getName().toUpperCase()).append("), \"")
+             .append(join.getName()).append(".id\", ")
+             .append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
+             .append(ins).append("    (").append(alias).append(", ").append(joinAlias).append(") -> {\n")
+             .append(ins).append("      ((").append(poImpl).append(") ")
+             .append(alias).append(".getPersistenceDelegate()).")
+             .append(rel.getSetterName());
+          if (rel.isSerialized()) {
+            buf.append("Blunt");
+          }
+          buf.append("(").append(joinAlias).append(");\n");
+        }
+        buf.append(ins).append("    }\n")
+           .append(ins).append("  )\n")
+           .append(ins);
+
+        if (joinCount > 1) {
+          buf.append(ins).append(")\n");
+        }
+      }
+      if (pathCount == paths.size()) {
+        buf.append(");\n");
+      }
+      else {
+        buf.append(")\n");
+      }
+      List<JoinPath> subPaths = path.getPaths();
+      if (!subPaths.isEmpty()) {
+        // all subpaths start with the same entity
+        Entity subEntity = subPaths.get(0).getElements().get(0).getRelation().getEntity();
+        buf.append(ins).append(".addCascadedJoins(new JoinedSelect<").append(subEntity).append(">)\n");
+        createJoinsImpl(buf, ins + "  ", subPaths);
+        buf.append(ins).append(")\n");
+      }
+    }
   }
 
 

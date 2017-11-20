@@ -1,8 +1,0 @@
-@[
-    // for the *<join>s
-    if (isWithJoins()) {
-]@
-        js.createJoinedSql(pdo(), sql);
-@[
-    }
-]@

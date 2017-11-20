@@ -29,6 +29,7 @@ For more options, see {\@link DbModelWurblet}.
     String className  = getClassName();
     String methodName = getMethodName();
     String pdoName    = getPdoClassName();
+    String pdoType    = pdoName;
     String returnType = pdoName;
     String poType     = className;
     if (isGenerified()) {
@@ -136,60 +137,9 @@ For more options, see {\@link DbModelWurblet}.
 @[
     } // end if remote
 
-    List<RelationPath> joins = getJoinPaths();
-    if (!joins.isEmpty()) {
-]@
-    JoinedSelect<@(returnType)@> js = new JoinedSelect<@(returnType)@>()
-@[
-      int joinCount = 0;
-      for (RelationPath join: joins) {
-        // @TODO: this must be refactored to support RelationPaths with more than one relation
-        Relation rel = join.getElements().get(0);
-        joinCount++;
-        String joinClass = rel.getForeignEntity().getName();
-        String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
-        if (rel.getRelationType() == RelationType.LIST) {
-]@
-      .addJoin(
-        new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(rel.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
-          (@(alias)@, @(joinAlias)@) -> {
-@[
-          if (rel.isReversed()) {
-]@
-            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getSetterName())@@(rel.isSerialized()?"Blunt":"")@(@(joinAlias)@);
-@[
-          }
-          else {
-]@
-            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getGetterName())@Blunt().addBlunt(@(joinAlias)@);
-@[
-            if (rel.getLinkMethodName() != null) {
-              String joinImpl = deriveClassNameForEntity(rel.getForeignEntity());
-]@
-            ((@(joinImpl)@) @(joinAlias)@.getPersistenceDelegate()).@(createRelationUpdateReferenceCode(rel, alias, true))@;
-@[
-            }
-          }
-]@
-          }
-        )
-      )@(joinCount == joins.size() ? ";" : "")@
-@[
-        }
-        else  {
-]@
-      .addJoin(
-        new Join<>(JoinType.LEFT, getColumnName(CN_@(rel.getAttribute().getName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
-          (@(alias)@, @(joinAlias)@) -> {
-            ((@(poImpl)@) @(alias)@.getPersistenceDelegate()).@(rel.getSetterName())@@(rel.isSerialized()?"Blunt":"")@(@(joinAlias)@);
-          }
-        )
-      )@(joinCount == joins.size() ? ";" : "")@
-@[
-        }
-      }
+    if (isWithJoins()) {
+      out.print(createJoins());
     }
-
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
       () -> {
@@ -211,7 +161,12 @@ For more options, see {\@link DbModelWurblet}.
         sql.append(@(append)@);
 @[
     }
-]@@{include $currentDir/genjoinsql.incl}@
+    if (isWithJoins()) {
+]@
+        js.createJoinedSql(pdo(), sql);
+@[
+    }
+]@
         return sql.toString();
       }
     );

@@ -18,46 +18,63 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.tentackle.common.Path;
 import org.tentackle.model.Relation;
 
 /**
- * Path of {@link Relation}s.
+ * Load join.
  *
  * @author harald
  */
-public class RelationPath implements Path<RelationPath, Relation> {
+public class Join {
 
-  private List<Relation> elements;            // the relations forming a path
-  private List<RelationPath> paths;           // continuation paths
+  private final Relation relation;
+  private String name;
 
   /**
-   * Creates a relation path.
+   * Creates an unnamed join.
    *
-   * @param elements the relations, null or empty if none
-   * @param paths the continuation paths, null or empty if none
+   * @param relation the relation
    */
-  public RelationPath(List<Relation> elements, List<RelationPath> paths) {
-    this.elements = elements;
-    this.paths = paths;
+  public Join(Relation relation) {
+    this.relation = relation;
+  }
+
+  /**
+   * Gets the relation wrapped by this join.
+   *
+   * @return the relation, never null
+   */
+  public Relation getRelation() {
+    return relation;
+  }
+
+  /**
+   * Gets the name of the join.
+   *
+   * @return the name, null if yet unnamed
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Sets the name of the join.
+   *
+   * @param name the name
+   */
+  public void setName(String name) {
+    this.name = name;
   }
 
   @Override
-  public List<Relation> getElements() {
-    if (elements == null) {
-      elements = new ArrayList<>();
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    buf.append(relation.getEntity()).append('.');
+    buf.append(relation.getName());
+    if (name != null) {
+      buf.append(" as ").append(name);
     }
-    return elements;
-  }
-
-  @Override
-  public List<RelationPath> getPaths() {
-    if (paths == null) {
-      paths = new ArrayList<>();
-    }
-    return paths;
+    return buf.toString();
   }
 
 }

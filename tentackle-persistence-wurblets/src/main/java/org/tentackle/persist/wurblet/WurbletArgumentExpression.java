@@ -40,7 +40,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
   private final List<WurbletArgumentOperator> operators;
 
   /** merged relation paths. */
-  private List<RelationPath> mergedPaths;
+  private List<JoinPath> mergedPaths;
 
 
   /**
@@ -87,7 +87,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
    *
    * @return the paths, empty if none, never null
    */
-  public List<RelationPath> getMergedPaths() {
+  public List<JoinPath> getMergedPaths() {
     if (mergedPaths == null) {
       List<WurbletArgument> pathArgs = new ArrayList<>();
       for (WurbletArgumentOperand oper: operands) {
@@ -104,7 +104,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
       }
       else {
         // merge as much as possible (only AND operators)
-        mergedPaths = new RelationPathFactory().createPaths(pathArgs);
+        mergedPaths = new JoinPathFactory().createPaths(pathArgs);
       }
     }
     return mergedPaths;

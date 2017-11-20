@@ -93,7 +93,7 @@ public class WurbletArgumentParser {
   private List<WurbletArgument> allArguments;
 
   /** paths for join arguments. */
-  private List<RelationPath> joinPaths;
+  private List<JoinPath> joinPaths;
 
   /** last wurblet argument index. */
   private int parIndex = 0;
@@ -182,9 +182,9 @@ public class WurbletArgumentParser {
    *
    * @return the join paths
    */
-  public List<RelationPath> getJoinPaths() {
+  public List<JoinPath> getJoinPaths() {
     if (joinPaths == null) {
-      joinPaths = new RelationPathFactory().createPaths(joinArguments);
+      joinPaths = new JoinPathFactory().createPaths(joinArguments);
     }
     return joinPaths;
   }

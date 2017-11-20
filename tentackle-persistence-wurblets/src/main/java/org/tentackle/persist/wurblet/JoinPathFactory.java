@@ -28,18 +28,18 @@ import org.tentackle.model.Relation;
  *
  * @author harald
  */
-public class RelationPathFactory implements PathFactory<RelationPath, Relation> {
+public class JoinPathFactory implements PathFactory<JoinPath, Join> {
 
   @Override
-  public RelationPath create(List<Relation> elements, List<RelationPath> paths) {
-    return new RelationPath(elements, paths);
+  public JoinPath create(List<Join> elements, List<JoinPath> paths) {
+    return new JoinPath(elements, paths);
   }
 
   @Override
-  public RelationPath create(List<Relation> elements, RelationPath path) {
-    List<Relation> allElements = new ArrayList<>(elements);
+  public JoinPath create(List<Join> elements, JoinPath path) {
+    List<Join> allElements = new ArrayList<>(elements);
     allElements.addAll(path.getElements());
-    return new RelationPath(allElements, path.getPaths());
+    return new JoinPath(allElements, path.getPaths());
   }
 
 
@@ -51,15 +51,43 @@ public class RelationPathFactory implements PathFactory<RelationPath, Relation> 
    * @param arguments the wurblet arguments
    * @return the list of paths, empty if none, never null
    */
-  public List<RelationPath> createPaths(List<WurbletArgument> arguments) {
-    List<RelationPath> paths = new ArrayList<>();
+  public List<JoinPath> createPaths(List<WurbletArgument> arguments) {
+    List<JoinPath> paths = new ArrayList<>();
     for (WurbletArgument argument: arguments) {
       if (argument.isPath()) {
-        paths.add(new RelationPath(argument.getRelations(), null));
+        List<Join> joins = new ArrayList<>();
+        for (Relation relation: argument.getRelations()) {
+          joins.add(new Join(relation));
+        }
+        paths.add(new JoinPath(joins, null));
       }
     }
     // recursively consolidate the paths
-    return merge(paths);
+    paths = merge(paths);
+    // set the join names
+    int index = 1;
+    for (JoinPath path: paths) {
+      namePath("j_" + index++, path);
+    }
+    return paths;
+  }
+
+  private void namePath(String prefix, JoinPath path) {
+    String lastPrefix = prefix;
+    if (path.getElements().size() <= 1) {
+      path.getElements().get(0).setName(lastPrefix);
+    }
+    else {
+      int index = 1;
+      prefix += "_";
+      for (Join join: path.getElements()) {
+        lastPrefix = prefix + index++;
+        join.setName(lastPrefix);
+      }
+    }
+    for (JoinPath subPath: path.getPaths()) {
+      namePath(lastPrefix, subPath);
+    }
   }
 
 }

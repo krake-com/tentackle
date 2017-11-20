@@ -21,7 +21,7 @@ package org.tentackle.persist.wurblet;
 import org.wurbelizer.wurbel.WurbelException;
 
 /**
- * Code generator for expressions.
+ * Code generator for nested structures.
  *
  * @author harald
  * @param <T> the type of object to generate code for
