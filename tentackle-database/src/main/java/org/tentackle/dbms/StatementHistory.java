@@ -63,13 +63,19 @@ public class StatementHistory {
     * Creates a statement execution history.
     *
     * @param statement the executed statement
+   * @param sql optional SQL string if statement does not provide it
     */
-  public StatementHistory(StatementWrapper statement) {
+  public StatementHistory(StatementWrapper statement, String sql) {
     this.parameters = statement instanceof PreparedStatementWrapper ? ((PreparedStatementWrapper) statement).getParameters() : null;
     this.txName = statement.getAttachedSession().getTxName();
     this.executionStart = System.currentTimeMillis();
     this.duration = new Duration();
-    this.sql = statement.getSql();
+    if (sql != null) {
+      this.sql = sql;
+    }
+    else {
+      this.sql = statement.getSql();
+    }
   }
 
 

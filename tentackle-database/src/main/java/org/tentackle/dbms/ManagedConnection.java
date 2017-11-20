@@ -544,10 +544,11 @@ public class ManagedConnection {
    * The execution end must be set via {@link StatementHistory#end()}
    *
    * @param statement the statement
+   * @param sql optional SQL string if statement does not provide it
    * @return the history with an execution start of now and execution end not set, never null
    */
-  StatementHistory logStatementHistory(StatementWrapper statement) {
-    StatementHistory history = new StatementHistory(statement);
+  StatementHistory logStatementHistory(StatementWrapper statement, String sql) {
+    StatementHistory history = new StatementHistory(statement, sql);
     if (isTxRunning()) {
       statementHistory.add(history);
     }

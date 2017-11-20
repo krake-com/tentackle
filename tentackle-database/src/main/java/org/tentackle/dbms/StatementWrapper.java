@@ -301,7 +301,7 @@ public class StatementWrapper implements AutoCloseable {
       Db db = getAttachedSession();
       db.setAlive(true);
       setRunning(true);
-      StatementHistory history = con.logStatementHistory(this);
+      StatementHistory history = con.logStatementHistory(this, sql);
       int count = executeUpdateImpl(sql);
       history.end();
       return count;
@@ -393,9 +393,10 @@ public class StatementWrapper implements AutoCloseable {
       db.setAlive(true);
       setRunning(true);   // will be cleared when the result set is closed
       if (withinTx) {
-        txVoucher = db.begin("executeQuery");  // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
+        txVoucher = db.begin("executeQuery");
+        // returns true if autocommit on, i.e. we were not within a tx and begin() started a new one.
       }
-      StatementHistory history = con.logStatementHistory(this);
+      StatementHistory history = con.logStatementHistory(this, sql);
       ResultSetWrapper resultSet = createResultSetWrapper(executeQueryImpl(sql));
       history.end();
       if (withinTx) {
