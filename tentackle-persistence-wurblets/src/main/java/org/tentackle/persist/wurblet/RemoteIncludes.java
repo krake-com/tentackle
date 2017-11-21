@@ -80,11 +80,11 @@ public class RemoteIncludes {
 
     if (remotePrefix == null) {
       // if not defined, set the default
+      pdoPackageName = packageName.replace(".persistence.", ".pdo.").replace(".persist.", ".pdo.");
       switch (superClassName) {
         case "AbstractPersistentObject":
           remotePrefix = "org.tentackle.persist.rmi." + superClassName;
           importSuperDelegate = true;
-          pdoPackageName = packageName.replace(".persistence.", ".pdo.").replace(".persist.", ".pdo.");
           break;
 
         case "AbstractDbObject":
@@ -159,7 +159,7 @@ public class RemoteIncludes {
             if (importSuperDelegate) {
               s.println("import " + remotePrefix + "RemoteDelegateImpl;");
             }
-            s.println("import org.tentackle.persist.rmi.RemoteDbSessionImpl;\n\n");
+            s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
             s.println("/**");
             s.println(" * Remote delegate implementation for {@link " + className + "}.");
             if (entity.isAbstract()) {
