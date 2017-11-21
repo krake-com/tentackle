@@ -112,10 +112,10 @@ public interface OperationFactory {
    * Creates an operation.
    *
    * @param <T> the operation class
-   * @param opn the operation
+   * @param op the operation
    * @return the created operation belonging to the same class as the given {@code pdo} and in same context.
    */
-  <T extends Operation<T>> T create(T opn);
+  <T extends Operation<T>> T create(T op);
 
   /**
    * Creates an operation for a given persistence delegate.

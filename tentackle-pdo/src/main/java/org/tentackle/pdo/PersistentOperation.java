@@ -39,7 +39,7 @@ public interface PersistentOperation<T extends Operation<T>>
    *
    * @return the operation
    */
-  T opn();
+  T op();
 
   /**
    * Gets the delegate implementing the persistence operation.

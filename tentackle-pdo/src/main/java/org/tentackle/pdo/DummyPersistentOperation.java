@@ -164,7 +164,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   }
 
   @Override
-  public T opn() {
+  public T op() {
     return operation;
   }
 

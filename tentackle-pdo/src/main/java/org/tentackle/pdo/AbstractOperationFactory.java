@@ -167,16 +167,16 @@ public abstract class AbstractOperationFactory implements OperationFactory {
 
 
   @SuppressWarnings("unchecked")
-  private <T extends Operation<T>> T createOperation(T opn) {
+  private <T extends Operation<T>> T createOperation(T op) {
     try {
-      Class<T> clazz = opn.getEffectiveClass();
+      Class<T> clazz = op.getEffectiveClass();
       OperationInvocationHandler<T> handler = createInvocationHandler(clazz);
       T instance = (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz }, handler);
-      handler.setupDelegates(instance, opn.getDomainContext());
+      handler.setupDelegates(instance, op.getDomainContext());
       return instance;
     }
     catch (Exception e) {
-      throw new PdoRuntimeException("cannot create operation from template " + opn, e);
+      throw new PdoRuntimeException("cannot create operation from template " + op, e);
     }
   }
 
@@ -275,8 +275,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
   }
 
   @Override
-  public <T extends Operation<T>> T create(T opn) {
-    return createOperation(opn);
+  public <T extends Operation<T>> T create(T op) {
+    return createOperation(op);
   }
 
 

@@ -299,11 +299,11 @@ public class Pdo {
    * Creates an operation.
    *
    * @param <T> the operation type
-   * @param opn the operation
+   * @param op the operation
    * @return the created operation belonging to the same class as the given operation and in same context.
    */
-  public static <T extends Operation<T>> T createOperation(T opn) {
-    return OperationFactory.getInstance().create(opn);
+  public static <T extends Operation<T>> T createOperation(T op) {
+    return OperationFactory.getInstance().create(op);
   }
 
 

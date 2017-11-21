@@ -65,7 +65,7 @@ public interface DomainContextProvider {
    * @param clazz the operation interface
    * @return the created operation
    */
-  default <T extends Operation<T>> T opn(Class<T> clazz) {
+  default <T extends Operation<T>> T op(Class<T> clazz) {
     return OperationFactory.getInstance().create(clazz, getDomainContext());
   }
 

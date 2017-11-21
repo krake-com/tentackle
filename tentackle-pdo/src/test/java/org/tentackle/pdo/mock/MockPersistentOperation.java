@@ -167,7 +167,7 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
-  public T opn() {
+  public T op() {
     return operation;
   }
 
