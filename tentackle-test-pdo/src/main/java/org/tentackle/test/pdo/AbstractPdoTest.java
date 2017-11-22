@@ -23,6 +23,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
@@ -59,28 +61,52 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     NONE
   }
 
-  private static Session session;           // session for all methods in all test classes
-  private static DomainContext context;     // domain context for all methods in all test classes
 
-  private TransactionType txType;           // transaction handling
+  private static Session session;           // session for all methods in all test classes
+  private DomainContext context;            // domain context for all methods in all test classes
+
+  private final TransactionType txType;     // transaction handling
+  private final boolean commit;             // true if commit transaction, else rollback (default)
   private long txVoucher;                   // transaction voucher for current test class
 
 
-  public AbstractPdoTest(TransactionType txType) {
+  /**
+   * Creates a test.
+   *
+   * @param txType the transaction type
+   * @param commit true if commit transaction, else rollback (default for regular tests)
+   */
+  public AbstractPdoTest(TransactionType txType, boolean commit) {
     this.txType = txType;
+    this.commit = commit;
   }
 
+  /**
+   * Creates a test with rollback.
+   *
+   * @param txType the transaction type
+   */
+  public AbstractPdoTest(TransactionType txType) {
+    this(txType, false);
+  }
+
+  /**
+   * Creates a test with rollback and one transaction per class.
+   */
   public AbstractPdoTest() {
-    this(TransactionType.CLASS);    // per class
+    this(TransactionType.CLASS, false);    // per class
   }
 
 
+  /**
+   * Opens the sessions and starts the modification tracker.
+   *
+   * @throws Exception if failed
+   */
   @BeforeSuite
-  public static void openSessionsAndStartModificationTracker() throws Exception {
-    session = Pdo.createSession();
-    session.open();
-    session.makeCurrent();
-    context = Pdo.createDomainContext();
+  public void openSessionsAndStartModificationTracker() throws Exception {
+    session = openSession();
+    context = createDomainContext();
 
     ModificationTracker tracker = ModificationTracker.getInstance();
     tracker.setSession(session.clone());
@@ -88,12 +114,22 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     tracker.start();
   }
 
+  /**
+   * Terminates the modification tracker and closes the sessions.
+   *
+   * @throws Exception if failed
+   */
   @AfterSuite
-  public static void closeSessionsAndTerminateModificationTracker() throws Exception {
+  public void closeSessionsAndTerminateModificationTracker() throws Exception {
     ModificationTracker.getInstance().terminate();
     session.close();
   }
 
+  /**
+   * Begins the transaction if type is {@link TransactionType#CLASS}.
+   *
+   * @throws Exception if failed
+   */
   @BeforeClass
   public void beforeClass() throws Exception {
     if (txType == TransactionType.CLASS) {
@@ -101,13 +137,23 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
   }
 
+  /**
+   * Ends the transaction if type is {@link TransactionType#CLASS}.
+   *
+   * @throws Exception if failed
+   */
   @AfterClass
   public void afterClass() throws Exception {
     if (txType == TransactionType.CLASS) {
-      rollbackTransaction();
+      endTransaction();
     }
   }
 
+  /**
+   * Begins the transaction if type is {@link TransactionType#METHOD}.
+   *
+   * @throws Exception if failed
+   */
   @BeforeMethod
   public void beforeMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
@@ -115,25 +161,18 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     }
   }
 
+  /**
+   * Ends the transaction if type is {@link TransactionType#METHOD}.
+   *
+   * @throws Exception if failed
+   */
   @AfterMethod
   public void afterMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
-      rollbackTransaction();
+      endTransaction();
     }
   }
 
-
-  private void beginTransaction() {
-    txVoucher = session.begin("test");
-  }
-
-
-  private void rollbackTransaction() {
-    if (session.isTxRunning()) {
-      session.rollback(txVoucher);
-      txVoucher = 0;
-    }
-  }
 
   /**
    * Gets the session.
@@ -145,6 +184,15 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   }
 
   /**
+   * Returns whether the transaction should be commit or rolled back.
+   *
+   * @return true if commit, false if rollback (default for regular tests)
+   */
+  public boolean isCommit() {
+    return commit;
+  }
+
+  /**
    * Gets the domain context.
    *
    * @return the domain context
@@ -153,7 +201,6 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
   public DomainContext getDomainContext() {
     return context;
   }
-
 
   /**
    * Runs the given class in another JVM.<br>
@@ -168,6 +215,48 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     waitForProcess(process);
     return process.exitValue();
   }
+
+  /**
+   * Opens the session.
+   */
+  protected Session openSession() {
+    Session s = Pdo.createSession();
+    s.open();
+    s.makeCurrent();
+    return s;
+  }
+
+  /**
+   * Creates the domain context.
+   *
+   * @return the context (usually thread-local)
+   */
+  protected DomainContext createDomainContext() {
+    return Pdo.createDomainContext();   // thread local
+  }
+
+  /**
+   * Begins a transaction.
+   */
+  protected void beginTransaction() {
+    txVoucher = session.begin("test");
+  }
+
+  /**
+   * Commits or rolls back a transaction.
+   */
+  protected void endTransaction() {
+    if (session.isTxRunning()) {
+      if (commit) {
+        session.commit(txVoucher);
+      }
+      else  {
+        session.rollback(txVoucher);
+      }
+      txVoucher = 0;
+    }
+  }
+
 
 
   /**
@@ -225,6 +314,5 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
       }
     }
   }
-
 
 }
