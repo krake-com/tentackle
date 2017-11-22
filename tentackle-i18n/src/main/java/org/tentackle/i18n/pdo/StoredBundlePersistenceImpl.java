@@ -387,6 +387,11 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   }
 
   @Override
+  public boolean isKeysLoaded() {
+    return keysLoaded;
+  }
+
+  @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(keys);

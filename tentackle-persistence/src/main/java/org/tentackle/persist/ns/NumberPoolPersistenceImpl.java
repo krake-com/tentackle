@@ -636,6 +636,11 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   @Override
+  public boolean isNumberRangeListLoaded() {
+    return numberRangeListLoaded;
+  }
+
+  @Override
   public void setSession(Session session)  {
     super.setSession(session);
     session.applyTo(numberRangeList);

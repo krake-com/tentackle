@@ -130,6 +130,14 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
   @Persistent("Keys")
   TrackedList<StoredBundleKey> getKeys();
 
+  /**
+   * Returns whether Keys is loaded.
+   *
+   * @return true if getKeys() invoked at least once
+   */
+  @Bindable
+  boolean isKeysLoaded();
+
   // </editor-fold>//GEN-END:relations
 
   /**

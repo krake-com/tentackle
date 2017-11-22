@@ -317,6 +317,14 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
   @Persistent("NumberRange")
   TrackedList<NumberRange> getNumberRangeList();
 
+  /**
+   * Returns whether NumberRange is loaded.
+   *
+   * @return true if getNumberRangeList() invoked at least once
+   */
+  @Bindable
+  boolean isNumberRangeListLoaded();
+
   // </editor-fold>//GEN-END:relations
 
   /**

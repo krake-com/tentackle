@@ -106,6 +106,20 @@ For more options, see {\@link ModelWurblet}.
   TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@();
 @[
         }
+
+        if (rel.isComposite() &&
+            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+]@
+
+  /**
+   * Returns whether @(rel.getName())@ is loaded.
+   *
+   * \@return true if @(rel.getGetterName())@() invoked at least once
+   */
+  \@Bindable
+  boolean is@(StringHelper.firstToUpper(var))@Loaded();
+@[
+        }
       }
 
 

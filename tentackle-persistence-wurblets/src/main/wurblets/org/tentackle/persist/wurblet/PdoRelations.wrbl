@@ -565,6 +565,31 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
         }
+
+        if (rel.isComposite() &&
+            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+          if (rel.getAccessScope() == AccessScope.PUBLIC) {
+]@
+
+  \@Override
+@[
+          }
+          else {
+]@
+
+  /**
+   * Returns whether @(rel.getName())@ is loaded.
+   *
+   * \@return true if @(rel.getGetterName())@() invoked at least once
+   */
+@[
+          }
+]@
+  @(scope)@ boolean is@(StringHelper.firstToUpper(var))@Loaded() {
+    return @(var)@Loaded;
+  }
+@[
+        }
       }
 
 
