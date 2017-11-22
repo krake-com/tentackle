@@ -246,7 +246,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * Commits or rolls back a transaction.
    */
   protected void endTransaction() {
-    if (session.isTxRunning()) {
+    if (session != null && session.isTxRunning()) {
       if (commit) {
         session.commit(txVoucher);
       }

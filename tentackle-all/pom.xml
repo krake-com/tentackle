@@ -41,11 +41,20 @@
 
   <build>
 
+    <!-- generated SQL -->
     <resources>
       <resource>
         <directory>target/generated-resources</directory>
       </resource>
     </resources>
+
+    <!-- backend properties -->
+    <testResources>
+      <testResource>
+        <directory>src/test/filtered-resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
 
     <plugins>
 
@@ -143,9 +152,9 @@
           <backends>
             <!-- for migration only -->
             <backend>
-              <url>jdbc:postgresql://localhost/tentackle</url>
-              <user>tentackle</user>
-              <password>tentackle</password>
+              <url>${dbUrl}</url>
+              <user>${dbUser}</user>
+              <password>${dbPasswd}</password>
             </backend>
           </backends>
         </configuration>

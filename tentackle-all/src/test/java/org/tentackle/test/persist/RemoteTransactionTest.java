@@ -135,7 +135,9 @@ public class RemoteTransactionTest implements DomainContextProvider {
       throw ex;
     }
     finally {
-      session.close();
+      if (session != null) {
+        session.close();
+      }
       AbstractPdoTest.waitForProcess(process);
     }
   }

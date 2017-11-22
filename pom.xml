@@ -97,6 +97,13 @@
     <!-- for the tentackle sql plugin -->
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
     <tentackle.sqlDir>${wurbel.wurbelDir}/sql</tentackle.sqlDir>
+
+    <!-- CI test database -->
+    <dbUrl>jdbc:postgresql://localhost/tentackle</dbUrl>
+    <dbUser>tentackle</dbUser>
+    <dbPasswd>tentackle</dbPasswd>
+    <dbService>rmi://localhost:24321/TestServer</dbService>
+
   </properties>
 
   <scm>
