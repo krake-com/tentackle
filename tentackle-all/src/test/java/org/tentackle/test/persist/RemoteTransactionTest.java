@@ -120,7 +120,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
 
   @Test
   public void testTransactions() throws Exception {
-    Process process = AbstractPdoTest.runClass(TestServer.class);
+    Process process = AbstractPdoTest.runClass(TestServer.class, "duration=4000");
     Thread.sleep(1500);
     try {
       SessionInfo sessionInfo = Pdo.createSessionInfo("client");

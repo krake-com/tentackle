@@ -176,6 +176,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @param testClass the test class
    * @param args optional arguments
+   * @return the process object
    * @throws IOException if some IO operation failed
    */
   public static Process runClass(Class<?> testClass, String... args) throws IOException {

@@ -101,7 +101,9 @@ public class TestServer extends ServerApplication {
   /**
    * Starts the server.
    * <p>
-   * Usage: <classname> [duration=<ms>]<br>
+   * Usage: &lt;classname&gt; [duration=<ms>]
+   * <p>
+   * where:<br>
    * duration = optional time in ms the server will be running.
    * Default is 10000ms (10s).
    *
