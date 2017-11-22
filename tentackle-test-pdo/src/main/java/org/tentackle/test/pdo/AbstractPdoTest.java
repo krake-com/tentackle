@@ -17,7 +17,7 @@
  *
  */
 
-package org.tentackle.test;
+package org.tentackle.test.pdo;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -175,15 +175,23 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * The testclass must have a main method.
    *
    * @param testClass the test class
+   * @param args optional arguments
    * @throws IOException if some IO operation failed
    */
-  public static Process runClass(Class<?> testClass) throws IOException {
+  public static Process runClass(Class<?> testClass, String... args) throws IOException {
     // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
-    String cmd = javaHome + "/bin/" + "java -classpath " + classPath + " " + testClass.getName();
+    StringBuilder cmd = new StringBuilder();
+    cmd.append(javaHome).append("/bin/java -classpath ")
+       .append(classPath).append(' ').append(testClass.getName());
+    if (args != null) {
+      for (String arg: args) {
+        cmd.append(' ').append(arg);
+      }
+    }
     Reporter.log("running: " + cmd + "<br>");
-    return Runtime.getRuntime().exec(cmd);
+    return Runtime.getRuntime().exec(cmd.toString());
   }
 
   /**

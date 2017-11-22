@@ -23,7 +23,7 @@ import org.tentackle.ns.NumberSource;
 import org.tentackle.ns.NumberSourceFactory;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
-import org.tentackle.test.AbstractPdoTest;
+import org.tentackle.test.pdo.AbstractPdoTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;

@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.test.persist;
+package org.tentackle.test.pdo;
 
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
@@ -33,10 +33,11 @@ import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 
 /**
+ * Server to run client transactions.
  *
  * @author harald
  */
-public class TransactionServer extends ServerApplication {
+public class TestServer extends ServerApplication {
 
   /**
    * The remote connection.
@@ -75,7 +76,7 @@ public class TransactionServer extends ServerApplication {
   /**
    * The server.
    */
-  public TransactionServer() {
+  public TestServer() {
     super("TestServer", ConnectionImpl.class);
   }
 
@@ -93,16 +94,30 @@ public class TransactionServer extends ServerApplication {
     }
   }
 
+
+
+  private static final String DURATION = "duration=";
+
   /**
    * Starts the server.
+   * <p>
+   * Usage: <classname> [duration=<ms>]<br>
+   * duration = optional time in ms the server will be running.
+   * Default is 10000ms (10s).
    *
    * @param args command line arguments
    */
   public static void main(final String[] args) {
+    long duration = 10000;   // default uptime in ms
+    for (String arg: args) {
+      if (arg.startsWith(DURATION)) {
+        duration = Long.valueOf(arg.substring(DURATION.length()));
+      }
+    }
     try {
-      TransactionServer server = new TransactionServer();
+      TestServer server = new TestServer();
       server.start(args);
-      server.sleep(4000);
+      server.sleep(duration);
       server.stop();
     }
     catch (Exception ex) {

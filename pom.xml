@@ -67,6 +67,7 @@
     <module>tentackle-swing-print</module>
     <module>tentackle-swing-rdc</module>
     <module>tentackle-web</module>
+    <module>tentackle-test-pdo</module>
     <module>tentackle-all</module>
     <module>tentackle-bom</module>
     <module>tentackle-tools</module>

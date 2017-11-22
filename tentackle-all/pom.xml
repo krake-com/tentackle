@@ -27,20 +27,8 @@
     <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-persistence</artifactId>
+      <artifactId>tentackle-test-pdo</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-domain</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.groovy</groupId>
-      <artifactId>groovy</artifactId>
-      <classifier>indy</classifier>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -60,24 +48,6 @@
     </resources>
 
     <plugins>
-
-      <plugin>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>tentackle-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>analyze</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <verbosity>info</verbosity>
-          <showCompileOutput>true</showCompileOutput>
-          <index>META-INF/RESOURCE-INDEX.LIST</index>
-        </configuration>
-      </plugin>
 
       <plugin>
         <groupId>org.wurbelizer</groupId>

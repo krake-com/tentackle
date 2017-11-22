@@ -19,7 +19,7 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.test.AbstractPdoTest;
+import org.tentackle.test.pdo.AbstractPdoTest;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
 

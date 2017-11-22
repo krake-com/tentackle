@@ -25,9 +25,10 @@ import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.test.AbstractPdoTest;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.test.pdo.AbstractPdoTest;
+import org.tentackle.test.pdo.TestServer;
 import org.testng.annotations.Test;
 
 
@@ -119,7 +120,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
 
   @Test
   public void testTransactions() throws Exception {
-    Process process = AbstractPdoTest.runClass(TransactionServer.class);
+    Process process = AbstractPdoTest.runClass(TestServer.class);
     Thread.sleep(1500);
     try {
       SessionInfo sessionInfo = Pdo.createSessionInfo("client");
