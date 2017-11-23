@@ -45,6 +45,12 @@ import org.tentackle.session.Session;
 public class StoredBundleControl extends ResourceBundle.Control implements DomainContextProvider {
 
   /**
+   * Controls whether property file should be tried if no stored bundle found.<br>
+   * Default is to fallback to
+   */
+  public static boolean fallbackToPropertyFile = true;
+
+  /**
    * the logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(StoredBundleControl.class);
@@ -99,13 +105,24 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       name = name.substring(0, ndx);
     }
 
+    String locText = loc == null ? "" : loc;   // avoid null in logging below
     StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(new StoredBundle.StoredBundleUDK(name, loc));
     if (bundle != null) {
-      LOGGER.fine("bundle {0} {1} loaded", name, loc);
+      LOGGER.info("stored bundle {0}[{1}] loaded", name, locText);
       return new StoredResourceBundle(bundle);
     }
 
-    LOGGER.fine("no bundle {0} {1}", name, loc);
+    if (fallbackToPropertyFile) {
+      LOGGER.fine("no stored bundle {0}[{1}] -> trying property file ...", name, locText);
+      if (format == null || format.isEmpty()) {
+        format = "java.properties";
+      }
+      ResourceBundle rb = super.newBundle(baseName, locale, format, loader, reload);
+      if (rb != null) {
+        LOGGER.info("property bundle {0}[{1}] loaded", name, locText);
+      }
+      return rb;
+    }
     return null;
   }
 
