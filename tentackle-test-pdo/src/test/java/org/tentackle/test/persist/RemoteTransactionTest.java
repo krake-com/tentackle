@@ -35,8 +35,6 @@ import org.testng.annotations.Test;
 
 /**
  * Tests for persisted preferences.
- * <p>
- * IMPORTANT: must be the last test in suite!
  *
  * @author harald
  */

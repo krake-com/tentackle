@@ -132,6 +132,19 @@
         <artifactId>tentackle-web</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <!-- test dependencies -->
+      <dependency>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-test-pdo</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-test-fx-rdc</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
