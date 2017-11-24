@@ -23,8 +23,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.HashMap;
-import java.util.Map;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
@@ -103,7 +101,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @BeforeSuite
+  @BeforeSuite(alwaysRun = true)
   public void openSessionsAndStartModificationTracker() throws Exception {
     session = openSession();
     context = createDomainContext();
@@ -119,7 +117,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @AfterSuite
+  @AfterSuite(alwaysRun = true)
   public void closeSessionsAndTerminateModificationTracker() throws Exception {
     ModificationTracker.getInstance().terminate();
     session.close();
@@ -130,7 +128,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @BeforeClass
+  @BeforeClass(alwaysRun = true)
   public void beforeClass() throws Exception {
     if (txType == TransactionType.CLASS) {
       beginTransaction();
@@ -142,7 +140,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @AfterClass
+  @AfterClass(alwaysRun = true)
   public void afterClass() throws Exception {
     if (txType == TransactionType.CLASS) {
       endTransaction();
@@ -154,7 +152,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @BeforeMethod
+  @BeforeMethod(alwaysRun = true)
   public void beforeMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
       beginTransaction();
@@ -166,7 +164,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    *
    * @throws Exception if failed
    */
-  @AfterMethod
+  @AfterMethod(alwaysRun = true)
   public void afterMethod() throws Exception {
     if (txType == TransactionType.METHOD) {
       endTransaction();

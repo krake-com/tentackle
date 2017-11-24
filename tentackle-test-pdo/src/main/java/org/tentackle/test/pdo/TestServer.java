@@ -26,6 +26,8 @@ import org.tentackle.dbms.rmi.DbServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.app.ServerApplication;
@@ -38,6 +40,11 @@ import org.tentackle.session.SessionInfo;
  * @author harald
  */
 public class TestServer extends ServerApplication {
+
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(TestServer.class);
 
   /**
    * The remote connection.
@@ -123,7 +130,7 @@ public class TestServer extends ServerApplication {
       server.stop();
     }
     catch (Exception ex) {
-      ex.printStackTrace();
+      LOGGER.severe("test server failed", ex);
       System.exit(1);
     }
   }

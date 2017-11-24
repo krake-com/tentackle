@@ -54,7 +54,7 @@ public class ControllerTest extends AbstractApplication {
     super("fx-test");
   }
 
-  @BeforeClass
+  @BeforeClass(alwaysRun = true)
   public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
     session = Pdo.createSession(sessionInfo);
@@ -72,7 +72,7 @@ public class ControllerTest extends AbstractApplication {
     register();
   }
 
-  @AfterClass
+  @AfterClass(alwaysRun = true)
   public void tearDownClass() throws Exception {
     if (session != null) {
       session.close();
@@ -96,7 +96,7 @@ public class ControllerTest extends AbstractApplication {
     return null;
   }
 
-  @Test
+  @Test(alwaysRun = true)
   public void testControllers() {
 
     if (session == null) {
