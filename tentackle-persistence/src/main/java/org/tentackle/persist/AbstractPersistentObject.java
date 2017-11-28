@@ -1550,28 +1550,39 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       rs.skip(nextPo.getColumnCount());
 
       for (Join<? super T,?> join: js.getJoins()) {
-        PersistentDomainObject joinedPdo = join.createJoinedPdo(nextPdo);
-        AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
-
-        if (rs.getObject(rs.findColumn(CN_ID)) != null) {
-          // only if not all columns null.
-          // This is the case if ID is null (which is not nullable)
-          // -> this one is valid:
-          joinedPo = joinedPo.readFromResultSetWrapper(rs);
-          if (joinedPo != null) {
-            joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
-            if (joinedPdo != null) {
-              ((Join) join).join(nextPdo, joinedPdo);
-            }
-          }
-        }
-        // skip to next join
-        int columnCount = joinedPo != null ? joinedPo.getColumnCount() : 0;
-        if (join.isExplicitIdAliasRequired()) {
-          columnCount++;
-        }
-        rs.skip(columnCount);
+        readJoin(rs, nextPdo, (Join<T,?>) join);
       }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, J nextPdo, Join<? super J,?> join) {
+    PersistentDomainObject joinedPdo = join.createJoinedPdo(nextPdo);
+    AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
+
+    if (rs.getObject(rs.findColumn(CN_ID)) != null) {
+      // only if not all columns null.
+      // This is the case if ID is null (which is not nullable)
+      // -> this one is valid:
+      joinedPo = joinedPo.readFromResultSetWrapper(rs);
+      if (joinedPo != null) {
+        joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
+        if (joinedPdo != null) {
+          ((Join) join).join(nextPdo, joinedPdo);
+        }
+      }
+    }
+
+    // skip to next join
+    int columnCount = joinedPo != null ? joinedPo.getColumnCount() : 0;
+    if (join.isExplicitIdAliasRequired()) {
+      columnCount++;
+    }
+    rs.skip(columnCount);
+    
+    // recursively read joined joins
+    for (Join<?,?> subJoin: join.getJoins()) {
+      readJoin(rs, joinedPdo, (Join) subJoin);
     }
   }
 

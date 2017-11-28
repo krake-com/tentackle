@@ -689,7 +689,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     );
     int ndx = 1;
-    ndx = js.setClassIdsInStatement(st, ndx);
     st.setString(ndx++, name);
     return executeTrackedListQuery(st, js);
   }
@@ -742,7 +741,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     );
     int ndx = 1;
-    ndx = js.setClassIdsInStatement(st, ndx);
     st.setString(ndx++, name);
     st.setString(ndx++, locale, true);
     return executeFirstPdoQuery(st, js);

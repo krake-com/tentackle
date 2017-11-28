@@ -122,6 +122,24 @@ public class WurbletArgumentParser {
     parse(arguments);
   }
 
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    buf.append(entity).append(": ");
+    boolean needComma = false;
+    for (WurbletArgument arg: getAllArguments()) {
+      if (needComma) {
+        buf.append(", ");
+      }
+      else {
+        needComma = true;
+      }
+      buf.append(arg);
+    }
+    return buf.toString();
+  }
+
+
   /**
    * Gets the entity the wurblet is applied to.
    *

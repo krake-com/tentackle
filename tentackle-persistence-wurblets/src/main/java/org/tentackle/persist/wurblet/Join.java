@@ -18,6 +18,7 @@
 
 package org.tentackle.persist.wurblet;
 
+import java.util.Objects;
 import org.tentackle.model.Relation;
 
 /**
@@ -64,6 +65,28 @@ public class Join {
    */
   public void setName(String name) {
     this.name = name;
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 5;
+    hash = 41 * hash + Objects.hashCode(this.relation);
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final Join other = (Join) obj;
+    return Objects.equals(this.relation, other.relation);
   }
 
   @Override

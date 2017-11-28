@@ -44,6 +44,18 @@ public class JoinPath implements Path<JoinPath, Join> {
     this.paths = paths;
   }
 
+  /**
+   * Creates a normalized relation path.
+   *
+   * @param element the relation
+   * @param paths the continuation paths, null or empty if none
+   */
+  public JoinPath(Join element, List<JoinPath> paths) {
+    elements = new ArrayList<>();
+    elements.add(element);
+    this.paths = paths;
+  }
+
   @Override
   public List<Join> getElements() {
     if (elements == null) {
@@ -95,6 +107,26 @@ public class JoinPath implements Path<JoinPath, Join> {
     // else: last join matches
     return join;
   }
+
+
+  /**
+   * Normalizes the join and all subjoins.<br>
+   * A normalized join contains only a single element.
+   */
+  public void normalize() {
+    for (JoinPath subPath: getPaths()) {
+      subPath.normalize();
+    }
+    int size;
+    while ((size = getElements().size()) > 1) {
+      Join last = getElements().get(size - 1);
+      JoinPath path = new JoinPath(last, new ArrayList<>(getPaths()));
+      getElements().remove(size - 1);
+      getPaths().clear();
+      getPaths().add(path);
+    }
+  }
+
 
   @Override
   public String toString() {

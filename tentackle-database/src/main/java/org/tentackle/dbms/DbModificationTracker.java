@@ -697,7 +697,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    */
   private void poll() {
 
-    performPendingCounts();
+    if (!getSession().isRemote()) {
+      performPendingCounts();
+    }
 
     long serial = selectMasterSerial();
 

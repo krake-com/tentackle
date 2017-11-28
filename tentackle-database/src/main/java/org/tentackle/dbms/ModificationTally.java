@@ -117,6 +117,9 @@ public class ModificationTally {
         throw new PersistenceException("no thread-local session to count modification for " + dbModification);
       }
     }
+    if (session.isRemote()) {
+      throw new PersistenceException(session, "modification counting not allowed for remote sessions");
+    }
     if (session.isTxRunning()) {
       sessionsInTx.putIfAbsent(session, null);
     }

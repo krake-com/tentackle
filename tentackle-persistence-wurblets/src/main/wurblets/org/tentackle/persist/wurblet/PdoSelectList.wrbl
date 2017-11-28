@@ -255,11 +255,6 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (isWithJoins()) {
-]@
-    ndx = js.setClassIdsInStatement(st, ndx);
-@[
-    }
 ]@
 @{include $currentDir/gensetpar.incl}@
 @[

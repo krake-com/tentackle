@@ -73,20 +73,20 @@ public class JoinPathFactory implements PathFactory<JoinPath, Join> {
   }
 
   private void namePath(String prefix, JoinPath path) {
+    int index = 1;
     String lastPrefix = prefix;
-    if (path.getElements().size() <= 1) {
-      path.getElements().get(0).setName(lastPrefix);
+    if (path.getElements().size() == 1) {
+      path.getElements().get(0).setName(prefix);
     }
     else {
-      int index = 1;
-      prefix += "_";
       for (Join join: path.getElements()) {
-        lastPrefix = prefix + index++;
+        lastPrefix = prefix + "_" + index++;
         join.setName(lastPrefix);
       }
     }
+    index = 1;
     for (JoinPath subPath: path.getPaths()) {
-      namePath(lastPrefix, subPath);
+      namePath(lastPrefix + "_" + index++, subPath);
     }
   }
 

@@ -92,7 +92,7 @@ For more options, see {\@link DbModelWurblet}.
     PreparedStatementWrapper st = getPreparedStatement(@(classVar)@@(statementId)@,
       () -> {
         StringBuilder sql = createSqlUpdate();
-@{include $currentDir/genset.incl}@
+@{include $currentDir/genupdate.incl}@
         sql.append(Backend.SQL_WHEREALL);
 @{include $currentDir/genwhere.incl}@
 @[

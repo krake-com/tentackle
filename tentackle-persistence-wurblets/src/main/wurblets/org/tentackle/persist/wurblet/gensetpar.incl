@@ -1,4 +1,7 @@
 @[
+    if (isWithJoins()) {
+      out.print(createJoinSetPars());
+    }
     if (getEntity().getHierarchyInheritanceType() == InheritanceType.SINGLE) {
 ]@
     if (isClassIdRequiredInWhereClause()) {

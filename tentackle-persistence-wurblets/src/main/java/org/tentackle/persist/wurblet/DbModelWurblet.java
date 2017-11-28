@@ -62,8 +62,7 @@ public class DbModelWurblet extends ModelWurblet {
   private boolean attracked;
   private boolean fullTracked;
   private Attribute contextAttribute;
-  private List<Relation> nonComponentRelations;
-
+  private List<JoinPath> joinPaths;
   private WurbletArgumentParser parser;
 
 
@@ -366,7 +365,14 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the join paths
    */
   public List<JoinPath> getJoinPaths() {
-    return parser.getJoinPaths();
+    if (joinPaths == null) {
+      joinPaths = parser.getJoinPaths();
+      // normalize paths (simplifies code generation with JoinedSelects below)
+      for (JoinPath path: joinPaths) {
+        path.normalize();
+      }
+    }
+    return joinPaths;
   }
 
   /**
@@ -464,103 +470,168 @@ public class DbModelWurblet extends ModelWurblet {
     }
     buf.append("    JoinedSelect<").append(pdoType).append("> js = new JoinedSelect<")
        .append(pdoType).append(">()\n");
-    createJoinsImpl(buf, "      ", getJoinPaths(), pdoType);
+    createJoinsImpl(buf, "      ", getJoinPaths(), pdoType, null);
+    buf.replace(buf.length() - 1, buf.length(), ";\n");
     return buf.toString();
   }
 
-  private void createJoinsImpl(StringBuilder buf, String inset, List<JoinPath> paths, String pdoType) throws WurbelException {
-    int pathCount = 0;
+  private void createJoinsImpl(StringBuilder buf, String inset, List<JoinPath> paths, String pdoType, String parentName)
+          throws WurbelException {
     for (JoinPath path: paths) {
-      pathCount++;
-      int joinCount = 0;
-      for (Join join: path.getElements()) {
+      String lastJoinName = null;
+      if (!path.getElements().isEmpty()) {
+        Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
         String ins = inset;
-        joinCount++;
-        Relation rel = join.getRelation();
-        String poImpl = deriveClassNameForEntity(rel.getEntity());
-        String alias = rel.getEntity().getTopSuperEntity().getTableAlias();
-        String leftClass = rel.getEntity().equals(getEntity()) ? pdoType : rel.getEntity().getName();
-        String joinClass = rel.getForeignEntity().getName();
-        String joinAlias = rel.getForeignEntity().getTableProvidingEntity().getTableAlias();
-        if (joinCount > 1) {
-          buf.append(ins).append("  .addCascadedJoins(new JoinedSelect<").append(rel.getEntity()).append(">()\n");
-          ins += "    ";
-        }
+        Relation relation = join.getRelation();
+        lastJoinName = join.getName();
+        String poImpl = deriveClassNameForEntity(relation.getEntity());
+        String alias = relation.getEntity().getTopSuperEntity().getTableAlias();
+        String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : relation.getEntity().getName();
+        String joinClass = relation.getForeignEntity().getName();
+        String joinAlias = relation.getForeignEntity().getTableProvidingEntity().getTableAlias();
         buf.append(ins).append(".addJoin(\n");
-        if (rel.getRelationType() == RelationType.LIST) {
+        if (relation.getRelationType() == RelationType.LIST) {
           buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
-          if (!getEntity().equals(rel.getEntity())) {
-            buf.append(poImpl).append(".CLASSVARIABLES.");
+          if (parentName == null) {
+            buf.append("getColumnName(CN_ID), \"");
           }
-          buf.append("getColumnName(CN_ID), \"")
-             .append(join.getName()).append('.').append(rel.getForeignAttribute().getColumnName())
-             .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
-             .append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
+          else {
+            buf.append('"').append(parentName).append(".id, \"");
+          }
+          buf.append(join.getName()).append('.').append(relation.getForeignAttribute().getColumnName())
+             .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n");
+          String extraSql = createOptionalWhereForJoin(relation, parentName, join.getName());
+          if (!extraSql.isEmpty()) {
+            buf.append(ins).append("             ").append(extraSql).append(",\n");
+          }
+          buf.append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
              .append(joinClass).append(" ").append(joinAlias).append(") -> {\n");
-          if (rel.isReversed()) {
+          if (relation.isReversed()) {
             buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
-               .append(".getPersistenceDelegate()).").append(rel.getSetterName());
-            if (rel.isSerialized()) {
+               .append(".getPersistenceDelegate()).").append(relation.getSetterName());
+            if (relation.isSerialized()) {
               buf.append("Blunt");
             }
             buf.append("(").append(joinAlias).append(");\n");
           }
           else {
             buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
-               .append(".getPersistenceDelegate()).").append(rel.getGetterName()).append("Blunt().addBlunt(")
+               .append(".getPersistenceDelegate()).").append(relation.getGetterName()).append("Blunt().addBlunt(")
                .append(joinAlias).append(");\n");
-            if (rel.getLinkMethodName() != null) {
-              String joinImpl = deriveClassNameForEntity(rel.getForeignEntity());
+            if (relation.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(relation.getForeignEntity());
               buf.append(ins).append("      ((").append(joinImpl).append(") ")
                  .append(joinAlias).append(".getPersistenceDelegate()).")
-                 .append(createRelationUpdateReferenceCode(rel, alias, true)).append(";\n");
+                 .append(createRelationUpdateReferenceCode(relation, alias, true)).append(";\n");
             }
           }
         }
         else {
           buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
-          if (!getEntity().equals(rel.getEntity())) {
-            buf.append(poImpl).append(".CLASSVARIABLES.");
+          if (parentName == null) {
+            buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase()).append("), \"");
           }
-          buf.append("getColumnName(");
-          if (!getEntity().equals(rel.getEntity())) {
-            buf.append(poImpl).append('.');
+          else {
+            buf.append('"').append(parentName).append('.').append(relation.getAttribute().getColumnName()).append("\", \"");
           }
-          buf.append("CN_").append(rel.getAttribute().getName().toUpperCase()).append("), \"")
-             .append(join.getName()).append(".id\", ")
+          buf.append(join.getName()).append(".id\", ")
              .append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
              .append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
              .append(joinClass).append(" ").append(joinAlias).append(") -> {\n")
              .append(ins).append("      ((").append(poImpl).append(") ")
              .append(alias).append(".getPersistenceDelegate()).")
-             .append(rel.getSetterName());
-          if (rel.isSerialized()) {
+             .append(relation.getSetterName());
+          if (relation.isSerialized()) {
             buf.append("Blunt");
           }
           buf.append("(").append(joinAlias).append(");\n");
         }
         buf.append(ins).append("    }\n")
            .append(ins).append("  )\n");
-
-        if (joinCount > 1) {
-          buf.append(ins).append(")\n")
-             .append(ins.substring(2)).append(")\n");
-        }
       }
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {
         // all subpaths start with the same entity
         Entity subEntity = subPaths.get(0).getElements().get(0).getRelation().getEntity();
-        buf.append(inset).append(".addCascadedJoins(new JoinedSelect<").append(subEntity).append(">()\n");
-        createJoinsImpl(buf, inset + "    ", subPaths, subEntity.getName());
-        buf.append(inset).append(")\n");
+        createJoinsImpl(buf, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
       }
-      buf.append(inset);
-      if (pathCount == paths.size()) {
-        buf.append(");\n");
+      buf.append(inset).append(")\n");
+    }
+  }
+
+
+  private String createOptionalWhereForJoin(Relation relation, String parentName, String joinName) {
+    StringBuilder buf = new StringBuilder();
+    List<MethodArgument> methodArgs = relation.getMethodArgs();
+    if (methodArgs.size() > 1) {
+      for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+        buf.append("\" AND ").append(joinName).append('.')
+           .append(methodArg.getForeignAttribute().getColumnName())
+           .append('=');
+        if (methodArg.isValue()) {
+          buf.append("?\"");
+        }
+        else {
+          Attribute attr = methodArg.getAttribute();
+          if (parentName == null) {
+            buf.append("\" + getColumnName(CN_").append(attr.getName().toUpperCase()).append(")");
+          }
+          else {
+            buf.append('"').append(parentName).append('.').append(attr.getColumnName()).append("\"");
+          }
+        }
       }
-      else {
-        buf.append(")\n");
+    }
+    return buf.toString();
+  }
+
+
+
+  /**
+   * Creates optional JDBC-set paramaters code for joins with extra arguments.
+   *
+   * @return the optional code, empty if none
+   * @throws WurbelException if failed
+   */
+  public String createJoinSetPars() throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    for (JoinPath path: getJoinPaths()) {
+      createJoinSetPars(buf, path);
+    }
+    return buf.toString();
+  }
+
+  private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException {
+    if (!path.getElements().isEmpty()) {
+      Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
+      Relation relation = join.getRelation();
+      if (isClassIdRequiredInWhereClause(relation.getForeignEntity())) {
+        buf.append("    st.setInt(ndx++, ").append(relation.getForeignEntity().getClassId()).append(");\n");
+      }
+      List<MethodArgument> methodArgs = relation.getMethodArgs();
+      if (methodArgs.size() > 1) {
+        for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+          if (methodArg.isValue()) {
+            Attribute attr = methodArg.getForeignAttribute();
+            buf.append("    st.")
+               .append(createJdbcSetterName(attr))
+               .append("(ndx++, ")
+               .append(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())));
+            if (attr.getOptions().isMapNull())  {
+              buf.append(", true);\n");
+            }
+            else {
+              buf.append(");\n");
+            }
+            // for multi column types, such as BMoney/DMoney
+            for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+              buf.append("    ndx++;\n");
+            }
+          }
+        }
+      }
+      for (JoinPath subPath: path.getPaths()) {
+        createJoinSetPars(buf, subPath);
       }
     }
   }

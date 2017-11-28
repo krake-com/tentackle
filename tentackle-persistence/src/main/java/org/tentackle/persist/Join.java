@@ -82,9 +82,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   private final BiConsumer<T,J> joiner;
 
   /**
-   * Cascaded joined selects.
+   * Cascaded joins.
    */
-  private final List<JoinedSelect<J>> cascadedJoinedSelects;
+  private final List<Join<J,?>> joins;
 
   /**
    * True if this is a list join.
@@ -101,7 +101,40 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    */
   private final Map<T,Set<J>> lastJoinedPdoMap;
 
+  /**
+   * Optional SQL code.
+   */
+  private final String extraSql;
 
+
+  /**
+   * Creates a join.
+   *
+   * @param type the join type
+   * @param columnName the column name of the PDO (includung table alias!)
+   * @param joinedColumnName the column name of the joined PDO (includung table alias!)
+   * @param joinedClass the joined class
+   * @param joinAlias the alias of the joined pdo
+   * @param extraSql optional SQL code (usually a WHERE clause)
+   * @param joiner the joiner
+   */
+  public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
+              String joinAlias, String extraSql, BiConsumer<T, J> joiner) {
+
+    this.type = type;
+    this.columnName = columnName;
+    this.joinedColumnName = joinedColumnName;
+    this.joinedClass = joinedClass;
+    this.joinAlias = joinAlias;
+    this.joiner = joiner;
+    this.extraSql = extraSql;
+
+    joins = new ArrayList<>();
+    lastJoinedPdoMap = new HashMap<>();
+    listJoin = columnName.endsWith(ENDS_WITH_ID);
+    explicitIdAliasRequired = !listJoin &&
+            ((AbstractPersistentObject) Pdo.create(joinedClass).getPersistenceDelegate()).isExplicitIdAliasRequiredInJoins();
+  }
 
   /**
    * Creates a join.
@@ -115,20 +148,9 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    */
   public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
               String joinAlias, BiConsumer<T, J> joiner) {
-    
-    this.type = type;
-    this.columnName = columnName;
-    this.joinedColumnName = joinedColumnName;
-    this.joinedClass = joinedClass;
-    this.joinAlias = joinAlias;
-    this.joiner = joiner;
-
-    cascadedJoinedSelects = new ArrayList<>();
-    lastJoinedPdoMap = new HashMap<>();
-    listJoin = columnName.endsWith(ENDS_WITH_ID);
-    explicitIdAliasRequired = !listJoin &&
-            ((AbstractPersistentObject) Pdo.create(joinedClass).getPersistenceDelegate()).isExplicitIdAliasRequiredInJoins();
+    this(type, columnName, joinedColumnName, joinedClass, joinAlias, null, joiner);
   }
+
 
   /**
    * Gets the join type.
@@ -204,23 +226,33 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
   }
 
   /**
-   * Adds another joined select that is cascaded as joins on this join.
+   * Gets optional SQL code.
    *
-   * @param joinedSelect the joined select
+   * @return sql code, null or empty if none
+   */
+  public String getExtraSql() {
+    return extraSql;
+  }
+
+
+  /**
+   * Adds a cascaded join.
+   *
+   * @param join the cascaded join
    * @return me (to allow fluent style setup)
    */
-  public Join<T,J> addCascadedJoins(JoinedSelect<J> joinedSelect) {
-    cascadedJoinedSelects.add(joinedSelect);
+  public Join<T,J> addJoin(Join<J,?> join) {
+    joins.add(join);
     return this;
   }
 
   /**
-   * Gets the cascaded joined selects.
+   * Gets the cascaded joins.
    *
-   * @return the cascaded selects, never null
+   * @return the cascaded joins, never null
    */
-  public List<JoinedSelect<J>> getCascadedJoins() {
-    return cascadedJoinedSelects;
+  public List<Join<J,?>> getJoins() {
+    return joins;
   }
 
 

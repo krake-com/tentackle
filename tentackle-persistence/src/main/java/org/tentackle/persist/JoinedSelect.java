@@ -102,7 +102,12 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
     AbstractPersistentObject<T,?> pdoPD = (AbstractPersistentObject<T,?>) pdo.getPersistenceDelegate();
     Backend backend = pdoPD.getBackend();
     for (Join<? super T,?> join: joins) {
-      if (join.getType() != JoinType.INNER && join.getType() != JoinType.LEFT) {
+      createJoinedSql(pdo, backend, join, selectSql);
+    }
+  }
+
+  private void createJoinedSql(PersistentDomainObject<?> pdo, Backend backend, Join<?,?> join, StringBuilder selectSql) {
+    if (join.getType() != JoinType.INNER && join.getType() != JoinType.LEFT) {
         throw new PersistenceException(pdo, "unsupported JoinType: " + join.getType().name());
       }
       PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass(), pdo.getDomainContext());
@@ -116,15 +121,25 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
         joinSelectIdAlias = joinPD.getTableAlias() + ".id AS " + joinPD.getTableAlias() + "_id";
         joinedColumnName = join.getJoinAlias() + "." + joinPD.getTableAlias() + "_id";
       }
+      String joinSql = columnName + "=" + joinedColumnName;
+      if (join.getExtraSql() != null) {
+        joinSql += join.getExtraSql();
+      }
       backend.sqlJoinSelects(join.getType(), true, selectSql,
                              selectJoinedSql, joinSelectIdAlias, join.getJoinAlias(),
-                             columnName + "=" + joinedColumnName);
-    }
+                             joinSql);
+
+      for (Join<?,?> subJoin: join.getJoins()) {
+        createJoinedSql(joinedPdo, backend, subJoin, selectSql);
+      }
   }
 
 
   /**
-   * Sets the class-ID parameters if required for the joins.
+   * Sets the class-ID parameters if required for the joins.<br>
+   * Notice that this method only works for joins with no subjoins and
+   * is used only for eager joins, i.e. the default selects.
+   * All code for non-eager joins is generated via the DbModelWurblet.
    *
    * @param st the statement
    * @param ndx the next parameter ndx
