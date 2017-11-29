@@ -22,6 +22,8 @@ package org.tentackle.persist.rmi;
 
 import java.rmi.RemoteException;
 import java.util.List;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RemoteDelegateImpl;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistentDomainObject;

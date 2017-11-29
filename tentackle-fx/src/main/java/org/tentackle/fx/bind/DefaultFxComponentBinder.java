@@ -41,11 +41,12 @@ import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
+import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
 
@@ -65,6 +66,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   private final FxController controller;                                // the controller to bind
   private final TreeMap<String,FxComponent> eligibleComponents;         // all eligible components in given form
   private final Map<FxComponent,FxComponentBinding> boundComponents;    // the bindings mapped by component
+  private final Set<FxComponent> unboundComponents;                     // unbound components
   private final Map<String,FxComponentBinding> boundPaths;              // the bindings mapped by binding path
   private final List<Binding> dynamicMandatoryBindings;                 // bindings to be monitored for the mandatory attribute
   private boolean needMandatoryUpdate;                                  // true if we need an update of the mandatory bindings
@@ -82,6 +84,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     this.controller = controller;
     eligibleComponents = new TreeMap<>();
     boundComponents = new HashMap<>();
+    unboundComponents = new HashSet<>();
     boundPaths = new TreeMap<>();
     dynamicMandatoryBindings = new ArrayList<>();
     dynamicChangeableBindings = new ArrayList<>();
@@ -105,12 +108,15 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           if (validator instanceof MandatoryBindingEvaluator) {
             Object parentObject = mandatoryBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
-              ValidationContext validationContext = new ValidationContext();
-              validationContext.setParentObject(parentObject);
-              validationContext.setObject(mandatoryBinding.getModelValue());
-              validationContext.setType(mandatoryBinding.getMember().getType());
+              ValidationScope scope = ValidationScopeFactory.getInstance().getMandatoryScope();
+              ValidationContext validationContext = new ValidationContext(
+                      mandatoryBinding.getMember().getMemberPath(),
+                      mandatoryBinding.getMember().getType(),
+                      mandatoryBinding.getModelValue(),
+                      parentObject,
+                      scope);
               // we must check the scope, because it may change due to CompoundValues
-              if (ValidationScopeFactory.getInstance().getMandatoryScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
                   validator.isConditionValid(validationContext)) {
                 mandatory = true;
@@ -130,12 +136,15 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           if (validator instanceof ChangeableBindingEvaluator) {
             Object parentObject = changeableBinding.getParentObject();
             if (parentObject != null) { // if parent path is valid, i.e. no null reference
-              ValidationContext validationContext = new ValidationContext();
-              validationContext.setParentObject(parentObject);
-              validationContext.setObject(changeableBinding.getModelValue());
-              validationContext.setType(changeableBinding.getMember().getType());
+              ValidationScope scope = ValidationScopeFactory.getInstance().getChangeableScope();
+              ValidationContext validationContext = new ValidationContext(
+                      changeableBinding.getMember().getMemberPath(),
+                      changeableBinding.getMember().getType(),
+                      changeableBinding.getModelValue(),
+                      parentObject,
+                      scope);
               // we must check the scope, because it may change due to CompoundValues
-              if (ValidationScopeFactory.getInstance().getChangeableScope().appliesTo(validator.getConfiguredScopes(validationContext)) &&
+              if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
                   validator.isConditionValid(validationContext)) {
                 changeable = true;
@@ -184,19 +193,31 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
   @Override
   public int bindAllInherited() {
-    return doBind(false, false);
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(false, false);
+    }
+    return count;
   }
 
 
   @Override
   public int bindWithInheritedBindables() {
-    return doBind(false, true);
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(false, true);
+    }
+    return count;
   }
 
 
   @Override
   public int bindWithInheritedComponents() {
-    return doBind(true, false);
+    int count = doBind(true, true);   // try fast binding first
+    if (isUnboundPending()) {
+      count += doBind(true, false);
+    }
+    return count;
   }
 
 
@@ -212,6 +233,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
       comp.setBinding(null);
     }
     eligibleComponents.clear();
+    unboundComponents.clear();
     boundComponents.clear();
     boundPaths.clear();
   }
@@ -231,24 +253,30 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
   @Override
   public Collection<FxComponent> getUnboundComponents() {
-    List<FxComponent> unboundComponents = new ArrayList<>();
-    for (FxComponent component: eligibleComponents.values()) {
-      if (component.getBinding() == null) {
-        unboundComponents.add(component);
-      }
-    }
     return unboundComponents;
+  }
+
+
+  /**
+   * Checks whether some components are still unbound.
+   *
+   * @return true if unbound pending, false if all bound
+   */
+  public boolean isUnboundPending() {
+    return !unboundComponents.isEmpty();
   }
 
 
   @Override
   public void assertAllBound() throws BindingException {
-    Collection<FxComponent> unboundComponents = getUnboundComponents();
-    if (!unboundComponents.isEmpty()) {
-      for (FxComponent comp: unboundComponents) {
-        LOGGER.severe("unbound component " + comp.getComponentPath());
+    if (isUnboundPending()) {
+      for (FxComponent comp: eligibleComponents.values()) {   // sorted by bindingPath
+        if (comp.getBinding() == null) {
+          LOGGER.severe("unbound component " + comp.getComponentPath());
+        }
       }
-      throw new BindingException("unbound components in " + controller.getClass().getName());
+      throw new BindingException("unbound components in controller " +
+                                 ReflectionHelper.getClassBaseName(controller.getClass()));
     }
   }
 
@@ -266,6 +294,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         throw new BindingException(binding + ": component '" + ((FxComponentBinding) binding).getComponent().getComponentPath() +
                                    "' already bound to " + oldBinding.getMember().getMemberPath());
       }
+
+      unboundComponents.remove(((FxComponentBinding) binding).getComponent());
 
       // check if binding is dynamically mandatory according to the annotation
       List<Validator> validators = binding.getValidators();
@@ -405,8 +435,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
         // try to bind this member
         FxComponent component = findComponent(fieldMemberPath);
-        if (component != null) {
-          // found
+        if (component != null && component.getBinding() == null) {
+          // unbound found
           Binding binding = FxBindingFactory.getInstance().createComponentBinding(
                                     this, parents, fieldMember, component, element.getBindingOptions());
           addBinding(binding);
@@ -515,7 +545,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
    *
    * @param controller the controller declaring the field
    * @param field the form field declared in the controller
-   * @return the component, null if field is null or not an FxComponent
+   * @return the component, null if field is not an FxComponent
    */
   private FxComponent getFxComponent(FxController controller, Field field) {
     FxComponent component = null;
@@ -525,11 +555,16 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
           field.setAccessible(true);
         }
         component = (FxComponent) field.get(controller);
+        if (component == null) {
+          throw new BindingException(field + " is null");
+        }
       }
     }
+    catch (BindingException bx) {
+      throw bx;
+    }
     catch (Exception ex) {
-      throw new BindingException("cannot access " + field + " in controller " +
-                                 controller.getClass().getName(), ex);
+      throw new BindingException("cannot access " + field, ex);
     }
     return component;
   }
@@ -560,7 +595,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
                                              false, null, true))) {
 
           FxComponent component = getFxComponent(controller, field);
-          if (component != null && component.isBindable()) {
+          if (component != null && component.isBindable() && component.getBinding() == null) {
+            // if component is bindable and not bound in advance
             String componentPath = controllerPath + "." + field.getName();
             component.setComponentPath(componentPath);
             String bindingPath = component.getBindingPath();
@@ -578,10 +614,15 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
             // add to component map
             FxComponent oldComponent = eligibleComponents.put(bindingPath, component);
             if (oldComponent != null) {
-              throw new BindingException("binding path '" + bindingPath +
-                                         "' already provided by " + oldComponent.getComponentPath());
+              if (oldComponent != component) {
+                throw new BindingException("binding path '" + bindingPath +
+                                           "' already provided by " + oldComponent.getComponentPath());
+              }
             }
-            LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
+            else {
+              LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
+              unboundComponents.add(component);
+            }
           }
         }
       }
@@ -615,7 +656,5 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     }
     return doBind(null, null, controller.getClass(), declaredBindablesOnly);
   }
-
-
 
 }

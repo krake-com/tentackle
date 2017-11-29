@@ -23,6 +23,7 @@ import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.script.nashorn.JavaScriptLanguage;
+import org.tentackle.validate.ValidationUtilities;
 
 /**
  * Converts a validator message script.
@@ -32,11 +33,13 @@ import org.tentackle.script.nashorn.JavaScriptLanguage;
 @MessageScriptConverter(JavaScriptLanguage.NAME)
 public class JavaScriptValidationMessageConverter implements ScriptConverter {
 
+  private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
+
   @Override
   public String convert(String code, ScriptingLanguage language) {
     int ndx = code.indexOf("@(");
     if (ndx > 0) {
-      return code.substring(0, ndx) + "org.tentackle.validate.ValidationUtilities.getInstance().format(" +
+      return code.substring(0, ndx) + VALIDATION_UTILITIES_NAME + ".getInstance().format(" +
               language.createLocalVariableReference(CompoundValue.VAR_OBJECT) +
               "," +
               code.substring(ndx + 2, code.length());

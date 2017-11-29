@@ -34,7 +34,7 @@ import javax.swing.JPasswordField;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.SessionInfo;
+import org.tentackle.session.SessionInfo;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.StringFormField;
 
@@ -42,7 +42,6 @@ import org.tentackle.swing.StringFormField;
  * The default tentackle login dialog.
  *
  * @author harald
- * @see org.tentackle.app.DesktopApplication
  */
 public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implements LoginDialog {
 
@@ -90,7 +89,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
    */
   public DefaultLoginDialog(SessionInfo sessionInfo, boolean promptLogin, Icon logo) {
 
-    this.sessionInfo = sessionInfo == null ? Pdo.createSessionInfo(null, null, null) : sessionInfo;
+    this.sessionInfo = sessionInfo == null ? Pdo.createSessionInfo() : sessionInfo;
     this.promptLogin = promptLogin;
 
     initComponents();
@@ -367,11 +366,11 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     loginPanel.setOpaque(false);
 
     jLabel1.setForeground(new java.awt.Color(204, 204, 255));
-    jLabel1.setText(RdcSwingRdcBundle.getTranslation("USERNAME:")); // NOI18N
+    jLabel1.setText(RdcSwingRdcBundle.getString("USERNAME:")); // NOI18N
     jLabel1.setFont(new java.awt.Font("SansSerif", 1, 12)); // NOI18N
 
     jLabel2.setForeground(new java.awt.Color(204, 204, 255));
-    jLabel2.setText(RdcSwingRdcBundle.getTranslation("PASSWORD:")); // NOI18N
+    jLabel2.setText(RdcSwingRdcBundle.getString("PASSWORD:")); // NOI18N
     jLabel2.setFont(new java.awt.Font("SansSerif", 1, 12)); // NOI18N
 
     nameField.setAutoSelect(true);
@@ -393,7 +392,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     });
 
     okButton.setBackground(new java.awt.Color(204, 204, 255));
-    okButton.setText(RdcSwingRdcBundle.getTranslation("LOGIN")); // NOI18N
+    okButton.setText(RdcSwingRdcBundle.getString("LOGIN")); // NOI18N
     okButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
     okButton.setName("login"); // NOI18N
     okButton.addActionListener(new java.awt.event.ActionListener() {
@@ -403,7 +402,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     });
 
     cancelLoginButton.setBackground(new java.awt.Color(204, 204, 255));
-    cancelLoginButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelLoginButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelLoginButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
     cancelLoginButton.setName("cancelLogin"); // NOI18N
     cancelLoginButton.addActionListener(new java.awt.event.ActionListener() {
@@ -413,7 +412,7 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     });
 
     capsLockLabel.setForeground(java.awt.Color.orange);
-    capsLockLabel.setText(RdcSwingRdcBundle.getTranslation("CAPS LOCK")); // NOI18N
+    capsLockLabel.setText(RdcSwingRdcBundle.getString("CAPS LOCK")); // NOI18N
 
     javax.swing.GroupLayout loginPanelLayout = new javax.swing.GroupLayout(loginPanel);
     loginPanel.setLayout(loginPanelLayout);
@@ -459,17 +458,17 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
         .addContainerGap())
     );
 
+    layeredPane.setLayer(loginPanel, javax.swing.JLayeredPane.PALETTE_LAYER);
     layeredPane.add(loginPanel);
     loginPanel.setBounds(0, 0, 500, 355);
-    layeredPane.setLayer(loginPanel, javax.swing.JLayeredPane.PALETTE_LAYER);
 
     statusPanel.setOpaque(false);
 
     statusLabel.setForeground(java.awt.Color.orange);
-    statusLabel.setText(RdcSwingRdcBundle.getTranslation("LOGIN...")); // NOI18N
+    statusLabel.setText(RdcSwingRdcBundle.getString("LOGIN...")); // NOI18N
 
     cancelStatusButton.setBackground(new java.awt.Color(204, 204, 255));
-    cancelStatusButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelStatusButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelStatusButton.setMargin(new java.awt.Insets(0, 4, 0, 4));
     cancelStatusButton.setName("cancelStatus"); // NOI18N
     cancelStatusButton.addActionListener(new java.awt.event.ActionListener() {
@@ -499,9 +498,9 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
         .addContainerGap())
     );
 
+    layeredPane.setLayer(statusPanel, javax.swing.JLayeredPane.MODAL_LAYER);
     layeredPane.add(statusPanel);
     statusPanel.setBounds(0, 0, 500, 350);
-    layeredPane.setLayer(statusPanel, javax.swing.JLayeredPane.MODAL_LAYER);
 
     logoPanel.setOpaque(false);
     logoPanel.setLayout(null);
@@ -510,9 +509,9 @@ public class DefaultLoginDialog extends org.tentackle.swing.FormDialog implement
     logoPanel.add(logoLabel);
     logoLabel.setBounds(60, 110, 130, 145);
 
+    layeredPane.setLayer(logoPanel, javax.swing.JLayeredPane.POPUP_LAYER);
     layeredPane.add(logoPanel);
     logoPanel.setBounds(0, 0, 500, 350);
-    layeredPane.setLayer(logoPanel, javax.swing.JLayeredPane.POPUP_LAYER);
 
     getContentPane().add(layeredPane, java.awt.BorderLayout.CENTER);
 

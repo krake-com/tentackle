@@ -19,6 +19,7 @@
 
 package org.tentackle.common;
 
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -35,35 +36,37 @@ public class FileHelper {
   /**
    * Loads properties.
    *
-   * @param filename the filename, null if return empty properties
+   * @param name the properties name, null if return empty properties
    * @param asResource true if load from the classpath, false if from filesystem
    * @return the properties, empty if filename is null
-   * @throws IOException if reading the property file failed or no such property file
+   * @throws IOException if reading the property file failed
+   * @throws FileNotFoundException if no properties found
    */
-  public static Properties loadProperties(String filename, boolean asResource) throws IOException {
+  public static Properties loadProperties(String name, boolean asResource) throws IOException {
     Properties dbProps = new Properties();
-    if (filename != null) {
-      if (filename.indexOf('.') < 0) {
-        filename += ".properties";
+    if (name != null) {
+      if (name.indexOf('.') < 0) {
+        name += ".properties";
       }
-      if (!filename.startsWith("/")) {
-        filename = "/" + filename;
+      if (!name.startsWith("/")) {
+        name = "/" + name;
       }
       InputStream is = null;
       try {
         if (asResource) {
-          is = FileHelper.class.getResourceAsStream(filename);
+          is = FileHelper.class.getResourceAsStream(name);
           if (is == null) {
             // try other variant
-            is = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename);
+            is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
             if (is == null) {
               throw new FileNotFoundException("no such resource");
             }
           }
         }
         else  {
-          is = new FileInputStream(filename);
+          is = new FileInputStream(name);
         }
+        is = new BufferedInputStream(is);
         dbProps.load(is);
       }
       finally {
@@ -78,6 +81,26 @@ public class FileHelper {
       }
     }
     return dbProps;
+  }
+
+
+  /**
+   * Loads properties.<br>
+   * Tries to load from filesystem first, then from classpath.
+   *
+   * @param name the properties name, null if return empty properties
+   * @return the properties, empty if filename is null
+   * @throws IOException if reading the property file failed
+   * @throws FileNotFoundException if no properties found
+   */
+  public static Properties loadProperties(String name) throws IOException {
+    try {
+      return loadProperties(name, false);
+    }
+    catch (FileNotFoundException e1) {
+      // try as resource
+      return loadProperties(name, true);
+    }
   }
 
 

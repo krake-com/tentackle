@@ -19,8 +19,11 @@
 
 package org.tentackle.maven;
 
+import com.sun.tools.javac.api.JavacTool;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import javax.tools.Diagnostic;
@@ -29,7 +32,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import javax.tools.ToolProvider;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -55,7 +57,11 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   @Parameter(defaultValue = "${tentackle.showCompileOutput}")
   protected boolean showCompileOutput;
 
-
+  /**
+   * Source file encode.
+   */
+  @Parameter(defaultValue = "${project.build.sourceEncoding}")
+  protected String encoding;
 
   /**
    * Directory holding the sources to be processed.
@@ -75,8 +81,12 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Annotation processors.
    */
-  private List<AbstractTentackleProcessor> processors;
+  protected List<AbstractTentackleProcessor> processors;
 
+  /**
+   * A class loader that searches also the classpath elements.
+   */
+  private ClassLoader processingClassloader;
 
 
   /**
@@ -84,12 +94,27 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    *
    * @param sourceDir the directory holding the sources to be processed
    * @param classpathElements the mavenProject classpath
+   * @throws MojoFailureException if classloader could not be created
    */
-  public void setMojoParameters(File sourceDir, List<String> classpathElements) {
+  public void setMojoParameters(File sourceDir, List<String> classpathElements) throws MojoFailureException {
     this.sourceDir = sourceDir;
     this.classpathElements = classpathElements;
+    try {
+      processingClassloader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+    }
+    catch (MalformedURLException mx) {
+      throw new MojoFailureException("cannot create project classloader", mx);
+    }
   }
 
+  /**
+   * Gets a classloader that searches also in the classpath elements of the project.
+   *
+   * @return the classloader
+   */
+  public ClassLoader getProcessingClassloader() {
+    return processingClassloader;
+  }
 
   /**
    * Adds an annotation processor.
@@ -115,8 +140,23 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   /**
    * Prepares the execution.<br>
    * Invoked before validate().
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
    */
-  public abstract void prepareExecute();
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
+
+  /**
+   * Finishes the execution.
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
+   */
+  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
 
 
 
@@ -157,6 +197,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
     }
 
+    finishExecute();
+
     if (processors != null) {
       for (AbstractTentackleProcessor processor: processors) {
         try {
@@ -190,8 +232,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    *
    * @param processor the annotation processor
    * @param srcDir the source dir
+   * @throws MojoFailureException if initialization failed
    */
-  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
+  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
     processor.setSourceDir(srcDir);
   }
 
@@ -200,8 +243,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * Initializes all processors.
    *
    * @param srcDir the current file set directory
+   * @throws MojoFailureException if initialization failed
    */
-  protected void initializeProcessors(File srcDir) {
+  protected void initializeProcessors(File srcDir) throws MojoFailureException {
     if (processors != null) {
       for (AbstractTentackleProcessor processor : processors) {
         initializeProcessor(processor, srcDir);
@@ -209,6 +253,16 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     }
   }
 
+
+  /**
+   * Cleans up the processors.
+   *
+   * @param srcDir the current file set directory
+   * @throws MojoFailureException if cleanup failed
+   */
+  protected void cleanupProcessors(File srcDir) throws MojoFailureException {
+    // the default does nothing
+  }
 
 
   /**
@@ -230,7 +284,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * @param fileSet the set of files
    * @throws MojoExecutionException
    */
-  private void processFileSet(FileSet fileSet) throws MojoExecutionException {
+  private void processFileSet(FileSet fileSet) throws MojoFailureException, MojoExecutionException {
 
     if (fileSet.getDirectory() == null && sourceDir != null) {
       // directory missing: use sourceDir as default
@@ -261,7 +315,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
       }
 
-      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+      // JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();   // picks the wrong classloader :(
+      JavaCompiler compiler = JavacTool.create();
+
       if (compiler == null) {
         throw new MojoExecutionException(
                 "No Java compiler! Make sure you're using the JDK or tools.jar is in your classpath.");
@@ -270,6 +326,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
 
       List<String> options = new ArrayList<>();
+      options.add("-encoding");
+      options.add(encoding);
       options.add("-proc:only");    // run only the annotation processing
       options.add("-classpath");
       StringBuilder buf = new StringBuilder();
@@ -318,6 +376,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
       }
     }
+
+    cleanupProcessors(dir);
 
     getLog().info(getPathRelativeToBasedir(dirName) + ": " +
                   fileNames.length + " files analyzed, " +

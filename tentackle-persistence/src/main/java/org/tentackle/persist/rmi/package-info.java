@@ -17,6 +17,6 @@
  */
 
 /**
- * Persistence layer remoting.
+ * Higher-level PDO-aware persistence remoting.
  */
 package org.tentackle.persist.rmi;

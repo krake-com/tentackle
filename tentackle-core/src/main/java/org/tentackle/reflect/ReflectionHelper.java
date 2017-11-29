@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import org.tentackle.misc.ApplicationException;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 
 /**

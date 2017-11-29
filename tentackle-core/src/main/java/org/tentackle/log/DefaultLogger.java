@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// $Id$
-
 package org.tentackle.log;
 
 import java.io.PrintStream;
@@ -25,7 +23,7 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
 
 /**
@@ -44,7 +42,7 @@ public class DefaultLogger implements Logger {
 
 
   // cached loggers
-  private static final HashMap<String,DefaultLogger> loggers = new HashMap<>();
+  private static final HashMap<String,DefaultLogger> LOGGERS = new HashMap<>();
 
   /**
    * Gets the DefaultLogger for given name.
@@ -54,12 +52,12 @@ public class DefaultLogger implements Logger {
    * @return the logger
    */
   public static DefaultLogger getLogger(String name) {
-    synchronized(loggers) {
-      DefaultLogger logger = loggers.get(name);
+    synchronized(LOGGERS) {
+      DefaultLogger logger = LOGGERS.get(name);
       if (logger == null) {
         // create a new one
         logger = new DefaultLogger(name);
-        loggers.put(name, logger);
+        LOGGERS.put(name, logger);
       }
       return logger;
     }
@@ -88,7 +86,6 @@ public class DefaultLogger implements Logger {
 
   private java.util.logging.Level translateLevel(Level level) {
     switch (level) {
-      case FINEST:  return java.util.logging.Level.FINEST;
       case FINER:   return java.util.logging.Level.FINER;
       case FINE:    return java.util.logging.Level.FINE;
       case INFO:    return java.util.logging.Level.INFO;
@@ -109,11 +106,6 @@ public class DefaultLogger implements Logger {
     doLog(level, message, cause);
   }
 
-
-  @Override
-  public void finest(String message, Throwable cause) {
-    doLog(Level.FINEST, message, cause);
-  }
 
   @Override
   public void finer(String message, Throwable cause) {
@@ -140,12 +132,6 @@ public class DefaultLogger implements Logger {
     doLog(Level.SEVERE, message, cause);
   }
 
-
-  @Override
-  public void finest(String message, Object... params) {
-    doLog(Level.FINEST, message, null, params);
-  }
-
   @Override
   public void finer(String message, Object... params) {
     doLog(Level.FINER, message, null, params);
@@ -169,12 +155,6 @@ public class DefaultLogger implements Logger {
   @Override
   public void severe(String message, Object... params) {
     doLog(Level.SEVERE, message, null, params);
-  }
-
-
-  @Override
-  public boolean isFinestLoggable() {
-    return isLoggable(Level.FINEST);
   }
 
   @Override
@@ -278,9 +258,7 @@ public class DefaultLogger implements Logger {
       if (params != null && params.length > 0) {
         final String msg = message;
         logger.logp(juLevel, se.getClassName(), se.getMethodName(), cause,
-                () -> {
-                  return MessageFormat.format(msg, params);
-                });
+                    () -> MessageFormat.format(msg, params));
       }
       else  {
         logger.logp(juLevel, se.getClassName(), se.getMethodName(), message, cause);

@@ -18,9 +18,11 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -28,8 +30,8 @@ import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.SessionUtilities;
 
 /**
  * Default implementation of a {@link GuiProvider}.<br>
@@ -60,7 +62,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   @Override
   public ResourceBundle getBundle() {
     if (bundle == null) {
-      bundle = ResourceBundle.getBundle(getClass().getName());
+      bundle = BundleFactory.getBundle(getClass().getName());
     }
     return bundle;
   }
@@ -141,7 +143,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
         int classId = Integer.parseInt(stok.nextToken());
         if (stok.hasMoreTokens()) {
           int id = Integer.parseInt(stok.nextToken());
-          String className = PdoUtilities.getInstance().getPdoClassName(classId);
+          String className = SessionUtilities.getInstance().getClassName(classId);
           if (className != null && id != 0) {
             try {
               return new IdentifiableKey<>(className, id);
@@ -192,7 +194,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public TableView<T> createTableView() {
+  public FxTableView<T> createTableView() {
     TableConfiguration<T> config = createTableConfiguration();
     if (config.getBindingType() == TableConfiguration.BINDING.YES) {
       config.getBinder().bind();
@@ -201,7 +203,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
       config.getBinder().bindAllInherited();
     }
     @SuppressWarnings("unchecked")
-    TableView<T> tableView = Fx.createNode(TableView.class);
+    FxTableView<T> tableView = Fx.createNode(TableView.class);
     config.configure(tableView);
     return tableView;
   }

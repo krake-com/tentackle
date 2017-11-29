@@ -188,7 +188,7 @@ public class YesNoRadioButton extends FormComponentPanel {
 
     setLayout(new java.awt.GridBagLayout());
 
-    yesButton.setText(SwingSwingBundle.getTranslation("YES")); // NOI18N
+    yesButton.setText(SwingSwingBundle.getString("YES")); // NOI18N
     yesButton.setName("yes"); // NOI18N
     yesButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -199,7 +199,7 @@ public class YesNoRadioButton extends FormComponentPanel {
     gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
     add(yesButton, gridBagConstraints);
 
-    noButton.setText(SwingSwingBundle.getTranslation("NO")); // NOI18N
+    noButton.setText(SwingSwingBundle.getString("NO")); // NOI18N
     noButton.setName("no"); // NOI18N
     noButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {

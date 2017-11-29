@@ -112,10 +112,33 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   /**
    * Adds the element to the list only if not already in the list.
    *
-   * @param element the element
+   * @param element the element to add
    * @return true if added, false if element already in list
    */
   boolean addIfAbsent(E element);
+
+  /**
+   * Adds the element to the list but does not mark it modified.
+   *
+   * @param element the element to add
+   */
+  void addBlunt(E element);
+
+  /**
+   * Removes the element from the list but does not mark it modified.
+   *
+   * @param element the element to remove
+   * @return true if element removed
+   */
+  boolean removeBlunt(E element);
+
+  /**
+   * Removes the element at given index from the list but does not mark it modified.
+   *
+   * @param index the index
+   * @return the removed element
+   */
+  E removeBlunt(int index);
 
   /**
    * Adds a listener.

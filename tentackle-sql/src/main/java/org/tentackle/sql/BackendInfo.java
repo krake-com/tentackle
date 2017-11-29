@@ -246,11 +246,24 @@ public class BackendInfo {
   /**
    * Creates a connection.
    *
-   * @return the connection
+   * @return the connection in autocommit mode
    * @throws SQLException if connection could not be created
    */
   public Connection connect() throws SQLException {
-    return jndiDataSource != null ? jndiDataSource.getConnection() : backend.createConnection(url, user, password);
+    Connection connection = jndiDataSource != null ?
+            jndiDataSource.getConnection() : backend.createConnection(url, user, password);
+    try {
+      if (!connection.getAutoCommit()) {
+        connection.setAutoCommit(true);   // set to autocommit mode for sure
+      }
+    }
+    catch (SQLException sqx) {
+      if (connection != null) {
+        connection.close();
+      }
+      throw sqx;
+    }
+    return connection;
   }
 
 

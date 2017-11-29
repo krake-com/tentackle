@@ -19,7 +19,6 @@
 package org.tentackle.model;
 
 import java.util.List;
-import org.tentackle.model.parser.Line;
 import org.tentackle.sql.Backend;
 
 /**
@@ -27,7 +26,7 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
-public interface Index {
+public interface Index extends ModelElement {
 
   /**
    * Gets the entity this index belongs to.
@@ -37,19 +36,12 @@ public interface Index {
   Entity getEntity();
 
   /**
-   * Gets the index name.
-   *
-   * @return the index name (always in lowercase)
-   */
-  String getName();
-
-  /**
-   * Gets the index name for given entity.
+   * Creates the database index name for given entity.
    *
    * @param entity the entity
    * @return the effective sql name
    */
-  String getName(Entity entity);
+  String createDatabaseIndexName(Entity entity);
 
   /**
    * Gets the comment.
@@ -85,13 +77,6 @@ public interface Index {
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
 
   /**
    * Creates the index creation sql code.

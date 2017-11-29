@@ -32,7 +32,9 @@ public interface Scavenger {
    *
    * @return true if scavenging
    */
-  boolean isScavenging();
+  default boolean isScavenging() {
+    return true;
+  }
 
 
 

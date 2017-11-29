@@ -193,6 +193,7 @@ public class DefaultFormBindingFactory extends AbstractBindingFactory implements
 
 
   @Override
+  @SuppressWarnings("unchecked")
   public FormTableBinder createFormTableBinder(BindableTableModel model) {
     return new DefaultFormTableBinder(model);
   }

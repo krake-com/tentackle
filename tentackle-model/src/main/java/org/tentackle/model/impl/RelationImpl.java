@@ -23,17 +23,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
+import org.tentackle.common.Constants;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.MethodArgument;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.RelationLine;
+import org.tentackle.model.TrackType;
+import org.tentackle.model.parse.OptionParser;
+import org.tentackle.model.parse.RelationLine;
 
 /**
  * Relation implementation.
@@ -43,80 +48,77 @@ import org.tentackle.model.parser.RelationLine;
 public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   /** property default (if object non-composite lazy). */
-  static final String DEFAULT = "DEFAULT";
+  public static final String DEFAULT = "default";
 
   /** property relation = ... */
-  static final String RELATION = "RELATION";
+  public static final String RELATION = "relation";
 
   /** property select = ... */
-  static final String SELECT = "SELECT";
+  public static final String SELECT = "select";
 
   /** property delete = ... */
-  static final String DELETE = "DELETE";
+  public static final String DELETE = "delete";
 
   /** property link = ... */
-  static final String LINK = "LINK";
+  public static final String LINK = "link";
 
   /** property args = ... */
-  static final String ARGS = "ARGS";
+  public static final String ARGS = "args";
 
   /** property nm = ... */
-  static final String NM = "NM";
+  public static final String NM = "nm";
 
   /** property method = ... */
-  static final String METHOD = "METHOD";
+  public static final String METHOD = "method";
 
   /** property name = ... */
-  static final String NAME = "NAME";
+  public static final String NAME = "name";
 
   /** property scope = ... */
-  static final String SCOPE = "SCOPE";
+  public static final String SCOPE = "scope";
 
   /** property comment = ... */
-  static final String COMMENT = "COMMENT";
+  public static final String COMMENT = "comment";
+
+  /** property count = ... */
+  public static final String COUNT = "count";
 
 
   /** composite relation flag. */
-  static final String COMPOSITE = "COMPOSITE";
+  public static final String COMPOSITE = "composite";
 
   /** tracked relation flag. */
-  static final String TRACKED = "TRACKED";
+  public static final String TRACKED = "tracked";
 
   /** referenced relation flag. */
-  static final String REFERENCED = "REFERENCED";
+  public static final String REFERENCED = "referenced";
 
   /** processed relation flag. */
-  static final String PROCESSED = "PROCESSED";
+  public static final String PROCESSED = "processed";
 
   /** readonly relation flag. */
-  static final String READONLY = "READONLY";
+  public static final String READONLY = "readonly";
 
   /** writeonly relation flag. */
-  static final String WRITEONLY = "WRITEONLY";
+  public static final String WRITEONLY = "writeonly";
 
   /** readonly + writeonly. */
-  static final String NOMETHOD = "NOMETHOD";
+  public static final String NOMETHOD = "nomethod";
 
   /** serialized relation flag. */
-  static final String SERIALIED = "SERIALIZED";
+  public static final String SERIALIZED = "serialized";
 
   /** clear-on-remote-save relation flag. */
-  static final String REMOTECLEAR = "REMOTECLEAR";
+  public static final String REMOTECLEAR = "remoteclear";
 
   /** map list relation to reversed 1:1 object relation. */
-  static final String REVERSED = "REVERSED";
+  public static final String REVERSED = "reversed";
 
   /** cached selection flag. */
-  static final String CACHED = "CACHED";
-
-  /** invocation from main class flag. */
-  static final String MAIN = "MAIN";
+  public static final String CACHED = "cached";
 
   /** cascade delete flag. */
-  static final String CASCADE = "CASCADE";
-
-  /** indexed link method flag. */
-  static final String INDEXED = "INDEXED";
+  public static final String CASCADE = "cascade";
 
 
 
@@ -139,12 +141,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean serialized;
   private boolean clearOnRemoteSave;
   private boolean reversed;
+  private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
-  private boolean selectionFromMainClass;
   private String selectionWurbletArguments;
   private String methodName;
-  private List<String> methodArgs;
+  private List<String> args;
+  private List<MethodArgument> methodArgs;
   private String nmName;
   private String nmMethodName;
   private String linkMethodName;
@@ -182,8 +185,14 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
    *
    * @return the source info
    */
+  @Override
   public SourceInfo getSourceInfo() {
     return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
   }
 
 
@@ -264,7 +273,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
       StringTokenizer stok = new StringTokenizer(entry.getValue());
 
-      switch(prop.toUpperCase()) {
+      switch(prop.toLowerCase()) {
 
         case DEFAULT:
           break;    // do nothing, just white noise (looks better ;))
@@ -273,7 +282,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case RELATION:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
+            switch(token.toLowerCase()) {
               case COMPOSITE:
                 setComposite(true);
                 break;
@@ -303,7 +312,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
                 setWriteOnly(true);
                 break;
 
-              case SERIALIED:
+              case SERIALIZED:
                 setSerialized(true);
                 break;
 
@@ -328,30 +337,39 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property select = ... */
         case SELECT:
+          boolean pipeFound = false;
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
-              case MAIN:
-                setSelectionFromMainClass(true);
-                break;
+            if (token.startsWith("|")) {
+              // lead for extra selection wurblet arguments
+              if (token.length() > 1) {
+                token = token.substring(1);   // remove leading |
+              }
+              pipeFound = true;
+            }
+            if (pipeFound) {
+              // add to wurblet args
+              if (selectionWurbletArguments == null) {
+                selectionWurbletArguments = token;
+              }
+              else {
+                selectionWurbletArguments += " " + token;
+              }
+            }
+            else {
+              switch(token.toLowerCase()) {
+                case CACHED:
+                  setSelectionCached(true);
+                  break;
 
-              case CACHED:
-                setSelectionCached(true);
-                break;
-
-              default:
-                try {
-                  setSelectionType(SelectionType.valueOf(token.toUpperCase()));
-                }
-                catch (IllegalArgumentException ex) {
-                  // add to wurblet args
-                  if (selectionWurbletArguments == null) {
-                    selectionWurbletArguments = token;
+                default:
+                  try {
+                    setSelectionType(SelectionType.valueOf(token.toUpperCase()));
                   }
-                  else {
-                    selectionWurbletArguments += " " + token;
+                  catch (IllegalArgumentException ex) {
+                    throw createModelException("illegal keyword in select property: " + token);
                   }
-                }
+              }
             }
           }
           break;
@@ -360,11 +378,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case DELETE:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
-            switch(token.toUpperCase()) {
-              case MAIN:
-                setDeletionFromMainClass(true);
-                break;
-
+            switch(token.toLowerCase()) {
               case CASCADE:
                 setDeletionCascaded(true);
                 break;
@@ -393,8 +407,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property args = ... */
         case ARGS:
-          while (stok.hasMoreTokens()) {
-            getMethodArgs().add(stok.nextToken());
+          OptionParser op = new OptionParser(entry.getValue(), false);
+          String nextArg;
+          while ((nextArg = op.nextOption(1)) != null) {
+            if (args == null) {
+              args = new ArrayList<>();
+            }
+            args.add(nextArg);
           }
           break;
 
@@ -406,7 +425,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property nm = ... */
         case NM:
-          // nm = &lt;N:M relation name&lt [mnMethodName];
+          // nm = &lt;N:M relation name&lt [mnMethodName]
           setNmName(stok.nextToken());
           if (stok.hasMoreTokens()) {
             setNmMethodName(stok.nextToken());
@@ -428,6 +447,22 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
+        /** property count = ... */
+        case COUNT:
+          Attribute ca = entity.getAttributeByJavaName(entry.getValue(), false);
+          if (ca == null) {
+            throw createModelException("unknown counter attribute: " + entry.getValue());
+          }
+          if (!ca.getDataType().isNumeric()) {
+            throw createModelException("counter attribute " + ca + " must be numeric");
+          }
+          if (ca.isNullable()) {
+            throw createModelException("counter attribute " + ca + " must not be nullable");
+          }
+          ((AttributeOptionsImpl) ca.getOptions()).setHidden(true);
+          setCountAttribute(ca);
+          break;
+
         /** property comment = ... */
         case COMMENT:
           setComment(entry.getValue());
@@ -438,14 +473,42 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       }
     }
 
-    // init defaults
-    if (methodArgs.isEmpty()) {
-      // setup defaults if not yet done
-      if (getRelationType() == RelationType.LIST) {
-        methodArgs.add("getId()");
-      }
-      else {
-        methodArgs.add(buildName(true) + "Id");
+    // setup default args
+    if (getRelationType() == RelationType.LIST) {
+      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(Constants.AN_ID, true)));
+    }
+    else {
+      methodArgs.add(new MethodArgument(this, entity.getAttributeByJavaName(getVariableName() + "Id", true)));
+    }
+    if (args != null) {
+      for (String arg: args) {
+        int ndx = arg.indexOf('[');
+        if (ndx < 0) {
+          throw createModelException("invalid syntax: " + arg);
+        }
+        String foreignName = arg.substring(0, ndx).trim();
+        String attribName = arg.substring(ndx + 1);
+        if (attribName.endsWith("]")) {
+          attribName = attribName.substring(0, attribName.length() - 1);
+        }
+        if (attribName.endsWith("()")) {
+          // method name: determine attribute name
+          attribName = attribName.substring(0, attribName.length() - 2);
+          if (attribName.startsWith("is")) {
+            attribName = attribName.substring(2);
+          }
+          else if (attribName.startsWith("get")) {
+            attribName = attribName.substring(3);
+          }
+          else {
+            throw createModelException("invalid method name: " + arg);
+          }
+          methodArgs.add(new MethodArgument(this, foreignName, entity.getAttributeByJavaName(attribName, true)));
+        }
+        else {
+          // fixed value
+          methodArgs.add(new MethodArgument(this, foreignName, attribName));
+        }
       }
     }
 
@@ -493,8 +556,17 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         }
       }
     }
-    else {
-      buf.append('?');
+    else if (!methodArgs.isEmpty()) {
+      buf.append(methodArgs.get(0));
+    }
+    if (methodArgs.size() > 1) {
+      boolean firstSkipped = false;
+      for (MethodArgument methodArg: methodArgs) {
+        if (firstSkipped) {
+          buf.append(" & ").append(methodArg.getForeignAttribute());
+        }
+        firstSkipped = true;
+      }
     }
     return buf.toString();
   }
@@ -502,9 +574,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    if (!reversed) {
-      buf.append(entity).append(": ");
-    }
     if (composite) {
       buf.append("composite ");
     }
@@ -575,7 +644,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       if (linkMethodName != null && !referenced) {
         throw createModelException("object relations with link= option must be referenced");
       }
+      if (methodArgs.size() > 1) {
+        throw createModelException("object relations cannot have extra args");
+      }
     }
+
     if (composite && selectionCached) {
       throw createModelException("cached select is not allowed for composite relations");
     }
@@ -595,23 +668,51 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
               "extra wurblet arguments are only allowed for list relations (in select property): " +
                       selectionWurbletArguments);
     }
+
+    if (countAttribute != null) {
+      if (relationType != RelationType.LIST || reversed || !composite) {
+        throw createModelException(
+              "counter attribute only allowed for composite non-reversed list relations");
+      }
+      if (entity.getOptions().getTrackType() != TrackType.FULLTRACKED) {
+        throw createModelException("entity must be FULLTRACKED to support counter attributes");
+      }
+    }
   }
 
 
+  /**
+   * Gets the name of this relation.<br>
+   * If no explicit name set, it defaults to the className.<br>
+   *
+   * @return the name
+   */
   @Override
   public String getName() {
-    return name == null ? BasicStringHelper.firstToLower(className) : name;
+    return name == null ? className : name;
   }
 
   public void setName(String name) {
+    if (name != null) {
+      name = StringHelper.firstToUpper(name);
+    }
     this.name = name;
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public RelationLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(RelationLine sourceLine) {
     this.sourceLine = sourceLine;
   }
@@ -734,12 +835,17 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   @Override
+  public Attribute getCountAttribute() {
+    return countAttribute;
+  }
+
+  @Override
   public String getMethodName() {
     return methodName;
   }
 
   @Override
-  public List<String> getMethodArgs() {
+  public List<MethodArgument> getMethodArgs() {
     return methodArgs;
   }
 
@@ -766,11 +872,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public SelectionType getSelectionType() {
     return selectionType;
-  }
-
-  @Override
-  public boolean isSelectionFromMainClass() {
-    return selectionFromMainClass;
   }
 
   @Override
@@ -834,7 +935,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.linkMethodName = linkMethodName;
   }
 
-  public void setMethodArgs(List<String> methodArgs) {
+  public void setMethodArgs(List<MethodArgument> methodArgs) {
     this.methodArgs = methodArgs;
   }
 
@@ -878,6 +979,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.reversed = reversed;
   }
 
+  public void setCountAttribute(Attribute countAttribute) {
+    this.countAttribute = countAttribute;
+  }
+
   public void setTracked(boolean tracked) {
     this.tracked = tracked;
   }
@@ -892,10 +997,6 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setSelectionCached(boolean selectionCached) {
     this.selectionCached = selectionCached;
-  }
-
-  public void setSelectionFromMainClass(boolean selectionFromMainClass) {
-    this.selectionFromMainClass = selectionFromMainClass;
   }
 
   public void setSelectionWurbletArguments(String selectionWurbletArguments) {
@@ -931,10 +1032,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private String buildName(boolean tolower) {
     String str = name == null ? className : name;
     if (tolower) {
-      str = BasicStringHelper.firstToLower(str);
+      str = StringHelper.firstToLower(str);
     }
     else {
-      str = BasicStringHelper.firstToUpper(str);
+      str = StringHelper.firstToUpper(str);
     }
     if (getRelationType() == RelationType.LIST && !reversed && name == null) {
       str += "List";

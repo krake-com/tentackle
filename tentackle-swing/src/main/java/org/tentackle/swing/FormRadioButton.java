@@ -28,8 +28,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.Icon;
 import javax.swing.JRadioButton;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.swing.bind.FormComponentBinding;
 
 
@@ -40,7 +38,7 @@ import org.tentackle.swing.bind.FormComponentBinding;
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormRadioButton extends JRadioButton implements FormComponent, I18nTranslatable, ActionListener {
+public class FormRadioButton extends JRadioButton implements FormComponent, ActionListener {
 
   // keyboard shortcuts
   private static final String SELECT_CHARS   = SwingSwingBundle.getString("YESKEYS");
@@ -77,7 +75,6 @@ public class FormRadioButton extends JRadioButton implements FormComponent, I18n
   private FocusTraversalGroup focusTraversalGroup;  // the focus traversal group, null = none
   private PropertyGroup propertyGroup;              // the property group, null = none
   private boolean triggerValueChangedEnabled = true;  // true if trigger value changed is enabled
-  private I18nTranslation i18nTranslation;          // the I18N translated text
 
 
 
@@ -124,29 +121,6 @@ public class FormRadioButton extends JRadioButton implements FormComponent, I18n
    */
   public FormRadioButton () {
     this (null);
-  }
-
-
-  /**
-   * Sets the translated text.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setText(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setText(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
   }
 
 

@@ -159,7 +159,7 @@ public class FormQuestion extends FormDialog {
     noButton = new org.tentackle.swing.FormButton();
 
     setAutoPosition(true);
-    setTitle(SwingSwingBundle.getTranslation("QUESTION")); // NOI18N
+    setTitle(SwingSwingBundle.getString("QUESTION")); // NOI18N
     setModal(true);
     addKeyListener(new java.awt.event.KeyAdapter() {
       public void keyTyped(java.awt.event.KeyEvent evt) {

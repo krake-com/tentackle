@@ -34,7 +34,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 
 /**

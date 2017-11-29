@@ -19,6 +19,7 @@
 package org.tentackle.reflect;
 
 import java.lang.reflect.Proxy;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
@@ -37,7 +38,10 @@ public class DefaultInterceptableFactory implements InterceptableFactory {
    * Creates the factory.
    */
   public DefaultInterceptableFactory() {
-    classMapper = new DefaultClassMapper("interception", ServiceFactory.getServiceFinder().createNameMap(Interceptable.class.getName()), null);
+    classMapper = new DefaultClassMapper(
+            "interception",
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, Interceptable.class.getName()),
+            ServiceFactory.getServiceFinder().createNameMap(Interceptable.class.getName()), null);
   }
 
   @Override

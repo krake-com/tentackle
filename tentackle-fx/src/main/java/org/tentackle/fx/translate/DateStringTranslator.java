@@ -37,7 +37,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.FormatHelper;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 import static java.util.Calendar.DATE;
 import static java.util.Calendar.DAY_OF_MONTH;
@@ -230,7 +230,11 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     if (date != null) {
       Class<?> type = getComponent().getType();
       if (org.tentackle.common.Timestamp.class.isAssignableFrom(type)) {
-        return new org.tentackle.common.Timestamp(date.getTime());
+        org.tentackle.common.Timestamp ts = new org.tentackle.common.Timestamp(date.getTime());
+        if (getComponent().isUTC()) {
+          ts.setUTC(true);
+        }
+        return ts;
       }
       else if (org.tentackle.common.Time.class.isAssignableFrom(type)) {
         return new org.tentackle.common.Time(date.getTime());

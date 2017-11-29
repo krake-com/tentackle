@@ -26,12 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import org.tentackle.misc.ScrollableResource;
-import org.tentackle.pdo.AbstractSessionTask;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PdoTracker;
-import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.swing.FormInfo;
 import org.tentackle.swing.GUIRuntimeException;
 import org.tentackle.task.Task;
@@ -62,7 +62,6 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
   private final int warnRowCount;           // number of rows displayable without warning, 0 = unlimited
   private final int maxRowCount;            // maximum number of rows displayable, 0 = unlimited
   private final int fetchSize;              // the fetchsize
-  private Task searchTask;                  // the search task
 
   private boolean searchImmediate;
   private boolean searchPanelInvisible;
@@ -85,7 +84,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
    */
   public AbstractPdoSearch(Class<T> pdoClass, DomainContext context, int fetchSize, int warnRowCount, int maxRowCount) {
     this.pdoClass = pdoClass;
-    this.pdoClassId = PdoUtilities.getInstance().getClassId(pdoClass.getName());
+    this.pdoClassId = SessionUtilities.getInstance().getClassId(pdoClass.getName());
     this.context = context;
     this.warnRowCount = warnRowCount;
     this.maxRowCount = maxRowCount;
@@ -146,8 +145,8 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
       final boolean runInDispatchThread = isSearchImmediate() &&
               (isDialogNotShownIfSearchImmediateFindsSingleMatch() || !isDialogShownIfSearchImmediateFails());
 
-      // search in PdoTracker
-      searchTask = new AbstractSessionTask() {
+      // search in ModificationTracker
+      Task searchTask = new AbstractSessionTask() {
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -156,8 +155,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
           if (all) {
             // select all PDOs
             cursor = proxy.selectAllAsCursor();
-          }
-          else {
+          } else {
             cursor = findByCriteria(proxy);
           }
 
@@ -170,7 +168,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
             cursor.setFetchSize(fetchSize);
 
             while ((cursorDialog == null || !cursorDialog.isAbortRequested()) &&
-                   (fetched = cursor.fetch()) != null) {   // get next fetchsize block
+                    (fetched = cursor.fetch()) != null) {   // get next fetchsize block
 
               list.addAll(fetched);
               int count = list.size();    // number of PDOs fetched so far (effectively final)
@@ -178,8 +176,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
               if (cursorDialog != null) {
                 if (cursorDialog.isShowing()) {
                   EventQueue.invokeLater(() -> cursorDialog.updateRowCount(count));
-                }
-                else if (count > warnRowCount) {
+                } else if (count > warnRowCount) {
                   EventQueue.invokeLater(cursorDialog::showDialog);
                 }
               }
@@ -203,8 +200,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
           // show results
           if (runInDispatchThread) {
             pdoDisplay.accept(list);
-          }
-          else  {
+          } else {
             EventQueue.invokeLater(() -> pdoDisplay.accept(list));
           }
         }
@@ -214,7 +210,7 @@ public abstract class AbstractPdoSearch<T extends PersistentDomainObject<T>> imp
         searchTask.run();     // execute in AWT-Thread
       }
       else  {
-        PdoTracker.getInstance().addTask(searchTask);
+        ModificationTracker.getInstance().addTask(searchTask);
       }
     }
   }

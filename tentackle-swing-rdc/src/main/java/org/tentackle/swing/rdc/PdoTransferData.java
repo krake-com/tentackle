@@ -23,7 +23,7 @@ package org.tentackle.swing.rdc;
 import java.io.Serializable;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.Session;
+import org.tentackle.session.Session;
 
 /**
  * Transfer data for an {@link PersistentDomainObject}.

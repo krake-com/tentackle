@@ -25,41 +25,43 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.EntityOptions;
+import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
 
 /**
+ * Entity options.
  *
  * @author harald
  */
 public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOptions {
 
   /** don't apply model defaults. */
-  static final String OPTION_NO_MODELDEFAULTS = "NODEFAULTS";
+  public static final String OPTION_NO_MODELDEFAULTS = "NODEFAULTS";
 
   /** don't generate ID as primary key. */
-  static final String OPTION_NO_PRIMARY = "NOPKEY";
+  public static final String OPTION_NO_PRIMARY = "NOPKEY";
 
   /** column tableserial is provided. */
-  static final String OPTION_TABLESERIAL = "TABLESERIAL";
+  public static final String OPTION_TABLESERIAL = "TABLESERIAL";
 
   /** token lock columns editedBy/Since/Expiry are provided. */
-  static final String OPTION_TOKENLOCK = "TOKENLOCK";
+  public static final String OPTION_TOKENLOCK = "TOKENLOCK";
 
   /** normText is provided. */
-  static final String OPTION_NORMTEXT = "NORMTEXT";
+  public static final String OPTION_NORMTEXT = "NORMTEXT";
 
   /** root entity. */
-  static final String OPTION_ROOT = "ROOT";
+  public static final String OPTION_ROOT = "ROOT";
 
   /** rootid is provided. */
-  static final String OPTION_ROOTID = "ROOTID";
+  public static final String OPTION_ROOTID = "ROOTID";
 
   /** rootclassid is provided. */
-  static final String OPTION_ROOTCLASSID = "ROOTCLASSID";
+  public static final String OPTION_ROOTCLASSID = "ROOTCLASSID";
 
   /** enable remoting. */
-  static final String OPTION_REMOTE = "REMOTE";
+  public static final String OPTION_REMOTE = "REMOTE";
 
 
 
@@ -78,7 +80,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   private boolean rootIdProvided;
   private boolean rootClassIdProvided;
   private boolean remote;
-  private List<String> sorting;
+  private List<String> sorting;   // != null if '|' found
 
 
 
@@ -108,7 +110,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   }
 
   @Override
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     boolean applied = super.applyOption(option, ctrl);
     boolean on = ctrl == null || ctrl;
@@ -139,7 +141,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl tableSerialAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             tableSerialAttribute.setDataType(DataType.LONG_PRIMITIVE);
             tableSerialAttribute.setColumnName(Constants.CN_TABLESERIAL);
-            tableSerialAttribute.setJavaName(Constants.AN_TABLESERIAL);
+            tableSerialAttribute.setName(Constants.AN_TABLESERIAL);
             tableSerialAttribute.getOptions().setComment("table serial");
             tableSerialAttribute.getOptions().setFromSuper(true);
             tableSerialAttribute.getOptions().setSetGet(true);
@@ -153,7 +155,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl rootIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             rootIdAttribute.setDataType(DataType.LONG_PRIMITIVE);
             rootIdAttribute.setColumnName(Constants.CN_ROOTID);
-            rootIdAttribute.setJavaName(Constants.AN_ROOTID);
+            rootIdAttribute.setName(Constants.AN_ROOTID);
             rootIdAttribute.getOptions().setComment("root entity id");
             rootIdAttribute.getOptions().setFromSuper(true);
             rootIdAttribute.getOptions().setSetGet(true);
@@ -167,7 +169,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl rootClassIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             rootClassIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
             rootClassIdAttribute.setColumnName(Constants.CN_ROOTCLASSID);
-            rootClassIdAttribute.setJavaName(Constants.AN_ROOTCLASSID);
+            rootClassIdAttribute.setName(Constants.AN_ROOTCLASSID);
             rootClassIdAttribute.getOptions().setComment("root entity class id");
             rootClassIdAttribute.getOptions().setFromSuper(true);
             rootClassIdAttribute.getOptions().setSetGet(true);
@@ -181,7 +183,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl editedByAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             editedByAttribute.setDataType(DataType.LONG_PRIMITIVE);
             editedByAttribute.setColumnName(Constants.CN_EDITEDBY);
-            editedByAttribute.setJavaName(Constants.AN_EDITEDBY);
+            editedByAttribute.setName(Constants.AN_EDITEDBY);
             editedByAttribute.getOptions().setComment("being edited by user id");
             editedByAttribute.getOptions().setFromSuper(true);
             editedByAttribute.getOptions().setSetGet(true);
@@ -190,7 +192,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl editedSinceAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             editedSinceAttribute.setDataType(DataType.TIMESTAMP);
             editedSinceAttribute.setColumnName(Constants.CN_EDITEDSINCE);
-            editedSinceAttribute.setJavaName(Constants.AN_EDITEDSINCE);
+            editedSinceAttribute.setName(Constants.AN_EDITEDSINCE);
             editedSinceAttribute.getOptions().setComment("being edited since");
             editedSinceAttribute.getOptions().setFromSuper(true);
             editedSinceAttribute.getOptions().setSetGet(true);
@@ -199,7 +201,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl editedExpiryAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             editedExpiryAttribute.setDataType(DataType.TIMESTAMP);
             editedExpiryAttribute.setColumnName(Constants.CN_EDITEDEXPIRY);
-            editedExpiryAttribute.setJavaName(Constants.AN_EDITEDEXPIRY);
+            editedExpiryAttribute.setName(Constants.AN_EDITEDEXPIRY);
             editedExpiryAttribute.getOptions().setComment("editing lock expiration");
             editedExpiryAttribute.getOptions().setFromSuper(true);
             editedExpiryAttribute.getOptions().setSetGet(true);
@@ -213,7 +215,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             AttributeImpl normTextAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
             normTextAttribute.setDataType(DataType.STRING);
             normTextAttribute.setColumnName(Constants.CN_NORMTEXT);
-            normTextAttribute.setJavaName(Constants.AN_NORMTEXT);
+            normTextAttribute.setName(Constants.AN_NORMTEXT);
             normTextAttribute.getOptions().setComment("normalized text");
             normTextAttribute.getOptions().setFromSuper(true);
             normTextAttribute.getOptions().setSetGet(true);
@@ -223,11 +225,13 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         default:
           // sorted column?
+          // this is just a convenience hack to allow ommitting the pipe sign.
+          // works, however, only if the column to sort is not an option keyword.
           if (ctrl != null) {
             if (sorting == null) {
               sorting = new ArrayList<>();
             }
-            sorting.add((on ? "+" : "-") + uco);
+            sorting.add((on ? "+" : "-") + option);
             break;
           }
           else  {
@@ -241,6 +245,34 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
             }
           }
           applied = false;
+      }
+    }
+    return applied;
+  }
+
+
+  /**
+   * Checks that the sorting string starts with a + or -.
+   *
+   * @param token the sorting token
+   * @return true if applied
+   */
+  public boolean processSorting(String token) {
+    boolean applied = false;
+    if (sorting == null) {
+      sorting = new ArrayList<>();
+    }
+    if (token != null && !token.isEmpty()) {
+      // must start with + or -
+      char c = token.charAt(0);
+      if (c == '-' || c == '+') {
+        sorting.add(token);
+        applied = true;
+      }
+      else if (Character.isLetter(c)) {
+        // prepend +
+        sorting.add("+" + token);
+        applied = true;
       }
     }
     return applied;
@@ -273,7 +305,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   }
 
   @Override
-  public boolean isRootEntity() {
+  public boolean isRoot() {
     return rootEntity;
   }
 

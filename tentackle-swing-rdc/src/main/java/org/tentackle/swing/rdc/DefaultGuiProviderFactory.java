@@ -18,6 +18,7 @@
 
 package org.tentackle.swing.rdc;
 
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.reflect.ClassMapper;
@@ -36,7 +37,10 @@ public class DefaultGuiProviderFactory extends AbstractGuiProviderFactory {
 
 
   public DefaultGuiProviderFactory() {
-    guiClassMapper = new DefaultClassMapper("Swing GUI-provider", ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
+    guiClassMapper = new DefaultClassMapper(
+            "Swing GUI-provider",
+            ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, GuiProvider.class.getName()),
+            ServiceFactory.getServiceFinder().createNameMap(GuiProvider.class.getName()), null);
   }
 
 

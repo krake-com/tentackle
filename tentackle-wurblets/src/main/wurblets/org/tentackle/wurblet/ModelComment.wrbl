@@ -1,35 +1,15 @@
 @{include $currentDir/header.incl}@
+@{phase 2}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate a comment to document the relations and usage of the entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; ModelComment
+<p>
+For more options, see {\@link ModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * generate a comment to document the relations of the entity.
-     *
-     * usage:  \@wurblet <tag> ModelComment --model=<mapfile>
-     *
-     *         <mapfile> is the mapping description
-     *
-     * Example: \@wurblet relations Relations --model=$mapping
-     */
-
+  private void wurbel() {
     // create comment for referencing relations
     List<Relation> referencingRelations = getEntity().getReferencingRelationsIncludingInherited();
     List<Entity> subEntities = getEntity().getSubEntities();
@@ -53,6 +33,12 @@
           !foreignRelation.isComposite()) {
         refRels.add(rel);
       }
+      else {
+        Relation nmRel = rel.getDefiningNmRelation();
+        if (nmRel != null) {
+          refRels.add(nmRel);
+        }
+      }
     }
 
     if (refRels.isEmpty()) {
@@ -67,11 +53,10 @@
 @[
     }
     for (Relation rel: refRels) {
-      ModelCommentSupport.printReferencedBy(rel, "   * ", out);
+      ModelCommentSupport.printReferencedBy(getEntity(), rel, "   * ", out);
     }
 
-    if (getEntity().isRootEntityAccordingToModel() ||
-        getEntity().getOptions().isRootEntity()) {
+    if (getEntity().isRootEntity()) {
 ]@
    *
    *
@@ -85,7 +70,8 @@
    *
    * @(getEntity())@ is a composite with the components:
 @[
-      ModelCommentSupport.printComponents(compositeRelations, subEntities, "   *    ", out);
+      Set<Relation> allRelations = new HashSet<>();
+      ModelCommentSupport.printComponents(allRelations, compositeRelations, subEntities, "   *    ", out);
     }
 
     List<Relation> outRels = new ArrayList<>();
@@ -118,7 +104,7 @@
    * @(getEntity())@ is referencing the following entities:
    *
 @[
-      ModelCommentSupport.printNonCompositeRelations(getEntity(), outRels, "   * ", out);
+      ModelCommentSupport.printNonCompositeRelations(getEntity(), outRels, true, "   * ", out);
     }
 
     if (getEntity().isComposite()) {
@@ -137,7 +123,7 @@
    * The following components of @(getEntity())@ are deeply referenced:
    *
 @[
-        ModelCommentSupport.printNonCompositeRelations(getEntity(), deepRels, "   * ", out);
+        ModelCommentSupport.printNonCompositeRelations(getEntity(), deepRels, false, "   * ", out);
       }
     }
 
@@ -193,3 +179,6 @@
 ]@
    *
    ****************************************************************************/
+@[
+  }
+]@

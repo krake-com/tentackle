@@ -44,6 +44,13 @@ public interface Validator {
   String getMessage();
 
   /**
+   * Gets the condition.
+   *
+   * @return the condition
+   */
+  String getCondition();
+
+  /**
    * Gets the optional error code.<br>
    * The error code is used to identify the error by a unique
    * code instead of some message string.
@@ -125,7 +132,7 @@ public interface Validator {
 
   /**
    * Gets the name of the validated element.
-   * 
+   *
    * @return the element name
    */
   String getValidatedElementName();

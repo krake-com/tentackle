@@ -101,13 +101,13 @@ public class PdoEvent extends Event {
 
   @Override
   public String toString() {
-    return new StringBuilder("PdoEvent [")
-                     .append("pdo = ").append(pdo.toGenericString())
-                     .append(", source = ").append(getSource())
-                     .append(", target = ").append(getTarget())
-                     .append(", eventType = ").append(getEventType())
-                     .append(", consumed = ").append(isConsumed())
-                     .append("]").toString();
+    return "PdoEvent [" +
+            "pdo = " + pdo.toGenericString() +
+            ", source = " + getSource() +
+            ", target = " + getTarget() +
+            ", eventType = " + getEventType() +
+            ", consumed = " + isConsumed() +
+            "]";
   }
 
 }

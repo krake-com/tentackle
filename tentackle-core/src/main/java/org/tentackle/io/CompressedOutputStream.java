@@ -67,7 +67,6 @@ public class CompressedOutputStream extends FilterOutputStream {
   private int orgLen;                   // number of bytes in orgBuf
   private Deflater deflater;            // the zip deflater
   private byte[] defBuf;                // deflated/compressed output data buffer
-  private int defLen;                   // number of bytes in defBuf
   private boolean closed;               // true if closed
 
   // for statistic only (Level.FINE must be enabled)
@@ -234,7 +233,7 @@ public class CompressedOutputStream extends FilterOutputStream {
         deflater.reset();   // sadly we must reset() cause of finish() :(
         deflater.setInput(orgBuf, 0, orgLen);
         deflater.finish();
-        defLen = 0;
+        int defLen = 0;
         while (!deflater.finished()) {
           int num = deflater.deflate(defBuf, defLen, bufSize - defLen);
           if (num <= 0) {

@@ -1,1 +1,2 @@
-/org/tentackle/common/CommonCommonBundle
+# analyze mojo cannot be used in tentackle-common (not built yet)
+org.tentackle.common.CommonCommonBundle

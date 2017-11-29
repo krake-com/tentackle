@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.0.7</version>
+    <version>2.1.0</version>
   </parent>
 
   <artifactId>tentackle-model</artifactId>
-  <version>2.0.7</version>
+  <version>2.1.0</version>
   <packaging>jar</packaging>
   <name>Tentackle Data Model</name>
   <description>Data Model for Tentackle</description>
@@ -21,12 +21,11 @@
       <artifactId>tentackle-sql</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-build-support</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
 
   <build>
     <plugins>
@@ -44,13 +43,14 @@
           <execution>
             <id>test-analyze</id>
             <goals>
-              <goal>testAnalyze</goal>
+              <goal>test-analyze</goal>
             </goals>
           </execution>
         </executions>
         <configuration>
           <verbosity>info</verbosity>
-          <showCompileOutput>false</showCompileOutput>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
         </configuration>
       </plugin>
     </plugins>

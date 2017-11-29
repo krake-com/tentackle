@@ -1,35 +1,14 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate relation method definitions of an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; Relations
+<p>
+For more options, see {\@link ModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * generate interface code for PDO relations.
-     *
-     * usage:  \@wurblet <tag> Relations --model=<mapfile>
-     *
-     *         <mapfile> is the mapping description
-     *
-     * Example: \@wurblet relations Relations --model=$mapping
-     */
-
+  private void wurbel() throws ModelException {
     // create comment for referencing relations
     List<Relation> referencingRelations = getEntity().getReferencingRelationsIncludingSubEntities();
 ]@
@@ -54,7 +33,7 @@
 
       String var = rel.getVariableName();
       String type = rel.getDeclaredJavaType();
-      String firstArg = rel.getMethodArgs().get(0);
+      String firstArg = rel.getMethodArgs().get(0).getMethodArgument();
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
                              (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
@@ -71,12 +50,12 @@
       String nmVar = null;
       if (nmRel != null) {
         if (rel.getNmMethodName() != null) {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmMethodName());
-          nmVar  = BasicStringHelper.firstToLower(rel.getNmMethodName());
+          nmName = StringHelper.firstToUpper(rel.getNmMethodName());
+          nmVar  = StringHelper.firstToLower(rel.getNmMethodName());
         }
         else  {
-          nmName = BasicStringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
-          nmVar = BasicStringHelper.firstToLower(rel.getNmName()) + "List";
+          nmName = StringHelper.firstToUpper(rel.getNmName()) + "Via" + rel.getMethodNameSuffix();
+          nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
         }
       }
 
@@ -98,12 +77,12 @@
 @[
         if (!rel.isComposite()) {
 ]@
-  \@Persistent(value=@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
 @[
         }
         else {
 ]@
-  \@Persistent(@(BasicStringHelper.toDoubleQuotes(rel.getComment()))@)
+  \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
         }
         for (String annotation: rel.getAnnotations()) {
@@ -123,8 +102,22 @@
    * \@return list of @(nmRel.getVariableName())@
    */
   \@Bindable
-  \@Persistent(value=@(BasicStringHelper.toDoubleQuotes(nmVar))@, component=false)
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
   TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@();
+@[
+        }
+
+        if (rel.isComposite() &&
+            (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)) {
+]@
+
+  /**
+   * Returns whether @(rel.getName())@ is loaded.
+   *
+   * \@return true if @(rel.getGetterName())@() invoked at least once
+   */
+  \@Bindable
+  boolean is@(StringHelper.firstToUpper(var))@Loaded();
 @[
         }
       }
@@ -171,6 +164,7 @@
     // creates the select- and delete-methods for list relations in foreign entities
     boolean useDatabaseRefInt = getEntity().getIntegrity().isCompositesCheckedByDatabase() &&
                                 Boolean.FALSE.equals(getEntity().isDeletionCascaded());
+    Set<String> declaredArgSet = new HashSet<>();   // to avoid duplicates if args= is used
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (rel.getAccessScope() != AccessScope.PUBLIC) {
@@ -179,29 +173,47 @@
       if (rel.getRelationType() == RelationType.LIST) {
         Attribute attribute = rel.getForeignAttribute();
         if (attribute != null) {
+          String declaredArgs = createDeclaredArgsForSelectOrDeleteMethod(rel);
+          if (declaredArgSet.add(declaredArgs)) {
 ]@
 
   /**
    * Selects @(rel)@.
    *
-   * \@param @(attribute.getJavaName())@ @(attribute.getOptions().getComment())@
+@[
+            for (MethodArgument arg : rel.getMethodArgs()) {
+              Attribute attr = arg.getForeignAttribute();
+]@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+@[
+            }
+]@
    * \@return @(rel.getComment())@
    */
-  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getJavaName())@);
+  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
 @[
-          if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
+            if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
 ]@
 
   /**
    * Deletes @(rel)@.
    *
-   * \@param @(attribute.getJavaName())@ @(attribute.getOptions().getComment())@
+@[
+              for (MethodArgument arg : rel.getMethodArgs()) {
+                Attribute attr = arg.getForeignAttribute();
+]@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
+@[
+              }
+]@
    * \@return @(rel.getComment())@
    */
-  int @(createListRelationDeleteMethodName(rel))@(@(attribute.getJavaType())@ @(attribute.getJavaName())@);
+  int @(createListRelationDeleteMethodName(rel))@(@(declaredArgs)@);
 @[
+            }
           }
         }
       }
     }
+  }
 ]@

@@ -23,8 +23,8 @@ import org.tentackle.common.Service;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.ModelImpl;
-import org.wurbelizer.wurbel.WurbelUtilities;
 import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelHelper;
 
 /**
  * Extended model aware of heap-files and global loading exception.
@@ -37,17 +37,26 @@ import org.wurbelizer.wurbel.WurbelException;
 public class TentackleWurbletsModel extends ModelImpl {
 
   /**
+   * Creates a model.
+   */
+  public TentackleWurbletsModel() {
+    // use the charset from the wurbelizer plugin
+    org.tentackle.common.Settings.encodingCharset = org.wurbelizer.misc.Settings.encodingCharset;
+  }
+
+
+  /**
    * Exception from loading the whole model.
    */
   private WurbelException loadingException;
 
   @Override
-  protected Reader createFileReader(String fileName) throws ModelException {
+  protected Reader createReader(String name) throws ModelException {
     try {
-      return WurbelUtilities.openReader(fileName);
+      return WurbelHelper.openReader(name);
     }
     catch (WurbelException wex) {
-      throw new ModelException("cannot create reader for " + fileName, wex);
+      throw new ModelException("cannot create reader for " + name, wex);
     }
   }
 

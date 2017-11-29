@@ -26,17 +26,17 @@ import org.tentackle.swing.FormTableRowObject;
 /**
  * Binding between a class member and a table model column.
  *
+ * @param <S> type of the objects contained within the table's items list
+ * @param <T> type of the content in all cells in this column
  * @author harald
  */
-public interface FormTableBinding extends Binding {
+public interface FormTableBinding<S,T> extends Binding {
 
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overridden to cast.
-   */
   @Override
-  FormTableBinder getBinder();
+  FormTableBinder<S> getBinder();
+
+  @Override
+  T getModelValue();
 
   /**
    * Gets the model column.

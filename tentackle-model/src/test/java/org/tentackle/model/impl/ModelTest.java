@@ -21,9 +21,10 @@ package org.tentackle.model.impl;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.TimeZone;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
@@ -33,9 +34,11 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
+import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
-import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
  * Data Model Test.
@@ -44,145 +47,156 @@ import org.testng.annotations.Test;
  */
 public class ModelTest {
 
-
-  private static final String MODEL_FILENAME = "org/tentackle/model/model.txt";
+  /** resource file holding the test model. */
+  public static final String MODEL_FILENAME = "org/tentackle/model/model.txt";
 
 
   @Test
   public void testModel() {
 
     try {
-      String model = BasicStringHelper.readTextFromResource(MODEL_FILENAME);
+      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
       Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
 
-      Assert.assertEquals("the invoice header", entity.getOptions().getComment());
-      Assert.assertEquals("Invoice", entity.getName());
-      Assert.assertEquals("invoice", entity.getTableName());
-      Assert.assertEquals(1, entity.getClassId());
-      Assert.assertEquals(Integrity.RELATED, entity.getIntegrity());
-      Assert.assertEquals(AccessScope.PUBLIC, entity.getOptions().getAccessScope());
+      assertEquals(entity.getOptions().getComment(), "the invoice header");
+      assertEquals(entity.getName(), "Invoice");
+      assertEquals(entity.getTableName(), "invoice");
+      assertEquals(entity.getClassId(), 1);
+      assertEquals(entity.getIntegrity(), Integrity.RELATED);
+      assertEquals(entity.getOptions().getAccessScope(), AccessScope.PUBLIC);
 
-      Assert.assertTrue(entity.getOptions().isBind());
-      Assert.assertTrue(entity.getOptions().isMaxCol());
-      Assert.assertTrue(entity.getOptions().isAutoSelect());
-      Assert.assertTrue(entity.getOptions().getTrackType() == TrackType.TRACKED);
-      Assert.assertTrue(entity.getOptions().isTokenLockProvided());
-      Assert.assertTrue(entity.getOptions().isTableSerialProvided());
+      assertTrue(entity.getOptions().isBind());
+      assertTrue(entity.getOptions().isMaxCol());
+      assertTrue(entity.getOptions().isAutoSelect());
+      assertEquals(entity.getOptions().getTrackType(), TrackType.TRACKED);
+      assertTrue(entity.getOptions().isTokenLockProvided());
+      assertTrue(entity.getOptions().isTableSerialProvided());
 
-      Assert.assertFalse(entity.getOptions().getTrackType() == TrackType.ATTRACKED);
-      Assert.assertFalse(entity.getOptions().isDerived());
-      Assert.assertFalse(entity.getOptions().isFromSuper());
-      Assert.assertFalse(entity.getOptions().getTrackType() == TrackType.FULLTRACKED);
-      Assert.assertFalse(entity.getOptions().isLowerCase());
-      Assert.assertFalse(entity.getOptions().isMapNull());
-      Assert.assertFalse(entity.getOptions().isNoConstant());
-      Assert.assertFalse(entity.getOptions().isNoDeclare());
-      Assert.assertFalse(entity.getOptions().isNoMethod());
-      Assert.assertFalse(entity.getOptions().isNoPrimaryKey());
-      Assert.assertFalse(entity.getOptions().isReadOnly());
-      Assert.assertFalse(entity.getOptions().isSetGet());
-      Assert.assertFalse(entity.getOptions().isTrimRead());
-      Assert.assertFalse(entity.getOptions().isTrimWrite());
-      Assert.assertFalse(entity.getOptions().isUpperCase());
-      Assert.assertFalse(entity.getOptions().isWriteOnly());
+      assertNotEquals(entity.getOptions().getTrackType(), TrackType.ATTRACKED);
+      assertFalse(entity.getOptions().isDerived());
+      assertFalse(entity.getOptions().isFromSuper());
+      assertNotEquals(entity.getOptions().getTrackType(), TrackType.FULLTRACKED);
+      assertFalse(entity.getOptions().isLowerCase());
+      assertFalse(entity.getOptions().isMapNull());
+      assertFalse(entity.getOptions().isNoConstant());
+      assertFalse(entity.getOptions().isNoDeclare());
+      assertFalse(entity.getOptions().isNoMethod());
+      assertFalse(entity.getOptions().isNoPrimaryKey());
+      assertFalse(entity.getOptions().isReadOnly());
+      assertFalse(entity.getOptions().isSetGet());
+      assertFalse(entity.getOptions().isTrimRead());
+      assertFalse(entity.getOptions().isTrimWrite());
+      assertFalse(entity.getOptions().isUpperCase());
+      assertFalse(entity.getOptions().isWriteOnly());
 
-      Assert.assertEquals("SIZE,AUTOSELECT", entity.getOptions().getBindOptions());
+      assertEquals(entity.getOptions().getBindOptions(), "SIZE,AUTOSELECT");
 
-      Assert.assertEquals(18, entity.getAttributes().size());
+      assertEquals(entity.getSorting().size(), 2);
+      AttributeSorting sorting = entity.getSorting().get(0);
+      assertEquals(sorting.getAttribute().getName(), "id");
+      assertEquals(sorting.getSortType(), SortType.DESC);
+
+      assertEquals(18, entity.getAttributes().size());
       Attribute attribute;
       attribute = entity.getAttributes().get(4);
-      Assert.assertEquals(DataType.LONG_PRIMITIVE, attribute.getDataType());
-      Assert.assertEquals("subsidiaryId", attribute.getJavaName());
-      Assert.assertEquals("subsidiary_id", attribute.getColumnName());
-      Assert.assertEquals("subsidiary ID", attribute.getOptions().getComment());
-      Assert.assertTrue(attribute.getOptions().isContextId());
+      assertEquals(attribute.getDataType(), DataType.LONG_PRIMITIVE);
+      assertEquals(attribute.getName(), "subsidiaryId");
+      assertEquals(attribute.getColumnName(), "subsidiary_id");
+      assertEquals(attribute.getOptions().getComment(), "subsidiary ID");
+      assertTrue(attribute.getOptions().isContextId());
 
       attribute = entity.getAttributes().get(5);
-      Assert.assertEquals(DataType.STRING, attribute.getDataType());
-      Assert.assertEquals("invoiceNo", attribute.getJavaName());
-      Assert.assertEquals("invoice_no", attribute.getColumnName());
-      Assert.assertEquals("the unique invoice number", attribute.getOptions().getComment());
-      Assert.assertEquals(Integer.valueOf(10), attribute.getSize());
-      Assert.assertTrue(attribute.getOptions().isUpperCase());
-      Assert.assertEquals("UC,MAXCOL=10", attribute.getOptions().getBindOptions());
-      Assert.assertEquals(1, attribute.getOptions().getAnnotations().size());
-      Assert.assertEquals("@NotNull(message=\"{ @('please_enter_the_invoice-number') }\")", attribute.getOptions().getAnnotations().get(0));
+      assertEquals(attribute.getDataType(), DataType.STRING);
+      assertEquals(attribute.getName(), "invoiceNo");
+      assertEquals(attribute.getColumnName(), "invoice_no");
+      assertEquals(attribute.getOptions().getComment(), "the unique invoice number");
+      assertEquals(attribute.getSize(), Integer.valueOf(10));
+      assertTrue(attribute.getOptions().isUpperCase());
+      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOL=10");
+      assertEquals(attribute.getOptions().getAnnotations().size(), 1);
+      assertEquals(attribute.getOptions().getAnnotations().get(0),
+                   "@NotNull(message=\"{ @('please_enter_the_invoice-number') }\")");
 
       attribute = entity.getAttributes().get(7);
-      Assert.assertEquals(DataType.LONG, attribute.getDataType());
-      Assert.assertNull(attribute.getSize());
-      Assert.assertTrue(attribute.getOptions().isUpperCase());
-      Assert.assertEquals("AUTOSELECT,UC", attribute.getOptions().getBindOptions());
+      assertEquals(attribute.getDataType(), DataType.LONG);
+      assertEquals(attribute.getColumnName(), "customer_id");
+      assertNull(attribute.getSize());
+      assertTrue(attribute.getOptions().isUpperCase());
+      assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,UC");
+      assertEquals(attribute.getOptions().getAnnotations().size(), 1);
+      assertEquals(attribute.getOptions().getAnnotations().get(0), "@NotNull");
 
       attribute = entity.getAttributes().get(8);
-      Assert.assertEquals(DataType.STRING, attribute.getDataType());
-      Assert.assertEquals("UC,MAXCOL=200", attribute.getOptions().getBindOptions());
-      Assert.assertEquals("blah x", attribute.getOptions().getDefaultValue());
+      assertEquals(attribute.getDataType(), DataType.STRING);
+      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOL=200");
+      assertEquals(attribute.getOptions().getDefaultValue(), "blah\nx ");
 
       attribute = entity.getAttributes().get(9);
-      Assert.assertEquals(2, attribute.getOptions().getAnnotations().size());
+      assertEquals(attribute.getOptions().getAnnotations().size(), 2);
 
       attribute = entity.getAttributes().get(11);
-      Assert.assertEquals(new Timestamp(-TimeZone.getDefault().getDSTSavings()), attribute.getOptions().getDefaultValue());
-      Assert.assertTrue(attribute.getOptions().isUTC());
+      assertEquals(attribute.getOptions().getDefaultValue(), new Timestamp(-TimeZone.getDefault().getDSTSavings()));
+      assertTrue(attribute.getOptions().isUTC());
 
       attribute = entity.getAttributes().get(12);
-      Assert.assertEquals(DataType.DOUBLE, attribute.getDataType());
-      Assert.assertEquals(Integer.valueOf(10), attribute.getSize());
-      Assert.assertEquals(Integer.valueOf(2), attribute.getScale());
-      Assert.assertEquals("AUTOSELECT,MAXCOL=10,SCALE=2", attribute.getOptions().getBindOptions());
+      assertEquals(attribute.getDataType(), DataType.DOUBLE);
+      assertEquals(attribute.getSize(), Integer.valueOf(10));
+      assertEquals(attribute.getScale(), Integer.valueOf(2));
+      assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,MAXCOL=10,SCALE=2");
 
       attribute = entity.getAttributes().get(13);
-      Assert.assertEquals(DataType.APPLICATION, attribute.getDataType());
-      Assert.assertEquals("MyType", attribute.getJavaType());
+      assertEquals(attribute.getDataType(), DataType.APPLICATION);
+      assertEquals(attribute.getJavaType(), "MyType");
 
       attribute = entity.getAttributes().get(14);
-      Assert.assertEquals(DataType.BINARY, attribute.getDataType());
-      Assert.assertEquals("Binary<Blah>", attribute.getJavaType());
-      Assert.assertEquals("some binary object", attribute.getOptions().getComment());
+      assertEquals(attribute.getDataType(), DataType.BINARY);
+      assertEquals(attribute.getJavaType(), "Binary<Blah>");
+      assertEquals(attribute.getOptions().getComment(), "some binary object");
 
       attribute = entity.getAttributes().get(15);
-      Assert.assertEquals(Boolean.TRUE, attribute.getOptions().getDefaultValue());
+      assertEquals(attribute.getOptions().getDefaultValue(), Boolean.TRUE);
 
-      Assert.assertEquals(3, entity.getIndexes().size());
+      assertEquals(entity.getIndexes().size(), 3);
       Index index = entity.getIndexes().get(0);
-      Assert.assertTrue(index.isUnique());
-      Assert.assertEquals("invoice_no", index.getName());
+      assertTrue(index.isUnique());
+      assertEquals(index.getName(), "invoice_no");
       index = entity.getIndexes().get(2);
-      Assert.assertEquals("to show latest invoices", index.getComment());
+      assertEquals(index.getComment(), "to show latest invoices");
 
-      Assert.assertEquals(2, entity.getRelations().size());
+      assertEquals(entity.getRelations().size(), 2);
       Relation relation;
       relation = entity.getRelations().get(0);
-      Assert.assertEquals("the invoice lines", relation.getComment());
-      Assert.assertEquals("invoiceLine", relation.getName());
-      Assert.assertEquals(RelationType.LIST, relation.getRelationType());
-      Assert.assertTrue(relation.isComposite());
-      Assert.assertTrue(relation.isReferenced());
-      Assert.assertEquals("setInvoice", relation.getLinkMethodName());
-      Assert.assertEquals("position", relation.getLinkMethodIndex());
-      Assert.assertEquals(SelectionType.LAZY, relation.getSelectionType());
+      assertEquals(relation.getComment(), "the invoice lines");
+      assertEquals(relation.getName(), "Lines");
+      assertEquals(relation.getRelationType(), RelationType.LIST);
+      assertTrue(relation.isComposite());
+      assertTrue(relation.isReferenced());
+      assertEquals(relation.getLinkMethodName(), "setInvoice");
+      assertEquals(relation.getLinkMethodIndex(), "position");
+      assertEquals(relation.getSelectionType(), SelectionType.LAZY);
+      assertEquals(relation.getAnnotations().size(), 1);
+      assertEquals(relation.getAnnotations().get(0), "@NotNull");
 
       relation = entity.getRelations().get(1);
-      Assert.assertEquals("customer", relation.getName());
-      Assert.assertEquals(RelationType.OBJECT, relation.getRelationType());
-      Assert.assertFalse(relation.isComposite());
-      Assert.assertFalse(relation.isReferenced());
-      Assert.assertNull(relation.getLinkMethodName());
-      Assert.assertEquals(SelectionType.ALWAYS, relation.getSelectionType());
-      Assert.assertTrue(relation.isSelectionCached());
-      Assert.assertEquals(1, relation.getAnnotations().size());
-      Assert.assertEquals("@NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")",
-                   relation.getAnnotations().get(0));
-      Assert.assertEquals("the customer object", relation.getComment());
+      assertEquals(relation.getName(), "Customer");
+      assertEquals(relation.getRelationType(), RelationType.OBJECT);
+      assertFalse(relation.isComposite());
+      assertFalse(relation.isReferenced());
+      assertNull(relation.getLinkMethodName());
+      assertEquals(relation.getSelectionType(), SelectionType.ALWAYS);
+      assertTrue(relation.isSelectionCached());
+      assertEquals(relation.getAnnotations().size(), 1);
+      assertEquals(relation.getAnnotations().get(0),
+                   "@NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")");
+      assertEquals(relation.getComment(), "the customer object");
       attribute = relation.getAttribute();
-      Assert.assertNotNull(attribute);
-      Assert.assertSame(relation, attribute.getRelation());
-      Assert.assertEquals("customerId", attribute.getJavaName());
+      assertNotNull(attribute);
+      assertSame(attribute.getRelation(), relation);
+      assertEquals(attribute.getName(), "customerId");
 
     }
     catch (IOException | ModelException ex) {
-      Assert.fail(ex.toString());
+      fail(ex.toString());
     }
   }
 }

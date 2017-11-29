@@ -24,24 +24,26 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
-import org.tentackle.model.SelectionType;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 import org.wurbelizer.wurbel.JavaSourceType;
 import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelTerminationException;
 import org.wurbelizer.wurbel.Wurbler;
 import org.wurbelizer.wurblet.AbstractWurblet;
 
@@ -49,15 +51,37 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 
 /**
  * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.
- *
+ * <p>
+ * The following wurblet options are parsed:
+ * <ul>
+ * <li><em>--method=&lt;method-name&gt;:</em> optional name of the generated method. Defaults to the wurblet tag.</li>
+ * <li><em>--model=&lt;mapping&gt;:</em> optional model mapping. Derived from source file, if missing.</li>
+ * <li><em>--remote:</em> force generating remote code. Taken from model-defaults, if missing.</li>
+ * <li><em>--noremote:</em> don't generate remote code. Taken from model-defaults, if missing.</li>
+ * </ul>
+ * For the general form of a wurblet-anchor, see {@link AbstractWurblet}.
  * @author  harald
  */
 public class ModelWurblet extends AbstractWurblet {
 
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile("\\s*([\\w\\.]+)\\.class");  // only 1-line annos for now
 
-  /** the name of the model directory. */
+  /**
+   * The name of the model directory.
+   * This is the model of the project's current (maven) module.
+   */
   private String modelDirName;
+
+  /**
+   * Names of other model dirs.
+   * Those models will be loaded *before* the model in modelDirName and
+   * represent models of other modules that are dependencies of the current module
+   * (i.e. the current model refers to).
+   * <p>
+   * Important: the modelDefaults and entityAliases must be the same for all models
+   * including the current!
+   */
+  private List<String> otherModelDirNames;
 
   /** name of the model. */
   private String modelName;
@@ -68,8 +92,11 @@ public class ModelWurblet extends AbstractWurblet {
   /** wurblet specific arguments. */
   private List<String> args;
 
-  /** whether context attribute is valid (even if set in model). */
-  private boolean contextIdAttributeValid;
+  /** list of wurblet args starting with -- (-- cut off). */
+  private List<String> optionArgs;
+
+  /** list of regular wurblet args (all args except the options). */
+  private List<String> wurbletArgs;
 
   /** != null if detected whether this is a pdo or not. */
   private Boolean isPdo;
@@ -80,11 +107,6 @@ public class ModelWurblet extends AbstractWurblet {
   /** the pdo classname if it's a pdo. */
   private String pdoClassName;
 
-  /** the wurblet key parser. */
-  private WurbletParameterParser parser;
-
-  /** the joins. */
-  private List<Relation> joins;
 
 
   /**
@@ -195,6 +217,12 @@ public class ModelWurblet extends AbstractWurblet {
       return pdoClassName;
     }
 
+    // last try: use interface name (manually implemented PDOs, or migration from TT1)
+    pdoClassName = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.INTERFACE_NAME);
+    if (pdoClassName != null) {
+      return pdoClassName;
+    }
+
     throw new WurbelException("cannot determine the pdo-class from the java-source");
   }
 
@@ -278,7 +306,7 @@ public class ModelWurblet extends AbstractWurblet {
    * Gets the name of the modelfile.
    *
    * @return the name
-   * @throws org.wurbelizer.wurbel.WurbelException if model could not be determined
+   * @throws WurbelException if model could not be determined
    */
   public String getModelName() throws WurbelException {
     if (modelName == null) {
@@ -339,15 +367,6 @@ public class ModelWurblet extends AbstractWurblet {
   }
 
   /**
-   * Returns whether context attribute is valid (even if set in model).
-   *
-   * @return true if context id attribute is valid
-   */
-  public boolean isContextIdAttributeValid() {
-    return contextIdAttributeValid;
-  }
-
-  /**
    * Gets the model entity.
    *
    * @return the entity
@@ -373,7 +392,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the option args
    */
   public List<String> getOptionArgs() {
-    return parser.getOptionArgs();
+    return optionArgs;
   }
 
 
@@ -403,76 +422,15 @@ public class ModelWurblet extends AbstractWurblet {
 
 
   /**
-   * Gets all parameters.
+   * Gets the wurblet arguments.<br>
+   * All arguments except the options.
    *
-   * @return the parameters
+   * @return the wurblet args
    */
-  public List<WurbletParameter> getAllParameters() {
-    return parser.getAllParameters();
+  public List<String> getWurbletArgs() {
+    return wurbletArgs;
   }
 
-  /**
-   * Gets the method parameters.
-   *
-   * @return the method parameters
-   */
-  public List<WurbletParameter> getMethodParameters() {
-    return parser.getMethodParameters();
-  }
-
-  /**
-   * Gets the expression parameters.
-   *
-   * @return the parameters used within the expression
-   */
-  public List<WurbletParameter> getExpressionParameters() {
-    return parser.getExpressionParameters();
-  }
-
-  /**
-   * Gets the select/where expression.
-   *
-   * @return the expression
-   */
-  public WurbletParameterExpression getExpression() {
-    return parser.getExpression();
-  }
-
-  /**
-   * Gets the extra parameters.
-   *
-   * @return the parameters used within the expression
-   */
-  public List<WurbletParameter> getExtraParameters() {
-    return parser.getExtraParameters();
-  }
-
-  /**
-   * Gets the sorting parameters.
-   *
-   * @return the sorting parameters, empty if no "order by"
-   */
-  public List<WurbletParameter> getSortingParameters() {
-    return parser.getSortingParameters();
-  }
-
-  /**
-   * Returns whether sorting is configured for this wurblet.
-   *
-   * @return true if sorting defined in args
-   */
-  public boolean isWithSorting() {
-    return !getSortingParameters().isEmpty();
-  }
-
-  /**
-   * Gets the joins.
-   *
-   * @return the joins
-   */
-  public List<Relation> getJoins() {
-    return joins;
-  }
 
   /**
    * Creates the method name to select a relation.
@@ -481,30 +439,30 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the method name
    */
   public String createRelationSelectMethodName(Relation relation) {
-    String text = "select";
+    StringBuilder text = new StringBuilder();
+    text.append("select");
 
     if (relation.getMethodName() != null) {
       if (relation.getRelationType() == RelationType.LIST) {
-        text += "By";
+        text.append("By");
       }
-      text += relation.getMethodName();
+      text.append(relation.getMethodName());
     }
     else {
       if (relation.getRelationType() == RelationType.LIST) {
-        text += "By" + relation.getEntity().getName() + "Id";
+        text.append("By");
+        for (MethodArgument arg: relation.getMethodArgs()) {
+          text.append(StringHelper.firstToUpper(arg.getForeignAttribute().getName()));
+        }
       }
       else {
         if (relation.isSelectionCached()) {
-          text += "Cached";
+          text.append("Cached");
         }
       }
     }
 
-    if (text.equals("select")) {
-      text = "select";
-    }
-
-    return text;
+    return text.toString();
   }
 
 
@@ -515,16 +473,38 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the method name
    */
   public String createListRelationDeleteMethodName(Relation relation) {
-    String text = "deleteBy";
+    StringBuilder text = new StringBuilder();
+    text.append("deleteBy");
     if (relation.getMethodName() != null) {
-      text += relation.getMethodName();
+      text.append(relation.getMethodName());
     }
     else  {
-      text += relation.getEntity().getName() + "Id";
+      for (MethodArgument arg : relation.getMethodArgs()) {
+        text.append(StringHelper.firstToUpper(arg.getForeignAttribute().getName()));
+      }
     }
-    return text;
+    return text.toString();
   }
 
+
+  /**
+   * Creates the method argument declaration for the select or delete method.
+   *
+   * @param relation the relation
+   * @return the argument declaration
+   * @throws ModelException
+   */
+  public String createDeclaredArgsForSelectOrDeleteMethod(Relation relation) throws ModelException {
+    StringBuilder text = new StringBuilder();
+    for (MethodArgument arg : relation.getMethodArgs()) {
+      if (text.length() > 0) {
+        text.append(", ");
+      }
+      Attribute attr = arg.getForeignAttribute();
+      text.append(attr.getJavaType()).append(' ').append(attr.getName());
+    }
+    return text.toString();
+  }
 
 
   /**
@@ -540,11 +520,23 @@ public class ModelWurblet extends AbstractWurblet {
     super.run();
 
     args = Arrays.asList(container.getArgs());
-    joins = new ArrayList<>();
-
-    parser = new WurbletParameterParser(args);
+    wurbletArgs = new ArrayList<>();
+    optionArgs = new ArrayList<>();
+    for (String arg : args) {
+      if (arg != null) {
+        if (arg.startsWith("--")) {
+          optionArgs.add(arg.substring(2));
+        }
+        else {
+          wurbletArgs.add(arg);
+        }
+      }
+    }
 
     modelDirName = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "model");
+    if (modelDirName == null) {
+      throw new WurbelException("missing wurblet property 'model'");
+    }
     File modelDir = new File(modelDirName);
     if (!modelDir.exists()) {
       getContainer().getLogger().info("creating " + modelDir);
@@ -552,6 +544,15 @@ public class ModelWurblet extends AbstractWurblet {
     }
     if (!modelDir.isDirectory()) {
       throw new WurbelException(modelDir + " is not a directory");
+    }
+
+    String otherModels = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "otherModels");
+    if (otherModels != null) {
+      otherModelDirNames = new ArrayList<>();
+      StringTokenizer stok = new StringTokenizer(otherModels, " \t\n\r\f,");
+      while (stok.hasMoreTokens()) {
+        otherModelDirNames.add(stok.nextToken());
+      }
     }
 
     // set the backends to validate the model, if any.
@@ -562,7 +563,7 @@ public class ModelWurblet extends AbstractWurblet {
       if ("all".equalsIgnoreCase(backends)) {
         backendList.addAll(BackendFactory.getInstance().getAllBackends());
       }
-      else  {
+      else if (!"none".equalsIgnoreCase(backends)) {
         for (String backend: backends.split(",")) {
           backendList.add(BackendFactory.getInstance().getBackendByName(backend.trim()));
         }
@@ -582,14 +583,33 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
 
+    // scan optional entity aliases
+    EntityAliases entityAliases = null;
+    String entityAliasesStr = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "entityAliases");
+    if (entityAliasesStr != null) {
+      try {
+        entityAliases = new EntityAliases(entityAliasesStr);
+      }
+      catch (ModelException mex) {
+        throw new WurbelException(mex.getMessage(), mex);
+      }
+    }
+
     // load the model (if not yet done)
     Model model = Model.getInstance();
     try {
-      model.loadModel(modelDirName, modelDefaults);
+      if (otherModelDirNames != null) {
+        for (String otherModelDirName: otherModelDirNames) {
+          model.loadModel(otherModelDirName, modelDefaults, entityAliases);
+        }
+      }
+      model.loadModel(modelDirName, modelDefaults, entityAliases);
     }
     catch (ModelException mex) {
-      WurbelException wex = new WurbelException("errors in model loaded from directory '" + modelDirName + "'", mex);
-      if (model instanceof TentackleWurbletsModel && !mex.getEntities().isEmpty() &&
+      // model exceptions cause the whole wurbel run to abort because it doesnt make any sense to clutter the sources
+      WurbelException wex = new WurbelTerminationException(
+              "errors in model loaded from directory '" + modelDirName + "'", true, mex);
+      if (model instanceof TentackleWurbletsModel && mex.getElement() != null &&
           ((TentackleWurbletsModel) model).getLoadingException() == null) {
         // delay first exception to concrete classes if exception could be associated to entities
         ((TentackleWurbletsModel) model).setLoadingException(wex);
@@ -604,7 +624,7 @@ public class ModelWurblet extends AbstractWurblet {
     try {
       if (getModelName().indexOf(File.separatorChar) >= 0) {
         // is a filename (load it if it's not already loaded)
-        entity = model.loadByFileName(modelDefaults, getModelName());
+        entity = model.loadByFileName(getModelName(), modelDefaults, entityAliases);
       }
       else  {
         // is an entity name
@@ -636,159 +656,14 @@ public class ModelWurblet extends AbstractWurblet {
       remote = false;
     }
 
-    contextIdAttributeValid = entity.getContextIdAttribute() != null;
-
-    Set<Entity> componentKeyEntities = new HashSet<>();
-
-    // setup wurblet parameters
-    for (WurbletParameter par: getAllParameters()) {
-
-      Entity parEntity = entity;    // the parameter's entity
-
-      if (par.isComponentKey() ||
-          par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-        if (par.isSortKey()) {
-          throw new WurbelException("sorting not allowed for component keys: " + par);
-        }
-        if (!entity.isRootEntityAccordingToModel()) {
-          throw new WurbelException("component keys are only allowed for root-entities: " + par);
-        }
-        try {
-          parEntity = model.getByEntityName(par.getComponentEntityName());
-        }
-        catch (ModelException mex) {
-          throw new WurbelException("model errors while loading '" + par.getComponentEntityName() + "'", mex);
-        }
-        if (parEntity == null && !par.isRelationKey()) {
-          // try relation-name instead of entity-name
-          Relation relation = entity.getRelation(par.getComponentEntityName(), true);
-          if (relation != null) {
-            parEntity = relation.getForeignEntity();
-          }
-        }
-        if (parEntity == null) {
-          throw new WurbelException("no such entity '" + par.getComponentEntityName() + "' in " + par);
-        }
-        boolean rootOk = false;
-        Entity joinedEntity = parEntity;
-        outer:
-        while (joinedEntity != null) {
-          for (Entity rootEntity: joinedEntity.getRootEntities()) {
-            if (rootEntity.equals(entity)) {
-              rootOk = true;
-              break outer;
-            }
-          }
-          joinedEntity = joinedEntity.getSuperEntity();
-        }
-        if (!rootOk) {
-          throw new WurbelException(parEntity + " is not a component of " + entity + ": " + par);
-        }
-        // remember related entities for check against joins later
-        Entity topEntity = parEntity.getTopSuperEntity();
-        componentKeyEntities.add(topEntity);
-        componentKeyEntities.addAll(parEntity.getAllSubEntities());
-      }
-
-      if (par.isRelationKey()) {
-        Relation relation = parEntity.getRelation(par.getRelationName(), true);
-        if (relation == null) {
-          throw new WurbelException("no such relation '" + par.getRelationName() +"' in " + parEntity + ": " + par);
-        }
-        par.setRelation(relation);
-        parEntity = relation.getForeignEntity();  // must work!
-        if (par.getRelationComponentEntityName() != null) {
-          try {
-            parEntity = model.getByEntityName(par.getRelationComponentEntityName());
-          }
-          catch (ModelException mex) {
-            throw new WurbelException("model errors while loading '" + par.getRelationComponentEntityName() + "'", mex);
-          }
-          if (parEntity == null) {
-            throw new WurbelException("no such related entity '" + par.getRelationComponentEntityName() + "' in " + par);
-          }
-        }
-        if (relation.isComposite()) {
-          // misuse of .relation as a component key?
-          for (Entity root: parEntity.getRootEntities()) {
-            if (root.equals(entity)) {
-              Entity topEntity = parEntity.getTopSuperEntity();
-              componentKeyEntities.add(topEntity);
-              componentKeyEntities.addAll(parEntity.getAllSubEntities());
-              break;
-            }
-          }
-        }
-      }
-
-      Attribute attribute = parEntity.getAttributeByJavaName(par.getName(), true);
-      if (attribute == null) {
-        throw new WurbelException("no such attribute '" + par.getName() + "' in " + parEntity + ": " + par);
-      }
-      par.setAttribute(attribute);
-
-      if (attribute.getEntity().equals(entity) && attribute.getOptions().isContextId()) {
-        // the contextId or an attribute with context scope is already part of the where-clause
-        // --> context-clause not necessary
-        contextIdAttributeValid = false;
-      }
-    }
-
-    // setup joins
-    for (String joinName: parser.getJoinNames()) {
-      Relation join = entity.getRelation(joinName, true);
-      if (join == null) {
-        throw new WurbelException("no such relation to join: " + joinName);
-      }
-      if (join.getSelectionType() != SelectionType.LAZY && join.getSelectionType() != SelectionType.EAGER) {
-        throw new WurbelException("joined relation '" + join.getName() + "' must be lazy or eager");
-      }
-      if (remote && !join.isComposite() && !join.isSerialized() && join.getSelectionType() != SelectionType.EAGER) {
-        throw new WurbelException("joined non-composite relation '" + join.getName() + "' must be serialized for remote access");
-      }
-      // verify that join is not used by a component key
-      if (componentKeyEntities.contains(join.getForeignEntity())) {
-        throw new WurbelException("join '" + join.getName() + "' is already used by a component key");
-      }
-      joins.add(join);
-    }
-
-
-    if (contextIdAttributeValid) {  // if context id option set for an attribute
-
-      /**
-       * Furthermore, if _all_ unique parameters are part of the where-clause, we
-       * don't need a contextAttribute as well. However, in that case, we need
-       * to makeValidContext in selects.
-       */
-      int uniqueAttributeCount = 0;
-      for (Attribute attribute: entity.getAttributes()) {
-        if (attribute.getOptions().isDomainKey()) {
-          uniqueAttributeCount++;
-        }
-      }
-
-      int uniqueKeyCount = 0;
-      for (WurbletParameter key: getExpressionParameters()) {
-        Attribute attribute = key.getAttribute();
-        if (attribute != null && attribute.getOptions().isDomainKey()) {
-          uniqueKeyCount++;
-        }
-      }
-
-      if (uniqueAttributeCount > 0 && uniqueAttributeCount == uniqueKeyCount) {
-        contextIdAttributeValid = false;
-      }
-    }
-
     /**
-     * Throw delayed wurbel execption if the real cause if related to this entity
+     * Throw delayed wurbel execption if the real cause is related to this entity
      */
     if (model instanceof TentackleWurbletsModel) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
       if (wex != null && wex.getCause() instanceof ModelException) {
         ModelException mex = (ModelException) wex.getCause();
-        if (mex.getEntities().contains(entity)) {
+        if (mex.isRelatedTo(entity)) {
           throw wex;
         }
       }
@@ -807,7 +682,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return true if pdo id
    */
   public boolean isIdAttribute(Attribute attribute) {
-    return attribute.getJavaName().equals(Constants.CN_ID);
+    return attribute.getName().equals(Constants.CN_ID);
   }
 
   /**
@@ -817,7 +692,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return true if pdo serial
    */
   public boolean isSerialAttribute(Attribute attribute) {
-    return attribute.getJavaName().equals(Constants.CN_SERIAL);
+    return attribute.getName().equals(Constants.CN_SERIAL);
   }
 
   /**

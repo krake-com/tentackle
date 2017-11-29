@@ -53,7 +53,7 @@ interface RdcUtilities$Singleton {
 }
 
 /**
- * Factory for RDC-related utility methods.
+ * RDC-related utility methods.
  *
  * @author harald
  */

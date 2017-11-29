@@ -43,7 +43,7 @@ import org.tentackle.fx.container.FxTabPane;
 import org.tentackle.fx.container.FxVBox;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcRuntimeException;
-import org.tentackle.fx.table.TablePopup;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -53,6 +53,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.session.SessionUtilities;
 import org.tentackle.validate.ValidationFailedException;
 
 /**
@@ -225,7 +226,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     }
     this.classId = classId;
     clazz = null;
-    pdo = Pdo.create(PdoUtilities.getInstance().getPdoClassName(classId),
+    pdo = Pdo.create(SessionUtilities.getInstance().getClassName(classId),
                      AbstractApplication.getRunningApplication().getDomainContext());
     setupSecuredObject();
   }

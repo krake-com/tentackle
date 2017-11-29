@@ -18,6 +18,9 @@
 
 package org.tentackle.common;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 /**
  * Helper methods dealing with exceptions.
  *
@@ -31,7 +34,7 @@ public final class ExceptionHelper {
    * @param <T> the exception type to search for
    * @param type the exception class to search for
    * @param first true if finds the first, else the last in chain
-   * @param headOfChain the head of chained exceptions
+   * @param headOfChain the head of chained exceptions, may be null
    * @return the exception, null if none
    */
   @SuppressWarnings("unchecked")
@@ -53,7 +56,7 @@ public final class ExceptionHelper {
    * Extracts any of the given exception types from an exception chain.
    *
    * @param first true if finds the first, else the last in chain
-   * @param headOfChain the head of chained exceptions
+   * @param headOfChain the head of chained exceptions, may be null
    * @param types the exception classes to search for
    * @return the exception, null if none
    */
@@ -71,28 +74,47 @@ public final class ExceptionHelper {
 
   /**
    * Concatenates the messages of an exception chain.
-   * @param headOfChain the head of chained exceptions
+   *
+   * @param headOfChain the head of chained exceptions, may be null
    * @return the message string
    */
   public static String concatenateMessages(Throwable headOfChain) {
     StringBuilder buf = new StringBuilder();
-    if (headOfChain.getMessage() != null) {
-      buf.append(headOfChain.getMessage());
-    }
-    Throwable cause = headOfChain.getCause();
-    while (cause != null) {
-      String subMsg = cause.getMessage();
-      if (subMsg != null) {
-        if (buf.indexOf(subMsg) < 0) {
-          if (buf.length() > 0) {
-            buf.append('\n');
-          }
-          buf.append(subMsg);
-        }
+    if (headOfChain != null) {
+      if (headOfChain.getMessage() != null) {
+        buf.append(headOfChain.getMessage());
       }
-      cause = cause.getCause();
+      Throwable cause = headOfChain.getCause();
+      while (cause != null) {
+        String subMsg = cause.getMessage();
+        if (subMsg != null) {
+          if (buf.indexOf(subMsg) < 0) {
+            if (buf.length() > 0) {
+              buf.append('\n');
+            }
+            buf.append(subMsg);
+          }
+        }
+        cause = cause.getCause();
+      }
     }
     return buf.toString();
+  }
+
+
+  /**
+   * Returns the stacktrace of a given exception as a string.
+   *
+   * @param cause the exception
+   * @return the stacktrace as a printable string
+   */
+  public static String getStackTraceAsString(Throwable cause)  {
+    ByteArrayOutputStream bs = new ByteArrayOutputStream();
+    try (PrintStream ps = new PrintStream(bs)) {
+      cause.printStackTrace(ps);
+      ps.flush();
+      return bs.toString();
+    }
   }
 
 

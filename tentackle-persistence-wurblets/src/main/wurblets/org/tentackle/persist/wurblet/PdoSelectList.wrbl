@@ -1,61 +1,35 @@
 @{include $currentDir/header.incl}@
+@{config pathAllowed}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to select a list of entities.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoSelectList
+    [--private] [--noif] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;]
+    [--sort] [--lock] [--resultset] [--cursor] [--bounded] [--limit] [--offset]
+    &lt;expression&gt;
+<p>
+arguments:
+<ul>
+<li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
+<li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
+<li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
+<li><em>--sort:</em> sort according to orderBy()-method.</li>
+<li><em>--lock:</em> generates SELECT FOR UPDATE.</li>
+<li><em>--limit:</em> adds a parameter to limit the number of objects.</li>
+<li><em>--offset:</em> adds a parameter to skip the first objects.</li>
+<li><em>--resultset:</em> returns the ResultSetWrapper instead of a List.</li>
+<li><em>--cursor:</em> returns a ScrollableResource instead of a List.</li>
+<li><em>--bounded:</em> returns a bounded List&lt;? extends mainClass&gt; instead of List&lt;mainClass&gt;.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a list select
-     * usage:  \@wurblet <methodname> PdoSelectList --model=<mapfile> [--remote|--local] [--private] [--sort] [--lock] [--append=<sqltext>]
-     *                    [--limit] [--offset] [--resultset] [--noif]
-     *                    [--tracked|--untracked] [--bounded] [--cursor]
-     *                    <key1> ... <keyn>
-     *         --remote means "with remote rmi-code" (overrides default)
-     *         --local means "without remote rmi-code" (overrides default)
-     *         --private makes the method private (default is public, turns on --local as well)
-     *         --sort checks for orderBy()-Method
-     *         --lock selects FOR UPDATE
-     *         --append=... appends an sql-string, i.e. to ORDER BY, GROUP or whatever
-     *         --private makes the method private (default is public)
-     *         --limit adds a parameter to provide an int following the LIMIT clause
-     *         --offset adds a parameter to provide an int following the OFFSET clause
-     *         --resultset returns the ResultSetWrapper instead of a list or cursor
-     *         --noif "no interface method", i.e. no \@Override will be generated
-     *         --tracked return a TrackedList instead of a List (if not [TRACKED] given in model)
-     *         --untracked to disable [TRACKED] from model
-     *         --bounded returns a bounded List<? extends mainClass> instead of List<mainClass>
-     *         --cursor creates ScrollableResource code instead of List
-     *
-     *         the keys are java-names.
-     *
-     * Example: \@wurblet selectByArtikelNr PdoSelectList --model=$scripts/artikel.map --remote artikelNr
-     */
+  private void wurbel() throws WurbelException {
 
     assertEntityIsPersistable();
-
-    if (!getExtraParameters().isEmpty()) {
-      String msg = "unexpected extra parameters:";
-      for (WurbletParameter par: getExtraParameters()) {
-        msg += " " + par;
-      }
-      throw new WurbelException(msg);
-    }
 
     String className  = getClassName();
     String methodName = getMethodName();
@@ -135,8 +109,8 @@
       if (isTracked()) {
         throw new WurbelException("tracked not available with cursors!");
       }
-      if (!getJoins().isEmpty()) {
-        List<WurbletParameter> sortKeys = getSortingParameters();
+      if (isWithJoins()) {
+        List<WurbletArgument> sortKeys = getSortingArguments();
         if (sortKeys.isEmpty() || !sortKeys.get(0).getAttribute().getColumnName().equals(Constants.CN_ID)) {
           throw new WurbelException("cursors with joins must be sorted by ID");
         }
@@ -156,8 +130,6 @@
                           ((isTracked() ? "TrackedList" : "List") + "<" + (bounded ? "? extends " : "") + pdoType + ">"));
     String varListType = cursor != null ? cursor : ((isTracked() ? "TrackedList" : "List") + "<" + pdoType + ">");
     String rmiListType = cursor != null ? cursor : ((isTracked() ? "TrackedList" : "List") + "<" + (bounded ? "? extends " : "") + pdoType + ">");
-    boolean whereWithAliases = true;   // for genwhere.incl
-
     String alias = getEntity().getTopSuperEntity().getTableAlias();
 
 ]@
@@ -237,50 +209,8 @@
 @[
     } // end if remote
 
-    if (!getJoins().isEmpty()) {
-]@
-    JoinedSelect<@(pdoType)@> js = new JoinedSelect<>();
-@[
-      int joinCount = 0;
-      for (Relation join: getJoins()) {
-        joinCount++;
-        String joinClass = join.getForeignEntity().getName();
-        String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
-        if (join.getRelationType() == RelationType.LIST) {
-]@
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_@(joinCount)@.@(join.getForeignAttribute().getColumnName())@", @(joinClass)@.class, "j_@(joinCount)@",
-        (@(alias)@, @(joinAlias)@) -> {
-          @(poImpl)@ po = (@(poImpl)@) @(alias)@.getPersistenceDelegate();
-@[
-          if (join.isReversed()) {
-]@
-          po.@(join.getSetterName())@(@(joinAlias)@);
-@[
-          }
-          else {
-]@
-          po.@(join.getGetterName())@Blunt().add(@(joinAlias)@);
-@[
-          }
-]@
-        }
-      )
-    );
-@[
-        }
-        else  { // RelationType.OBJECT
-]@
-    js.addJoin(
-      new Join<>(JoinType.LEFT, getColumnName(CN_@(join.getAttribute().getJavaName().toUpperCase())@), "j_@(joinCount)@.id", @(joinClass)@.class, "j_@(joinCount)@",
-        (@(alias)@, @(joinAlias)@) -> {
-          @(alias)@.@(join.getSetterName())@(@(joinAlias)@);
-        }
-      )
-    );
-@[
-        }
-      }
+    if (isWithJoins()) {
+      out.print(createJoins());
     }
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
@@ -304,7 +234,12 @@
         sql.append(@(append)@);
 @[
     }
-]@@{include $currentDir/genjoinsql.incl}@
+    if (isWithJoins()) {
+]@
+        js.createJoinedSql(pdo(), sql);
+@[
+    }
+]@
         return sql.toString();
       }
     );
@@ -320,11 +255,6 @@
 @[
     }
 
-    if (!getJoins().isEmpty()) {
-]@
-    ndx = js.setClassIdsInStatement(st, ndx);
-@[
-    }
 ]@
 @{include $currentDir/gensetpar.incl}@
 @[
@@ -344,39 +274,39 @@
 ]@
     ResultSetWrapper rs = st.executeQuery();
 @[
-        if (getJoins().isEmpty()) {
+        if (isWithJoins()) {
 ]@
-    return new ResultSetCursor<>(pdo(), rs);
+    return new ResultSetCursor<>(pdo(), rs, js));
 @[
         }
         else  {
 ]@
-    return new ResultSetCursor<>(pdo(), rs, js));
+    return new ResultSetCursor<>(pdo(), rs);
 @[
         }
       } // end if cursor
       else  { // list
         if (isTracked())  {
-          if (getJoins().isEmpty()) {
-]@
-    return executeTrackedListQuery(st);
-@[
-          }
-          else  {
+          if (isWithJoins()) {
 ]@
     return executeTrackedListQuery(st, js);
 @[
           }
+          else  {
+]@
+    return executeTrackedListQuery(st);
+@[
+          }
         }
         else  {
-          if (getJoins().isEmpty()) {
+          if (isWithJoins()) {
 ]@
-    return executeListQuery(st);
+    return executeListQuery(st, js);
 @[
           }
           else  {
 ]@
-    return executeListQuery(st, js);
+    return executeListQuery(st);
 @[
           }
         }
@@ -384,4 +314,6 @@
     }   // end !resultset
 ]@
   }
-
+@[
+  }
+]@

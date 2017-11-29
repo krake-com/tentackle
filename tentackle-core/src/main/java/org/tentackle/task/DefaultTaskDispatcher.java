@@ -314,6 +314,12 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
+  public Task getTask(long taskId) {
+    assertNotKilled();
+    return idMap.get(taskId);
+  }
+
+  @Override
   public boolean isInstanceOfTaskPending(Class<? extends Task> clazz) {
     for (Task task: idMap.values()) {
       if (clazz.isAssignableFrom(task.getClass())) {

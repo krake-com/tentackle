@@ -21,7 +21,7 @@ package org.tentackle.model.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
@@ -29,19 +29,21 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.Index;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
+import org.tentackle.model.RelationType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.AttributeLine;
-import org.tentackle.model.parser.CommentLine;
-import org.tentackle.model.parser.ConfigurationLine;
-import org.tentackle.model.parser.Document;
-import org.tentackle.model.parser.GlobalOptionLine;
-import org.tentackle.model.parser.Line;
-import org.tentackle.model.parser.OptionLine;
-import org.tentackle.model.parser.RelationLine;
+import org.tentackle.model.parse.AttributeLine;
+import org.tentackle.model.parse.CommentLine;
+import org.tentackle.model.parse.ConfigurationLine;
+import org.tentackle.model.parse.Document;
+import org.tentackle.model.parse.GlobalOptionLine;
+import org.tentackle.model.parse.Line;
+import org.tentackle.model.parse.OptionLine;
+import org.tentackle.model.parse.RelationLine;
 import org.tentackle.sql.Backend;
 
 
@@ -97,8 +99,8 @@ public class EntityFactoryImpl implements EntityFactory {
   }
 
   @Override
-  public IndexAttributeImpl createIndexAttribute(Index index, SourceInfo sourceInfo) {
-    return new IndexAttributeImpl(index, sourceInfo);
+  public IndexAttributeImpl createIndexAttribute(Index index) {
+    return new IndexAttributeImpl(index);
   }
 
   @Override
@@ -134,7 +136,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl idAttribute = createAttribute(entity, document.getSourceInfo(), true);
     idAttribute.setDataType(DataType.LONG_PRIMITIVE);
     idAttribute.setColumnName(Constants.CN_ID);
-    idAttribute.setJavaName(Constants.AN_ID);
+    idAttribute.setName(Constants.AN_ID);
     idAttribute.getOptions().setComment("object id");
     idAttribute.getOptions().setFromSuper(true);
     idAttribute.getOptions().setSetGet(true);
@@ -143,7 +145,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl serialAttribute = createAttribute(entity, document.getSourceInfo(), true);
     serialAttribute.setDataType(DataType.LONG_PRIMITIVE);
     serialAttribute.setColumnName(Constants.CN_SERIAL);
-    serialAttribute.setJavaName(Constants.AN_SERIAL);
+    serialAttribute.setName(Constants.AN_SERIAL);
     serialAttribute.getOptions().setComment("object serial");
     serialAttribute.getOptions().setFromSuper(true);
     serialAttribute.getOptions().setSetGet(true);
@@ -175,7 +177,7 @@ public class EntityFactoryImpl implements EntityFactory {
           break;
 
         case GLOBAL_OPTION:
-          processGlobalOption(entity, (GlobalOptionLine) line);
+          processGlobalOptions(entity, (GlobalOptionLine) line);
           break;
 
         case ATTRIBUTE_OPTION:
@@ -194,13 +196,13 @@ public class EntityFactoryImpl implements EntityFactory {
           processRelationOption(entity, (OptionLine) line);
           break;
 
-        default: throw new ModelException("unknown linetype " + line.getLineType(),
+        default: throw new ModelException("unknown linetype " + line.getLineType() + " @ " +
                                           document.getSourceInfo().add(line.getLineNumber() - 1, 0));
       }
     }
 
     for (Attribute attribute: entity.getAttributes()) {
-      if (Constants.AN_TABLESERIAL.equals(attribute.getJavaName()) ||
+      if (Constants.AN_TABLESERIAL.equals(attribute.getName()) ||
           Constants.CN_TABLESERIAL.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [TABLESERIAL] option instead of explicit attribute", entity);
@@ -210,7 +212,7 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_NORMTEXT.equals(attribute.getJavaName()) ||
+      if (Constants.AN_NORMTEXT.equals(attribute.getName()) ||
           Constants.CN_NORMTEXT.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [NORMTEXT] option instead of explicit attribute", entity);
@@ -220,11 +222,11 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_EDITEDBY.equals(attribute.getJavaName()) ||
+      if (Constants.AN_EDITEDBY.equals(attribute.getName()) ||
           Constants.CN_EDITEDBY.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDSINCE.equals(attribute.getJavaName()) ||
+          Constants.AN_EDITEDSINCE.equals(attribute.getName()) ||
           Constants.CN_EDITEDSINCE.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDEXPIRY.equals(attribute.getJavaName()) ||
+          Constants.AN_EDITEDEXPIRY.equals(attribute.getName()) ||
           Constants.CN_EDITEDEXPIRY.equals(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [EDITEDBY] option instead of explicit attribute", entity);
@@ -245,13 +247,15 @@ public class EntityFactoryImpl implements EntityFactory {
       }
     }
 
-    // find associated attributes associated to relations
+    // find associated attributes associated to object relations
     for (Relation relation: entity.getRelations()) {
-      String firstArg = relation.getMethodArgs().get(0);
-      Attribute attribute = entity.getAttributeByJavaName(firstArg, false);
-      if (attribute != null) {
-        ((RelationImpl) relation).setAttribute(attribute);
-        ((AttributeImpl) attribute).setRelation(relation);
+      if (relation.getRelationType() == RelationType.OBJECT) {
+        MethodArgument firstArg = relation.getMethodArgs().get(0);
+        Attribute attribute = firstArg.getAttribute();
+        if (attribute != null) {
+          ((RelationImpl) relation).setAttribute(attribute);
+          ((AttributeImpl) attribute).setRelation(relation);
+        }
       }
     }
 
@@ -259,7 +263,7 @@ public class EntityFactoryImpl implements EntityFactory {
       AttributeImpl classIdAttribute = createAttribute(entity, document.getSourceInfo(), true);
       classIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
       classIdAttribute.setColumnName(Constants.CN_CLASSID);
-      classIdAttribute.setJavaName(Constants.AN_CLASSID);
+      classIdAttribute.setName(Constants.AN_CLASSID);
       classIdAttribute.getOptions().setComment("class id");
       classIdAttribute.getOptions().setFromSuper(true);
       classIdAttribute.getOptions().setSetGet(true);
@@ -281,7 +285,7 @@ public class EntityFactoryImpl implements EntityFactory {
 
     // creates the sorting info, if any
     List<String> sortOpts = entity.getOptions().getSorting();
-    if (sortOpts != null) {
+    if (sortOpts != null && !sortOpts.isEmpty()) {
       List<AttributeSorting> sorting = new ArrayList<>();
       for (String sortOpt: sortOpts) {
         String name = sortOpt.substring(1);
@@ -291,7 +295,7 @@ public class EntityFactoryImpl implements EntityFactory {
           attribute = entity.getAttributeByColumnName(name, false);
         }
         if (attribute == null) {
-          throw new ModelException("no such attribute '" + name + "' to sort", entity.getOptions().getSourceInfo());
+          throw new ModelException("no such attribute '" + name + "' to sort", entity);
         }
         sorting.add(new AttributeSorting(attribute, sortType));
       }
@@ -331,7 +335,7 @@ public class EntityFactoryImpl implements EntityFactory {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
     index.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(index.getComment())) {
+    if (StringHelper.isAllWhitespace(index.getComment())) {
       index.setComment(comment);
     }
     entity.getIndexes().add(index);
@@ -345,7 +349,7 @@ public class EntityFactoryImpl implements EntityFactory {
    * @param line the global option line
    * @throws ModelException if processing failed
    */
-  protected void processGlobalOption(EntityImpl entity, GlobalOptionLine line) throws ModelException {
+  protected void processGlobalOptions(EntityImpl entity, GlobalOptionLine line) throws ModelException {
     if (!entity.getAttributes().isEmpty()) {
       line.createModelException("global options must appear before attributes declaration section");
     }
@@ -353,6 +357,11 @@ public class EntityFactoryImpl implements EntityFactory {
     for (String option: line.getOptions()) {
       if (!options.processOption(option)) {
         throw line.createModelException("illegal global option: " + option);
+      }
+    }
+    for (String sorting: line.getSortings()) {
+      if (!options.processSorting(sorting)) {
+        throw line.createModelException("illegal global sorting: " + sorting);
       }
     }
     consumePendingComment();
@@ -422,7 +431,7 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeImpl attribute = createAttribute(entity, line.getSourceInfo(), false);
     attribute.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
+    if (StringHelper.isAllWhitespace(attribute.getOptions().getComment())) {
       attribute.getOptions().setComment(comment);
     }
     entity.getAttributes().add(attribute);
@@ -440,10 +449,10 @@ public class EntityFactoryImpl implements EntityFactory {
     RelationImpl relation = createRelation(entity, line.getSourceInfo());
     relation.parse(entity, line);
     String comment = consumePendingComment();
-    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+    if (StringHelper.isAllWhitespace(relation.getComment())) {
       relation.setComment(comment);
     }
-    if (BasicStringHelper.isAllWhitespace(relation.getComment())) {
+    if (StringHelper.isAllWhitespace(relation.getComment())) {
       relation.setComment(relation.getName());
     }
     entity.getRelations().add(relation);

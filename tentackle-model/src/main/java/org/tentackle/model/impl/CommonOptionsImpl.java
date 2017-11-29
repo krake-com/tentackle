@@ -36,48 +36,48 @@ import static org.tentackle.common.Constants.BIND_SCALE;
 public abstract class CommonOptionsImpl implements CommonOptions {
 
   /** don't generate declaration. */
-  static final String OPTION_NODECLARE = "NODECLARE";
+  public static final String OPTION_NODECLARE = "NODECLARE";
 
   /** don't generate accessor methods. */
-  static final String OPTION_NOMETHOD = "NOMETHOD";
+  public static final String OPTION_NOMETHOD = "NOMETHOD";
 
   /** don't generate static constants. */
-  static final String OPTION_NOCONSTANT = "NOCONSTANT";
+  public static final String OPTION_NOCONSTANT = "NOCONSTANT";
 
   /** attribute is derived (table per class). */
-  static final String OPTION_DERIVED = "DERIVED";
+  public static final String OPTION_DERIVED = "DERIVED";
 
   /** attribute is derived (table per concrete class). */
-  static final String OPTION_SUPER = "SUPER";
+  public static final String OPTION_SUPER = "SUPER";
 
   /** don't generate a set-method. */
-  static final String OPTION_READONLY = "READONLY";
+  public static final String OPTION_READONLY = "READONLY";
 
   /** don't generate a get-method. */
-  static final String OPTION_WRITEONLY = "WRITEONLY";
+  public static final String OPTION_WRITEONLY = "WRITEONLY";
 
   /** trim string on read. */
-  static final String OPTION_TRIM_READ = "TRIMREAD";
+  public static final String OPTION_TRIM_READ = "TRIMREAD";
 
   /** trim string on write. */
-  static final String OPTION_TRIM_WRITE = "TRIMWRITE";
+  public static final String OPTION_TRIM_WRITE = "TRIMWRITE";
 
   /** trim on read and write. */
-  static final String OPTION_TRIM = "TRIM";
+  public static final String OPTION_TRIM = "TRIM";
 
   /** map null to non-null value. */
-  static final String OPTION_MAPNULL = "MAPNULL";
+  public static final String OPTION_MAPNULL = "MAPNULL";
 
   /** always use set/get, don't use attributes directly in read/write. */
-  static final String OPTION_SETGET = "SETGET";
+  public static final String OPTION_SETGET = "SETGET";
 
   /** add binding information. */
-  static final String OPTION_BIND = "BIND";
+  public static final String OPTION_BIND = "BIND";
 
   // binding options. Setting a binding option automatically turns on OPTION_BIND
 
   /** set max columns and/or scale. */
-  static final String BIND_SIZE = "SIZE";
+  public static final String BIND_SIZE = "SIZE";
 
 
 
@@ -134,8 +134,9 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    * @param option the option string
    * @param ctrl option control: true if turn option on, false if oprion off, null if on/off missing (defaults to on)
    * @return true if applied, false if unknown option
+   * @throws ModelException if applying the option failed
    */
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     String uco = option.toUpperCase();
     String fullopt = uco;
@@ -248,23 +249,31 @@ public abstract class CommonOptionsImpl implements CommonOptions {
 
 
   /**
-   * Processes an option string.
+   * Processes an option string.<br>
+   * If the option string starts with ! or -, the option is considered to be turned off.
+   * If the option starts with '+' it is forced to be turned on.
+   * In all other cases it is left to the implementation of {@link #applyOption(java.lang.String, java.lang.Boolean)}
+   * how the option should be treated.
    *
    * @param option the option string
    * @return true if option applied, false if not known
+   * @throws ModelException if option malformed
    */
-  public boolean processOption(String option) {
-    boolean applied;
-    switch (option.charAt(0)) {
-      case '-':
-        applied = applyOption(option.substring(1), Boolean.FALSE);
-        break;
-      case '+':
-        applied = applyOption(option.substring(1), Boolean.TRUE);
-        break;
-      default:
-        applied = applyOption(option, null);
-        break;
+  public boolean processOption(String option) throws ModelException {
+    boolean applied = false;
+    if (option != null && !option.isEmpty()) {
+      switch (option.charAt(0)) {
+        case '!':
+        case '-':
+          applied = applyOption(option.substring(1), Boolean.FALSE);
+          break;
+        case '+':
+          applied = applyOption(option.substring(1), Boolean.TRUE);
+          break;
+        default:
+          applied = applyOption(option, null);
+          break;
+      }
     }
     return applied;
   }

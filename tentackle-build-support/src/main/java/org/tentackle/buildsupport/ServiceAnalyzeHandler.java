@@ -55,8 +55,8 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
-  public void setProcessor(AbstractTentackleProcessor processor) {
-    this.processor = (AnalyzeProcessor) processor;
+  public void setProcessor(AnalyzeProcessor processor) {
+    this.processor = processor;
   }
 
   @Override
@@ -141,7 +141,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         if (processor.isDebugLogging()) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName);
+                  Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName, element);
         }
 
         try {
@@ -149,11 +149,11 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
                   println(servicingClassName);
           processor.getResourceManager(processor.getAnalyzeDir()).getWriter(servicingClassName.replace('.', '/') +
                   "/service.log").
-                  println(servicingClassName);
+                  println(servicedClassName);
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "file generation error: " + ex);
+                  Kind.ERROR, "file generation error: " + ex, element);
           return;
         }
       }

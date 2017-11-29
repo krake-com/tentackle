@@ -28,6 +28,7 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.EditPermission;
+import org.tentackle.session.SessionUtilities;
 
 interface SecurityDialogFactory$Singleton {
   SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class);
@@ -59,7 +60,7 @@ public interface SecurityDialogFactory {
   default boolean isDialogAllowed(DomainContext context) {
     EditPermission permission = SecurityFactory.getInstance().getPermission(EditPermission.class);
     SecurityResult result = SecurityFactory.getInstance().getSecurityManager().evaluate(
-            context, permission, PdoUtilities.getInstance().getClassId(Security.class.getName()), 0);
+            context, permission, SessionUtilities.getInstance().getClassId(Security.class.getName()), 0);
     return result.isAccepted();
   }
 

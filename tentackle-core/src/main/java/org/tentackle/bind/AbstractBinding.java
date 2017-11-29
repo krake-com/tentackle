@@ -23,8 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.validate.DefaultScope;
+import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationEvent;
 import org.tentackle.validate.ValidationListener;
 import org.tentackle.validate.ValidationResult;
@@ -272,6 +273,12 @@ public abstract class AbstractBinding implements Binding {
   @Override
   public ValidationEvent createValidationEvent(List<ValidationResult> results) {
     return new ValidationEvent(this, results);
+  }
+
+  @Override
+  public ValidationContext createValidationContext(ValidationScope scope) {
+    return new ValidationContext(getMember().getMemberPath(), getMember().getType(),
+                                 getModelValue(), getParentObject(), scope);
   }
 
   @Override

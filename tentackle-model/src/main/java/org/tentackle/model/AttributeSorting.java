@@ -62,7 +62,7 @@ public class AttributeSorting {
 
   @Override
   public String toString() {
-    return (sortType == SortType.ASC ? "+" : "-") + attribute.getJavaName();
+    return (sortType == SortType.ASC ? "+" : "-") + attribute.getName();
   }
 
 }

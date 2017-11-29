@@ -33,19 +33,26 @@ import org.tentackle.common.Constants;
 
 
 /**
- * Handler to collect the names of resource bundles.
+ * Handler to extract the name of the resource bundle from
+ * the class annotated with &#64;Bundle.
  *
  * @author harald
  */
 public class BundleHandler extends AbstractAnalyzeHandler {
 
+  /**
+   * The service name to find all annotations using this handler or subclasses of it.
+   */
+  public static final String BUNDLE_HANDLER_SERVICE = BundleHandler.class.getName();
+
+  /** extension for property files. */
   public static final String PROPS_EXTENSION = ".properties";
 
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
-  public void setProcessor(AbstractTentackleProcessor processor) {
-    this.processor = (AnalyzeProcessor) processor;
+  public void setProcessor(AnalyzeProcessor processor) {
+    this.processor = processor;
   }
 
   @Override
@@ -68,7 +75,14 @@ public class BundleHandler extends AbstractAnalyzeHandler {
 
         String bundleName = getBundleName(element, annotationName);
         if (bundleName != null) {
-          String fileName = Constants.DEFAULT_BUNDLE_PATH + annotationName;
+
+          String clsName = element.toString();
+          if (!bundleName.equals(clsName)) {
+            // not the same as the classname: append original classname
+            bundleName += " = " + clsName;
+          }
+
+          String fileName = Constants.BUNDLE_SERVICE_PATH + annotationName;
 
           if (processor.isDebugLogging()) {
             processor.getProcessingEnvironment().getMessager().printMessage(
@@ -76,8 +90,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
           }
 
           try {
-            processor.getResourceManager(processor.getServiceDir()).getWriter(fileName).
-                    println(bundleName);
+            processor.getResourceManager(processor.getServiceDir()).getWriter(fileName).println(bundleName);
           }
           catch (IOException ex) {
             processor.getProcessingEnvironment().getMessager().printMessage(
@@ -103,7 +116,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
    */
   protected String getBundleName(Element element, String annotationName) {
 
-    String bundleName = "/" + element.toString();   // annotated class, same as the name of the bundle (default)
+    String bundleName = element.toString();   // annotated class, same as the name of the bundle (default)
 
     // check if bundle name is overridden
     // we must use mirrors because class isn't loaded already and probably cannot be loaded at all
@@ -112,14 +125,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                 annoMirror.getElementValues().entrySet()) {
           if ("value".equals(entry.getKey().getSimpleName().toString())) {
-            String name = entry.getValue().toString();
-            if (!name.isEmpty()) {
-              bundleName = name;
-              if (bundleName.endsWith(PROPS_EXTENSION)) {
-                // cut trailing ".properties"
-                bundleName = bundleName.substring(0, bundleName.length() - PROPS_EXTENSION.length());
-              }
-            }
+            bundleName = xlateBundleName(entry.getValue().toString());
             break;
           }
         }
@@ -127,8 +133,32 @@ public class BundleHandler extends AbstractAnalyzeHandler {
       }
     }
 
-    bundleName = bundleName.replace('.', '/');
+    return bundleName;
+  }
 
+
+  /**
+   * Translates the bundle name to a standard format.
+   *
+   * @param bundleName the name
+   * @return the standardized name
+   */
+  protected String xlateBundleName(String bundleName) {
+    if (bundleName != null && !bundleName.isEmpty()) {
+      if (bundleName.length() > 2 && bundleName.charAt(0) == '"' && bundleName.charAt(bundleName.length() - 1) == '"') {
+        // strip quotes
+        bundleName = bundleName.substring(1, bundleName.length() - 1);
+      }
+      if (bundleName.endsWith(PROPS_EXTENSION)) {
+        // cut trailing ".properties"
+        bundleName = bundleName.substring(0, bundleName.length() - PROPS_EXTENSION.length());
+      }
+      if (bundleName.charAt(0) == '/') {
+        bundleName = bundleName.substring(1);   // cut leading slash
+      }
+      // transform to classname format
+      bundleName = bundleName.replace('/', '.');
+    }
     return bundleName;
   }
 

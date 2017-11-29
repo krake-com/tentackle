@@ -1,0 +1,2795 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+
+package org.tentackle.dbms;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Binary;
+import org.tentackle.common.DMoney;
+import org.tentackle.common.Date;
+import org.tentackle.common.Time;
+import org.tentackle.common.Timestamp;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.DateHelper;
+import org.tentackle.session.PersistenceException;
+
+
+/**
+ * A wrapper for {@link ResultSet}s.
+ *
+ * @author harald
+ */
+public class ResultSetWrapper implements AutoCloseable {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetWrapper.class);
+
+  private ResultSet rs;                             // the wrapped result set, null if closed
+  private StatementWrapper stmt;                    // the statement wrapper
+  private Db db;                                    // db from statement
+  private int columnOffset;                         // offset to add to column index (e.g. for eager loading / joins)
+  private boolean commitOnCloseVoucherValid;        // true if commitOnCloseVoucher has been set
+  private long commitOnCloseVoucher;                // != 0 if issue a commit() before close()
+  private boolean closeStatementOnClose;            // true = close the statement after resultset is closed
+  private int columnCount;                          // number of columns returned, -1 if unknown
+  private ResultSetMetaData metaData;               // the meta data, null if not retrieved yet
+  private List<ResultSetSkipBlock> skipBlocks;      // list of skip blocks (null if not in skipmode)
+  private ResultSetSkipBlock skipBlock;             // current skip block
+  private int skipBlockIndex;                       // the current skip block
+  private boolean cursorMovedInSkipMode;            // true if cursor moved the first time while in skipmode
+  private Map<Object,ResultSetSection> sections;    // the configured column sections
+  private ResultSetSection currentSection;          // the current section, null if none
+
+
+  /**
+   * Creates a wrapper for the given result set.
+   *
+   * @param stmt is the prepared statement wrapper that created this resultset
+   * @param rs the original result-set
+   */
+  public ResultSetWrapper (StatementWrapper stmt, ResultSet rs) {
+
+    this.stmt = stmt;
+    this.rs = rs;
+
+    db = stmt.getSession();
+    if (db == null) {
+      stmt.consume();
+      throw new PersistenceException("connection already closed for " + this);
+    }
+
+    // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
+    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
+                            ((PreparedStatementWrapper) stmt).getStatementKey() == null;
+
+    columnCount = -1;
+  }
+
+
+
+  /**
+   * Gets the session associated to the result set.
+   *
+   * @return the db
+   */
+  public Db getSession() {
+    return db;
+  }
+
+  /**
+   * Gets the statement.
+   *
+   * @return the statement being executes for this result set
+   */
+  public StatementWrapper getStatement() {
+    return stmt;
+  }
+
+  @Override
+  public String toString() {
+    return stmt == null ? "<closed resultset>" : stmt.toString();
+  }
+
+
+  /**
+   * Gets the metadata.
+   *
+   * @return the metadata
+   */
+  public ResultSetMetaData getMetaData() {
+    if (metaData == null) {
+      try {
+        metaData = rs.getMetaData();
+      }
+      catch (SQLException sqx) {
+        throw new PersistenceException(db, sqx);
+      }
+    }
+    return metaData;
+  }
+
+
+  /**
+   * Closes the resultset.
+   */
+  @Override
+  public void close ()  {
+    final ResultSet rset = rs;    // local copy in case of race-condition
+    if (rset != null) {
+      try {
+        final StatementWrapper st = stmt;
+        if (st != null && !st.isClosed()) {
+          st.unmarkReady();
+          st.forgetResultSetWrapper(this);    // removes me from stmt.close (see below)
+          final boolean voucherValid = commitOnCloseVoucherValid;
+          final Db session = db;
+          if (voucherValid && session != null)  {
+            session.commit(commitOnCloseVoucher);
+            commitOnCloseVoucher = 0;
+            commitOnCloseVoucherValid = false;
+          }
+        }
+        rset.close();   // this is ok even if already closed (according to the API)
+      }
+      catch (SQLException sqx)  {
+        throw new PersistenceException(db, sqx);
+      }
+      catch (RuntimeException rex) {
+        LOGGER.severe("closing result set wrapper " + this + " failed", rex);
+      }
+      finally {
+        db = null;
+        rs = null;
+        skipBlock = null;
+        skipBlocks = null;
+        final StatementWrapper st = stmt;
+        if (st != null) {
+          st.detachSession();
+          if (closeStatementOnClose)  {
+            st.close();
+          }
+          stmt = null;
+        }
+      }
+    }
+  }
+
+
+  /**
+   * Determines whether the result set is closed.
+   *
+   * @return true if closed
+   */
+  public boolean isClosed() {
+    return rs == null;
+  }
+
+
+  /**
+   * Overridden to close forgotten resultsets.
+   */
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      if (!isClosed()) {
+        LOGGER.warning("pending resultset '" + this + "' closed by finalizer");
+        close();
+      }
+    }
+    catch (Exception ex) {
+      try {
+        LOGGER.severe("closing pending resultset '" + this + "' failed in finalizer");
+      }
+      catch (Exception ex2) {
+        // don't stop finalization if just the logging failed
+      }
+    }
+    finally  {
+      super.finalize();
+    }
+  }
+
+
+  /**
+   * Set whether to commit() before close() or not.<br>
+   * Some dbms (e.g. Postgres) cannot use cursors outside of a transaction.
+   * In this case a transaction must be started before executeQuery()
+   * (see PreparedStatementWrapper and Query).
+   * and closed when the resultset (or the cursor) is closed.
+   * The default is not to commit on close.
+   *
+   * @param commitOnCloseVoucherValid true if commitOnCloseVoucher is valid
+   * @param commitOnCloseVoucher the voucher to commit, 0 if none
+   */
+  public void setCommitOnCloseVoucher(boolean commitOnCloseVoucherValid, long commitOnCloseVoucher) {
+    this.commitOnCloseVoucherValid = commitOnCloseVoucherValid;
+    this.commitOnCloseVoucher = commitOnCloseVoucher;
+  }
+
+
+  /**
+   * Returns whether the commitOnCloseVoucher is valid.
+   *
+   * @return true if perform a commit on close
+   */
+  public boolean isCommitOnCloseVoucherValid() {
+    return commitOnCloseVoucherValid;
+  }
+
+  /**
+   * Gets the commit-on-close voucher.
+   *
+   * @return the commit on close transaction voucher
+   */
+  public long getCommitOnCloseVoucher()  {
+    if (!isCommitOnCloseVoucherValid()) {
+      throw new PersistenceException("commitOnCloseVoucher is not valid");
+    }
+    return commitOnCloseVoucher;
+  }
+
+
+
+  /**
+   * Set the statement to be closed when result set is closed.
+   * By default the statement remains open.
+   *
+   * @param closeStatementOnClose true if close statement on close
+   */
+  public void setCloseStatementOnclose(boolean closeStatementOnClose) {
+    this.closeStatementOnClose = closeStatementOnClose;
+  }
+
+  /**
+   * Gets the statement-on-close flag.
+   *
+   * @return true if close statement on close
+   */
+  public boolean isCloseStatementOnclose()  {
+    return closeStatementOnClose;
+  }
+
+
+  /**
+   * Sets the column offset.
+   * Useful for eager loading or joining in general.
+   *
+   * @param columnOffset (default is 0)
+   */
+  public void setColumnOffset(int columnOffset) {
+    this.columnOffset = columnOffset;
+  }
+
+  /**
+   * Gets the column offset.
+   *
+   * @return the current columnOffset
+   */
+  public int getColumnOffset()  {
+    return columnOffset;
+  }
+
+  /**
+   * Gets the number of columns in the resultset.
+   *
+   * @return the number of columns
+   */
+  public int getColumnCount() {
+    if (columnCount == -1) {
+      try {
+        columnCount = getMetaData().getColumnCount();
+      }
+      catch (SQLException sqx) {
+        throw new PersistenceException(db, sqx);
+      }
+    }
+    return columnCount;
+  }
+
+
+  /**
+   * Returns whether the result set is in skipmode.
+   *
+   * @return true if in skipmode
+   */
+  public boolean isInSkipMode() {
+    return skipBlocks != null;
+  }
+
+  /**
+   * Maps the given column name to its column index.
+   * <p>
+   * If the result set is in skip mode, the first column with that name is found
+   * after having skipped some columns according to the last invocation of {@link #skip()}.
+   * Otherwise the standard JDBC-implementation is used.
+   *
+   * @param name the column name
+   * @return the index in the result set
+   */
+  public int findColumn(String name) {
+    if (isInSkipMode()) {    // skipmode
+      int ndx = skipBlock.findColumn(name);
+      return ndx - columnOffset;
+    }
+
+    // else standard mode
+    try {
+      return rs.findColumn(name) - columnOffset;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Skips given number of columns in current skip block.<br>
+   * This is usually the column count of an entity.
+   *
+   * @param columnCount the number of columns
+   */
+  public void skipColumns(int columnCount) {
+    assertInSkipMode();
+    skipBlock.applyColumnIndex(skipBlock.getSkippedColumns() + columnCount);
+  }
+
+  /**
+   * Starts or restarts skip mode.
+   * <p>
+   * Skipmode allows multiple columns with the same name belonging to different entities.
+   * For example, in a joined select of two unrelated tables (i.e. no MULTI-inheritance),
+   * at least the columns id and serial will appear twice. With skip mode enabled,
+   * the column configuration allows to skip already configured columns (hence the name skipmode).
+   * <p>
+   * Skipmode is implemented by changing the way {@link #findColumn(java.lang.String)} maps names to column indexes.
+   * All other methods are unaffected.
+   *
+   * <pre>
+   * rs.startSkip();
+   * int foo_a = rs.findColumn("a");
+   * int foo_b = rs.findColumn("b");
+   * ...
+   * rs.skip();                         // skips to the next occurrences
+   * int bar_a = rs.findColumn("a");    // will find the second column named "a"
+   * int bar_b = rs.findColumn("b");    // will find the second column named "b"
+   * ...
+   * rs.skip();             // for the third, etc...
+   * </pre>
+   *
+   * Invoking startSkip again will revert to the first skip block.
+   * <p>
+   * For performance reasons the skip blocks are reused as soon as the cursor is moved,
+   * so the following is allowed:
+   * <pre>
+   * while (rs.next()) {
+   *   rs.startSkip();
+   *   po1 = po1.readFromResultSetWrapper(rs);
+   *   rs.skip();
+   *   po2 = po2.readFromResultSetWrapper(rs);
+   * }
+   * </pre>
+   *
+   * For multi-inherited entities it is required to apply the column count as well since
+   * not all sections may be retrieved depending on the classids found in the result set.
+   * So the code above changes to:
+   * <pre>
+   * while (rs.next()) {
+   *   rs.startSkip();
+   *   po1 = po1.readFromResultSetWrapper(rs);
+   *   rs.skip(po1.getColumnCount());
+   *   po2 = po2.readFromResultSetWrapper(rs);
+   * }
+   * </pre>
+   *
+   */
+  public void startSkip() {
+    if (cursorMovedInSkipMode) {
+      assertInSkipMode();
+      // just rewind
+      skipBlock = skipBlocks.get(0);
+      skipBlockIndex = 0;
+    }
+    else  {
+      // build first skipblock
+      skipBlock = new ResultSetSkipBlock(this, 0);
+      skipBlocks = new ArrayList<>();
+      skipBlocks.add(skipBlock);
+      cursorMovedInSkipMode = false;
+    }
+  }
+
+  /**
+   * Ends skip mode.
+   */
+  public void endSkip() {
+    skipBlocks = null;
+    skipBlock = null;
+  }
+
+  /**
+   * Returns the currently configured skip blocks.
+   * <P>
+   * A skip block is a map of column names to column indexes.
+   * The first skip block contains all columns of the result set.
+   * If a columnname appears more than once in the result set,
+   * the _first_ column index is used.
+   * <p>
+   * Subsequent blocks contain all columns not configured by findColumn
+   * from the previous block.
+   *
+   * @return the skip blocks
+   */
+  public List<ResultSetSkipBlock> getSkipBlocks() {
+    assertInSkipMode();
+    return skipBlocks;
+  }
+
+  /**
+   * Gets the index to the current skip block.
+   *
+   * @return the current index, 0 if first
+   */
+  public int getSkipBlockIndex() {
+    assertInSkipMode();
+    return skipBlockIndex;
+  }
+
+  /**
+   * Skips to the next logical entity.
+   * @see #startSkip()
+   * @throws PersistenceException if not in skipmode
+   */
+  public void skip() {
+    assertInSkipMode();
+    if (cursorMovedInSkipMode) {
+      // re-use old skip blocks
+      skipBlockIndex++;
+      if (skipBlockIndex >= skipBlocks.size()) {
+        throw new PersistenceException(db, "only " + skipBlocks.size() + " skip blocks used so far in " + this);
+      }
+      skipBlock = skipBlocks.get(skipBlockIndex);
+    }
+    else  {
+      int skippedColumns = skipBlock == null ? 0 : skipBlock.getMaxColumnIndex();
+      skipBlock = new ResultSetSkipBlock(this, skippedColumns);
+      skipBlocks.add(skipBlock);
+    }
+  }
+
+  /**
+   * Performs a {@link #skipColumns} followed by a {@link #skip} in one method call.<br>
+   * Provided to save typing only.
+   *
+   * @param columnCount the columns to skip
+   */
+  public void skip(int columnCount) {
+    skipColumns(columnCount);
+    skip();
+  }
+
+
+  /**
+   * Configures a section within this resultset for retrieval.
+   * <p>
+   * A section is a logical group of columns within the result set.<br>
+   * There must be at least one section activated in order to retrieve columns
+   * by section configuration instead of the traditional way by position or by name.<br>
+   * A section may span the whole result set or there may be more than one section,
+   * for example one for each joined table. It's up to the application.<br>
+   * If {@code configureSection} returns true, a new section was created and
+   * the columns of this section must be configured once via {@link #configureColumn} in
+   * the order of their retrieval.<br>
+   * Otherwise the section is already configured.<br>
+   * This is the preferred way to retrieve values from a result set, since
+   * it is the best compromise between speed and flexibility with respect to
+   * the order of the returned columns.<p>
+   *
+   * Example:
+   * <pre>
+   *  if (rs.activateSection(CLASSVARIABLES)) {
+   *    rs.configureColumn(CN_OBJECTCLASS);
+   *    rs.configureColumn(CN_OBJECTID);
+   *    ...
+   *  }
+   *  objectClass = rs.getString();
+   *  objectId = rs.getLong();
+   *  contextObjectId = rs.getLong();
+   *  ...
+   * </pre>
+   *
+   * @param key the unique section key, usually the classvariables
+   * @return true if columns of new section must be configured
+   * @see #configureColumn(java.lang.String)
+   */
+  public boolean configureSection(Object key) {
+    if (sections == null) {
+      sections = new HashMap<>();
+    }
+    currentSection = sections.get(key);
+    if (currentSection == null) {
+      currentSection = new ResultSetSection(this, key);
+      sections.put(key, currentSection);
+      return true;
+    }
+    currentSection.resetColumnIndex();
+    return false;
+  }
+
+
+  /**
+   * Configures a column of the current section for automatic retrieval.
+   *
+   * @param name the column name
+   */
+  public void configureColumn(String name) {
+    assertValidSection();
+    currentSection.configureColumn(name);
+  }
+
+
+  /**
+   * Gives the JDBC driver a hint as to the number of rows that should
+   * be fetched from the database when more rows are needed for this
+   * <code>ResultSet</code> object.
+   * If the fetch size specified is zero, the JDBC driver
+   * ignores the value and is free to make its own best guess as to what
+   * the fetch size should be.  The default value is set by the
+   * <code>Statement</code> object
+   * that created the result set.  The fetch size may be changed at any time.
+   *
+   * @param rows the number of rows to fetch
+   * @see #getFetchSize
+   */
+  public void setFetchSize(int rows) {
+    try {
+      rs.setFetchSize(rows);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the fetch size for this
+   * <code>ResultSet</code> object.
+   *
+   * @return the current fetch size for this <code>ResultSet</code> object
+   * @see #setFetchSize
+   */
+  public int getFetchSize() {
+    try {
+      return rs.getFetchSize();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+
+  }
+
+
+
+  /**
+   * Gives a hint as to the direction in which the rows in this
+   * <code>ResultSet</code> object will be processed.
+   * The initial value is determined by the
+   * <code>Statement</code> object
+   * that produced this <code>ResultSet</code> object.
+   * The fetch direction may be changed at any time.
+   *
+   * @param direction an <code>int</code> specifying the suggested
+   *        fetch direction; one of <code>ResultSet.FETCH_FORWARD</code>,
+   *        <code>ResultSet.FETCH_REVERSE</code>, or
+   *        <code>ResultSet.FETCH_UNKNOWN</code>
+   * @see StatementWrapper#setFetchDirection
+   * @see #getFetchDirection
+   */
+  public void setFetchDirection(int direction) {
+    try {
+      rs.setFetchDirection(direction);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the fetch direction for this
+   * <code>ResultSet</code> object.
+   *
+   * @return the current fetch direction for this <code>ResultSet</code> object
+   * @see #setFetchDirection
+   */
+  public int getFetchDirection() {
+    try {
+      return rs.getFetchDirection();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor froward one row from its current position.
+   * A <code>ResultSet</code> cursor is initially positioned
+   * before the first row; the first call to the method
+   * <code>next</code> makes the first row the current row; the
+   * second call makes the second row the current row, and so on.
+   * <p>
+   * When a call to the <code>next</code> method returns <code>false</code>,
+   * the cursor is positioned after the last row. Any
+   * invocation of a <code>ResultSet</code> method which requires a
+   * current row will result in a <code>SQLException</code> being thrown.
+   *  If the result set type is <code>TYPE_FORWARD_ONLY</code>, it is vendor specified
+   * whether their JDBC driver implementation will return <code>false</code> or
+   *  throw an <code>SQLException</code> on a
+   * subsequent call to <code>next</code>.
+   *
+   * <p>If an input stream is open for the current row, a call
+   * to the method <code>next</code> will
+   * implicitly close it. A <code>ResultSet</code> object's
+   * warning chain is cleared when a new row is read.
+   *
+   * @return <code>true</code> if the new current row is valid;
+   * <code>false</code> if there are no more rows
+   */
+  public boolean next()  {
+    try {
+      clearSection();
+      return rs.next();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the previous row in this
+   * <code>ResultSet</code> object.
+   *<p>
+   * When a call to the <code>previous</code> method returns <code>false</code>,
+   * the cursor is positioned before the first row.  Any invocation of a
+   * <code>ResultSet</code> method which requires a current row will result in a
+   * <code>SQLException</code> being thrown.
+   *<p>
+   * If an input stream is open for the current row, a call to the method
+   * <code>previous</code> will implicitly close it.  A <code>ResultSet</code>
+   *  object's warning change is cleared when a new row is read.
+   *
+   * @return <code>true</code> if the cursor is now positioned on a valid row;
+   * <code>false</code> if the cursor is positioned before the first row
+   */
+  public boolean previous ()  {
+    try {
+      clearSection();
+      return rs.previous();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the first row in
+   * this <code>ResultSet</code> object.
+   *
+   * @return <code>true</code> if the cursor is on a valid row;
+   * <code>false</code> if there are no rows in the result set
+   */
+  public boolean first ()  {
+    try {
+      clearSection();
+      return rs.first();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the last row in
+   * this <code>ResultSet</code> object.
+   *
+   * @return <code>true</code> if the cursor is on a valid row;
+   * <code>false</code> if there are no rows in the result set
+   */
+  public boolean last ()  {
+    try {
+      clearSection();
+      return rs.last();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the front of
+   * this <code>ResultSet</code> object, just before the
+   * first row. This method has no effect if the result set contains no rows.
+   */
+  public void beforeFirst()  {
+    try {
+      clearSection();
+      rs.beforeFirst();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the end of
+   * this <code>ResultSet</code> object, just after the
+   * last row. This method has no effect if the result set contains no rows.
+   */
+  public void afterLast()  {
+    try {
+      clearSection();
+      rs.afterLast();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves whether the cursor is before the first row in
+   * this <code>ResultSet</code> object.
+   * <p>
+   * <strong>Note:</strong>Support for the <code>isBeforeFirst</code> method
+   * is optional for <code>ResultSet</code>s with a result
+   * set type of <code>TYPE_FORWARD_ONLY</code>
+   *
+   * @return <code>true</code> if the cursor is before the first row;
+   * <code>false</code> if the cursor is at any other position or the
+   * result set contains no rows
+   */
+  public boolean isBeforeFirst()  {
+    try {
+      return rs.isBeforeFirst();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves whether the cursor is after the last row in
+   * this <code>ResultSet</code> object.
+   * <p>
+   * <strong>Note:</strong>Support for the <code>isAfterLast</code> method
+   * is optional for <code>ResultSet</code>s with a result
+   * set type of <code>TYPE_FORWARD_ONLY</code>
+   *
+   * @return <code>true</code> if the cursor is after the last row;
+   * <code>false</code> if the cursor is at any other position or the
+   * result set contains no rows
+   */
+  public boolean isAfterLast()  {
+    try {
+      return rs.isAfterLast();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the current row number.<br>
+   * The first row is number 1, the second number 2, and so on.
+   * <p>
+   * <strong>Note:</strong>Support for the <code>getRow</code> method
+   * is optional for <code>ResultSet</code>s with a result
+   * set type of <code>TYPE_FORWARD_ONLY</code>
+   *
+   * @return the current row number; <code>0</code> if there is no current row
+   */
+  public int getRow ()  {
+    try {
+      return rs.getRow();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor to the given row number in
+   * this <code>ResultSet</code> object.
+   *
+   * <p>If the row number is positive, the cursor moves to
+   * the given row number with respect to the
+   * beginning of the result set.  The first row is row 1, the second
+   * is row 2, and so on.
+   *
+   * <p>If the given row number is negative, the cursor moves to
+   * an absolute row position with respect to
+   * the end of the result set.  For example, calling the method
+   * <code>absolute(-1)</code> positions the
+   * cursor on the last row; calling the method <code>absolute(-2)</code>
+   * moves the cursor to the next-to-last row, and so on.
+   *
+   * <p>An attempt to position the cursor beyond the first/last row in
+   * the result set leaves the cursor before the first row or after
+   * the last row.
+   *
+   * <p><B>Note:</B> Calling <code>absolute(1)</code> is the same
+   * as calling <code>first()</code>. Calling <code>absolute(-1)</code>
+   * is the same as calling <code>last()</code>.
+   *
+   * @param row the number of the row to which the cursor should move.
+   *        A positive number indicates the row number counting from the
+   *        beginning of the result set; a negative number indicates the
+   *        row number counting from the end of the result set
+   * @return <code>true</code> if the cursor is moved to a position in this
+   * <code>ResultSet</code> object;
+   * <code>false</code> if the cursor is before the first row or after the
+   * last row
+   */
+  public boolean absolute (int row)  {
+    try {
+      clearSection();
+      return rs.absolute(row);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Moves the cursor a relative number of rows, either positive or negative.
+   * Attempting to move beyond the first/last row in the
+   * result set positions the cursor before/after the
+   * the first/last row. Calling <code>relative(0)</code> is valid, but does
+   * not change the cursor position.
+   *
+   * <p>Note: Calling the method <code>relative(1)</code>
+   * is identical to calling the method <code>next()</code> and
+   * calling the method <code>relative(-1)</code> is identical
+   * to calling the method <code>previous()</code>.
+   *
+   * @param rows an <code>int</code> specifying the number of rows to
+   *        move from the current row; a positive number moves the cursor
+   *        forward; a negative number moves the cursor backward
+   * @return <code>true</code> if the cursor is on a row;
+   *         <code>false</code> otherwise
+   */
+  public boolean relative (int rows)  {
+    try {
+      clearSection();
+      return rs.relative(rows);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Reports whether
+   * the last column read had a value of SQL <code>NULL</code>.
+   * Note that you must first call one of the getter methods
+   * on a column to try to read its value and then call
+   * the method <code>wasNull</code> to see if the value read was
+   * SQL <code>NULL</code>.
+   *
+   * @return <code>true</code> if the last column value read was SQL
+   *         <code>NULL</code> and <code>false</code> otherwise
+   */
+  public boolean wasNull() {
+    try {
+      return rs.wasNull();
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+
+  // ---------------------- get values by column label ---------------------------
+
+
+  /**
+   * Retrieves the value of the designated column in the current row.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Object getObject (String name)  {
+    try {
+      return rs.getObject(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getString (String name, boolean mapNull)  {
+    try {
+      String str = rs.getString (name);
+      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+        return null;
+      }
+      return str;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getString (String name) {
+    return getString(name, false);
+  }
+
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>false</code>
+   */
+  public boolean getBoolean (String name) {
+    try {
+      return rs.getBoolean(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Boolean getABoolean (String name)  {
+    boolean value = getBoolean(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>float</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public float getFloat (String name) {
+    try {
+      return rs.getFloat(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Float</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Float getAFloat (String name)  {
+    float value = getFloat(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>double</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public double getDouble (String name) {
+    try {
+      return rs.getDouble(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Double</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Double getADouble (String name)  {
+    double value = getDouble(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>java.math.BigDecimal</code> with full precision.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BigDecimal getBigDecimal (String name) {
+    try {
+      return rs.getBigDecimal(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>BMoney</code> with full precision.<br>
+   * Notice that BMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BMoney getBMoney (String name) {
+    double value = getDouble(name);
+    return wasNull() ? null : new BMoney (value, getInt(name + "P"));
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>DMoney</code> with full precision.<br>
+   * Notice that DMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public DMoney getDMoney (String name) {
+    try {
+      BigDecimal decimal = rs.getBigDecimal(name);
+      if (!wasNull()) {
+        // set scale
+        return new DMoney(decimal.movePointLeft(getInt(name + "P")));
+      }
+      else  {
+        return null;
+      }
+    }
+    catch (SQLException e) {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>byte</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public byte getByte (String name) {
+    try {
+      return rs.getByte(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+/**
+ * Retrieves the value of the designated column in the current row
+ * of this <code>ResultSet</code> object as
+ * a <code>Byte</code> in the Java programming language.
+ *
+ * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+ * @return the column value; if the value is SQL <code>NULL</code>, the
+ * value returned is <code>null</code>
+ */
+  public Byte getAByte (String name)  {
+    byte value = getByte(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>char</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code> or the empty string, the
+   * value returned is <code>0</code>
+   */
+  public char getChar (String name) {
+    try {
+      String val = rs.getString(name);
+      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column.
+   * @param mapNull if blanks should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   */
+  public Character getCharacter (String name, boolean mapNull)  {
+    char value = getChar(name);
+    return wasNull() ? null : (mapNull && value == ' ' ? null : value);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column.
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   */
+  public Character getCharacter (String name)  {
+    return getCharacter(name, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>short</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public short getShort (String name) {
+    try {
+      return rs.getShort(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Short</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Short getAShort (String name)  {
+    short value = getShort(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>int</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public int getInt (String name) {
+    try {
+      return rs.getInt(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Integer</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Integer getInteger (String name)  {
+    int value = getInt(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>long</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public long getLong (String name)  {
+    try {
+      return rs.getLong(name);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Long</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Long getALong (String name)  {
+    long value = getLong(name);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(String name, Calendar timezone, boolean mapNull)  {
+    try {
+      java.sql.Date date = timezone == null ?
+              rs.getDate(name) : rs.getDate(name, timezone);
+      if (date == null ||
+          (mapNull && date.equals(DateHelper.MIN_DATE)))  {
+        // mindate is translated back to null
+        return null;
+      }
+      return new Date(date.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(String name, Calendar timezone) {
+    return getDate(name, timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(String name, boolean mapNull)  {
+    return getDate(name, null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(String name)  {
+    return getDate(name, null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(String name, Calendar timezone, boolean mapNull)  {
+    try {
+      java.sql.Timestamp ts = timezone == null ?
+              rs.getTimestamp(name) : rs.getTimestamp(name, timezone);
+      if (ts == null ||
+          (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
+        // mintimestamp is translated back to null
+        return null;
+      }
+      Timestamp tts = new Timestamp(ts.getTime());
+      tts.setNanos(ts.getNanos());
+      return tts;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(String name, Calendar timezone) {
+    return getTimestamp(name, timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(String name, boolean mapNull) {
+    return getTimestamp(name, null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(String name)  {
+    return getTimestamp(name, null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   * If the SQL AS clause was not specified, then the label is the name of the column
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime(String name, Calendar timezone)  {
+    try {
+      // no minTime (makes no sense, see PreparedStatementWrapper)
+      java.sql.Time time = timezone == null ?
+              rs.getTime(name) : rs.getTime(name, timezone);
+      return time == null ? null : new Time(time.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime(String name)  {
+    return getTime(name, null);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a {@link Binary} in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.
+   *        If the SQL AS clause was not specified, then the label is the name of the column
+   * @param bufSize the initial buffersize for the Binary
+   * @return the binary read from db
+   */
+  public Binary<?> getBinary(String name, int bufSize)  {
+    try {
+      return Binary.createBinary(rs.getBinaryStream(name), bufSize);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+
+  // ------------------- getter with positions -----------------------------
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Object getObject (int pos)  {
+    try {
+      return rs.getObject (pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getString (int pos, boolean mapNull)  {
+    try {
+      String str = rs.getString (pos + columnOffset);
+      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+        return null;
+      }
+      return str;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getString (int pos) {
+    return getString(pos, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>false</code>
+   */
+  public boolean getBoolean (int pos) {
+    try {
+      return rs.getBoolean(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Boolean getABoolean (int pos)  {
+    boolean value = getBoolean(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>float</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public float getFloat (int pos) {
+    try {
+      return rs.getFloat(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Float</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Float getAFloat (int pos)  {
+    float value = getFloat(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>double</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public double getDouble (int pos) {
+    try {
+      return rs.getDouble(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Double</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Double getADouble (int pos)  {
+    double value = getDouble(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>java.math.BigDecimal</code> with full precision.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BigDecimal getBigDecimal (int pos) {
+    try {
+      return rs.getBigDecimal(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>BMoney</code> with full precision.<br>
+   * Notice that BMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @param pos the parameter index for the amount in the result set
+   * @param ppos the parameter index for the scale in the result set
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BMoney getBMoney (int pos, int ppos) {
+    double value = getDouble(pos);
+    return wasNull() ? null : new BMoney (value, getInt(ppos));
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>DMoney</code> with full precision.<br>
+   * Notice that DMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @param pos the parameter index for the amount in the result set
+   * @param ppos the parameter index for the scale in the result set
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public DMoney getDMoney (int pos, int ppos) {
+    BigDecimal value = getBigDecimal(pos);
+    return wasNull() ? null : new DMoney (value.movePointLeft(getInt(ppos)));
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>byte</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public byte getByte (int pos) {
+    try {
+      return rs.getByte(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Byte</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Byte getAByte (int pos)  {
+    byte value = getByte(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>char</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code> or the empty string, the
+   * value returned is <code>0</code>
+   */
+  public char getChar (int pos) {
+    try {
+      String val = rs.getString(pos + columnOffset);
+      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if blanks should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   *
+   */
+  public Character getCharacter (int pos, boolean mapNull)  {
+    char value = getChar(pos);
+    return wasNull() ? null : (mapNull && value == ' ' ? null : value);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   *
+   */
+  public Character getCharacter (int pos) {
+    return getCharacter(pos, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>short</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public short getShort (int pos) {
+    try {
+      return rs.getShort(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Short</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Short getAShort (int pos)  {
+    short value = getShort(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>int</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public int getInt (int pos) {
+    try {
+      return rs.getInt(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Integer</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Integer getInteger (int pos)  {
+    int value = getInt(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>long</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public long getLong (int pos)  {
+    try {
+      return rs.getLong(pos + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Long</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Long getALong (int pos)  {
+    long value = getLong(pos);
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(int pos, Calendar timezone, boolean mapNull)  {
+    try {
+      java.sql.Date date = timezone == null ?
+              rs.getDate(pos + columnOffset) : rs.getDate(pos + columnOffset, timezone);
+      if (date == null ||
+          (mapNull && date.equals(DateHelper.MIN_DATE)))  {
+        // mindate is translated back to null
+        return null;
+      }
+      return new Date(date.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(int pos, boolean mapNull)  {
+    return getDate(pos, null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(int pos, Calendar timezone) {
+    return getDate(pos, timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(int pos)  {
+    return getDate(pos, null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(int pos, Calendar timezone, boolean mapNull)  {
+    try {
+      java.sql.Timestamp ts = timezone == null ?
+              rs.getTimestamp(pos + columnOffset) : rs.getTimestamp(pos + columnOffset, timezone);
+      if (ts == null ||
+          (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
+        // mindate is translated back to null
+        return null;
+      }
+      Timestamp tts = new Timestamp(ts.getTime());
+      tts.setNanos(ts.getNanos());
+      return tts;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(int pos, boolean mapNull)  {
+    return getTimestamp(pos, null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(int pos, Calendar timezone)  {
+    return getTimestamp(pos, timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(int pos)  {
+    return getTimestamp(pos, null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime(int pos, Calendar timezone)  {
+    try {
+      // no mapNull possible
+      java.sql.Time time = timezone == null ?
+              rs.getTime(pos + columnOffset) : rs.getTime(pos + columnOffset, timezone);
+      return time == null ? null : new Time(time.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime(int pos)  {
+    return getTime(pos, null);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a {@link Binary} in the Java programming language.
+   *
+   * @param pos the parameter index in the result set
+   * @param bufSize the initial buffersize for the Binary
+   * @return the binary read from db
+   */
+  public Binary<?> getBinary(int pos, int bufSize)  {
+    try {
+      return Binary.createBinary(rs.getBinaryStream(pos + columnOffset), bufSize);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  // ------------------- getter with automatic column index -----------------------------
+
+
+  /**
+   * Retrieves the value of the configured column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getString (boolean mapNull)  {
+    try {
+      String str = rs.getString (nextConfiguredIndex() + columnOffset);
+      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+        return null;
+      }
+      return str;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the configured column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getString () {
+    return getString(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>false</code>
+   */
+  public boolean getBoolean () {
+    try {
+      return rs.getBoolean(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Boolean</code> in the Java programming language.
+   *
+   * <P>If the designated column has a datatype of CHAR or VARCHAR
+   * and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 0, a value of <code>false</code> is returned.  If the designated column has a datatype
+   * of CHAR or VARCHAR
+   * and contains a "1" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT
+   * and contains  a 1, a value of <code>true</code> is returned.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Boolean getABoolean ()  {
+    boolean value = getBoolean(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>float</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public float getFloat () {
+    try {
+      return rs.getFloat(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Float</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Float getAFloat ()  {
+    float value = getFloat(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>double</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public double getDouble () {
+    try {
+      return rs.getDouble(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Double</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Double getADouble ()  {
+    double value = getDouble(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>java.math.BigDecimal</code> with full precision.
+   *
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BigDecimal getBigDecimal () {
+    try {
+      return rs.getBigDecimal(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>BMoney</code> with full precision.<br>
+   * Notice that BMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public BMoney getBMoney () {
+    double value = getDouble(nextConfiguredIndex());
+    return wasNull() ? null : new BMoney (value, getInt(nextConfiguredIndex()));
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as a
+   * <code>DMoney</code> with full precision.<br>
+   * Notice that DMoney fields use two fields:
+   * one for the value and
+   * one for the scale (= name + "P")
+   *
+   * @return the column value (full precision);
+   * if the value is SQL <code>NULL</code>, the value returned is
+   * <code>null</code> in the Java programming language.
+   */
+  public DMoney getDMoney () {
+    BigDecimal value = getBigDecimal(nextConfiguredIndex());
+    return wasNull() ? null : new DMoney (value.movePointLeft(getInt(nextConfiguredIndex())));
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>byte</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public byte getByte () {
+    try {
+      return rs.getByte(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Byte</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Byte getAByte ()  {
+    byte value = getByte(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>char</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code> or the empty string, the
+   * value returned is <code>0</code>
+   */
+  public char getChar () {
+    try {
+      String val = rs.getString(nextConfiguredIndex() + columnOffset);
+      return val == null || val.length() == 0 ? 0 : val.charAt(0);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @param mapNull if blanks should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   *
+   */
+  public Character getCharacter (boolean mapNull)  {
+    char value = getChar(nextConfiguredIndex());
+    return wasNull() ? null : (mapNull && value == ' ' ? null : value);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Character</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>. If the value is the empty string the returned
+   * value is <code>new Character(0)</code>.
+   *
+   */
+  public Character getCharacter () {
+    return getCharacter(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>short</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public short getShort () {
+    try {
+      return rs.getShort(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Short</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Short getAShort ()  {
+    short value = getShort(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>int</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public int getInt () {
+    try {
+      return rs.getInt(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * an <code>Integer</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Integer getInteger ()  {
+    int value = getInt(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>long</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>0</code>
+   */
+  public long getLong ()  {
+    try {
+      return rs.getLong(nextConfiguredIndex() + columnOffset);
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>Long</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Long getALong ()  {
+    long value = getLong(nextConfiguredIndex());
+    return wasNull() ? null : value;
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(Calendar timezone, boolean mapNull)  {
+    try {
+      int pos = nextConfiguredIndex();
+      java.sql.Date date = timezone == null ?
+              rs.getDate(pos + columnOffset) : rs.getDate(pos + columnOffset, timezone);
+      if (date == null ||
+          (mapNull && date.equals(DateHelper.MIN_DATE)))  {
+        // mindate is translated back to null
+        return null;
+      }
+      return new Date(date.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param mapNull true if 1.1.1970 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(boolean mapNull)  {
+    return getDate(nextConfiguredIndex(), null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate(Calendar timezone) {
+    return getDate(nextConfiguredIndex(), timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Date</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Date getDate()  {
+    return getDate(nextConfiguredIndex(), null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param timezone the calendar providing the timezone configuration
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(Calendar timezone, boolean mapNull)  {
+    try {
+      int pos = nextConfiguredIndex();
+      java.sql.Timestamp ts = timezone == null ?
+              rs.getTimestamp(pos + columnOffset) : rs.getTimestamp(pos + columnOffset, timezone);
+      if (ts == null ||
+          (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
+        // mindate is translated back to null
+        return null;
+      }
+      Timestamp tts = new Timestamp(ts.getTime());
+      tts.setNanos(ts.getNanos());
+      return tts;
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param mapNull true if 1.1.1970 00:00:00.000 should be mapped to null
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(boolean mapNull)  {
+    return getTimestamp(nextConfiguredIndex(), null, mapNull);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp(Calendar timezone)  {
+    return getTimestamp(nextConfiguredIndex(), timezone, false);
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Timestamp</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Timestamp getTimestamp()  {
+    return getTimestamp(nextConfiguredIndex(), null, false);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @param timezone the calendar providing the timezone configuration
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime(Calendar timezone)  {
+    try {
+      // no mapNull possible
+      int pos = nextConfiguredIndex();
+      java.sql.Time time = timezone == null ?
+              rs.getTime(pos + columnOffset) : rs.getTime(pos + columnOffset, timezone);
+      return time == null ? null : new Time(time.getTime());
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>java.sql.Time</code> in the Java programming language.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public Time getTime()  {
+    return getTime(nextConfiguredIndex(), null);
+  }
+
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a {@link Binary} in the Java programming language.
+   *
+   * @param bufSize the initial buffersize for the Binary
+   * @return the binary read from db
+   */
+  public Binary<?> getBinary(int bufSize)  {
+    try {
+      return Binary.createBinary(rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize);
+    }
+    catch (SQLException | IOException e)  {
+      throw new PersistenceException(db, e);
+    }
+  }
+
+
+
+  // ----------------------------------- private methods ----------------------------------------------
+
+  /**
+   * Clears the configured index and sets the flag that cursor was moved.
+   */
+  private void clearSection() {
+    if (rs == null) {
+      throw new PersistenceException("result set already closed");
+    }
+    currentSection = null;
+    if (isInSkipMode()) {
+      cursorMovedInSkipMode = true;
+    }
+  }
+
+  /**
+   * Gets the next configured column index.
+   *
+   * @return the next column index
+   */
+  private int nextConfiguredIndex() {
+    assertValidSection();
+    return currentSection.nextColumnIndex();
+  }
+
+  /**
+   * Asserts that current section is valid.
+   */
+  private void assertValidSection() {
+    if (currentSection == null) {
+      throw new PersistenceException(db, "no current section configured for automatic indexed retrieval");
+    }
+  }
+
+  /**
+   * Asserts that result set is in skipmode.
+   */
+  private void assertInSkipMode() {
+    if (!isInSkipMode()) {
+      throw new PersistenceException(db, "result set is not in skipmode");
+    }
+  }
+
+}

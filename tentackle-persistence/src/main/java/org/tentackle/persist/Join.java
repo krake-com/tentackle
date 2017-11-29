@@ -1,0 +1,293 @@
+/*
+ * Tentackle - http://www.tentackle.org.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
+package org.tentackle.persist;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import org.tentackle.common.Constants;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.sql.JoinType;
+
+/**
+ * PDO join.
+ * <p>
+ * Joins two PDOs within the same select.<br>
+ * Used by eager joins and explicit domain-driven joins.<br>
+ * Works for composite and non-composite relations.
+ *
+ * @author harald
+ * @param <T> the PDO type holding the relation to the joined PDO
+ * @param <J> the joined PDO type
+ */
+public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomainObject<J>> {
+
+  private static final String ENDS_WITH_ID = "." + Constants.CN_ID;
+
+  /**
+   * The join type.<br>
+   * Currently supported is only INNER and LEFT.
+   */
+  private final JoinType type;
+
+  /**
+   * The column name of the table.
+   * For object-joins this is the alias-name of the table followed by a dot and a column name ending with "id"
+   * For list-joins this is the alias-name of the table followed by a dot and the ID-column name.
+   */
+  private final String columnName;
+
+  /**
+   * The column name of the joined table.
+   * For object-joins this is the alias-name of the joined table followed by a dot and the ID-column name.
+   * For list-joins this is the alias-name of the joined table followed by a dot and a column name ending with "id"
+   */
+  private final String joinedColumnName;
+
+  /**
+   * The joined PDO class.
+   */
+  private final Class<J> joinedClass;
+
+  /**
+   * The alias of the joined table.
+   */
+  private final String joinAlias;
+
+  /**
+   * The joiner implementing the join for the model.
+   */
+  private final BiConsumer<T,J> joiner;
+
+  /**
+   * Cascaded joins.
+   */
+  private final List<Join<J,?>> joins;
+
+  /**
+   * True if this is a list join.
+   */
+  private final boolean listJoin;
+
+  /**
+   * True if the joined table gets an extra id added due to multiple ids within its select.
+   */
+  private final boolean explicitIdAliasRequired;
+
+  /**
+   * Holds the joined pdos per pdo that gets the join
+   */
+  private final Map<T,Set<J>> lastJoinedPdoMap;
+
+  /**
+   * Optional SQL code.
+   */
+  private final String extraSql;
+
+
+  /**
+   * Creates a join.
+   *
+   * @param type the join type
+   * @param columnName the column name of the PDO (includung table alias!)
+   * @param joinedColumnName the column name of the joined PDO (includung table alias!)
+   * @param joinedClass the joined class
+   * @param joinAlias the alias of the joined pdo
+   * @param extraSql optional SQL code (usually a WHERE clause)
+   * @param joiner the joiner
+   */
+  public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
+              String joinAlias, String extraSql, BiConsumer<T, J> joiner) {
+
+    this.type = type;
+    this.columnName = columnName;
+    this.joinedColumnName = joinedColumnName;
+    this.joinedClass = joinedClass;
+    this.joinAlias = joinAlias;
+    this.joiner = joiner;
+    this.extraSql = extraSql;
+
+    joins = new ArrayList<>();
+    lastJoinedPdoMap = new HashMap<>();
+    listJoin = columnName.endsWith(ENDS_WITH_ID);
+    explicitIdAliasRequired = !listJoin &&
+            ((AbstractPersistentObject) Pdo.create(joinedClass).getPersistenceDelegate()).isExplicitIdAliasRequiredInJoins();
+  }
+
+  /**
+   * Creates a join.
+   *
+   * @param type the join type
+   * @param columnName the column name of the PDO (includung table alias!)
+   * @param joinedColumnName the column name of the joined PDO (includung table alias!)
+   * @param joinedClass the joined class
+   * @param joinAlias the alias of the joined pdo
+   * @param joiner the joiner
+   */
+  public Join(JoinType type, String columnName, String joinedColumnName, Class<J> joinedClass,
+              String joinAlias, BiConsumer<T, J> joiner) {
+    this(type, columnName, joinedColumnName, joinedClass, joinAlias, null, joiner);
+  }
+
+
+  /**
+   * Gets the join type.
+   *
+   * @return the type
+   */
+  public JoinType getType() {
+    return type;
+  }
+
+  /**
+   * Returns whether joined to list or object.
+   *
+   * @return true if to list
+   */
+  public boolean isListJoin() {
+    return listJoin;
+  }
+
+  /**
+   * Returne whether an extra ID-alias must be added to the joined select statement.
+   * This is true for multi-table inherited object relations.
+   *
+   * @return true if ID alias necessary
+   */
+  public boolean isExplicitIdAliasRequired() {
+    return explicitIdAliasRequired;
+  }
+
+  /**
+   * Gets the column name of the PDO.
+   *
+   * @return the column name
+   */
+  public String getColumnName() {
+    return columnName;
+  }
+
+  /**
+   * Gets the joined column name.
+   *
+   * @return the column name, "id" if object join, else list join
+   */
+  public String getJoinedColumnName() {
+    return joinedColumnName;
+  }
+
+  /**
+   * Gets the joined PDO class.
+   *
+   * @return the class
+   */
+  public Class<J> getJoinedClass() {
+    return joinedClass;
+  }
+
+  /**
+   * Gets the alias of the joined PDO.
+   *
+   * @return the alias
+   */
+  public String getJoinAlias() {
+    return joinAlias;
+  }
+
+  /**
+   * Gets the joiner.
+   *
+   * @return the joiner
+   */
+  public BiConsumer<T, J> getJoiner() {
+    return joiner;
+  }
+
+  /**
+   * Gets optional SQL code.
+   *
+   * @return sql code, null or empty if none
+   */
+  public String getExtraSql() {
+    return extraSql;
+  }
+
+
+  /**
+   * Adds a cascaded join.
+   *
+   * @param join the cascaded join
+   * @return me (to allow fluent style setup)
+   */
+  public Join<T,J> addJoin(Join<J,?> join) {
+    joins.add(join);
+    return this;
+  }
+
+  /**
+   * Gets the cascaded joins.
+   *
+   * @return the cascaded joins, never null
+   */
+  public List<Join<J,?>> getJoins() {
+    return joins;
+  }
+
+
+  /**
+   * Initializes the join.
+   */
+  public void initialize() {
+    lastJoinedPdoMap.clear();
+  }
+
+  /**
+   * Creates a new PDO to join to given pdo.
+   *
+   * @param pdo the pdo to join to
+   * @return the pdo to join
+   */
+  public J createJoinedPdo(T pdo) {
+    return Pdo.create(joinedClass, pdo.getDomainContext());
+  }
+
+  /**
+   * Joins a pdo with another pdo.<br>
+   *
+   * @param pdo the pdo that gets the join
+   * @param pdoToJoin the pdo to join, null to finish the joining process
+   */
+  public void join(T pdo, J pdoToJoin) {
+    Set<J> lastJoined = lastJoinedPdoMap.get(pdo);
+    if (lastJoined == null) {
+      lastJoined = new HashSet<>();
+      lastJoinedPdoMap.put(pdo, lastJoined);
+    }
+    if (lastJoined.add(pdoToJoin)) {
+      joiner.accept(pdo, pdoToJoin);
+    }
+  }
+
+}

@@ -82,7 +82,7 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;ok&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="DISCARD" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="DISCARD" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="discard" noResource="true"/>
           </Properties>
@@ -101,7 +101,7 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;save&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="SAVE" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="SAVE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="save" noResource="true"/>
           </Properties>
@@ -120,7 +120,7 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;cancel&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="cancel" noResource="true"/>
           </Properties>

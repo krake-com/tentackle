@@ -104,9 +104,9 @@ public class CommandLine {
 
 
   /**
-   * Gets the value for an option "--opt=...".
+   * Gets the value for an option.
    *
-   * @param option the option name
+   * @param option the option name (without the leading --)
    * @return the value or null if no such option or not a value option
    */
   public String getOptionValue(String option) {

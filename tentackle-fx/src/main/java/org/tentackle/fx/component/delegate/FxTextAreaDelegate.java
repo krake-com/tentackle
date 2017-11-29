@@ -13,7 +13,7 @@ import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxTextArea;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * Delegate for FxTextArea.

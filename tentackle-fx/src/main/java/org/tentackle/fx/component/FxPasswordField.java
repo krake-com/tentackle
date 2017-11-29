@@ -54,10 +54,19 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
 
   private /**/FxPasswordFieldDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxPasswordFieldDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxPasswordFieldDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxPasswordFieldDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxPasswordFieldDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -91,7 +100,7 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 
@@ -402,6 +411,16 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   @Override
   public boolean isUnsigned() {
     return getDelegate().isUnsigned();
+  }
+
+  @Override
+  public void setUTC(boolean utc) {
+    getDelegate().setUTC(utc);
+  }
+
+  @Override
+  public boolean isUTC() {
+    return getDelegate().isUTC();
   }
 
   @Override

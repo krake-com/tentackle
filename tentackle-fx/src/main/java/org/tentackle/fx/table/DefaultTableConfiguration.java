@@ -19,48 +19,24 @@
 
 package org.tentackle.fx.table;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.tentackle.common.BMoney;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
-import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Default implementation of a table configuration.<br>
@@ -69,6 +45,11 @@ import org.xml.sax.helpers.AttributesImpl;
  * @author harald
  */
 public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
+
+  /**
+   * The logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTableConfiguration.class);
 
   /** preferences key for table width. */
   private static final String PREF_TABLE_WIDTH = "width";
@@ -219,7 +200,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void savePreferences(TableView<S> table, String suffix, boolean system) {
+  public void savePreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
     prefName.append(name);
@@ -247,10 +228,21 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       }
 
       // store also the dimensions of the table
-      prefs.putDouble(PREF_TABLE_HEIGHT, table.getHeight());
+      double height = table.getHeight();
+      if (table.getTotalsTableView() != null) {
+        // add the height of the totals table
+        height += table.getTotalsTableView().getHeight();
+      }
+      prefs.putDouble(PREF_TABLE_HEIGHT, height);
       prefs.putDouble(PREF_TABLE_WIDTH, table.getWidth());
 
-      prefs.flush();
+      try {
+        prefs.flush();
+      }
+      catch (PreferencesInvalidException pix) {
+        // ignore if changed meanwhile, just log that (would confuse user)
+        LOGGER.warning(pix.toString());
+      }
     }
     catch (BackingStoreException | RuntimeException ex) {
       throw new FxRuntimeException("saving table preferences failed for '" + prefName + "'", ex);
@@ -258,7 +250,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void loadPreferences(TableView<S> table, String suffix, boolean system, boolean noViewSize) {
+  public void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize) {
 
     StringBuilder prefName = new StringBuilder();
     prefName.append(name);
@@ -343,173 +335,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public void toSpreadsheet(TableView<S> table, File file, boolean onlySelected) {
-    HSSFWorkbook wb = new HSSFWorkbook();
-    HSSFSheet sheet = wb.createSheet();
-
-    int srow = 0;   // current spreadsheet row
-
-    // column headers
-    HSSFRow row = sheet.createRow(srow++);
-    HSSFFont font = wb.createFont();
-    font.setItalic(true);
-    font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-    HSSFCellStyle cs = wb.createCellStyle();
-    cs.setAlignment(HSSFCellStyle.ALIGN_CENTER);
-    cs.setFont(font);
-    int columnIndex = 0;
-    for (TableColumnConfiguration<S, ?> tc : getColumnConfigurations()) {
-      HSSFCell cell = row.createCell(columnIndex);
-      cell.setCellValue(new HSSFRichTextString(tc.getDisplayedName()));
-      cell.setCellStyle(cs);
-      columnIndex++;
-    }
-
-    // default cell-style for date
-    HSSFCellStyle dateStyle = wb.createCellStyle();
-    dateStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("m/d/yy"));
-
-    // cellstyles for numbers
-    List<HSSFCellStyle> numberStyles = new ArrayList<>();
-    HSSFDataFormat format = wb.createDataFormat();
-
-    List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
-
-    for (S item : items) {
-
-      row = sheet.createRow(srow++);
-      columnIndex = 0;
-
-      for (TableColumnConfiguration<S, ?> tc : getColumnConfigurations()) {
-
-        FxTableBinding<S, ?> binding = tc.getBinding();
-        if (binding != null) {
-          binding.setBoundRootObject(item);
-          Object value = binding.getModelValue();
-
-          HSSFCell cell = row.createCell(columnIndex);
-
-          if (value instanceof Boolean) {
-            cell.setCellValue(((Boolean) value));
-          }
-          else if (value instanceof BMoney) {
-            BMoney money = (BMoney) value;
-            cell.setCellValue(money.doubleValue());
-
-            String fmt = "#,##0";
-            if (money.scale() > 0) {
-              StringBuilder buf = new StringBuilder(fmt).append('.');
-              for (int j = 0; j < money.scale(); j++) {
-                buf.append('0');
-              }
-              fmt = buf.toString();
-            }
-            // create format
-            short fmtIndex = format.getFormat(fmt);
-
-            // check if there is already a cellstyle with this scale
-            Iterator<HSSFCellStyle> iter = numberStyles.iterator();
-            boolean found = false;
-            while (iter.hasNext()) {
-              cs = iter.next();
-              if (cs.getDataFormat() == fmtIndex) {
-                // reuse that
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              // create a new style
-              cs = wb.createCellStyle();
-              cs.setDataFormat(fmtIndex);
-              numberStyles.add(cs);
-            }
-            cell.setCellStyle(cs);
-          }
-          else if (value instanceof Number) {
-            cell.setCellValue(((Number) value).doubleValue());
-          }
-          else if (value instanceof Date) {
-            cell.setCellValue((Date) value);
-            cell.setCellStyle(dateStyle);
-          }
-          else if (value instanceof GregorianCalendar) {
-            cell.setCellValue((GregorianCalendar) value);
-            cell.setCellStyle(dateStyle);
-          }
-          else if (value != null) {
-            cell.setCellValue(new HSSFRichTextString(value.toString()));
-          }
-        }
-        columnIndex++;
-      }
-    }
-
-    try (FileOutputStream fileOut = new FileOutputStream(file)) {
-      wb.write(fileOut);
-    }
-    catch (IOException ex) {
-      throw new FxRuntimeException("creating spreadsheet file failed", ex);
-    }
-  }
-
-  @Override
-  public void toXml(TableView<S> table, File file, boolean onlySelected) {
-
-    try (PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-
-      StreamResult streamResult = new StreamResult(out);
-      SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-      // SAX2.0 ContentHandler.
-      TransformerHandler hd = tf.newTransformerHandler();
-      Transformer serializer = hd.getTransformer();
-      serializer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-      serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-      hd.setResult(streamResult);
-      hd.startDocument();
-      AttributesImpl atts = new AttributesImpl();
-
-      hd.startElement("", "", "Table", atts);
-
-      List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
-
-      for (S item : items) {
-
-        hd.startElement("", "", getName(), atts);
-
-        for (TableColumnConfiguration<S, ?> tc : getColumnConfigurations()) {
-          String tag = tc.getName();
-          FxTableBinding<S, ?> binding = tc.getBinding();
-          if (binding != null) {
-            binding.setBoundRootObject(item);
-            Object value = binding.getModelValue();
-            String text = value == null ? "" : value.toString();
-            hd.startElement("", "", tag, atts);
-            hd.characters(text.toCharArray(), 0, text.length());
-            hd.endElement("", "", tag);
-          }
-        }
-
-        hd.endElement("", "", getName());
-      }
-
-      hd.endElement("", "", "Table");
-      hd.endDocument();
-    }
-    catch (IOException | TransformerConfigurationException | SAXException ex) {
-      throw new FxRuntimeException("creating XML file failed", ex);
-    }
-  }
-
-
-  @Override
-  public void configure(TableView<S> table) {
+  public void configure(FxTableView<S> table) {
     table.getColumns().clear();
     for (TableColumnConfiguration<S,?> config: columnConfigurations) {
       table.getColumns().add(config.getTableColumn());
     }
     if (table instanceof FxTableView) {
-      ((FxTableView<S>) table).setConfiguration(this);
+      table.setConfiguration(this);
     }
   }
 

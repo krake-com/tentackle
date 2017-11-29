@@ -1,39 +1,21 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to delete low-level persistent objects.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; DbDeleteBy [--private] [--append=&lt;sqltext&gt;] [--classvar=&lt;classvariables&gt;] &lt;expression&gt;
+<p>
+arguments:
+<ul>
+<li><em>--private:</em> makes the method private (default is public).</li>
+<li><em>--append=&lt;sqltext&gt;:</em> appends an sql-string.</li>
+<li><em>--classvar=&lt;classvariables&gt;:</em> reference to classvariables, if pick the statement-IDs from there.</li>
+<li><em>&lt;expression&gt;:</em> see {\@link WurbletArgumentParser}.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a list delete
-     * usage:  \@wurblet <methodname> DbDeleteBy --model=<mapfile> [--remote|--local] [--private] [--append=<sqltext>]
-     *                          [--classvar=<access_to_classvariables>] <key1> ... <keyn>
-     *         --remote means "with remote rmi-code" (overrides default)
-     *         --local means "without remote rmi-code" (overrides default)
-     *         --private makes the method private (default is public, turns on --local as well)
-     *         --append=... appends an sql-string, i.e. to ORDER BY, GROUP or whatever
-     *         --classvar=... name or method to classvariables for statementId, default is private static
-     *
-     *         the keys are java-names.
-     *
-     * Example: \@wurblet deleteByArtikelNr DbDeleteBy --model=$scripts/artikel.map --remote artikelNr
-     */
+  private void wurbel() throws WurbelException {
 
     String className = getClassName();
     String methodName = getMethodName();
@@ -66,7 +48,7 @@
     String params = buildMethodParameters();
     String iparms = buildInvocationParameters();
     String statementId = createStatementId();
-    boolean whereWithAliases = false;   // for genwhere.incl
+
 ]@
   @(scope)@ int @(methodName)@(@(params)@) {
 @[
@@ -130,4 +112,5 @@
 
 @[
     }
+  }
 ]@

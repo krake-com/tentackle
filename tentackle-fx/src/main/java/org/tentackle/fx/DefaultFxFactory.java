@@ -38,6 +38,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import javafx.util.BuilderFactory;
+import org.tentackle.common.BundleFactory;
+import org.tentackle.common.Constants;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -165,7 +167,10 @@ public class DefaultFxFactory implements FxFactory {
       Class<?> viewClass = entry.getKey().getViewClass();
       DefaultClassMapper translators = viewTranslatorMap.get(viewClass);
       if (translators == null) {
-        translators = new DefaultClassMapper(ReflectionHelper.getClassBaseName(viewClass) + "-translator", new HashMap<>(), null);
+        translators = new DefaultClassMapper(
+                ReflectionHelper.getClassBaseName(viewClass) + "-translator",
+                ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
+                new HashMap<>(), null);
         viewTranslatorMap.put(viewClass, translators);
       }
       translators.getNameMap().put(entry.getKey().getModelClass().getName(), entry.getValue().getName());
@@ -279,7 +284,7 @@ public class DefaultFxFactory implements FxFactory {
     }
 
     if (!FxControllerService.RESOURCES_NONE.equals(resourcesStr)) {
-      resources = ResourceBundle.getBundle(resourcesStr, LocaleProvider.getInstance().getLocale());
+      resources = BundleFactory.getBundle(resourcesStr, LocaleProvider.getInstance().getLocale());
     }
 
     if (url == null) {

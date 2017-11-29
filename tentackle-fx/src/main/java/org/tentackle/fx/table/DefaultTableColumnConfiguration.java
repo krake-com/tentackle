@@ -33,6 +33,7 @@ import javafx.util.Callback;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.misc.FormatHelper;
+import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * Default configuration for a table column.<br>
@@ -62,7 +63,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   /**
    * The table column.
    */
-  private TableColumn<S,T> tableColumn;
+  private FxTableColumn<S,T> tableColumn;
 
   /**
    * The binding.
@@ -130,6 +131,11 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Case conversion.
    */
   private Boolean caseConversion;
+
+  /**
+   * Summable or not.
+   */
+  private Boolean summable;
 
 
 
@@ -309,7 +315,22 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
   @Override
   public boolean isSummable() {
-    return type != null && Number.class.isAssignableFrom(type);
+    if (summable != null) {
+      return summable;
+    }
+    return type != null &&
+           Number.class.isAssignableFrom(
+                   type.isPrimitive() ? ReflectionHelper.primitiveToWrapperClass(type) : type);
+  }
+
+  @Override
+  public void setSummable(Boolean summable) {
+    this.summable = summable;
+  }
+
+  @Override
+  public Boolean getSummable() {
+    return summable;
   }
 
   @Override
@@ -323,7 +344,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
-  public TableColumn<S, T> getTableColumn() {
+  public FxTableColumn<S, T> getTableColumn() {
     if (tableColumn == null) {
       tableColumn = createTableColumn();
     }
@@ -343,7 +364,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
         throw new FxRuntimeException("missing binding for " + this);
       }
       binding.setBoundRootObject(p.getValue());
-      return new ReadOnlyObjectWrapper<>((T) binding.getModelValue());
+      return new ReadOnlyObjectWrapper<>(binding.getModelValue());
     };
   }
 
@@ -362,8 +383,8 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    *
    * @return the table column
    */
-  protected TableColumn<S, T> createTableColumn() {
-    TableColumn<S, T> tc = new TableColumn<>(displayedName);
+  protected FxTableColumn<S, T> createTableColumn() {
+    FxTableColumn<S, T> tc = new FxTableColumn<>(this, displayedName);
     tc.setCellValueFactory(createCellValueFactory());
     tc.setCellFactory(createCellFactory());
     return tc;

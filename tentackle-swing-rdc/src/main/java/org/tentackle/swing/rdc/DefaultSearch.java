@@ -21,7 +21,7 @@ package org.tentackle.swing.rdc;
 import java.text.MessageFormat;
 import java.util.List;
 import org.tentackle.misc.ScrollableResource;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.FormInfo;

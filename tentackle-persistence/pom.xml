@@ -5,32 +5,42 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.0.7</version>
+    <version>2.1.0</version>
   </parent>
 
   <artifactId>tentackle-persistence</artifactId>
-  <version>2.0.7</version>
+  <version>2.1.0</version>
   <packaging>jar</packaging>
   <name>Tentackle Persistence</name>
   <description>Tentackle Persistence Layer</description>
   <url>http://www.tentackle.org</url>
 
   <dependencies>
-
-    <!-- local dependencies -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-core</artifactId>
+      <artifactId>tentackle-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-sql</artifactId>
+      <artifactId>tentackle-database</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
 
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
   <build>
+
+    <testResources>
+      <testResource>
+        <directory>src/test/filtered-resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+    
     <plugins>
 
       <plugin>
@@ -46,7 +56,8 @@
         </executions>
         <configuration>
           <verbosity>info</verbosity>
-          <showCompileOutput>false</showCompileOutput>
+          <showCompileOutput>true</showCompileOutput>
+          <index>META-INF/RESOURCE-INDEX.LIST</index>
         </configuration>
       </plugin>
 
@@ -102,11 +113,8 @@
             <fileset>
               <includes>
                 <include>**/*.wurb</include>
-                <include>**/pdo/*.java</include>
+                <include>**/*.java</include>
               </includes>
-              <excludes>
-                <exclude>**/tentackle/pdo/*.java</exclude>
-              </excludes>
               <followSymlinks>false</followSymlinks>
             </fileset>
             <!-- wurbel rmis last -->
@@ -121,21 +129,9 @@
       </plugin>
 
       <plugin>
-        <!-- only to create the SQL-files -->
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-sql-maven-plugin</artifactId>
-        <version>2.0.7</version>
-        <configuration>
-          <verbosity>info</verbosity>
-          <backendNames>all</backendNames>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <!--<excludePackageNames>*/ns/pdo/rmi, */security/pdo/rmi</excludePackageNames>-->
           <sourceFileExcludes>
             <exclude>**/rmi/*Delegate.java</exclude>
             <exclude>**/rmi/*DelegateImpl.java</exclude>

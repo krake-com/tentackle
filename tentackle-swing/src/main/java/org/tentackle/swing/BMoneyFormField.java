@@ -22,10 +22,13 @@ package org.tentackle.swing;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.text.ParseException;
+import java.util.Currency;
+import java.util.Locale;
 import javax.swing.text.Document;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Constants;
 import org.tentackle.common.DMoney;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.swing.bind.BMoneyFormFieldBinding;
 
@@ -70,8 +73,7 @@ public class BMoneyFormField extends AbstractFractionNumberFormField {
     decimalFormat.applyPattern(FormatHelper.getMoneyPattern());    // generate default decimalFormat
     // set the commaChar and the scale from the current locale
     commaChar = decimalFormat.getDecimalFormatSymbols().getDecimalSeparator();
-    // TODO: use LocaleHelper via threadlocal
-//    setScale(BMoney.currency.getDefaultFractionDigits());
+    setScale(Currency.getInstance(LocaleProvider.getInstance().getLocale()).getDefaultFractionDigits());
   }
 
 

@@ -18,7 +18,6 @@
 
 package org.tentackle.reflect.interceptabletest;
 
-import org.tentackle.pdo.pdofactorytest.LogIt;
 import org.tentackle.reflect.Interceptable;
 
 /**

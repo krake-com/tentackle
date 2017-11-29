@@ -19,15 +19,13 @@
 
 package org.tentackle.reflect.classmappertest;
 
-import org.tentackle.pdo.PersistentDomainObject;
-
 
 /**
  * Invoice interface.
  *
  * @author harald
  */
-public interface Invoice extends PersistentDomainObject<Invoice>, InvoicePersistence {
+public interface Invoice extends InvoicePersistence {
 
 
 }

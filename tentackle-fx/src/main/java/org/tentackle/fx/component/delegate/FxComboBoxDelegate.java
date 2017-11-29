@@ -18,12 +18,9 @@ import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
-import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxComboBox;
-import org.tentackle.misc.StringHelper;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.common.StringHelper;
+
 
 /**
  * Delegate for FxComboBox.
@@ -33,8 +30,6 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
   private final FxComboBox<?> component;   // the component
-
-  private boolean loadPdosPending;
 
   /**
    * Creates the delegate.
@@ -91,9 +86,6 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
       items.clear();
       items.addAll(Arrays.asList(type.getEnumConstants()));
     }
-    else if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      loadPdosPending = true;
-    }
   }
 
   @Override
@@ -126,17 +118,6 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
   @Override
   @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
-    if (loadPdosPending) {
-      loadPdosPending = false;
-      FxComponentBinding binding = component.getBinding();
-      DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
-      if (context != null) {
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) getType(), context);
-        ObservableList items = component.getItems();
-        items.clear();
-        items.addAll(pdo.selectAll());
-      }
-    }
     if (component.isEditable()) {
       ValueTranslator translator = getValueTranslator();
       value = translator.toView(value);    // to string

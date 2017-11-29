@@ -22,55 +22,85 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
+import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
-import org.tentackle.sql.Backend;
 import org.tentackle.wurblet.ModelWurblet;
-import org.tentackle.wurblet.WurbletParameter;
 import org.wurbelizer.wurbel.WurbelException;
 
+
 /**
- * Adds persistence-specific stuff.
+ * Base class for persistence wurblets.
+ * <p>
+ * The following wurblet options are supported:
+ * <ul>
+ * <li><em>--context=&lt;key&gt;:</em> defines the context id (--context= turns off default context).</li>
+ * <li><em>--tracked:</em> return a TrackedList instead of List (useful if [TRACKED] not given in model).</li>
+ * <li><em>--attracked:</em> same as --tracked but generate is...Modified per attribute.</li>
+ * <li><em>--fulltracked:</em> same as --attracked but keep last persisted values as well.</li>
+ * <li><em>--untracked:</em> disable [TRACKED, ATTRACKED or FULLTRACKED] from model.</li>
+ * </ul>
+ * For more options, see {@link ModelWurblet}.
  *
  * @author harald
  */
 public class DbModelWurblet extends ModelWurblet {
 
+  private boolean argumentGroupingEnabled;
+  private boolean pathAllowed;
   private boolean tracked;
   private boolean attracked;
   private boolean fullTracked;
   private Attribute contextAttribute;
-  private Set<ComponentJoin> componentJoins;
-  private List<Relation> joinedRelations;
+  private List<JoinPath> joinPaths;
+  private WurbletArgumentParser parser;
 
 
   /**
-   * Overridden to process some arguments.
+   * Returns whether argument grouping is enabled.<br>
+   * By default, the grouping separator '|' just improves readability.<br>
+   * Some wurblet, however, need extra arguments separated from the main expression.
+   * This is true for the PdoUpdateBy or DbUpdateBy wurblets, for example.
+   * Grouping is turned on via the wurblet option "groupArgs".
    *
-   * <pre>
-   * --context=&lt;key&gt; defines the context id (--context= turns off default context)
-   * --tracked return a TrackedArrayList instead of an ArrayList (if not [TRACKED] given in model)
-   * --attracked (same as tracked but generate is...Modified per attribute)
-   * --fulltracked (same as attracked but keep last persisted values as well)
-   * --untracked to disable [TRACKED, ATTRACKED or FULLTRACKED] from model
-   * --makevalidcontext sets the context from the object instead of context
-   * --makevalidcontext=- turns off the default makeValidContext
-   * --or use OR instead of AND for multiple keys
-   * </pre>
-   *
-   * @throws WurbelException if running the wurblet failed
+   * @return true if grouping enabled
    */
+  public boolean isArgumentGroupingEnabled() {
+    return argumentGroupingEnabled;
+  }
+
+  /**
+   * Returns whether expression arguments may contain paths to other entities.
+   *
+   * @return true if allowed, false if not
+   */
+  public boolean isPathAllowed() {
+    return pathAllowed;
+  }
+
+
   @Override
   public void run() throws WurbelException {
+
+    String wurbletOptions = getConfiguration();
+    if (wurbletOptions != null) {
+      if (wurbletOptions.contains("groupArgs")) {
+        argumentGroupingEnabled = true;
+      }
+      else if (wurbletOptions.contains("pathAllowed")) {
+        pathAllowed = true;
+      }
+    }
 
     super.run();
 
@@ -107,6 +137,34 @@ public class DbModelWurblet extends ModelWurblet {
         }
         else {
           contextAttribute = getEntity().getAttributeByJavaName(arg.substring(8), false);
+        }
+      }
+    }
+
+    // analyze the wurblet arguments
+    parser = new WurbletArgumentParser(getEntity(), argumentGroupingEnabled, getWurbletArgs());
+
+    if (!pathAllowed) {
+      for (WurbletArgument arg: parser.getAllArguments()) {
+        if (arg.isPath()) {
+          throw new WurbelException("relation paths not allowed in wurblet " + this);
+        }
+      }
+    }
+
+    if (isRemote()) {
+      // check whether relations are not transient
+      for (WurbletArgument joinArgument: parser.getJoinArguments()) {
+        for (Relation relation: joinArgument.getRelations()) {
+          if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
+            throw new WurbelException("joined non-composite relation '" + relation.getName() +
+                    "' must be serialized for remote access");
+          }
+          Relation opRel = relation.getForeignRelation();
+          if (opRel != null && !opRel.isSerialized() && !opRel.isComposite()) {
+            throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
+                    "' must be serialized for remote access");
+          }
         }
       }
     }
@@ -196,6 +254,64 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
+   * Gets the method arguments.
+   *
+   * @return the method arguments
+   */
+  public List<WurbletArgument> getMethodArguments() {
+    return parser.getMethodArguments();
+  }
+
+
+  /**
+   * Gets the expression arguments.
+   *
+   * @return the arguments used within the expression
+   */
+  public List<WurbletArgument> getExpressionArguments() {
+    return parser.getExpressionArguments();
+  }
+
+
+  /**
+   * Gets the extra arguments.<br>
+   * Those are not part of the expression and not sorting arguments.
+   *
+   * @return the extra arguments
+   */
+  public List<WurbletArgument> getExtraArguments() {
+    return parser.getExtraArguments();
+  }
+
+  /**
+   * Gets the select/where expression.
+   *
+   * @return the expression
+   */
+  public WurbletArgumentExpression getExpression() {
+    return parser.getExpression();
+  }
+
+  /**
+   * Gets the sorting arguments.
+   *
+   * @return the sorting arguments, empty if no "order by"
+   */
+  public List<WurbletArgument> getSortingArguments() {
+    return parser.getSortingArguments();
+  }
+
+  /**
+   * Returns whether sorting is configured for this wurblet.
+   *
+   * @return true if sorting defined in args
+   */
+  public boolean isWithSorting() {
+    return !getSortingArguments().isEmpty();
+  }
+
+
+  /**
    * Goes up the inheritance tree until a default sorting is found.
    *
    * @return the sorting, null if none
@@ -217,14 +333,14 @@ public class DbModelWurblet extends ModelWurblet {
    * Gets the default sorting keys.
    *
    * @return the sorting keys, empty if no "order by"
+   * @throws WurbelException if failed
    */
-  public List<WurbletParameter> getDefaultSortKeys() {
-    List<WurbletParameter> sortKeys = new ArrayList<>();
+  public List<WurbletArgument> getDefaultSortKeys() throws WurbelException {
+    List<WurbletArgument> sortKeys = new ArrayList<>();
     List<AttributeSorting> sorting = getDefaultSorting();
     if (sorting != null) {
       for (AttributeSorting as: sorting) {
-        WurbletParameter key = new WurbletParameter(as.toString());
-        key.setAttribute(as.getAttribute());
+        WurbletArgument key = parser.createArgument(as.toString(), true, false);
         sortKeys.add(key);
       }
     }
@@ -242,50 +358,30 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
+
   /**
-   * Gets the component joins.
+   * Gets the consolidated relation paths for the join arguments.
    *
-   * @return the joins, empty if none
-   * @throws WurbelException if a join could not be created
+   * @return the join paths
    */
-  public Set<ComponentJoin> getComponentJoins() throws WurbelException {
-    if (componentJoins == null) {
-      componentJoins = new HashSet<>();
-      for (WurbletParameter par: getExpressionParameters()) {
-        if (par.isComponentKey() ||
-            par.isRelationKey() && par.getRelationComponentEntityName() != null) {
-          ComponentJoin join = new ComponentJoin(this,
-                                                 par.isComponentKey() ? getEntity() : par.getRelation().getForeignEntity(),
-                                                 par.getAttribute().getEntity());
-          componentJoins.add(join);
-        }
-        else if (par.isRelationKey() && !par.getComponentEntityName().isEmpty()) {
-          ComponentJoin join = new ComponentJoin(this,
-                                                 par.getRelation().getForeignEntity(),
-                                                 par.getRelation().getEntity());
-          componentJoins.add(join);
-        }
+  public List<JoinPath> getJoinPaths() {
+    if (joinPaths == null) {
+      joinPaths = parser.getJoinPaths();
+      // normalize paths (simplifies code generation with JoinedSelects below)
+      for (JoinPath path: joinPaths) {
+        path.normalize();
       }
     }
-    return componentJoins;
+    return joinPaths;
   }
 
-
   /**
-   * Gets the non-component joined relations.
+   * Returns whether there are load joins.
    *
-   * @return the non-component joined relations
+   * @return true if with load joins
    */
-  public List<Relation> getJoinedRelations() {
-    if (joinedRelations == null) {
-      joinedRelations = new ArrayList<>();
-      for (WurbletParameter par: getExpressionParameters()) {
-        if (par.isRelationKey()) {
-          joinedRelations.add(par.getRelation());
-        }
-      }
-    }
-    return joinedRelations;
+  public boolean isWithJoins() {
+    return !getJoinPaths().isEmpty();
   }
 
 
@@ -296,33 +392,51 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the order by clause, null if unsorted
    * @throws WurbelException if failed
    */
-  public String createOrderBy(List<WurbletParameter> sortKeys) throws WurbelException {
+  public String createOrderBy(List<WurbletArgument> sortKeys) throws WurbelException {
     if (!sortKeys.isEmpty()) {
       StringBuilder buf = new StringBuilder();
       boolean needComma = false;
-      for (WurbletParameter key: sortKeys) {
+      for (WurbletArgument key: sortKeys) {
         Attribute attr = key.getAttribute();
         for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
           if (needComma) {
             buf.append("\n           .append(Backend.SQL_COMMA)");
           }
-          String name = "CN_" + attr.getJavaName().toUpperCase() + sp.getPostfix();
+          String name = "CN_" + attr.getName().toUpperCase() + sp.getPostfix();
           buf.append(".append(");
           if (getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI) {
-            buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()));
-            buf.append(".CLASSVARIABLES.getColumnName(").append(name).append(')');
+            buf.append(deriveClassNameForEntity(getEntity().getTopSuperEntity()))
+               .append(".CLASSVARIABLES.getColumnName(").append(name).append(')');
           }
           else  {
-            if (isPdo()) {
-              buf.append("getColumnName(").append(name).append(')');
+            if (!getEntity().equals(attr.getEntity())) {
+              // must be a joined component (otherwise the column is not in the result set)
+              boolean joinFound = false;
+              for (JoinPath joinPath: getJoinPaths()) {
+                Join join = joinPath.findJoin(key.getRelations());
+                if (join != null) {
+                  buf.append('"').append(join.getName())
+                     .append('.').append(attr.getColumnName()).append('"');
+                  joinFound = true;
+                  break;
+                }
+              }
+              if (!joinFound) {
+                throw new WurbelException("missing join for sort key: " + key);
+              }
             }
-            else  {
-              buf.append(name);
+            else {
+              if (isPdo()) {
+                buf.append("getColumnName(").append(name).append(')');
+              }
+              else  {
+                buf.append(name);
+              }
             }
           }
-          buf.append(").append(");
-          buf.append(key.getSortMode().equals(Backend.SQL_SORTASC) ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC");
-          buf.append(')');
+          buf.append(").append(")
+             .append(SortType.ASC == key.getSortType() ? "Backend.SQL_SORTASC" : "Backend.SQL_SORTDESC")
+             .append(')');
           needComma = true;
         }
       }
@@ -338,7 +452,197 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if failed
    */
   public String createOrderBy() throws WurbelException {
-    return createOrderBy(getSortingParameters());
+    return createOrderBy(getSortingArguments());
+  }
+
+
+  /**
+   * Creates the java code for {@code JoinedSelect}s.
+   *
+   * @return the generated java code
+   * @throws WurbelException if failed
+   */
+  public String createJoins() throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    String pdoType = getPdoClassName();
+    if (isGenerified()) {
+      pdoType = "T";
+    }
+    buf.append("    JoinedSelect<").append(pdoType).append("> js = new JoinedSelect<")
+       .append(pdoType).append(">()\n");
+    createJoinsImpl(buf, "      ", getJoinPaths(), pdoType, null);
+    buf.replace(buf.length() - 1, buf.length(), ";\n");
+    return buf.toString();
+  }
+
+  private void createJoinsImpl(StringBuilder buf, String inset, List<JoinPath> paths, String pdoType, String parentName)
+          throws WurbelException {
+    for (JoinPath path: paths) {
+      String lastJoinName = null;
+      if (!path.getElements().isEmpty()) {
+        Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
+        String ins = inset;
+        Relation relation = join.getRelation();
+        lastJoinName = join.getName();
+        String poImpl = deriveClassNameForEntity(relation.getEntity());
+        String alias = relation.getEntity().getTopSuperEntity().getTableAlias();
+        String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : relation.getEntity().getName();
+        String joinClass = relation.getForeignEntity().getName();
+        String joinAlias = relation.getForeignEntity().getTableProvidingEntity().getTableAlias();
+        buf.append(ins).append(".addJoin(\n");
+        if (relation.getRelationType() == RelationType.LIST) {
+          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          if (parentName == null) {
+            buf.append("getColumnName(CN_ID), \"");
+          }
+          else {
+            buf.append('"').append(parentName).append(".id, \"");
+          }
+          buf.append(join.getName()).append('.').append(relation.getForeignAttribute().getColumnName())
+             .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n");
+          String extraSql = createOptionalWhereForJoin(relation, parentName, join.getName());
+          if (!extraSql.isEmpty()) {
+            buf.append(ins).append("             ").append(extraSql).append(",\n");
+          }
+          buf.append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
+             .append(joinClass).append(" ").append(joinAlias).append(") -> {\n");
+          if (relation.isReversed()) {
+            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+               .append(".getPersistenceDelegate()).").append(relation.getSetterName());
+            if (relation.isSerialized()) {
+              buf.append("Blunt");
+            }
+            buf.append("(").append(joinAlias).append(");\n");
+          }
+          else {
+            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+               .append(".getPersistenceDelegate()).").append(relation.getGetterName()).append("Blunt().addBlunt(")
+               .append(joinAlias).append(");\n");
+            if (relation.getLinkMethodName() != null) {
+              String joinImpl = deriveClassNameForEntity(relation.getForeignEntity());
+              buf.append(ins).append("      ((").append(joinImpl).append(") ")
+                 .append(joinAlias).append(".getPersistenceDelegate()).")
+                 .append(createRelationUpdateReferenceCode(relation, alias, true)).append(";\n");
+            }
+          }
+        }
+        else {
+          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          if (parentName == null) {
+            buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase()).append("), \"");
+          }
+          else {
+            buf.append('"').append(parentName).append('.').append(relation.getAttribute().getColumnName()).append("\", \"");
+          }
+          buf.append(join.getName()).append(".id\", ")
+             .append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
+             .append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
+             .append(joinClass).append(" ").append(joinAlias).append(") -> {\n")
+             .append(ins).append("      ((").append(poImpl).append(") ")
+             .append(alias).append(".getPersistenceDelegate()).")
+             .append(relation.getSetterName());
+          if (relation.isSerialized()) {
+            buf.append("Blunt");
+          }
+          buf.append("(").append(joinAlias).append(");\n");
+        }
+        buf.append(ins).append("    }\n")
+           .append(ins).append("  )\n");
+      }
+      List<JoinPath> subPaths = path.getPaths();
+      if (!subPaths.isEmpty()) {
+        // all subpaths start with the same entity
+        Entity subEntity = subPaths.get(0).getElements().get(0).getRelation().getEntity();
+        createJoinsImpl(buf, inset + "  ", subPaths, subEntity.getName(), lastJoinName);
+      }
+      buf.append(inset).append(")\n");
+    }
+  }
+
+
+  private String createOptionalWhereForJoin(Relation relation, String parentName, String joinName) {
+    StringBuilder buf = new StringBuilder();
+    List<MethodArgument> methodArgs = relation.getMethodArgs();
+    if (methodArgs.size() > 1) {
+      for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+        Attribute attr = methodArg.getForeignAttribute();
+        buf.append("\" AND ").append(joinName).append('.')
+           .append(attr.getColumnName())
+           .append('=');
+        if (methodArg.isValue()) {
+          buf.append('?');
+          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
+            boolean mainColumn = sp.getPostfix().isEmpty();
+            if (!mainColumn) {
+              buf.append(" AND ").append(joinName).append('.').append(name).append("=?");
+            }
+          }
+          buf.append('"');
+        }
+        else {
+          attr = methodArg.getAttribute();
+          if (parentName == null) {
+            buf.append("\" + getColumnName(CN_").append(attr.getName().toUpperCase()).append(")");
+          }
+          else {
+            buf.append('"').append(parentName).append('.').append(attr.getColumnName()).append("\"");
+          }
+        }
+      }
+    }
+    return buf.toString();
+  }
+
+
+
+  /**
+   * Creates optional JDBC-set paramaters code for joins with extra arguments.
+   *
+   * @return the optional code, empty if none
+   * @throws WurbelException if failed
+   */
+  public String createJoinSetPars() throws WurbelException {
+    StringBuilder buf = new StringBuilder();
+    for (JoinPath path: getJoinPaths()) {
+      createJoinSetPars(buf, path);
+    }
+    return buf.toString();
+  }
+
+  private void createJoinSetPars(StringBuilder buf, JoinPath path) throws WurbelException {
+    if (!path.getElements().isEmpty()) {
+      Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
+      Relation relation = join.getRelation();
+      if (isClassIdRequiredInWhereClause(relation.getForeignEntity())) {
+        buf.append("    st.setInt(ndx++, ").append(relation.getForeignEntity().getClassId()).append(");\n");
+      }
+      List<MethodArgument> methodArgs = relation.getMethodArgs();
+      if (methodArgs.size() > 1) {
+        for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+          if (methodArg.isValue()) {
+            Attribute attr = methodArg.getForeignAttribute();
+            buf.append("    st.")
+               .append(createJdbcSetterName(attr))
+               .append("(ndx++, ")
+               .append(getJdbcCode(attr, attr.toMethodArgument(methodArg.getValue())));
+            if (attr.getOptions().isMapNull())  {
+              buf.append(", true);\n");
+            }
+            else {
+              buf.append(");\n");
+            }
+            // for multi column types, such as BMoney/DMoney
+            for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+              buf.append("    ndx++;\n");
+            }
+          }
+        }
+      }
+      for (JoinPath subPath: path.getPaths()) {
+        createJoinSetPars(buf, subPath);
+      }
+    }
   }
 
 
@@ -384,17 +688,20 @@ public class DbModelWurblet extends ModelWurblet {
     }
 
     Set<String> argSet = new HashSet<>();     // each arg only once
-    for (WurbletParameter key: getMethodParameters())  {
-      if (key.isArg() && argSet.add(key.getArg())) {
-        Attribute attr = key.getAttribute();
-        try {
-          appendCommaSeparated(params, attr.getJavaType());
+    for (WurbletArgument key: getMethodArguments())  {
+      if (key.isMethodArgument()) {
+        String arg = key.getMethodArgumentName();
+        if (argSet.add(arg)) {
+          Attribute attr = key.getAttribute();
+          try {
+            appendCommaSeparated(params, attr.getJavaType());
+          }
+          catch (ModelException me) {
+            throw new WurbelException("cannot determine java type for key " + key, me);
+          }
+          params.append(' ');
+          params.append(arg);
         }
-        catch (ModelException me) {
-          throw new WurbelException("cannot determine java type for key " + key, me);
-        }
-        params.append(' ');
-        params.append(key.getArg());
       }
     }
 
@@ -419,8 +726,9 @@ public class DbModelWurblet extends ModelWurblet {
    * @param limit optional limit rows
    * @param offset optional skip rows
    * @return the invocation parameters
+   * @throws WurbelException if failed
    */
-  public String buildInvocationParameters(boolean limit, boolean offset) {
+  public String buildInvocationParameters(boolean limit, boolean offset) throws WurbelException {
 
     StringBuilder params = new StringBuilder();
 
@@ -432,9 +740,12 @@ public class DbModelWurblet extends ModelWurblet {
     }
 
     Set<String> argSet = new HashSet<>();     // each arg only once
-    for (WurbletParameter key: getMethodParameters())  {
-      if (key.isArg() && argSet.add(key.getArg())) {
-        appendCommaSeparated(params, key.getArg());
+    for (WurbletArgument key: getMethodArguments())  {
+      if (key.isMethodArgument()) {
+        String arg = key.getMethodArgumentName();
+        if (argSet.add(arg)) {
+          appendCommaSeparated(params, arg);
+        }
       }
     }
 
@@ -446,8 +757,9 @@ public class DbModelWurblet extends ModelWurblet {
    * Builds the string of invocation parameters.
    *
    * @return the invocation parameters
+   * @throws WurbelException if failed
    */
-  public String buildInvocationParameters() {
+  public String buildInvocationParameters() throws WurbelException {
     return buildInvocationParameters(false, false);
   }
 
@@ -516,15 +828,12 @@ public class DbModelWurblet extends ModelWurblet {
    * @throws WurbelException if type is misconfigured
    */
   public DataType getJdbcDataType(Attribute attribute) throws WurbelException {
-    if (attribute.getDataType() == DataType.APPLICATION) {
-      try {
-        return attribute.getInnerType();
-      }
-      catch (ModelException me) {
-        throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
-      }
+    try {
+      return attribute.getEffectiveType();
     }
-    return attribute.getDataType();
+    catch (ModelException me) {
+      throw new WurbelException("cannot determine effective JDBC datatype for " + attribute, me);
+    }
   }
 
   /**
@@ -538,7 +847,7 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder("set");
     DataType type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
-      buf.append(BasicStringHelper.firstToUpper(type.toString()));
+      buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else  {
       buf.append(type.toString());
@@ -557,7 +866,7 @@ public class DbModelWurblet extends ModelWurblet {
     StringBuilder buf = new StringBuilder("get");
     DataType type = getJdbcDataType(attribute);
     if (type.isPrimitive()) {
-      buf.append(BasicStringHelper.firstToUpper(type.toString()));
+      buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else if (type == DataType.BOOLEAN) {
       buf.append("ABoolean");
@@ -657,51 +966,46 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-
-  /**
-   * Gets the relation arguments for delete or select methods.
-   *
-   * @param relation the relation
-   * @param select is true if args for select-method, else delete-method
-   * @return the arguments for select/delete methods
-   */
-  public List<String> getRelationArgs(Relation relation, boolean select) {
-    if (select) {
-      if (relation.isSelectionFromMainClass()) {
-        return new ArrayList<>(); // no args if invoke non-static in main class
-      }
-    }
-    else {
-      if (relation.isDeletionFromMainClass()) {
-        return new ArrayList<>(); // no args if invoke non-static in main class
-      }
-    }
-    return relation.getMethodArgs();
-  }
-
-
   /**
    * Creates the argument string for select- or delete statement of a relation.
    *
    * @param relation the relation.
-   * @param select is true if for selectStatement, else deleteStatement
    * @return the arg string
    */
-  public String createRelationArgString(Relation relation, boolean select) {
+  public String createRelationArgString(Relation relation) {
     StringBuilder buf = new StringBuilder();
     buf.append('(');
-    List<String> args = getRelationArgs(relation, select);
+    List<MethodArgument> args = relation.getMethodArgs();
     boolean first = true;
-    for (String arg: args) {
+    for (MethodArgument arg: args) {
       if (first) {
         first = false;
       }
       else  {
         buf.append(", ");
       }
-      buf.append(arg);
+      buf.append(arg.getMethodArgument());
     }
     buf.append(')');
+    return buf.toString();
+  }
+
+
+  /**
+   * Creates the wurblet argument string for select- or delete statement of a relation.
+   *
+   * @param relation the relation.
+   * @return the arg string
+   */
+  public String createRelationWurbletArgString(Relation relation) {
+    StringBuilder buf = new StringBuilder();
+    List<MethodArgument> args = relation.getMethodArgs();
+    for (MethodArgument arg: args) {
+      if (buf.length() > 0) {
+        buf.append(' ');
+      }
+      buf.append(arg.getForeignAttribute().getName());
+    }
     return buf.toString();
   }
 
@@ -713,16 +1017,15 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationSelectCode(Relation relation) {
-
-    String text = "on(" + relation.getClassName() + ".class)." + createRelationSelectMethodName(relation);
-
-    text += createRelationArgString(relation, true);
-
+    StringBuilder text = new StringBuilder();
     if (relation.getForeignEntity().isAbstract()) {
       // we need a cast
-      text = "(" + relation.getClassName() + "<?>) " + text;
+      text.append("(").append(relation.getClassName()).append("<?>) ");
     }
-    return text;
+    text.append("on(").append(relation.getClassName()).append(".class).")
+        .append(createRelationSelectMethodName(relation))
+        .append(createRelationArgString(relation));
+    return text.toString();
   }
 
 
@@ -730,15 +1033,40 @@ public class DbModelWurblet extends ModelWurblet {
    * Creates the java code to update the reference of a relation.
    *
    * @param relation the relation
+   * @param pdo the PDO name
+   * @param blunt use the blunt setter method, if provided
+   * @return the java code
+   */
+  public String createRelationUpdateReferenceCode(Relation relation, String pdo, boolean blunt) {
+    Relation foreignRel = relation.getForeignRelation();
+    if (blunt &&
+        (foreignRel == null ||
+         foreignRel.getRelationType() != RelationType.OBJECT || !foreignRel.isSerialized() ||
+         (foreignRel.getSelectionType() != SelectionType.LAZY && foreignRel.getSelectionType() != SelectionType.EAGER))) {
+      blunt = false;
+    }
+
+    if (!blunt && relation.getLinkMethodName() != null) {
+      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ?
+              ("(" + pdo + ", ndx++)") : ("(" + pdo + ")"));
+    }
+    else {
+      if (foreignRel != null) {
+        return foreignRel.getSetterName() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
+      }
+      return "set" + relation.getForeignEntity() + (blunt ? "Blunt" : "") + "(" + pdo + ")";
+    }
+  }
+
+  /**
+   * Creates the java code to update the reference of a relation.<br>
+   * The pdo name is fixed {@code "pdo()"}.
+   *
+   * @param relation the relation
    * @return the java code
    */
   public String createRelationUpdateReferenceCode(Relation relation) {
-    if (relation.getLinkMethodName() != null) {
-      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ? "(pdo(), ndx++)" : "(pdo())");
-    }
-    else {
-      return "set" + relation.getEntity().getName() + "(pdo())";
-    }
+    return createRelationUpdateReferenceCode(relation, "pdo()", false);
   }
 
   /**
@@ -748,7 +1076,7 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the set-method name
    */
   public String createRelationSetFirstArgMethodName(Relation relation) {
-    return "set" + BasicStringHelper.firstToUpper(relation.getMethodArgs().get(0));
+    return "set" + StringHelper.firstToUpper(relation.getMethodArgs().get(0).getAttribute().getName());
   }
 
 
@@ -759,19 +1087,11 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationDeleteCode(Relation relation) {
-    String text = "delete";
-    if (relation.getRelationType() == RelationType.LIST) {
-      text += "By";
-    }
-    if (relation.getMethodName() != null) {
-      text += relation.getMethodName();
-    }
-    else {
-      text += relation.getEntity().getName() + "Id";
-    }
-    text = "on(" + relation.getClassName() + ".class)." + text;
-    text += createRelationArgString(relation, false);
-    return text;
+    StringBuilder text = new StringBuilder();
+    text.append("on(").append(relation.getClassName()).append(".class).")
+        .append(createListRelationDeleteMethodName(relation))
+        .append(createRelationArgString(relation));
+    return text.toString();
   }
 
 
@@ -792,12 +1112,12 @@ public class DbModelWurblet extends ModelWurblet {
     else {
       text += relation.getEntity().getName() + "Id";
     }
-    return text + createRelationArgString(relation, true);
+    return text + createRelationArgString(relation);
   }
 
 
   /**
-   * The TT persistence layer provides an optimized select for a single eager relations via a Join.
+   * The TT persistence layer provides an optimized select for a single eager relations via a LeftJoin.
    *
    * @return the eager relations, empty list if no optimization possible or no eagers at all
    */
@@ -828,6 +1148,15 @@ public class DbModelWurblet extends ModelWurblet {
   }
 
 
-
+  /**
+   * Creates the component info for a given component.
+   *
+   * @param component the component of the wurblet's entity
+   * @return the info
+   * @throws WurbelException if failed
+   */
+  public ComponentInfo createComponentInfo(Entity component) throws WurbelException {
+    return new ComponentInfo(this, component);
+  }
 
 }

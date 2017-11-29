@@ -31,7 +31,7 @@ import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoFinder;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**

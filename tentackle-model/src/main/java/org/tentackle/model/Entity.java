@@ -29,14 +29,7 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
-public interface Entity {
-
-  /**
-   * Gets the name of the entity.
-   *
-   * @return the name
-   */
-  String getName();
+public interface Entity extends ModelElement {
 
   /**
    * Gets the unique id of this entity.<br>
@@ -71,10 +64,18 @@ public interface Entity {
   /**
    * Gets the table alias for joined selects.<br>
    * The alias is unique among all tables.
+   * If the model does not provide an alias, a unique alias will be generated.
    *
    * @return the table alias
    */
   String getTableAlias();
+
+  /**
+   * Gets the table alias originally configured in the model.<br>
+   *
+   * @return the fixed alias, null if automatic
+   */
+  String getDefinedTableAlias();
 
   /**
    * Gets the referential integrity mode.
@@ -246,6 +247,15 @@ public interface Entity {
   Relation getRelation(String name, boolean all);
 
   /**
+   * Gets all relations for a given entity type.
+   *
+   * @param entity the entity
+   * @param all true if include inherited relations
+   * @return the relations, empty if no such relation
+   */
+  List<Relation> getRelations(Entity entity, boolean all);
+
+  /**
    * Gets the relations from other entities directly referencing this entity.
    *
    * @return the relations
@@ -412,6 +422,14 @@ public interface Entity {
   Entity getRootEntity();
 
   /**
+   * Returns whether this is a root entity.<br>
+   * Inspects the super entities as well.
+   *
+   * @return true if root entity
+   */
+  boolean isRootEntity();
+
+  /**
    * Returns whether entity is the root of an inheritance hierarchy.
    *
    * @return true if root
@@ -523,6 +541,14 @@ public interface Entity {
    * @return the paths, empty list if this is not a component of any other entity
    */
   Set<List<Relation>> getCompositePaths();
+
+  /**
+   * Gets the paths of composite relations to this entity.<br>
+   * Notice that this inludes paths to sub-entities and super-entities as well.
+   *
+   * @return the paths, empty list if this is not a component of any other entity
+   */
+  Set<List<Relation>> getAllCompositePaths();
 
   /**
    * Gets the direct components of this entity.

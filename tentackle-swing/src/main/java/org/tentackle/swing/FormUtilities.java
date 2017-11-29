@@ -82,6 +82,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.swing.bind.DefaultFormBindingFactory;
 import org.tentackle.swing.bind.FormBindingFactory;
 import org.tentackle.swing.bind.FormComponentBinding;
@@ -492,8 +493,11 @@ public class FormUtilities {
   public void removeWindow(Window w) {
     synchronized (windows)  {
       if (windows.remove(w))  {
-        if (w instanceof Dialog && ((Dialog) w).isModal()) {
-          modalDialogs.remove(w);
+        if (w instanceof Dialog) {
+          Dialog d = (Dialog) w;
+          if (d.isModal()) {
+            modalDialogs.remove(d);
+          }
         }
         fireWindowActionPerformed(new ActionEvent(w, Event.ACTION_EVENT, "remove")); // NOI18N
       }
@@ -1707,7 +1711,13 @@ public class FormUtilities {
       counter[0]++;
       prefs.putInt("height_" + counter[0] , comp.getHeight()); // NOI18N
       prefs.putInt("width_" + counter[0], comp.getWidth()); // NOI18N
-      prefs.flush();
+      try {
+        prefs.flush();
+      }
+      catch (PreferencesInvalidException pix) {
+        // ignore if changed meanwhile, just log that (would confuse user)
+        LOGGER.warning(pix.getMessage());
+      }
     }
     else if (comp instanceof Container) {
       for (Component component : ((Container) comp).getComponents()) {

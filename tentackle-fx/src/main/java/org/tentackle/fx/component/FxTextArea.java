@@ -63,10 +63,19 @@ public class FxTextArea extends TextArea implements FxTextComponent {
 
   private /**/FxTextAreaDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxTextAreaDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxTextAreaDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxTextAreaDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxTextAreaDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -100,7 +109,7 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 
@@ -411,6 +420,16 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   @Override
   public boolean isUnsigned() {
     return getDelegate().isUnsigned();
+  }
+
+  @Override
+  public void setUTC(boolean utc) {
+    getDelegate().setUTC(utc);
+  }
+
+  @Override
+  public boolean isUTC() {
+    return getDelegate().isUTC();
   }
 
   @Override

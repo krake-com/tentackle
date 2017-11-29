@@ -220,6 +220,23 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isTemporaryName(String name) {
+    // oracle does not allow identifiers to start with an underscore -> we use "tmp_" instead.
+    return name != null && (name.startsWith("tmp_") || name.startsWith("TMP_"));
+  }
+
+  @Override
+  public void assertValidName(String nameType, String name) {
+    super.assertValidName(nameType, name);
+    assertNameLength(nameType, name);
+    if (name != null) {
+      if (name.startsWith("_")) {
+        throw new BackendException(nameType + " '" + name + "' is illegal for backend " + this);
+      }
+    }
+  }
+
+  @Override
   public String getEmptyString() {
     return ORACLE_EMPTY_STRING;
   }
@@ -359,13 +376,6 @@ public class Oracle extends AbstractSql2003Backend {
       default:
         return super.jdbcTypeToSqlType(jdbcType, size, scale);
     }
-  }
-
-
-  @Override
-  public void assertValidName(String nameType, String name) {
-    super.assertValidName(nameType, name);
-    assertNameLength(nameType, name);
   }
 
 

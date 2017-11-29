@@ -20,7 +20,7 @@ package org.tentackle.sql.metadata;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 
 
 /**
@@ -52,7 +52,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
    * @throws SQLException the processing the result set failed
    */
   public void setupIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
-    columnName = BasicStringHelper.toLower(resultSet.getString("COLUMN_NAME"));
+    columnName = StringHelper.toLower(resultSet.getString("COLUMN_NAME"));
     String ascDesc = resultSet.getString("ASC_OR_DESC");
     descending = ascDesc != null && ascDesc.startsWith("D");
     position = resultSet.getShort("ORDINAL_POSITION");

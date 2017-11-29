@@ -1,0 +1,3 @@
+tablename = bundle
+classid   = 8
+mapping   = $model/$tablename.map

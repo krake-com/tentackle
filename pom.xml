@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>2.0.7</version>
+  <version>2.1.0</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -44,6 +44,9 @@
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
     <module>tentackle-core</module>
+    <module>tentackle-session</module>
+    <module>tentackle-pdo</module>
+    <module>tentackle-check-maven-plugin</module>
     <module>tentackle-log-util</module>
     <module>tentackle-log-log4j</module>
     <module>tentackle-log-slf4j</module>
@@ -51,7 +54,10 @@
     <module>tentackle-script-ruby</module>
     <module>tentackle-domain</module>
     <module>tentackle-persistence-wurblets</module>
+    <module>tentackle-database</module>
     <module>tentackle-persistence</module>
+    <module>tentackle-i18n</module>
+    <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
     <module>tentackle-fx-rdc</module>
     <module>tentackle-swing</module>
@@ -61,35 +67,49 @@
     <module>tentackle-swing-print</module>
     <module>tentackle-swing-rdc</module>
     <module>tentackle-web</module>
-    <module>tentackle-all</module>
+    <module>tentackle-test-pdo</module>
+    <module>tentackle-test-fx-rdc</module>
+    <module>tentackle-bom</module>
+    <module>tentackle-tools</module>
   </modules>
 
   <properties>
+    <rootBasedir>${project.basedir}</rootBasedir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.version.src>1.8</javac.version.src>
     <javac.version.target>1.8</javac.version.target>
+    <javac.version.require>1.8.0-45</javac.version.require>
     <maven.version>3.0.5</maven.version>
+    <postgresql.version>9.1-901-1.jdbc4</postgresql.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>2.0.6</wurbelizer.version>
+    <wurbelizer.version>2.1.0</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
-    <wurbel.wurbelDir>${project.parent.build.directory}/wurbel</wurbel.wurbelDir>
+    <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
     <!-- for the tentackle sql plugin -->
     <tentackle.modelDir>${wurbel.wurbelDir}/model</tentackle.modelDir>
-    <tentackle.sqlDir>${project.parent.build.directory}/sql</tentackle.sqlDir>
+    <tentackle.sqlDir>${wurbel.wurbelDir}/sql</tentackle.sqlDir>
+
+    <!-- CI test database -->
+    <dbUrl>jdbc:postgresql://localhost/tentackle</dbUrl>
+    <dbUser>tentackle</dbUser>
+    <dbPasswd>tentackle</dbPasswd>
+    <dbService>rmi://localhost:24321/TestServer</dbService>
+
   </properties>
 
   <scm>
-    <connection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</connection>
+    <connection>scm:git:https://bitbucket.org/krake-oss/tentackle.git</connection>
     <developerConnection>scm:git:ssh://git@bitbucket.org/krake-oss/tentackle.git</developerConnection>
-    <url>https://bitbucket.org/krake-oss/tentackle.git/</url>
+    <url>https://bitbucket.org/krake-oss/tentackle/</url>
   </scm>
 
   <issueManagement>
@@ -98,6 +118,10 @@
   </issueManagement>
 
   <distributionManagement>
+    <site>
+      <id>${site.id}</id>
+      <url>scp:${site.url}/tentackle/${project.version}</url>
+    </site>
     <repository>
       <id>${repo.id}</id>
       <name>Release Repository</name>
@@ -129,7 +153,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>3.12</version>
+        <version>3.16</version>
       </dependency>
 
       <dependency>
@@ -159,19 +183,19 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.12</version>
+        <version>1.7.25</version>
       </dependency>
 
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>1.7.21</version>
+        <version>9.1.8.0</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>2.4.4</version>
+        <version>2.4.10</version>
         <classifier>indy</classifier>
       </dependency>
 
@@ -179,7 +203,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>6.9.6</version>
+        <version>6.11</version>
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -192,22 +216,15 @@
       <dependency>
         <groupId>postgresql</groupId>
         <artifactId>postgresql</artifactId>
-        <version>9.1-901-1.jdbc4</version>
-        <scope>test</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
-        <version>5.1.36</version>
+        <version>${postgresql.version}</version>
         <scope>test</scope>
       </dependency>
 
       <!-- plugin dependencies -->
       <dependency>
         <groupId>org.apache.maven</groupId>
-        <artifactId>maven-project</artifactId>
-        <version>2.2.1</version>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>3.3.9</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -217,7 +234,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.4</version>
+        <version>3.5</version>
         <scope>provided</scope><!-- annotations are needed only to build the plugin -->
       </dependency>
 
@@ -240,7 +257,6 @@
   <build>
     <pluginManagement>
       <plugins>
-
         <plugin>
           <groupId>org.wurbelizer</groupId>
           <artifactId>wurbelizer-maven-plugin</artifactId>
@@ -250,7 +266,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.4</version>
+          <version>3.5</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -270,7 +286,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.4</version>
+          <version>3.6</version>
+          <configuration>
+            <siteDirectory>${rootBasedir}/src/site</siteDirectory>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.wagon</groupId>
+              <artifactId>wagon-ssh</artifactId>
+              <version>2.12</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -280,7 +306,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.3</version>
+          <version>3.6.1</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <source>${javac.version.src}</source>
@@ -293,7 +319,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>2.7</version>
+          <version>3.0.2</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <escapeString>\</escapeString>
@@ -303,21 +329,24 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.19.1</version>
+          <configuration>
+            <argLine>-Duser.language=en -Duser.region=US</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.4</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.10.3</version>
+          <version>2.10.4</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <version>3.0.2</version>
           <configuration>
             <archive>
               <manifest>
@@ -330,13 +359,22 @@
             </archive>
           </configuration>
         </plugin>
-
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.8</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
     <resources>
       <resource>
-        <directory>${basedir}/src/main/resources</directory>
+        <directory>${project.basedir}/src/main/resources</directory>
       </resource>
       <!--  additional source directory for generated service files -->
       <resource>
@@ -346,7 +384,7 @@
 
     <testResources>
       <testResource>
-        <directory>${basedir}/src/test/resources</directory>
+        <directory>${project.basedir}/src/test/resources</directory>
       </testResource>
       <testResource>
         <directory>${tentackle.testServiceDir}</directory>
@@ -367,8 +405,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[${javac.version.src},)</version>
-                  <message>[ERROR] The currently supported version of Java is ${javac.version.src} or higher</message>
+                  <version>[${javac.version.require},)</version>
+                  <message>[ERROR] The currently supported version of Java is ${javac.version.require} or higher</message>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>[${maven.version},)</version>
@@ -413,22 +451,61 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.4</version>
+        <version>3.5</version>
+        <configuration>
+          <requirements>
+            <maven>3.0</maven>
+          </requirements>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.3</version>
+        <version>2.10.4</version>
+        <configuration>
+          <sourceFileExcludes>
+            <exclude>**/rmi/*.java</exclude>
+          </sourceFileExcludes>
+          <tags>
+            <tag>
+              <name>wurblet</name>
+              <placement>a</placement>
+              <head>Wurblet:</head>
+            </tag>
+          </tags>
+          <!-- don't complain about wurblet args -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+          <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
         <version>2.5</version>
+        <configuration>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.8.1</version>
+        <version>2.9</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.3</version>
+        <reportSets>
+          <reportSet>
+            <id>versions</id>
+            <reports>
+              <report>dependency-updates-report</report>
+              <report>plugin-updates-report</report>
+              <report>property-updates-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
       </plugin>
     </plugins>
   </reporting>
@@ -472,6 +549,8 @@
                   <goal>jar</goal>
                 </goals>
                 <configuration>
+                  <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
+                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
                   <quiet>true</quiet>
                   <archive>
                     <manifest>
@@ -520,7 +599,7 @@
           <plugin>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
-            <version>1.3.5.1</version>
+            <version>1.4.5</version>
             <executions>
               <execution>
                 <goals>

@@ -54,20 +54,20 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
-import org.tentackle.misc.StringHelper;
-import org.tentackle.pdo.ConstraintException;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.NotFoundException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRuntimeException;
-import org.tentackle.pdo.PersistenceException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.security.SecurityDialogFactory;
+import org.tentackle.swing.rdc.security.SecurityDialogFactory;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityManager;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.security.permissions.EditPermission;
 import org.tentackle.security.permissions.ViewPermission;
+import org.tentackle.session.ConstraintException;
+import org.tentackle.session.NotFoundException;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.swing.FormContainer;
 import org.tentackle.swing.FormDialog;
 import org.tentackle.swing.FormError;
@@ -183,9 +183,6 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
   /**
    * Creates a database object dialog.
-   * <p>
-   * Note: applications should use {@link org.tentackle.app.DesktopApplication#showEditDialog} instead, because
-   * this will make use of dialog pooling!
    *
    * @param owner the owner window, null if no owner
    * @param pdo is the database object
@@ -1774,11 +1771,11 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
     nextButton = new org.tentackle.swing.FormButton();
 
     idDialog.setAutoPosition(true);
-    idDialog.setTitle(RdcSwingRdcBundle.getTranslation("READ OBJECT BY ID")); // NOI18N
+    idDialog.setTitle(RdcSwingRdcBundle.getString("READ OBJECT BY ID")); // NOI18N
     idDialog.setModal(true);
     idDialog.getContentPane().setLayout(new java.awt.GridBagLayout());
 
-    jLabel1.setText(RdcSwingRdcBundle.getTranslation("ID-NO:")); // NOI18N
+    jLabel1.setText(RdcSwingRdcBundle.getString("ID-NO:")); // NOI18N
     idDialog.getContentPane().add(jLabel1, new java.awt.GridBagConstraints());
 
     idNumberField.setAutoSelect(true);
@@ -1793,7 +1790,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
     gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
     idDialog.getContentPane().add(idNumberField, gridBagConstraints);
 
-    idSearchButton.setText(RdcSwingRdcBundle.getTranslation("READ")); // NOI18N
+    idSearchButton.setText(RdcSwingRdcBundle.getString("READ")); // NOI18N
     idSearchButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
         idSearchButtonActionPerformed(evt);
@@ -1801,7 +1798,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
     });
     idDialog.getContentPane().add(idSearchButton, new java.awt.GridBagConstraints());
 
-    idCancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    idCancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     idCancelButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
         idCancelButtonActionPerformed(evt);
@@ -1841,7 +1838,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     noAccessLabel.setForeground(java.awt.Color.red);
     noAccessLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-    noAccessLabel.setText(RdcSwingRdcBundle.getTranslation("YOU DON'T HAVE PERMISSION TO VIEW THIS KIND OF DATA!")); // NOI18N
+    noAccessLabel.setText(RdcSwingRdcBundle.getString("YOU DON'T HAVE PERMISSION TO VIEW THIS KIND OF DATA!")); // NOI18N
     noAccessPanel.add(noAccessLabel, java.awt.BorderLayout.CENTER);
 
     dataPanel.add(noAccessPanel, "noAccess");
@@ -1849,7 +1846,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
     noInfoPanel.setLayout(new java.awt.BorderLayout());
 
     jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-    jLabel3.setText(RdcSwingRdcBundle.getTranslation("NO FURTHER INFORMATION")); // NOI18N
+    jLabel3.setText(RdcSwingRdcBundle.getString("NO FURTHER INFORMATION")); // NOI18N
     noInfoPanel.add(jLabel3, java.awt.BorderLayout.CENTER);
 
     dataPanel.add(noInfoPanel, "noInfo");
@@ -1860,7 +1857,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     searchButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("search"));
     searchButton.setMnemonic('f');
-    searchButton.setText(RdcSwingRdcBundle.getTranslation("FIND")); // NOI18N
+    searchButton.setText(RdcSwingRdcBundle.getString("FIND")); // NOI18N
     searchButton.setActionCommand(ACTION_SEARCH);
     searchButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     searchButton.setName("find"); // NOI18N
@@ -1878,7 +1875,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     newButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("new"));
     newButton.setMnemonic('n');
-    newButton.setText(RdcSwingRdcBundle.getTranslation("NEW")); // NOI18N
+    newButton.setText(RdcSwingRdcBundle.getString("NEW")); // NOI18N
     newButton.setActionCommand(ACTION_NEW);
     newButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     newButton.setName("new"); // NOI18N
@@ -1896,7 +1893,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     saveButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("save"));
     saveButton.setMnemonic('s');
-    saveButton.setText(RdcSwingRdcBundle.getTranslation("SAVE")); // NOI18N
+    saveButton.setText(RdcSwingRdcBundle.getString("SAVE")); // NOI18N
     saveButton.setActionCommand(ACTION_SAVE);
     saveButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     saveButton.setName("save"); // NOI18N
@@ -1914,7 +1911,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     deleteButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("delete"));
     deleteButton.setMnemonic('d');
-    deleteButton.setText(RdcSwingRdcBundle.getTranslation("DELETE")); // NOI18N
+    deleteButton.setText(RdcSwingRdcBundle.getString("DELETE")); // NOI18N
     deleteButton.setActionCommand(ACTION_DELETE);
     deleteButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     deleteButton.setName("delete"); // NOI18N
@@ -1932,7 +1929,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     printButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("print"));
     printButton.setMnemonic('p');
-    printButton.setText(RdcSwingRdcBundle.getTranslation("PRINT")); // NOI18N
+    printButton.setText(RdcSwingRdcBundle.getString("PRINT")); // NOI18N
     printButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     printButton.setName("print"); // NOI18N
     printButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1949,7 +1946,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     closeButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("close"));
     closeButton.setMnemonic('c');
-    closeButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    closeButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     closeButton.setActionCommand(ACTION_CANCEL);
     closeButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     closeButton.setName("cancel"); // NOI18N
@@ -2004,7 +2001,7 @@ public class PdoEditDialog<T extends PersistentDomainObject<T>> extends FormDial
 
     browserButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("browser"));
     browserButton.setMnemonic('t');
-    browserButton.setText(RdcSwingRdcBundle.getTranslation("TREE")); // NOI18N
+    browserButton.setText(RdcSwingRdcBundle.getString("TREE")); // NOI18N
     browserButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     browserButton.setName("tree"); // NOI18N
     browserButton.addActionListener(new java.awt.event.ActionListener() {

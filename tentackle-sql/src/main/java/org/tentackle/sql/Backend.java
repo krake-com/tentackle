@@ -199,6 +199,10 @@ public interface Backend {
   /** MAX function name. */
   String SQL_MIN = "MIN";
 
+  /** SQL EXISTS clause with SELECT 1 and opening left parenthesis. */
+  String SQL_EXISTS = "EXISTS (SELECT 1 FROM ";
+
+
 
   /**
    * Checks whether the backend belongs to the given jdbc url.
@@ -254,6 +258,17 @@ public interface Backend {
    */
   DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException;
 
+  /**
+   * Checks whether this is a temporary name.<br>
+   * Returns whether an entity-, attribute- or index-name is temporary and should not
+   * be taken into account for migration or even used in the model.<br>
+   * Depending on the backend, temporary names start with an underscore or some other
+   * lead string.
+   *
+   * @param name the name
+   * @return true temporary (invalid) name
+   */
+  boolean isTemporaryName(String name);
 
   /**
    * Creates a select statement string from an inner sql string.
@@ -268,6 +283,21 @@ public interface Backend {
    * @param offset the offset value, &le; 0 if no offset clause
    */
   void buildSelectSql(StringBuilder sqlBuilder, boolean writeLock, int limit, int offset);
+
+  /**
+   * Creates a select statement string from an inner sql string.
+   * <p>
+   * {@code sqlBuilder} is anything as {@code FROM... WHERE... ORDER BY...}.<br>
+   * It is decorated with a leading {@code SELECT} plus optional clauses
+   * like for the given parameters.
+   *
+   * @param sql the sql without leading {@code SELECT}.
+   * @param writeLock true select should write lock
+   * @param limit the limit value, &le; 0 if no limit clause
+   * @param offset the offset value, &le; 0 if no offset clause
+   * @return the select statement
+   */
+  String buildSelectSql(String sql, boolean writeLock, int limit, int offset);
 
 
   /**
@@ -457,6 +487,14 @@ public interface Backend {
    * @return the default size, 0 if no default size
    */
   int getDefaultSize(SqlType sqlType);
+
+  /**
+   * Gets the default schema name.<br>
+   * Some backends store the objects in a default schema, if no explicit schema is given.
+   *
+   * @return the defailt schema, null if none
+   */
+  String getDefaultSchema();
 
   /**
    * Gets the list of reserved words for this backend.
@@ -723,9 +761,10 @@ public interface Backend {
    * @param tableName the tablename
    * @param columnName the column name
    * @param sqlType the sql type
+   * @param defaultValue the optional default value if defined in the model
    * @return the SQL code
    */
-  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType);
+  String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue);
 
   /**
    * Generates sql code to change the null-constraint of a column.
@@ -819,7 +858,7 @@ public interface Backend {
    *
    * @param type the join type
    * @param addColumns true if columns of joined table should be added to the result set
-   * @param select the original select
+   * @param select the original select statement
    * @param joinSelect the select to join with the original sql or just a tablename
    * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
    * @param joinAlias the alias of the joined select
@@ -827,6 +866,21 @@ public interface Backend {
    */
   void sqlJoinSelects(JoinType type, boolean addColumns, StringBuilder select,
                       String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
+
+  /**
+   * Generate SQL code for joining a table to an existing select.
+   *
+   * @param type the join type
+   * @param addColumns true if columns of joined table should be added to the result set
+   * @param select the original select statement
+   * @param joinSelect the select to join with the original sql or just a tablename
+   * @param joinSelectIdAlias extra id alias to add to the joined select, null if none
+   * @param joinAlias the alias of the joined select
+   * @param join the join clause
+   * @return the select statement
+   */
+  String sqlJoinSelects(JoinType type, boolean addColumns, String select,
+                        String joinSelect, String joinSelectIdAlias, String joinAlias, String join);
 
   /**
    * Converts the JDBC data type integer to a tentackle backend SqlTypes.
@@ -869,5 +923,14 @@ public interface Backend {
    * @return the optimized sql code
    */
   String optimizeSql(String sql);
+
+
+  /**
+   * Returns whether the backend supports releasing savepoints explicitly.
+   * If not, the savepoints are released when the transaction finishs.
+   *
+   * @return true if release is supported, else false
+   */
+  boolean isReleaseSavepointSupported();
 
 }

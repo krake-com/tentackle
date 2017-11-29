@@ -35,16 +35,19 @@ import org.tentackle.model.SourceInfo;
 public class AttributeOptionsImpl extends CommonOptionsImpl implements AttributeOptions {
 
   /** generate SQL DEFAULT. */
-  static final String OPTION_DEFAULT = "DEFAULT";
+  public static final String OPTION_DEFAULT = "DEFAULT";
 
   /** this is the object id holding the context. */
-  static final String OPTION_CONTEXT = "CONTEXT";
+  public static final String OPTION_CONTEXT = "CONTEXT";
 
   /** this is a unique domain key (or part of it). */
-  static final String OPTION_DOMAINKEY = "KEY";
+  public static final String OPTION_DOMAINKEY = "KEY";
 
   /** timestamp, date or time with database timezone. */
-  static final String OPTION_TZ = "TZ";
+  public static final String OPTION_TZ = "TZ";
+
+  /** hidden attribute (no interface definition). */
+  public static final String OPTION_HIDDEN = "HIDDEN";
 
 
 
@@ -57,6 +60,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean utc;
   private boolean withTimezone;
   private boolean unsigned;
+  private boolean hidden;
 
 
   /**
@@ -114,7 +118,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
 
   @Override
-  public boolean applyOption(String option, Boolean ctrl) {
+  public boolean applyOption(String option, Boolean ctrl) throws ModelException {
 
     boolean applied = super.applyOption(option, ctrl);
     boolean on = ctrl == null || ctrl;
@@ -124,7 +128,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
       if (uco.startsWith(OPTION_DEFAULT)) {
         if (on) {
           String str = option.substring(OPTION_DEFAULT.length()).trim();
-          Object value = getAttribute().getDataType().parse(str);
+          Object value = getAttribute().getEffectiveType().parse(str);
           setDefaultValue(value);
         }
         else  {
@@ -220,6 +224,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   public void setUnsigned(boolean unsigned) {
     this.unsigned = unsigned;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return hidden;
+  }
+
+  public void setHidden(boolean hidden) {
+    this.hidden = hidden;
   }
 
 

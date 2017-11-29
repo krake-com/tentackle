@@ -83,10 +83,19 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
 
   private /**/FxComboBoxDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxComboBoxDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxComboBoxDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxComboBoxDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxComboBoxDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -157,6 +166,16 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   @Override
   public boolean isUnsigned() {
     return getDelegate().isUnsigned();
+  }
+
+  @Override
+  public void setUTC(boolean utc) {
+    getDelegate().setUTC(utc);
+  }
+
+  @Override
+  public boolean isUTC() {
+    return getDelegate().isUTC();
   }
 
   @Override
@@ -259,7 +278,7 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

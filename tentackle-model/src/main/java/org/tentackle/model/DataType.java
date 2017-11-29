@@ -26,7 +26,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import org.tentackle.common.BMoney;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.DMoney;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.SqlType;
@@ -120,6 +120,23 @@ public enum DataType {
   APPLICATION("<application>", false, false, false, false, false, SqlType.JAVA_OBJECT);
 
 
+  /**
+   * Creates a datatype from a java type string.
+   *
+   * @param javaType the java type
+   * @return the datatype, null if no such type
+   */
+  public static DataType createFromJavaType(String javaType) {
+    for (DataType dataType: DataType.values()) {
+      if (dataType.javaType.equals(javaType)) {
+        return dataType;
+      }
+    }
+    return null;
+  }
+
+
+
 
   /**
    * Pair of SqlType and its name postfix.
@@ -182,7 +199,8 @@ public enum DataType {
    * @param dateOrTime true if data and/or time
    * @param sqlTypes the sql type(s)
    */
-  DataType(String javaType, boolean primitive, boolean mutable, boolean numeric, boolean dateOrTime, boolean bool, SqlType... sqlTypes) {
+  DataType(String javaType, boolean primitive, boolean mutable, boolean numeric,
+           boolean dateOrTime, boolean bool, SqlType... sqlTypes) {
     this.javaType = javaType;
     this.primitive = primitive;
     this.mutable = mutable;
@@ -372,7 +390,7 @@ public enum DataType {
     try {
       switch (type) {
         case STRING:
-          return BasicStringHelper.parseString(str);
+          return StringHelper.parseString(str);
         case DATE:
           return parseDate(str);
         case TIME:
@@ -380,19 +398,19 @@ public enum DataType {
         case TIMESTAMP:
           return parseTimestamp(str);
         case BIGDECIMAL:
-          return new BigDecimal(BasicStringHelper.parseString(str));
+          return new BigDecimal(StringHelper.parseString(str));
         case BMONEY:
-          return new BMoney(new BigDecimal(BasicStringHelper.parseString(str)));
+          return new BMoney(new BigDecimal(StringHelper.parseString(str)));
         case DMONEY:
-          return new DMoney(new BigDecimal(BasicStringHelper.parseString(str)));
+          return new DMoney(new BigDecimal(StringHelper.parseString(str)));
         case CHARACTER:
-          String cstr = BasicStringHelper.parseString(str);
+          String cstr = StringHelper.parseString(str);
           if (cstr.length() != 1) {
             throw new TentackleRuntimeException("character must be of length 1: " + cstr);
           }
           return cstr.charAt(0);
         case BOOLEAN:
-          String bstr = BasicStringHelper.parseString(str);
+          String bstr = StringHelper.parseString(str);
           switch (bstr.toLowerCase()) {
             case "true":
             case "t":
@@ -406,17 +424,17 @@ public enum DataType {
               throw new TentackleRuntimeException("invalid boolean value: " + bstr);
           }
         case BYTE:
-          return Byte.valueOf(BasicStringHelper.parseString(str));
+          return Byte.valueOf(StringHelper.parseString(str));
         case SHORT:
-          return Short.valueOf(BasicStringHelper.parseString(str));
+          return Short.valueOf(StringHelper.parseString(str));
         case INTEGER:
-          return Integer.valueOf(BasicStringHelper.parseString(str));
+          return Integer.valueOf(StringHelper.parseString(str));
         case LONG:
-          return Long.valueOf(BasicStringHelper.parseString(str));
+          return Long.valueOf(StringHelper.parseString(str));
         case FLOAT:
-          return Float.valueOf(BasicStringHelper.parseString(str));
+          return Float.valueOf(StringHelper.parseString(str));
         case DOUBLE:
-          return Double.valueOf(BasicStringHelper.parseString(str));
+          return Double.valueOf(StringHelper.parseString(str));
       }
     }
     catch (ParseException ex) {
@@ -425,6 +443,36 @@ public enum DataType {
     throw new TentackleRuntimeException("cannot parse type " + type);
   }
 
+
+  /**
+   * Takes an object and converts it to a string that can in turn be parsed with {@link #parse(java.lang.String)}.
+   *
+   * @param object the object of this DataType
+   * @return the printable string
+   */
+  public String print(Object object) {
+    DataType type = isPrimitive() ? toNonPrimitive() : this;
+    try {
+      String str;
+      switch (type) {
+        case DATE:
+          str = printDate((java.util.Date) object);
+          break;
+        case TIME:
+          str = printTime((java.util.Date) object);
+          break;
+        case TIMESTAMP:
+          str = printTimestamp((java.util.Date) object);
+          break;
+        default:
+          str = object.toString();
+      }
+      return StringHelper.toParsableString(str);
+    }
+    catch (RuntimeException rx) {
+      throw new TentackleRuntimeException("cannot print '" + object + "' as type " + type);
+    }
+  }
 
 
   private static final String DATE_PATTERN = "yyyy-MM-dd";
@@ -439,18 +487,18 @@ public enum DataType {
 
   private static Date parseDate(String str) throws ParseException {
     synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
-      return new Date(DATE_FORMAT.parse(BasicStringHelper.parseString(str)).getTime());
+      return new Date(DATE_FORMAT.parse(StringHelper.parseString(str)).getTime());
     }
   }
 
   private static Time parseTime(String str) throws ParseException {
     synchronized(TIME_FORMAT) {
-      return new Time(TIME_FORMAT.parse(BasicStringHelper.parseString(str)).getTime());
+      return new Time(TIME_FORMAT.parse(StringHelper.parseString(str)).getTime());
     }
   }
 
   private static Timestamp parseTimestamp(String str) throws ParseException {
-    str = BasicStringHelper.parseString(str);
+    str = StringHelper.parseString(str);
     if (str.length() > 3 && str.charAt(str.length() - 4) == '.') {
       synchronized(MS_TIMESTAMP_FORMAT) {
         return new Timestamp(MS_TIMESTAMP_FORMAT.parse(str).getTime());
@@ -463,20 +511,27 @@ public enum DataType {
     }
   }
 
+  private static String printDate(java.util.Date date) {
+    synchronized(DATE_FORMAT) {  // formatters are not thread-safe :(
+      return DATE_FORMAT.format(date);
+    }
+  }
 
-  /**
-   * Creates a datatype from a java type string.
-   *
-   * @param javaType the java type
-   * @return the datatype, null if no such type
-   */
-  public static DataType createFromJavaType(String javaType) {
-    for (DataType dataType: DataType.values()) {
-      if (dataType.javaType.equals(javaType)) {
-        return dataType;
+  private static String printTime(java.util.Date time) {
+    synchronized(TIME_FORMAT) {
+      return TIME_FORMAT.format(time);
+    }
+  }
+
+  private static String printTimestamp(java.util.Date timestamp) {
+    if (timestamp.getTime() % 1000 != 0) {
+      synchronized(MS_TIMESTAMP_FORMAT) {
+        return MS_TIMESTAMP_FORMAT.format(timestamp);
       }
     }
-    return null;
+    synchronized(TIMESTAMP_FORMAT) {
+      return TIMESTAMP_FORMAT.format(timestamp);
+    }
   }
 
 }

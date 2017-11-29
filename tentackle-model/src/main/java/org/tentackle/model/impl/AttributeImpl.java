@@ -19,16 +19,17 @@
 package org.tentackle.model.impl;
 
 import java.util.Objects;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.AttributeLine;
+import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
 
 /**
@@ -72,6 +73,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     options = factory.createAttributeOptions(this, sourceInfo);
   }
 
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
+  }
 
 
   @Override
@@ -130,7 +140,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setSourceLine(line);
 
     setColumnName(line.getColumnName());
-    setJavaName(line.getJavaName());
+    setName(line.getJavaName());
     setScale(line.getScale());
     setSize(line.getSize());
     setDataType(DataType.createFromJavaType(line.getJavaType()));
@@ -149,7 +159,13 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
     for (String option: line.getOptions()) {
       if (!getOptions().processOption(option)) {
-        throw line.createModelException("illegal attribute option: " + option);
+        if (option.startsWith("@")) {
+          // treat as annotation
+          getOptions().getAnnotations().add(option);
+        }
+        else {
+          throw line.createModelException("illegal attribute option: " + option);
+        }
       }
     }
 
@@ -248,6 +264,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
 
+  @Override
+  public DataType getEffectiveType() throws ModelException {
+    if (dataType == DataType.APPLICATION) {
+      return getInnerType();
+    }
+    return dataType;
+  }
+
+
   /**
    * Gets the java type.<br>
    * Returns the java type with optional generic info.
@@ -288,7 +313,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   }
 
   @Override
-  public String getJavaName() {
+  public String getName() {
     return javaName;
   }
 
@@ -330,7 +355,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
 
   public void setColumnName(String columnName) {
-    this.columnName = BasicStringHelper.toLower(columnName);
+    this.columnName = StringHelper.toLower(columnName);
   }
 
   public void setDataType(DataType dataType) {
@@ -341,7 +366,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     this.relation = relation;
   }
 
-  public void setJavaName(String javaName) {
+  public void setName(String javaName) {
     this.javaName = javaName;
   }
 
@@ -358,10 +383,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (nullable != null) {
       return nullable;
     }
-    DataType type = getDataType();
-    if (type == DataType.APPLICATION) {
-      type = getInnerType();
-    }
+    DataType type = getEffectiveType();
     return !type.isPrimitive() && !getOptions().isMapNull();
   }
 
@@ -377,24 +399,21 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String toString() {
-    return getJavaName();
+    return getName();
   }
 
 
   @Override
   public void validate() throws ModelException {
 
-    if (BasicStringHelper.isAllWhitespace(getJavaName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing Java name");
     }
-    if (BasicStringHelper.isReservedWord(getJavaName())) {
-      throw createModelException("'" + getJavaName() + "' is a reserved Java keyword");
+    if (StringHelper.isReservedWord(getName())) {
+      throw createModelException("'" + getName() + "' is a reserved Java keyword");
     }
-    if (BasicStringHelper.isAllWhitespace(getColumnName())) {
+    if (StringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
-    }
-    if (getColumnName().startsWith("_")) {
-      throw createModelException("column name '" + getColumnName() + "' must not start with an underscore");
     }
 
     for (Backend backend: factory.getBackends()) {
@@ -402,7 +421,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
         backend.assertValidName("column name", getColumnName());
       }
       catch (RuntimeException rex) {
-        throw new ModelException(rex.getMessage(), sourceInfo, rex);
+        throw new ModelException(rex.getMessage(), this, rex);
       }
     }
 
@@ -419,11 +438,20 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     getOptions().validate();
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public AttributeLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(AttributeLine sourceLine) {
     this.sourceLine = sourceLine;
   }
@@ -443,7 +471,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       ex = sourceLine.createModelException(message);
     }
     else  {
-      ex = new ModelException(message, sourceInfo);
+      ex = new ModelException(message, this);
     }
     return ex;
   }
@@ -451,7 +479,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String getMethodNameSuffix() {
-    return BasicStringHelper.firstToUpper(javaName);
+    return StringHelper.firstToUpper(javaName);
   }
 
   @Override
@@ -476,7 +504,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   public String getBindableAnnotation() {
     if (getOptions().isBind()) {
       String bindOptions = getOptions().getBindOptions();
-      if (BasicStringHelper.isAllWhitespace(bindOptions)) {
+      if (StringHelper.isAllWhitespace(bindOptions)) {
         return "@Bindable";
       }
       else {
@@ -484,6 +512,28 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       }
     }
     return null;
+  }
+
+  @Override
+  public String toMethodArgument(String value) {
+    if (getDataType().isNumeric()) {
+      // check to downcast for (short) or (byte)
+      switch (getDataType()) {
+        case BYTE:
+          value = "(Byte) " + value;
+          break;
+        case BYTE_PRIMITIVE:
+          value = "(byte) " + value;
+          break;
+        case SHORT:
+          value = "(Short) " + value;
+          break;
+        case SHORT_PRIMITIVE:
+          value = "(short) " + value;
+          break;
+      }
+    }
+    return value;
   }
 
 }

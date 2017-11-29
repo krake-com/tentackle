@@ -19,75 +19,55 @@
 
 package org.tentackle.model.impl;
 
-import java.io.File;
+import java.util.List;
+import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
-import org.tentackle.model.ModelException;
 
 /**
  * A directory holding model files.
  *
  * @author harald
  */
-public class ModelDirectory {
-
-  private final File dir;                       // the directory file
-  private final ModelDefaults modelDefaults;    // the model defaults used for that directory
-
-  private long lastModified;                    // the last modification time
-
+public interface ModelDirectory {
 
   /**
-   * Creates a model directory object.
+   * Gets the directory path.
    *
-   * @param modelDir the directory name
-   * @param defaults the model defaults
-   * @throws ModelException if directory does not exist or is not a directory
+   * @return the path
    */
-  public ModelDirectory(String modelDir, ModelDefaults defaults) throws ModelException {
-    dir = new File(modelDir);
-    if (!dir.exists()) {
-      throw new ModelException(modelDir + " does not exist");
-    }
-    if (!dir.isDirectory()) {
-      throw new ModelException(modelDir + " is not a directory");
-    }
-    lastModified = dir.lastModified();
-    modelDefaults = defaults;
-  }
-
+  public String getPath();
 
   /**
-   * Gets the directory file.
+   * Gets the model file names.
    *
-   * @return the file
+   * @return the list of names, never null
    */
-  public File getFile() {
-    return dir;
-  }
+  List<String> getFileNames();
 
   /**
    * Gets the model defaults.
    *
-   * @return the defaults
+   * @return the defaults, null if none
    */
-  public ModelDefaults getModelDefaults() {
-    return modelDefaults;
-  }
+  ModelDefaults getModelDefaults();
+
+  /**
+   * Gets the entity aliases.
+   *
+   * @return the aliases, null if none
+   */
+  EntityAliases getEntityAliases();
 
   /**
    * Returns whether the directory has changed.
    *
    * @return true if changed
    */
-  public boolean hasChanged() {
-    return dir.lastModified() > lastModified;
-  }
+  boolean hasChanged();
 
   /**
    * Marks this directory dirty.
    */
-  public void markDirty() {
-    lastModified = 0;
-  }
+  void markDirty();
 
 }

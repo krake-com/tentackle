@@ -19,12 +19,14 @@
 package org.tentackle.model.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
@@ -34,10 +36,11 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.ConfigurationLine;
+import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
 
 /**
@@ -47,28 +50,28 @@ import org.tentackle.sql.Backend;
  */
 public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
-  /** name = ... */
+  /** name := ... */
   static final String NAME = "NAME";
 
-  /** id = ... */
+  /** id := ... */
   static final String ID = "ID";
 
-  /** table = ... */
+  /** table := ... */
   static final String TABLE = "TABLE";
 
-  /** alias = ... */
+  /** alias := ... */
   static final String ALIAS = "ALIAS";
 
-  /** integrity = ... */
+  /** integrity := ... */
   static final String INTEGRITY = "INTEGRITY";
 
-  /** inheritance = ... */
+  /** inheritance := ... */
   static final String INHERITANCE = "INHERITANCE";
 
-  /** extends = ... */
+  /** extends := ... */
   static final String EXTENDS = "EXTENDS";
 
-  /** comment = ... */
+  /** comment := ... */
   static final String COMMENT = "COMMENT";
 
 
@@ -81,6 +84,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private String schemaName;                                // the schema name
   private String tableNameWithoutSchema;                    // schema relative table name
   private String tableAlias;                                // the table alias
+  private String definedTableAlias;                         // the fixed table alias (from model specs)
   private Integrity integrity;                              // referential integrity
   private InheritanceType inheritanceType;                  // the inheritance type
   private String superEntityName;                           // the name of the extended super class
@@ -96,9 +100,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private final List<Relation> referencingRelations;        // the referencing relations from other entities
   private final List<Index> indexes;                        // the indexes
   private final Set<List<Relation>> compositePaths;         // paths of composite relations to this entity
+  private Set<List<Relation>> allCompositePaths;            // paths of composite relations to this entity and super entities
   private final List<Relation> deepReferencesToComponents;  // deep references to components of this root entity
   private final List<Relation> deepReferences;              // deep references to this entity
   private boolean deeplyReferenced;                         // true if this or any component is deeply referenced
+  private Boolean rootEntity;                               // true if root entity (according to model or explicitly set)
   private boolean modelRoot;                                // is root entity according to model
   private boolean modelRootId;                              // provides a root-ID according to model
   private boolean modelRootClassId;                         // provides a root-class-ID according to model
@@ -126,6 +132,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     deepReferences = new ArrayList<>();
     deepReferencesToComponents = new ArrayList<>();
     indexes = new ArrayList<>();
+  }
+
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return superEntity;
   }
 
 
@@ -171,7 +187,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         if (str.indexOf('.') >= 0) {
           throw line.createModelException("entity name must not contain package name");
         }
-        if (!BasicStringHelper.isValidJavaClassName(str)) {
+        if (!StringHelper.isValidJavaClassName(str)) {
           throw line.createModelException("'" + str + "' is not a valid Java class name");
         }
         setName(str);
@@ -187,6 +203,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         break;
 
       case ALIAS:
+        setDefinedTableAlias(line.getValue());
         setTableAlias(line.getValue());
         break;
 
@@ -274,6 +291,13 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     return tableAlias;
   }
 
+  @Override
+  public String getDefinedTableAlias() {
+    return definedTableAlias;
+  }
+
+
+
   /**
    * Sets the tablename.
    *
@@ -306,6 +330,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public void setTableAlias(String tableAlias) {
     this.tableAlias = tableAlias;
   }
+
+  /**
+   * Sets the table alias defined by the model specification.
+   *
+   * @param definedTableAlias the original alias, null if automatic
+   */
+  public void setDefinedTableAlias(String definedTableAlias) {
+    this.definedTableAlias = definedTableAlias;
+  }
+
 
   @Override
   public Integrity getIntegrity() {
@@ -622,8 +656,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     List<Attribute> subAttributes = new ArrayList<>();
     for (Entity sub: getAllSubEntities()) {
       for (Attribute attribute: sub.getAttributes()) {
-        if (!attribute.getJavaName().equals(Constants.AN_ID) &&
-            !attribute.getJavaName().equals(Constants.AN_SERIAL)) {
+        if (!attribute.getName().equals(Constants.AN_ID) &&
+            !attribute.getName().equals(Constants.AN_SERIAL)) {
           subAttributes.add(attribute);
         }
       }
@@ -735,11 +769,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Attribute serialAttribute = null;
     List<Attribute> filteredList = new ArrayList<>();
     for (Attribute attribute: attributes) {
-      if (Constants.CN_ID.equals(attribute.getJavaName())) {
+      if (Constants.CN_ID.equals(attribute.getName())) {
         idAttribute = attribute;
         continue;
       }
-      if (Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      if (Constants.CN_SERIAL.equals(attribute.getName())) {
         serialAttribute = attribute;
         continue;
       }
@@ -764,8 +798,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   protected List<Attribute> removeIdSerial(List<Attribute> attributes) {
     List<Attribute> filteredList = new ArrayList<>();
     for (Attribute attribute: attributes) {
-      if (!Constants.CN_ID.equals(attribute.getJavaName()) &&
-          !Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      if (!Constants.CN_ID.equals(attribute.getName()) &&
+          !Constants.CN_SERIAL.equals(attribute.getName())) {
         filteredList.add(attribute);
       }
     }
@@ -783,10 +817,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Attribute idAttribute = null;
     Attribute serialAttribute = null;
     for (Attribute attribute: entity.getAttributes()) {
-      if (Constants.CN_ID.equals(attribute.getJavaName())) {
+      if (Constants.CN_ID.equals(attribute.getName())) {
         idAttribute = attribute;
       }
-      else if (Constants.CN_SERIAL.equals(attribute.getJavaName())) {
+      else if (Constants.CN_SERIAL.equals(attribute.getName())) {
         serialAttribute = attribute;
       }
     }
@@ -933,6 +967,19 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
+  public Set<List<Relation>> getAllCompositePaths() {
+    if (allCompositePaths == null) {
+      allCompositePaths = new HashSet<>();
+      Entity currentEntity = this;
+      while (currentEntity != null) {
+        allCompositePaths.addAll(currentEntity.getCompositePaths());
+        currentEntity = currentEntity.getSuperEntity();
+      }
+    }
+    return allCompositePaths;
+  }
+
+  @Override
   public Set<Entity> getComponents() {
     Set<Entity> components = new TreeSet<>();
     for (Relation relation: getRelations()) {
@@ -1006,7 +1053,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       Entity entity = this;
       while (entity != null) {
         for (Attribute attribute: entity.getAttributes()) {
-          if (javaName.equalsIgnoreCase(attribute.getJavaName())) {
+          if (javaName.equalsIgnoreCase(attribute.getName())) {
             return attribute;
           }
         }
@@ -1052,7 +1099,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public List<Attribute> getUniqueDomainKey() {
     if (uniqueDomainKey == null) {
       uniqueDomainKey = new ArrayList<>();
-      if (isRootEntityAccordingToModel()) {
+      if (isRootEntity()) {
         getUniqueDomainKeyImpl(uniqueDomainKey, this);
       }
     }
@@ -1072,7 +1119,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
     for (Entity component: entity.getComponentsIncludingInherited()) {
-      if (!component.isRootEntityAccordingToModel()) {   // stop at sub-roots!
+      if (!component.isRootEntity()) {   // stop at sub-roots!
         getUniqueDomainKeyImpl(uniqueDomainKeys, component);
       }
     }
@@ -1181,6 +1228,28 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     return null;
   }
 
+  @Override
+  public List<Relation> getRelations(Entity entity, boolean all) {
+    List<Relation> rels = new ArrayList<>();
+    if (entity != null) {
+      Entity e = this;
+      while (e != null) {
+        for (Relation relation: e.getRelations()) {
+          if (entity.equals(relation.getForeignEntity())) {
+            rels.add(relation);
+          }
+        }
+        if (all) {
+          e = e.getSuperEntity();
+        }
+        else  {
+          break;
+        }
+      }
+    }
+    return rels;
+  }
+
 
   /**
    * Validates the entity without relation dependent settings.
@@ -1189,7 +1258,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    */
   public void validate() throws ModelException {
 
-    if (BasicStringHelper.isAllWhitespace(getName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw new ModelException("configuration 'name = ...' missing", this);
     }
 
@@ -1206,7 +1275,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     getOptions().validate();
 
-    if (getOptions().isRootEntity()) {
+    if (getOptions().isRoot()) {
       if (getSuperEntityName() != null) {
         throw new ModelException("[ROOT] option cannot be applied to subclasses", this);
       }
@@ -1218,14 +1287,32 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
-    Set<String> javaNames = new HashSet<>();
-    Set<String> columnNames = new HashSet<>();
+    Map<String,Attribute> javaNames = new HashMap<>();
     for (Attribute attribute: getAttributes()) {
       attribute.validate();
-      if (!javaNames.add(attribute.getJavaName())) {
-        throw new ModelException("duplicate Java name '" + attribute.getJavaName() + "'", this);
+      Attribute other = javaNames.put(normalizeName(attribute.getName()), attribute);
+      if (other != null) {
+        if (other.getName().equals(attribute.getName())) {
+          throw new ModelException("duplicate Java name '" + attribute.getName() + "'", this);
+        }
+        else {
+          throw new ModelException("Java name '" + attribute.getName() + "' too close to '" +
+                                   other.getName() + "' -> danger of confusion", this);
+        }
       }
-      if (!columnNames.add(attribute.getColumnName())) {
+    }
+
+    Set<String> columnNames = new HashSet<>();
+    for (Attribute attribute: getAttributes()) {
+      String normalizedColumnName = normalizeName(attribute.getColumnName());
+      Attribute other = javaNames.get(normalizedColumnName);
+      if (other != null && !other.equals(attribute)) {
+        throw new ModelException("misleading column name '" + attribute.getColumnName() +
+                                 "' for Java name '" + attribute.getName() +
+                                 "' -> danger of confusion with '" +
+                                 other.getName() + " / " + other.getColumnName() + "'", this);
+      }
+      if (!columnNames.add(normalizedColumnName)) {
         throw new ModelException("duplicate column name '" + attribute.getColumnName() + "'", this);
       }
     }
@@ -1233,16 +1320,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     Set<String> indexNames = new HashSet<>();
     for (Index index: getIndexes()) {
       index.validate();
-      if (!indexNames.add(index.getName())) {
-        throw new ModelException("duplicate index '" + index.getName() + "'", this);
+      if (!indexNames.add(normalizeName(index.getName()))) {
+        throw new ModelException("duplicate index name '" + index.getName() + "'", this);
       }
     }
 
     Set<String> relationNames = new HashSet<>();
     for (Relation relation: getRelations()) {
       relation.validate();
-      if (!relationNames.add(relation.getName())) {
-        throw new ModelException("duplicate relation '" + relation.getName() + "'", this);
+      if (!relationNames.add(normalizeName(relation.getName()))) {
+        throw new ModelException("duplicate relation name '" + relation.getName() + "'", this);
       }
     }
 
@@ -1256,11 +1343,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    */
   public void validateRelated() throws ModelException {
     if (getTableProvidingEntity() == this) {
-      if (BasicStringHelper.isAllWhitespace(getTableName())) {
+      if (StringHelper.isAllWhitespace(getTableName())) {
         throw new ModelException("configuration 'table = ...' missing", this);
-      }
-      if (getTableName().startsWith("_")) {
-        throw new ModelException("table name '" + getTableName() + "' must not start with an underscore", this);
       }
       for (Backend backend: factory.getBackends()) {
         try {
@@ -1268,15 +1352,15 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           backend.assertValidName("table alias", getTableAlias());
         }
         catch (RuntimeException rex) {
-          throw new ModelException(rex.getMessage(), sourceInfo, rex);
+          throw new ModelException(rex.getMessage(), this, rex);
         }
       }
     }
     else  {
-      if (!BasicStringHelper.isAllWhitespace(getTableName())) {
+      if (!StringHelper.isAllWhitespace(getTableName())) {
         throw new ModelException("configuration 'table = ...' not allowed", this);
       }
-      if (!BasicStringHelper.isAllWhitespace(getTableAlias())) {
+      if (!StringHelper.isAllWhitespace(getTableAlias())) {
         throw new ModelException("configuration 'alias = ...' not allowed", this);
       }
     }
@@ -1310,10 +1394,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     for (Attribute attribute: tableAttributes) {
       if (!attribute.getOptions().isDerived()) {
-        DataType dataType = attribute.getDataType();
-        if (dataType == DataType.APPLICATION) {
-          dataType = attribute.getInnerType();
-        }
+        DataType dataType = attribute.getEffectiveType();
         int multiColumnIndex = 1;
         int multiColumnSize = dataType.getSqlTypes().length;
         for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
@@ -1338,7 +1419,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           buf.append(backend.sqlCreateColumn(
                   columnName, comment, sp.getSqlType(), size, scale,
                   attribute.isNullable(), defaultValue,
-                  attribute.getJavaName().equals(Constants.AN_ID),
+                  attribute.getName().equals(Constants.AN_ID),
                   attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
           multiColumnIndex++;
         }
@@ -1433,12 +1514,29 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   public Entity getRootEntity() {
     Set<Entity> rootEntities = getRootEntities();
     if (rootEntities.size() == 1) {
-      Entity rootEntity = rootEntities.iterator().next();
-      if (!rootEntity.isAbstract()) {
-        return rootEntity;
+      Entity root = rootEntities.iterator().next();
+      if (!root.isAbstract()) {
+        return root;
       }
     }
     return null;
+  }
+
+  @Override
+  public boolean isRootEntity() {
+    if (rootEntity == null) {
+      // not determined yet
+      rootEntity = false;
+      Entity entity = this;
+      while (entity != null) {
+        if (entity.getOptions().isRoot()) {
+          rootEntity = true;
+          break;
+        }
+        entity = entity.getSuperEntity();
+      }
+    }
+    return rootEntity;
   }
 
   @Override
@@ -1459,6 +1557,24 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   @Override
   public String toString() {
     return getName();
+  }
+
+
+  /**
+   * Normalizes a name to detect misleading java- or column names.
+   *
+   * @param name the name
+   * @return the normalized name
+   */
+  private String normalizeName(String name) {
+    StringBuilder buf = new StringBuilder(name.length());
+    for (int i=0; i < name.length(); i++) {
+      char c = name.charAt(i);
+      if (Character.isLetterOrDigit(c)) {
+        buf.append(Character.toUpperCase(c));
+      }
+    }
+    return buf.toString();
   }
 
 }

@@ -88,12 +88,12 @@ public class PdoCursorProgressDialog extends FormDialog {
     abortButton = new org.tentackle.swing.FormButton();
 
     setAutoPosition(true);
-    setTitle(RdcSwingRdcBundle.getTranslation("LOADING OBJECTS...")); // NOI18N
+    setTitle(RdcSwingRdcBundle.getString("LOADING OBJECTS...")); // NOI18N
     setModal(true);
 
     infoPanel.setLayout(new java.awt.GridBagLayout());
 
-    jLabel1.setText(RdcSwingRdcBundle.getTranslation("OBJECTS READ SO FAR:")); // NOI18N
+    jLabel1.setText(RdcSwingRdcBundle.getString("OBJECTS READ SO FAR:")); // NOI18N
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
     infoPanel.add(jLabel1, gridBagConstraints);
@@ -107,7 +107,7 @@ public class PdoCursorProgressDialog extends FormDialog {
     getContentPane().add(infoPanel, java.awt.BorderLayout.CENTER);
 
     abortButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("working"));
-    abortButton.setText(RdcSwingRdcBundle.getTranslation("ABORT")); // NOI18N
+    abortButton.setText(RdcSwingRdcBundle.getString("ABORT")); // NOI18N
     abortButton.setName("abort"); // NOI18N
     abortButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {

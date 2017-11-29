@@ -19,6 +19,7 @@
 package org.tentackle.model;
 
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Information about the source.
@@ -122,7 +123,7 @@ public class SourceInfo {
   public String toString() {
     StringBuilder buf = new StringBuilder(getShortFileName());
     if (getLineNumber() != 0) {
-      buf.append(":[");
+      buf.append('[');
       buf.append(getLineNumber());
       if (getPosition() != 0) {
         buf.append(',');
@@ -131,6 +132,36 @@ public class SourceInfo {
       buf.append(']');
     }
     return buf.toString();
+  }
+
+  @Override
+  public int hashCode() {
+    int hash = 3;
+    hash = 17 * hash + Objects.hashCode(this.fileName);
+    hash = 17 * hash + this.lineNumber;
+    hash = 17 * hash + this.position;
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    final SourceInfo other = (SourceInfo) obj;
+    if (this.lineNumber != other.lineNumber) {
+      return false;
+    }
+    if (this.position != other.position) {
+      return false;
+    }
+    return Objects.equals(this.fileName, other.fileName);
   }
 
 }

@@ -21,7 +21,8 @@ package org.tentackle.buildsupport;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -31,6 +32,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
+import org.tentackle.common.Settings;
 
 
 /**
@@ -43,8 +45,8 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
-  public void setProcessor(AbstractTentackleProcessor processor) {
-    this.processor = (AnalyzeProcessor) processor;
+  public void setProcessor(AnalyzeProcessor processor) {
+    this.processor = processor;
   }
 
   @Override
@@ -62,7 +64,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
     }
     catch (ClassNotFoundException nfe) {
       processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe);
+                  Kind.ERROR, "cannot load annotation class " + annotationType + ": " + nfe, annotationType);
       return;
     }
 
@@ -91,7 +93,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
           }
           if (getProcessor().isDebugLogging()) {
             processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "found annotated method " + methodName + " in class " + className);
+                  Kind.NOTE, "found annotated method " + methodName + " in class " + className, element);
           }
           try {
             // create info object
@@ -99,30 +101,33 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
             File outputDir = getDirectory(getProcessor().getAnalyzeDir(), className);
             outputDir.mkdirs();
             File outputFile = new File(outputDir, methodName + RemoteMethodInfo.INFO_FILE_EXTENSION);
-            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFile)))) {
+            try (PrintWriter pw = new PrintWriter(
+                                    new BufferedWriter(
+                                      new OutputStreamWriter(
+                                        new FileOutputStream(outputFile), Settings.encodingCharset)))) {
               info.write(pw);
             }
             if (getProcessor().isDebugLogging()) {
               processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "created " + outputFile);
+                  Kind.NOTE, "created " + outputFile, element);
             }
           }
           catch (Exception ex) {
             processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "extracting AnalyzeInfo failed: " + ex);
+                  Kind.ERROR, "extracting AnalyzeInfo failed: " + ex, element);
           }
         }
         else {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "enclosing element '" + enclosingElement + "'of annotated method is not a class", enclosingElement);
+          processor.getProcessingEnvironment().getMessager().printMessage(Kind.WARNING,
+                  "enclosing element '" + enclosingElement + "' of annotated method '" +
+                  methodElement.getSimpleName() + "' is not a class -> ignored", element);
         }
       }
       else {
         processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "annotated element '" + element + "' is not a method", element);
+                  Kind.WARNING, "annotated element '" + element + "' is not a method -> ignored", element);
       }
     }
   }
-
 
 }

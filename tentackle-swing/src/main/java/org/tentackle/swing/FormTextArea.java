@@ -1320,11 +1320,11 @@ public class FormTextArea extends JTextArea implements FormFieldComponent {
       }
       else {
         // set to position marked by mouse (aligned for sure)
+        if (caretPos > getDocument().getLength()) {
+          caretPos = getDocument().getLength() - 1;
+        }
         if (caretPos < 0) {
           caretPos = 0;
-        }
-        else if (caretPos > getDocument().getLength()) {
-          caretPos = getDocument().getLength() - 1;
         }
         setCaretPosition(caretPos);
       }

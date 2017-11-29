@@ -22,6 +22,7 @@ package org.tentackle.persist.rmi;
 
 import java.rmi.RemoteException;
 import java.util.List;
+import org.tentackle.dbms.rmi.RemoteDelegate;
 import org.tentackle.persist.ResultSetCursor.FetchList;
 
 /**

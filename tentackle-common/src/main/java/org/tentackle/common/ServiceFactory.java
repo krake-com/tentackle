@@ -19,144 +19,89 @@
 
 package org.tentackle.common;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Factory for services based on {@link ServiceFinder}.<br>
- * This is the only factory that cannot be replaced by a {@code @Service}-annotation.
+ * Factory for services based on {@link ServiceFinder}.
+ * <p>
+ * The factory itself is loaded via the standard JDK {@link ServiceLoader} and can
+ * be replaced via META-INF/services. If no such configuration is found, for whatever reason,
+ * an instance of {@link ServiceFactory} is used.
+ * As a consequence, the fallback and default implementation <em>is</em> {@link ServiceFactory} itself.
+ * However, applications can replace it, if necessary.
  *
  * @author harald
  */
 public class ServiceFactory {
 
-  // the singleton instance
-  private static final ServiceFactory INSTANCE = new ServiceFactory();
-
-
-  // the bootstrap finder (by default finds an instance of iself, see @Service annotation in DefaultServiceFinder)
-  private Class<? extends ServiceFinder> serviceFinderClass;
-
-
-  // hash key for the finder map
-  private static final class Key {
-
-    private final ClassLoader loader;
-    private final String servicePath;
-
-    private Key(ClassLoader loader, String servicePath) {
-      this.loader = loader;
-      this.servicePath = servicePath;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj == null) {
-        return false;
-      }
-      if (getClass() != obj.getClass()) {
-        return false;
-      }
-      final Key other = (Key) obj;
-      if (this.loader != other.loader && (this.loader == null || !this.loader.equals(other.loader))) {
-        return false;
-      }
-      return !((this.servicePath == null) ? (other.servicePath != null) : !this.servicePath.equals(other.servicePath));
-    }
-
-    @Override
-    public int hashCode() {
-      int hash = 7;
-      hash = 89 * hash + (this.loader != null ? this.loader.hashCode() : 0);
-      hash = 89 * hash + (this.servicePath != null ? this.servicePath.hashCode() : 0);
-      return hash;
-    }
-
-  }
-
-  // map of finders for different classloaders and service paths
-  private final Map<Key,ServiceFinder> finderMap;
-
-
-
   /**
-   * Singleton.
+   * the logger for this class.
+   * We must use java.util logging because we cannot use the service factory yet.
    */
-  private ServiceFactory() {
-    try {
-      // bootstrap finder used to load the effective finder class
-      serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
-    }
-    catch (Exception ex) {
-      // we cannot use LOGGER here because this may use the createService as well
-      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
-              "{0} -> fallback to {1}", new Object[]{ex.getMessage(), DefaultServiceFinder.class.getName()});
-      serviceFinderClass = DefaultServiceFinder.class;
-    }
-
-    finderMap = new ConcurrentHashMap<>();
-  }
-
-
+  private static final Logger LOGGER = Logger.getLogger(ServiceFactory.class.getName());
 
   /**
-   * Gets a service finder for a given classloader and service path.<br>
-   * If the finder does not exist yet, it will be created.
+   * Creates the singleton via {@link ServiceLoader}.
    *
-   * @param loader the classloader
-   * @param servicePath the service path prefix
-   * @return the finder
+   * @return the instance, never null (fallback to this class)
    */
-  private ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
-    if (loader == null) {
-      throw new IllegalArgumentException("loader must not be null");
-    }
-    if (servicePath == null) {
-      throw new IllegalArgumentException("service path must not be null");
-    }
-    Key key = new Key(loader, servicePath);
-    ServiceFinder finder = finderMap.get(key);
-    if (finder == null) {
+  private static ServiceFactory createServiceFactory() {
+
+    if (Settings.SERVICE_FACTORY_CLASSNAME != null) {
       try {
-        finder = serviceFinderClass.getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
-        finderMap.put(key, finder);
+        @SuppressWarnings("unchecked")
+        Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) (
+          Settings.SERVICE_FACTORY_CLASSLOADER == null ?
+            Class.forName(Settings.SERVICE_FACTORY_CLASSNAME) :
+            Class.forName(Settings.SERVICE_FACTORY_CLASSNAME, true, Settings.SERVICE_FACTORY_CLASSLOADER));
+
+        return clazz.newInstance();
       }
-      catch (Exception ex) {
-        throw new TentackleRuntimeException("cannot instantiate service finder", ex);
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+        LOGGER.log(Level.WARNING,
+                "creating instance of Constants.SERVICE_FACTORY_CLASSNAME failed -> trying ServiceLoader...",
+                ex);
       }
     }
-    return finder;
+
+    try {
+      ServiceLoader<ServiceFactory> loader = Settings.SERVICE_FACTORY_CLASSLOADER == null ?
+              ServiceLoader.load(ServiceFactory.class) :
+              ServiceLoader.load(ServiceFactory.class, Settings.SERVICE_FACTORY_CLASSLOADER);
+      for (ServiceFactory factory: loader) {
+        if (factory != null) {
+          return factory;
+        }
+      }
+    }
+    catch (ServiceConfigurationError cx) {
+      LOGGER.log(Level.WARNING,
+                 "locating the service factory failed -> fallback to ServiceFactory",
+                 cx);
+
+    }
+
+    return new ServiceFactory();
   }
 
-
-  /**
-   * Gets a service finder for a given service path.<br>
-   * If the finder does not exist yet, it will be created.
-   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
-   *
-   * @param servicePath the service path prefix
-   * @return the finder
-   */
-  private ServiceFinder getServiceFinderImpl(String servicePath) {
-    return getServiceFinderImpl(Thread.currentThread().getContextClassLoader(), servicePath);
-  }
+  /** the singleton instance. */
+  public static final ServiceFactory INSTANCE = createServiceFactory();
 
 
-  /**
-   * Gets a service finder.<br>
-   * If the finder does not exist yet, it will be created.
-   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}
-   * and the service path is {@code "META_INF/services/"}.
-   *
-   * @return the finder
-   */
-  private ServiceFinder getServiceFinderImpl() {
-    return getServiceFinderImpl(Constants.DEFAULT_SERVICE_PATH);
-  }
-
-
-
-  /**
+    /**
    * Gets a service finder for a given classloader and service path.<br>
    * If the finder does not exist yet, it will be created.
    *
@@ -175,7 +120,7 @@ public class ServiceFactory {
    * The classloader used is {@code Thread.currentThread().getContextClassLoader()}.
    *
    * @param servicePath the service path prefix
-   * @return the finder
+   * @return the finder, never null
    */
   public static ServiceFinder getServiceFinder(String servicePath) {
     return INSTANCE.getServiceFinderImpl(servicePath);
@@ -248,14 +193,431 @@ public class ServiceFactory {
     catch (TentackleRuntimeException re) {
       try {
         // we cannot use LOGGER here because this may use the createService as well
-        java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.WARNING,
-                "{0} -> creating default {1}", new Object[]{re.getMessage(), defaultClass.getName()});
+        java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(
+                java.util.logging.Level.WARNING,
+                "creating service for " + serviceClass.getName() +
+                " failed -> creating default " + defaultClass.getName(),
+                re);
         return defaultClass.newInstance();
       }
       catch (Exception ex) {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);
       }
     }
+  }
+
+
+  /**
+   * Gets the classloader for a given service path and name.<br>
+   * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
+   * Otherwise the default classloader is returned.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, never null
+   */
+  public static ClassLoader getClassLoader(String servicePath, String serviceName) {
+    return INSTANCE.getClassLoaderImpl(servicePath, serviceName);
+  }
+
+
+  /**
+   * Gets the explicit classloader for a given service path and name.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, null if no explicit classloader set
+   */
+  public static ClassLoader getExplicitClassLoader(String servicePath, String serviceName) {
+    if (INSTANCE != null) {   // chicken/egg (may be called during init of ServiceFactory itself)
+      return INSTANCE.getExplicitClassLoaderImpl(servicePath, serviceName);
+    }
+    return null;
+  }
+
+
+  /**
+   * Adds an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  public static void addExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    INSTANCE.addExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+  }
+
+
+  /**
+   * Remove]s an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  public static void removeExplicitClassLoader(String servicePath, String serviceName, ClassLoader classLoader) {
+    INSTANCE.removeExplicitClassLoaderImpl(servicePath, serviceName, classLoader);
+  }
+
+
+  /**
+   * Apply a given resource index.<br>
+   * The index is usually created via the tentackle-maven-plugin's analyze goal
+   * with the index option set to something like {@code "META-INF/RESOURCES-INDEX.LIST"}.
+   * <p>
+   * This is a utility method, that can be used during the activation within an
+   * OSGI-bundle, for example.
+   *
+   * @param classLoader the classloader to load the index resource
+   * @param indexName the name of the index resource
+   * @param set true if set loaders, else remove loaders from the services index
+   */
+  public static void applyResourceIndex(ClassLoader classLoader, String indexName, boolean set) {
+    INSTANCE.applyResourceIndexImpl(classLoader, indexName, set);
+  }
+
+
+
+
+  // --------------------------- implementation goes here -------------------------------------
+
+
+  /**
+   * Key to maintain explicit classloaders.
+   */
+  private static class ClassLoaderKey {
+    private final String servicePath;
+    private final String serviceName;
+
+    public ClassLoaderKey(String servicePath, String serviceName) {
+      this.servicePath = servicePath;
+      this.serviceName = serviceName;
+    }
+
+    @Override
+    public int hashCode() {
+      int hash = 3;
+      hash = 37 * hash + Objects.hashCode(this.servicePath);
+      hash = 37 * hash + Objects.hashCode(this.serviceName);
+      return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      final ClassLoaderKey other = (ClassLoaderKey) obj;
+      if (!Objects.equals(this.servicePath, other.servicePath)) {
+        return false;
+      }
+      return Objects.equals(this.serviceName, other.serviceName);
+    }
+  }
+
+
+  private final Map<ClassLoaderKey,LinkedList<ClassLoader>> explicitLoaders;          // optional explicit loaders for named services
+
+
+  /**
+   * The service finder (by default finds an instance of iself.<br>
+   * See @Service annotation in DefaultServiceFinder.
+   */
+  private Class<? extends ServiceFinder> serviceFinderClass;
+
+  /**
+   * map of finders for different classloaders and service paths.
+   */
+  private final Map<ServiceFinderKey,ServiceFinder> finderMap;
+
+  /**
+   * Use another classloader, if set.<br>
+   * Default is to use Thread.currentThread().getContextClassLoader().
+   */
+  private ClassLoader fixedClassLoader;
+
+
+  /**
+   * Creates the factory.
+   */
+  public ServiceFactory() {
+    try {
+      // service finder used to load the effective finder class
+      serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
+    }
+    catch (Exception ex) {
+      // we cannot use LOGGER here because this may use the createService as well
+      java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.INFO,
+              "cannot load ServiceFinder class -> fallback to " + DefaultServiceFinder.class.getName(), ex);
+      serviceFinderClass = DefaultServiceFinder.class;
+    }
+
+    finderMap = new ConcurrentHashMap<>();
+    explicitLoaders = new HashMap<>();
+  }
+
+
+  /**
+   * Gets the fixed classloader.
+   *
+   * @return the classloader, null if default
+   */
+  public ClassLoader getFixedClassLoader() {
+    return fixedClassLoader;
+  }
+
+  /**
+   * Sets the fixed classloader.<br>
+   * Default is Thread.currentThread().getContextClassLoader().
+   *
+   * @param classLoader the classloader, null if default
+   */
+  public void setFixedClassLoader(ClassLoader classLoader) {
+    this.fixedClassLoader = classLoader;
+  }
+
+
+  /**
+   * Gets the default classloader.<br>
+   * The classloader to use is determined as follows:
+   * <ol>
+   * <li>use the fixed classloader set by {@link #setFixedClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
+   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
+   * </ol>
+   *
+   * @return the loader, never null
+   */
+  protected ClassLoader getClassLoader() {
+    ClassLoader loader = fixedClassLoader;
+    if (loader == null) {
+      loader = Thread.currentThread().getContextClassLoader();
+    }
+    if (loader == null) {
+      loader = getClass().getClassLoader();
+    }
+    return loader;
+  }
+
+
+  /**
+   * Gets the classloader for a given service path and name.<br>
+   * If an explicit classloader is set, the last defined classloader for the given path and name is returned.
+   * Otherwise the default classloader is returned.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, never null
+   */
+  protected ClassLoader getClassLoaderImpl(String servicePath, String serviceName) {
+    ClassLoader cl = getExplicitClassLoader(servicePath, serviceName);
+    if (cl == null) {
+      cl = getClassLoader();
+    }
+    return cl;
+  }
+
+
+  /**
+   * Gets the explicit classloader for a given service path and name.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @return the classloader, null if no explicit classloader set
+   */
+  protected synchronized ClassLoader getExplicitClassLoaderImpl(String servicePath, String serviceName) {
+    ClassLoader cl = null;
+    LinkedList<ClassLoader> cList = explicitLoaders.get(new ClassLoaderKey(servicePath, serviceName));
+    if (cList != null && !cList.isEmpty()) {
+      cl = cList.getFirst();
+    }
+    return cl;
+  }
+
+
+  /**
+   * Adds an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  protected synchronized void addExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
+    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
+    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
+    if (loaders == null) {
+      loaders = new LinkedList<>();
+      explicitLoaders.put(key, loaders);
+    }
+    // remove previously added loader (-> Set)
+    // if the same classloader is added twice, the cl is moved to the start of the list
+    loaders.remove(classLoader);
+    loaders.push(classLoader);
+  }
+
+
+  /**
+   * Remove]s an explict classloader for a given service path and name.<br>
+   * Loaders are kept in a linked list for each path and name combination.
+   * Setting a classloader performs a push, clearing a pop.
+   * Thus, removing a loader activates the previously set loader, if any.
+   * This allows activation and deactivation as it used in OSGi, for example.
+   *
+   * @param servicePath the service path
+   * @param serviceName the service name
+   * @param classLoader the classloader, null if remove
+   */
+  protected synchronized void removeExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
+    ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
+    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
+    if (loaders != null) {
+      loaders.remove(classLoader);
+      if (loaders.isEmpty()) {
+        explicitLoaders.remove(key);
+      }
+    }
+  }
+
+
+  /**
+   * Apply a given resource index.<br>
+   * The index is usually created via the tentackle-maven-plugin's analyze goal
+   * with the index option set to something like {@code "META-INF/RESOURCES-INDEX.LIST"}.
+   * <p>
+   * This is a utility method, that can be used during the activation within an
+   * OSGI-bundle, for example.
+   *
+   * @param classLoader the classloader to load the index resource
+   * @param indexName the name of the index resource
+   * @param set true if set loaders, else remove loaders from the services index
+   */
+  protected void applyResourceIndexImpl(ClassLoader classLoader, String indexName, boolean set) {
+    try {
+      Enumeration<URL> urls = classLoader.getResources(indexName);
+      if (urls.hasMoreElements()) {
+        // we take only the first
+        URL url = urls.nextElement();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            if (!line.startsWith("#")) {
+              int ndx = line.lastIndexOf('/');
+              String servicePath;
+              String serviceName;
+              if (ndx > 0 && ndx < line.length() - 1) {
+                servicePath = line.substring(0, ndx + 1);   // including trailing slash
+                serviceName = line.substring(ndx + 1);
+              }
+              else {
+                servicePath = "";
+                serviceName = line;
+              }
+              if (set) {
+                addExplicitClassLoader(servicePath, serviceName, classLoader);
+              }
+              else {
+                removeExplicitClassLoader(servicePath, serviceName, classLoader);
+              }
+            }
+          }
+        }
+      }
+    }
+    catch (IOException ix) {
+      throw new TentackleRuntimeException("applying index failed", ix);
+    }
+  }
+
+
+  /**
+   * Gets the finder map.<br>
+   * Allows applications to modify or add finders programmatically.<br>
+   * The map is threadsafe.
+   *
+   * @return the finder map
+   */
+  public Map<ServiceFinderKey,ServiceFinder> getFinderMap() {
+    return finderMap;
+  }
+
+
+  /**
+   * Gets the class of the service finder.
+   *
+   * @return the class of the service finder, never null
+   */
+  protected Class<? extends ServiceFinder> getServiceFinderClass() {
+    return serviceFinderClass;
+  }
+
+  /**
+   * Gets a service finder for a given classloader and service path.<br>
+   * If the finder does not exist yet, it will be created.
+   *
+   * @param loader the classloader
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  protected ServiceFinder getServiceFinderImpl(ClassLoader loader, String servicePath) {
+    ServiceFinderKey key = new ServiceFinderKey(loader, servicePath);
+    ServiceFinder finder = getFinderMap().get(key);
+    if (finder == null) {
+      try {
+        finder = getServiceFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
+        getFinderMap().put(key, finder);
+      }
+      catch (Exception ex) {
+        throw new TentackleRuntimeException("cannot instantiate service finder", ex);
+      }
+    }
+    return finder;
+  }
+
+  /**
+   * Gets a service finder for a given service path.<br>
+   * If the finder does not exist yet, it will be created.
+   * The classloader to use is determined as follows:
+   * <ol>
+   * <li> use the fixed classloader set by {@link #setFixedClassLoader(java.lang.ClassLoader)}, if not null</li>
+   * <li>else try {@code Thread.currentThread().getContextClassLoader()}</li>
+   * <li>if the context classloader is null, use the classloader that loaded the service factory</li>
+   * </ol>
+   *
+   * @param servicePath the service path prefix
+   * @return the finder, never null
+   */
+  protected ServiceFinder getServiceFinderImpl(String servicePath) {
+    return getServiceFinderImpl(getClassLoader(), servicePath);
+  }
+
+  /**
+   * Gets a service finder.<br>
+   * If the finder does not exist yet, it will be created.
+   * The classloader used is {@code Thread.currentThread().getContextClassLoader()}
+   * and the service path is {@code "META_INF/services/"}.
+   *
+   * @return the finder
+   */
+  protected ServiceFinder getServiceFinderImpl() {
+    return getServiceFinderImpl(Constants.DEFAULT_SERVICE_PATH);
   }
 
 }

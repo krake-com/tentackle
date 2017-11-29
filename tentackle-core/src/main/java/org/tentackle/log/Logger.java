@@ -31,7 +31,6 @@ public interface Logger {
    * <p>
    * Provided are:
    * <ul>
-   *  <li>FINEST</li>
    *  <li>FINER</li>
    *  <li>FINE</li>
    *  <li>INFO</li>
@@ -43,11 +42,6 @@ public interface Logger {
 
     /**
      * FINEST indicates a highly detailed tracing message.
-     */
-    FINEST,
-
-    /**
-     * FINER indicates a fairly detailed tracing message.
      */
     FINER,
 
@@ -86,14 +80,6 @@ public interface Logger {
   boolean isLoggable(Level level);
 
 
-
-  /**
-   * Checks if logger logs level FINEST.
-   *
-   * @return true if logger will log this level
-   */
-  boolean isFinestLoggable();
-
   /**
    * Checks if logger logs level FINER.
    *
@@ -130,8 +116,6 @@ public interface Logger {
   boolean isSevereLoggable();
 
 
-
-
   /**
    * Logs a message.
    *
@@ -141,14 +125,6 @@ public interface Logger {
    */
   void log(Level level, String message, Throwable cause);
 
-
-  /**
-   * Logs a message with level FINEST.
-   *
-   * @param message the message
-   * @param params optional parameters
-   */
-  void finest(String message, Object... params);
 
   /**
    * Logs a message with level FINER.
@@ -190,15 +166,6 @@ public interface Logger {
    */
   void severe(String message, Object... params);
 
-
-  /**
-   * Logs a message with level FINEST.
-   *
-   * @param message the message
-   * @param cause the throwable
-   */
-  void finest(String message, Throwable cause);
-
   /**
    * Logs a message with level FINER.
    *
@@ -238,8 +205,6 @@ public interface Logger {
    * @param cause the throwable
    */
   void severe(String message, Throwable cause);
-
-
 
 
   /**

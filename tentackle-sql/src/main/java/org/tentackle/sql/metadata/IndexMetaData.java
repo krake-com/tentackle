@@ -23,7 +23,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
 
 /**
@@ -59,7 +59,7 @@ public class IndexMetaData {
    * @throws SQLException the processing the result set failed
    */
   public void setupIndexFromMetaData(ResultSet resultSet) throws SQLException {
-    indexName = BasicStringHelper.toLower(resultSet.getString("INDEX_NAME"));
+    indexName = StringHelper.toLower(resultSet.getString("INDEX_NAME"));
     // cut schema, if any
     int dotNdx = indexName.indexOf('.');
     if (dotNdx >= 0) {
@@ -171,7 +171,7 @@ public class IndexMetaData {
    * Validates and postprocesses the index data.
    */
   public void validate() {
-    if (BasicStringHelper.isAllWhitespace(filterCondition)) {
+    if (StringHelper.isAllWhitespace(filterCondition)) {
       filterCondition = null; // translate empty string to null
     }
   }

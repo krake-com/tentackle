@@ -66,17 +66,17 @@ public class SqlDateFieldBinding extends DefaultFormComponentBinding {
     try {
       Class<?> type = getMember().getType();
       if (java.sql.Timestamp.class.isAssignableFrom(type)) {
-        Timestamp timestamp = ((SqlDateField) getFormComponent()).getTimestamp();
+        Timestamp timestamp = ((SqlDateField) getComponent()).getTimestamp();
         if (timestamp != null && utc) {
           timestamp.setUTC(true);
         }
         return timestamp;
       }
       else if (java.sql.Time.class.isAssignableFrom(type)) {
-        return ((SqlDateField) getFormComponent()).getTime();
+        return ((SqlDateField) getComponent()).getTime();
       }
       else if (java.sql.Date.class.isAssignableFrom(type)) {
-        return ((SqlDateField) getFormComponent()).getDate();
+        return ((SqlDateField) getComponent()).getDate();
       }
       else {
         // else: java.util.Date

@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * A reflective visitor to add application-specific functionality to existing objects.

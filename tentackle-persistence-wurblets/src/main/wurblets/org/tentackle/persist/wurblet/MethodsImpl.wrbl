@@ -1,38 +1,19 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate getters, setters and other methods for an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; MethodsImpl [--noif] [--noudk]
+<p>
+arguments:
+<ul>
+<li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
+<li><em>--noudk&gt;:</em> don't generate selectByUniqueDomainKey wurblet anchor.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * create a getter and setter methods for db-attributes.
-     *
-     * usage:  \@wurblet <somename> MethodsImpl --model=<mapfile> [--remote] [--tracked] [--attracked] [--fulltracked] [--noif] [--noudk]
-     *         --remote generate covariant getRemoteDelegate()
-     *         --tracked will create setModified()-code in setter methods
-     *         --attracked same as tracked but generate code on attribute level as well
-     *         --fulltracked sames as attracked but keeps the original value since last persistence operation
-     *         --noif: there is no interface (don't generate \@Override)
-     *         --noudk don't generate selectByUniqueDomainKey wurblet
-     *
-     * Example: \@wurblet methods MethodsImpl --model=$scripts/artikel.map --tracked
-     */
+  private void wurbel() throws WurbelException, ModelException {
 
     // main class
     String mainClass = getClassName();
@@ -102,13 +83,9 @@
 
     if (getEntity().getSuperEntity() == null) {
 
-      if (getEntity().getOptions().isRootEntity()) {
+      if (getEntity().getOptions().isRoot()) {
 ]@
 
-  /**
-   * Object is a root entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootEntity() {
     return true;
@@ -119,10 +96,6 @@
       if (getEntity().getOptions().isTableSerialProvided()) {
 ]@
 
-  /**
-   * Object provides the tableserial.
-   * \@return true
-   */
   \@Override
   public boolean isTableSerialProvided() {
     return true;
@@ -133,10 +106,6 @@
       if (getEntity().getOptions().isTokenLockProvided()) {
 ]@
 
-  /**
-   * PDO provides the token lock columns.
-   * \@return true
-   */
   \@Override
   public boolean isTokenLockProvided() {
     return true;
@@ -147,10 +116,6 @@
       if (getEntity().getOptions().isNormTextProvided()) {
 ]@
 
-  /**
-   * Object provides the normtext.
-   * \@return true
-   */
   \@Override
   public boolean isNormTextProvided() {
     return true;
@@ -161,10 +126,6 @@
       if (getEntity().getOptions().isRootIdProvided()) {
 ]@
 
-  /**
-   * Object provides the id of the root-entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootIdProvided() {
     return true;
@@ -177,13 +138,9 @@
 
 ]@
 
-  /**
-   * The root entity id is @(rootAttribute)@.
-   * \@return the ID of the root entity
-   */
   \@Override
   public long getRootId() {
-    return @(rootAttribute.getJavaName())@;
+    return @(rootAttribute.getName())@;
   }
 @[
         }
@@ -192,10 +149,6 @@
       if (getEntity().getOptions().isRootClassIdProvided()) {
 ]@
 
-  /**
-   * Object provides the class-id of the root-entity.
-   * \@return true
-   */
   \@Override
   public boolean isRootClassIdProvided() {
     return true;
@@ -207,10 +160,6 @@
         if (rootEntity != null) {
 ]@
 
-  /**
-   * The root entity class is @(rootEntity)@.
-   * \@return the class ID of the root entity
-   */
   \@Override
   public int getRootClassId() {
     return @(rootEntity.getClassId())@;
@@ -222,10 +171,6 @@
       if (isTracked())  {
 ]@
 
-  /**
-   * Overridden cause of "--tracked".
-   * \@return true = setters check for modification
-   */
   \@Override
   public boolean isTracked() {
     return true;    // invoking isModified() is ok
@@ -237,9 +182,6 @@
       if (isAttracked()) {
 ]@
 
-  /**
-   * Overridden cause of "--attracked".
-   */
   \@Override
   public void setModified(boolean modified) {
     super.setModified(modified);
@@ -247,12 +189,14 @@
 @[
       for (Attribute attr: getEntity().getAttributes())  {
         if (!attr.getOptions().isNoMethod())    {
-]@
-      @(attr.getJavaName())@Modified = false;
-@[
           if (isFullTracked()) {
 ]@
-      @(attr.getJavaName())@Persisted = @(attr.getJavaName())@;
+      @(attr.getName())@Persisted = @(attr.getName())@;
+@[
+          }
+          else {
+]@
+      @(attr.getName())@Modified = false;
 @[
           }
         }
@@ -267,9 +211,6 @@
     if (isFullTracked()) {
 ]@
 
-  /**
-   * Overridden cause of "--fulltracked".
-   */
   \@Override
   public boolean differsPersisted() {
     return super.differsPersisted()
@@ -279,12 +220,12 @@
             !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
           if (attr.getDataType().isPrimitive()) {
 ]@
-           || @(attr.getJavaName())@Persisted != @(attr.getJavaName())@
+           || @(attr.getName())@Persisted != @(attr.getName())@
 @[
           }
           else {
 ]@
-           || !Objects.equals(@(attr.getJavaName())@Persisted, @(attr.getJavaName())@)
+           || !Objects.equals(@(attr.getName())@Persisted, @(attr.getName())@)
 @[
           }
         }
@@ -292,12 +233,15 @@
 ]@
            ;
   }
-@[
 
+  \@Override
+  public boolean attributesModified() {
+    return differsPersisted();
+  }
+@[
     }
 
     if (!getEntity().getInheritanceType().isMappingToNoTable()) {
-
       String orderBy = getEntity().getSorting() != null ? createOrderBy(getDefaultSortKeys()) : null;
       if (orderBy != null) {
 ]@
@@ -317,101 +261,100 @@
     super.getFields(rs);
     if (rs.configureSection(CLASSVARIABLES)) {
 @[
-    for (Attribute attr: getEntity().getMappedAttributes())  {
-      if (!attr.getOptions().isDerived())  {
-
-        for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-          String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
+      for (Attribute attr: getEntity().getMappedAttributes())  {
+        if (!attr.getOptions().isDerived())  {
+          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
 ]@
       rs.configureColumn(CN_@(name)@);
 @[
+          }
         }
       }
-    }
 ]@
     }
     if (rs.getRow() <= 0) {
       throw new PersistenceException(getSession(), "no valid row");
     }
 @[
-    for (Attribute attr: getEntity().getMappedAttributes())  {
-      if (!attr.getOptions().isDerived())  {
-        String getterMethod = createJdbcGetterName(attr);
-        String name = attr.getJavaName().toUpperCase();
-        boolean useSetter = isSetGetRequired(attr);
+      for (Attribute attr: getEntity().getMappedAttributes())  {
+        if (!attr.getOptions().isDerived())  {
+          String getterMethod = createJdbcGetterName(attr);
+          String name = attr.getName().toUpperCase();
+          boolean useSetter = isSetGetRequired(attr);
 
-        if (attr.getDataType() == DataType.BINARY) {
-          // Binary getter takes additional size argument
-          String castStr = "";
-          if (attr.getJavaType().indexOf('<') >= 0) {
-            // with generic type: -> need a cast
-            castStr = "(" + attr.getJavaType() + ") ";
-          }
-          if (useSetter)  {
+          if (attr.getDataType() == DataType.BINARY) {
+            // Binary getter takes additional size argument
+            String castStr = "";
+            if (attr.getJavaType().indexOf('<') >= 0) {
+              // with generic type: -> need a cast
+              castStr = "(" + attr.getJavaType() + ") ";
+            }
+            if (useSetter)  {
 ]@
     @(attr.getSetterName())@(@(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@));
 @[
-          }
-          else  {
-]@
-    @(attr.getJavaName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
-@[
-          }
-        }
-
-        else  {
-          String rsGetter = "rs." + getterMethod + "(";
-          boolean needComma = false;
-          if (attr.getOptions().isWithTimezone()) {
-            rsGetter += "get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
-            needComma = true;
-          }
-          if (attr.getOptions().isMapNull()) {
-            if (needComma) {
-              rsGetter += ", ";
             }
-            rsGetter += "true";
-            needComma = true;
-          }
-          rsGetter += ")";
-
-          String modelCode = getModelCode(attr, rsGetter);
-
-          if (attr.getOptions().isTrimRead()) {
-            modelCode = "StringHelper.trim(" + modelCode + ", " + attr.getSizeWithDefault() + ")";
+            else  {
+]@
+    @(attr.getName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
+@[
+            }
           }
 
-          if (useSetter) {
-            modelCode = attr.getSetterName() + "(" + modelCode + ")";
-          }
           else  {
-            modelCode = attr.getJavaName() + " = " + modelCode;
-          }
+            String rsGetter = "rs." + getterMethod + "(";
+            boolean needComma = false;
+            if (attr.getOptions().isWithTimezone()) {
+              rsGetter += "get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+              needComma = true;
+            }
+            if (attr.getOptions().isMapNull()) {
+              if (needComma) {
+                rsGetter += ", ";
+              }
+              rsGetter += "true";
+              needComma = true;
+            }
+            rsGetter += ")";
+
+            String modelCode = getModelCode(attr, rsGetter);
+
+            if (attr.getOptions().isTrimRead()) {
+              modelCode = "StringHelper.trim(" + modelCode + ", " + attr.getSizeWithDefault() + ")";
+            }
+
+            if (useSetter) {
+              modelCode = attr.getSetterName() + "(" + modelCode + ")";
+            }
+            else  {
+              modelCode = attr.getName() + " = " + modelCode;
+            }
 ]@
     @(modelCode)@;
 @[
-          if (attr.getOptions().isUTC()) {
-            if (useSetter) {
-              modelCode = attr.getGetterName() + "()";
-            }
-            else  {
-              modelCode = attr.getJavaName();
-            }
+            if (attr.getOptions().isUTC()) {
+              if (useSetter) {
+                modelCode = attr.getGetterName() + "()";
+              }
+              else  {
+                modelCode = attr.getName();
+              }
 ]@
     if (@(modelCode)@ != null) {
       @(modelCode)@.setUTC(true);
     }
 @[
+            }
           }
         }
       }
-    }
 ]@
   }
-
 @[
-    if (multiInheritance) {
+      if (multiInheritance) {
 ]@
+
   /**
    * Sets the values of all @(pdoClass)@-columns in the given statement.
    *
@@ -421,86 +364,85 @@
   public int setFields@(pdoClass)@(PreparedStatementWrapper st) {
     int ndx = 0;
 @[
-    }
-    else  {
+      }
+      else  {
 ]@
+
   \@Override
   public int setFields(PreparedStatementWrapper st) {
     int ndx = super.setFields(st);
 @[
-    }
+      }
 
-    for (Attribute attr: getEntity().getMappedAttributes()) {
-      if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
-        String setterName = createJdbcSetterName(attr);
+      for (Attribute attr: getEntity().getMappedAttributes()) {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
+          String setterName = createJdbcSetterName(attr);
 
-        String modelCode;
-        if (isSetGetRequired(attr)) {
-          modelCode = attr.getGetterName() + "()";
-        }
-        else {
-          modelCode = attr.getJavaName();
-        }
+          String modelCode;
+          if (isSetGetRequired(attr)) {
+            modelCode = attr.getGetterName() + "()";
+          }
+          else {
+            modelCode = attr.getName();
+          }
 
-        String jdbcCode = getJdbcCode(attr, modelCode);
+          String jdbcCode = getJdbcCode(attr, modelCode);
 
-        if (attr.getOptions().isTrimWrite()) {
-          jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
-        }
+          if (attr.getOptions().isTrimWrite()) {
+            jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
+          }
 
-        jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
-        if (attr.getOptions().isWithTimezone()) {
-          jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
-        }
-        if (attr.getOptions().isMapNull()) {
-          jdbcCode += ", true)";
-        }
-        else  {
-          jdbcCode += ")";
-        }
+          jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
+          if (attr.getOptions().isWithTimezone()) {
+            jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+          }
+          if (attr.getOptions().isMapNull()) {
+            jdbcCode += ", true)";
+          }
+          else  {
+            jdbcCode += ")";
+          }
 ]@
     @(jdbcCode)@;
 @[
 
-        // for multi column types, such as BMoney/DMoney
-        for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+          // for multi column types, such as BMoney/DMoney
+          for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
 ]@
     ++ndx;
 @[
+          }
         }
       }
-    }
 
-    if (multiInheritance && getEntity().getSuperEntity() != null) {
+      if (multiInheritance && getEntity().getSuperEntity() != null) {
 ]@
     st.setLong(++ndx, getId());
 @[
-    }
+      }
 ]@
     return ndx;
   }
 @[
-      }
+    }
 
-      if (getEntity().getInheritanceType().isMappingToOwnTable()) {
+    if (getEntity().getInheritanceType().isMappingToOwnTable()) {
 
-        List<String> names = new ArrayList<>();
-        List<Attribute> attributes = multiInheritance ?
-                                        getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
-        for (Attribute attr: attributes)  {
-          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
-            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-              String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
-              names.add(name);
-            }
+      List<String> names = new ArrayList<>();
+      List<Attribute> attributes = multiInheritance ?
+                                      getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
+      for (Attribute attr: attributes)  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
+          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
+            names.add(name);
           }
         }
+      }
 
+      if (multiInheritance) {
 ]@
 
-@[
-    if (multiInheritance) {
-]@
   /**
    * Creates the SQL code for the @(pdoClass)@ insert statement.
    *
@@ -508,53 +450,52 @@
    */
   public String createInsertSql@(pdoClass)@() {
 @[
-    }
-    else  {
+      }
+      else  {
 ]@
+
   \@Override
   public String createInsertSql() {
 @[
-    }
+      }
 ]@
     return Backend.SQL_INSERT_INTO + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_LEFT_PARENTHESIS +
 @[
 
-        int count = 0;
-        for (String name: names) {
-          String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
+      int count = 0;
+      for (String name: names) {
+        String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
 ]@
            CN_@(name)@@(lineSep)@
 @[
-          count++;
-        }
+        count++;
+      }
 ]@
            Backend.SQL_INSERT_VALUES +
 @[
-        while (--count > 0)	{
+      while (--count > 0)	{
 ]@
            Backend.SQL_PAR_COMMA +
 @[
-        }
+      }
 ]@
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 @[
 
-    names.clear();
-    for (Attribute attr: attributes)  {
-      if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
-        for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-          String name = attr.getJavaName().toUpperCase() + sp.getPostfix();
-          names.add(name);
+      names.clear();
+      for (Attribute attr: attributes)  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
+          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
+            names.add(name);
+          }
         }
       }
-    }
 
+      if (multiInheritance) {
 ]@
 
-@[
-    if (multiInheritance) {
-]@
   /**
    * Creates the SQL code for the @(pdoClass)@ update statement.
    *
@@ -562,64 +503,63 @@
    */
   public String createUpdateSql@(pdoClass)@() {
 @[
-    }
-    else  {
+      }
+      else  {
 ]@
+
   \@Override
   public String createUpdateSql() {
 @[
-    }
+      }
 ]@
     return Backend.SQL_UPDATE + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_SET +
 @[
-        boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
-        int ncnt = 0;
-        for (String name: names) {
-          ncnt++;
-          if (!checkSerial && ncnt == names.size()) {
+      boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
+      int ncnt = 0;
+      for (String name: names) {
+        ncnt++;
+        if (!checkSerial && ncnt == names.size()) {
 ]@
            CN_@(name)@ + Backend.SQL_EQUAL_PAR +
 @[
-          }
-          else {
+        }
+        else {
 ]@
            CN_@(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
 @[
-          }
         }
+      }
 
-        if (ncnt == 0 && !checkSerial) {
-          // special case: no attributes and no checkserial
+      if (ncnt == 0 && !checkSerial) {
+        // special case: no attributes and no checkserial
 ]@
            CN_ID + Backend.SQL_EQUAL + CN_ID +
 @[
-        }
+      }
 
-        if (checkSerial) {
+      if (checkSerial) {
 ]@
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-        }
-        else  {
+      }
+      else  {
 ]@
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
-        }
+      }
 ]@
   }
 @[
-      }
+    }
 
-
-
-      if (multiInheritance) {
-        // create joinable sql selects with table aliases
-        Entity topEntity = getEntity().getTopSuperEntity();
-        List<Entity> chain = topEntity.getInheritanceChain(getEntity());
-        List<Entity> subs = orderByInheritanceLevelAndClassId(getEntity().getAllSubEntities());
-        String topImplClass = deriveClassNameForEntity(topEntity);
+    if (multiInheritance) {
+      // create joinable sql selects with table aliases
+      Entity topEntity = getEntity().getTopSuperEntity();
+      List<Entity> chain = topEntity.getInheritanceChain(getEntity());
+      List<Entity> subs = orderByInheritanceLevelAndClassId(getEntity().getAllSubEntities());
+      String topImplClass = deriveClassNameForEntity(topEntity);
 ]@
 
   /**
@@ -629,19 +569,19 @@
    */
   public String createDeleteSql@(pdoClass)@() {
 @[
-        if (getEntity().isRootOfInheritanceHierarchy()) {
+      if (getEntity().isRootOfInheritanceHierarchy()) {
 ]@
     return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-        }
-        else  {
+      }
+      else  {
 ]@
     return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
-        }
+      }
 ]@
   }
 
@@ -649,56 +589,56 @@
   public StringBuilder createSelectAllInnerSql() {
     StringBuilder sql = new StringBuilder();
 @[
-        boolean needComma = false;
-        for (Entity entity: chain) {
-          String implClass = deriveClassNameForEntity(entity);
+      boolean needComma = false;
+      for (Entity entity: chain) {
+        String implClass = deriveClassNameForEntity(entity);
 ]@
     sql.@(needComma ? "append(Backend.SQL_COMMA)." : "")@append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
 @[
-          needComma = true;
-          if (entity == topEntity) {
-            for (Entity sub: subs) {
-              implClass = deriveClassNameForEntity(sub);
+        needComma = true;
+        if (entity == topEntity) {
+          for (Entity sub: subs) {
+            implClass = deriveClassNameForEntity(sub);
 ]@
     sql.append(Backend.SQL_COMMA).append(@(implClass)@.CLASSVARIABLES.getColumnName(Backend.SQL_ALLSTAR));
 @[
-            }
           }
         }
+      }
 ]@
     sql.append(Backend.SQL_FROM);
     sql.append(@(topImplClass)@.CLASSVARIABLES.getTableName()).
         append(getBackend().sqlAsBeforeTableAlias()).append(@(topImplClass)@.CLASSVARIABLES.getTableAlias());
 @[
-        if (chain.size() > 1) {
-          for (Entity entity: chain.subList(1, chain.size())) {
-            String implClass = deriveClassNameForEntity(entity);
+      if (chain.size() > 1) {
+        for (Entity entity: chain.subList(1, chain.size())) {
+          String implClass = deriveClassNameForEntity(entity);
 ]@
     sql.append(getBackend().sqlJoin(JoinType.INNER,
                @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
                @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
                @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
 @[
-          }
         }
+      }
 
-        for (Entity sub: subs) {
-          String implClass = deriveClassNameForEntity(sub);
+      for (Entity sub: subs) {
+        String implClass = deriveClassNameForEntity(sub);
 ]@
     sql.append(getBackend().sqlJoin(JoinType.LEFT,
                @(implClass)@.CLASSVARIABLES.getTableName(), @(implClass)@.CLASSVARIABLES.getTableAlias(),
                @(topImplClass)@.CLASSVARIABLES.getColumnName(CN_ID) + Backend.SQL_EQUAL +
                @(implClass)@.CLASSVARIABLES.getColumnName(CN_ID)));
 @[
-        }
+      }
 ]@
     sql.append(Backend.SQL_WHEREALL);
     return sql;
   }
-
 @[
-        String implClass = deriveClassNameForEntity(topEntity);
+      String implClass = deriveClassNameForEntity(topEntity);
 ]@
+
   \@Override
   public StringBuilder createSelectAllByIdInnerSql() {
     StringBuilder sql = createSelectAllInnerSql();
@@ -709,36 +649,33 @@
   }
 @[
 
-        if (getEntity().isRootOfInheritanceHierarchy()) {
+      if (getEntity().isRootOfInheritanceHierarchy()) {
 ]@
 
   \@Override
-  protected void updateImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void updateImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.updateStatementId, this::createUpdateSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void insertImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void insertImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.insertStatementId, this::createInsertSql@(pdoClass)@);
     setFields@(pdoClass)@(st);
     assertThisRowAffected(st.executeUpdate());
   }
 
   \@Override
-  protected void deleteImpl(\@SuppressWarnings("unused") DbObjectClassVariables<P> classVariables,
-                            \@SuppressWarnings("unused") Supplier<String> sqlsupplier) {
+  protected void deleteImpl(DbObjectClassVariables<P> classVariables, Supplier<String> sqlsupplier) {
     PreparedStatementWrapper st = getPreparedStatement(CLASSVARIABLES.deleteStatementId, this::createDeleteSql@(pdoClass)@);
     st.setLong(1, getId());
     st.setLong(2, getSerial());
     assertThisRowAffected(st.executeUpdate());
   }
 @[
-        }
-        else  {
+      }
+      else  {
 ]@
 
   \@Override
@@ -768,15 +705,15 @@
     super.deleteImpl(classVariables, sqlsupplier);
   }
 @[
-        }
       }
+    }
 
-      for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet()) {
-          generateSnapshot = true;
-        }
-        if (attr.getOptions().isNoMethod()) {
-          if (!attr.getOptions().isFromSuper()) {
+    for (Attribute attr: getEntity().getAttributes())  {
+      if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet()) {
+        generateSnapshot = true;
+      }
+      if (attr.getOptions().isNoMethod()) {
+        if (!attr.getOptions().isFromSuper()) {
 ]@
 
   /**
@@ -784,83 +721,106 @@
    * @(attr.getOptions().getComment())@
    */
 @[
-          }
         }
-        else {
-          String protection = attr.getOptions().getAccessScope().toString();
-          String type = attr.getJavaType();
-          String methodSuffix = attr.getMethodNameSuffix();
-          String getter = attr.getGetterName();
-          String setter = attr.getSetterName();
-          if (attr.getOptions().isWriteOnly()) {
+      }
+      else {
+        String protection = attr.getOptions().getAccessScope().toString();
+        String type = attr.getJavaType();
+        String methodSuffix = attr.getMethodNameSuffix();
+        String getter = attr.getGetterName();
+        String setter = attr.getSetterName();
+        if (attr.getOptions().isWriteOnly()) {
 ]@
 
   // @(attr)@ is writeonly, no getter.
 @[
-          }
-          else  {
+        }
+        else  {
+          if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
-   * Gets the attribute @(attr.getJavaName())@.
+   * Gets the attribute @(attr.getName())@.
    *
    * \@return @(attr.getOptions().getComment())@
    */
 @[
-            if (!noif) {
+          }
+          else {
 ]@
+
   \@Override
 @[
-            }
+          }
 ]@
   @(protection)@ @(type)@ @(getter)@()    {
-    return @(attr.getJavaName())@;
+    return @(attr.getName())@;
   }
 @[
-          }
+        }
 
-          if (attr.getOptions().isReadOnly()) {
+        if (attr.getOptions().isReadOnly()) {
 ]@
 
   // @(attr)@ is readonly, no setter.
 @[
+        }
+        else {
+          String setterProtection = protection;
+          boolean useOverride = !noif && "public".equals(protection) && !attr.getOptions().isHidden();
+          // check to make setter for lazy or eager object relations private
+          Relation rel = attr.getRelation();
+          if (rel != null && rel.getSelectionType() != SelectionType.ALWAYS) {
+            setterProtection = getEntity().isAbstract() ? "protected" : "private";
+            useOverride = false;
           }
-          else {
-            String setterProtection = protection;
-            boolean useOverride = !noif && "public".equals(protection);
-            // check to make setter for lazy or eager object relations private
-            Relation rel = attr.getRelation();
-            if (rel != null && rel.getSelectionType() != SelectionType.ALWAYS) {
-              setterProtection = getEntity().isAbstract() ? "protected" : "private";
-              useOverride = false;
-            }
+          if (!useOverride) {
 ]@
 
   /**
-   * Sets the attribute @(attr.getJavaName())@.
+   * Sets the attribute @(attr.getName())@.
    *
-   * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+   * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
    */
 @[
-            if (useOverride) {
+          }
+          else {
 ]@
+
   \@Override
 @[
-            }
+          }
 ]@
-  @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getJavaName())@) {
+  @(setterProtection)@ void @(setter)@(@(type)@ @(attr.getName())@) {
     assertMutable();
 @[
-            if (isTracked())  {
+          if (isTracked())  {
+            if (isFullTracked()) {
               if (attr.getDataType().isPrimitive()) {
 ]@
-    if (this.@(attr.getJavaName())@ != @(attr.getJavaName())@) {
+    if (this.@(attr.getName())@ != @(attr.getName())@) {
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+    }
+@[
+              }
+              else {
+]@
+    if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
+    }
+@[
+              }
+            }
+            else {
+              if (attr.getDataType().isPrimitive()) {
+]@
+    if (this.@(attr.getName())@ != @(attr.getName())@) {
       setModified(true);
 @[
                 if (isAttracked()) {
 ]@
-      @(attr.getJavaName())@Modified = true;
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+      @(attr.getName())@Modified = true;
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                 }
 ]@
@@ -869,13 +829,13 @@
               }
               else  {
 ]@
-    if (!Objects.equals(this.@(attr.getJavaName())@, @(attr.getJavaName())@)) {
+    if (!Objects.equals(this.@(attr.getName())@, @(attr.getName())@)) {
       setModified(true);
 @[
                 if (isAttracked()) {
 ]@
-      @(attr.getJavaName())@Modified = true;
-      firePropertyChange(AN_@(attr.getJavaName().toUpperCase())@, this.@(attr.getJavaName())@, @(attr.getJavaName())@);
+      @(attr.getName())@Modified = true;
+      firePropertyChange(AN_@(attr.getName().toUpperCase())@, this.@(attr.getName())@, @(attr.getName())@);
 @[
                 }
 ]@
@@ -883,40 +843,64 @@
 @[
               }
             }
+          }
 ]@
-    this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
+    this.@(attr.getName())@ = @(attr.getName())@;
 @[
-            if (type.equals("Timestamp")) {
+          if (type.equals("Timestamp")) {
 ]@
-    if (@(attr.getJavaName())@ != null) {
-      @(attr.getJavaName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
+    if (@(attr.getName())@ != null) {
+      @(attr.getName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
     }
 @[
-            }
+          }
 ]@
   }
 @[
-            if (isAttracked()) {
+          if (isAttracked()) {
+            if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
-   * Gets the modification state of @(attr.getJavaName())@.
+   * Gets the modification state of @(attr.getName())@.
    *
    * \@return true if @(attr)@ has been modified
    */
 @[
-              if (!noif) {
+            }
+            else {
 ]@
+
   \@Override
 @[
-              }
+            }
 ]@
   @(protection)@ boolean is@(methodSuffix)@Modified() {
-    return @(attr.getJavaName())@Modified;
-  }
+@[
+            if (isFullTracked()) {
+              if (attr.getDataType().isPrimitive()) {
+]@
+    return @(attr.getName())@ != @(attr.getName())@Persisted;
+@[
+              }
+              else {
+]@
+    return !Objects.equals(@(attr.getName())@, @(attr.getName())@Persisted);
+@[
+              }
+            }
+            else {
+]@
+    return @(attr.getName())@Modified;
 @[
             }
-            if (isFullTracked()) {
+]@
+  }
+@[
+          }
+
+          if (isFullTracked()) {
+            if (noif || attr.getOptions().isHidden()) {
 ]@
 
   /**
@@ -925,22 +909,24 @@
    * \@return the last persisted value
    */
 @[
-              if (!noif) {
+            }
+            else {
 ]@
+
   \@Override
 @[
-              }
+            }
 ]@
   @(protection)@ @(attr.getJavaType())@ @(getter)@Persisted() {
-    return @(attr.getJavaName())@Persisted;
+    return @(attr.getName())@Persisted;
   }
 @[
-            }
           }
         }
       }
+    }
 
-      if (isPdo && generateSnapshot) {
+    if (isPdo && generateSnapshot) {
 ]@
 
   /**
@@ -949,22 +935,22 @@
    *
    * \@param snapshot the snapshot
    */
-  protected void createAttributesInSnapshot(@(mainClass)@ snapshot) {
+  protected void createAttributesInSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.createAttributesInSnapshot(snapshot);
 @[
-        for (Attribute attr: getEntity().getAttributes())  {
-          if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
-            String name = attr.getJavaName();
-            if (attr.getDataType().isMutable()) {
-              String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
+      for (Attribute attr: getEntity().getAttributes())  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
+          String name = attr.getName();
+          if (attr.getDataType().isMutable()) {
+            String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
 ]@
     if (@(name)@ != null) {
       snapshot.@(name)@Snapshot = @(castStr)@@(name)@.clone();
     }
 @[
-            }
           }
         }
+      }
 ]@
   }
 
@@ -973,72 +959,75 @@
    *
    * \@param snapshot the snapshot object
    */
-  protected void revertAttributesToSnapshot(@(mainClass)@ snapshot) {
+  protected void revertAttributesToSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.revertAttributesToSnapshot(snapshot);
 @[
-        for (Attribute attr: getEntity().getAttributes()) {
-          if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
-            String name = attr.getJavaName();
+      for (Attribute attr: getEntity().getAttributes()) {
+        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
+          String name = attr.getName();
 ]@
     // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
 @[
-            if (attr.getDataType().isDateOrTime()) {
+          if (attr.getDataType().isDateOrTime()) {
 ]@
     if (@(name)@ != null) {
       @(name)@.setTime(snapshot.@(name)@Snapshot.getTime());
     }
 @[
-            }
-            else if (attr.getDataType() == DataType.BINARY) {
+          }
+          else if (attr.getDataType() == DataType.BINARY) {
 ]@
     if (@(name)@ != null) {
       @(name)@.setData(snapshot.@(name)@Snapshot.getData());
     }
 @[
-            }
-            if (isAttracked()) {
-]@
-    @(name)@Modified = snapshot.@(name)@Modified;
-@[
-              if (isFullTracked()) {
+          }
+          if (isAttracked()) {
+            if (isFullTracked()) {
 ]@
     @(name)@Persisted = snapshot.@(name)@Persisted;
 @[
-              }
+            }
+            else {
+]@
+    @(name)@Modified = snapshot.@(name)@Modified;
+@[
             }
           }
         }
+      }
 ]@
   }
 @[
-      }
+    }
 
-      if (generateSelectByUDK) {
-        List<Attribute> udk = getEntity().getUniqueDomainKey();
-        if (!udk.isEmpty()) {
-          List<Attribute> superUdk = null;
-          if (getEntity().getSuperEntity() != null) {
-            superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
-          }
-          if (superUdk == null || !udk.equals(superUdk)) {
-            Set<Entity> components = getEntity().getAllComponents();
-            StringBuilder attribs = new StringBuilder();
-            for (Attribute attribute: udk) {
-              if (attribs.length() != 0) {
-                attribs.append(" ");
-              }
-              if (components.contains(attribute.getEntity())) {
-                attribs.append(attribute.getEntity()).append(".");
-              }
-              attribs.append(attribute.getJavaName());
+    if (generateSelectByUDK) {
+      List<Attribute> udk = getEntity().getUniqueDomainKey();
+      if (!udk.isEmpty()) {
+        List<Attribute> superUdk = null;
+        if (getEntity().getSuperEntity() != null) {
+          superUdk = getEntity().getSuperEntity().getUniqueDomainKey();
+        }
+        if (superUdk == null || !udk.equals(superUdk)) {
+          Set<Entity> components = getEntity().getAllComponents();
+          StringBuilder attribs = new StringBuilder();
+          for (Attribute attribute: udk) {
+            if (attribs.length() != 0) {
+              attribs.append(" ");
             }
+            if (components.contains(attribute.getEntity())) {
+              attribs.append(attribute.getEntity()).append(".");
+            }
+            attribs.append(attribute.getName());
+          }
 ]@
 
   // selects by unique domain key
   // \@wurblet selectByUniqueDomainKey PdoSelectUnique @(attribs)@
 @[
-          }
         }
       }
+    }
+  }
 ]@

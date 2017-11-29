@@ -30,8 +30,6 @@ import java.awt.event.KeyEvent;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JButton;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -43,7 +41,7 @@ import org.tentackle.log.LoggerFactory;
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormButton extends JButton implements FormChangeableComponent, I18nTranslatable {
+public class FormButton extends JButton implements FormChangeableComponent {
 
   /**
    * the logger for this class.
@@ -63,7 +61,6 @@ public class FormButton extends JButton implements FormChangeableComponent, I18n
   private boolean honourChangeable = true;        // true if honour setChangeable
   private boolean changeable = true;              // true if component is changeable
   private boolean allChangeable = true;           // true if container is changeable
-  private I18nTranslation i18nTranslation;        // the I18N translated text
 
   /**
    * Creates a button with no set text or icon.
@@ -110,29 +107,6 @@ public class FormButton extends JButton implements FormChangeableComponent, I18n
    */
   public FormButton(String text, Icon icon) {
     super(text, icon);
-  }
-
-
-  /**
-   * Sets the translated text.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setText(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setText(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
   }
 
 

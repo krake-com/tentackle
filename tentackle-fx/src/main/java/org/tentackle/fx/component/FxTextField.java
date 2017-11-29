@@ -64,10 +64,19 @@ public class FxTextField extends TextField implements FxTextComponent {
 
   private /**/FxTextFieldDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxTextFieldDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxTextFieldDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxTextFieldDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxTextFieldDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -101,7 +110,7 @@ public class FxTextField extends TextField implements FxTextComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 
@@ -412,6 +421,16 @@ public class FxTextField extends TextField implements FxTextComponent {
   @Override
   public boolean isUnsigned() {
     return getDelegate().isUnsigned();
+  }
+
+  @Override
+  public void setUTC(boolean utc) {
+    getDelegate().setUTC(utc);
+  }
+
+  @Override
+  public boolean isUTC() {
+    return getDelegate().isUTC();
   }
 
   @Override

@@ -37,17 +37,18 @@ import java.util.Set;
 /**
  * Default implementation of a {@link ServiceFinder}.
  * <p>
- * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
- * on tentackle-common, i.e. this cannot be analyzed.
- * META-INF/services must be edited manually!
  *
  * @author harald
  */
 @Service(ServiceFinder.class)
 public class DefaultServiceFinder implements ServiceFinder {
+  /**
+   * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
+   * on tentackle-common, i.e. this cannot be analyzed.
+   * META-INF/services must be edited manually!
+   */
 
-
-  private final ClassLoader loader;                         // optional classloader, null = default
+  private final ClassLoader loader;                         // the default classloader, never null
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
@@ -56,12 +57,16 @@ public class DefaultServiceFinder implements ServiceFinder {
   /**
    * Creates a service finder.<br>
    *
-   * @param loader optional classloader, null if use {@link ClassLoader#getSystemResources}
+   * @param loader optional classloader, null if use {@link ClassLoader#getSystemClassLoader()}
    * @param servicePath optional service path prefix, null if {@code "META_INF/services/"}
    */
   public DefaultServiceFinder(ClassLoader loader, String servicePath) {
 
-    this.loader = loader;
+    this.loader = loader == null ? ClassLoader.getSystemClassLoader() : loader;
+
+    if (this.loader == null) {
+      throw new TentackleRuntimeException("cannot determine classloader");
+    }
 
     if (servicePath == null) {
       this.servicePath = Constants.DEFAULT_SERVICE_PATH;
@@ -78,8 +83,8 @@ public class DefaultServiceFinder implements ServiceFinder {
       this.servicePath = servicePath;
     }
 
-    this.serviceMap = new HashMap<>();
-    this.classMap   = new HashMap<>();
+    serviceMap = new HashMap<>();
+    classMap = new HashMap<>();
   }
 
 
@@ -104,6 +109,26 @@ public class DefaultServiceFinder implements ServiceFinder {
   }
 
 
+  /**
+   * Gets the classloader used by this finder.
+   *
+   * @return the classloader, never null
+   */
+  @Override
+  public ClassLoader getClassLoader() {
+    return loader;
+  }
+
+  /**
+   * Gets the finder' service path it is responsible for.
+   *
+   * @return the service path
+   */
+  @Override
+  public String getServicePath() {
+    return servicePath;
+  }
+
 
   /**
    * Finds URLs of a service by name.<br>
@@ -114,17 +139,12 @@ public class DefaultServiceFinder implements ServiceFinder {
   @Override
   public Enumeration<URL> findServiceURLs(String serviceName) {
     try {
-      String fullName = servicePath + serviceName;
-      return loader == null ?
-                ClassLoader.getSystemResources(fullName) :
-                loader.getResources(fullName);
+      return getClassLoader(serviceName).getResources(servicePath + serviceName);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
     }
   }
-
-
 
 
   /**
@@ -135,7 +155,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return a map of the configured services and their corresponding URLs
    */
   @Override
-  public Map<String,URL> findServiceConfigurations(String serviceName) {
+  public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
     Map<String,URL> services = serviceMap.get(serviceName);
     if (services == null) {
       services = new LinkedHashMap<>();   // linked hashmap to preserve order
@@ -158,7 +178,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the service configuation entry
    */
   @Override
-  public Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
+  public synchronized Map.Entry<String,URL> findFirstServiceConfiguration(String serviceName) {
     Map<String,URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -176,7 +196,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the service configuation entry
    */
   @Override
-  public Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
+  public synchronized Map.Entry<String,URL> findUniqueServiceConfiguration(String serviceName) {
     Map<String,URL> services = findServiceConfigurations(serviceName);
     if (services.isEmpty()) {
       throw new TentackleRuntimeException("service '" + serviceName + "' not found");
@@ -208,14 +228,14 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @SuppressWarnings("unchecked")
   @Override
-  public <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
+  public synchronized <T> Collection<Class<T>> findServiceProviders(Class<T> service) throws ClassNotFoundException {
     String serviceName = service.getName();
     Collection<Class<T>> serviceImplClasses = (Collection) classMap.get(serviceName);
     if (serviceImplClasses == null) {
       serviceImplClasses = new ArrayList<>();
       for (Map.Entry<String,URL> entry: findServiceConfigurations(serviceName).entrySet()) {
         String serviceImplName = entry.getKey();
-        Class<T> provider = (Class<T>) Class.forName(serviceImplName);
+        Class<T> provider = (Class<T>) Class.forName(serviceImplName, true, getClassLoader(serviceName));
         // check that provides really implements service
         checkProvider(provider, service, entry.getValue());
         serviceImplClasses.add(provider);
@@ -239,15 +259,16 @@ public class DefaultServiceFinder implements ServiceFinder {
   @SuppressWarnings("unchecked")
   @Override
   public <T> Class<T> findFirstServiceProvider(Class<T> service) throws ClassNotFoundException {
-    Map.Entry<String,URL> entry = findFirstServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey());
+    String serviceName = service.getName();
+    Map.Entry<String,URL> entry = findFirstServiceConfiguration(serviceName);
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
 
 
   /**
-   * Finds the unique service provider by service name.<br>
+   * Finds the unique service provider by service class.<br>
    *
    * @param <T> the service type
    * @param service the service class
@@ -257,8 +278,9 @@ public class DefaultServiceFinder implements ServiceFinder {
   @SuppressWarnings("unchecked")
   @Override
   public <T> Class<T> findUniqueServiceProvider(Class<T> service) throws ClassNotFoundException {
-    Map.Entry<String,URL> entry = findUniqueServiceConfiguration(service.getName());
-    Class<T> provider = (Class<T>) Class.forName(entry.getKey());
+    String serviceName = service.getName();
+    Map.Entry<String,URL> entry = findUniqueServiceConfiguration(serviceName);
+    Class<T> provider = (Class<T>) Class.forName(entry.getKey(), true, getClassLoader(serviceName));
     checkProvider(provider, service, entry.getValue());
     return provider;
   }
@@ -274,7 +296,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the map
    */
   @Override
-  public Map<String, String> createNameMap(String serviceName) {
+  public synchronized Map<String, String> createNameMap(String serviceName) {
 
     Map<String, String> nameMap = new HashMap<>();
 
@@ -282,7 +304,7 @@ public class DefaultServiceFinder implements ServiceFinder {
             ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH).findServiceConfigurations(serviceName).entrySet()) {
 
       String configuration = entry.getKey();
-      List<String> parts = BasicStringHelper.split(configuration, ":= ");
+      List<String> parts = StringHelper.split(configuration, ":= ");
       if (parts.size() != 2) {
         throw new TentackleRuntimeException("invalid service configuration '" + configuration + "' in " + entry.getValue());
       }
@@ -302,14 +324,14 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the map
    */
   @Override
-  public Map<String, Set<String>> createNameMapToAll(String serviceName) {
+  public synchronized Map<String, Set<String>> createNameMapToAll(String serviceName) {
     Map<String, Set<String>> nameMap = new HashMap<>();
 
     for (Map.Entry<String, URL> entry :
             ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH).findServiceConfigurations(serviceName).entrySet()) {
 
       String configuration = entry.getKey();
-      List<String> parts = BasicStringHelper.split(configuration, ":= ");
+      List<String> parts = StringHelper.split(configuration, ":= ");
       if (parts.size() != 2) {
         throw new TentackleRuntimeException("invalid service configuration '" + configuration + "' in " + entry.getValue());
       }
@@ -326,6 +348,20 @@ public class DefaultServiceFinder implements ServiceFinder {
     return nameMap;
   }
 
+
+  /**
+   * Gets the classloader for the given service name.
+   *
+   * @param serviceName the service name
+   * @return the loader, never null
+   */
+  protected ClassLoader getClassLoader(String serviceName) {
+    ClassLoader cl = ServiceFactory.getExplicitClassLoader(servicePath, serviceName);
+    if (cl == null) {
+      cl = getClassLoader();
+    }
+    return cl;
+  }
 
   /**
    * Parses a service URL.<br>

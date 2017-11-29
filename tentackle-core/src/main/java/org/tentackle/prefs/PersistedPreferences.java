@@ -20,8 +20,6 @@
 
 package org.tentackle.prefs;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
@@ -32,12 +30,8 @@ import java.util.prefs.PreferenceChangeListener;
 /**
  * Persisted Preferences.
  * <p>
- * Despite the JDK's implementation this is just an interface.
- * This makes it easier to switch implementations at runtime.
- * <p>
- * Some static methods became class methods.
- * The only static method is getPersistedPreferencesClass which determines
- * the implementation class of the PeristedPreferences via service lookup.
+ * Resembles the JDK's {@link java.util.prefs.Preferences}, but is just an interface.
+ * Allows to switch implementations at runtime.
  */
 public interface PersistedPreferences {
 
@@ -583,6 +577,8 @@ public interface PersistedPreferences {
    * <p>
    * @throws BackingStoreException if this operation cannot be completed due to a failure in the backing store, or
    *                               inability to communicate with it.
+   * @throws PreferencesInvalidException if some of the nodes or preferences keys were changed in the meantime
+   * and application should reload the preferences node(s)
    * @see #sync()
    */
   void flush() throws BackingStoreException;
@@ -596,6 +592,8 @@ public interface PersistedPreferences {
    * @throws BackingStoreException if this operation cannot be completed due to a failure in the backing store, or
    *                               inability to communicate with it.
    * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode()} method.
+   * @throws PreferencesInvalidException if some of the nodes or preferences keys were changed in the meantime
+   * and application should reload the preferences node(s)
    * @see #flush()
    */
   void sync() throws BackingStoreException;
@@ -671,52 +669,5 @@ public interface PersistedPreferences {
    * @see #addNodeChangeListener(NodeChangeListener)
    */
   void removeNodeChangeListener(NodeChangeListener ncl);
-
-  /**
-   * Emits on the specified output stream an XML document representing all of the preferences contained in this node
-   * (but not its descendants). This XML document is, in effect, an offline backup of the node.
-   * <p>
-   * The XML document will have the following DOCTYPE declaration:
-   * <pre>{@code
-   * <!DOCTYPE preferences SYSTEM "http://java.sun.com/dtd/preferences.dtd">
-   * }</pre> The UTF-8 character encoding will be used.
-   * <p>
-   * This method is an exception to the general rule that the results of concurrently executing multiple methods in this
-   * class yields results equivalent to some serial execution. If the preferences at this node are modified concurrently
-   * with an invocation of this method, the exported preferences comprise a "fuzzy snapshot" of the preferences
-   * contained in the node; some of the concurrent modifications may be reflected in the exported data while others may
-   * not.
-   * <p>
-   * @param os the output stream on which to emit the XML document.
-   * <p>
-   * @throws IOException           if writing to the specified output stream results in an <tt>IOException</tt>.
-   * @throws BackingStoreException if preference data cannot be read from backing store.
-   * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode() } method.
-   */
-  void exportNode(OutputStream os) throws IOException, BackingStoreException;
-
-  /**
-   * Emits an XML document representing all of the preferences contained in this node and all of its descendants. This
-   * XML document is, in effect, an offline backup of the subtree rooted at the node.
-   * <p>
-   * The XML document will have the following DOCTYPE declaration:
-   * <pre>{@code
-   * <!DOCTYPE preferences SYSTEM "http://java.sun.com/dtd/preferences.dtd">
-   * }</pre> The UTF-8 character encoding will be used.
-   * <p>
-   * This method is an exception to the general rule that the results of concurrently executing multiple methods in this
-   * class yields results equivalent to some serial execution. If the preferences or nodes in the subtree rooted at this
-   * node are modified concurrently with an invocation of this method, the exported preferences comprise a "fuzzy
-   * snapshot" of the subtree; some of the concurrent modifications may be reflected in the exported data while others
-   * may not.
-   * <p>
-   * @param os the output stream on which to emit the XML document.
-   * <p>
-   * @throws IOException           if writing to the specified output stream results in an <tt>IOException</tt>.
-   * @throws BackingStoreException if preference data cannot be read from backing store.
-   * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode()} method.
-   * @see #exportNode(OutputStream)
-   */
-  void exportSubtree(OutputStream os) throws IOException, BackingStoreException;
 
 }

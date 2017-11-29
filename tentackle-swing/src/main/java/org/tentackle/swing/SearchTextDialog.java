@@ -106,7 +106,7 @@ public class SearchTextDialog extends org.tentackle.swing.FormDialog {
     cancelButton = new org.tentackle.swing.FormButton();
 
     setAutoPosition(true);
-    setTitle(SwingSwingBundle.getTranslation("FIND")); // NOI18N
+    setTitle(SwingSwingBundle.getString("FIND")); // NOI18N
     addFormWrapListener(new org.tentackle.swing.FormWrapListener() {
       public void formWrapped(org.tentackle.swing.FormWrapEvent evt) {
         formFormWrapped(evt);
@@ -115,7 +115,7 @@ public class SearchTextDialog extends org.tentackle.swing.FormDialog {
 
     searchPanel.setLayout(new java.awt.GridBagLayout());
 
-    jLabel1.setText(SwingSwingBundle.getTranslation("FIND:")); // NOI18N
+    jLabel1.setText(SwingSwingBundle.getString("FIND:")); // NOI18N
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
     gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
@@ -136,7 +136,7 @@ public class SearchTextDialog extends org.tentackle.swing.FormDialog {
     gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
     searchPanel.add(searchTextField, gridBagConstraints);
 
-    uclcCheckBox.setText(SwingSwingBundle.getTranslation("CASE SENSITIVE?")); // NOI18N
+    uclcCheckBox.setText(SwingSwingBundle.getString("CASE SENSITIVE?")); // NOI18N
     uclcCheckBox.setName("uclc"); // NOI18N
     uclcCheckBox.addValueListener(new org.tentackle.swing.ValueListener() {
       public void valueEntered(org.tentackle.swing.ValueEvent evt) {
@@ -157,7 +157,7 @@ public class SearchTextDialog extends org.tentackle.swing.FormDialog {
 
     searchButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("search"));
     searchButton.setMnemonic('s');
-    searchButton.setText(SwingSwingBundle.getTranslation("FIND")); // NOI18N
+    searchButton.setText(SwingSwingBundle.getString("FIND")); // NOI18N
     searchButton.setName("search"); // NOI18N
     searchButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -168,7 +168,7 @@ public class SearchTextDialog extends org.tentackle.swing.FormDialog {
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
     cancelButton.setMnemonic('a');
-    cancelButton.setText(SwingSwingBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(SwingSwingBundle.getString("CANCEL")); // NOI18N
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {

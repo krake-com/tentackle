@@ -4,7 +4,7 @@
   <Properties>
     <Property name="autoPosition" type="boolean" value="true"/>
     <Property name="title" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-      <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+      <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND" replaceFormat="UiSwingBundle.getString(&quot;{key}&quot;)"/>
     </Property>
   </Properties>
   <SyntheticProperties>
@@ -40,7 +40,7 @@
         <Component class="org.tentackle.swing.FormLabel" name="jLabel1">
           <Properties>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND:" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND:" replaceFormat="UiSwingBundle.getString(&quot;{key}&quot;)"/>
             </Property>
           </Properties>
           <Constraints>
@@ -67,7 +67,7 @@
         <Component class="org.tentackle.swing.FormCheckBox" name="uclcCheckBox">
           <Properties>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="CASE SENSITIVE?" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="CASE SENSITIVE?" replaceFormat="UiSwingBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="uclc" noResource="true"/>
           </Properties>
@@ -99,7 +99,7 @@
             </Property>
             <Property name="mnemonic" type="int" value="115"/>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="FIND" replaceFormat="UiSwingBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="search" noResource="true"/>
           </Properties>
@@ -114,7 +114,7 @@
             </Property>
             <Property name="mnemonic" type="int" value="97"/>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="CANCEL" replaceFormat="UiSwingBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/UiSwingBundle.properties" key="CANCEL" replaceFormat="UiSwingBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="name" type="java.lang.String" value="cancel" noResource="true"/>
           </Properties>

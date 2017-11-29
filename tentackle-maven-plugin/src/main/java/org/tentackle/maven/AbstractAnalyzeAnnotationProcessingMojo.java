@@ -20,11 +20,18 @@
 package org.tentackle.maven;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 import org.tentackle.buildsupport.AnalyzeProcessor;
+import org.tentackle.buildsupport.ResourceManager;
 
 
 
@@ -50,6 +57,18 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    */
   private File servicesDir;
 
+  /**
+   * Optional generated index holding the generated services.<br>
+   * Example: &lt;index&gt;META-INF/RESOURCE-INDEX.LIST&lt;/index&gt;
+   */
+  @Parameter
+  protected String index;
+
+  /**
+   * The generated services names.
+   */
+  private Set<String> generatedServices;
+
 
   /**
    * Creates a mojo.
@@ -65,8 +84,10 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
    * @param analyzeDir the directory holding the analyze results
    * @param servicesDir the directory holding the generated services
    * @param classpathElements the mavenProject classpath
+   * @throws MojoFailureException if classloader could not be created
    */
-  public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements) {
+  public void setMojoParameters(File sourceDir, File analyzeDir, File servicesDir, List<String> classpathElements)
+         throws MojoFailureException {
     super.setMojoParameters(sourceDir, classpathElements);
     this.analyzeDir = analyzeDir;
     this.servicesDir = servicesDir;
@@ -102,18 +123,31 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
   }
 
 
-  /**
-   * Initializes a processor.
-   *
-   * @param processor the annotation processor
-   * @param srcDir the sources dir
-   */
   @Override
-  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) {
+  protected void initializeProcessor(AbstractTentackleProcessor processor, File srcDir) throws MojoFailureException {
     super.initializeProcessor(processor, srcDir);
     AnalyzeProcessor p = (AnalyzeProcessor) processor;
     p.setAnalyzeDir(analyzeDir);
     p.setServiceDir(servicesDir);
+    p.setProcessingClassLoader(getProcessingClassloader());
+  }
+
+  
+  @Override
+  protected void cleanupProcessors(File srcDir) throws MojoFailureException {
+    if (index != null && processors != null) {
+      if (generatedServices == null) {
+        generatedServices = new TreeSet<>();
+      }
+      for (AbstractTentackleProcessor processor: processors) {
+        for (ResourceManager rm: processor.getResourceManagers()) {
+          if (rm.getLocation().equals(servicesDir)) {
+            generatedServices.addAll(rm.getResourceNames());
+          }
+        }
+      }
+    }
+    super.cleanupProcessors(srcDir);
   }
 
 
@@ -159,6 +193,21 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     }
 
     return filteredNames.toArray(new String[filteredNames.size()]);
+  }
+
+  @Override
+  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+    if (index != null && generatedServices != null && !generatedServices.isEmpty()) {
+      try (PrintWriter writer = new ResourceManager(servicesDir).getWriter(index)) {
+        for (String generatedService: generatedServices) {
+          writer.println(generatedService);
+        }
+      }
+      catch (IOException ix) {
+        throw new MojoFailureException("cannot create resource index", ix);
+      }
+    }
+    super.finishExecute();
   }
 
 }

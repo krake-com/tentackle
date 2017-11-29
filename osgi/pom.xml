@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!--
+   Tentackle OSGi Parent
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>2.1-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle-parent-osgi</artifactId>
+  <version>2.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Tentackle OSGi Parent</name>
+  <description>OSGi Parent pom.xml for the Tentackle modules.</description>
+
+  <modules>
+    <module>tentackle.common.osgi</module>
+    <module>tentackle-osgi-activators</module>
+    <module>tentackle.core.osgi</module>
+    <module>tentackle.sql.osgi</module>
+    <module>tentackle.session.osgi</module>
+    <module>tentackle.database.osgi</module>
+    <module>tentackle.model.osgi</module>
+    <module>tentackle.pdo.osgi</module>
+    <module>tentackle.domain.osgi</module>
+    <module>tentackle.persistence.osgi</module>
+    <module>tentackle.log.util.osgi</module>
+    <module>tentackle.log.log4j.osgi</module>
+    <module>tentackle.log.slf4j.osgi</module>
+    <module>tentackle.i18n.osgi</module>
+    <module>tentackle.script.groovy.osgi</module>
+    <module>tentackle.script.ruby.osgi</module>
+    <module>tentackle.web.osgi</module>
+    <module>tentackle.fx.osgi</module>
+    <module>tentackle.fx.rdc.osgi</module>
+  </modules>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <id>bundle</id>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>install</id>
+            <phase>install</phase>
+            <goals>
+              <goal>install</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>deploy</id>
+            <phase>deploy</phase>
+            <goals>
+              <goal>deploy</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+

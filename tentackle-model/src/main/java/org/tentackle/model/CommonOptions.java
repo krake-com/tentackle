@@ -35,7 +35,7 @@ public interface CommonOptions {
 
   /**
    * The bind options.
-   * 
+   *
    * @return the bind options
    */
   String getBindOptions();
@@ -83,7 +83,7 @@ public interface CommonOptions {
   boolean isWriteOnly();
 
   /**
-   * true if [PACKAGE]-option set.
+   * The access scope.
    * @return the AccessPackage
    */
   AccessScope getAccessScope();

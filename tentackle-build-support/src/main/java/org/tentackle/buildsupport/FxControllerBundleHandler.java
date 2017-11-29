@@ -26,12 +26,10 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import org.tentackle.common.Constants;
 
-import static org.tentackle.buildsupport.BundleHandler.PROPS_EXTENSION;
-
 
 /**
  * Handler to extract the name of the resource bundle from
- * the with @FxControllerService annotated class.
+ * the class annotated with &#64;FxControllerService.
  *
  * @author harald
  */
@@ -40,7 +38,7 @@ public class FxControllerBundleHandler extends BundleHandler {
   @Override
   protected String getBundleName(Element element, String annotationName) {
 
-    String bundleName = "/" + element.toString();   // annotated class, same as the name of the bundle (default)
+    String bundleName = element.toString();   // annotated class, same as the name of the bundle (default)
 
     // check if bundle name is overridden
     // we must use mirrors because class isn't loaded already and probably cannot be loaded at all
@@ -48,16 +46,12 @@ public class FxControllerBundleHandler extends BundleHandler {
       if (annoMirror.getAnnotationType().toString().equals(annotationName)) {
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annoMirror.getElementValues().entrySet()) {
           if ("resources".equals(entry.getKey().getSimpleName().toString())) {
-            String name = entry.getValue().toString();
-            if (Constants.NAME_NONE.equals(name)) {
-              return null;    // explicitly no bundle
+            bundleName = entry.getValue().toString();
+            if (Constants.NAME_NONE.equals(bundleName)) {
+              bundleName = null; // explicitly no bundle
             }
-            if (!name.isEmpty()) {
-              bundleName = name;
-              if (bundleName.endsWith(PROPS_EXTENSION)) {
-                // cut trailing ".properties"
-                bundleName = bundleName.substring(0, bundleName.length() - PROPS_EXTENSION.length());
-              }
+            else {
+              bundleName = xlateBundleName(bundleName);
             }
             break;
           }
@@ -66,7 +60,6 @@ public class FxControllerBundleHandler extends BundleHandler {
       }
     }
 
-    bundleName = bundleName.replace('.', '/');
     return bundleName;
   }
 

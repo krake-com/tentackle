@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.WeakInvalidationListener;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -38,7 +40,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
@@ -53,7 +54,9 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxLabel;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.component.FxTreeView;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.GuiProviderFactory;
@@ -61,12 +64,13 @@ import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcRuntimeException;
-import org.tentackle.fx.table.TablePopup;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.fx.rdc.table.TablePopup;
+import org.tentackle.fx.table.TotalsTableView;
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PdoHolder;
-import org.tentackle.pdo.PdoTracker;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
 
 /**
@@ -113,10 +117,13 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   private ObservableList<T> items = FXCollections.observableArrayList();
 
+  private InvalidationListener itemsListener;   // listener for items totals change
   private ResourceBundle resources;             // the resources
   private PdoFinder<T> finder;                  // the finder
-  private TableView<T> tableView;               // the table showing the results
-  private TreeView<T> treeView;                 // the tree showing the results
+  private FxBorderPane tablePane;               // the border pane holding the table view
+  private FxTableView<T> tableView;             // the table showing the results
+  private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
+  private FxTreeView<T> treeView;               // the tree showing the results
   private boolean treeShown;                    // true if tree shown, else table
   private boolean tableViewInvalid;             // true if tableview is invalid
   private boolean treeViewInvalid;              // true if treeview is invalid
@@ -175,6 +182,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     finder.getContainer().updateView();
     setFinderVisible(finder.isVisible());
     tableView = GuiProviderFactory.getInstance().createGuiProvider(pdo).createTableView();
+    tablePane.setCenter(tableView);
     tableView.setOnMousePressed(event -> {
       if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
         T firstPdo = tableView.getSelectionModel().getSelectedItem();
@@ -251,10 +259,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
     StackPane stackPane = Fx.createNode(StackPane.class);
     if (treeShown) {
-      stackPane.getChildren().addAll(tableView, treeView);
+      stackPane.getChildren().addAll(tablePane, treeView);
     }
     else {
-      stackPane.getChildren().addAll(treeView, tableView);
+      stackPane.getChildren().addAll(treeView, tablePane);
     }
     treeViewInvalid = true;
     tableViewInvalid = true;
@@ -343,8 +351,48 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     newButton.setManaged(allowed);
   }
 
+  /**
+   * Returns whether creating a new PDO is allowed.
+   *
+   * @return true if allowed
+   */
   public boolean isCreatePdoAllowed() {
     return newButton.isVisible();
+  }
+
+  /**
+   * Sets the totals.<br>
+   * Shows the results from {@link PdoFinder#createTotals} or hides the totals if none.
+   *
+   * @see TotalsTableView
+   * @param totals the totals (usually one item), null or empty if none
+   */
+  public void setTotals(ObservableList<T> totals) {
+    if (totals != null && !totals.isEmpty()) {
+      if (totalsView == null) {
+        totalsView = finder.createTotalsTableView();
+      }
+      totalsView.setBoundTable(tableView);
+      totalsView.setItems(totals);
+      tablePane.setBottom(totalsView);
+      totalsView.applyCss();  // necessary to see the value before being rendered
+      totalsView.setPrefHeight(totals.size() * totalsView.getFixedCellSize() + 2);  // +2 due to bounds
+    }
+    else {
+      if (totalsView != null) {
+        tablePane.setBottom(null);
+        totalsView.setBoundTable(null);
+      }
+    }
+  }
+
+  /**
+   * Gets the totals if shown.
+   *
+   * @return the totals, null if no totals
+   */
+  public ObservableList<T> getTotalsItems() {
+    return totalsView == null ? null : totalsView.getItems();
   }
 
 
@@ -367,7 +415,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     filterField.clear();
     if (finder.isSearchRunningInBackground()) {
       getView().setCursor(Cursor.WAIT);
-      PdoTracker.getInstance().addTask(new AbstractTask() {
+      ModificationTracker.getInstance().addTask(new AbstractTask() {
         @Override
         public void run() {
           ObservableList<T> result = finder.runSearch();
@@ -428,6 +476,17 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     if (getPdo().isNormTextProvided()) {
       filterField.setVisible(true);
       filterButton.setVisible(true);
+    }
+
+    itemsListener = null;   // to GC -> will remove WeakInvalidationListener eventually
+    if (!this.items.isEmpty()) {
+      // show totals only if result is not empty
+      itemsListener = (o) -> setTotals(finder.createTotals(this.items));
+      this.items.addListener(new WeakInvalidationListener(itemsListener));
+      itemsListener.invalidated(this.items);    // show totals first time, if any totals at all
+    }
+    else {
+      setTotals(null);
     }
   }
 
@@ -520,7 +579,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    *
    * @return the table view
    */
-  public TreeView<T> getTreeView() {
+  public FxTreeView<T> getTreeView() {
     showTree();    // make sure tree is shown and valid
     return treeView;
   }
@@ -530,7 +589,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    */
   public void showTable() {
     if (treeShown) {
-      tableView.toFront();
+      tablePane.toFront();
       treeShown = false;
       treeButton.setGraphic(Fx.createImageView("tree"));
       if (tableViewInvalid) {
@@ -546,7 +605,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    *
    * @return the table view
    */
-  public TableView<T> getTableView() {
+  public FxTableView<T> getTableView() {
     showTable();    // make sure table is shown and valid
     return tableView;
   }
@@ -575,7 +634,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Creates a new PDO.
    */
   public void createPdo() {
-    T nPdo = Rdc.displayCrudStage(on(), true, Modality.APPLICATION_MODAL, getStage());
+    T nPdo = on();
+    if (getPdo().isUniqueDomainKeyProvided()) {
+      nPdo.setUniqueDomainKey(getPdo().getUniqueDomainKey());
+    }
+    nPdo = Rdc.displayCrudStage(nPdo, true, Modality.APPLICATION_MODAL, getStage());
     if (nPdo != null && !nPdo.isNew()) {
       createdPdo = nPdo;
       close();
@@ -613,6 +676,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
 
     cancelButton.setGraphic(Fx.createImageView("close"));
     cancelButton.setOnAction(e -> cancel());
+    cancelButton.setCancelButton(true);
+
+    tablePane = Fx.createNode(BorderPane.class);
   }
 
   @Override

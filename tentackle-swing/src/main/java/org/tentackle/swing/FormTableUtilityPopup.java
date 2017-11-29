@@ -64,13 +64,16 @@ import org.apache.poi.hssf.usermodel.HSSFRichTextString;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.tentackle.common.BMoney;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.prefs.PreferencesInvalidException;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -544,9 +547,9 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
     if (xTitle != null)  {
       HSSFRow row = sheet.createRow(srow);
       HSSFFont font = wb.createFont();
-      font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+      font.setBold(true);
       HSSFCellStyle cs = wb.createCellStyle();
-      cs.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+      cs.setAlignment(HorizontalAlignment.CENTER);
       cs.setFont(font);
       HSSFCell cell = row.createCell(0);
       cell.setCellStyle(cs);
@@ -560,8 +563,8 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
       HSSFRow row = sheet.createRow(srow);
       HSSFCell cell = row.createCell(0);
       HSSFCellStyle cs = wb.createCellStyle();
-      cs.setAlignment(HSSFCellStyle.ALIGN_LEFT);
-      cs.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
+      cs.setAlignment(HorizontalAlignment.LEFT);
+      cs.setVerticalAlignment(VerticalAlignment.CENTER);
       cs.setWrapText(true);
       cell.setCellStyle(cs);
       if (onlySelected) {
@@ -584,9 +587,9 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
     HSSFRow row = sheet.createRow(srow);
     HSSFFont font = wb.createFont();
     font.setItalic(true);
-    font.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+    font.setBold(true);
     HSSFCellStyle cs = wb.createCellStyle();
-    cs.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+    cs.setAlignment(HorizontalAlignment.CENTER);
     cs.setFont(font);
     for (int c=0; c < cols; c++)  {
       HSSFCell cell = row.createCell(c);
@@ -737,7 +740,12 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         toExcel(outFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(EXCEL_KEY, outFile.getAbsolutePath());
-          prefs.flush();
+          try {
+            prefs.flush();
+          }
+          catch (PreferencesInvalidException pix) {
+            // ignore if changed meanwhile
+          }
         }
       }
     }
@@ -910,7 +918,12 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         toXml(outFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(XML_KEY, outFile.getAbsolutePath());
-          prefs.flush();
+          try {
+            prefs.flush();
+          }
+          catch (PreferencesInvalidException pix) {
+            // ignore if changed meanwhile
+          }
         }
       }
     }

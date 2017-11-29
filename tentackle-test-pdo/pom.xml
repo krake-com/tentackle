@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent</artifactId>
+    <version>2.1.0</version>
+  </parent>
+
+  <artifactId>tentackle-test-pdo</artifactId>
+  <version>2.1.0</version>
+  <packaging>jar</packaging>
+  <name>Tentackle PDO Tests</name>
+  <description>
+    Test depdendency to support writing PDO-based tests.
+    Also generates the SQL-scripts for the TT tables and
+    contains some PDO tests.
+    This artifact must be included in test-scope only!
+  </description>
+  <url>http://www.tentackle.org</url>
+
+  <properties>
+    <rootBasedir>${project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+
+    <!-- local dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-pdo</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-persistence</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-domain</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <classifier>indy</classifier>
+    </dependency>
+    <dependency>
+      <groupId>org.testng</groupId>
+      <artifactId>testng</artifactId>
+      <scope>compile</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+
+    <!-- generated SQL -->
+    <resources>
+      <resource>
+        <directory>target/generated-resources</directory>
+      </resource>
+    </resources>
+
+    <!-- backend properties -->
+    <testResources>
+      <testResource>
+        <directory>src/test/filtered-resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+
+    <plugins>
+
+      <plugin>
+        <!-- create the SQL-files -->
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <backendNames>all</backendNames>
+          <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
+          <backends>
+            <!-- for migration only -->
+            <backend>
+              <url>${dbUrl}</url>
+              <user>${dbUser}</user>
+              <password>${dbPasswd}</password>
+            </backend>
+          </backends>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>
+
+
+
+
+

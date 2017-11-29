@@ -17,13 +17,8 @@
  */
 
 
-
-
 package org.tentackle.prefs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 import java.util.prefs.PreferencesFactory;
 import org.tentackle.common.ServiceFactory;
@@ -55,6 +50,12 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
     return PersistedPreferencesFactory$Singleton.INSTANCE;
   }
 
+  /**
+   * Invalidates all loaded and/or cached nodes.<br>
+   * The listeners remain registered.<br>
+   * Any modifications not flushed so far will be discarded as well.
+   */
+  void invalidate();
 
   /**
    * Returns whether the preferences are automatically sync'd
@@ -146,23 +147,5 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @see Preferences#systemNodeForPackage(java.lang.Class)
    */
   PersistedPreferences systemNodeForPackage(Class<?> c);
-
-  /**
-   * Imports all of the preferences represented by the XML document on the specified input stream. The document may
-   * represent user preferences or system preferences. If it represents user preferences, the preferences will be
-   * imported into the calling user's preference tree (even if they originally came from a different user's preference
-   * tree). If any of the preferences described by the document inhabit preference nodes that do not exist, the nodes
-   * will be created.
-   *
-   * @param is the input stream from which to read the XML document.
-   * @throws IOException                       if reading from the specified input stream results in an
-   *                                           <tt>IOException</tt>.
-   * @throws InvalidPreferencesFormatException Data on input stream does not constitute a valid XML document with the
-   *                                           mandated document type.
-   * @throws SecurityException                 If a security manager is present and it denies
-   *                                           <tt>RuntimePermission("preferences")</tt>.
-   * @see RuntimePermission
-   */
-  void importPreferences(InputStream is) throws IOException, InvalidPreferencesFormatException;
 
 }

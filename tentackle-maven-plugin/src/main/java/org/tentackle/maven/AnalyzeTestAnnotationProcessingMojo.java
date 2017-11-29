@@ -21,6 +21,7 @@ package org.tentackle.maven;
 
 import java.io.File;
 import java.util.List;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -38,7 +39,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  *
  * @author harald
  */
-@Mojo(name = "testAnalyze",
+@Mojo(name = "test-analyze",
       defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES,
       requiresDependencyResolution = ResolutionScope.TEST)
 public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotationProcessingMojo {
@@ -49,9 +50,9 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
    * If this is not desired, filesets must be used.
    */
   @Parameter(defaultValue = "${project.build.testSourceDirectory}",
-             property = "tentackle.testSourceDir",
+             property = "wurbel.testSourceDir",
              required = true)
-  protected File sourceDir;
+  protected File sourceDir;   // same as in wurbelizer's WurbelMojo
 
   /**
    * Project classpath.
@@ -65,21 +66,22 @@ public class AnalyzeTestAnnotationProcessingMojo extends AbstractAnalyzeAnnotati
    * Directory analyze results.
    */
   @Parameter(defaultValue = "${project.build.directory}/test-analyze",
-             property = "tentackle.testAnalyzeDir",
+             property = "wurbel.testAnalyzeDir",
              required = true)
-  protected File analyzeDir;
+  protected File analyzeDir;    // same as in wurbelizer's WurbelMojo
 
   /**
    * Directory generated services.
    */
-  @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/service",
+  @Parameter(defaultValue = "${project.build.directory}/generated-test-resources/services",
              property = "tentackle.testServiceDir",
              required = true)
   protected File servicesDir;
 
 
   @Override
-  public void prepareExecute() {
+  public void prepareExecute() throws MojoFailureException {
     setMojoParameters(sourceDir, analyzeDir, servicesDir, classpathElements);
   }
+
 }

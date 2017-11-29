@@ -1,0 +1,38 @@
+/* Settings for the TotalsTable */
+
+/* set fixed row height to allow height computing according to number of rows */
+.totalstable {
+  -fx-fixed-cell-size: 24;
+}
+
+/* hide header */
+.totalstable .column-header-background {
+	visibility: hidden;
+	-fx-padding: -1.0em;
+}
+
+/* Hide the horizontal scrollbar */
+.totalstable .scroll-bar:horizontal .track {
+  -fx-padding: 0px;
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-background-radius: 0em;
+	-fx-border-radius: 2em;
+}
+.totalstable .scroll-bar:horizontal .increment-button,
+.totalstable .scroll-bar:horizontal .decrement-button {
+  -fx-background-color: transparent;
+  -fx-background-radius: 0em;
+  -fx-padding: 0 0 0 0;
+}
+.totalstable .scroll-bar:horizontal .increment-arrow,
+.totalstable .scroll-bar:horizontal .decrement-arrow {
+	-fx-shape: " ";
+	-fx-padding: 0;
+}
+.totalstable .scroll-bar:horizontal .thumb {
+  -fx-background-color: transparent;
+  -fx-background-insets: 0, 0, 0;
+  -fx-background-radius: 2em;
+  -fx-padding: 0px;
+}

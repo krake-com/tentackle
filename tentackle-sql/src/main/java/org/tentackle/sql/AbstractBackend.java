@@ -121,6 +121,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isTemporaryName(String name) {
+    return name != null && name.startsWith("_");
+  }
+
+  @Override
   public String getEmptyString() {
     return EMPTY_STRING;
   }
@@ -213,7 +218,8 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isCommunicationLinkException(SQLException ex) {
-    return isExceptionStateStartingWith(ex, "08");
+    return isExceptionStateStartingWith(ex, "08") ||    // initial connection failed
+           isExceptionStateStartingWith(ex, "57");      // connection vanished or became unusable
   }
 
   @Override
@@ -255,6 +261,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
 
+  @Override
+  public String getDefaultSchema() {
+    return null;
+  }
+
 
   @Override
   public ModelMetaData getModelMetaData(DatabaseMetaData[] metaData, String[] schemas, String... tableNames) {
@@ -291,13 +302,13 @@ public abstract class AbstractBackend implements Backend {
     for (DatabaseMetaData metaData: modelMetaData.getMetaData()) {
       try {
         try {
-          table.setupTableFromMetaData(metaData, schemaPattern, tablePattern);
+          table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(), schemaPattern, tablePattern);
           found = true;
           break;
         }
         catch (BackendException ex1) {
           try {
-            table.setupTableFromMetaData(metaData,
+            table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
                                          schemaPattern == null ? null : schemaPattern.toUpperCase(),
                                          tablePattern.toUpperCase());
             found = true;
@@ -305,7 +316,7 @@ public abstract class AbstractBackend implements Backend {
           }
           catch (BackendException ex2) {
             try {
-              table.setupTableFromMetaData(metaData,
+              table.setupTableFromMetaData(metaData, modelMetaData.getSchemas(),
                                            schemaPattern == null ? null : schemaPattern.toLowerCase(),
                                            tablePattern.toLowerCase());
               found = true;
@@ -458,11 +469,37 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
-    // @todo: this does only work for strings and simple numerics.
-    // make it work with booleans, dates, timestamps, etc...
-    // specials like Oracle's empty/null string, etc...
-    String attributeDefault = defaultValue == null ? null : valueToLiteral(sqlType, defaultValue);
-    return Objects.equals(attributeDefault, column.getDefaultValue());
+    String attributeDefault = normalizeDefault(defaultValue == null ? null : defaultValue.toString());
+    String columnDefault = normalizeDefault(column.getDefaultValue());
+    boolean rv = attributeDefault.equals(columnDefault);
+    if (!rv && column.getDefaultValue() != null) {
+      Object value = sqlType.parse(column.getDefaultValue());
+      // retry with literal according to type
+      rv = Objects.equals(defaultValue, value);
+    }
+    return rv;
+  }
+
+  /**
+   * Normalize the default string to compare.
+   *
+   * @param str the default value as a string, may be null
+   * @return the normalized value, never null
+   */
+  protected String normalizeDefault(String str) {
+    if (str == null) {
+      str = "";
+    }
+    else {
+      str = str.toUpperCase();
+      if (str.startsWith("'")) {
+        str = str.substring(1);
+      }
+      if (str.endsWith("'")) {
+        str = str.substring(0, str.length() - 1);
+      }
+    }
+    return str;
   }
 
   @Override
@@ -552,12 +589,12 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
-  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType) {
+  public String sqlUpdateToNotNull(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
     return  "UPDATE " + tableName +
             " SET " +
             columnName +
             "=" +
-            valueToLiteral(sqlType, sqlType.getDefaultValue()) +
+            valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
             " WHERE " +
             columnName +
             " IS NULL;\n";
@@ -778,8 +815,13 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public void assertValidName(String nameType, String name) {
-    if (name != null && getReservedWords().contains(name.toUpperCase())) {
-      throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
+    if (name != null) {
+      if (getReservedWords().contains(name.toUpperCase())) {
+        throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);
+      }
+      if (isTemporaryName(name)) {
+        throw new BackendException(nameType + " '" + name + "' is a temporary identifier for backend " + this);
+      }
     }
   }
 
@@ -885,6 +927,25 @@ public abstract class AbstractBackend implements Backend {
     return sql.replace(Backend.SQL_WHEREAND, Backend.SQL_WHERE).
             replace(Backend.SQL_WHEREOR, Backend.SQL_WHERE).
               replace(Backend.SQL_WHEREALL, "");
+  }
+
+  @Override
+  public String buildSelectSql(String sql, boolean writeLock, int limit, int offset) {
+    StringBuilder buf = new StringBuilder(sql);
+    buildSelectSql(buf, writeLock, limit, offset);
+    return buf.toString();
+  }
+
+  @Override
+  public String sqlJoinSelects(JoinType type, boolean addColumns, String select, String joinSelect, String joinSelectIdAlias, String joinAlias, String join) {
+    StringBuilder buf = new StringBuilder(select);
+    sqlJoinSelects(type, addColumns, buf, joinSelect, joinSelectIdAlias, joinAlias, join);
+    return buf.toString();
+  }
+
+  @Override
+  public boolean isReleaseSavepointSupported() {
+    return false;
   }
 
 

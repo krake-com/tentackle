@@ -23,7 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.wurblet.ModelWurblet;
 import org.wurbelizer.wurbel.HeapStream;
@@ -32,7 +32,8 @@ import org.wurbelizer.wurbel.Wurbler;
 
 
 /**
- * Handles generated .remote and .impl-code.<br>
+ * Handles generated .remote and .impl-code.
+ * <p>
  * Also creates the RMI-java files, if missing.
  *
  * @author harald
@@ -66,7 +67,7 @@ public class RemoteIncludes {
     container       = wurblet.getContainer();
     className       = wurblet.getClassName();
     entity          = wurblet.getEntity();
-    superClassName  = BasicStringHelper.getPlainClassName(wurblet.getSuperClassName());
+    superClassName  = StringHelper.getPlainClassName(wurblet.getSuperClassName());
     packageName     = wurblet.getPackageName();
     remotePrefix    = container.getProperty(Wurbler.PROPSPACE_EXTRA, "remoteprefix");
 
@@ -77,14 +78,12 @@ public class RemoteIncludes {
       // only needed for initial class file generation below
     }
 
-    int ndx = packageName.lastIndexOf(".persistence");
-    pdoPackageName = ndx > 0 ? packageName.substring(0, ndx) : packageName;
-
     if (remotePrefix == null) {
       // if not defined, set the default
+      pdoPackageName = packageName.replace(".persistence.", ".pdo.").replace(".persist.", ".pdo.");
       switch (superClassName) {
         case "AbstractPersistentObject":
-          remotePrefix = "org.tentackle.pdo.rmi." + superClassName;
+          remotePrefix = "org.tentackle.persist.rmi." + superClassName;
           importSuperDelegate = true;
           break;
 
@@ -105,7 +104,7 @@ public class RemoteIncludes {
       }
     }
 
-    ndx = remotePrefix.lastIndexOf('.');
+    int ndx = remotePrefix.lastIndexOf('.');
     remotePrefixBasename = ndx < 0 ? remotePrefix : remotePrefix.substring(ndx + 1);
 
     // find directory for remote delegates
@@ -160,7 +159,7 @@ public class RemoteIncludes {
             if (importSuperDelegate) {
               s.println("import " + remotePrefix + "RemoteDelegateImpl;");
             }
-            s.println("import org.tentackle.persist.rmi.RemoteDbSessionImpl;\n\n");
+            s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
             s.println("/**");
             s.println(" * Remote delegate implementation for {@link " + className + "}.");
             if (entity.isAbstract()) {

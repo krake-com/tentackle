@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="${project.name}">
+  <bannerLeft>
+    <name>Tentackle</name>
+    <src>images/tentackle.png</src>
+    <href>http://www.tentackle.org</href>
+    <title>${project.name}</title>
+  </bannerLeft>
+  <bannerRight>
+    <name>Krake Softwaretechnik</name>
+    <src>images/krake.png</src>
+    <href>http://www.krake.de</href>
+  </bannerRight>
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-default-skin</artifactId>
+    <version>1.2</version>
+  </skin>
+  <body>
+    <links>
+      <item name="Tentackle" href="http://www.tentackle.org"/>
+    </links>
+
+    <menu ref="parent"/>
+    <menu ref="modules"/>
+    <menu ref="reports"/>
+    <menu name="Links">
+      <item name="Bitbucket" href="https://bitbucket.org/krake-oss/tentackle"/>
+      <item name="Wurbelizer" href="http://www.wurbelizer.org"/>
+    </menu>
+
+    <footer><![CDATA[<a href="${url}">Tentackle</a> - a domain driven enterprise framework]]></footer>
+  </body>
+</project>

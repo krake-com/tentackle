@@ -33,7 +33,7 @@ public class CommonCommonBundle {   // not annotated with @Bundle but directly c
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(CommonCommonBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(CommonCommonBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**

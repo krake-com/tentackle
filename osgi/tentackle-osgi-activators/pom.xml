@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <!--
+   Tentackle OSGi Parent
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.tentackle</groupId>
+    <artifactId>tentackle-parent-osgi</artifactId>
+    <version>2.1-SNAPSHOT</version>
+  </parent>
+
+  <groupId>org.tentackle</groupId>
+  <artifactId>tentackle-parent-osgi-activators</artifactId>
+  <version>2.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Tentackle OSGi Parent for Activators</name>
+  <description>OSGi Parent pom.xml for the activators of Tentackle modules.</description>
+
+  <modules>
+    <module>tentackle-core-osgi-activator</module>
+    <module>tentackle-sql-osgi-activator</module>
+    <module>tentackle-session-osgi-activator</module>
+    <module>tentackle-database-osgi-activator</module>
+    <module>tentackle-model-osgi-activator</module>
+    <module>tentackle-pdo-osgi-activator</module>
+    <module>tentackle-domain-osgi-activator</module>
+    <module>tentackle-persistence-osgi-activator</module>
+    <module>tentackle-log-util-osgi-activator</module>
+    <module>tentackle-log-log4j-osgi-activator</module>
+    <module>tentackle-log-slf4j-osgi-activator</module>
+    <module>tentackle-i18n-osgi-activator</module>
+    <module>tentackle-script-groovy-osgi-activator</module>
+    <module>tentackle-script-ruby-osgi-activator</module>
+    <module>tentackle-web-osgi-activator</module>
+    <module>tentackle-fx-osgi-activator</module>
+    <module>tentackle-fx-rdc-osgi-activator</module>
+  </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <!--
+        Skip not supported by maven-bundle-plugin, unfortunately.
+        Does not harm, however.
+      -->
+    </plugins>
+  </build>
+
+</project>
+

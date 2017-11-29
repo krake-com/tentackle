@@ -54,11 +54,9 @@ import org.tentackle.swing.FormTableEntry;
 import org.tentackle.swing.FormTableModel;
 import org.tentackle.swing.FormTableSorter;
 import org.tentackle.swing.FormTableUtilityPopup;
-import org.tentackle.swing.FormTableUtilityPopupFactory;
 import org.tentackle.swing.FormTree;
 import org.tentackle.swing.FormUtilities;
 import org.tentackle.swing.SumFormTableEntry;
-import org.tentackle.swing.UIFactory;
 
 
 
@@ -676,7 +674,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
   @SuppressWarnings("unchecked")
   public FormTable<T> createTable() {
     // create empty table
-    FormTable<?> table = UIFactory.getInstance().createFormTable();
+    FormTable<?> table = Rdc.createFormTable();
     table.setDragEnabled(true);
     table.setAutoResizeMode(FormTable.AUTO_RESIZE_OFF);
     table.setCreateDefaultColumnsFromPreferences(true);
@@ -1507,7 +1505,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
 
           naviTable.createDefaultColumnsFromModel();    // create column width from preferences. table height see below
 
-          FormTableUtilityPopup popup = FormTableUtilityPopupFactory.getInstance().createPopup();
+          FormTableUtilityPopup popup = Rdc.createPopup();
           popup.setTitle(title);
           popup.setIntro(tableIntro);
           naviTable.setUtilityPopup(popup);
@@ -1819,7 +1817,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     add(naviScroll, java.awt.BorderLayout.CENTER);
 
     selectButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
-    selectButton.setText(RdcSwingRdcBundle.getTranslation("SELECT")); // NOI18N
+    selectButton.setText(RdcSwingRdcBundle.getString("SELECT")); // NOI18N
     selectButton.setActionCommand(ACTION_SELECT);
     selectButton.setName("select"); // NOI18N
     selectButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1830,7 +1828,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     buttonPanel.add(selectButton);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setActionCommand(ACTION_CANCEL);
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1841,7 +1839,7 @@ public class PdoNavigationPanel<T extends PersistentDomainObject<T>> extends For
     buttonPanel.add(cancelButton);
 
     closeButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("close"));
-    closeButton.setText(RdcSwingRdcBundle.getTranslation("CLOSE")); // NOI18N
+    closeButton.setText(RdcSwingRdcBundle.getString("CLOSE")); // NOI18N
     closeButton.setActionCommand(ACTION_CLOSE);
     closeButton.setName("close"); // NOI18N
     closeButton.addActionListener(new java.awt.event.ActionListener() {

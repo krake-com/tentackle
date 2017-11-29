@@ -1,0 +1,237 @@
+/**
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+
+package org.tentackle.log.log4j;
+
+import java.io.PrintStream;
+import java.text.MessageFormat;
+import java.util.HashMap;
+import org.tentackle.common.Service;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerOutputStream;
+import org.tentackle.log.MappedDiagnosticContext;
+
+/**
+ * Pluggable logger using <tt>org.apache.log4j</tt>.
+ *
+ * @author harald
+ */
+@Service(Logger.class)
+public class Log4JLogger implements Logger {
+
+  // classname to exclude from stacktrace
+  private static final String EXCLUDE_CLASSNAME = Log4JLogger.class.getName();
+
+  // cached loggers
+  private static final HashMap<String,Log4JLogger> LOGGERS = new HashMap<>();
+
+  /**
+   * Gets the Log4JLogger for given name.
+   * If a logger with that name already exists, it will be re-used.
+   *
+   * @param name the name of the logger
+   * @return the logger
+   */
+  public static Log4JLogger getLogger(String name) {
+    synchronized(LOGGERS) {
+      Log4JLogger logger = LOGGERS.get(name);
+      if (logger == null) {
+        // create a new one
+        logger = new Log4JLogger(name);
+        LOGGERS.put(name, logger);
+      }
+      return logger;
+    }
+  }
+
+
+  private final org.apache.log4j.Logger logger;   // the Log4J logger
+
+
+  /**
+   * Creates a logger.
+   *
+   * @param name the name of the logger
+   */
+  public Log4JLogger(String name) {
+    logger = org.apache.log4j.Logger.getLogger(name);
+  }
+
+
+  @Override
+  public Object getLoggerImpl() {
+    return logger;
+  }
+
+
+  @Override
+  public boolean isLoggable(Level level) {
+    return logger.isEnabledFor(translateLevel(level));
+  }
+
+
+
+  @Override
+  public void log(Level level, String message, Throwable cause) {
+    doLog(level, message, cause);
+  }
+
+
+  @Override
+  public void finer(String message, Throwable cause) {
+    doLog(Level.FINER, message, cause);
+  }
+
+  @Override
+  public void fine(String message, Throwable cause) {
+    doLog(Level.FINE, message, cause);
+  }
+
+  @Override
+  public void info(String message, Throwable cause) {
+    doLog(Level.INFO, message, cause);
+  }
+
+  @Override
+  public void warning(String message, Throwable cause) {
+    doLog(Level.WARNING, message, cause);
+  }
+
+  @Override
+  public void severe(String message, Throwable cause) {
+    doLog(Level.SEVERE, message, cause);
+  }
+
+  @Override
+  public void finer(String message, Object... params) {
+    doLog(Level.FINER, message, null, params);
+  }
+
+  @Override
+  public void fine(String message, Object... params) {
+    doLog(Level.FINE, message, null, params);
+  }
+
+  @Override
+  public void info(String message, Object... params) {
+    doLog(Level.INFO, message, null, params);
+  }
+
+  @Override
+  public void warning(String message, Object... params) {
+    doLog(Level.WARNING, message, null, params);
+  }
+
+  @Override
+  public void severe(String message, Object... params) {
+    doLog(Level.SEVERE, message, null, params);
+  }
+
+
+  @Override
+  public boolean isFinerLoggable() {
+    return isLoggable(Level.FINER);
+  }
+
+  @Override
+  public boolean isFineLoggable() {
+    return isLoggable(Level.FINE);
+  }
+
+  @Override
+  public boolean isInfoLoggable() {
+    return isLoggable(Level.INFO);
+  }
+
+  @Override
+  public boolean isWarningLoggable() {
+    return isLoggable(Level.WARNING);
+  }
+
+  @Override
+  public boolean isSevereLoggable() {
+    return isLoggable(Level.SEVERE);
+  }
+
+  /**
+   * Logs the stacktrace of a throwable.
+   *
+   * @param level   the logging level
+   * @param cause   the Throwable to log the stacktrace for
+   */
+  @Override
+  public void logStacktrace(Level level, Throwable cause) {
+    try (PrintStream ps = new PrintStream(new LoggerOutputStream(this, level))) {
+      cause.printStackTrace(ps);
+    }
+  }
+
+  /**
+   * Logs the stacktrace of a throwable with a logging level of SEVERE.
+   *
+   * @param cause   the Throwable to log the stacktrace for
+   */
+  @Override
+  public void logStacktrace(Throwable cause) {
+    logStacktrace(Level.SEVERE, cause);
+  }
+
+  @Override
+  public MappedDiagnosticContext getMappedDiagnosticContext() {
+    return Log4JMappedDiagnosticContext.getInstance();
+  }
+
+
+
+  /**
+   * Translates the tentackle logging level to a LOG4J level.
+   *
+   * @param level the tt level
+   * @return the LOG4J level
+   */
+  protected org.apache.log4j.Level translateLevel(Level level) {
+    switch (level) {
+      case FINER:   return org.apache.log4j.Level.TRACE;
+      case FINE:    return org.apache.log4j.Level.DEBUG;
+      case INFO:    return org.apache.log4j.Level.INFO;
+      case WARNING: return org.apache.log4j.Level.WARN;
+      default:      return org.apache.log4j.Level.ERROR;
+    }
+  }
+
+
+  /**
+   * Logging workhorse.
+   *
+   * @param level the log level
+   * @param message the message
+   * @param cause the cause
+   * @param params optional parameters
+   */
+  protected void doLog(Level level, String message, Throwable cause, Object... params) {
+    if (params != null && params.length > 0) {
+      if (!isLoggable(level)) { // check before formatting
+        return;
+      }
+      message = MessageFormat.format(message, params);
+    }
+    logger.log(EXCLUDE_CLASSNAME, translateLevel(level), message, cause);
+  }
+
+}

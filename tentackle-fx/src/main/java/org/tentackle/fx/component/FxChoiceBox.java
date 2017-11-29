@@ -47,17 +47,6 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
     super();
   }
 
-  /**
-   * Create a new ChoiceBox with the given set of items.<br>
-   * Since it is observable, the content of this list may change
-   * over time and the ChoiceBox will be updated accordingly.
-   * 
-   * @param items the items
-   */
-  public FxChoiceBox(ObservableList<T> items) {
-    super(items);
-  }
-
 
   // @wurblet delegate Include $currentDir/fxcomponent.include
 
@@ -65,10 +54,19 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
 
   private /**/FxChoiceBoxDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxChoiceBoxDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxChoiceBoxDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxChoiceBoxDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxChoiceBoxDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -100,7 +98,7 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

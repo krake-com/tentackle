@@ -1,36 +1,17 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code to define the database column names.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; ColumnNames
+<p>
+For more options, see {\@link ModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * Generate code to define the database column names.
-     *
-     * usage:  \@wurblet <somename> ColumnNames [--model=<mapfile>]
-     *
-     *         <mapfile> is the mapping description
-     */
-
+  private void wurbel() {
     for (Attribute attr: getEntity().getAttributes())  {
       if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
-        String name = attr.getJavaName().toUpperCase();
+        String name = attr.getName().toUpperCase();
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
 ]@
@@ -42,4 +23,5 @@
         }
       }
     }
+  }
 ]@

@@ -48,7 +48,7 @@ public class Binary<T> implements Serializable, Cloneable {
   /**
    * initial default buffersize when reading from the database.
    */
-  private static int BUF_SIZE = 1024;
+  public static int bufSize = 1024;
 
 
   private byte[] data;                   // byte array of arbitrary data or serialized object
@@ -115,7 +115,7 @@ public class Binary<T> implements Serializable, Cloneable {
    * The stream is closed after creating the Binary.
    *
    * @param stream the InputStream (associated to the database) to read from, may be null
-   * @param bufSize the initial buffer size, 0 = default size (BUF_SIZE)
+   * @param bufSize the initial buffer size, 0 = default size (bufSize)
    *
    * @return the new Binary or null if stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
@@ -126,7 +126,7 @@ public class Binary<T> implements Serializable, Cloneable {
     }
     Binary<?> b = new Binary<>();
     if (bufSize <= 0) {
-      bufSize = BUF_SIZE;
+      bufSize = Binary.bufSize;
     }
     b.data = new byte[bufSize];
     int count;

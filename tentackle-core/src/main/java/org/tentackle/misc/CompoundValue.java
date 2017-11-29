@@ -45,8 +45,6 @@ import org.tentackle.script.ScriptVariable;
  * static method or field. If the dotted path contains an element with the first character in uppercase, the latter is assumed.
  * Boolean references may be preceeded by <code>"!"</code> to negate the result.</li>
  * <li>a script in a scripting language, for example Groovy or JRuby.</li>
- * <li>an indirect reference: just like a normal or static reference, but the result will be parsed and will in turn
- * be treated as a constant, reference or script. Nice to load scripts from the database.</li>
  * </ol>
  *
  * Examples:
@@ -108,7 +106,7 @@ public class CompoundValue {
   private boolean negate;                     // true if negate the (boolean) reference
   private Script script;                      // the script, null if none
   private boolean scriptCached;               // use caching for script, if possible
-  private boolean scriptExecutedThreadSafe;  // execute script thread safe
+  private boolean scriptExecutedThreadSafe;   // execute script thread safe
 
 
 
@@ -120,7 +118,7 @@ public class CompoundValue {
    * converted to the given type, if possible.
    *
    * @param str the string value
-   * @param clazz the class of the value.
+   * @param clazz the class of the value
    */
   public CompoundValue(String str, Class<?> clazz) {
     configure(str, clazz);

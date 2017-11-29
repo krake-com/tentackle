@@ -116,6 +116,7 @@ public interface TaskDispatcher extends Terminatable {
 
   /**
    * Adds a task to the queue.
+   * 
    * @param task the task to add
    * @return true if added, false if already in queue
    */
@@ -124,10 +125,19 @@ public interface TaskDispatcher extends Terminatable {
   /**
    * Checks whether a tasks is still pending.<br>
    * Tasks are pending as long as they are not completed.
+   *
    * @param task the task
    * @return true if pending, else completed
    */
   boolean isTaskPending(Task task);
+
+  /**
+   * Gets the task by its id.
+   *
+   * @param taskId the task id
+   * @return the task, null if completed
+   */
+  Task getTask(long taskId);
 
   /**
    * Gets all tasks.<br>

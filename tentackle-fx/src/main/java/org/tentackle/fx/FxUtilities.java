@@ -59,7 +59,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.component.Note;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 interface FxUtilities$Singleton {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
@@ -457,8 +457,12 @@ public class FxUtilities {
       processed = true;
     }
     else if (Constants.BIND_UTC.equals(option)) {
+      comp.setUTC(true);
       processed = true;
-      // nothing to do any further
+    }
+    else if (("-" + Constants.BIND_UTC).equals(option)) {
+      comp.setUTC(false);
+      processed = true;
     }
     else if (Constants.BIND_UNSIGNED.equals(option)) {
       comp.setUnsigned(true);

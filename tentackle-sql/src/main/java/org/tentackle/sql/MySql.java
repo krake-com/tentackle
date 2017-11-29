@@ -86,6 +86,11 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isReleaseSavepointSupported() {
+    return true;
+  }
+
+  @Override
   public boolean allowsExpressionsReferringToTablesBeingUpdated() {
     return false;
   }
@@ -262,15 +267,6 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public ColumnMetaData createColumnMetaData(TableMetaData tableMetaData) {
     return new MySqlColumnMetaData(tableMetaData);
-  }
-
-  @Override
-  public boolean isDefaultEqual(ColumnMetaData column, SqlType sqlType, Object defaultValue) {
-    // @todo: this does only work for strings and simple numerics.
-    // make it work with booleans, dates, timestamps, etc...
-    // specials like Oracle's empty/null string, etc...
-    String attributeDefault = defaultValue == null ? null : defaultValue.toString();
-    return Objects.equals(attributeDefault, column.getDefaultValue());
   }
 
   @Override

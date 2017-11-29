@@ -48,13 +48,14 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    */
   private class Daemon {
 
-    private Thread supervisedDaemon;    // the managed daemon
-    private final int daemonIndex;      // the slot index
-    private Supervisable supervisable;  // != null if daemon is a Supervisable
-    private boolean supervisableKilled; // true if supervisable was killed
-    private int startCount;             // number of starts
-    private boolean enabled = true;     // true if daemon is enabled (default)
-    private Object terminationCause;    // the last termination cause
+    private Thread supervisedDaemon;      // the managed daemon
+    private final int daemonIndex;        // the slot index
+    private Supervisable supervisable;    // != null if daemon is a Supervisable
+    private boolean supervisableKilled;   // true if supervisable was killed
+    private int startCount;               // number of starts
+    private boolean enabled = true;       // true if daemon is enabled (default)
+    private Object terminationCause;      // the termination cause, null if daemon running
+    private Object lastTerminationCause;  // the saved termination cause, when new daemon was started
 
     /**
      * Creates a daemon wrapper.
@@ -110,6 +111,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      */
     private void clear() {
       if (supervisable != null) {
+        lastTerminationCause = null;    // daemon terminated: clear old cause in case no current cause
         terminationCause = supervisable.getTerminationCause();
       }
       supervisedDaemon = null;
@@ -195,11 +197,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
     setDaemon(true);
     setDaemonNum(daemonNum);
-  }
-
-  @Override
-  public boolean isScavenging() {
-    return true;
   }
 
   /**
@@ -463,13 +460,25 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * Gets the last termination cause.<br>
    * Only valid if daemon is a {@link Supervisable}.
+   * <p>
+   * Notice that the cause may be non-null even if the daemon is
+   * running properly. In this case, the termination cause refers
+   * to the previously terminated instance.
    *
    * @param index the daemon's slot [0 ... daemonNum-1]
    * @return the termination cause, null if none
    */
   public Object getTerminationCause(int index) {
+    Object cause = null;
     Daemon daemon = getDaemon(index);
-    return daemon == null ? null : daemon.terminationCause;
+    if (daemon != null) {
+      cause = daemon.terminationCause;
+      if (cause == null) {
+        // new daemon started in the meantime? (i.e. current cause cleared)
+        cause = daemon.lastTerminationCause;    // try saved cause
+      }
+    }
+    return cause;
   }
 
 
@@ -639,7 +648,9 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
               daemon.kill();
             }
             else  {
-              daemon.terminationCause = null;   // survived at least one interval -> clear last termination cause
+              // survived at least one interval -> clear termination cause
+              daemon.lastTerminationCause = daemon.terminationCause;    // save old cause
+              daemon.terminationCause = null;
             }
           }
           else {

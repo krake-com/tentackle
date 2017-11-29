@@ -57,7 +57,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return number of members bound
    */
-  int bindFormInherited();
+  int bindWithInheritedComponents();
 
   /**
    * Binds with bindable inheritance.
@@ -72,7 +72,7 @@ public interface FormComponentBinder extends Binder {
    *
    * @return number of members bound
    */
-  int bindBindableInherited();
+  int bindWithInheritedBindables();
 
   /**
    * Gets a binding by component.

@@ -22,7 +22,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlType;
 
@@ -79,7 +79,7 @@ public class ColumnMetaData {
    * @throws SQLException the processing the result set failed
    */
   public void setupColumnFromMetaData(ResultSet resultSet) throws SQLException {
-    columnName = BasicStringHelper.toLower(resultSet.getString("COLUMN_NAME"));
+    columnName = StringHelper.toLower(resultSet.getString("COLUMN_NAME"));
     comment = resultSet.getString("REMARKS");
     size = resultSet.getInt("COLUMN_SIZE");
     scale = resultSet.getShort("DECIMAL_DIGITS");

@@ -15,7 +15,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-// $Id: IndexAttribute.java 2450 2016-01-04 11:21:35Z svn $
 
 package org.tentackle.model;
 

@@ -57,10 +57,11 @@ public interface Model {
    * Loads the whole model from the model directory if not yet done.
    *
    * @param modelDir the directory containing the model files
-   * @param defaults model defaults, null if none
+   * @param defaults optional model defaults, null if none
+   * @param aliases optional entity aliases, null if none
    * @throws ModelException if the model is inconsistent
    */
-  void loadModel(String modelDir, ModelDefaults defaults) throws ModelException;
+  void loadModel(String modelDir, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
 
   /**
    * Clears the model.
@@ -128,12 +129,13 @@ public interface Model {
    * Loads an entity for a given mapfile name.<br>
    * Entities are cached so they are loaded and parsed only once.
    *
-   * @param defaults the model defaults
    * @param fileName the name of the mapfile
+   * @param defaults optional model defaults, null if none
+   * @param aliases optional entity aliases, null if none
    * @return the entity
    * @throws ModelException if no such mapfile or parsing error
    */
-  Entity loadByFileName(ModelDefaults defaults, String fileName) throws ModelException;
+  Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
 
   /**
    * Gets all foreign keys.

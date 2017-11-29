@@ -101,10 +101,9 @@ public interface EntityFactory {
    * Creates an index attribute.
    *
    * @param index the index
-   * @param sourceInfo source information, null if none
    * @return the created index attribute
    */
-  IndexAttribute createIndexAttribute(Index index, SourceInfo sourceInfo);
+  IndexAttribute createIndexAttribute(Index index);
 
   /**
    * Creates a relation.

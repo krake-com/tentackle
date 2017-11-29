@@ -90,4 +90,11 @@ public interface AttributeOptions extends CommonOptions {
    */
   boolean isUnsigned();
 
+  /**
+   * Returns whether the attribute is not declared in the interface.
+   *
+   * @return true if implemented only, no public interface definition
+   */
+  boolean isHidden();
+
 }

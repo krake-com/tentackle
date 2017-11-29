@@ -21,14 +21,15 @@ package org.tentackle.model.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.tentackle.common.BasicStringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
-import org.tentackle.model.parser.ConfigurationLine;
+import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
 
 /**
@@ -67,6 +68,17 @@ public class IndexImpl implements Index {
   public Entity getEntity() {
     return entity;
   }
+
+  @Override
+  public SourceInfo getSourceInfo() {
+    return sourceInfo;
+  }
+
+  @Override
+  public ModelElement getParent() {
+    return entity;
+  }
+
 
   /**
    * Parses a configuration line.
@@ -164,9 +176,10 @@ public class IndexImpl implements Index {
         }
         // check if column name exists
         for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getColumnName().equals(token)) {
+          if (attribute.getColumnName().equals(token) ||
+              attribute.getName().equals(token)) {
             // found
-            indexAttribute = factory.createIndexAttribute(this, sourceInfo);
+            indexAttribute = factory.createIndexAttribute(this);
             indexAttribute.setAttribute(attribute);
             if (descending != null) {
               indexAttribute.setDescending(descending);
@@ -193,7 +206,7 @@ public class IndexImpl implements Index {
   }
 
   @Override
-  public String getName(Entity entity) {
+  public String createDatabaseIndexName(Entity entity) {
     return entity.getTableNameWithoutSchema() + "_" + name;
   }
 
@@ -219,7 +232,7 @@ public class IndexImpl implements Index {
 
 
   public void setName(String name) {
-    this.name = BasicStringHelper.toLower(name);
+    this.name = StringHelper.toLower(name);
   }
 
   public void setComment(String comment) {
@@ -231,7 +244,7 @@ public class IndexImpl implements Index {
   }
 
   public void setFilterCondition(String filterCondition) {
-    if (BasicStringHelper.isAllWhitespace(filterCondition)) {
+    if (StringHelper.isAllWhitespace(filterCondition)) {
       this.filterCondition = null;
     }
     else  {
@@ -247,17 +260,17 @@ public class IndexImpl implements Index {
 
   @Override
   public void validate() throws ModelException {
-    if (BasicStringHelper.isAllWhitespace(getName())) {
+    if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
     // leading underscore is ok, because index name gets the tablename prepended
 
     for (Backend backend: factory.getBackends()) {
       try {
-        backend.assertValidName("index name", getName(entity));
+        backend.assertValidName("index name", createDatabaseIndexName(entity));
       }
       catch (RuntimeException rex) {
-        throw new ModelException(rex.getMessage(), sourceInfo, rex);
+        throw new ModelException(rex.getMessage(), this, rex);
       }
     }
 
@@ -266,11 +279,20 @@ public class IndexImpl implements Index {
     }
   }
 
-  @Override
+  /**
+   * Gets the source line.
+   *
+   * @return the line
+   */
   public ConfigurationLine getSourceLine() {
     return sourceLine;
   }
 
+  /**
+   * Sets the source line.
+   *
+   * @param sourceLine the line
+   */
   public void setSourceLine(ConfigurationLine sourceLine) {
     this.sourceLine = sourceLine;
   }
@@ -314,7 +336,7 @@ public class IndexImpl implements Index {
       }
       attributeCount++;
     }
-    buf.append(backend.sqlCreateIndex(entity.getTableName(), getName(entity), isUnique(), getFilterCondition(), columnNames));
+    buf.append(backend.sqlCreateIndex(entity.getTableName(), createDatabaseIndexName(entity), isUnique(), getFilterCondition(), columnNames));
 
     return buf.toString();
   }

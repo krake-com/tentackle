@@ -74,9 +74,10 @@ import org.tentackle.common.DMoney;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.swing.bind.FormTableBinding;
 
 
@@ -880,7 +881,14 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
       prefs.putInt(PREF_TABLE_HEIGHT, -1);         // makes no sense if not in a viewport
       prefs.putInt(PREF_TABLE_WIDTH, getWidth());  // store just for documentation
     }
-    prefs.flush();
+
+    try {
+      prefs.flush();
+    }
+    catch (PreferencesInvalidException pix) {
+      // ignore if changed meanwhile, just log that (would confuse user)
+      LOGGER.warning(pix.toString());
+    }
   }
 
 
@@ -1461,10 +1469,11 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
                       ((AbstractFormField)field).clearText();
                       ((AbstractFormField)field).setInhibitAutoSelect(true);
                     }
-                    field.dispatchEvent(
-                        new KeyEvent(field, KeyEvent.KEY_TYPED,
-                                     kevt.getWhen()+1,  // +1 to get processed!
-                                     kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
+                    // no more necessary since Java 1.8
+//                    field.dispatchEvent(
+//                        new KeyEvent(field, KeyEvent.KEY_TYPED,
+//                                     kevt.getWhen()+1,  // +1 to get processed!
+//                                     kevt.getModifiers(), KeyEvent.VK_UNDEFINED, key));
                   }
                   else  {
                     EventQueue.invokeLater(() -> box.selectWithKeyChar(key));
@@ -2231,7 +2240,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
   public boolean isCellMandatory(int row, int column) {
     boolean mandatory = false;
     if (bindableModel != null) {
-      FormTableBinding binding = bindableModel.getBinding(convertColumnIndexToModel(column));
+      FormTableBinding<?,?> binding = bindableModel.getBinding(convertColumnIndexToModel(column));
       if (binding != null) {
         mandatory = binding.isMandatory();
       }

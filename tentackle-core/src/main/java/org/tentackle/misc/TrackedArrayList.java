@@ -50,7 +50,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private Set<E> removedObjects;                    // set of removed objects
   private boolean removedObjectsFiltered;           // true if removed objects filtered
 
-  private transient List<TrackedList<E>> snapshots; // snapshots of this list
+  private transient List<TrackedArrayList<E>> snapshots; // snapshots of this list
   private transient List<E> elementSnapshots;       // snapshots for the elements of this list (if this is a snapshot)
 
   private transient List<TrackedListListener<E>> listeners;   // the listeners
@@ -133,7 +133,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   @SuppressWarnings("unchecked")
-  public TrackedList<E> createSnapshot() {
+  public TrackedArrayList<E> createSnapshot() {
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
@@ -237,7 +237,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @return the list of snapshots for this object, null if none taken so far
    */
   @Override
-  public List<TrackedList<E>> getSnapshots() {
+  public List<TrackedArrayList<E>> getSnapshots() {
     return snapshots;
   }
 
@@ -549,11 +549,15 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param obj element to be removed from this list, if present
    * @return <tt>true</tt> if this list contained the specified element
    */
-  @SuppressWarnings("unchecked")
   @Override
   public boolean remove(Object obj) {
-    if (super.remove(obj)) {
-      addRemovedObject((E) obj);
+    // because of Object.equals in super.remove(obj) we cannot be
+    // sure that the reference is correct (for addRemovedObject).
+    // Hence, we must grab the object "equal" to obj from the list.
+    // This is achieved by using remove(int) instead of remove(obj).
+    int ndx = indexOf(obj);
+    if (ndx >= 0) {
+      remove(ndx);
       return true;
     }
     return false;
@@ -664,6 +668,22 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     }
     return false;
   }
+
+  @Override
+  public void addBlunt(E element) {
+    super.add(element);
+  }
+
+  @Override
+  public boolean removeBlunt(E element) {
+    return super.remove(element);
+  }
+
+  @Override
+  public E removeBlunt(int index) {
+    return super.remove(index);
+  }
+
 
   /**
    * Replaces the element at the specified position in this list with

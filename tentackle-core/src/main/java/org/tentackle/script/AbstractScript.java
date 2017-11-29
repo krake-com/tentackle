@@ -19,7 +19,7 @@
 
 package org.tentackle.script;
 
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 
 /**
  * Abstract implementation of a script.

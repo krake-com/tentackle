@@ -19,7 +19,7 @@
 
 package org.tentackle.validate.validator;
 
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationRuntimeException;

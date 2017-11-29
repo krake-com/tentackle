@@ -30,8 +30,6 @@ import java.awt.event.ContainerListener;
 import java.awt.event.WindowEvent;
 import javax.swing.JDialog;
 import javax.swing.event.EventListenerList;
-import org.tentackle.locale.I18nTranslatable;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.swing.bind.FormComponentBinder;
 
 
@@ -41,7 +39,7 @@ import org.tentackle.swing.bind.FormComponentBinder;
  * @author harald
  */
 @SuppressWarnings("serial")
-public class FormDialog extends JDialog implements FormWindow, I18nTranslatable, ContainerListener {
+public class FormDialog extends JDialog implements FormWindow, ContainerListener {
 
   private String helpURL;                             // default help for this container
   private TooltipDisplay tooltipDisplay;              // to automatically display tooltips
@@ -60,9 +58,6 @@ public class FormDialog extends JDialog implements FormWindow, I18nTranslatable,
   private boolean bindable = true;                    // true if bindable
   private boolean autoUpdate = true;                  // true if autoupdate model
   private FormComponentBinder binder;                 // Binding implementation
-  private I18nTranslation i18nTranslation;            // the I18N translated title
-
-
 
 
   /**
@@ -151,29 +146,6 @@ public class FormDialog extends JDialog implements FormWindow, I18nTranslatable,
    */
   public FormDialog() {
     this(null, null, false);
-  }
-
-
-  /**
-   * Sets the translated title.<br>
-   * This method is used by I18n-Wizards in IDEs to set the original text,
-   * the locale and the translated text.
-   *
-   * @param i18nTranslation the translated text, null if none
-   */
-  public void setTitle(I18nTranslation i18nTranslation) {
-    setI18nTranslation(i18nTranslation);
-  }
-
-  @Override
-  public void setI18nTranslation(I18nTranslation i18nTranslation) {
-    this.i18nTranslation = i18nTranslation;
-    setTitle(i18nTranslation == null ? null : i18nTranslation.getText());
-  }
-
-  @Override
-  public I18nTranslation getI18nTranslation() {
-    return i18nTranslation;
   }
 
 

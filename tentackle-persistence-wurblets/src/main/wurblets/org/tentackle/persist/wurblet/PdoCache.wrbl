@@ -1,170 +1,155 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate code for setting up a PdoCache for an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; PdoCache
+    [--cache=&lt;classname&gt;] [--secure] [--public] [--preload]
+    [--mutable] [--noreg] [--udk] [--bounded]
+    [--strategy=LRU|LFU|FORGET] [--maxsize=&lt;n&gt;] [--keepquota=&lt;p&gt;] [--configure=&lt;method&gt;]
+    [index1] [index2] ...
+<p>
+arguments:
+<ul>
+<li><em>--cache=&lt;classname&gt;:</em> sets the cache-class. Defaults to PdoCache.</li>
+<li><em>--secure:</em> if cache must check read permission for each access (default is no check).</li>
+<li><em>--public:</em> makes the cache and indexes public (default is private).</li>
+<li><em>--preload:</em> the first access will load all entities at once.</li>
+<li><em>--mutable:</em> generates a non-shared cache, i.e. mutable PDOs (by default a shared readonly cache is generated).</li>
+<li><em>--noreg:</em> will not register the cache globally (default is to use the factory).</li>
+<li><em>--udk:</em> add index for the unique domain key.</li>
+<li><em>--bounded:</em> creates List&lt;? extends T&gt; for selectAllCached instead of List&lt;T&gt;.</li>
+<li><em>--strategy=LRU|LFU|FORGET:</em> the caching strategy (default is FORGET).</li>
+<li><em>--maxsize=&lt;n&gt;:</em> the cache size (if not preloaded).</li>
+<li><em>--keepquota=&lt;p&gt;:</em> percentage of entries to keep when applying caching strategy. Default is 50.</li>
+<li><em>--configure=&lt;method&gt;:</em> an optional method to further configure the cache.</li>
+<li><em>--index&lt;n&gt;:</em> additional unique indexes. By default, only the ID-index will be created.</li>
+</ul>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
-  /**
-   * Tentackle - http://www.tentackle.org
-   *
-   * This library is free software; you can redistribute it and/or
-   * modify it under the terms of the GNU Lesser General Public
-   * License as published by the Free Software Foundation; either
-   * version 2.1 of the License, or (at your option) any later version.
-   *
-   * This library is distributed in the hope that it will be useful,
-   * but WITHOUT ANY WARRANTY; without even the implied warranty of
-   * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   * Lesser General Public License for more details.
-   *
-   * You should have received a copy of the GNU Lesser General Public
-   * License along with this library; if not, write to the Free Software
-   * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-   */
+  private void wurbel() throws ModelException, WurbelException {
 
+    // main class
+    String pdoName     = getPdoClassName();
 
+    boolean secure     = false;
+    boolean preload    = false;
+    boolean mutable    = false;
+    boolean delayed    = true;
+    boolean noreg      = false;
+    boolean genudk     = false;
+    boolean bounded    = false;
 
-  /**
-   * create a code for setting up an PdoCache
-   *
-   * usage:  \@wurblet <somename> PdoCache --model=<mapfile> [--cache=<classname>] [--secure]
-   *                   [--public] [--preload] [--mutable] [--noreg] [--udk] [--bounded] [index1] [index2] ...
-   *         --secure if cache must check read permission (default is no check)
-   *         --preload will generate an autopreloading cache
-   *         --mutable generates a non-shared cache, i.e. mutable PDOs (by default a shared readonly cache is generated)
-   *         --public makes the cache and indexes public (default is private!)
-   *         --immediate forces immediate expiration (by using the ModificationThread's db-connection)
-   *         --cache=<classname> sets the cache-class. If missing "PdoCache".
-   *         --noreg will not register the cache globally (default is to register if cache=PdoCache)
-   *         --bounded returns a bounded List<? extends ...> for selectAllCached
-   *         --udk create index for unique domain key
-   *         --strategy=<LRU|LFU|FORGET>    the caching strategy (default is FORGET)
-   *         --maxsize=<maximum number of pdos>   the cache size (if not preload)
-   *         --keepquota=<quota> percentage of entries to keep when applying caching strategy, default 50
-   *         --configure=<method> an optional method to configure the cache
-   *
-   *         index1, ... are additional unique indexes to create. By default, only the ID-index
-   *         will be created.
-   *
-   * Example: \@wurblet cache PdoCache --model=$mapfile --preload artikelNr
-   */
+    String cache       = "PdoCache";
+    String scope       = "private";
 
-  // main class
-  String mainClass   = getClassName();
-  String pdoName     = getPdoClassName();
+    String strategy    = null;
+    Integer maxSize    = null;
+    Integer keepQuota  = null;
+    String configure   = null;
 
-  boolean secure     = false;
-  boolean preload    = false;
-  boolean mutable    = false;
-  boolean delayed    = true;
-  boolean noreg      = false;
-  boolean genudk     = false;
-  boolean bounded    = false;
-
-  String cache       = "PdoCache";
-  String scope       = "private";
-
-  String strategy    = null;
-  Integer maxSize    = null;
-  Integer keepQuota  = null;
-  String configure   = null;
-
-  for (String arg: getOptionArgs())  {
-    if (arg.equals("preload")) {
-      preload = true;
+    for (String arg: getOptionArgs())  {
+      if (arg.equals("preload")) {
+        preload = true;
+      }
+      else if (arg.equals("secure")) {
+        secure = true;
+      }
+      else if (arg.equals("mutable")) {
+        mutable = true;
+      }
+      else if (arg.equals("immediate")) {
+        delayed = false;
+      }
+      else if (arg.equals("public")) {
+        scope = "public";
+      }
+      else if (arg.equals("noreg")) {
+        noreg = true;
+      }
+      else if (arg.equals("bounded")) {
+        bounded = true;
+      }
+      else if (arg.equals("udk")) {
+        genudk = true;
+      }
+      else if (arg.startsWith("cache=")) {
+        cache = arg.substring(6);
+      }
+      else if (arg.startsWith("strategy=")) {
+        strategy = arg.substring(9).toUpperCase();
+      }
+      else if (arg.startsWith("maxsize=")) {
+        maxSize = Integer.valueOf(arg.substring(8));
+      }
+      else if (arg.startsWith("keepquota=")) {
+        keepQuota = Integer.valueOf(arg.substring(10));
+      }
+      else if (arg.startsWith("configure=")) {
+        configure = arg.substring(10);
+      }
     }
-    else if (arg.equals("secure")) {
-      secure = true;
+
+    if (secure && !getEntity().isRootEntity()) {
+      throw new WurbelException(getEntity() + " is not a root-entity");
     }
-    else if (arg.equals("mutable")) {
-      mutable = true;
-    }
-    else if (arg.equals("immediate")) {
-      delayed = false;
-    }
-    else if (arg.equals("public")) {
-      scope = "public";
-    }
-    else if (arg.equals("noreg")) {
+
+    // align args
+    if (!cache.equals("PdoCache"))  {
       noreg = true;
     }
-    else if (arg.equals("bounded")) {
-      bounded = true;
-    }
-    else if (arg.equals("udk")) {
-      genudk = true;
-    }
-    else if (arg.startsWith("cache=")) {
-      cache = arg.substring(6);
-    }
-    else if (arg.startsWith("strategy=")) {
-      strategy = arg.substring(9).toUpperCase();
-    }
-    else if (arg.startsWith("maxsize=")) {
-      maxSize = Integer.valueOf(arg.substring(8));
-    }
-    else if (arg.startsWith("keepquota=")) {
-      keepQuota = Integer.valueOf(arg.substring(10));
-    }
-    else if (arg.startsWith("configure=")) {
-      configure = arg.substring(10);
-    }
-  }
 
-  if (secure && !getEntity().isRootEntityAccordingToModel()) {
-    throw new WurbelException(getEntity() + " is not a root-entity");
-  }
-
-  // align args
-  if (!cache.equals("PdoCache"))  {
-    noreg = true;
-  }
-
-  List<Attribute> udk = null;
-  String udkType = null;
-  String udkName = null;
-  String udkSuffix = null;
-  if (genudk) {
-    udk = getEntity().getUniqueDomainKey();
-    if (!udk.isEmpty()) {
-      if (udk.size() == 1) {
-        udkType = udk.get(0).getJavaType();
-        udkName = udk.get(0).getJavaName();
-        udkSuffix = udk.get(0).getMethodNameSuffix();
+    List<Attribute> udk = null;
+    String udkType = null;
+    String udkName = null;
+    String udkSuffix = null;
+    if (genudk) {
+      udk = getEntity().getUniqueDomainKey();
+      if (!udk.isEmpty()) {
+        if (udk.size() == 1) {
+          udkType = udk.get(0).getJavaType();
+          udkName = udk.get(0).getName();
+          udkSuffix = udk.get(0).getMethodNameSuffix();
+        }
+        else {
+          udkType = getEntity().getName() + "UDK";
+          udkName = "udk";
+          udkSuffix = "UniqueDomainKey";
+          udkType = getEntity().getName() + "." + udkType;
+        }
       }
       else {
-        udkType = getEntity().getName() + "UDK";
-        udkName = "udk";
-        udkSuffix = "UniqueDomainKey";
+        udk = null;
+        genudk = false;
       }
     }
-    else {
-      udk = null;
-      genudk = false;
-    }
-  }
 
 
-  if (getEntity().isAbstract()) {
-    List<Entity> leafs = getEntity().getLeafEntities();
+    if (getEntity().isAbstract()) {
+      List<Entity> leafs = getEntity().getLeafEntities();
 ]@
 
   \@Override
   \@SuppressWarnings("unchecked")
   public T selectCached(long id) {
 @[
-    boolean first = true;
-    for (Entity leaf: leafs) {
-      if (first)  {
+      boolean first = true;
+      for (Entity leaf: leafs) {
+        if (first)  {
 ]@
     T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCached(id);
 @[
-        first = false;
-      }
-      else {
+          first = false;
+        }
+        else {
 ]@
     if (pdo == null) {
       pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCached(id);
     }
 @[
+        }
       }
-    }
 ]@
     return pdo;
   }
@@ -173,27 +158,28 @@
   \@SuppressWarnings("unchecked")
   public T selectCachedOnly(long id) {
 @[
-    first = true;
-    for (Entity leaf: leafs) {
-      if (first)  {
+      first = true;
+      for (Entity leaf: leafs) {
+        if (first)  {
 ]@
     T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnly(id);
 @[
-        first = false;
-      }
-      else {
+          first = false;
+        }
+        else {
 ]@
     if (pdo == null) {
       pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnly(id);
     }
 @[
+        }
       }
-    }
 ]@
     return pdo;
   }
 @[
-    if (preload) {
+
+      if (preload) {
 ]@
 
   \@Override
@@ -201,42 +187,43 @@
   public List<T> selectAllCached() {
     List<T> pdos = new ArrayList<>();
 @[
-    for (Entity leaf: leafs) {
+        for (Entity leaf: leafs) {
 ]@
     pdos.addAll((Collection<? extends T>) Pdo.create(@(leaf)@.class, getDomainContext()).selectAllCached());
 @[
-    }
+        }
 ]@
     return pdos;
   }
 @[
-    }
+      }
 
-    for (WurbletParameter key: getExpressionParameters()) {
-      String type = key.getAttribute().getJavaType();
-      String suffix = Character.toUpperCase(key.getName().charAt(0)) + key.getName().substring(1);
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 ]@
 
   \@Override
   \@SuppressWarnings("unchecked")
-  public T selectCachedBy@(suffix)@(@(type)@ @(key.getName())@) {
+  public T selectCachedBy@(suffix)@(@(type)@ @(name)@) {
 @[
-      first = true;
-      for (Entity leaf: leafs) {
-        if (first)  {
+        first = true;
+        for (Entity leaf: leafs) {
+          if (first)  {
 ]@
-    T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(key.getName())@);
+    T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(name)@);
 @[
-          first = false;
-        }
-        else {
+            first = false;
+          }
+          else {
 ]@
     if (pdo == null) {
-      pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(key.getName())@);
+      pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedBy@(suffix)@(@(name)@);
     }
 @[
+          }
         }
-      }
 ]@
     return pdo;
   }
@@ -245,51 +232,51 @@
   \@SuppressWarnings("unchecked")
   public T selectCachedOnlyBy@(suffix)@(@(type)@ @(key.getName())@) {
 @[
-      first = true;
-      for (Entity leaf: leafs) {
-        if (first)  {
+        first = true;
+        for (Entity leaf: leafs) {
+          if (first)  {
 ]@
     T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnlyBy@(suffix)@(@(key.getName())@);
 @[
-          first = false;
-        }
-        else {
+            first = false;
+          }
+          else {
 ]@
     if (pdo == null) {
       pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnlyBy@(suffix)@(@(key.getName())@);
     }
 @[
+          }
         }
-      }
 ]@
     return pdo;
   }
 @[
-    }
+      }
 
-    if (genudk) {
+      if (genudk) {
 ]@
 
   \@Override
   \@SuppressWarnings("unchecked")
   public T selectCachedByUniqueDomainKey(@(udkType)@ @(udkName)@) {
 @[
-      first = true;
-      for (Entity leaf: leafs) {
-        if (first)  {
+        first = true;
+        for (Entity leaf: leafs) {
+          if (first)  {
 ]@
     T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedByUniqueDomainKey(@(udkName)@);
 @[
-          first = false;
-        }
-        else {
+            first = false;
+          }
+          else {
 ]@
     if (pdo == null) {
       pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedByUniqueDomainKey(@(udkName)@);
     }
 @[
+          }
         }
-      }
 ]@
     return pdo;
   }
@@ -298,50 +285,51 @@
   \@SuppressWarnings("unchecked")
   public T selectCachedOnlyByUniqueDomainKey(@(udkType)@ @(udkName)@) {
 @[
-      first = true;
-      for (Entity leaf: leafs) {
-        if (first)  {
+        first = true;
+        for (Entity leaf: leafs) {
+          if (first)  {
 ]@
     T pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnlyByUniqueDomainKey(@(udkName)@);
 @[
-          first = false;
-        }
-        else {
+            first = false;
+          }
+          else {
 ]@
     if (pdo == null) {
       pdo = (T) Pdo.create(@(leaf)@.class, getDomainContext()).selectCachedOnlyByUniqueDomainKey(@(udkName)@);
     }
 @[
+          }
         }
-      }
 ]@
     return pdo;
   }
 @[
+      }
     }
-  }
-  else  {
+    else  {
 ]@
 
   /** the cache. */
   @(scope)@ static @(cache)@<@(pdoName)@> cache;
 @[
-    for (WurbletParameter key: getExpressionParameters()) {
-      String type = key.getAttribute().getJavaType();
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
 ]@
 
-  /** index for @(key.getName())@. */
-  @(scope)@ static PdoCacheIndex<@(pdoName)@,@(type)@> @(key.getName())@Index;
+  /** index for @(name)@. */
+  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(type)@> @(name)@Index;
 @[
-    }
+      }
 
-    if (genudk) {
+      if (genudk) {
 ]@
 
   /** index for the unique domain key. */
-  @(scope)@ static PdoCacheIndex<@(pdoName)@,@(udkType)@> udkIndex;
+  @(scope)@ static PdoCacheIndex<@(pdoName)@, @(udkType)@> udkIndex;
 @[
-    }
+      }
 ]@
 
   /**
@@ -352,51 +340,55 @@
   private static synchronized @(cache)@<@(pdoName)@> createCache() {
     if (cache == null) {
 @[
-    if (noreg) {
+      if (noreg) {
 ]@
       cache = new @(cache)@<@(pdoName)@> (@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
 @[
-    }
-    else {
+      }
+      else {
 ]@
       cache = Pdo.createPdoCache(@(pdoName)@.class, @(preload ? "true" : "false")@, @(mutable ? "false" : "true")@, @(secure ? "true" : "false")@);
 @[
-    }
+      }
 
-    if (strategy != null) {
+      if (strategy != null) {
 ]@
       cache.setStrategy(PdoCacheStrategy.@(strategy)@);
 @[
-    }
+      }
 
-    if (maxSize != null) {
+      if (maxSize != null) {
 ]@
       cache.setMaxSize(@(maxSize)@);
 @[
-    }
+      }
 
-    if (keepQuota != null) {
+      if (keepQuota != null) {
 ]@
       cache.setKeepQuota(@(keepQuota)@);
 @[
-    }
+      }
 
-    if (configure != null) {
+      if (configure != null) {
 ]@
       @(configure)@(cache);
 @[
-    }
+      }
 
-    for (WurbletParameter key: getExpressionParameters()) {
-      String type   = key.getAttribute().getJavaType();
-      String suffix = key.getAttribute().getMethodNameSuffix();
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        if (isRemote()) {
+          suffix += "ForCache";
+        }
 ]@
 
-      @(key.getName())@Index = new PdoCacheIndex<@(pdoName)@,@(type)@>("@(pdoName)@:@(key.getName())@") {
+      @(name)@Index = new PdoCacheIndex<@(pdoName)@, @(type)@>("@(pdoName)@:@(name)@") {
 
           \@Override
-          public @(pdoName)@ select(DomainContext context, @(type)@ @(key.getArg())@) {
-            return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(key.getArg())@);
+          public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
+            return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(name)@);
           }
 
           \@Override
@@ -405,16 +397,44 @@
           }
         };
 @[
-    }
+      }
 
-    if (genudk) {
+      if (genudk) {
 ]@
 
-      udkIndex = new PdoCacheIndex<@(pdoName)@,@(udkType)@>("@(pdoName)@:UDK") {
+      udkIndex = new PdoCacheIndex<@(pdoName)@, @(udkType)@>("@(pdoName)@:UDK") {
 
           \@Override
           public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
+@[
+        if (isRemote()) {
+          RemoteIncludes genInc = new RemoteIncludes(this);
+          PrintStream implOut   = genInc.getImplStream();
+          PrintStream remoteOut = genInc.getRemoteStream();
+]@
+@{to remoteOut}@
+  @(pdoName)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(pdoName)@ selectByUniqueDomainKeyForCache(DomainContext context, @(udkType)@ @(udkName)@) throws RemoteException {
+    try {
+      return newInstance(context).selectCachedByUniqueDomainKey(@(udkName)@);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+            return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKeyForCache(@(udkName)@);
+@[
+        }
+        else {
+]@
             return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKey(@(udkName)@);
+@[
+        }
+]@
           }
 
           \@Override
@@ -423,11 +443,11 @@
           }
         };
 @[
-    }
+      }
 
 ]@
 
-      PdoTracker.getInstance().addModificationListener(new PdoListener(@(pdoName)@.class) {
+      ModificationTracker.getInstance().addModificationListener(new PdoListener(@(pdoName)@.class) {
 
         \@Override
         public void dataChanged(ModificationEvent ev) {
@@ -450,7 +470,7 @@
   }
 
   \@Override
-  public PdoCache<@(pdoName)@> getCache() {
+  public PdoCache<@(bounded ? "? extends " : "")@@(pdoName)@> getCache() {
     return cache == null ? createCache() : cache;
   }
 
@@ -480,36 +500,37 @@
     return getCache().select(getDomainContext(), id);
   }
 @[
-    for (WurbletParameter key: getExpressionParameters()) {
-      String type   = key.getAttribute().getJavaType();
-      String suffix = key.getAttribute().getMethodNameSuffix();
+      for (WurbletArgument key: getExpressionArguments()) {
+        String name = key.getMethodArgumentName();
+        String type = key.getAttribute().getJavaType();
+        String suffix = Character.toUpperCase(name.charAt(0)) + name.substring(1);
 ]@
 
   /**
-   * Selects from cache by @(key.getName())@ but does not load from db if not in cache.
+   * Selects from cache by @(name)@ but does not load from db if not in cache.
    *
-   * \@param @(key.getArg())@ the unique key
+   * \@param @(name)@ the unique key
    * \@return the pdo, null if not in cache
    */
   \@Override
-  public @(pdoName)@ selectCachedOnlyBy@(suffix)@(@(type)@ @(key.getArg())@)  {
-    return getCache().select(@(key.getName())@Index, getDomainContext(), @(key.getArg())@, false);
+  public @(pdoName)@ selectCachedOnlyBy@(suffix)@(@(type)@ @(name)@)  {
+    return getCache().select(@(name)@Index, getDomainContext(), @(name)@, false);
   }
 
   /**
-   * Selects via cache by @(key.getName())@.
+   * Selects via cache by @(name)@.
    *
-   * \@param @(key.getArg())@ the unique key
+   * \@param @(name)@ the unique key
    * \@return the pdo, null if no such object
    */
   \@Override
-  public @(pdoName)@ selectCachedBy@(suffix)@(@(type)@ @(key.getArg())@)  {
-    return getCache().select(@(key.getName())@Index, getDomainContext(), @(key.getArg())@);
+  public @(pdoName)@ selectCachedBy@(suffix)@(@(type)@ @(name)@)  {
+    return getCache().select(@(name)@Index, getDomainContext(), @(name)@);
   }
 @[
-    }
+      }
 
-    if (genudk) {
+      if (genudk) {
 ]@
 
   /**
@@ -533,10 +554,35 @@
   public @(pdoName)@ selectCachedByUniqueDomainKey(@(udkType)@ @(udkName)@)  {
     return getCache().select(udkIndex, getDomainContext(), @(udkName)@);
   }
-@[
-    }
 
-    if (preload)  {
+  /**
+   * Selects via remote cache, if session is remote.
+   *
+   * \@param @(udkName)@ the unique key
+   * \@return the pdo, null if no such object
+   */
+  \@Override
+  public @(pdoName)@ findByUniqueDomainKeyForCache(@(udkType)@ @(udkName)@) {
+    @(pdoName)@ obj;
+    if (getSession().isRemote()) {
+      try {
+        DomainContext context = getDomainContext();
+        obj = getRemoteDelegate().selectByUniqueDomainKeyForCache(context, @(udkName)@);
+        configureRemoteObject(context, obj);
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+    else {
+      obj = pdo().findByUniqueDomainKey(@(udkName)@);
+    }
+    return obj;
+  }
+@[
+      }
+
+      if (preload)  {
 ]@
 
   \@Override
@@ -544,6 +590,7 @@
     return getCache().selectAll(getDomainContext());
   }
 @[
+      }
     }
   }
 ]@

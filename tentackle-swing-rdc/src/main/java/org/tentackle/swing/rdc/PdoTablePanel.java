@@ -36,9 +36,7 @@ import org.tentackle.swing.FormTable;
 import org.tentackle.swing.FormTableEntry;
 import org.tentackle.swing.FormTableModel;
 import org.tentackle.swing.FormTableSorter;
-import org.tentackle.swing.FormTableUtilityPopupFactory;
 import org.tentackle.swing.FormUtilities;
-import org.tentackle.swing.UIFactory;
 import org.tentackle.swing.mocking.MockFormTableEntry;
 
 
@@ -190,7 +188,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
    */
   @SuppressWarnings("unchecked")
   public FormTable<T> createFormTable() {
-    return (FormTable<T>) UIFactory.getInstance().createFormTable();
+    return (FormTable<T>) Rdc.createFormTable();
   }
 
 
@@ -309,7 +307,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     dataTable.setName(prefName);
     if (prefName != null)  {
       dataTable.setCreateDefaultColumnsFromPreferences(true);
-      dataTable.setUtilityPopup(FormTableUtilityPopupFactory.getInstance().createPopup());
+      dataTable.setUtilityPopup(Rdc.createPopup());
     }
     else  {
       dataTable.setCreateDefaultColumnsFromPreferences(false);
@@ -866,7 +864,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.setLayout(new java.awt.GridBagLayout());
 
     newButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("add"));
-    newButton.setText(RdcSwingRdcBundle.getTranslation("ADD")); // NOI18N
+    newButton.setText(RdcSwingRdcBundle.getString("ADD")); // NOI18N
     newButton.setToolTipText(RdcSwingRdcBundle.getString("ADD A NEW ROW")); // NOI18N
     newButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     newButton.setName("add"); // NOI18N
@@ -883,7 +881,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.add(newButton, gridBagConstraints);
 
     saveButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("save"));
-    saveButton.setText(RdcSwingRdcBundle.getTranslation("SAVE")); // NOI18N
+    saveButton.setText(RdcSwingRdcBundle.getString("SAVE")); // NOI18N
     saveButton.setToolTipText(RdcSwingRdcBundle.getString("SAVE ALL ROWS")); // NOI18N
     saveButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     saveButton.setName("save"); // NOI18N
@@ -900,7 +898,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.add(saveButton, gridBagConstraints);
 
     deleteButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("subtract"));
-    deleteButton.setText(RdcSwingRdcBundle.getTranslation("REMOVE")); // NOI18N
+    deleteButton.setText(RdcSwingRdcBundle.getString("REMOVE")); // NOI18N
     deleteButton.setToolTipText(RdcSwingRdcBundle.getString("REMOVE ROW")); // NOI18N
     deleteButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     deleteButton.setName("remove"); // NOI18N
@@ -917,7 +915,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.add(deleteButton, gridBagConstraints);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("close"));
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setToolTipText(RdcSwingRdcBundle.getString("DISCARD CHANGES AND CLOSE")); // NOI18N
     cancelButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     cancelButton.setName("cancel"); // NOI18N
@@ -934,7 +932,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.add(cancelButton, gridBagConstraints);
 
     moveUpButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("up"));
-    moveUpButton.setText(RdcSwingRdcBundle.getTranslation("UP")); // NOI18N
+    moveUpButton.setText(RdcSwingRdcBundle.getString("UP")); // NOI18N
     moveUpButton.setToolTipText(RdcSwingRdcBundle.getString("MOVE UP ONE ROW")); // NOI18N
     moveUpButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     moveUpButton.setName("up"); // NOI18N
@@ -951,7 +949,7 @@ public class PdoTablePanel<T extends PersistentDomainObject<T>> extends org.tent
     buttonPanel.add(moveUpButton, gridBagConstraints);
 
     moveDownButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("down"));
-    moveDownButton.setText(RdcSwingRdcBundle.getTranslation("DOWN")); // NOI18N
+    moveDownButton.setText(RdcSwingRdcBundle.getString("DOWN")); // NOI18N
     moveDownButton.setToolTipText(RdcSwingRdcBundle.getString("MOVE DOWN ONE ROW")); // NOI18N
     moveDownButton.setMargin(new java.awt.Insets(1, 3, 1, 3));
     moveDownButton.setName("down"); // NOI18N

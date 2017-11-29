@@ -45,7 +45,7 @@ public class BMoneyFormFieldBinding extends DefaultFormComponentBinding {
   public Object getViewValue() {
     try {
       if (DMoney.class.isAssignableFrom(getMember().getType())) {
-        return ((BMoneyFormField)getFormComponent()).getDMoney();
+        return ((BMoneyFormField)getComponent()).getDMoney();
       }
       else {
         return super.getViewValue();

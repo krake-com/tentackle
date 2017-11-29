@@ -1,35 +1,15 @@
 @{include $currentDir/header.incl}@
+@{phase 2}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Generate unique domain key class for an entity.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; UniqueDomainKey
+<p>
+For more options, see {\@link ModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * generate unique domain key class for a pdo.
-     *
-     * usage:  \@wurblet <tag> UniqueDomainKey --model=<mapfile>
-     *
-     *         <mapfile> is the mapping description
-     *
-     * Example: \@wurblet uniqueDomainKey UniqueDomainKey --model=$mapping
-     */
-
+  private void wurbel() throws ModelException {
     List<Attribute> udk = getEntity().getUniqueDomainKey();
     List<Attribute> superUdk = null;
     if (getEntity().getSuperEntity() != null) {
@@ -41,7 +21,7 @@
   // @(getEntity())@ inherits from @(getEntity().getSuperEntity())@
 @[
     }
-    else if (!getEntity().isRootEntityAccordingToModel()) {
+    else if (!getEntity().isRootEntity()) {
 ]@
 
   // @(getEntity())@ is not a root entity
@@ -65,7 +45,9 @@
   /**
    * The unique domain key for @(getEntity())@.
    */
-  public static class @(getEntity())@UDK implements Comparable<@(getEntity())@UDK> {
+  public static class @(getEntity())@UDK implements Serializable, Comparable<@(getEntity())@UDK> {
+
+    private static final long serialVersionUID = 1L;
 @[
       StringBuilder con1Args = new StringBuilder();   // 1st constructor arguments
       StringBuilder con2Args = new StringBuilder();   // 2nd constructor arguments
@@ -78,12 +60,12 @@
           con1Args.append(", ");
           con2Args.append(", ");
         }
-        con1Args.append(attr.getJavaType()).append(" ").append(attr.getJavaName());
+        con1Args.append(attr.getJavaType()).append(" ").append(attr.getName());
         con2Args.append("pdo.").append(attr.getGetterName()).append("()");
 ]@
 
     /** @(attr.getOptions().getComment())@. */
-    public final @(attr.getJavaType())@ @(attr.getJavaName())@;
+    public final @(attr.getJavaType())@ @(attr.getName())@;
 @[
 
       }
@@ -93,20 +75,20 @@
      * Creates a unique domain key.
      *
 @[
-        for (Attribute attr: udk) {
+      for (Attribute attr: udk) {
 ]@
-     * \@param @(attr.getJavaName())@ @(attr.getOptions().getComment())@
+     * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
 @[
-        }
+      }
 ]@
      */
     public @(getEntity())@UDK(@(con1Args.toString())@) {
 @[
-        for (Attribute attr: udk) {
+      for (Attribute attr: udk) {
 ]@
-      this.@(attr.getJavaName())@ = @(attr.getJavaName())@;
+      this.@(attr.getName())@ = @(attr.getName())@;
 @[
-        }
+      }
 ]@
     }
 
@@ -123,18 +105,18 @@
     public int hashCode() {
       int hash = 7;
 @[
-        for (Attribute attr: udk) {
-          if (attr.getDataType().isPrimitive()) {
+      for (Attribute attr: udk) {
+        if (attr.getDataType().isPrimitive()) {
 ]@
-      hash = 79 * hash + @(attr.getJavaName())@;
+      hash = 79 * hash + @(attr.getName())@;
 @[
-          }
-          else  {
-]@
-      hash = 79 * hash + Objects.hashCode(@(attr.getJavaName())@);
-@[
-          }
         }
+        else  {
+]@
+      hash = 79 * hash + Objects.hashCode(@(attr.getName())@);
+@[
+        }
+      }
 ]@
       return hash;
     }
@@ -149,22 +131,22 @@
       }
       @(getEntity())@UDK other = (@(getEntity())@UDK) obj;
 @[
-        for (Attribute attr: udk) {
-          if (attr.getDataType().isPrimitive()) {
+      for (Attribute attr: udk) {
+        if (attr.getDataType().isPrimitive()) {
 ]@
-      if (@(attr.getJavaName())@ != other.@(attr.getJavaName())@) {
+      if (@(attr.getName())@ != other.@(attr.getName())@) {
         return false;
       }
 @[
-          }
-          else  {
-]@
-      if (!Objects.equals(@(attr.getJavaName())@, other.@(attr.getJavaName())@)) {
-        return false;
-      }
-@[
-          }
         }
+        else  {
+]@
+      if (!Objects.equals(@(attr.getName())@, other.@(attr.getName())@)) {
+        return false;
+      }
+@[
+        }
+      }
 ]@
       return true;
     }
@@ -173,35 +155,36 @@
     public int compareTo(@(getEntity())@UDK other) {
       int rv = other == null ? 1 : 0;
 @[
-        String inset = "";
-        for (Attribute attr: udk) {
+      String inset = "";
+      for (Attribute attr: udk) {
 ]@
       @(inset)@if (rv == 0) {
 @[
           if (attr.getDataType().isPrimitive()) {
 ]@
-      @(inset)@  rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
+      @(inset)@  rv = @(attr.getDataType().toNonPrimitive())@.compare(@(attr.getName())@, other.@(attr.getName())@);
 @[
-          }
-          else  {
-]@
-      @(inset)@  rv = Compare.compare(@(attr.getJavaName())@, other.@(attr.getJavaName())@);
-@[
-          }
-          inset += "  ";
         }
+        else  {
+]@
+      @(inset)@  rv = Compare.compare(@(attr.getName())@, other.@(attr.getName())@);
+@[
+        }
+        inset += "  ";
+      }
 
-        do {
-          inset = inset.substring(2);
+      do {
+        inset = inset.substring(2);
 ]@
       @(inset)@}
 @[
 
-        } while (!inset.isEmpty());
+      } while (!inset.isEmpty());
 ]@
       return rv;
     }
   }
 @[
+    }
   }
 ]@

@@ -33,17 +33,26 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.fx.table.TotalsTableView;
 
 /**
  * Extended TableView.
  *
  * @author harald
- * @param <S> the type
+ * @param <S> the row type
  */
 public class FxTableView<S> extends TableView<S> implements FxComponent {
 
-
+  /**
+   * The configuration.<br>
+   * Optional but recommended.
+   */
   private TableConfiguration<S> configuration;
+
+  /**
+   * The optional totals table.
+   */
+  private TotalsTableView<S> totalsTableView;
 
   /**
    * Creates a default TableView control with no content.
@@ -73,6 +82,26 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     this.configuration = configuration;
   }
 
+
+  /**
+   * Gets the totals table.
+   *
+   * @return null if no totals (default)
+   */
+  public TotalsTableView<S> getTotalsTableView() {
+    return totalsTableView;
+  }
+
+  /**
+   * Sets the totals table.
+   *
+   * @param totalsTableView null to clear
+   */
+  public void setTotalsTableView(TotalsTableView<S> totalsTableView) {
+    this.totalsTableView = totalsTableView;
+  }
+
+
   /**
    * Saves the column sizes, visability, view size and sorting to the preferences.
    *
@@ -98,30 +127,6 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
     }
   }
 
-  /**
-   * Converts the table to a spreadsheet file.
-   *
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  public void toSpreadsheet(File file, boolean onlySelected) {
-    if (configuration != null) {
-      configuration.toSpreadsheet(this, file, onlySelected);
-    }
-  }
-
-  /**
-   * Exports a table to an XML file.
-   *
-   * @param file the output file
-   * @param onlySelected true if export only selected rows
-   */
-  public void toXml(File file, boolean onlySelected) {
-    if (configuration != null) {
-      configuration.toXml(this, file, onlySelected);
-    }
-  }
-
 
   /**
    * Sets the sortable property of all columns.
@@ -141,10 +146,19 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
 
   private /**/FxTableViewDelegate/**/ delegate;          // @wurblet < Inject ${classname}Delegate
 
+  /**
+   * Creates the delegate.
+   *
+   * @return the delegate
+   */
+  protected /**/FxTableViewDelegate/**/ createDelegate() {  // @wurblet < Inject ${classname}Delegate
+    return new /**/FxTableViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+  }
+
   @Override
   public /**/FxTableViewDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = new /**/FxTableViewDelegate/**/(this);  // @wurblet < Inject ${classname}Delegate
+      delegate = createDelegate();
     }
     return delegate;
   }
@@ -176,7 +190,7 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   }
 
   @Override
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     return getDelegate().getViewValue();
   }
 

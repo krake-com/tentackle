@@ -18,8 +18,6 @@
 
 package org.tentackle.model;
 
-import org.tentackle.model.parser.Line;
-
 /**
  * An attribute.
  * <p>
@@ -27,7 +25,7 @@ import org.tentackle.model.parser.Line;
  *
  * @author harald
  */
-public interface Attribute {
+public interface Attribute extends ModelElement {
 
   /**
    * Gets the entity this attribute belongs to.
@@ -35,13 +33,6 @@ public interface Attribute {
    * @return the entity
    */
   Entity getEntity();
-
-  /**
-   * Gets the Java-Name of the attribute.
-   *
-   * @return the java name
-   */
-  String getJavaName();
 
 
   /**
@@ -130,10 +121,19 @@ public interface Attribute {
   /**
    * Gets the innertype for application specific types.
    *
-   * @return the inner type to convert to agains the SQL backend
+   * @return the inner type to convert to agains the backend
    * @throws ModelException if not application specific type or innertype not a legal DataType.
    */
   DataType getInnerType() throws ModelException;
+
+  /**
+   * Gets the effective type exposed to the backend.<br>
+   * If this is an application specific type, the inner type will be returned.
+   *
+   * @return the effective data type
+   * @throws ModelException if model garbeled
+   */
+  DataType getEffectiveType() throws ModelException;
 
   /**
    * Gets the java type.<br>
@@ -159,7 +159,6 @@ public interface Attribute {
    */
   boolean isNullable() throws ModelException;
 
-
   /**
    * Gets the associated relation.
    *
@@ -167,21 +166,12 @@ public interface Attribute {
    */
   Relation getRelation();
 
-
   /**
    * Validates the attribute.
    *
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
-
 
   /**
    * Gets the suffix to be used in methodnames.
@@ -214,6 +204,15 @@ public interface Attribute {
    * @return the annotation text, null if none
    */
   String getBindableAnnotation();
+
+  /**
+   * Conberts a given value string to a valid java method argument.<br>
+   * Adds downcasts, if necessary.
+   *
+   * @param value the value string
+   * @return the method argument string
+   */
+  String toMethodArgument(String value);
 
 }
 

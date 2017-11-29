@@ -28,7 +28,7 @@ import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.swing.BindableTableModel;
 import org.tentackle.swing.FormUtilities;
 
@@ -36,16 +36,17 @@ import org.tentackle.swing.FormUtilities;
 /**
  * Binding Workhorse.
  *
+ * @param <S> type of the objects contained within the table's items list
  * @author harald
  */
-public class DefaultFormTableBinder extends AbstractBinder implements FormTableBinder {
+public class DefaultFormTableBinder<S> extends AbstractBinder implements FormTableBinder<S> {
 
   /**
    * logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFormTableBinder.class);
 
-  private final BindableTableModel<?> model;                    // the table to bind
+  private final BindableTableModel<S> model;                    // the table to bind
   private final Map<Integer,FormTableBinding> boundColumns;     // the bindings mapped by column number
   private final Map<String,FormTableBinding> boundPaths;        // the bindings mapped by binding path
 
@@ -55,7 +56,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
    *
    * @param model the table model to bind
    */
-  public DefaultFormTableBinder(BindableTableModel<?> model) {
+  public DefaultFormTableBinder(BindableTableModel<S> model) {
     super();
     this.model = model;
     boundColumns = new HashMap<>();
@@ -64,7 +65,7 @@ public class DefaultFormTableBinder extends AbstractBinder implements FormTableB
 
 
   @Override
-  public BindableTableModel<?> getModel() {
+  public BindableTableModel<S> getModel() {
     return model;
   }
 

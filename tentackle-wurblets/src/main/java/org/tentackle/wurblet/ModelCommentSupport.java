@@ -21,9 +21,12 @@ package org.tentackle.wurblet;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import org.tentackle.common.BasicStringHelper;
+import java.util.Set;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
+import org.tentackle.model.MethodArgument;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 
@@ -55,56 +58,70 @@ public class ModelCommentSupport {
       out.print('.');
       out.print(relation.getForeignAttribute());
     }
+    else if (!relation.getMethodArgs().isEmpty()) {
+      out.print(relation.getMethodArgs().get(0));
+    }
     else {
       out.print("?");
+    }
+    if (relation.getMethodArgs().size() > 1) {
+      boolean firstSkipped = false;
+      for (MethodArgument arg: relation.getMethodArgs()) {
+        if (firstSkipped) {
+          out.print(" & ");
+          out.print(arg);
+        }
+        firstSkipped = true;
+      }
     }
   }
 
   /**
    * Prints the referencing relation.
    *
+   * @param entity the referenced entity
    * @param relation the relation
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printReferencedBy(Relation relation, String indent, PrintStream out) {
-    Entity entity = relation.getEntity();   // the referencing entity
-    out.print(indent);
-    out.print(entity);
-    printRootEntities(entity, entity.getRootEntities(), out);
-    if (relation.isDeepReference()) {
-      out.print(" deeply");
-    }
+  public static void printReferencedBy(Entity entity, Relation relation, String indent, PrintStream out) {
+    Entity referencingEntity = relation.getEntity();
+    Collection<Entity> roots = referencingEntity.getRootEntities();
+    if (roots.size() != 1 || !roots.contains(entity)) {
+      out.print(indent);
+      out.print(referencingEntity);
+      printRootEntities(referencingEntity, roots, out);
+      if (relation.isDeepReference()) {
+        out.print(" deeply");
+      }
 
-    printVia(relation, out);
+      Relation nmRel = relation.getNmRelation();
+      Relation rel = relation;
+      if (nmRel == null && relation.getForeignRelation() != null) {
+        nmRel = relation.getForeignRelation().getNmRelation();
+        if (nmRel != null) {
+          rel = relation.getForeignRelation();
+        }
+      }
 
-    if (!relation.getName().equalsIgnoreCase(entity.toString())) {
-      out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
-    }
-    Relation nmRel = relation.getNmRelation();
-    Relation rel = relation;
-    if (nmRel == null && relation.getForeignRelation() != null) {
-      nmRel = relation.getForeignRelation().getNmRelation();
-      if (nmRel != null) {
-        rel = relation.getForeignRelation();
+      if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
+        out.print(" via ");
+        out.print(relation.getForeignEntity());
+        out.print(" as ");
+        out.print(relation.getName());
+        out.println(" [N:M]");
       }
-    }
-    if (nmRel != null) {
-      out.print(" [N:M] to ");
-      Entity nmEntity = nmRel.getForeignEntity();
-      out.print(nmEntity);
-      if (rel.getNmMethodName() != null &&
-          !rel.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
-        out.print(" as " + BasicStringHelper.firstToLower(rel.getNmMethodName()));
-      }
-      out.println();
-    }
-    else  {
-      if (relation.getRelationType() == RelationType.LIST) {
-        out.println(" [1:N]");
-      }
-      else {
-        out.println(" [1:1]");
+      else  {
+        printVia(relation, out);
+        if (!relation.getName().equalsIgnoreCase(referencingEntity.toString())) {
+          out.print(" as " + relation.getVariableName());
+        }
+        if (relation.getRelationType() == RelationType.LIST) {
+          out.println(" [1:N]");
+        }
+        else {
+          out.println(" [1:1]");
+        }
       }
     }
   }
@@ -113,30 +130,38 @@ public class ModelCommentSupport {
   /**
    * Recursively prints the components and sub-entities of an entity.
    *
+   * @param allRelations set to avoid recursion loops
    * @param compositeRelations the composite relations
    * @param subEntities the sub entities
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printComponents(Collection<Relation> compositeRelations, Collection<Entity> subEntities,
+  public static void printComponents(Set<Relation> allRelations,
+                                     Collection<Relation> compositeRelations, Collection<Entity> subEntities,
                                      String indent, PrintStream out) {
 
     for (Relation relation: compositeRelations) {
+
+      boolean relationNotAlreadyPrinted = allRelations.add(relation);
       Entity component = relation.getForeignEntity();
-      for (Entity sub: subEntities) {
-        if (!sub.getComponents().isEmpty()) {
-          out.print(indent);
-          out.print("^ ");
-          out.println(sub);
-          List<Relation> subCompositeRelations = new ArrayList<>();
-          for (Relation subRelation : sub.getRelationsIncludingInherited()) {
-            if (subRelation.isComposite()) {
-              subCompositeRelations.add(subRelation);
+
+      if (relationNotAlreadyPrinted) {
+        for (Entity sub: subEntities) {
+          if (!sub.getComponents().isEmpty()) {
+            out.print(indent);
+            out.print("^ ");
+            out.println(sub);
+            List<Relation> subCompositeRelations = new ArrayList<>();
+            for (Relation subRelation : sub.getRelationsIncludingInherited()) {
+              if (subRelation.isComposite()) {
+                subCompositeRelations.add(subRelation);
+              }
             }
+            printComponents(allRelations, subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
           }
-          printComponents(subCompositeRelations, sub.getSubEntities(), indent + "    ", out);
         }
       }
+
       out.print(indent);
       out.print("+ ");
       out.print(component);
@@ -144,7 +169,7 @@ public class ModelCommentSupport {
       printVia(relation, out);
 
       if (!relation.getName().equalsIgnoreCase(component.toString())) {
-        out.print(" as " + BasicStringHelper.firstToLower(relation.getName()));
+        out.print(" as " + StringHelper.firstToLower(relation.getName()));
       }
       if (relation.getNmRelation() != null) {
         out.print(" [N:M] to ");
@@ -152,16 +177,15 @@ public class ModelCommentSupport {
         out.print(nmEntity);
         if (relation.getNmMethodName() != null &&
             !relation.getNmMethodName().equalsIgnoreCase(nmEntity.toString())) {
-          out.print(" as " + BasicStringHelper.firstToLower(relation.getNmMethodName()));
+          out.print(" as " + StringHelper.firstToLower(relation.getNmMethodName()));
         }
-        out.println();
       }
       else  {
         if (relation.getRelationType() == RelationType.LIST) {
-          out.println(" [1:N]");
+          out.print(" [1:N]");
         }
         else {
-          out.println(" [1:1]");
+          out.print(" [1:1]");
         }
       }
 
@@ -171,7 +195,19 @@ public class ModelCommentSupport {
           componentCompositeRelations.add(subRelation);
         }
       }
-      printComponents(componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
+
+      if (relationNotAlreadyPrinted) {
+        out.println();
+        printComponents(allRelations, componentCompositeRelations, component.getSubEntities(), indent + "    ", out);
+      }
+      else {
+        if (relation.getForeignEntity().isComposite()) {
+          out.println(" ...");
+        }
+        else {
+          out.println();
+        }
+      }
     }
   }
 
@@ -197,39 +233,82 @@ public class ModelCommentSupport {
    *
    * @param entity the root entity
    * @param relations the outgoing relations
+   * @param rootsFromForeignEntity true if print roots from relation.foreignEntity else relation.entity
    * @param indent the indent string
    * @param out the output stream
    */
-  public static void printNonCompositeRelations(Entity entity, List<Relation> relations, String indent, PrintStream out) {
+  public static void printNonCompositeRelations(Entity entity, List<Relation> relations,
+                                                boolean rootsFromForeignEntity,
+                                                String indent, PrintStream out) {
+
+    List<Relation> sortedRelations = new ArrayList<>();
 
     for (Relation relation: relations) {
       if (!relation.isComposite() && !relation.getForeignEntity().equals(entity)) {
-        out.print(indent);
-        out.print(relation.getForeignEntity());
-        printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
-        if (!relation.getEntity().equals(entity)) {   // some sub entity
-          out.print(" from ");
-          out.print(relation.getEntity());
-          printRootEntities(entity, relation.getEntity().getRootEntities(), out);
-        }
-        printVia(relation, out);
-        if (relation.isReversed()) {
-          out.println(" reversed");
-        }
-        out.println();
+        sortedRelations.add(relation);
       }
+    }
+
+    Collections.sort(sortedRelations, (o1, o2) -> {
+      return o1.getForeignEntity().getName().compareTo(o2.getForeignEntity().getName());
+    });
+
+    for (Relation relation: sortedRelations) {
+      out.print(indent);
+      out.print(relation.getForeignEntity());
+      if (rootsFromForeignEntity) {
+        printRootEntities(entity, relation.getForeignEntity().getRootEntities(), out);
+      }
+      if (!relation.getEntity().equals(entity)) {   // some sub entity
+        out.print(" from ");
+        out.print(relation.getEntity());
+        if (!rootsFromForeignEntity) {
+          printRootEntities(relation.getEntity(), relation.getEntity().getRootEntities(), out);
+        }
+      }
+      printVia(relation, out);
+      if (relation.isReversed()) {
+        out.print(" reversed");
+      }
+      if (relation.isDeepReference()) {
+        out.print(" deeply");
+      }
+      if (relation.getRelationType() == RelationType.LIST && !relation.isReversed()) {
+        out.print(" [1:N]");
+      }
+      else {
+        Relation nmRel = relation.getDefiningNmRelation();
+        if (nmRel != null && entity.equals(nmRel.getEntity())) {
+          out.print(" [N:M]");
+        }
+        else {
+          out.print(" [1:1]");
+        }
+      }
+      out.println();
     }
   }
 
 
+  /**
+   * Prints the root entities for a component or other entity.
+   *
+   * @param entity the entity to ignore in roots
+   * @param rootEntities the root entities
+   * @param out the output stream
+   */
   private static void printRootEntities(Entity entity, Collection<Entity> rootEntities, PrintStream out) {
-    List<Entity> roots = new ArrayList<>();
-    for (Entity rootEntity: rootEntities) {
-      if (!rootEntity.equals(entity)) {
-        roots.add(rootEntity);
-      }
+    List<Entity> roots = new ArrayList<>(rootEntities);
+    if (roots.size() == 1 && entity.equals(roots.get(0))) {
+      roots.clear();
     }
+
     if (!roots.isEmpty()) {
+
+      Collections.sort(roots, (o1, o2) -> {
+        return o1.getName().compareTo(o2.getName());
+      });
+
       out.print(" (");
       boolean needComma = false;
       for (Entity rootEntity : roots) {

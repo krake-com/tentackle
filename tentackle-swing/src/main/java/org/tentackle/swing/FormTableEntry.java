@@ -23,7 +23,6 @@ import java.awt.Rectangle;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import org.tentackle.common.Compare;
-import org.tentackle.locale.I18nTranslation;
 import org.tentackle.swing.BindableTableModel.BindType;
 import org.tentackle.swing.bind.FormTableBinding;
 
@@ -74,28 +73,12 @@ abstract public class FormTableEntry<T> implements FormTableRowObject {
    * Gets the displayed column name.<br>
    * By default the column-name and the displayed column name
    * are the same.
+   * 
    * @param mColumn the datamodel column
    * @return the display name of the column
    */
   public String getDisplayedColumnName(int mColumn) {
-    I18nTranslation i18nTranslation = getI18nTranslation(mColumn);
-    if (i18nTranslation != null) {
-      return i18nTranslation.getText();
-    }
-    else  {
-      return getColumnName(mColumn);
-    }
-  }
-
-  /**
-   * Gets the translation for given column.
-   *
-   * @param mColumn the datamodel column
-   * @return the translation
-   */
-  public I18nTranslation getI18nTranslation(int mColumn) {
-    // @todo: this should be a generic lookup to the I18N backend!
-    return null;
+    return getColumnName(mColumn);
   }
 
 

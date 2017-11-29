@@ -64,30 +64,32 @@ public class TableMetaData {
    * Sets up the column from the database meta data result.
    *
    * @param metaData the database metadata
+   * @param schemas valid schemas to scan, null if all
    * @param schemaPattern the schema (null if none, "" if without schema)
    * @param tablePattern the table pattern
    * @throws SQLException the processing failed
    * @throws BackendException if logical meta data processing error
    */
-  public void setupTableFromMetaData(DatabaseMetaData metaData, String schemaPattern, String tablePattern) throws SQLException {
-
-    ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null);
-    try {
-      if (resultSet.next()) {
+  public void setupTableFromMetaData(DatabaseMetaData metaData, String[] schemas, String schemaPattern, String tablePattern) throws SQLException {
+    try (ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null)) {
+      boolean valid = false;    // true if valid table found
+      outer:
+      while (resultSet.next()) {
         schemaName = resultSet.getString("TABLE_SCHEM");
         tableName = resultSet.getString("TABLE_NAME");
         comment = resultSet.getString("REMARKS");
+        // restrict to optional schemas
+        if (isValidSchema(schemaName, schemas)) {
+          valid = true;
+          break;
+        }
       }
-      else  {
+      if (!valid) {
         throw new BackendException("no metadata for schema " + schemaPattern + ", table " + tablePattern);
       }
     }
-    finally {
-      resultSet.close();
-    }
 
-    resultSet = metaData.getColumns(null, schemaPattern, tablePattern, null);
-    try {
+    try (ResultSet resultSet = metaData.getColumns(null, schemaName, tableName, null)) {
       while (resultSet.next()) {
         // check same schema, tablename
         String schema = resultSet.getString("TABLE_SCHEM");
@@ -118,21 +120,18 @@ public class TableMetaData {
 
         ColumnMetaData columnMetaData = modelMetaData.getBackend().createColumnMetaData(this);
         columnMetaData.setupColumnFromMetaData(resultSet);
-        if (columnMetaData.getColumnName() != null && !columnMetaData.getColumnName().startsWith("_")) {
+        if (columnMetaData.getColumnName() != null &&
+            !modelMetaData.getBackend().isTemporaryName(columnMetaData.getColumnName())) {
           columns.add(columnMetaData);
         }
       }
     }
-    finally {
-      resultSet.close();
-    }
 
     // extract index information
-    resultSet = metaData.getIndexInfo(null, schemaName, tableName, false, false);
-    try {
+    try (ResultSet resultSet = metaData.getIndexInfo(null, schemaName, tableName, false, false)) {
       while (resultSet.next()) {
         String indexName = resultSet.getString("INDEX_NAME");
-        if (indexName != null && !indexName.startsWith("_")) {
+        if (indexName != null && !modelMetaData.getBackend().isTemporaryName(indexName)) {
           // find index meta data, if new: create one
           IndexMetaData indexMetaData = indexes.get(indexName);
           if (indexMetaData == null) {
@@ -145,14 +144,10 @@ public class TableMetaData {
         }
       }
     }
-    finally {
-      resultSet.close();
-    }
 
     // extract foreign keys
     ForeignKeyMetaData foreignKeyMetaData;
-    resultSet = metaData.getImportedKeys(null, schemaName, tableName);
-    try {
+    try (ResultSet resultSet = metaData.getImportedKeys(null, schemaName, tableName)) {
       while (resultSet.next()) {
         short keySeq = resultSet.getShort("KEY_SEQ");
         if (keySeq == 1) {
@@ -160,7 +155,7 @@ public class TableMetaData {
           foreignKeyMetaData = new ForeignKeyMetaData(this);
           foreignKeyMetaData.setupForeignKeyFromMetaData(resultSet);
           if (foreignKeyMetaData.getForeignKeyName() != null &&
-              !foreignKeyMetaData.getForeignKeyName().startsWith("_")) {
+              !modelMetaData.getBackend().isTemporaryName(foreignKeyMetaData.getForeignKeyName())) {
             foreignKeys.put(foreignKeyMetaData.getForeignKeyName(), foreignKeyMetaData);
           }
         }
@@ -171,9 +166,6 @@ public class TableMetaData {
         column.setupForeignKeyColumnFromMetaData(resultSet);
         foreignKeyMetaData.addForeignKeyColumn(column);
       }
-    }
-    finally {
-      resultSet.close();
     }
 
     validate();
@@ -297,6 +289,10 @@ public class TableMetaData {
    * Validates and postprocesses the table data.
    */
   public void validate() {
+    String defaultSchema = getModelMetaData().getBackend().getDefaultSchema();
+    if (defaultSchema != null && defaultSchema.equalsIgnoreCase(schemaName)) {
+      schemaName = null;
+    }
     if (comment != null && comment.isEmpty()) {
       comment = null;
     }
@@ -346,6 +342,32 @@ public class TableMetaData {
     }
     buf.append("\n");
     return buf.toString();
+  }
+
+
+  /**
+   * Checks whether given schema name is valid.
+   *
+   * @param schema the schema name
+   * @param schemas the (optional) schemas
+   * @return true if schema belongs to optional given schemas (or no schemas given)
+   */
+  private boolean isValidSchema(String schema, String[] schemas) {
+    boolean valid = false;
+    if (schemas != null) {
+      if (schema != null) {
+        for (String s: schemas) {
+          if (s.equalsIgnoreCase(schema)) {
+            valid = true;
+            break;
+          }
+        }
+      }
+    }
+    else {
+      valid = true;
+    }
+    return valid;
   }
 
 }

@@ -288,6 +288,21 @@ public class PooledTaskDispatcher extends AbstractPooledTaskDispatcher {
   }
 
 
+  @Override
+  public Task getTask(long taskId) {
+    for (TaskDispatcher dispatcher : dispatchers) {
+      if (dispatcher.isAlive()) {
+        Task task = dispatcher.getTask(taskId);
+        if (task != null) {
+          return task;
+        }
+      }
+      dispatcher.start();
+    }
+    return null;
+  }
+
+
   /**
    * {@inheritDoc}
    * <p>

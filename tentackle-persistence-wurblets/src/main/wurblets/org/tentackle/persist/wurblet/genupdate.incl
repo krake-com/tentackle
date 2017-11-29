@@ -1,0 +1,21 @@
+@[
+    boolean isFirstSetKey = true;
+    for (WurbletArgument key: getExtraArguments())  {
+      Attribute attr = key.getAttribute();
+      if (isFirstSetKey) {
+        isFirstSetKey = false;
+      }
+      else  {
+]@
+        sql.append(Backend.SQL_COMMA);
+@[
+      }
+      for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+        String name = attr.getName().toUpperCase() + sp.getPostfix();
+]@
+        sql.append(CN_@(name)@);
+        sql.append(Backend.SQL_EQUAL_PAR);
+@[
+      }
+    }
+]@

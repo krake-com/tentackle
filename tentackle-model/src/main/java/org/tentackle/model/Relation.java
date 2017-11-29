@@ -19,14 +19,13 @@
 package org.tentackle.model;
 
 import java.util.List;
-import org.tentackle.model.parser.Line;
 
 /**
  * A relation to an entity.
  *
  * @author harald
  */
-public interface Relation {
+public interface Relation extends ModelElement {
 
   /**
    * Gets the entity this relation belongs to.
@@ -76,14 +75,6 @@ public interface Relation {
    * @return the defining relation
    */
   Relation getDefiningNmRelation();
-
-  /**
-   * Gets the name of this relation.<br>
-   * By default the name is the className with the first character in lowercase.
-   *
-   * @return the name
-   */
-  String getName();
 
   /**
    * Gets the comment.
@@ -191,6 +182,17 @@ public interface Relation {
    */
   boolean isReversed();
 
+  /**
+   * Returns the attribute that holds the number of elements of a 1:N relation.<br>
+   * Applies only to composite non-reversed list relations.<br>
+   * If set, this column gets the number of elements in the list when the PDO is persisted.
+   * This avoids an initial select when the list is accessed the first time and the list is empty.
+   *
+   * @return the counter attribute, null if none
+   */
+  Attribute getCountAttribute();
+
+
   // select = ...
 
   /**
@@ -199,13 +201,6 @@ public interface Relation {
    * @return the selection tupe
    */
   SelectionType getSelectionType();
-
-  /**
-   * Returns whether select method is invoked on main class instead of relation class.
-   *
-   * @return true if select from main class
-   */
-  boolean isSelectionFromMainClass();
 
   /**
    * Returns whether the select method is a caching one.
@@ -270,11 +265,11 @@ public interface Relation {
   // args = ...
 
   /**
-   * Gets the method arguments for select- and delete-methods.
+   * Gets the effective method arguments for select- and delete-methods.<br>
    *
-   * @return the args
+   * @return the args, never null, at least 1 element
    */
-  List<String> getMethodArgs();
+  List<MethodArgument> getMethodArgs();
 
 
   // nm = ...
@@ -302,13 +297,6 @@ public interface Relation {
    * @throws ModelException if validation failed
    */
   void validate() throws ModelException;
-
-  /**
-   * Gets the source line.
-   *
-   * @return the source line
-   */
-  Line getSourceLine();
 
   /**
    * Gets the variable name.<br>

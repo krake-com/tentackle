@@ -1,39 +1,14 @@
 @{include $currentDir/header.incl}@
+@{comment
+<strong>({\@code \@wurblet})</strong> Asserts that remote delegates exist and generates them if missing.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; AssertRemote
+<p>
+For more options, see {\@link DbModelWurblet}.
+}@
 @[
-    /**
-     * Tentackle - http://www.tentackle.org
-     *
-     * This library is free software; you can redistribute it and/or
-     * modify it under the terms of the GNU Lesser General Public
-     * License as published by the Free Software Foundation; either
-     * version 2.1 of the License, or (at your option) any later version.
-     *
-     * This library is distributed in the hope that it will be useful,
-     * but WITHOUT ANY WARRANTY; without even the implied warranty of
-     * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     * Lesser General Public License for more details.
-     *
-     * You should have received a copy of the GNU Lesser General Public
-     * License along with this library; if not, write to the Free Software
-     * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-     */
-
-
-
-    /**
-     * Asserts that RemoteDelegate files exist and generates them if not existing.
-     *
-     * Each db class that uses remote methods must provide its own delegate even
-     * if there is no class specific remote method.
-     * Using this wurblet in all db-classes is good practice.
-     *
-     * usage:  \@wurblet <guardname> AssertRemote --remote
-     *
-     * args:
-     *        --remote must be given to generate code at all
-     *
-     */
-
+  private void wurbel() throws WurbelException {
     if (isRemote()) {
       // create includes
       RemoteIncludes genInc = new RemoteIncludes(this);
@@ -48,4 +23,5 @@
   // remote code generation disabled
 @[
     }
+  }
 ]@

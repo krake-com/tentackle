@@ -22,6 +22,7 @@ package org.tentackle.validate;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
@@ -30,15 +31,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
 import org.tentackle.bind.Binder;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.StringHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.validator.FailedValidationResult;
@@ -72,6 +73,29 @@ public class ValidationUtilities {
     return ValidationUtilities$Singleton.INSTANCE;
   }
 
+
+  /**
+   * special classloader if used in tools (for example tentackle-test maven plugin).
+   */
+  private ClassLoader validationBundleClassLoader;
+
+  /**
+   * Gets the classloader to load the validation bundle class.
+   *
+   * @return the classloader, never null (default to this classes classloader)
+   */
+  public ClassLoader getValidationBundleClassLoader() {
+    return validationBundleClassLoader == null ? getClass().getClassLoader() : validationBundleClassLoader;
+  }
+
+  /**
+   * Sets the classloader to load the validation bundle class.
+   *
+   * @param validationBundleClassLoader the classloader, null to use the default
+   */
+  public void setValidationBundleClassLoader(ClassLoader validationBundleClassLoader) {
+    this.validationBundleClassLoader = validationBundleClassLoader;
+  }
 
   /**
    * Gets the default validation path.<br>
@@ -283,10 +307,8 @@ public class ValidationUtilities {
     for (Validator validator : validators) {
 
       // build validation context
-      ValidationContext validationContext = new ValidationContext();
-      validationContext.setParentObject(object);    // set object prior to determine condition
-      validationContext.setEffectiveScope(effectiveScope);
-      validationContext.setValidationPath(validationPath + "." + validator.getValidatedElementName());
+      Object valObject = null;   // the element to validate
+      Class<?> valType = null;   // the element's type
 
       AnnotatedElement element = validator.getAnnotatedElement();
       if (element instanceof Field) {
@@ -295,8 +317,8 @@ public class ValidationUtilities {
           field.setAccessible(true);
         }
         try {
-          validationContext.setObject(object == null ? null : field.get(object));
-          validationContext.setType(field.getType());
+          valObject = object == null ? null : field.get(object);
+          valType = field.getType();
         }
         catch (Exception ex) {
           throw new ValidationRuntimeException("cannot access value of field " + field, ex);
@@ -305,13 +327,18 @@ public class ValidationUtilities {
       else if (element instanceof Method) {
         Method method = (Method) element;
         try {
-          validationContext.setObject(object == null ? null : method.invoke(object));
-          validationContext.setType(method.getReturnType());
+          valObject = object == null ? null : method.invoke(object);
+          valType = method.getReturnType();
         }
         catch (Exception ex) {
           throw new ValidationRuntimeException("cannot invoke method " + method, ex);
         }
       }
+
+      ValidationContext validationContext = new ValidationContext(
+              validationPath + "." + validator.getValidatedElementName(),
+              valType, valObject, object, effectiveScope);
+
 
       // check if scope applies
       if (validator.isConditionValid(validationContext)
@@ -354,46 +381,44 @@ public class ValidationUtilities {
           List<Validator> validators, ValidationScope effectiveScope,
           String validationPath, Object parentObject, Object object, Class<?> type) {
 
-    if (validationPath == null) {
-      validationPath = getDefaultValidationPath(object);
-    }
-
     List<ValidationResult> allResults = new ArrayList<>();
 
-    for (Validator validator : validators) {
+    if (!validators.isEmpty()) {
 
-      // build validation context
-      ValidationContext validationContext = new ValidationContext();
-      validationContext.setParentObject(parentObject);    // set object prior to determine condition
-      validationContext.setObject(object);
-      validationContext.setType(type);
-      validationContext.setEffectiveScope(effectiveScope);
-      validationContext.setValidationPath(validationPath);
+      if (validationPath == null) {
+        validationPath = getDefaultValidationPath(object);
+      }
 
-      // check if scope applies and validator is valid
-      if (validator.isConditionValid(validationContext)
-              && (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
-        // scope applies
-        try {
-          List<? extends ValidationResult> results = validator.validate(validationContext);
-          if (results != null) {
-            boolean failed = false;
-            for (ValidationResult result : results) {
-              allResults.add(result);
-              if (result.hasFailed() && validator.getStopIfFailed()) {
-                failed = true;
+      ValidationContext validationContext = new ValidationContext(
+                validationPath, type, object, parentObject, effectiveScope);
+
+      for (Validator validator : validators) {
+
+        // check if scope applies and validator is valid
+        if (validator.isConditionValid(validationContext) &&
+            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
+          // scope applies
+          try {
+            List<? extends ValidationResult> results = validator.validate(validationContext);
+            if (results != null) {
+              boolean failed = false;
+              for (ValidationResult result : results) {
+                allResults.add(result);
+                if (result.hasFailed() && validator.getStopIfFailed()) {
+                  failed = true;
+                  break;
+                }
+              }
+              if (failed) {
                 break;
               }
             }
-            if (failed) {
-              break;
-            }
           }
-        }
-        catch (RuntimeException ex) {
-          // just log the error for diagnostics
-          LOGGER.severe("validator '" + validator + "' failed", ex);
-          throw ex;
+          catch (RuntimeException ex) {
+            // just log the error for diagnostics
+            LOGGER.severe("validator '" + validator + "' failed", ex);
+            throw ex;
+          }
         }
       }
     }
@@ -573,7 +598,7 @@ public class ValidationUtilities {
    * Or much shorter directly as a message parameter in the validator:
    * <pre>message={ @('{0}_is_wrong', value) }</pre>
    * <p>
-   * This method will lookup a class ValidationBundle in the package of where the validator is used
+   * This method will lookup a class ValidationBundle in the package or super-packages of where the validator is used
    * and invokes the static method getString().
    *
    * @param clazz the class to look for <code>ValidationBundle</code> in the same package
@@ -587,7 +612,7 @@ public class ValidationUtilities {
 
     if (pattern != null) {
       if (clazz == null) {
-        throw new IllegalArgumentException("clazz is necessary to determine package");
+        throw new ValidationRuntimeException("clazz is necessary to determine package");
       }
       // find package of given object
       String packageName = ReflectionHelper.getPackageName(clazz);
@@ -595,39 +620,52 @@ public class ValidationUtilities {
         throw new IllegalArgumentException(clazz + " is not within a package");
       }
 
-      // find a class in the same package with the name 'Locales'
-      Class<?> bundleClass = null;
-
-      try {
-        bundleClass = Class.forName(packageName + ".ValidationBundle");
-        // class must contain a public static attribute named "bundle" which must be a ResourceBundle
-        Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
-        if (!bundleMethod.getReturnType().equals(String.class)) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
-        }
-        if (!Modifier.isStatic(bundleMethod.getModifiers())) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");
-        }
-        if (!Modifier.isPublic(bundleMethod.getModifiers())) {
-          throw new IllegalArgumentException(bundleClass.getName() + "." + bundleMethod.getName() + " is not public");
-        }
-        // okay, here we go...
+      // go up the package hierarchy until a class ValidationBundle is found
+      for(;;) {
+        Class<?> bundleClass = null;
         try {
-          String localizedPattern = (String) bundleMethod.invoke(null, pattern);
-          return MessageFormat.format(localizedPattern, args);
+          String bundleName = packageName + (packageName.isEmpty() ? "" : ".") + "ValidationBundle";
+          bundleClass = getValidationBundleClassLoader().loadClass(bundleName);
+          // class must contain a public static method getString(String.class)
+          Method bundleMethod = bundleClass.getDeclaredMethod("getString", String.class);
+          if (!bundleMethod.getReturnType().equals(String.class)) {
+            throw new ValidationRuntimeException(
+                    bundleClass.getName() + "." + bundleMethod.getName() + " does not return a String");
+          }
+          if (!Modifier.isStatic(bundleMethod.getModifiers())) {
+            throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " is not static");
+          }
+          if (!Modifier.isPublic(bundleMethod.getModifiers())) {
+            throw new ValidationRuntimeException(bundleClass.getName() + "." + bundleMethod.getName() + " is not public");
+          }
+          // okay, here we go...
+          try {
+            String localizedPattern = (String) bundleMethod.invoke(null, pattern);
+            return MessageFormat.format(localizedPattern, args);
+          }
+          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            throw new ValidationRuntimeException("no localization for '" + pattern + "' in locale " +
+                                                 LocaleProvider.getInstance().getLocale(), ex);
+          }
         }
-        catch (Exception ex) {
-          // could not translate: format without translation and write a log
-          LOGGER.warning("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
-          return MessageFormat.format(pattern, args);
+        catch (ClassNotFoundException e1) {
+          int ndx = packageName.lastIndexOf('.');
+          if (ndx > 0) {
+            packageName = packageName.substring(0, ndx);
+          }
+          else if (!packageName.isEmpty()) {
+            packageName = "";
+          }
+          else {
+            break;
+          }
+        }
+        catch (NoSuchMethodException e2) {
+          throw new ValidationRuntimeException(bundleClass.getName() + " does not provide the method getString()");
         }
       }
-      catch (ClassNotFoundException e1) {
-        throw new IllegalArgumentException("no ValidationBundle found in " + packageName);
-      }
-      catch (NoSuchMethodException e2) {
-        throw new IllegalArgumentException(bundleClass.getName() + " does not provide the method getString()");
-      }
+
+      throw new ValidationRuntimeException("no ValidationBundle found for " + clazz);
     }
 
     return null;
@@ -645,7 +683,18 @@ public class ValidationUtilities {
    * @see #format(java.lang.Class, java.lang.String, java.lang.Object...)
    */
   public String format(Object object, String pattern, Object... args) {
-    return format(object instanceof EffectiveClassProvider ? ((EffectiveClassProvider) object).getEffectiveClass() : object.getClass(), pattern, args);
+    Class<?> clazz;
+    if (object instanceof Class) {
+      // object itself is a class
+      clazz = (Class<?>) object;
+    }
+    else if (object instanceof EffectiveClassProvider) {
+      clazz = ((EffectiveClassProvider) object).getEffectiveClass();
+    }
+    else {
+      clazz = object.getClass();
+    }
+    return format(clazz, pattern, args);
   }
 
 

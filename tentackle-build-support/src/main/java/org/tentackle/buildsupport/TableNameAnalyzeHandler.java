@@ -29,8 +29,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.common.BasicStringHelper;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 
 /**
  * Handler for the {@code @TableName} annotation.
@@ -44,8 +44,8 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
-  public void setProcessor(AbstractTentackleProcessor processor) {
-    this.processor = (AnalyzeProcessor) processor;
+  public void setProcessor(AnalyzeProcessor processor) {
+    this.processor = processor;
   }
 
   @Override
@@ -88,8 +88,8 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   break;
 
                 case "prefix":
-                  prefix = BasicStringHelper.parseString(entry.getValue().toString());
-                  if (BasicStringHelper.isAllWhitespace(prefix)) {
+                  prefix = StringHelper.parseString(entry.getValue().toString());
+                  if (StringHelper.isAllWhitespace(prefix)) {
                     prefix = null;
                   }
                   break;
@@ -130,7 +130,7 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
 
         if (processor.isDebugLogging()) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName);
+                  Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
         }
 
         try {
@@ -138,11 +138,11 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   println(configuration);
           processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
                   servicingClassName.replace('.', '/') + "/service.log").
-                  println(configuration);
+                  println(annoName + ": " + configuration);
         }
         catch (IOException ex) {
           processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "file generation error: " + ex);
+                  Diagnostic.Kind.ERROR, "file generation error: " + ex, element);
           return;
         }
       }

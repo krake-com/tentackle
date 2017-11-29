@@ -40,10 +40,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;add&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="ADD" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="ADD" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="ADD A NEW ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="ADD A NEW ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>
@@ -65,10 +65,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;save&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="SAVE" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="SAVE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="SAVE ALL ROWS" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="SAVE ALL ROWS" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>
@@ -90,10 +90,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;subtract&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="REMOVE" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="REMOVE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="REMOVE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="REMOVE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>
@@ -115,10 +115,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;close&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CANCEL" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="DISCARD CHANGES AND CLOSE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="DISCARD CHANGES AND CLOSE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>
@@ -140,10 +140,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;up&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="UP" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="UP" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="MOVE UP ONE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="MOVE UP ONE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>
@@ -165,10 +165,10 @@
               <Connection code="org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon(&quot;down&quot;)" type="code"/>
             </Property>
             <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="DOWN" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="DOWN" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-              <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="MOVE DOWN ONE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
+              <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="MOVE DOWN ONE ROW" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
             </Property>
             <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
               <Insets value="[1, 3, 1, 3]"/>

@@ -20,14 +20,18 @@
 package org.tentackle.buildsupport;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -35,6 +39,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import org.tentackle.common.Settings;
 
 
 
@@ -71,13 +76,16 @@ public class RemoteMethodInfo {
   public static final String TYPE_CLASS = "class";    // not implemented yet!
 
 
-  // some private class Strings (we don't use <class>.getName() because we want to keep dependencies small
-  public static final String CLASSNAME_COLLECTION  = "java.util.Collection";
-  public static final String CLASSNAME_SESSION     = "org.tentackle.pdo.Session";
-  public static final String CLASSNAME_DBOBJECT    = "org.tentackle.persist.AbstractDbObject";
-  public static final String CLASSNAME_CURSOR      = "org.tentackle.misc.ScrollableResource";
-  public static final String CLASSNAME_CONTEXT     = "org.tentackle.pdo.DomainContext";
-  public static final String CLASSNAME_PDO         = "org.tentackle.pdo.PersistentDomainObject";
+
+  /**
+   * Part in a classname.
+   */
+  private static final String NAME_PART = "\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*";
+  /**
+   * Pattern to detect full qualified classnames.
+   */
+  private static final Pattern FQCN_PATTERN = Pattern.compile(NAME_PART + "\\." + NAME_PART + "(\\." + NAME_PART + ")*");
+
 
 
   /**
@@ -89,7 +97,9 @@ public class RemoteMethodInfo {
    */
   public static RemoteMethodInfo readInfo(File infoFile) throws IOException {
     RemoteMethodInfo info;
-    try (LineNumberReader reader = new LineNumberReader(new FileReader(infoFile))) {
+    try (LineNumberReader reader = new LineNumberReader(
+                                     new InputStreamReader(
+                                       new FileInputStream(infoFile), Settings.encodingCharset))) {
       info = readInfo(reader);
     }
     return info;
@@ -146,7 +156,7 @@ public class RemoteMethodInfo {
               info.setVarArgsMethod(Boolean.valueOf(stok.nextToken()));
             }
             else if (type.startsWith("arg")) {
-              info.addParameter(new RemoteMethodInfoParameter(stok));
+              info.addParameter(new RemoteMethodInfoParameter(info, stok));
             }
           }
         }
@@ -165,6 +175,14 @@ public class RemoteMethodInfo {
     return info;
   }
 
+
+  // classnames from property file (we don't use <class>.getName() because we want to keep dependencies small
+  private final String nameCollection;
+  private final String nameSession;
+  private final String nameDbObject;
+  private final String nameCursor;
+  private final String nameContext;
+  private final String namePdo;
 
 
   // information gathered from apt run
@@ -193,6 +211,14 @@ public class RemoteMethodInfo {
    * @throws IOException if unsupported TYPE_...
    */
   public RemoteMethodInfo(String type) throws IOException {
+    ResourceBundle bundle = ResourceBundle.getBundle("org.tentackle.buildsupport.ClassNames");
+    nameCollection = bundle.getString("CLASSNAME_COLLECTION");
+    nameSession = bundle.getString("CLASSNAME_SESSION");
+    nameDbObject = bundle.getString("CLASSNAME_DBOBJECT");
+    nameCursor = bundle.getString("CLASSNAME_CURSOR");
+    nameContext = bundle.getString("CLASSNAME_CONTEXT");
+    namePdo = bundle.getString("CLASSNAME_PDO");
+
     if (!type.equals(TYPE_METHOD)) {
       throw new IOException("unsupported type '" + type + "'");
     }
@@ -230,28 +256,28 @@ public class RemoteMethodInfo {
       }
     }
 
-    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_PDO));
-    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_COLLECTION, CLASSNAME_PDO));
-    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_CURSOR, CLASSNAME_PDO));
+    setReturningPdo(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, namePdo));
+    setReturningPdoCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, namePdo));
+    setReturningPdoCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor, namePdo));
 
     if (isReturningPdo()) {
       setReturningDbObject(true);
     }
     else  {
-      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_DBOBJECT));
+      setReturningDbObject(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameDbObject));
     }
 
     if (isReturningPdoCollection()) {
       setReturningDbObjectCollection(true);
     }
     else  {
-      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_COLLECTION, CLASSNAME_DBOBJECT));
+      setReturningDbObjectCollection(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCollection, nameDbObject));
     }
     if (isReturningPdoCursor()) {
       setReturningCursor(true);
     }
     else  {
-      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, CLASSNAME_CURSOR));
+      setReturningCursor(AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, nameCursor));
     }
 
     Set<Modifier> methodElementModifiers = methodElement.getModifiers();
@@ -259,7 +285,7 @@ public class RemoteMethodInfo {
     varArgsMethod = methodElement.isVarArgs();
     List<? extends VariableElement> varList = methodElement.getParameters();
     for (int i=0; i < varList.size(); i++) {
-      RemoteMethodInfoParameter par = new RemoteMethodInfoParameter(processingEnv, varList.get(i));
+      RemoteMethodInfoParameter par = new RemoteMethodInfoParameter(this, processingEnv, varList.get(i));
       if (i == varList.size()-1) {
         par.setVarArg(varArgsMethod);
       }
@@ -267,6 +293,59 @@ public class RemoteMethodInfo {
     }
   }
 
+  /**
+   * Gets the classname for a collection.
+   *
+   * @return the classname
+   */
+  public String getNameCollection() {
+    return nameCollection;
+  }
+
+  /**
+   * Gets the classname for a session.
+   *
+   * @return the classname
+   */
+  public String getNameSession() {
+    return nameSession;
+  }
+
+  /**
+   * Gets the classname for a simple db object.
+   *
+   * @return the classname
+   */
+  public String getNameDbObject() {
+    return nameDbObject;
+  }
+
+  /**
+   * Gets the classname for a cursor.
+   *
+   * @return the classname
+   */
+  public String getNameCursor() {
+    return nameCursor;
+  }
+
+  /**
+   * Gets the classname for a domain context.
+   *
+   * @return the classname
+   */
+  public String getNameContext() {
+    return nameContext;
+  }
+
+  /**
+   * Gets the classname for a PDO.
+   *
+   * @return the classname
+   */
+  public String getNamePdo() {
+    return namePdo;
+  }
 
   /**
    * Gets the type of this analyze info.
@@ -534,6 +613,8 @@ public class RemoteMethodInfo {
 
   /**
    * Gets the declaration string.
+   * <p>
+   * {@inheritDoc}
    */
   @Override
   public String toString() {
@@ -585,7 +666,6 @@ public class RemoteMethodInfo {
   }
 
 
-
   /**
    * Simplifies some classnames by removing package names.<br>
    * Makes generated code better readable.
@@ -595,23 +675,18 @@ public class RemoteMethodInfo {
    * @return the shortened type
    */
   public String cleanTypeString(String type) {
-    // cut out leading package names
-    int gndx = type.indexOf('<');   // with generics?
-    String typeStr;
-    String genStr;
-    if (gndx >= 0) {
-      typeStr = type.substring(0, gndx);
-      genStr = "<" + cleanTypeString(type.substring(gndx + 1, type.length() - 1)) + ">";
+    StringBuilder buf = new StringBuilder();
+    Matcher matcher = FQCN_PATTERN.matcher(type);
+    int lastNdx = 0;
+    while (matcher.find()) {
+      buf.append(type.substring(lastNdx, matcher.start()));
+      String name = type.substring(matcher.start(), matcher.end());
+      int dotNdx = name.lastIndexOf('.');   // at least one dot!
+      buf.append(name.substring(dotNdx + 1));
+      lastNdx = matcher.end();
     }
-    else {
-      typeStr = type;
-      genStr = "";
-    }
-    int ndx = typeStr.lastIndexOf('.');
-    if (ndx >= 0) {
-      typeStr = typeStr.substring(ndx + 1);
-    }
-    return typeStr + genStr;
+    buf.append(type.substring(lastNdx));
+    return buf.toString();
   }
 
 }

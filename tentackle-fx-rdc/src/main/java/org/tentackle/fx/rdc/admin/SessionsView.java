@@ -27,12 +27,12 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.fx.table.TablePopup;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.AdminExtension;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.RemoteSession;
+import org.tentackle.pdo.PdoRemoteSession;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
 
@@ -94,7 +94,7 @@ public class SessionsView extends AbstractFxController {
   public void configure() {
     DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check to run tests
-      RemoteSession remoteSession = context.getSession().getRemoteSession();
+      PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();
       adminExt = remoteSession.getExtension(context, AdminExtension.class);
       popup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
       securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(context));

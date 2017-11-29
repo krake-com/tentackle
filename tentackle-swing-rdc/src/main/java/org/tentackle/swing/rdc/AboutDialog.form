@@ -154,7 +154,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="CLOSE" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="CLOSE" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
                 <Property name="margin" type="java.awt.Insets" editor="org.netbeans.beaninfo.editors.InsetsEditor">
                   <Insets value="[1, 4, 1, 4]"/>
@@ -171,7 +171,7 @@
                   <Color blue="ff" green="cc" red="cc" type="rgb"/>
                 </Property>
                 <Property name="text" type="java.lang.String" editor="org.netbeans.modules.i18n.form.FormI18nStringEditor">
-                  <ResourceString bundle="org/tentackle/rdc/RdcSwingRdcBundle.properties" key="MEMORY:" replaceFormat="RdcSwingRdcBundle.getTranslation(&quot;{key}&quot;)"/>
+                  <ResourceString bundle="org/tentackle/swing/rdc/RdcSwingRdcBundle.properties" key="MEMORY:" replaceFormat="RdcSwingRdcBundle.getString(&quot;{key}&quot;)"/>
                 </Property>
               </Properties>
             </Component>

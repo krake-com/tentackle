@@ -206,7 +206,7 @@ public class CancelSaveDiscardDialog extends org.tentackle.swing.FormDialog {
     buttonPanel.setLayout(new java.awt.GridBagLayout());
 
     discardButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("ok"));
-    discardButton.setText(RdcSwingRdcBundle.getTranslation("DISCARD")); // NOI18N
+    discardButton.setText(RdcSwingRdcBundle.getString("DISCARD")); // NOI18N
     discardButton.setName("discard"); // NOI18N
     discardButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -219,7 +219,7 @@ public class CancelSaveDiscardDialog extends org.tentackle.swing.FormDialog {
     buttonPanel.add(discardButton, gridBagConstraints);
 
     saveButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("save"));
-    saveButton.setText(RdcSwingRdcBundle.getTranslation("SAVE")); // NOI18N
+    saveButton.setText(RdcSwingRdcBundle.getString("SAVE")); // NOI18N
     saveButton.setName("save"); // NOI18N
     saveButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -232,7 +232,7 @@ public class CancelSaveDiscardDialog extends org.tentackle.swing.FormDialog {
     buttonPanel.add(saveButton, gridBagConstraints);
 
     cancelButton.setIcon(org.tentackle.swing.plaf.PlafUtilities.getInstance().getIcon("cancel"));
-    cancelButton.setText(RdcSwingRdcBundle.getTranslation("CANCEL")); // NOI18N
+    cancelButton.setText(RdcSwingRdcBundle.getString("CANCEL")); // NOI18N
     cancelButton.setName("cancel"); // NOI18N
     cancelButton.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
