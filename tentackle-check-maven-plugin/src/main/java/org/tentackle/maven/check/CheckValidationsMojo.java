@@ -23,12 +23,14 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.maven.check.CheckValidationsProcessor.ValidatorEntry;
@@ -36,6 +38,7 @@ import org.tentackle.misc.CompoundValue;
 import org.tentackle.common.StringHelper;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
+import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.validator.MessageScriptConverter;
@@ -167,8 +170,17 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       }
     }
     catch (ClassNotFoundException | RuntimeException ex) {
-      getLog().error("validation message check failed for validator " + validatorEntry, ex);
       errors++;
+      MissingResourceException mx = ExceptionHelper.extractException(MissingResourceException.class, true, ex);
+      if (mx != null) {
+        // no stacktrace for missing resource: just print the missing translation
+        ValidationRuntimeException vx = ExceptionHelper.extractException(ValidationRuntimeException.class, true, ex);
+        if (vx != null) {
+          getLog().error(vx.getMessage() + " for " + validatorEntry);
+          return;
+        }
+      }
+      getLog().error("validation message check failed for validator " + validatorEntry, ex);
     }
   }
 

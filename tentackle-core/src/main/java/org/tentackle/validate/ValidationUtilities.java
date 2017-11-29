@@ -31,10 +31,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
 import org.tentackle.bind.Binder;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
@@ -644,7 +644,8 @@ public class ValidationUtilities {
             return MessageFormat.format(localizedPattern, args);
           }
           catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            throw new ValidationRuntimeException("no localization for '" + pattern + "' in locale " + Locale.getDefault(), ex);
+            throw new ValidationRuntimeException("no localization for '" + pattern + "' in locale " +
+                                                 LocaleProvider.getInstance().getLocale(), ex);
           }
         }
         catch (ClassNotFoundException e1) {
