@@ -1579,7 +1579,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       columnCount++;
     }
     rs.skip(columnCount);
-    
+
     // recursively read joined joins
     for (Join<?,?> subJoin: join.getJoins()) {
       readJoin(rs, joinedPdo, (Join) subJoin);
@@ -1665,7 +1665,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
         int ndx = 1;
         if (js != null) {
-          ndx = js.setClassIdsInStatement(st, ndx);
+          ndx = setClassIdsInStatement(js, st, ndx);
         }
         st.setLong(ndx, id);
 
@@ -1673,6 +1673,31 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
     return obj;
+  }
+
+
+  /**
+   * Sets the class-ID parameters if required for the joins.<br>
+   * Notice that this method only works for joins with no subjoins and
+   * is used only for eager joins, i.e. the default selects.
+   * All code for non-eager joins is generated via the DbModelWurblet.
+   *
+   * @param st the statement
+   * @param ndx the next parameter ndx
+   * @return the next parameter index
+   */
+  protected int setClassIdsInStatement(JoinedSelect<T> js, PreparedStatementWrapper st, int ndx) {
+    for (Join<? super T,?> join: js.getJoins()) {
+      if (!join.getJoins().isEmpty()) {   // just to make sure...
+        throw new PersistenceException(this, "eager relations cannot be cascaded");
+      }
+      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass());
+      AbstractPersistentObject joinPD = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
+      if (joinPD.isClassIdRequiredInWhereClause()) {
+        st.setInt(ndx++, joinPD.getClassId());
+      }
+    }
+    return ndx;
   }
 
 
@@ -2048,7 +2073,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     int ndx = 1;
     if (js != null) {
-      ndx = js.setClassIdsInStatement(st, ndx);
+      ndx = setClassIdsInStatement(js, st, ndx);
     }
     if (isClassIdRequiredInWhereClause()) {
       st.setInt(ndx++, getClassId());
@@ -2101,7 +2126,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     int ndx = 1;
     if (js != null) {
-      ndx = js.setClassIdsInStatement(st, ndx);
+      ndx = setClassIdsInStatement(js, st, ndx);
     }
     if (isClassIdRequiredInWhereClause()) {
       st.setInt(ndx++, getClassId());
@@ -2253,7 +2278,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     int ndx = 1;
     if (js != null) {
-      ndx = js.setClassIdsInStatement(st, ndx);
+      ndx = setClassIdsInStatement(js, st, ndx);
     }
     if (isClassIdRequiredInWhereClause()) {
       st.setInt(ndx++, getClassId());
@@ -2291,7 +2316,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     st.setLong(1, oldSerial);
     int ndx = 2;
     if (js != null) {
-      ndx = js.setClassIdsInStatement(st, ndx);
+      ndx = setClassIdsInStatement(js, st, ndx);
     }
     if (isClassIdRequiredInWhereClause()) {
       st.setInt(ndx++, getClassId());
@@ -2334,7 +2359,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     int ndx = 1;
     if (js != null) {
-      ndx = js.setClassIdsInStatement(st, ndx);
+      ndx = setClassIdsInStatement(js, st, ndx);
     }
     if (isClassIdRequiredInWhereClause()) {
       st.setInt(ndx++, getClassId());

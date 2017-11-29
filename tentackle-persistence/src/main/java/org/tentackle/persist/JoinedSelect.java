@@ -134,29 +134,6 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
       }
   }
 
-
-  /**
-   * Sets the class-ID parameters if required for the joins.<br>
-   * Notice that this method only works for joins with no subjoins and
-   * is used only for eager joins, i.e. the default selects.
-   * All code for non-eager joins is generated via the DbModelWurblet.
-   *
-   * @param st the statement
-   * @param ndx the next parameter ndx
-   * @return the next parameter index
-   */
-  public int setClassIdsInStatement(PreparedStatementWrapper st, int ndx) {
-    for (Join<? super T,?> join: joins) {
-      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass());
-      AbstractPersistentObject joinPD = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
-      if (joinPD.isClassIdRequiredInWhereClause()) {
-        st.setInt(ndx++, joinPD.getClassId());
-      }
-    }
-    return ndx;
-  }
-
-
   /**
    * Gets the PDO retrieved before the current PDO.
    *
