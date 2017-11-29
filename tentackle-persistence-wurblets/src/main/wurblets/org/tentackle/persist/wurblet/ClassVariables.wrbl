@@ -8,7 +8,7 @@ usage:<br>
 For more options, see {\@link DbModelWurblet}.
 }@
 @[
-  private void wurbel() throws WurbelException {
+  private void wurbel() throws WurbelException, ModelException {
     String pdoName    = getPdoClassName();
     String className  = getClassName();
     boolean multiInheritance = getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI;
@@ -69,6 +69,9 @@ For more options, see {\@link DbModelWurblet}.
 @[
         int joinCount = 0;
         for (Relation join: joins) {
+          if (join.getMethodArgs().size() > 1) {
+            throw new ModelException("eager relations with 'args=...' are currently not supported", join);
+          }
           joinCount++;
           String joinClass = join.getForeignEntity().getName();
           String joinAlias = join.getForeignEntity().getTopSuperEntity().getTableAlias();
