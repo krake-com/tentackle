@@ -565,14 +565,23 @@ public class DbModelWurblet extends ModelWurblet {
     List<MethodArgument> methodArgs = relation.getMethodArgs();
     if (methodArgs.size() > 1) {
       for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+        Attribute attr = methodArg.getForeignAttribute();
         buf.append("\" AND ").append(joinName).append('.')
-           .append(methodArg.getForeignAttribute().getColumnName())
+           .append(attr.getColumnName())
            .append('=');
         if (methodArg.isValue()) {
-          buf.append("?\"");
+          buf.append('?');
+          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+            String name = attr.getName().toUpperCase() + sp.getPostfix();
+            boolean mainColumn = sp.getPostfix().isEmpty();
+            if (!mainColumn) {
+              buf.append(" AND ").append(joinName).append('.').append(name).append("=?");
+            }
+          }
+          buf.append('"');
         }
         else {
-          Attribute attr = methodArg.getAttribute();
+          attr = methodArg.getAttribute();
           if (parentName == null) {
             buf.append("\" + getColumnName(CN_").append(attr.getName().toUpperCase()).append(")");
           }

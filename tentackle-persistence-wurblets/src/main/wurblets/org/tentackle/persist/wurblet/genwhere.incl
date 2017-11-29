@@ -137,10 +137,21 @@
 
                   List<MethodArgument> methodArgs = rel.getMethodArgs();
                   for (MethodArgument methodArg: methodArgs.subList(1, methodArgs.size())) {
+                    Attribute mattr = methodArg.getForeignAttribute();
                     buf.append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
-                       .append(rightClass).append("CN_").append(methodArg.getForeignAttribute().getName().toUpperCase()).append("))\n");
+                       .append(rightClass).append("CN_").append(mattr.getName().toUpperCase()).append("))\n");
                     if (methodArg.isValue()) {
                       buf.append("           .append(Backend.SQL_EQUAL_PAR)\n");
+                      for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+                        String name = attr.getName().toUpperCase() + sp.getPostfix();
+                        boolean mainColumn = sp.getPostfix().isEmpty();
+                        if (!mainColumn) {
+                          buf.append("           .append(Backend.SQL_AND)\n")
+                             .append("           .append(").append(rightClass).append("CLASSVARIABLES.getColumnName(")
+                             .append(rightClass).append("CN_").append(name).append("))\n")
+                             .append("           .append(Backend.SQL_EQUAL_PAR)\n");
+                        }
+                      }
                     }
                     else {
                       buf.append("           .append(Backend.SQL_EQUAL).append(")
