@@ -20,6 +20,7 @@
 package org.tentackle.maven.check;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -94,10 +95,11 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
          ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
       try {
         String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getConstructor().newInstance();
         messageConverterMap.put(language, converter);
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+             InvocationTargetException | NoSuchMethodException ex) {
         throw new MojoFailureException("message script converter configuration failed", ex);
       }
     }

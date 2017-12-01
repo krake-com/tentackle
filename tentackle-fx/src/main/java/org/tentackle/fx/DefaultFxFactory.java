@@ -122,9 +122,10 @@ public class DefaultFxFactory implements FxFactory {
       try {
         @SuppressWarnings("unchecked")
         Class<? extends Configurator<?>> configuratorClass = (Class<? extends Configurator<?>>) Class.forName(entry.getValue());
-        configurators.put(entry.getKey(), configuratorClass.newInstance());
+        configurators.put(entry.getKey(), configuratorClass.getConstructor().newInstance());
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+             InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException(ex);
       }
     }
@@ -135,14 +136,15 @@ public class DefaultFxFactory implements FxFactory {
       for (Class<ImageProvider> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ImageProvider.class)) {
         ImageProviderService svc = clazz.getAnnotation(ImageProviderService.class);
         if (svc != null) {
-          imageProviders.putIfAbsent(svc.value(), clazz.newInstance());
+          imageProviders.putIfAbsent(svc.value(), clazz.getConstructor().newInstance());
         }
         else {
           LOGGER.severe("{0} not annotated with @ImageProviderService", clazz);
         }
       }
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+           InvocationTargetException | NoSuchMethodException ex) {
       throw new FxRuntimeException("loading image providers failed", ex);
     }
 

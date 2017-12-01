@@ -1,6 +1,7 @@
 # Netbeans
 nb-configuration.xml
 nbactions*.xml
+jshell.history
 
 # Maven
 target/

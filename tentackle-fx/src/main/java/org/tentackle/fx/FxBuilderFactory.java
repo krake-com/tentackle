@@ -19,6 +19,7 @@
 
 package org.tentackle.fx;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import javafx.fxml.JavaFXBuilderFactory;
@@ -77,9 +78,9 @@ public class FxBuilderFactory implements BuilderFactory {
          * and not cached by FXMLLoader in any way.
          * This allows the builder to extend BeanAdapter and wrap a single node.
          */
-        builder = (Builder<?>) builderClass.newInstance();
+        builder = (Builder<?>) builderClass.getConstructor().newInstance();
       }
-      catch (InstantiationException | IllegalAccessException ex) {
+      catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException("cannot create builder for " + type, ex);
       }
     }

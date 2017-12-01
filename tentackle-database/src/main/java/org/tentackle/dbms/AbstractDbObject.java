@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
@@ -105,9 +106,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   static public <P extends AbstractDbObject<?>> P newInstance(Class<P> clazz) {
     try {
       // load the class
-      return clazz.newInstance();
+      return clazz.getConstructor().newInstance();
     }
-    catch (InstantiationException | IllegalAccessException e) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new PersistenceException("creating object for " + clazz + " failed", e);
     }
   }
@@ -604,12 +605,12 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   @SuppressWarnings("unchecked")
   public P newInstance() {
     try {
-      AbstractDbObject obj = getClass().newInstance();
+      AbstractDbObject obj = getClass().getConstructor().newInstance();
       obj.session = session;
       obj.sessionHolder = sessionHolder;
       return (P) obj;
     }
-    catch (InstantiationException | IllegalAccessException e) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new PersistenceException(this, "creating new object failed", e);
     }
   }

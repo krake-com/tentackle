@@ -559,7 +559,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     String secman = getProperty("secman");   // NOI18N
     if (secman != null && !secman.isEmpty()) {
       try {
-        System.setSecurityManager((java.lang.SecurityManager)(Class.forName(secman).newInstance()));
+        System.setSecurityManager((java.lang.SecurityManager)(Class.forName(secman).getConstructor().newInstance()));
       }
       catch (Exception ex) {
         throw new ApplicationException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);

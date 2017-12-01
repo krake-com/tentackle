@@ -22,6 +22,7 @@ package org.tentackle.common;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -68,9 +69,10 @@ public class ServiceFactory {
             Class.forName(Settings.SERVICE_FACTORY_CLASSNAME) :
             Class.forName(Settings.SERVICE_FACTORY_CLASSNAME, true, Settings.SERVICE_FACTORY_CLASSLOADER));
 
-        return clazz.newInstance();
+        return clazz.getDeclaredConstructor().newInstance();
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+             InvocationTargetException | NoSuchMethodException ex) {
         LOGGER.log(Level.WARNING,
                 "creating instance of Constants.SERVICE_FACTORY_CLASSNAME failed -> trying ServiceLoader...",
                 ex);
@@ -170,7 +172,7 @@ public class ServiceFactory {
    */
   public static <T> T createService(Class<T> serviceClass) {
     try {
-      return createServiceClass(serviceClass).newInstance();
+      return createServiceClass(serviceClass).getDeclaredConstructor().newInstance();
     }
     catch (Exception ex) {
       throw new TentackleRuntimeException("cannot create instance for " + serviceClass, ex);
@@ -198,7 +200,7 @@ public class ServiceFactory {
                 "creating service for " + serviceClass.getName() +
                 " failed -> creating default " + defaultClass.getName(),
                 re);
-        return defaultClass.newInstance();
+        return defaultClass.getDeclaredConstructor().newInstance();
       }
       catch (Exception ex) {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);

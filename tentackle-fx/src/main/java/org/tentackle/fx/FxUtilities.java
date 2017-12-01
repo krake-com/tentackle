@@ -20,8 +20,6 @@
 package org.tentackle.fx;
 
 import com.sun.javafx.css.StyleManager;
-import com.sun.javafx.scene.control.skin.TableViewSkin;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -45,6 +43,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.transform.Scale;

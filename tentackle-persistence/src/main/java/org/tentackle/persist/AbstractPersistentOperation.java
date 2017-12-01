@@ -19,6 +19,7 @@
 
 package org.tentackle.persist;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
@@ -191,11 +192,11 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   public PersistentOperation<T> newInstance() {
     try {
       @SuppressWarnings("unchecked")
-      T obj = (T) getClass().newInstance();
+      T obj = (T) getClass().getConstructor().newInstance();
       obj.setSession(getSession());
       return obj;
     }
-    catch (InstantiationException | IllegalAccessException e) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new PersistenceException(getSession(), "creating new object failed", e);
     }
   }

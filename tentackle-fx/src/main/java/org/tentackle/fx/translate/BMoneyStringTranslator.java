@@ -19,6 +19,7 @@
 package org.tentackle.fx.translate;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.ParseException;
@@ -103,7 +104,7 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
         // convert
         decimalFormat.setParseBigDecimal(true);
         BigDecimal value = (BigDecimal) decimalFormat.parse(str);
-        value = value.setScale(getComponent().getScale(), BigDecimal.ROUND_HALF_UP);
+        value = value.setScale(getComponent().getScale(), RoundingMode.HALF_UP);
         BMoney money = null;
 
         if (parseDMoney) {

@@ -19,6 +19,7 @@
 
 package org.tentackle.security;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -81,7 +82,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
           throw new SecurityException("permission implementation " + permissionImplementation.getName() +
                                       " does not implement " + permissionInterface.getName());
         }
-        Permission permission = permissionImplementation.newInstance();
+        Permission permission = permissionImplementation.getConstructor().newInstance();
         if (permission.getClass().getInterfaces()[0] != permissionInterface) {
           throw new SecurityException("permission interface of " + permissionImplementation.getName() +
                                       " is not a " + permissionInterface.getName());
@@ -157,7 +158,8 @@ public class DefaultSecurityFactory implements SecurityFactory {
         throw new SecurityException("no AllPermission configured");
       }
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException nfe) {
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+           InvocationTargetException | NoSuchMethodException nfe) {
       throw new SecurityException("supported permissions could not be determined", nfe);
     }
   }

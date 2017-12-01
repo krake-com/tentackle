@@ -21,6 +21,7 @@ package org.tentackle.common;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Currency;
 
 /**
@@ -42,7 +43,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @param scale the digits after comma the value should be rounded to
    */
   public BMoney (double val, int scale)   {
-    super(new BigDecimal(val).setScale(scale, ROUND_HALF_UP).unscaledValue(), scale);
+    super(new BigDecimal(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
   }
 
   /**
@@ -52,7 +53,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @param  scale   the digits after comma the value should be rounded to
    */
   public BMoney (String val, int scale)  {
-    super(new BigDecimal(val).setScale(scale, ROUND_HALF_UP).unscaledValue(), scale);
+    super(new BigDecimal(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
   }
 
   /**
@@ -84,7 +85,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @param scale the digits after comma the value should be rounded to
    */
   public BMoney (BMoney val, int scale) {
-    super(val.setScale(scale, ROUND_HALF_UP).unscaledValue(), scale);
+    super(val.setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
   }
 
 
@@ -252,7 +253,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @return the value as a words
    */
   public String toWords() {
-    String digits = setScale(0, ROUND_DOWN).toString();
+    String digits = setScale(0, RoundingMode.DOWN).toString();
     int len = digits.length();
     StringBuilder buf = new StringBuilder();
     boolean first = true;

@@ -19,8 +19,8 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.control.behavior.TextAreaBehavior;
-import com.sun.javafx.scene.control.skin.TextAreaSkin;
+import com.sun.javafx.scene.NodeHelper;
+import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
@@ -43,21 +43,20 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
   protected void remapKeys(T control) {
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
-      TextAreaBehavior behavior = ((TextAreaSkin) control.getSkin()).getBehavior();
 
       switch (event.getCode()) {
         case TAB:
           if (!event.isAltDown() && !event.isMetaDown()) {
             if (event.getEventType() == KeyEvent.KEY_PRESSED) {
               if (event.isControlDown()) {
-                behavior.callAction("TraverseOrInsertTab");
+                control.insertText(control.getCaretPosition(), "\t");
               }
               else {
                 if (event.isShiftDown()) {
-                  behavior.callAction("TraversePrevious");
+                  NodeHelper.traverse(control, Direction.PREVIOUS);
                 }
                 else {
-                  behavior.callAction("TraverseNext");
+                  NodeHelper.traverse(control, Direction.NEXT);
                 }
               }
             }
@@ -71,10 +70,10 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
               !event.isMetaDown()) {
             if (event.getEventType() == KeyEvent.KEY_PRESSED) {
               if (event.isControlDown()) {
-                behavior.callAction("InsertNewLine");
+                control.insertText(control.getCaretPosition(), "\n");
               }
               else {
-                behavior.callAction("TraverseNext");
+                NodeHelper.traverse(control, Direction.NEXT);
               }
             }
             event.consume();

@@ -19,8 +19,8 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.control.behavior.TextFieldBehavior;
-import com.sun.javafx.scene.control.skin.TextFieldSkin;
+import com.sun.javafx.scene.NodeHelper;
+import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.PasswordField;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
@@ -36,20 +36,19 @@ public class PasswordFieldConfigurator<T extends PasswordField> extends TextInpu
 
   @Override
   protected void remapKeys(T control) {
+    
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
-
-      TextFieldBehavior behavior = ((TextFieldSkin) control.getSkin()).getBehavior();
 
       switch (event.getCode()) {
         case ENTER:
           if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
                   event.getEventType() == KeyEvent.KEY_PRESSED) {
             if (event.isShiftDown()) {
-              behavior.callAction("TraversePrevious");
+              NodeHelper.traverse(control, Direction.PREVIOUS);
             }
             else {
-              behavior.callAction("TraverseNext");
+              NodeHelper.traverse(control, Direction.NEXT);
             }
           }
           break;

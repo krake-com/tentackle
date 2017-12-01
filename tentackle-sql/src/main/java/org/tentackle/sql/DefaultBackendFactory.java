@@ -19,6 +19,7 @@
 
 package org.tentackle.sql;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import org.tentackle.common.Service;
@@ -48,10 +49,11 @@ public class DefaultBackendFactory implements BackendFactory {
     backends = new ArrayList<>();
     try {
       for (Class<Backend> backendClass: ServiceFactory.getServiceFinder().findServiceProviders(Backend.class)) {
-        backends.add(backendClass.newInstance());
+        backends.add(backendClass.getConstructor().newInstance());
       }
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException nfe) {
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+           InvocationTargetException | NoSuchMethodException nfe) {
       throw new BackendException("supported backends could not be determined", nfe);
     }
   }

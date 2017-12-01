@@ -19,6 +19,7 @@
 
 package org.tentackle.common;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -128,10 +129,11 @@ public class DefaultBundleFactory implements BundleFactory {
         if (providerList == null) {
           providerList = new ArrayList<>();
         }
-        providerList.add(clazz.newInstance());
+        providerList.add(clazz.getConstructor().newInstance());
       }
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+    catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+           InvocationTargetException | NoSuchMethodException ex) {
       throw new TentackleRuntimeException("cannot load bundle control providers", ex);
     }
     return providerList;

@@ -18,6 +18,7 @@
 
 package org.tentackle.fx.table;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
@@ -65,11 +66,11 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
       // not created yet
       try {
         Class<TableCellType<T>> cellTypeClass = (Class<TableCellType<T>>) cellTypeMapper.mapLenient(clazz);
-        cellType = cellTypeClass.newInstance();
+        cellType = cellTypeClass.getConstructor().newInstance();
         cellTypeMap.put(itemClass, cellType);
       }
       catch (ClassNotFoundException | SecurityException | InstantiationException |
-             IllegalAccessException | IllegalArgumentException ex) {
+             IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException("cannot load table cell type for " + itemClass, ex);
       }
     }

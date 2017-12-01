@@ -21,6 +21,7 @@
 package org.tentackle.buildsupport;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,7 @@ import javax.tools.Diagnostic.Kind;
 import org.tentackle.common.Analyze;
 import org.tentackle.common.TentackleRuntimeException;
 
-import static javax.lang.model.SourceVersion.RELEASE_8;
+import static javax.lang.model.SourceVersion.RELEASE_9;
 
 
 /**
@@ -46,7 +47,7 @@ import static javax.lang.model.SourceVersion.RELEASE_8;
  * @author harald
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(RELEASE_8)
+@SupportedSourceVersion(RELEASE_9)
 @SupportedOptions("verbosity")
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
@@ -171,14 +172,15 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
               try {
                 @SuppressWarnings("unchecked")
                 Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName);
-                AnalyzeHandler handler = handlerClass.newInstance();
+                AnalyzeHandler handler = handlerClass.getConstructor().newInstance();
                 handler.setProcessor(this);
                 handlers.add(handler);
                 if (handlers.size() > MAX_HANDLERS) {
                   throw new TentackleRuntimeException("endless-loop detected while processing " + handlerClass);
                 }
               }
-              catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+              catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                     InvocationTargetException | NoSuchMethodException ex) {
                 throw new TentackleRuntimeException("cannot instantiate AnalyzeHandler " + handlerClassName, ex);
               }
             }

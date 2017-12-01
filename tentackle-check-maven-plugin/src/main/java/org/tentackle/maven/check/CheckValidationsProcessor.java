@@ -19,6 +19,7 @@
 package org.tentackle.maven.check;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +229,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
         if (validatorClass != null) {
           try {
-            Validator validator = (Validator) validatorClass.newInstance();
+            Validator validator = (Validator) validatorClass.getConstructor().newInstance();
             validator.setAnnotation(annotation);
             Element enclosingClass = element;
             while (enclosingClass != null &&
@@ -249,7 +250,8 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
                   Diagnostic.Kind.ERROR, validatorClass + " is not a validator");
             errors++;
           }
-          catch (IllegalAccessException | InstantiationException ex) {
+          catch (IllegalAccessException | InstantiationException |
+                 InvocationTargetException | NoSuchMethodException ex) {
             getProcessingEnvironment().getMessager().printMessage(
                   Diagnostic.Kind.ERROR, "cannot create validator for " + validatorClass);
             errors++;

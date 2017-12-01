@@ -139,7 +139,7 @@ public class GroovyScript extends AbstractScript {
       else  {
         LOGGER.fine("re-using compiled script:\n{0}", effectiveCode);
       }
-      compiledScript = new CompiledScript(effectiveCode, scriptClass.newInstance());
+      compiledScript = new CompiledScript(effectiveCode, scriptClass.getConstructor().newInstance());
       return compiledScript;
     }
     catch (Exception ex) {

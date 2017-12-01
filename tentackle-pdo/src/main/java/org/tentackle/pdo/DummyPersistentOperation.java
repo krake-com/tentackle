@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
@@ -154,11 +155,11 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   public PersistentOperation<T> newInstance() {
     try {
       @SuppressWarnings("unchecked")
-      T obj = (T) getClass().newInstance();
+      T obj = (T) getClass().getConstructor().newInstance();
       obj.setSession(getSession());
       return obj;
     }
-    catch (InstantiationException | IllegalAccessException e) {
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new PersistenceException(getSession(), "creating new object failed", e);
     }
   }

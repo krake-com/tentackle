@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.table;
 
-import com.sun.javafx.scene.control.skin.TableViewSkin;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -34,6 +32,8 @@ import javafx.print.PrinterJob;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.transform.Scale;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.FxControllerService;
