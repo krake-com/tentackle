@@ -55,12 +55,18 @@ public class LoginApplication extends FxApplication {
 
   @Override
   public void startApplication(Stage stage) throws Exception {
-    controller = Fx.load(Login.class);
-    controller.setSessionInfo(createSessionInfo());
-    Scene scene = new Scene(controller.getView());
-    stage.setScene(scene);
-    stage.initStyle(StageStyle.TRANSPARENT);
-    stage.show();
+    try {
+      controller = Fx.load(Login.class);
+      controller.setSessionInfo(createSessionInfo());
+      Scene scene = new Scene(controller.getView());
+      stage.setScene(scene);
+      stage.initStyle(StageStyle.TRANSPARENT);
+      stage.show();
+    }
+    catch (RuntimeException ex) {
+      LOGGER.severe("launching login stage failed", ex);   // log the stacktrace, because ...
+      throw ex;   // ... javafx.application.Application just terminates without a detailed error message
+    }
   }
 
 
