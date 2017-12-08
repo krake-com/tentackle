@@ -34,19 +34,19 @@ public class LocaleTest {
   public void testLocale() {
     Locale locale = new Locale("en", "US");
     SimpleDateFormat format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
-    Assert.assertEquals("MMM d, yyyy h:mm:ss a", format.toPattern());
-    Assert.assertEquals("MMM d, yyyy h:mm:ss a", format.toLocalizedPattern());
+    Assert.assertEquals(format.toPattern(), "MMM d, y, h:mm:ss a");
+    Assert.assertEquals(format.toLocalizedPattern(), "MMM d, y, h:mm:ss a");
     locale = new Locale("en", "DE");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
-    Assert.assertEquals("MMM d, yyyy h:mm:ss a", format.toPattern());
-    Assert.assertEquals("MMM d, yyyy h:mm:ss a", format.toLocalizedPattern());
+    Assert.assertEquals(format.toPattern(), "d MMM y, HH:mm:ss");
+    Assert.assertEquals(format.toLocalizedPattern(), "d MMM y, HH:mm:ss");
     locale = new Locale("de", "US");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
-    Assert.assertEquals("dd.MM.yyyy HH:mm:ss", format.toPattern());
-    Assert.assertEquals("tt.MM.uuuu HH:mm:ss", format.toLocalizedPattern());
+    Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
+    Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
     locale = new Locale("de", "DE");
     format = (SimpleDateFormat) SimpleDateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, locale);
-    Assert.assertEquals("dd.MM.yyyy HH:mm:ss", format.toPattern());
-    Assert.assertEquals("tt.MM.uuuu HH:mm:ss", format.toLocalizedPattern());
+    Assert.assertEquals(format.toPattern(), "dd.MM.y, HH:mm:ss");
+    Assert.assertEquals(format.toLocalizedPattern(), "dd.MM.y, HH:mm:ss");
   }
 }
