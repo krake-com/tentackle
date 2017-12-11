@@ -44,6 +44,18 @@ import org.tentackle.session.SessionInfo;
 public class LoginApplication extends FxApplication {
 
   /**
+   * Returns whether the session should be logged in immediately.<br>
+   * Requires <code>autologin</code> property set in session info properties.
+   *
+   * @param sessionInfo the session info
+   * @return true if autologin
+   */
+  public static boolean isAutoLogin(SessionInfo sessionInfo) {
+    return sessionInfo.getProperties().containsKey("autologin");
+  }
+  
+
+  /**
    * the logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(LoginApplication.class);
@@ -57,10 +69,14 @@ public class LoginApplication extends FxApplication {
   public void startApplication(Stage stage) throws Exception {
     try {
       controller = Fx.load(Login.class);
-      controller.setSessionInfo(createSessionInfo());
+      SessionInfo sessionInfo = createSessionInfo();
+      controller.setSessionInfo(sessionInfo);
       Scene scene = new Scene(controller.getView());
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
+      if (isAutoLogin(sessionInfo)) {
+        stage.setOnShown((e) -> controller.autoLogin());
+      }
       stage.show();
     }
     catch (RuntimeException ex) {

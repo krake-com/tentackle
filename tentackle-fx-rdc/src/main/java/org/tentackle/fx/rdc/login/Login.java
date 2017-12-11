@@ -35,6 +35,7 @@ import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.SessionInfo;
@@ -54,6 +55,7 @@ public class Login extends AbstractFxController {
 
   private ResourceBundle resources;     // localization bundle
   private SessionInfo sessionInfo;      // the session info
+  private boolean autoLogin;            // true if login immediately
 
 
   @FXML
@@ -111,6 +113,22 @@ public class Login extends AbstractFxController {
     passwordField.setText(sessionInfo.getPasswordAsString());
   }
 
+
+  /**
+   * Logs in automatically.
+   *
+   * @see LoginApplication#isAutoLogin(org.tentackle.session.SessionInfo)
+   */
+  public void autoLogin() {
+    autoLogin = true;
+    Platform.runLater(() -> {
+      usernameField.setEditable(false);
+      passwordField.setEditable(false);
+      login();
+    });
+  }
+  
+
   private void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());
@@ -135,7 +153,7 @@ public class Login extends AbstractFxController {
    * @param value negative to infinite, 0 to hide progress bar, else up to 1 for 100%
    */
   public void setProgress(double value) {
-    if (value <= 0.0) {
+    if (value <= 0.0 && !autoLogin) {
       progressBar.setVisible(false);
       progressBar.setProgress(0.0);
       loginButton.setDisable(false);

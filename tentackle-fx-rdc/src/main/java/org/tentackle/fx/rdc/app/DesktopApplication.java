@@ -255,6 +255,10 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
             catch (RuntimeException rex) {
               // if anything else fails: log that
               LOGGER.severe("login task failed", rex);
+              Platform.runLater(() -> {
+                Fx.error(rex.getLocalizedMessage(), rex);
+                Platform.exit();
+              });
             }
 
             return null;
