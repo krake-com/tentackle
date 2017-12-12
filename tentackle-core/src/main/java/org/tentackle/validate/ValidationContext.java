@@ -19,6 +19,8 @@
 
 package org.tentackle.validate;
 
+import java.util.function.Supplier;
+
 /**
  * The validation context.<br>
  * No logic in here, just data.
@@ -31,6 +33,7 @@ public class ValidationContext {
   private final String validationPath;
   private final Class<?> type;
   private final Object object;
+  private final Supplier<?> objectSupplier;
   private final Object parentObject;
   private final ValidationScope effectiveScope;
 
@@ -41,7 +44,7 @@ public class ValidationContext {
    * @param validationPath the validation path
    * @param type the type of the object to validate
    * @param object the element to validate
-   * @param parentObject the object containing the element
+   * @param parentObject the parent object containing the element
    * @param effectiveScope the effective validation scope
    */
   public ValidationContext(String validationPath,
@@ -53,6 +56,33 @@ public class ValidationContext {
     this.validationPath = validationPath;
     this.type = type;
     this.object = object;
+    this.objectSupplier = null;
+    this.parentObject = parentObject;
+    this.effectiveScope = effectiveScope;
+  }
+
+  /**
+   * Creates a validation context with lazy object provider.<br>
+   * The object to validate is retrieved only if actually validated.
+   * Allows validators to avoid the invocation of the method to load the object
+   * if the pre condition fails. Useful for lazy list relations, for example.
+   *
+   * @param validationPath the validation path
+   * @param type the type of the object to validate
+   * @param objectSupplier the supplier providing the element to validate
+   * @param parentObject the parent object containing the element
+   * @param effectiveScope the effective validation scope
+   */
+  public ValidationContext(String validationPath,
+                           Class<?> type,
+                           Supplier<?> objectSupplier,
+                           Object parentObject,
+                           ValidationScope effectiveScope) {
+
+    this.validationPath = validationPath;
+    this.type = type;
+    this.object = null;
+    this.objectSupplier = objectSupplier;
     this.parentObject = parentObject;
     this.effectiveScope = effectiveScope;
   }
@@ -72,10 +102,10 @@ public class ValidationContext {
    * Gets the element to validate.<br>
    * This is usually annotated with validator annotation.
    *
-   * @return the object to validate
+   * @return the element to validate
    */
   public Object getObject() {
-    return object;
+    return objectSupplier == null ? object : objectSupplier.get();
   }
 
   /**
@@ -98,7 +128,6 @@ public class ValidationContext {
 
   /**
    * Gets the parent object.<br>
-   *
    *
    * @return the object containing the element to validate
    */
