@@ -72,6 +72,7 @@ public class TablePopup<S> {
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
   private final boolean noViewSize;             // true if don't set the table view's size
+  private final String title;                   // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
 
@@ -82,17 +83,29 @@ public class TablePopup<S> {
    * @param table the table
    * @param preferencesSuffix the preferences suffix to load/save table preferences
    * @param noViewSize true if don't set the table view's size
+   * @param title the title of the printed table
    */
-  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize) {
+  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize, String title) {
     this.table = table;
     this.preferencesSuffix = preferencesSuffix;
     this.noViewSize = noViewSize;
+    this.title = title;
 
     ContextMenu menu = createContextMenu();
     table.setContextMenu(menu);
     for (TableColumn<S,?> column: table.getColumns())  {
       column.setContextMenu(menu);
     }
+  }
+
+  /**
+   * Creates a table popup.
+   *
+   * @param table the table
+   * @param preferencesSuffix the preferences suffix to load/save table preferences
+   */
+  public TablePopup(FxTableView<S> table, String preferencesSuffix) {
+    this(table, preferencesSuffix, false, null);
   }
 
   /**
@@ -163,7 +176,7 @@ public class TablePopup<S> {
 
     MenuItem printItem = new MenuItem();
     printItem.setText(FxFxBundle.getString("PRINT"));
-    printItem.setOnAction(e -> TableUtilities.getInstance().print(table, null));
+    printItem.setOnAction(e -> TableUtilities.getInstance().print(table, title));
     menu.getItems().add(printItem);
 
     MenuItem excelItem = new MenuItem();

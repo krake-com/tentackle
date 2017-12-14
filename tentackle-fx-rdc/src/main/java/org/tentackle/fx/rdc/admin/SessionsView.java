@@ -82,7 +82,7 @@ public class SessionsView extends AbstractFxController {
     killButton.setOnAction(e -> kill());
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
-    popup = new TablePopup<>(sessionsNode, "Sessions", false);
+    popup = new TablePopup<>(sessionsNode, "Sessions", false, resources.getString("Sessions"));
 
     TableConfiguration<SessionData> config = createTableConfiguration();
     config.getBinder().bind();

@@ -246,7 +246,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         }
       }
     });
-    TablePopup<T> tablePopup = new TablePopup<>(tableView, null, false);
+    TablePopup<T> tablePopup = new TablePopup<>(tableView, null, false, pdo.getPlural());
     tablePopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
 
     treeView = Fx.createNode(TreeView.class);

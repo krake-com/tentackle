@@ -1,4 +1,23 @@
-/* Settings for the TablePrinter */
+
+/* no borders and shadows and alike */
+.root {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+}
+
+.table-view {
+  -fx-table-cell-border-color: transparent;
+  -fx-box-border: transparent;
+}
+
+.table-cell {
+  -fx-background-color: transparent;
+}
+
+.table-row-cell {
+  -fx-background-color: transparent;
+}
+
 
 /* Hide the horizontal scrollbar for sure */
 .scroll-bar:horizontal .track {
