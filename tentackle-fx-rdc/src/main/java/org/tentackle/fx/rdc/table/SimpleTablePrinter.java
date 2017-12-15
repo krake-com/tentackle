@@ -52,6 +52,8 @@ import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTableColumn;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
@@ -87,6 +89,10 @@ public class SimpleTablePrinter extends AbstractFxController {
     stage.showAndWait();
   }
 
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(SimpleTablePrinter.class);
 
   private static final String STYLE_TITLE = "title";
   private static final String STYLE_BOTTOMLINE = "bottomline";
@@ -343,7 +349,13 @@ public class SimpleTablePrinter extends AbstractFxController {
         // ignored
       }
 
-      Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount(tableView)));
+      Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount(tableView) - 1));
+
+      if (printableRows <= 0) {
+        // no room to print (may be renedering problem, whatsoever....)
+        LOGGER.severe("no printable rows");
+        return;
+      }
 
       // calculate the page contents and number of pages
       List<PageInfo> pages = new ArrayList<>();
