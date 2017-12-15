@@ -40,17 +40,19 @@ import javafx.scene.transform.Scale;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.FxTableColumn;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
 
@@ -75,6 +77,7 @@ public class SimpleTablePrinter extends AbstractFxController {
     SimpleTablePrinter printer = Fx.load(SimpleTablePrinter.class);
     Scene scene = new Scene(printer.getView());
     stage.setScene(scene);
+    stage.setTitle(RdcFxRdcBundle.getString("Printing..."));
     stage.setOnShown(e -> {
       Platform.runLater(() ->
         printer.print(table,
@@ -84,10 +87,10 @@ public class SimpleTablePrinter extends AbstractFxController {
     stage.showAndWait();
   }
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(SimpleTablePrinter.class);
+
+  private static final String STYLE_TITLE = "title";
+  private static final String STYLE_BOTTOMLINE = "bottomline";
+  private static final String STYLE_TOTALS = "totals";
 
 
   private ResourceBundle resources;   // I18N resources
@@ -100,11 +103,18 @@ public class SimpleTablePrinter extends AbstractFxController {
   private FxTableView<?> tableView;
 
   @FXML
+  private FxHBox bottomLine;
+
+  @FXML
+  private FxLabel dateLabel;
+
+  @FXML
   private FxLabel pageLabel;
 
 
   private int rowCount;               // number of rows to print (incl. totals)
   private int totalsRowCount;         // number of total rows, 0 = none
+  private int rowOffset;              // offset in model
 
 
   /**
@@ -146,19 +156,27 @@ public class SimpleTablePrinter extends AbstractFxController {
       TableCell<S, T> cell = orgCellFactory.call(column);
       FxTableColumn<S, T> fxColumn = (FxTableColumn<S, T>) column;
       TableColumnConfiguration<S, T> columnConfig = fxColumn.getConfiguration();
-      if (totalsRowCount > 0 && columnConfig != null && !columnConfig.isSummable()) {
+      if (totalsRowCount > 0 && columnConfig != null) {
         // replace by cell aware of totals
         cell = new FxTableCell<S, T>(columnConfig) {
           @Override
           protected void updateItem(T item, boolean empty) {
-            if (getIndex() >= rowCount - totalsRowCount) {
-              // totals row: columns not summable are rendered empty (see TotalsTableView)
-              setText(null);
-              setGraphic(null);
+            int index = rowOffset + getIndex();
+            if (index >= rowCount - totalsRowCount) {
+              if (columnConfig.isSummable() && index < rowCount) {
+                if (!getStyleClass().contains(STYLE_TOTALS)) {
+                  getStyleClass().add(STYLE_TOTALS);
+                }
+              }
+              else {
+                // totals row: columns not summable are rendered empty (see TotalsTableView)
+                getStyleClass().remove(STYLE_TOTALS);
+                setText(null);
+                setGraphic(null);
+                return;
+              }
             }
-            else {
-              super.updateItem(item, empty);
-            }
+            super.updateItem(item, empty);
           }
         };
       }
@@ -172,6 +190,10 @@ public class SimpleTablePrinter extends AbstractFxController {
   @SuppressWarnings("unchecked")
   public void initialize(URL location, ResourceBundle resources) {
     this.resources = resources;
+    titleLabel.getStyleClass().add(STYLE_TITLE);
+    bottomLine.getStyleClass().add(STYLE_BOTTOMLINE);
+    pageLabel.getStyleClass().add(STYLE_BOTTOMLINE);
+    dateLabel.getStyleClass().add(STYLE_BOTTOMLINE);
   }
 
 
@@ -185,6 +207,8 @@ public class SimpleTablePrinter extends AbstractFxController {
    */
   @SuppressWarnings("unchecked")
   private void print(FxTableView<?> table, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
+
+    dateLabel.setText(FormatHelper.formatShortTimestamp(new Timestamp()));
 
     // copy the columns to the printing table
     double tableWidth = 0;
@@ -219,15 +243,13 @@ public class SimpleTablePrinter extends AbstractFxController {
     // set the table's height to fit the page height minus title and page count labels
     titleLabel.setText(title);
     updatePageLabel(1);
-    double tableHeight = printableHeight / scaleXY - titleLabel.getHeight() - pageLabel.getHeight();
+    getView().layout();
+    double tableHeight = printableHeight / scaleXY - titleLabel.getHeight() - bottomLine.getHeight();
     tableView.setMinHeight(tableHeight);
     tableView.setMaxHeight(tableHeight);
 
     // scale to page width
     getView().getTransforms().add(new Scale(scaleXY, scaleXY));
-
-    LOGGER.info("displayed rows = {0}", getVisibleRowCount(table));
-
 
     ObservableList items;
     FxTableView<?> totalsTable = table.getTotalsTableView();
@@ -322,7 +344,6 @@ public class SimpleTablePrinter extends AbstractFxController {
       }
 
       Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount(tableView)));
-      LOGGER.info("printable rows = {0}", printableRows);
 
       // calculate the page contents and number of pages
       List<PageInfo> pages = new ArrayList<>();
@@ -342,7 +363,8 @@ public class SimpleTablePrinter extends AbstractFxController {
       Fx.runAndWait(() -> {
         int pageNo = 1;
         for (PageInfo page : pages) {
-          tableView.setItems(FXCollections.observableList(items.subList(page.rowStart, page.rowStart + page.rowCount)));
+          rowOffset = page.rowStart;
+          tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
           tableView.getSelectionModel().clearSelection();
           updatePageLabel(pageNo++);
           job.printPage(pageLayout, getView());

@@ -110,10 +110,20 @@ public class TablePopup<S> {
 
   /**
    * Gets the table.
+   *
    * @return the table
    */
   public FxTableView<S> getTable() {
     return table;
+  }
+
+  /**
+   * Gets the printed title.
+   *
+   * @return the title
+   */
+  public String getTitle() {
+    return title;
   }
 
   /**
@@ -171,12 +181,12 @@ public class TablePopup<S> {
 
     MenuItem autoWidthItem = new MenuItem();
     autoWidthItem.setText(FxFxBundle.getString("AUTO WIDTH"));
-    autoWidthItem.setOnAction(e -> FxUtilities.getInstance().resizeColumnsToFitContent(table));
+    autoWidthItem.setOnAction(e -> autoWidth());
     menu.getItems().add(autoWidthItem);
 
     MenuItem printItem = new MenuItem();
     printItem.setText(FxFxBundle.getString("PRINT"));
-    printItem.setOnAction(e -> TableUtilities.getInstance().print(table, title));
+    printItem.setOnAction(e -> print());
     menu.getItems().add(printItem);
 
     MenuItem excelItem = new MenuItem();
@@ -274,6 +284,21 @@ public class TablePopup<S> {
     return menu;
   }
 
+
+  /**
+   * Resizes all columns to fit their content.
+   */
+  public void autoWidth() {
+    FxUtilities.getInstance().resizeColumnsToFitContent(table);
+  }
+
+
+  /**
+   * Prints the table.
+   */
+  public void print() {
+    TableUtilities.getInstance().print(table, title);
+  }
 
 
   /**
@@ -420,6 +445,7 @@ public class TablePopup<S> {
     }
   }
 
+  
   /**
    * Loads the table preferences.
    *

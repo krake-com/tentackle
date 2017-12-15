@@ -47,6 +47,8 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Scale;
 import javafx.stage.PopupWindow;
 import javafx.stage.Stage;
@@ -512,9 +514,7 @@ public class FxUtilities {
    * Resizes the width of all columns of a table to fit the displayed content.<br>
    * Unlike the "double-click on column separator"-feature this method computes
    * the column widths according to the content currently displayed. For tables
-   * with a large number of rows this is much more efficient. Furthermore,
-   * the headers are not taken into account. As a result, the columns are sized
-   * to the absolute minimum to display the content.
+   * with a large number of rows this is much more efficient than scanning the whole table.
    *
    * @param table the table view
    */
@@ -528,33 +528,46 @@ public class FxUtilities {
       iCell = virtualFlow.getLastVisibleCell();
       if (iCell != null) {
         int last = iCell.getIndex();
-        for (TableColumn tc: table.getColumns()) {
-          if (tc.isVisible()) {
-            Callback cellFactory = tc.getCellFactory();
+        for (TableColumn column: table.getColumns()) {
+          if (column.isVisible()) {
+            Callback cellFactory = column.getCellFactory();
             if (cellFactory != null) {
-              TableCell cell = (TableCell) cellFactory.call(tc);
+              TableCell cell = (TableCell) cellFactory.call(column);
+              Font cellFont = cell.getFont();
+              // BOLD may not work if header is styled with CSS, but that's ok for default configs
+              Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
               if (cell != null) {
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkin
                 double maxWidth = 20;   // don't go below this so that column remains visible
+                // apply header text first
+                cell.updateTableColumn(column);
+                cell.updateTableView(table);
+                cell.setText(column.getText());
+                cell.setGraphic(column.getGraphic());
+                cell.setFont(headerFont);
+                maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
+                cell.setFont(cellFont);
                 for (int row=first; row <= last; row++) {
-                  cell.updateTableColumn(tc);
-                  cell.updateTableView(table);
                   cell.updateIndex(row);
-                  if ((cell.getText() != null && !cell.getText().isEmpty()) || cell.getGraphic() != null) {
-                    tableSkin.getChildren().add(cell);
-                    cell.applyCss();
-                    maxWidth = Math.max(maxWidth, cell.prefWidth(-1));
-                    tableSkin.getChildren().remove(cell);
-                  }
+                  maxWidth = maxColumnWidth(maxWidth, cell, tableSkin);
                 }
-                cell.updateIndex(-1);
-                table.resizeColumn(tc, maxWidth - tc.getWidth());
+                table.resizeColumn(column, maxWidth - column.getWidth());
               }
             }
           }
         }
       }
     }
+  }
+
+  private double maxColumnWidth(double maxWidth, TableCell cell, TableViewSkin<?> tableSkin) {
+    if ((cell.getText() != null && !cell.getText().isEmpty()) || cell.getGraphic() != null) {
+      tableSkin.getChildren().add(cell);
+      cell.applyCss();
+      maxWidth = Math.max(maxWidth, cell.prefWidth(-1));
+      tableSkin.getChildren().remove(cell);
+    }
+    return maxWidth;
   }
 
 }
