@@ -98,16 +98,7 @@ public class TablePopup<S> {
     }
   }
 
-  /**
-   * Creates a table popup.
-   *
-   * @param table the table
-   * @param preferencesSuffix the preferences suffix to load/save table preferences
-   */
-  public TablePopup(FxTableView<S> table, String preferencesSuffix) {
-    this(table, preferencesSuffix, false, null);
-  }
-
+  
   /**
    * Gets the table.
    *
@@ -445,7 +436,7 @@ public class TablePopup<S> {
     }
   }
 
-  
+
   /**
    * Loads the table preferences.
    *

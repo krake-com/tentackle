@@ -21,8 +21,10 @@ package org.tentackle.fx.rdc;
 
 import org.tentackle.common.Service;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
+import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -64,6 +66,12 @@ public class DefaultRdcFactory implements RdcFactory {
   @Override
   public <S, T extends PersistentDomainObject<T>> PdoTableCell<S, T> createTableCell() {
     return new PdoTableCell<>();
+  }
+
+  @Override
+  public <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize,
+          String title) {
+    return new TablePopup<S>(table, preferencesSuffix, noViewSize, title);
   }
 
 }
