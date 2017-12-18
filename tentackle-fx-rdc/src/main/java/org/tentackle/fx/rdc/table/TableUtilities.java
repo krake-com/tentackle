@@ -260,7 +260,7 @@ public class TableUtilities {
   public void print(FxTableView<?> table, String title) {
     final PrinterJob job = PrinterJob.createPrinterJob();
     if (job != null && job.showPrintDialog(Fx.getStage(table))) {
-      SimpleTablePrinter.print(table, title, job);
+      TablePrinter.print(table, title, job);
     }
   }
 

@@ -57,11 +57,17 @@ public class ConcurrencyHelper {
     public void execute(Runnable command) {
       FutureTask<Void> task = new FutureTask<>(command, null);
       executor.execute(task);
-      try {
-        task.get();   // this will block until excecution has finished
-      }
-      catch (InterruptedException | ExecutionException ex) {
-        throw new TentackleRuntimeException("blocking execution failed", ex);
+      for (;;) {
+        try {
+          task.get();   // this will block until excecution has finished
+          break;
+        }
+        catch (InterruptedException ix) {
+          // interrupted: next round will catch result
+        }
+        catch (ExecutionException ex) {
+          throw new TentackleRuntimeException("blocking execution failed", ex);
+        }
       }
     }
   }
