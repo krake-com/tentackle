@@ -311,7 +311,6 @@ public class TablePrinter extends AbstractFxController {
       int end = cell.getIndex();
       count = end - start;
       if (end >= flow.getCellCount() - 1) {
-        LOGGER.info("last cell {0}", end);
         // last cell:
         // in FX9 VirtualFlow.getLastVisibleCellWithinViewport is package scope
         // we use scrollTo to test whether last cell is within viewport
