@@ -82,8 +82,14 @@
     <javac.version.src>1.8</javac.version.src>
     <javac.version.target>1.8</javac.version.target>
     <javac.version.require>1.8.0-45</javac.version.require>
-    <maven.version>3.0.5</maven.version>
+    <maven.version>3.3.9</maven.version>
     <postgresql.version>9.1-901-1.jdbc4</postgresql.version>
+
+    <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
+    <java9.sourceDirectory>${project.basedir}/src/main/java9</java9.sourceDirectory>
+    <java9.build.outputDirectory>${project.build.directory}/classes-java9</java9.build.outputDirectory>
+    <!-- IMPORTANT: define this in settings.xml: -->
+    <!-- <java9.jdkhome>/path/to/jdk9</java9.jdkhome>  -->
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
@@ -306,7 +312,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.6.1</version>
+          <version>3.7.0</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <source>${javac.version.src}</source>

@@ -1,0 +1,417 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.fx.rdc.table;
+
+import java.net.URL;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.print.PageLayout;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.control.IndexedCell;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.transform.Scale;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+import org.tentackle.common.Timestamp;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.component.FxLabel;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.FxTableColumn;
+import org.tentackle.fx.table.TableColumnConfiguration;
+import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.Duration;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.task.AbstractTask;
+
+/**
+ * A controller to print a table.
+ *
+ * @author harald
+ */
+@FxControllerService(binding = FxControllerService.BINDING.NO)
+public class TablePrinter extends AbstractFxController {
+
+  /**
+   * Prints a table.
+   *
+   * @param table the table to be printed
+   * @param title the job title
+   * @param job the printer job
+   */
+  public static void print(FxTableView<?> table, String title, PrinterJob job) {
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    TablePrinter printer = Fx.load(TablePrinter.class);
+    Scene scene = new Scene(printer.getView());
+    stage.setScene(scene);
+    stage.setTitle(RdcFxRdcBundle.getString("Printing..."));
+    String jobTitle;
+    if (title == null) {
+      jobTitle = table.getConfiguration().getName();
+    }
+    else {
+      jobTitle = title;
+    }
+    if (jobTitle != null) {
+      job.getJobSettings().setJobName(jobTitle);
+    }
+    stage.setOnShown(e -> {
+      Platform.runLater(() -> printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage));
+    });
+    stage.showAndWait();
+  }
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(TablePrinter.class);
+
+  private static final String STYLE_TITLE = "title";
+  private static final String STYLE_BOTTOMLINE = "bottomline";
+  private static final String STYLE_TOTALS = "totals";
+
+
+  private ResourceBundle resources;   // I18N resources
+  private int pageCount;              // number of pages
+
+  @FXML
+  private FxLabel titleLabel;
+
+  @FXML
+  private FxTableView<?> tableView;
+
+  @FXML
+  private FxHBox bottomLine;
+
+  @FXML
+  private FxLabel dateLabel;
+
+  @FXML
+  private FxLabel pageLabel;
+
+
+  private Duration jobDuration;       // for logging only
+  private int rowCount;               // number of rows to print (incl. totals)
+  private int totalsRowCount;         // number of total rows, 0 = none
+  private volatile int rowOffset;     // offset in model
+
+
+  /**
+   * Info for one printable page.
+   */
+  private static class PageInfo {
+
+    private final int rowStart;
+    private final int rowCount;
+
+    public PageInfo(int rowStart, int rowCount) {
+      this.rowStart = rowStart;
+      this.rowCount = rowCount;
+    }
+
+    @Override
+    public String toString() {
+      return "print " + rowCount + " rows starting at row " + rowStart;
+    }
+  }
+
+
+  /**
+   * Cell factory to suppress not summable cells in totals.
+   *
+   * @param <S> The type of the TableView generic type (i.e. S == TableView&lt;S&gt;)
+   * @param <T> The type of the content in all cells in this TableColumn.
+   */
+  private class PrintCellFactory<S, T> implements Callback<TableColumn<S, T>, TableCell<S, T>> {
+
+    private final Callback<TableColumn<S, T>, TableCell<S, T>> orgCellFactory;
+
+    public PrintCellFactory(Callback<TableColumn<S, T>, TableCell<S, T>> orgCellFactory) {
+      this.orgCellFactory = orgCellFactory;
+    }
+
+    @Override
+    public TableCell<S, T> call(TableColumn<S, T> column) {
+      TableCell<S, T> cell = orgCellFactory.call(column);
+      FxTableColumn<S, T> fxColumn = (FxTableColumn<S, T>) column;
+      TableColumnConfiguration<S, T> columnConfig = fxColumn.getConfiguration();
+      if (totalsRowCount > 0 && columnConfig != null) {
+        // replace by cell aware of totals
+        cell = new FxTableCell<S, T>(columnConfig) {
+          @Override
+          protected void updateItem(T item, boolean empty) {
+            int index = rowOffset + getIndex();
+            if (index >= rowCount - totalsRowCount) {
+              if (columnConfig.isSummable() && index < rowCount) {
+                if (!getStyleClass().contains(STYLE_TOTALS)) {
+                  getStyleClass().add(STYLE_TOTALS);
+                }
+              }
+              else {
+                // totals row: columns not summable are rendered empty (see TotalsTableView)
+                getStyleClass().remove(STYLE_TOTALS);
+                setText(null);
+                setGraphic(null);
+                return;
+              }
+            }
+            else {
+              getStyleClass().remove(STYLE_TOTALS);
+            }
+            super.updateItem(item, empty);
+          }
+        };
+      }
+      return cell;
+    }
+
+  }
+
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void initialize(URL location, ResourceBundle resources) {
+    this.resources = resources;
+    titleLabel.getStyleClass().add(STYLE_TITLE);
+    bottomLine.getStyleClass().add(STYLE_BOTTOMLINE);
+    pageLabel.getStyleClass().add(STYLE_BOTTOMLINE);
+    dateLabel.getStyleClass().add(STYLE_BOTTOMLINE);
+    jobDuration = new Duration();
+  }
+
+
+  /**
+   * Prints the table.
+   *
+   * @param table the table to be printed
+   * @param title the job title
+   * @param job the printer job
+   * @param pageLayout the printing layout
+   */
+  @SuppressWarnings("unchecked")
+  private void print(FxTableView<?> table, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
+
+    LOGGER.fine("table print job {0}", job);
+
+    dateLabel.setText(FormatHelper.formatShortTimestamp(new Timestamp()));
+
+    // copy the columns to the printing table
+    double tableWidth = 0;
+    tableView.getColumns().clear();
+    tableView.setConfiguration((TableConfiguration) table.getConfiguration());
+    for (TableColumn<?,?> column: table.getColumns()) {
+      if (column.isVisible()) {
+        TableColumnConfiguration<?,?> columnConfig = column instanceof FxTableColumn ?
+                ((FxTableColumn) column).getConfiguration() : null;
+        FxTableColumn printColumn = new FxTableColumn(columnConfig, column.getText());
+        printColumn.setCellValueFactory(column.getCellValueFactory());
+        printColumn.setCellFactory(new PrintCellFactory(column.getCellFactory()));
+        printColumn.setMinWidth(column.getWidth());
+        printColumn.setMaxWidth(column.getWidth());
+        tableView.getColumns().add(printColumn);
+        tableWidth += column.getWidth();
+      }
+    }
+
+    double printableWidth = pageLayout.getPrintableWidth();
+    double printableHeight = pageLayout.getPrintableHeight();
+
+    // scale to fit page width if necessary
+    double scaleXY = 1.0;
+    if (printableWidth < tableWidth) {
+      scaleXY = printableWidth / tableWidth;
+      tableWidth = printableWidth / scaleXY;
+    }
+    tableView.setMinWidth(tableWidth - 1);
+    tableView.setMaxWidth(tableWidth - 1);
+
+    // set the table's height to fit the page height minus title and page count labels
+    titleLabel.setText(title);
+    updatePageLabel(1);
+    getView().layout();
+    double tableHeight = printableHeight / scaleXY - titleLabel.getHeight() - bottomLine.getHeight();
+    tableView.setMinHeight(tableHeight);
+    tableView.setMaxHeight(tableHeight);
+
+    // scale to page width
+    getView().getTransforms().add(new Scale(scaleXY, scaleXY));
+
+    ObservableList items;
+    FxTableView<?> totalsTable = table.getTotalsTableView();
+    if (totalsTable != null) {
+      // add totals
+      items = FXCollections.observableArrayList(table.getItems());
+      items.addAll(totalsTable.getItems());
+      totalsRowCount = totalsTable.getItems().size();
+    }
+    else {
+      items = table.getItems();
+      totalsRowCount = 0;
+    }
+
+    rowCount = items.size();
+
+    //    Platform.runLater(() -> {
+    //
+    //      int printableRows = getVisibleRowCount(tableView);
+    //      ... etc...
+    //    doesnt always work
+    //    hence -> Task running in ModificationTracker with Fx.runAndWait.
+
+    ModificationTracker.getInstance().addTask(new PrinterTask(items, job, pageLayout, stage));
+  }
+
+
+  private void updatePageLabel(int pageNo) {
+    pageLabel.setText(MessageFormat.format(resources.getString("page {0} of {1}"), pageNo, pageCount));
+  }
+
+
+  private int getVisibleRowCount() {
+    VirtualFlow<?> flow = (VirtualFlow<?>) ((TableViewSkin<?>) tableView.getSkin()).getChildren().get(1);
+    int start = 0;
+    IndexedCell<?> cell = flow.getFirstVisibleCell();
+    if (cell != null) {
+      start = cell.getIndex();
+    }
+    cell = flow.getLastVisibleCell();
+    int count = -1;
+    if (cell != null) {
+      int end = cell.getIndex();
+      count = end - start;
+      if (end >= flow.getCellCount() - 1) {
+        LOGGER.info("last cell {0}", end);
+        // last cell:
+        // in FX9 VirtualFlow.getLastVisibleCellWithinViewport is package scope
+        // we use scrollTo to test whether last cell is within viewport
+        tableView.scrollTo(end);
+        cell = flow.getFirstVisibleCell();
+        if (cell != null && cell.getIndex() == start) {
+          // last cell completely visible
+          count++;
+        }
+        else {
+          tableView.scrollTo(start);
+        }
+      }
+    }
+    return count;
+  }
+
+
+
+  /**
+   * Task using the ModificationTracker to print the table.
+   */
+  @SuppressWarnings("serial")
+  private class PrinterTask extends AbstractTask {
+
+    private final ObservableList items;
+    private final PrinterJob job;
+    private final PageLayout pageLayout;
+    private final Stage stage;
+
+    private volatile int printableRows;
+
+    private PrinterTask(ObservableList items, PrinterJob job, PageLayout pageLayout, Stage stage) {
+      this.items = items;
+      this.job = job;
+      this.pageLayout = pageLayout;
+      this.stage = stage;
+    }
+
+    private void setPrintableRows(int printableRows) {
+      this.printableRows = printableRows;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void run() {
+
+      // calculate the page contents and number of pages
+      List<PageInfo> pages = new ArrayList<>();
+      int size  = items.size();
+      rowOffset = 0;
+      while (rowOffset < size) {
+        Fx.runAndWait(() -> {
+          // apply remaining items (works with varying row heights)
+          tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
+          getView().layout();   // this does the trick to make getVisibleRowCount below work!
+        });
+        Fx.runAndWait(() -> {
+          setPrintableRows(getVisibleRowCount());
+        });
+        if (printableRows <= 0) {
+          // no space to print (may be renedering problem, whatsoever....)
+          Platform.runLater(() -> {
+            job.cancelJob();
+            Fx.error(resources.getString("no printable area"));
+            stage.close();
+          });
+          return;
+        }
+        PageInfo page = new PageInfo(rowOffset, printableRows);
+        pages.add(page);
+        rowOffset += printableRows;
+        LOGGER.fine("page {0}: {1}", pages.size(), page);
+      }
+
+
+      // print the pages
+      pageCount = pages.size();
+      Fx.runAndWait(() -> {
+        if (pageCount == 0) {
+          Fx.info(resources.getString("no pages to print"));
+          job.cancelJob();
+        }
+        else {
+          int pageNo = 1;
+          for (PageInfo page : pages) {
+            rowOffset = page.rowStart;
+            tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
+            tableView.getSelectionModel().clearSelection();
+            updatePageLabel(pageNo++);
+            job.printPage(pageLayout, getView());
+          }
+          job.endJob();
+          jobDuration.end();
+          LOGGER.info("job \"{0}\", {1} pages printed, {2} s",
+                      titleLabel.getText(), pages.size(), jobDuration.secondsToString());
+        }
+        stage.close();
+      });
+    }
+  }
+
+}
