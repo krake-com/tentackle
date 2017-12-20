@@ -55,8 +55,8 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
+import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
-import org.tentackle.task.AbstractTask;
 
 /**
  * A controller to print a table.
@@ -92,6 +92,14 @@ public class TablePrinter extends AbstractFxController {
     stage.setOnShown(e -> {
       Platform.runLater(() -> printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage));
     });
+    stage.setOnCloseRequest((e) -> {
+      if (Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false)) {
+        printer.terminationRequested = true;
+      }
+      else {
+        e.consume();
+      }
+    });
     stage.showAndWait();
   }
 
@@ -121,10 +129,11 @@ public class TablePrinter extends AbstractFxController {
   private FxLabel pageLabel;
 
 
-  private Duration jobDuration;       // for logging only
-  private int rowCount;               // number of rows to print (incl. totals)
-  private int totalsRowCount;         // number of total rows, 0 = none
-  private volatile int rowOffset;     // offset in model
+  private Duration jobDuration;                     // for logging only
+  private int rowCount;                             // number of rows to print (incl. totals)
+  private int totalsRowCount;                       // number of total rows, 0 = none
+  private volatile int rowOffset;                   // offset in model
+  private volatile boolean terminationRequested;    // true if user closed the printing dialog
 
 
   /**
@@ -319,7 +328,7 @@ public class TablePrinter extends AbstractFxController {
    * Task using the ModificationTracker to print the table.
    */
   @SuppressWarnings("serial")
-  private class PrinterTask extends AbstractTask {
+  private class PrinterTask extends AbstractSessionTask {
 
     private final ObservableList items;
     private final PrinterJob job;
@@ -347,7 +356,7 @@ public class TablePrinter extends AbstractFxController {
       List<PageInfo> pages = new ArrayList<>();
       int size  = items.size();
       rowOffset = 0;
-      while (rowOffset < size) {
+      while (rowOffset < size && !terminationRequested) {
         Fx.runAndWait(() -> {
           // apply remaining items (works with varying row heights)
           tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
@@ -369,32 +378,47 @@ public class TablePrinter extends AbstractFxController {
         pages.add(page);
         rowOffset += printableRows;
         LOGGER.fine("page {0}: {1}", pages.size(), page);
+        getSession().setAlive(true);
       }
 
-
-      // print the pages
-      pageCount = pages.size();
-      Fx.runAndWait(() -> {
-        if (pageCount == 0) {
-          Fx.info(resources.getString("no pages to print"));
-          job.cancelJob();
-        }
-        else {
-          int pageNo = 1;
-          for (PageInfo page : pages) {
-            rowOffset = page.rowStart;
-            tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
-            tableView.getSelectionModel().clearSelection();
-            updatePageLabel(pageNo++);
-            job.printPage(pageLayout, getView());
+      if (terminationRequested) {
+        LOGGER.info("job \"{0}\" canceled by user", titleLabel.getText());
+      }
+      else {
+        // print the pages
+        pageCount = pages.size();
+        Fx.runAndWait(() -> {
+          if (pageCount == 0) {
+            Fx.info(resources.getString("no pages to print"));
+            job.cancelJob();
           }
-          job.endJob();
-          jobDuration.end();
-          LOGGER.info("job \"{0}\", {1} pages printed, {2} s",
-                      titleLabel.getText(), pages.size(), jobDuration.secondsToString());
-        }
-        stage.close();
-      });
+          else {
+            int pageNo = 1;
+            for (PageInfo page : pages) {
+              rowOffset = page.rowStart;
+              tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
+              tableView.getSelectionModel().clearSelection();
+              updatePageLabel(pageNo++);
+              job.printPage(pageLayout, getView());
+              if (terminationRequested) {
+                break;
+              }
+              getSession().setAlive(true);
+            }
+            if (terminationRequested) {
+              job.cancelJob();
+              LOGGER.info("printing job \"{0}\" canceled by user", titleLabel.getText());
+            }
+            else {
+              job.endJob();
+              jobDuration.end();
+              LOGGER.info("job \"{0}\", {1} pages printed, {2} s",
+                          titleLabel.getText(), pages.size(), jobDuration.secondsToString());
+            }
+          }
+          stage.close();
+        });
+      }
     }
   }
 

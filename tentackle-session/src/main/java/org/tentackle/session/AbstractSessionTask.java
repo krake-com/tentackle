@@ -35,13 +35,6 @@ public abstract class AbstractSessionTask extends AbstractTask {
 
 
   /**
-   * Creates a task.
-   */
-  public AbstractSessionTask() {
-    super();
-  }
-
-  /**
    * Sets the db.<br>
    * Done by {@link SessionTaskDispatcher}.
    *
