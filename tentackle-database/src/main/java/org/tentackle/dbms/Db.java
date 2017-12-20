@@ -81,36 +81,36 @@ import org.tentackle.sql.BackendInfo;
 
 
 /**
- * A logical database connection.
+ * A persistence session.
  * <p>
- * Each thread must use its own Db. If threads must share the same db, access to the Db
+ * Each thread must use its own session. If threads must share the same session, access to the session
  * must be synchronized at the application-level!
  * <p>
- * Db connections are an abstraction for a connection between a client
+ * Sessions are an abstraction for a connection between a client
  * and a server, whereas "server" is not necessarily a database server,
- * because Db connections can be either local or remote.<br>
- * A local Db talks to a database backend via a {@link ConnectionManager}
+ * because sessions can be either local or remote.<br>
+ * A local session talks to a database backend via a {@link ConnectionManager}
  * which is responsible for the physical JDBC-connection. However, there
- * is no 1:1 relationship between a Db and a physical connection. This is up
+ * is no 1:1 relationship between a session and a physical connection. This is up
  * to the connection manager.
- * Local Db connections are used in client applications running in 2-tier mode
+ * Local sessions are used in client applications running in 2-tier mode
  * or in application servers.<br>
- * Remote Db connections are connected to a Tentackle application server
+ * Remote sessions are connected to a Tentackle application server
  * via RMI. Client applications running in 3-tier mode (more precise n-tier, with n &ge; 3)
  * use remote connections.<br>
- * With the abstraction of a logical Db connection, Tentackle applications
+ * With the abstraction of a session, Tentackle applications
  * are able to run both in 2- or n-tier mode without a single modification
  * to the source code. It's just a small change in a config file.
  * <p>
  * The configuration is achieved by a property file, which is located
- * by the {@link SessionInfo} passed to the Db.
+ * by the {@link SessionInfo} passed to the session.
  * <p>
- * Local connections can be either a DataSource bound via JNDI or a direct
+ * Local sessions can be either a DataSource bound via JNDI or a direct
  * JDBC connection. JNDI is used in application servers, for example running
  * a JRuby on Rails application from within Glassfish (see tentackle-web).<br>
  * JDBC connections are for standalone 2-tier applications or Tentackle application servers.
  * <br>
- * For local connections via JDBC the file contains at least the following properties:
+ * For local sessions via JDBC the file contains at least the following properties:
  *
  * <pre>
  * driver=jdbc-driver
@@ -121,7 +121,7 @@ import org.tentackle.sql.BackendInfo;
  * url=jdbc:postgresql://gonzo.krake.local/erp
  * </pre>
  *
- * Local connections via JNDI need only the url. The url starts with
+ * Local sessions via JNDI need only the url. The url starts with
  * "<tt>jndi:</tt>" and is followed by the JNDI-name. The optional database backend type is
  * only necessary if it cannot be determined from the connection's metadata.
  *
@@ -132,7 +132,7 @@ import org.tentackle.sql.BackendInfo;
  * url=jndi:jdbc/erpPool
  * </pre>
  *
- * For remote connections only one line is required at minimum:
+ * For remote sessions only one line is required at minimum:
  *
  * <pre>
  * url=rmi://hostname[:port]/service
@@ -164,7 +164,7 @@ import org.tentackle.sql.BackendInfo;
  *  </li>
  * </ul>
  * <p>
- * For local connections via JDBC or JNDI:
+ * For local sessions via JDBC or JNDI:
  * <ul>
  *  <li>
  *  Each object persistable to the database (database object for short)
@@ -177,8 +177,8 @@ import org.tentackle.sql.BackendInfo;
  *  </li>
  * </ul>
  * <p>
- * For remote connections, the properties (session info) will be sent to the server.
- * This can be used to set some application specific options or to tune the connection.
+ * For remote sessions, the properties (session info) will be sent to the server.
+ * This can be used to set some application specific options or to tune the session.
  *
  * @author harald
  */
@@ -242,32 +242,32 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * We keep an internal set of all open Db-sessions via WeakReferences, so the
-   * Db-session still will be finalized when the Db isn't used anymore.
-   * The set of Db-sessions is used to enhance the diagnostic utilities.
+   * We keep an internal set of all open sessions via WeakReferences, so the
+   * session still will be finalized when the session isn't used anymore.
+   * The set of sessions is used to enhance the diagnostic utilities.
    */
-  private static final Set<WeakReference<Db>> DB_SET =
+  private static final Set<WeakReference<Db>> SESSIONS =
           Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 
   /**
-   * Registers this Db.
+   * Registers this session.
    */
-  private void registerDb() {
-    DB_SET.add(new WeakReference<>(this));
+  private void registerSession() {
+    SESSIONS.add(new WeakReference<>(this));
   }
 
 
   /**
-   * Unregisters this Db.
+   * Unregisters this session.
    * <p>
-   * Also cleans up the set by removing unreferenced or closed db sessions.
+   * Also cleans up the set by removing unreferenced or closed sessions.
    */
-  private void unregisterDb() {
-    for (Iterator<WeakReference<Db>> iter = DB_SET.iterator(); iter.hasNext(); ) {
+  private void unregisterSession() {
+    for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
       WeakReference<Db> ref = iter.next();
       Db refDb = ref.get();
-      // if closed or unreferenced or the db to remove
+      // if closed or unreferenced or the session to remove
       if (refDb == null || !refDb.isOpen() || refDb == this) {   // == is okay here
         iter.remove();
       }
@@ -276,13 +276,13 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets a list of all currently open Db sessions.
+   * Gets a list of all currently open sessions.
    *
-   * @return the list of open Db sessions
+   * @return the list of open sessions
    */
-  public static Collection<Db> getAllOpenDb() {
+  public static Collection<Db> getAllOpenSessions() {
     List<Db> dbList = new ArrayList<>();
-    for (Iterator<WeakReference<Db>> iter = DB_SET.iterator(); iter.hasNext(); ) {
+    for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
       WeakReference<Db> ref = iter.next();
       Db refDb = ref.get();
       if (refDb != null && refDb.isOpen()) {
@@ -298,21 +298,21 @@ public class Db implements Session, Cloneable {
 
   private static final AtomicInteger INSTANCE_COUNTER = new AtomicInteger(); // global instance counter
 
-  // for RMI remote connections (all Db)
+  // for RMI remote connections
   private static Class<?>[]         remoteClasses;        // the classes Objects for the delegates provide service for
   private static int                nextDelegateId;       // next handle per class
 
-  private int instanceNumber;                             // each Db gets a unique instance number
+  private int instanceNumber;                             // each session gets a unique instance number
   private BackendInfo backendInfo;                        // the backend information
   private String idConfig;                                // configuration of IdSource
   private final ConnectionManager conMgr;                 // connection manager for local connections
-  private int conId;                                      // local connection ID
-  private int groupConId;                                 // ID of the connection group, 0 = none
-  private ManagedConnection con;                          // connection if attached, null = detached
+  private int sessionId;                                  // local session ID
+  private int sessionGroupId;                             // ID of the session group, 0 = none
+  private volatile ManagedConnection con;                 // connection if attached, null = detached
   private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool
   private int poolId;                                     // the poolid if dbPool != null
   private SessionInfo sessionInfo;                        // user information
-  private Db clonedFromDb;                                // the original db if this is a cloned one
+  private Db clonedFromDb;                                // the original session if this is a cloned one
   private volatile boolean autoCommit;                    // true if autocommit on, else false
   private boolean countModificationAllowed = true;        // allow modification count
   private boolean logModificationAllowed = true;          // allow modification log
@@ -330,7 +330,7 @@ public class Db implements Session, Cloneable {
   private int immediatelyCommitted;                       // txLevel > 0 if a transaction has been committed by commitImmediately (only for local Db)
   private volatile boolean alive;                         // true = connection is still in use, false = connection has timed out
   private long keepAliveInterval;                         // the auto keep alive interval in ms, 0 = no keep alive
-  private boolean crashed;                                // true = db is closed because it is treated as crashed
+  private boolean crashed;                                // true = session is closed because it is treated as crashed
   private volatile Thread ownerThread;                    // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
   private Map<String,Serializable> applicationProperties; // application-specific properties
@@ -347,7 +347,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Creates an instance of a logical db connection.
+   * Creates an instance of a logical session.
    *
    * @param conMgr the connection manager if local connection (ignored if remote)
    * @param sessionInfo user information
@@ -410,7 +410,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the unique instance number of this Db.
+   * Gets the unique instance number of this session.
    *
    * @return the instance number
    */
@@ -421,10 +421,10 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the db name.<br>
+   * Gets the session name.<br>
    * Consists of the instance number, the connection id and the connection group id.
    *
-   * @return the db name
+   * @return the session name
    */
   @Override
   public String getName() {
@@ -432,10 +432,10 @@ public class Db implements Session, Cloneable {
     buf.append("Db");
     buf.append(instanceNumber);
     buf.append('c');
-    buf.append(conId);
-    if (groupConId > 0) {
+    buf.append(sessionId);
+    if (sessionGroupId > 0) {
       buf.append('g');
-      buf.append(groupConId);
+      buf.append(sessionGroupId);
     }
     return  buf.toString();
   }
@@ -459,9 +459,10 @@ public class Db implements Session, Cloneable {
     }
     buf.append(':');
     buf.append(backendInfo);
-    if (con != null) {
+    ManagedConnection mc = con;
+    if (mc != null) {
       buf.append('[');
-      buf.append(con.getName());
+      buf.append(mc.getName());
       buf.append(']');
     }
     return buf.toString();
@@ -470,13 +471,13 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Compares two db instances.<br>
+   * Compares two session instances.<br>
    * We simply use the unique instanceNumber.<br>
    * Because the instanceNumber is unique, we don't need to override equals/hash.
-   * In fact, Db must not override equals because it may be used in WeakHashMaps, where
+   * In fact, we must not override equals because it may be used in WeakHashMaps, where
    * the object reference counts, for example.
    *
-   * @param session the session to compare this db with
+   * @param session the session to compare this session with
    * @return  a negative integer, zero, or a positive integer as this object
    *          is less than, equal to, or greater than the specified object.
    */
@@ -487,7 +488,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the connection manager for this Db.
+   * Gets the connection manager for this session.
    *
    * @return the connection manager
    */
@@ -497,10 +498,10 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Sets the pool manager.
-   * The method is invoked from a SessionPool when the Db is created.
+   * Sets the pool manager.<br>
+   * The method is invoked from a SessionPool when the session is created.
    *
-   * @param sessionPool the db pool, null = not pooled
+   * @param sessionPool the session pool, null = not pooled
    */
   public void setPool(SessionPool sessionPool) {
     this.dbPool = sessionPool;
@@ -509,7 +510,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the pool manager.
    *
-   * @return the db pool, null = not pooled
+   * @return the session pool, null = not pooled
    */
   @Override
   public SessionPool getPool() {
@@ -518,7 +519,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Checks whether this Db is pooled.
+   * Checks whether this session is pooled.
    *
    * @return true if pooled, false if not pooled
    */
@@ -529,10 +530,10 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Sets the pool id.
-   * The method is invoked from a SessionPool when the Db is used in a pool.
+   * Sets the pool id.<br>
+   * The method is invoked from a SessionPool when the session is used in a pool.
    *
-   * @param poolId the ID given by the pool (&gt; 0), 0 = not used (free Db), -1 if removed from pool
+   * @param poolId the ID given by the pool (&gt; 0), 0 = not used (free session), -1 if removed from pool
    */
   public void setPoolId(int poolId) {
     this.poolId = poolId;
@@ -549,7 +550,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Returns whether Db is readonly.
+   * Returns whether session is readonly.
    *
    * @return true if readonly.
    */
@@ -558,7 +559,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Sets the db to readonly.
+   * Sets the session to readonly.
    * <p>
    * If a database is readonly, no updates, deletes or inserts
    * are possible. Any attempt to do so results in a persistence exception.
@@ -599,7 +600,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Asserts db is not used by another thread than the ownerthread.
+   * Asserts session is not used by another thread than the ownerthread.
    */
   public void assertOwnerThread() {
     Thread ownrThread = getOwnerThread();
@@ -607,7 +608,7 @@ public class Db implements Session, Cloneable {
       Thread currentThread = Thread.currentThread();
       if (ownrThread != currentThread && !Scavenger.isScavenger(currentThread)) {
         throw new PersistenceException(this,
-                                       "illegal attempt to use Db owned by " + ownrThread +
+                                       "illegal attempt to use session owned by " + ownrThread +
                                        " by " + currentThread.getName());
       }
     }
@@ -622,7 +623,7 @@ public class Db implements Session, Cloneable {
       if (!isOpen()) {
         if (getPool() != null) {
           throw new SessionClosedException(this, "database session already closed by pool " + getPool() +
-                  "! application still holding a reference to this Db after returning it to the pool!");
+                  "! application still holding a reference to this session after returning it to the pool!");
         }
         throw new SessionClosedException(this, "database session is closed");
       }
@@ -668,7 +669,7 @@ public class Db implements Session, Cloneable {
    */
   public void assertNotRemote() {
     if (isRemote()) {
-      throw new PersistenceException(this, "operation not allowed for remote db connections");
+      throw new PersistenceException(this, "operation not allowed for remote sessions");
     }
   }
 
@@ -677,7 +678,7 @@ public class Db implements Session, Cloneable {
    */
   public void assertRemote() {
     if (!isRemote()) {
-      throw new PersistenceException(this, "operation not allowed for local db connections");
+      throw new PersistenceException(this, "operation not allowed for local sessions");
     }
   }
 
@@ -699,9 +700,9 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Checks whether the db connection is still in use.
+   * Checks whether the session is still in use.
    * Whenever a {@link StatementWrapper} or {@link PreparedStatementWrapper} is used
-   * (i.e executeQuery or executeUpdate), the db connection is set to be alive.
+   * (i.e executeQuery or executeUpdate), the session is set to be alive.
    * Some other thread may clear this flag regulary and check whether it has
    * been set in the meantime.
    *
@@ -722,7 +723,7 @@ public class Db implements Session, Cloneable {
   }
 
   /**
-   * Sets the db connection's alive state.
+   * Sets the session's alive state.
    *
    * @param alive is true to signal it's alive, false to clear
    */
@@ -979,11 +980,11 @@ public class Db implements Session, Cloneable {
         rdel = rses.getDbRemoteDelegate();
 
         // get the remote connection id
-        conId = rdel.getSessionId();
+        sessionId = rdel.getSessionId();
       }
       else  {
         // direct connection to database
-        conId = conMgr.login(this);
+        sessionId = conMgr.login(this);
       }
 
       // fresh connections are always in autoCommit mode
@@ -995,13 +996,13 @@ public class Db implements Session, Cloneable {
         sessionInfo.setSince(System.currentTimeMillis());
       }
 
-      alive = true;   // all db start alive!
+      alive = true;   // all sedsions start alive!
 
       if (!isCloned()) {
-        LOGGER.info("connection {0} established", this);
+        LOGGER.info("session {0} opened", this);
       }
 
-      registerDb();
+      registerSession();
     }
 
     // warning causes
@@ -1024,7 +1025,7 @@ public class Db implements Session, Cloneable {
       }
     }
     clearMembers();
-    unregisterDb();
+    unregisterSession();
     open();
   }
 
@@ -1097,91 +1098,75 @@ public class Db implements Session, Cloneable {
   @Override
   public void close() {
     if (isOpen()) {
-      if (Scavenger.isScavenger(Thread.currentThread())) {
-        crashed = true;
-      }
-      if (crashed) {
-        // non-blocking close to cleanup crashed session
-        closeImpl();
-      }
-      else {
-        // regular close
-        synchronized (this) {
-          closeImpl();
-        }
-      }
-    }
-  }
-
-  private void closeImpl() {
-    try {
-      for (SessionCloseHandler closeHandler : closeHandlers) {
-        try {
-          closeHandler.beforeClose(this);
-        }
-        catch (Exception ex) {
-          LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
-        }
-      }
-      for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-        try {
-          closeHandler.beforeClose(this);
-        }
-        catch (Exception ex) {
-          LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
-        }
-      }
-
-      if (isRemote()) {
-        if (rcon != null && rses != null) {
-          // don't rcon.logout if crashed, because connection may block.
-          // remote side must timeout anyway. (or has already timed out)
-          if (!crashed) {
-            rcon.logout(rses);
+      try {
+        for (SessionCloseHandler closeHandler : closeHandlers) {
+          try {
+            closeHandler.beforeClose(this);
           }
-          LOGGER.info("remote db {0} closed", this);
-        }
-      }
-      else {
-        if (conId > 0) {
-          ManagedConnection c = con;
-          if (c != null) {    // if attached
-            try {
-              c.closePreparedStatements(true);   // cleanup all pending statements
-            }
-            catch (Exception ex) {
-              LOGGER.warning("closing prepared statements failed for " + this, ex);
-            }
+          catch (Exception ex) {
+            LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
           }
-          conMgr.logout(this);
-          LOGGER.info("db {0} closed", this);
         }
-      }
+        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+          try {
+            closeHandler.beforeClose(this);
+          }
+          catch (Exception ex) {
+            LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
+          }
+        }
 
-      for (SessionCloseHandler closeHandler : closeHandlers) {
-        try {
-          closeHandler.afterClose(this);
+        if (isRemote()) {
+          if (rcon != null && rses != null) {
+            // don't rcon.logout if crashed, because connection may block.
+            // remote side must timeout anyway. (or has already timed out)
+            if (!crashed) {
+              rcon.logout(rses);
+            }
+            LOGGER.info("remote session {0} closed", this);
+          }
         }
-        catch (Exception ex) {
-          LOGGER.warning("closehandler.afterClose failed for " + this, ex);
+        else {
+          if (sessionId > 0) {
+            ManagedConnection c = con;
+            if (c != null) {    // if attached
+              try {
+                c.closePreparedStatements(true);   // cleanup all pending statements
+              }
+              catch (Exception ex) {
+                LOGGER.warning("closing prepared statements failed for " + this, ex);
+              }
+            }
+            conMgr.logout(this);
+            LOGGER.info("session {0} closed", this);
+          }
+        }
+
+        for (SessionCloseHandler closeHandler : closeHandlers) {
+          try {
+            closeHandler.afterClose(this);
+          }
+          catch (Exception ex) {
+            LOGGER.warning("closehandler.afterClose failed for " + this, ex);
+          }
+        }
+        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+          try {
+            closeHandler.afterClose(this);
+          }
+          catch (Exception ex) {
+            LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
+          }
         }
       }
-      for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-        try {
-          closeHandler.afterClose(this);
-        }
-        catch (Exception ex) {
-          LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
-        }
+      catch (Exception e) {
+        throw new PersistenceException(this, "closing session failed", e);
       }
-    }
-    catch (Exception e) {
-      throw new PersistenceException(this, "closing db failed", e);
-    }
-    finally {
-      // whatever happened: make it unusable
-      clearMembers();   // clear members for re-open
-      unregisterDb();
+      finally {
+        // whatever happened: make it unusable
+        clearMembers();   // clear members for re-open
+        unregisterSession();
+      }
     }
   }
 
@@ -1195,13 +1180,13 @@ public class Db implements Session, Cloneable {
   protected void finalize() throws Throwable {
     try {
       if (isOpen()) {
-        LOGGER.warning("closing unreferenced open db: " + this);
-        closeImpl();
+        LOGGER.warning("closing unreferenced open session: " + this);
+        close();
       }
     }
     catch (Exception ex) {
        try {
-        LOGGER.severe("closing unreferenced db '" + this + "' failed in finalizer");
+        LOGGER.severe("closing unreferenced session '" + this + "' failed in finalizer");
       }
       catch (Exception ex2) {
         // don't stop finalization if just the logging failed
@@ -1216,7 +1201,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Sets the crash flag.<br>
-   * The db may be marked as crashed to reduce logging of succeeding errors.
+   * The session may be marked as crashed to reduce logging of succeeding errors.
    *
    * @param crashed the crash flag
    */
@@ -1239,7 +1224,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the connection state.
    *
-   * @return true if db is open, else false
+   * @return true if session is open, else false
    */
   @Override
   public boolean isOpen() {
@@ -1247,7 +1232,7 @@ public class Db implements Session, Cloneable {
       return rdel != null;
     }
     else  {
-      return conId > 0;
+      return sessionId > 0;
     }
   }
 
@@ -2163,7 +2148,7 @@ public class Db implements Session, Cloneable {
    * This method is package scope and invoked whenever a connection
    * is attached or detached to/from a Db by the ConnectionManager.
    */
-  synchronized void setConnection(ManagedConnection con) {
+  void setConnection(ManagedConnection con) {
     this.con = con;
   }
 
@@ -2173,26 +2158,30 @@ public class Db implements Session, Cloneable {
    *
    * @return the connection, null = not attached
    */
-  synchronized ManagedConnection getConnection() {
+  ManagedConnection getConnection() {
     return con;
   }
 
+
   /**
-   * Gets the current connection.<br>
-   * Same as {@link #getConnection() } but unsynchronized.
+   * Asserts that that the connection is attached and returns it.
    *
-   * @return the connection, null = not attached
+   * @return the attached connection
    */
-  public ManagedConnection getConnectionUnsafe() {
-    return con;
+  ManagedConnection connection() {
+    ManagedConnection c = con;
+    if (c == null) {
+      throw new PersistenceException(this, "not attached");
+    }
+    return c;
   }
 
 
   /**
-   * Detach the db.<br>
+   * Detach the session.<br>
    * Used in execption handling to cleanup all pending statements and result sets.
    */
-  public synchronized void forceDetached() {
+  public void forceDetached() {
     if (con != null) {
       conMgr.forceDetach(this);
     }
@@ -2200,14 +2189,23 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the connection id.
-   * This is a unique number assigned to this Db by the ConnectionManager.
+   * Gets the session id.
+   * This is a unique number assigned to this session by the ConnectionManager.
    *
-   * @return the connection id, 0 = Db is new and not connected so far
+   * @return the session id, 0 = session is new and not connected so far
    */
   @Override
   public int getSessionId() {
-    return conId;
+    return sessionId;
+  }
+
+  /**
+   * Clears the session ID.<br>
+   * Used by connection managers only.
+   * Package scope!
+   */
+  void clearSessionId() {
+    sessionId = 0;
   }
 
 
@@ -2232,15 +2230,15 @@ public class Db implements Session, Cloneable {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    if (number != groupConId) {
+    if (number != sessionGroupId) {
       if (number != 0) {
         LOGGER.info("{0} joined group {1}", this, number);
       }
       else  {
-        LOGGER.info("{0} removed from group {1}", this, groupConId);
+        LOGGER.info("{0} removed from group {1}", this, sessionGroupId);
       }
     }
-    groupConId = number;
+    sessionGroupId = number;
   }
 
 
@@ -2255,7 +2253,7 @@ public class Db implements Session, Cloneable {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    return groupConId;
+    return sessionGroupId;
   }
 
 
@@ -2267,7 +2265,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        groupConId = rdel.groupWith(sessionId);
+        sessionGroupId = rdel.groupWith(sessionId);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2275,75 +2273,61 @@ public class Db implements Session, Cloneable {
     }
     else  {
 
-      if (groupConId > 0 && sessionId != groupConId) {
-        throw new PersistenceException(this, "session to join group " + sessionId + " already belongs to group " + groupConId);
+      if (sessionGroupId > 0 && sessionId != sessionGroupId) {
+        throw new PersistenceException(this,
+                "session to join group " + sessionId + " already belongs to group " + sessionGroupId);
       }
       setSessionGroupId(sessionId);
-      for (WeakReference<Db> dbRef: DB_SET) {
+      for (WeakReference<Db> dbRef: SESSIONS) {
         Db db = dbRef.get();
-        if (db != null && db.conId == sessionId) {
-          if (db.groupConId > 0 && sessionId != db.groupConId) {
-            throw new PersistenceException(db, "session already belongs to group " + db.groupConId);
+        if (db != null && db.sessionId == sessionId) {
+          if (db.sessionGroupId > 0 && sessionId != db.sessionGroupId) {
+            throw new PersistenceException(db, "session already belongs to group " + db.sessionGroupId);
           }
           db.setSessionGroupId(sessionId);
           break;
         }
       }
     }
-    return groupConId;
+    return sessionGroupId;
   }
 
 
   /**
-   * Attaches the connection.
+   * Attaches the session.
    * <p>
    * Notice: package scope!
    */
-  synchronized void attach() {
+  void attach() {
     assertOpen();
     assertOwnerThread();
     if (conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
     }
     if (isPooled() && getPoolId() == 0) {
-      // no SessionPool.getDb() on this db: possible closed RemoteSession?
-      throw new PersistenceException(this, "illegal attempt to attach a pooled Db which is not in use");
+      throw new PersistenceException(this, "illegal attempt to attach a pooled session which is not in use");
     }
     conMgr.attach(this);
   }
 
   /**
-   * Detaches the connection.
+   * Detaches the session.
    * <p>
    * Notice: package scope!
    */
-  synchronized void detach() {
-    if (conId > 0) {
+  void detach() {
+    if (sessionId > 0) {
       assertOwnerThread();
       conMgr.detach(this);
     }
-    // else: Db is already closed (may happen during cleanup)
-  }
-
-
-  /**
-   * Asserts that that the connection is attached and returns it.
-   *
-   * @return the attached connection
-   */
-  ManagedConnection connection() {
-    ManagedConnection c = con;
-    if (c == null) {
-      throw new PersistenceException(this, "not attached");
-    }
-    return c;
+    // else: session is already closed (may happen during cleanup)
   }
 
 
   /**
    * Sets the exclusive owner thread.
    * <p>
-   * Allows to detect other threads accidently using this db.<br>
+   * Allows to detect other threads accidently using this session.<br>
    * Caution: don't forget to clear!
    *
    * @param ownerThread the owner thread, null to clear
@@ -2369,8 +2353,8 @@ public class Db implements Session, Cloneable {
   /**
    * Creates a non-prepared statement.
    * <p>
-   * Non-prepared statements attach the db as soon as they
-   * are instatiated! The db is detached after executeUpdate or after
+   * Non-prepared statements attach the session as soon as they
+   * are instatiated! The session is detached after executeUpdate or after
    * executeQuery when its result set is closed.
    *
    * @param resultSetType a result set type; one of
@@ -2382,7 +2366,7 @@ public class Db implements Session, Cloneable {
    *        <code>ResultSet.CONCUR_UPDATABLE</code>
    * @return the statement wrapper
    */
-  public synchronized StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
+  public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
     try {
@@ -2428,8 +2412,8 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the prepared statement.
    * <p>
-   * Getting the prepared statement will attach the db to a connection.
-   * The db will be detached after executeUpdate() or executeQuery when its
+   * Getting the prepared statement will attach the session to a connection.
+   * The session will be detached after executeUpdate() or executeQuery when its
    * result set is closed.
    *
    * @param stmtKey the statement key
@@ -2438,10 +2422,10 @@ public class Db implements Session, Cloneable {
    * @param resultSetConcurrency one of ResultSet.CONCUR_...
    * @param sqlSupplier the SQL supplier
    *
-   * @return the prepared statement for this db
+   * @return the prepared statement for this session
    */
-  public synchronized PreparedStatementWrapper getPreparedStatement(
-          StatementKey stmtKey, boolean alwaysPrepare, int resultSetType, int resultSetConcurrency, Supplier<String> sqlSupplier) {
+  public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare, int resultSetType,
+                                                       int resultSetConcurrency, Supplier<String> sqlSupplier) {
     assertNotRemote();
     attach();
     try {
@@ -2465,7 +2449,7 @@ public class Db implements Session, Cloneable {
    * @param alwaysPrepare true if always do a physical prepare
    * @param sqlSupplier the SQL supplier
    *
-   * @return the prepared statement for this db
+   * @return the prepared statement for this session
    */
   public PreparedStatementWrapper getPreparedStatement(StatementKey stmtKey, boolean alwaysPrepare,
                                                        Supplier<String> sqlSupplier) {
@@ -2476,17 +2460,17 @@ public class Db implements Session, Cloneable {
   /**
    * Creates a one-shot prepared statement.
    * <p>
-   * Getting the prepared statement will attach the db to a connection.
-   * The db will be detached after executeUpdate() or executeQuery() when its
+   * Getting the prepared statement will attach the session to a connection.
+   * The session will be detached after executeUpdate() or executeQuery() when its
    * result set is closed.
    *
    * @param sql the SQL code
    * @param resultSetType one of ResultSet.TYPE_...
    * @param resultSetConcurrency one of ResultSet.CONCUR_...
    *
-   * @return the prepared statement for this db
+   * @return the prepared statement for this session
    */
-  public synchronized PreparedStatementWrapper createPreparedStatement(String sql, int resultSetType, int resultSetConcurrency) {
+  public PreparedStatementWrapper createPreparedStatement(String sql, int resultSetType, int resultSetConcurrency) {
     assertNotRemote();
     attach();
     try {
@@ -2506,7 +2490,7 @@ public class Db implements Session, Cloneable {
    *
    * @param sql the SQL code
    *
-   * @return the prepared statement for this db
+   * @return the prepared statement for this session
    */
   public PreparedStatementWrapper createPreparedStatement(String sql) {
     return Db.this.createPreparedStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
@@ -2516,7 +2500,7 @@ public class Db implements Session, Cloneable {
   /**
    * Sets autoCommit feature.
    * <p>
-   * The method is provided for local db connections only.
+   * The method is provided for local sessions only.
    * Applications must use begin/commit instead.
    * Furthermore, the database will be attached and detached.
    * <p>
@@ -2578,7 +2562,7 @@ public class Db implements Session, Cloneable {
   /**
    * Sets the userInfo.
    * This will *NOT* send the session to the remote server
-   * if this is a remote db.
+   * if this is a remote session.
    *
    * @param sessionInfo the session info
    */
@@ -2604,12 +2588,12 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * clears the db local data for close/clone
+   * clears the session's local data for close/clone
    */
   private void clearMembers() {
     if (isRemote()) {
-      // cloning a remote connection involves creating an entire new connection via open()!
-      // notice that a remote db is always open (otherwise it wouldn't be remote ;-))
+      // cloning a remote session involves creating an entire new session via open()!
+      // notice that a remote session is always open (otherwise it wouldn't be remote ;-))
       rdel               = null;
       rses               = null;
       rcon               = null;
@@ -2621,8 +2605,8 @@ public class Db implements Session, Cloneable {
       transaction         = null;
     }
 
-    groupConId  = 0;
-    conId       = 0;
+    sessionGroupId  = 0;
+    sessionId       = 0;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
@@ -2633,12 +2617,12 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Clones a logical connection.
+   * Clones a logical session.
    * <p>
-   * Connections may be cloned, which results in a new connection using
-   * the cloned userinfo of the original connection.
-   * If the old db is already open, the new db will be opened as well.
-   * If the old db is closed, the cloned db will be closed.
+   * Connections may be cloned, which results in a new session using
+   * the cloned userinfo of the original session.
+   * If the old session is already open, the new session will be opened as well.
+   * If the old session is closed, the cloned session will be closed.
    *
    * @return the cloned Db
    */
@@ -2666,7 +2650,7 @@ public class Db implements Session, Cloneable {
           if (newDb.sessionInfo != null) {
             newDb.getSessionInfo().setSince(System.currentTimeMillis());
           }
-          newDb.conId = conMgr.login(newDb);
+          newDb.sessionId = conMgr.login(newDb);
           // new connections always start with autocommit on!
           newDb.autoCommit = true;
           newDb.transaction = null;
@@ -2674,9 +2658,9 @@ public class Db implements Session, Cloneable {
         }
       }
 
-      LOGGER.info("connection {0} cloned from {1}, state={2}", newDb, this, newDb.isOpen() ? "open" : "closed");
+      LOGGER.info("session {0} cloned from {1}, state={2}", newDb, this, newDb.isOpen() ? "open" : "closed");
 
-      newDb.registerDb();
+      newDb.registerSession();
       return newDb;
     }
     catch (Exception e)  {
@@ -2686,9 +2670,9 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the original db if this db is cloned.
+   * Gets the original session if this session is cloned.
    *
-   * @return the orginal db, null if this db is not cloned.
+   * @return the orginal session, null if this session is not cloned.
    */
   public Db getClonedFromDb() {
     return clonedFromDb;
@@ -2707,7 +2691,7 @@ public class Db implements Session, Cloneable {
   /**
    * Gets the cloned state.
    *
-   * @return true if this db is cloned
+   * @return true if this session is cloned
    */
   public boolean isCloned() {
     return clonedFromDb != null;
@@ -2755,7 +2739,7 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Gets the type of the logical connection.
+   * Gets the type of the logical session.
    *
    * @return true if remote, false if local
    */
@@ -2773,8 +2757,8 @@ public class Db implements Session, Cloneable {
   /**
    * Prepares a {@link RemoteDelegate}.
    * <p>
-   * The delegates for the AbstractDbObject-classes "live" in the db, i.e. the remote session.
-   * Thus, delegates are unique per class AND db!
+   * The delegates for the AbstractDbObject-classes "live" in the session, i.e. the remote session.
+   * Thus, delegates are unique per class AND session!
    * In order for the AbstractDbObject-derived classes to quickly map to the corresponding delegate,
    * the delegates get a unique handle, i.e. an index to an array of delegates, which in
    * turn is unique among ALL sessions.
@@ -2873,7 +2857,7 @@ public class Db implements Session, Cloneable {
 
   /**
    * Defines whether objects are allowed to count modifications.
-   * Useful to turn off modcount for a special (temporary) connection doing
+   * Useful to turn off modcount for a special (temporary) session doing
    * certain tasks that should not be counted.
    *
    * @param countModificationAllowed true if allowed, false if turned off
@@ -2895,9 +2879,9 @@ public class Db implements Session, Cloneable {
 
   /**
    * Sets the modification allowed state.
-   * Useful to turn off modlog for a special (temporary) connection doing
+   * Useful to turn off modlog for a special (temporary) session doing
    * certain tasks that should not be logged.
-   * The state will be handed over to the remote db-connection as well.
+   * The state will be handed over to the remote session as well.
    *
    * @param logModificationAllowed true to allow, false to deny
    */
@@ -2932,7 +2916,7 @@ public class Db implements Session, Cloneable {
    * In deferred mode the {@link ModificationLog}s are not written to the database.
    * Instead they are kept in memory and can be processed later via
    * {@link #popModificationLogsOfTransaction()}.
-   * The state will be handed over to the remote db-connection as well.
+   * The state will be handed over to the remote session as well.
    * <p>
    * Note: the deferred state will be reset to false after each begin/commit/rollback.
    * <p>
