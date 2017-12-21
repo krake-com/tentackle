@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc.table;
 
-import com.sun.javafx.scene.control.skin.TableViewSkin;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -35,6 +33,8 @@ import javafx.scene.Scene;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.skin.TableViewSkin;
+import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.transform.Scale;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -310,16 +310,31 @@ public class TablePrinter extends AbstractFxController {
   private int getVisibleRowCount() {
     VirtualFlow<?> flow = (VirtualFlow<?>) ((TableViewSkin<?>) tableView.getSkin()).getChildren().get(1);
     int start = 0;
-    int end = 0;
-    IndexedCell<?> cell = flow.getFirstVisibleCellWithinViewPort();
+    IndexedCell<?> cell = flow.getFirstVisibleCell();
     if (cell != null) {
       start = cell.getIndex();
     }
-    cell = flow.getLastVisibleCellWithinViewPort();
+    cell = flow.getLastVisibleCell();
+    int count = -1;
     if (cell != null) {
-      end = cell.getIndex();
+      int end = cell.getIndex();
+      count = end - start;
+      if (end >= flow.getCellCount() - 1) {
+        // last cell:
+        // in FX9 VirtualFlow.getLastVisibleCellWithinViewport is package scope
+        // we use scrollTo to test whether last cell is within viewport
+        tableView.scrollTo(end);
+        cell = flow.getFirstVisibleCell();
+        if (cell != null && cell.getIndex() == start) {
+          // last cell completely visible
+          count++;
+        }
+        else {
+          tableView.scrollTo(start);
+        }
+      }
     }
-    return end - start + 1;
+    return count;
   }
 
 
