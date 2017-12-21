@@ -25,6 +25,7 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
+import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.rdc.table.TablePopup;
@@ -82,7 +83,7 @@ public class SessionsView extends AbstractFxController {
     killButton.setOnAction(e -> kill());
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
 
-    popup = new TablePopup<>(sessionsNode, "Sessions", false);
+    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", false, resources.getString("Sessions"));
 
     TableConfiguration<SessionData> config = createTableConfiguration();
     config.getBinder().bind();

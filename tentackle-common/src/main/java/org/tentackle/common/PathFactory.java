@@ -55,7 +55,6 @@ public interface PathFactory<P extends Path<P,E>, E> {
   /**
    * Merge paths to remove redundant path segments.<br>
    * The returned consolidated paths form a hierarchical graph.
-   * <p>
    * <pre>
    * Example:
    *

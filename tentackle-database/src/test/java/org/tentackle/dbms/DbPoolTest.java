@@ -30,7 +30,7 @@ import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 /**
- * Db pool test.
+ * Session pool and connection manager test.
  *
  * @author harald
  */
@@ -79,7 +79,7 @@ public class DbPoolTest {
     SessionInfo sessionInfo = new DefaultSessionInfo();
     BackendInfo backendInfo = new BackendInfo(sessionInfo.getProperties());
     ConnectionManager conMgr = new MpxConnectionManager("mpx", backendInfo,
-            NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS, 720, 2160);
+            NUM_THREADS, 1, NUM_THREADS / 8, 1, NUM_THREADS / 8, NUM_THREADS / 2, 720, 2160);
     pool = new DefaultDbPool("default", conMgr, sessionInfo, 8, 2, 4, conMgr.getMaxSessions(), 60, 0);
   }
 
@@ -94,7 +94,7 @@ public class DbPoolTest {
     }
 
     try {
-      Thread.sleep(30000);
+      Thread.sleep(30000);    // give'm half a minute to run at full speed...
     }
     catch (InterruptedException ex) {
       Reporter.log(ex.getMessage() + "<br/>");

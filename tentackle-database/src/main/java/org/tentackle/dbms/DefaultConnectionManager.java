@@ -293,9 +293,14 @@ public class DefaultConnectionManager implements ConnectionManager {
     int id = session.getSessionId();
     int index = convertConnectionIdToIndex(id);
     removeDb(index);
-    ManagedConnection con = removeConnection(index);
-    LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, id);
-    con.close();  // physically close the removed connection
+    try {
+      ManagedConnection con = removeConnection(index);
+      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, id);
+      con.close();  // physically close the removed connection
+    }
+    finally {
+      session.clearSessionId();
+    }
   }
 
 

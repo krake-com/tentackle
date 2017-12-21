@@ -86,15 +86,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   public PersistentObjectClassVariables<? super T, ? super P> topSuperClassVariables;
 
-  /**
-   * Flag is true to check the security rules for each access to objects of this class.
-   * The rules will be checked in local db access only (i.e. the check will be applied
-   * already at the RMI-side *before* the data is leaving the client!)
-   * Because this check can be somewhat time consuming, it's turned off by default.
-   * The flag cannot be changed at runtime anymore!
-   */
-  public boolean checkSecurity;
-
 
 
   /**
@@ -153,6 +144,17 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   private String effectiveTableAlias;
 
+  /**
+   * Flag is true to check the security rules for each access to objects of this class.
+   * The rules will be checked in local db access only (i.e. the check will be applied
+   * already at the RMI-side *before* the data is leaving the client!)
+   * Because this check can be somewhat time consuming, it's turned off by default.
+   * The flag cannot be changed at runtime anymore!
+   */
+  private boolean securityEnabled;
+  private boolean securityEnabledInitialized;
+
+
 
   /**
    * Constructs a classvariable.<p>
@@ -175,7 +177,6 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
     this.superClassVariables = superClassVariables;
     this.eagerJoins = eagerJoins;
     pdoClassBaseName = ReflectionHelper.getClassBaseName(this.pdoClass);
-    loadMoreProperties();
   }
 
   /**
@@ -282,14 +283,14 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   }
 
 
-  /**
-   * Loads more properties.<br>
-   * Invoked from constructor.
-   */
-  protected void loadMoreProperties() {
-    String prop = getProperty(PROPERTY_CHECKSECURITY);
-    checkSecurity = prop == null ||
-            !(prop.equals("no") || prop.equals("off") || prop.equals("false") || prop.equals("disabled") || prop.equals("0"));
+  public boolean isSecurityEnabled() {
+    if (!securityEnabledInitialized) {
+      String prop = getProperty(PROPERTY_CHECKSECURITY);
+      securityEnabled = prop == null ||
+                        !(prop.equals("no") || prop.equals("off") || prop.equals("false") ||
+                          prop.equals("disabled") || prop.equals("0"));
+    }
+    return securityEnabled;
   }
 
 
@@ -308,7 +309,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public String toString() {
     StringBuilder buf = new StringBuilder(pdoClass.getName());
     buf.append("/").append(super.toString());
-    if (!checkSecurity) {
+    if (!isSecurityEnabled()) {
       buf.append("/*NOSECURITY*");
     }
     return buf.toString();
@@ -383,7 +384,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return false if operation (select) is denied.
    */
   public boolean isReadAllowed(AbstractPersistentObject<?,?> object) {
-    if (checkSecurity) {
+    if (isSecurityEnabled()) {
       Permission readPermission = SecurityFactory.getInstance().getReadPermission();
       if (object.isRootEntity()) {
         return object.isPermissionAccepted(readPermission);
@@ -411,7 +412,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return false if operation is denied
    */
   public boolean isWriteAllowed(AbstractPersistentObject<?,?> object) {
-    return !checkSecurity ||
+    return !isSecurityEnabled() ||
            (object.isRootEntity() &&
             object.isPermissionAccepted(SecurityFactory.getInstance().getWritePermission()));
   }
@@ -426,7 +427,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return false if operation is denied
    */
   public boolean isViewAllowed(AbstractPersistentObject<?,?> object) {
-    if (checkSecurity) {
+    if (isSecurityEnabled()) {
       Permission viewPermission = SecurityFactory.getInstance().getViewPermission();
       if (object.isRootEntity()) {
         return object.isPermissionAccepted(viewPermission);
@@ -450,7 +451,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * @return false if operation is denied
    */
   public boolean isEditAllowed(AbstractPersistentObject<?,?> object) {
-    return !checkSecurity ||
+    return !isSecurityEnabled() ||
            (object.isRootEntity() &&
             object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission()));
   }
@@ -487,7 +488,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   protected boolean checkClassPermission(DomainContext context, Permission permission) {
     try {
-      return !checkSecurity ||
+      return !isSecurityEnabled() ||
              SecurityFactory.getInstance().getSecurityManager().evaluate(context, permission, classId, 0).isAccepted();
     }
     catch (Exception ex) {

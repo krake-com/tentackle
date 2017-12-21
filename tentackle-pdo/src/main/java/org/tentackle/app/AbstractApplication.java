@@ -275,16 +275,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Sets the properties to configure the application.
    * <p>
-   * Must be set before starting the application.<br>
-   * By default the following properties will be honoured:
-   * <ul>
-   * <li>nodbprefs: if defined disables the configuration of the DbPreferences as the Preferences backing store</li>
-   * <li>userprefs: if defined the user-scope preferences are used (with fallback to system-scope if not defined)</li>
-   * <li>secman=...: the java runtime security manager if not the default</li>
-   * <li>nomodthread: if given the modification thread will not be started (but still created!)</li>
-   * <li></li>
-   * <li></li>
-   * </ul>
+   * Must be set before starting the application.
    *
    * @param props the properties to configure the application
    */

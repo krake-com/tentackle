@@ -28,11 +28,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import javafx.application.Platform;
 import javafx.print.PrinterJob;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -264,21 +260,7 @@ public class TableUtilities {
   public void print(FxTableView<?> table, String title) {
     final PrinterJob job = PrinterJob.createPrinterJob();
     if (job != null && job.showPrintDialog(Fx.getStage(table))) {
-      Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
-      SimpleTablePrinter printer = Fx.load(SimpleTablePrinter.class);
-      Scene scene = new Scene(printer.getView());
-      stage.setScene(scene);
-      stage.setOnShown(e -> {
-        printer.print(table,
-                      title == null ? table.getConfiguration().getName() : title,
-                      job, job.getJobSettings().getPageLayout());
-        Platform.runLater(() -> {
-          if (stage.isShowing()) {    // if not closed by the user meanwhile
-            stage.close();
-          }
-        });
-      });
-      stage.showAndWait();
+      TablePrinter.print(table, title, job);
     }
   }
 

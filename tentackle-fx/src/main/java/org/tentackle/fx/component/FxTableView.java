@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import java.io.File;
 import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;

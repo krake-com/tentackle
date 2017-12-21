@@ -5,19 +5,26 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 
-<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.table.TablePrinter">
+<BorderPane fx:id="borderPane" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.table.TablePrinter">
    <top>
-      <Label fx:id="titleLabel" text="Title" BorderPane.alignment="CENTER">
+      <Label fx:id="titleLabel" alignment="CENTER" contentDisplay="CENTER" maxWidth="1.7976931348623157E308" text="Title" textAlignment="CENTER" BorderPane.alignment="CENTER">
          <padding>
             <Insets bottom="10.0" />
-         </padding></Label>
+         </padding>
+      </Label>
    </top>
    <bottom>
-      <Label fx:id="pageLabel" text="Page 1 of X" BorderPane.alignment="CENTER">
-         <padding>
+      <HBox fx:id="bottomLine" BorderPane.alignment="CENTER">
+         <children>
+            <Label fx:id="dateLabel" maxWidth="1.7976931348623157E308" text="xx/xx/xx hh:mm" HBox.hgrow="ALWAYS" />
+            <Label fx:id="pageLabel" text="Page 1 of X" />
+         </children>
+         <HBox.margin>
             <Insets top="10.0" />
-         </padding></Label>
+         </HBox.margin>
+      </HBox>
    </bottom>
    <center>
       <TableView fx:id="tableView" focusTraversable="false" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
@@ -25,9 +32,6 @@
           <TableColumn prefWidth="75.0" text="C1" />
           <TableColumn prefWidth="75.0" text="C2" />
         </columns>
-         <BorderPane.margin>
-            <Insets />
-         </BorderPane.margin>
       </TableView>
    </center>
 </BorderPane>

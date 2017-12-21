@@ -72,6 +72,7 @@ public class TablePopup<S> {
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
   private final boolean noViewSize;             // true if don't set the table view's size
+  private final String title;                   // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
 
@@ -82,11 +83,13 @@ public class TablePopup<S> {
    * @param table the table
    * @param preferencesSuffix the preferences suffix to load/save table preferences
    * @param noViewSize true if don't set the table view's size
+   * @param title the title of the printed table
    */
-  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize) {
+  public TablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize, String title) {
     this.table = table;
     this.preferencesSuffix = preferencesSuffix;
     this.noViewSize = noViewSize;
+    this.title = title;
 
     ContextMenu menu = createContextMenu();
     table.setContextMenu(menu);
@@ -95,12 +98,23 @@ public class TablePopup<S> {
     }
   }
 
+  
   /**
    * Gets the table.
+   *
    * @return the table
    */
   public FxTableView<S> getTable() {
     return table;
+  }
+
+  /**
+   * Gets the printed title.
+   *
+   * @return the title
+   */
+  public String getTitle() {
+    return title;
   }
 
   /**
@@ -158,12 +172,12 @@ public class TablePopup<S> {
 
     MenuItem autoWidthItem = new MenuItem();
     autoWidthItem.setText(FxFxBundle.getString("AUTO WIDTH"));
-    autoWidthItem.setOnAction(e -> FxUtilities.getInstance().resizeColumnsToFitContent(table));
+    autoWidthItem.setOnAction(e -> autoWidth());
     menu.getItems().add(autoWidthItem);
 
     MenuItem printItem = new MenuItem();
     printItem.setText(FxFxBundle.getString("PRINT"));
-    printItem.setOnAction(e -> TableUtilities.getInstance().print(table, null));
+    printItem.setOnAction(e -> print());
     menu.getItems().add(printItem);
 
     MenuItem excelItem = new MenuItem();
@@ -261,6 +275,21 @@ public class TablePopup<S> {
     return menu;
   }
 
+
+  /**
+   * Resizes all columns to fit their content.
+   */
+  public void autoWidth() {
+    FxUtilities.getInstance().resizeColumnsToFitContent(table);
+  }
+
+
+  /**
+   * Prints the table.
+   */
+  public void print() {
+    TableUtilities.getInstance().print(table, title);
+  }
 
 
   /**
@@ -406,6 +435,7 @@ public class TablePopup<S> {
       Fx.error(FxFxBundle.getString("PREFERENCES COULD NOT BE SAVED"), ex);
     }
   }
+
 
   /**
    * Loads the table preferences.

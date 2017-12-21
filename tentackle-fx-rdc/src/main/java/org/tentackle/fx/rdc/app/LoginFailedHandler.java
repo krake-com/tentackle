@@ -96,7 +96,7 @@ public class LoginFailedHandler {
    */
   public void handle(LoginFailedException ex) {
     LOGGER.severe(ex.getMessage(), ex);
-    
+
     if (ex instanceof AlreadyLoggedInException) {
       application.showApplicationStatus(ex.getLocalizedMessage(), 0.0);
     }
@@ -110,7 +110,12 @@ public class LoginFailedHandler {
       });
     }
     else {
-      loginCount++;
+      if (LoginApplication.isAutoLogin(sessionInfo)) {
+        loginCount = 3;
+      }
+      else {
+        loginCount++;
+      }
       switch (loginCount) {
         case 1:
           application.showApplicationStatus(AppFxRdcBundle.getString("LOGIN FAILED! (2 MORE RETRIES)"), 0.0);

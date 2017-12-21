@@ -61,6 +61,7 @@ public class FxTreeViewDelegate extends FxComponentDelegate {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void setViewObject(Object viewObject) {
     component.setRoot((TreeItem) viewObject);
   }

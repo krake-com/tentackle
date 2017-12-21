@@ -183,7 +183,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
 
   /**
-   * The {@link AbstractDbObject} the log belongs to. null = unknown. Speeds up {@link #getDbObject}
+   * The {@link AbstractDbObject} the log belongs to. null = unknown. Speeds up {@link #getObject}
    * in distributed applications (see the poolkeeper framework).
    * <p>
    * If the lazyObject is a PersistentObject, it's getPdo() method will hold the PDO.

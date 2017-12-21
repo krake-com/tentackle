@@ -19,7 +19,8 @@
 
 package org.tentackle.common;
 
-import java.util.ResourceBundle;
+import java.io.IOException;
+import java.util.Properties;
 
 
 /**
@@ -30,18 +31,19 @@ import java.util.ResourceBundle;
 public class Version {
 
   /** the artifact version **/
-  public static final String RELEASE = getBundle().getString("version");
+  public static final String RELEASE = getProperties().getProperty("version", "<no-version>");
 
   /** the build timestamp **/
-  public static final String DATE = getBundle().getString("date");
+  public static final String DATE = getProperties().getProperty("date", "<no-date>");
 
-  /**
-   * Gets the bundle.
-   *
-   * @return the resource bundle
-   */
-  public static ResourceBundle getBundle() {
-    return ResourceBundle.getBundle(Version.class.getName());
+
+  private static Properties getProperties() {
+    try {
+      return FileHelper.loadProperties(Version.class.getName().replace('.', '/'));
+    }
+    catch (IOException iox) {
+      return new Properties();    // avoid NPE
+    }
   }
 
 

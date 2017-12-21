@@ -492,7 +492,7 @@ public class ModelWurblet extends AbstractWurblet {
    *
    * @param relation the relation
    * @return the argument declaration
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   public String createDeclaredArgsForSelectOrDeleteMethod(Relation relation) throws ModelException {
     StringBuilder text = new StringBuilder();

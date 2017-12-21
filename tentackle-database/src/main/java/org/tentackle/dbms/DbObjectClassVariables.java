@@ -20,15 +20,19 @@
 
 package org.tentackle.dbms;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import org.tentackle.common.FileHelper;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 
@@ -42,6 +46,11 @@ import org.tentackle.session.PersistenceException;
  * @author harald
  */
 public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
+
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(DbObjectClassVariables.class);
 
   // all classes register here:
   private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();
@@ -165,11 +174,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final String classBaseName;
 
   /**
-   * class properties.
-   */
-  public Properties properties;
-
-  /**
    * database table name.
    */
   public String tableName;
@@ -287,6 +291,11 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public IdSource idSource;
 
 
+  /**
+   * class properties.
+   */
+  private Properties properties;
+
 
   /**
    * constructs a classvariable.
@@ -305,8 +314,6 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
     classBaseName = ReflectionHelper.getClassBaseName(clazz);
     expirationBacklog = createBacklog();
 
-    loadProperties();
-
     // register and check extension hierarchy
     putVariables(this);
   }
@@ -323,22 +330,29 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * Loads and initially processes the properties.<br>
-   * Invoked from constructor.
+   * Lazily gets the properties.<br>
+   * Loads and initially processes the properties.
    */
-  protected void loadProperties() {
-    // load properties, if any from file
-    // Resourcebundle isn't serializable, but Properties are.
-    properties = new Properties();
-    try {
-      ResourceBundle bundle = ResourceBundle.getBundle(clazz.getName());
-      for (String key: bundle.keySet()) {
-        properties.setProperty(key, bundle.getString(key));
+  public Properties getProperties() {
+    if (properties == null) {
+      // load properties, if any from file or resource
+      String propertiesName = clazz.getName().replace('.', '/');
+      try {
+        properties = FileHelper.loadProperties(propertiesName);
+      }
+      catch (FileNotFoundException nf) {
+        // missing props is okay and default
+      }
+      catch (IOException io) {
+        LOGGER.severe("could not load class variable properties from " + propertiesName, io);
+      }
+      finally {
+        if (properties == null) {
+          properties = new Properties();
+        }
       }
     }
-    catch (Exception e) {
-      // missing props is okay
-    }
+    return properties;
   }
 
 
@@ -528,7 +542,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the property value
    */
   public String getProperty(String key) {
-    return properties.getProperty(key);
+    return getProperties().getProperty(key);
   }
 
   /**
@@ -539,7 +553,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * @return the old property value, null if new
    */
   public String putProperty(String key, String value) {
-    return (String) properties.put(key, value);
+    return (String) getProperties().put(key, value);
   }
 
 
