@@ -28,6 +28,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 import org.tentackle.sql.BackendInfo;
 
 
@@ -290,12 +291,11 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
-    int id = session.getSessionId();
-    int index = convertConnectionIdToIndex(id);
+    int index = getIndexFromSessionId(session);
     removeDb(index);
     try {
       ManagedConnection con = removeConnection(index);
-      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, id);
+      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, session.getSessionId());
       con.close();  // physically close the removed connection
     }
     finally {
@@ -326,7 +326,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       con = createConnection(session.getBackendInfo());
 
       synchronized(this) {
-        int index = convertConnectionIdToIndex(session.getSessionId());
+        int index = getIndexFromSessionId(session);
         conList[index] = con;
         LOGGER.info("{0}: connection {1} reopened", this, con);
         con.attachSession(session);
@@ -338,7 +338,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void detach(Db session) {
     assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
+    int index = getIndexFromSessionId(session);
     ManagedConnection con = conList[index];
     con.detachSession(session);
   }
@@ -347,7 +347,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
+    int index = getIndexFromSessionId(session);
     ManagedConnection con = conList[index];
     con.forceDetached();
   }
@@ -475,15 +475,19 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /**
-   * Converts the connection id to the internal Db-array index.
+   * Gets the internal array index from the session's session ID.
    *
-   * @param id the connection id (&gt; 0)
+   * @param session the session
    * @return the array index
    */
-  protected int convertConnectionIdToIndex(int id) {
+  protected int getIndexFromSessionId(Db session) {
+    int id = session.getSessionId();
+    if (id <= 0) {
+      throw new PersistenceException(session, this + ": session already closed");
+    }
     int ndx = id - idOffset;
     if (ndx < 0 || ndx >= dbSize) {
-      throw new PersistenceException(this + ": invalid connection id=" + id +
+      throw new PersistenceException(session, this + ": invalid connection id=" + id +
               ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
     }
     return ndx;
@@ -546,7 +550,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    */
   private synchronized ManagedConnection attachImpl(Db session) {
     assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
+    int index = getIndexFromSessionId(session);
     ManagedConnection con = conList[index];
     if (con.isDead()) {
       LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);

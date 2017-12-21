@@ -231,7 +231,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
-    int index = convertConnectionIdToIndex(session.getSessionId());
+    int index = getIndexFromSessionId(session);
     removeDb(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
     try {
@@ -283,106 +283,110 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   public void attach(Db session) {
     assertSessionBelongsToMe(session);
     ManagedConnection con = session.getConnection();
-
-    int loopCount = 0;   // number of retries so far
-
-    while (con == null) {   // while not attached
-
+    if (con != null) {
       synchronized(this) {
-        // find an unattached connection
-        int conIndex = popUnattached();
-        if (conIndex >= 0) {
-          con = conList[conIndex];
-          if (con.getIndex() != conIndex) {
-            throw new PersistenceException(session,
-                    "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
-          }
-          /**
-           * If connection is detached for a long time (minMinutes/2), verify the connection first.
-           * This is mainly for databases like MySQL that close connections after a certain time
-           * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
-           */
-          if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
-            /**
-             * Although this will block all threads from attaching/detaching a connection,
-             * this is the preferred solution compared to an extra "verification thread",
-             * because that thread would need some synchronisation on the connection object
-             * to prevent attachment while running the verification statement.
-             * However, verification happens very rarely, so the performance would suffer
-             * more from permanent and mostly unnecessary syncs than rare blocking verifications --
-             * hopefully... ;)
-             */
-            con.verifyConnection();
-          }
+        con.attachSession(session);
+      }
+    }
+    else {
+      int loopCount = 0;   // number of retries so far
 
-          if (con.isDead()) {
-            cleanupDeadConnection(con);
-            con = null;
-            continue;
-          }
-          else  {
+      while (con == null) {   // while not attached
+
+        synchronized(this) {
+          // find an unattached connection
+          int conIndex = popUnattached();
+          if (conIndex >= 0) {
+            con = conList[conIndex];
+            if (con.getIndex() != conIndex) {
+              throw new PersistenceException(session,
+                      "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
+            }
+            /**
+             * If connection is detached for a long time (minMinutes/2), verify the connection first.
+             * This is mainly for databases like MySQL that close connections after a certain time
+             * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
+             */
+            if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
+              /**
+               * Although this will block all threads from attaching/detaching a connection,
+               * this is the preferred solution compared to an extra "verification thread",
+               * because that thread would need some synchronisation on the connection object
+               * to prevent attachment while running the verification statement.
+               * However, verification happens very rarely, so the performance would suffer
+               * more from permanent and mostly unnecessary syncs than rare blocking verifications --
+               * hopefully... ;)
+               */
+              con.verifyConnection();
+            }
+
+            if (con.isDead()) {
+              cleanupDeadConnection(con);
+              con = null;
+              continue;
+            }
+
+            con.attachSession(session);
             break;
           }
         }
-      }
 
-      /**
-       * In order not to stop all clients for the duration of establishing new connections
-       * this is done in the connecThread. We will just trigger the thread and wait.
-       */
-      boolean request = false;
-      boolean runningOutOfConnections = false;
+        /**
+         * In order not to stop all clients for the duration of establishing new connections
+         * this is done in the connecThread. We will just trigger the thread and wait.
+         */
+        boolean request = false;
+        boolean runningOutOfConnections = false;
 
-      synchronized(this) {
-        if (conRequestCount == 0) {
-          // no request running: request more connections
-          conRequestCount = incSize;
-          request = true;
-        }
-        else if (conRequestCount < 0) {
-          // max connections exhausted
-          conRequestCount = 0;
-          loopCount++;
-          if (loopCount > 20) {    // we tried 20 times and it took us about a minute. Sorry :-(
-            // this will probably close the client unfriendly, but what else can we do?
-            throw new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
+        synchronized(this) {
+          if (conRequestCount == 0) {
+            // no request running: request more connections
+            conRequestCount = incSize;
+            request = true;
           }
-          runningOutOfConnections = true;
+          else if (conRequestCount < 0) {
+            // max connections exhausted
+            conRequestCount = 0;
+            loopCount++;
+            if (loopCount > 20) {    // we tried 20 times and it took us about a minute. Sorry :-(
+              // this will probably close the client unfriendly, but what else can we do?
+              throw new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
+            }
+            runningOutOfConnections = true;
+          }
+          // else: some request is already running
         }
-        // else: some request is already running
-      }
 
-      if (runningOutOfConnections) {
-        try {
-          // sleep a randomly between 1 and 5 seconds (3 average)
-          long ms = loopCount > 1 ? 1000 + random.nextInt(4000) : 100 + random.nextInt(400);
-          LOGGER.warning(this + ": Running out of connections! Putting " + session +
-                         " to sleep for " + ms + " ms, loop " + loopCount);
-          Thread.sleep(ms);
+        if (runningOutOfConnections) {
+          try {
+            // sleep a randomly between 1 and 5 seconds (3 average)
+            long ms = loopCount > 1 ? 1000 + random.nextInt(4000) : 100 + random.nextInt(400);
+            LOGGER.warning(this + ": Running out of connections! Putting " + session +
+                           " to sleep for " + ms + " ms, loop " + loopCount);
+            Thread.sleep(ms);
+          }
+          catch (InterruptedException ex) {
+            LOGGER.fine("interrupted!");
+          }
         }
-        catch (InterruptedException ex) {
-          LOGGER.fine("interrupted!");
-        }
-      }
 
-      if (request) {
-        // start a new request for bringing up connections
-        synchronized(connectGoMutex) {
-          connectGoMutex.notifyAll();
+        if (request) {
+          // start a new request for bringing up connections
+          synchronized(connectGoMutex) {
+            connectGoMutex.notifyAll();
+          }
         }
-      }
-      // wait for connections to be brought up
-      synchronized(connectDoneMutex) {
-        try {
-          connectDoneMutex.wait(1000);     // wait max 1 second
-        }
-        catch (InterruptedException ex) {
-          // just continue
+        // wait for connections to be brought up
+        synchronized(connectDoneMutex) {
+          try {
+            connectDoneMutex.wait(1000);     // wait max 1 second
+          }
+          catch (InterruptedException ex) {
+            // just continue
+          }
         }
       }
     }
-
-    con.attachSession(session);
   }
 
 
@@ -393,13 +397,14 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     if (con == null) {
       throw new PersistenceException(this + ": no connection attached to " + session);
     }
-    con.detachSession(session);
 
-    if (!con.isAttached()) {
+    boolean closeIt = false;
 
-      boolean closeIt = false;
+    synchronized (this) {
 
-      synchronized (this) {
+      con.detachSession(session);
+
+      if (!con.isAttached()) {
         if (con.isClosed()) {
           LOGGER.warning("detached session {0}: connection {1} already closed!", session, con);
           int ndx = con.getIndex();
@@ -441,13 +446,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
         }
       }
+    }
 
-      if (closeIt) {
-        LOGGER.info("{0}: closing connection {1}, open since {2}",
-                    this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
-        con.close();
-        reopenConnections();
-      }
+    if (closeIt) {
+      LOGGER.info("{0}: closing connection {1}, open since {2}",
+                  this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+      con.close();
+      reopenConnections();
     }
   }
 
