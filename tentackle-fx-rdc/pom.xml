@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1.1-SNAPSHOT</version>
+    <version>2.1.1</version>
   </parent>
 
   <artifactId>tentackle-fx-rdc</artifactId>
-  <version>2.1.1-SNAPSHOT</version>
+  <version>2.1.1</version>
   <packaging>jar</packaging>
   <name>Tentackle FX Rich Desktop Client</name>
   <description>Rich Desktop Client based on FX</description>
@@ -73,15 +73,9 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <property name="compile_classpath" refid="maven.compile.classpath"/>
+                <property name="compile_classpath" refid="maven.compile.classpath" />
                 <mkdir dir="${java9.build.outputDirectory}" />
-                <javac srcdir="${java9.sourceDirectory}"
-                       destdir="${java9.build.outputDirectory}"
-                       classpath="${compile_classpath}"
-                       includeantruntime="false"
-                       compiler="extJavac"
-                       listfiles="true"
-                       executable="${java9.jdkhome}/bin/javac">
+                <javac srcdir="${java9.sourceDirectory}" destdir="${java9.build.outputDirectory}" classpath="${compile_classpath}" includeantruntime="false" compiler="extJavac" listfiles="true" executable="${java9.jdkhome}/bin/javac">
                   <compilerarg line="--add-exports javafx.controls/javafx.scene.control.skin=ALL-UNNAMED" />
                 </javac>
               </target>
