@@ -61,6 +61,7 @@ public class FxListViewDelegate extends FxComponentDelegate {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void setViewObject(Object viewObject) {
     component.setItems((ObservableList) viewObject);
   }

@@ -1,4 +1,39 @@
-/* Settings for the TablePrinter */
+
+/* no borders and shadows and alike */
+.root {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+}
+
+.table-view {
+  -fx-table-cell-border-color: transparent;
+  -fx-box-border: transparent;
+}
+
+.table-cell {
+  -fx-background-color: transparent;
+}
+
+.table-row-cell {
+  -fx-background-color: transparent;
+}
+
+.title {
+  -fx-font-weight: bold;
+}
+
+.bottomline {
+  -fx-text-fill: gray;
+  -fx-border-width: 1;
+  -fx-border-color: gray transparent transparent transparent;
+}
+
+.totals {
+  -fx-border-width: 1;
+  -fx-border-color: black transparent transparent transparent;
+  -fx-font-weight: bold;
+}
+
 
 /* Hide the horizontal scrollbar for sure */
 .scroll-bar:horizontal .track {

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import org.tentackle.bind.Binder;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
@@ -291,15 +292,15 @@ public class ValidationUtilities {
    * @param effectiveScope the effective scope, null = all
    * @param validationPath the validation path corresponding to <code>object</code>,
    *                       null if {@link #getDefaultValidationPath(java.lang.Object) }
-   * @param object the parent object to verify
+   * @param parentObject the parent object to validate
    * @return the list of validation results
    */
   public List<ValidationResult> validateFields(
           List<Validator> validators, ValidationScope effectiveScope,
-          String validationPath, Object object) {
+          String validationPath, Object parentObject) {
 
     if (validationPath == null) {
-      validationPath = getDefaultValidationPath(object);
+      validationPath = getDefaultValidationPath(parentObject);
     }
 
     List<ValidationResult> allResults = new ArrayList<>();
@@ -307,8 +308,8 @@ public class ValidationUtilities {
     for (Validator validator : validators) {
 
       // build validation context
-      Object valObject = null;   // the element to validate
-      Class<?> valType = null;   // the element's type
+      Supplier<?> objectSupplier = null;      // lazy object provider
+      Class<?> type = null;                   // the object's type
 
       AnnotatedElement element = validator.getAnnotatedElement();
       if (element instanceof Field) {
@@ -316,28 +317,32 @@ public class ValidationUtilities {
         if (!field.isAccessible()) {
           field.setAccessible(true);
         }
-        try {
-          valObject = object == null ? null : field.get(object);
-          valType = field.getType();
-        }
-        catch (Exception ex) {
-          throw new ValidationRuntimeException("cannot access value of field " + field, ex);
-        }
+        type = field.getType();
+        objectSupplier = parentObject == null ? null : () -> {
+          try {
+            return field.get(parentObject);
+          }
+          catch (IllegalAccessException ex) {
+            throw new ValidationRuntimeException("cannot access field " + field, ex);
+          }
+        };
       }
       else if (element instanceof Method) {
         Method method = (Method) element;
-        try {
-          valObject = object == null ? null : method.invoke(object);
-          valType = method.getReturnType();
-        }
-        catch (Exception ex) {
-          throw new ValidationRuntimeException("cannot invoke method " + method, ex);
-        }
+        type = method.getReturnType();
+        objectSupplier = parentObject == null ? null : () -> {
+          try {
+            return method.invoke(parentObject);
+          }
+          catch (IllegalAccessException | InvocationTargetException ex) {
+            throw new ValidationRuntimeException("cannot invoke method " + method, ex);
+          }
+        };
       }
 
       ValidationContext validationContext = new ValidationContext(
               validationPath + "." + validator.getValidatedElementName(),
-              valType, valObject, object, effectiveScope);
+              type, objectSupplier, parentObject, effectiveScope);
 
 
       // check if scope applies

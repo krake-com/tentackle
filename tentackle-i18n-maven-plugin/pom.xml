@@ -5,14 +5,14 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1.0</version>
+    <version>2.1.1</version>
   </parent>
 
   <artifactId>tentackle-i18n-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>Tentackle I18N Maven Plugin</name>
   <description>Maven Plugin for Localization Tooling</description>
-  <version>2.1.0</version>
+  <version>2.1.1</version>
   <url>http://www.tentackle.org</url>
 
   <dependencies>

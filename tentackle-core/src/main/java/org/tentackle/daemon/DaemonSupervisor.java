@@ -628,8 +628,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
           Daemon daemon = daemons[daemonIndex];
 
           if (daemon.supervisable != null && daemon.supervisable.isDead() && !daemon.supervisable.isKilled()) {
-            LOGGER.info((daemon.supervisedDaemon != null && !daemon.supervisedDaemon.isAlive() ?
-                        "daemon has terminated: " : "dead daemon detected: ") + daemon.supervisable);
+            LOGGER.warning((daemon.supervisedDaemon != null && !daemon.supervisedDaemon.isAlive() ?
+                           "daemon has terminated: " : "dead daemon detected: ") + daemon.supervisable);
             try {
               daemon.kill();    // mark it killed (even if !alive anymore)
             }
@@ -708,7 +708,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
             }
           }
           catch (RuntimeException rex) {
-            LOGGER.warning("cleanup pending thread failed", rex);
+            LOGGER.severe("cleanup pending thread failed", rex);
           }
         }
       }

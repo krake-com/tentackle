@@ -216,6 +216,8 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
   /**
    * Opens the session.
+   *
+   * @return the thread-local session
    */
   protected Session openSession() {
     Session s = Pdo.createSession();

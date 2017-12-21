@@ -178,7 +178,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
         return ((Boolean) value);
       }
       else  {
-        throw new ValidationRuntimeException("result if test '" + condition + "' is not a Boolean");
+        throw new ValidationRuntimeException("result of condition '" + condition + "' is not a Boolean");
       }
     }
     else  {

@@ -72,7 +72,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
 
     super.doCreateStackDump(buf);
 
-    Collection<Db> openDbs = Db.getAllOpenDb();
+    Collection<Db> openDbs = Db.getAllOpenSessions();
     if (!openDbs.isEmpty()) {
       buf.append("\n\nopen Db sessions:\n");
       // log all open Db sessions including those that have not set the current owner thread
@@ -80,7 +80,7 @@ public class DbDiagnosticUtilities extends DiagnosticUtilities {
         buf.append("\n    ");
         buf.append(db);
         buf.append(": ");
-        ManagedConnection con = db.getConnectionUnsafe();   // unsynchronized to avoid locks!
+        ManagedConnection con = db.getConnection();
         if (con != null) {
           doCreateConnectionDump(buf, con);
           buf.append('\n');

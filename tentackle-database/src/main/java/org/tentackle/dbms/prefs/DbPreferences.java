@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +35,6 @@ import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import org.tentackle.dbms.Db;
-import org.tentackle.io.Base64;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
@@ -308,7 +308,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public void putByteArray(String key, byte[] value) {
-    put(key, Base64.byteArrayToBase64(value));
+    put(key, Base64.getEncoder().encodeToString(value));
   }
 
   @Override
@@ -317,7 +317,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     String value = get(key, null);
     try {
       if (value != null) {
-        result = Base64.base64ToByteArray(value);
+        result = Base64.getDecoder().decode(value);
       }
     }
     catch (RuntimeException e) {

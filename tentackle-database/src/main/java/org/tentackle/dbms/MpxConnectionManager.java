@@ -87,7 +87,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    *
    * @param name the name of the connection manager
    * @param backendInfo the backend info to use for creating connections
-   * @param maxDb the maximum number of Db instances, 0 = no limit
+   * @param maxSessions the maximum number of Db instances, 0 = no limit
    * @param idOffset the offset for connection ids (&gt; 0)
    * @param iniSize the initial size of the connection pool
    * @param incSize the number of connections to add if all in use
@@ -96,7 +96,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * @param minMinutes minimum minutes a connection should be used
    * @param maxMinutes maximum minutes a connection should be used
    */
-  public MpxConnectionManager(String name, BackendInfo backendInfo, int maxDb, int idOffset, int iniSize, int incSize,
+  public MpxConnectionManager(String name, BackendInfo backendInfo, int maxSessions, int idOffset, int iniSize, int incSize,
                               int minSize, int maxSize, int minMinutes, int maxMinutes) {
 
     super(name, iniSize, maxSize, idOffset, minMinutes, maxMinutes);
@@ -104,12 +104,12 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     if (minSize > maxSize) {
       throw new IllegalArgumentException("maxSize must be >= minSize");
     }
-    if (maxDb > 0 && maxDb < iniSize) {
-      throw new IllegalArgumentException("maxDb must be 0 or >= iniSize");
+    if (maxSessions > 0 && maxSessions < iniSize) {
+      throw new IllegalArgumentException("maxSessions must be 0 or >= iniSize");
     }
 
     this.backendInfo = backendInfo;
-    this.maxDbSize = maxDb;
+    this.maxDbSize = maxSessions;
     this.incSize = incSize;
     this.minSize = minSize;
 
@@ -234,42 +234,47 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     int index = convertConnectionIdToIndex(session.getSessionId());
     removeDb(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
-    // check that connection is not attached, if so, detach it!
-    ManagedConnection con = session.getConnection();
-    if (con != null) {
-      con.forceDetached();
-      if (con.isDead()) {
-        // remove connection if dead and check to reopen
-        cleanupDeadConnection(con);
-        /**
-         * Client crashed due to a dead server connection.
-         * This is a strong indicator that the database is facing some severe
-         * problems. Because we don't know how many unattached connections are down
-         * we will probe them here. This is a little time consuming but better
-         * than waiting for other clients to crash.
-         */
-        int[] newUnConList = new int[unConList.length];
-        int newUnConCount  = 0;
-        for (int i=0; i < unConCount; i++) {
-          ManagedConnection c = conList[unConList[i]];
-          c.verifyConnection();
-          if (c.isDead()) {
-            cleanupDeadConnection(c);
+    try {
+      // check that connection is not attached, if so, detach it!
+      ManagedConnection con = session.getConnection();
+      if (con != null) {
+        con.forceDetached();
+        if (con.isDead()) {
+          // remove connection if dead and check to reopen
+          cleanupDeadConnection(con);
+          /**
+           * Client crashed due to a dead server connection.
+           * This is a strong indicator that the database is facing some severe
+           * problems. Because we don't know how many unattached connections are down
+           * we will probe them here. This is a little time consuming but better
+           * than waiting for other clients to crash.
+           */
+          int[] newUnConList = new int[unConList.length];
+          int newUnConCount = 0;
+          for (int i = 0; i < unConCount; i++) {
+            ManagedConnection c = conList[unConList[i]];
+            c.verifyConnection();
+            if (c.isDead()) {
+              cleanupDeadConnection(c);
+            }
+            else {
+              newUnConList[newUnConCount++] = c.getIndex();
+            }
           }
-          else  {
-            newUnConList[newUnConCount++] = c.getIndex();
-          }
-        }
-        unConList  = newUnConList;
-        unConCount = newUnConCount;
+          unConList = newUnConList;
+          unConCount = newUnConCount;
 
-        // open any missing connections
-        reopenConnections();
+          // open any missing connections
+          reopenConnections();
+        }
+        else {
+          // add connection to freelist
+          pushUnattached(con.getIndex());
+        }
       }
-      else  {
-        // add connection to freelist
-        pushUnattached(con.getIndex());
-      }
+    }
+    finally {
+      session.clearSessionId();
     }
   }
 
