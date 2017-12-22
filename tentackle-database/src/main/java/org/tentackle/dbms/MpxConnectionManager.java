@@ -43,6 +43,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MpxConnectionManager.class);
 
+  private static final int MAX_LOOP = 100;      // max. number of sleep-with-retry if no connection available
+  private static final int BASE_MS = 50;        // base milliseconds to sleep before next try
+  private static final long MUTEX_MS = 1000;    // mutex wait timeout
+
+
   // args
 
   /** the backend info. */
@@ -53,8 +58,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   /** minimum size. */
   final protected int minSize;
-
-
 
 
   // local
@@ -69,14 +72,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   protected boolean initialized;
 
 
-
   // connect thread
 
   private boolean shutdownRequested;        // true if shutdown procedure initiated
   private Thread connectThread;             // thread to bring up connections
   private final Object connectGoMutex;      // mutex to trigger connect thread to go for more connections
   private final Object connectDoneMutex;    // mutex to signal waiting threads that connections were brought up
-  private volatile int conRequestCount;     // number of new connections requested
+  private int conRequestCount;              // number of new connections requested
   private int warnLogSize;                  // number of connections when to start WARNING logging
   private int infoLogSize;                  // number of connections when to start INFO logging
 
@@ -282,94 +284,99 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public void attach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = session.getConnection();
-    if (con != null) {
+
+    int loopCount = 0;   // number of retries so far
+
+    for (;;) {   // until attached
+
       synchronized(this) {
-        con.attachSession(session);
-      }
-    }
-    else {
-      int loopCount = 0;   // number of retries so far
 
-      while (con == null) {   // while not attached
+        ManagedConnection con = session.getConnection();
+        if (con != null) {
+          // already attached (e.g. within transaction)
+          con.attachSession(session);   // just increment the attach count
+          break;
+        }
 
-        synchronized(this) {
-          // find an unattached connection
-          int conIndex = popUnattached();
-          if (conIndex >= 0) {
-            con = conList[conIndex];
-            if (con.getIndex() != conIndex) {
-              throw new PersistenceException(session,
-                      "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
-            }
+        // find an unattached connection
+        int conIndex = popUnattached();
+        if (conIndex >= 0) {
+          con = conList[conIndex];
+          if (con.getIndex() != conIndex) {
+            throw new PersistenceException(session,
+                    "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
+          }
+          /**
+           * If connection is detached for a long time (minMinutes/2), verify the connection first.
+           * This is mainly for databases like MySQL that close connections after a certain time
+           * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
+           */
+          if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
             /**
-             * If connection is detached for a long time (minMinutes/2), verify the connection first.
-             * This is mainly for databases like MySQL that close connections after a certain time
-             * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
+             * Although this will block all threads from attaching/detaching a connection,
+             * this is the preferred solution compared to an extra "verification thread",
+             * because that thread would need some synchronisation on the connection object
+             * to prevent attachment while running the verification statement.
+             * However, verification happens very rarely, so the performance would suffer
+             * more from permanent and mostly unnecessary syncs than rare blocking verifications --
+             * hopefully... ;)
              */
-            if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
-              /**
-               * Although this will block all threads from attaching/detaching a connection,
-               * this is the preferred solution compared to an extra "verification thread",
-               * because that thread would need some synchronisation on the connection object
-               * to prevent attachment while running the verification statement.
-               * However, verification happens very rarely, so the performance would suffer
-               * more from permanent and mostly unnecessary syncs than rare blocking verifications --
-               * hopefully... ;)
-               */
-              con.verifyConnection();
-            }
-
-            if (con.isDead()) {
-              cleanupDeadConnection(con);
-              con = null;
-              continue;
-            }
-
-            con.attachSession(session);
-            break;
+            con.verifyConnection();
           }
+
+          if (con.isDead()) {
+            cleanupDeadConnection(con);
+            continue;
+          }
+
+          // found: attach!
+          con.attachSession(session);
+          break;
         }
+      }
 
-        /**
-         * In order not to stop all clients for the duration of establishing new connections
-         * this is done in the connecThread. We will just trigger the thread and wait.
-         */
-        boolean request = false;
-        boolean runningOutOfConnections = false;
+      /**
+       * continue unsyncd (allow other threads to use the connection manager).
+       * In order not to stop all clients for the duration of establishing new connections
+       * this is done in the connecThread. We will just trigger the thread and wait.
+       */
+      boolean request = false;
+      boolean runningOutOfConnections = false;
 
-        synchronized(this) {
-          if (conRequestCount == 0) {
-            // no request running: request more connections
-            conRequestCount = incSize;
-            request = true;
-          }
-          else if (conRequestCount < 0) {
-            // max connections exhausted
-            conRequestCount = 0;
-            loopCount++;
-            if (loopCount > 20) {    // we tried 20 times and it took us about a minute. Sorry :-(
-              // this will probably close the client unfriendly, but what else can we do?
-              throw new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
-            }
-            runningOutOfConnections = true;
-          }
-          // else: some request is already running
+      synchronized(this) {
+        if (conRequestCount == 0) {
+          // no request running: request more connections
+          conRequestCount = incSize;
+          request = true;
         }
-
-        if (runningOutOfConnections) {
-          try {
-            // sleep a randomly between 1 and 5 seconds (3 average)
-            long ms = loopCount > 1 ? 1000 + random.nextInt(4000) : 100 + random.nextInt(400);
-            LOGGER.warning(this + ": Running out of connections! Putting " + session +
-                           " to sleep for " + ms + " ms, loop " + loopCount);
-            Thread.sleep(ms);
+        else if (conRequestCount < 0) {
+          // max connections exhausted
+          conRequestCount = 0;
+          loopCount++;
+          if (loopCount > MAX_LOOP) {    // we tried hard, but it took too long, sorry :-(
+            // this will probably close the client unfriendly, but what else can we do?
+            throw new PersistenceException(this + ": max. number of concurrent connections in use: " + maxConSize);
           }
-          catch (InterruptedException ex) {
-            LOGGER.fine("interrupted!");
-          }
+          runningOutOfConnections = true;
         }
+        // else: some request is already running
+      }
 
+      // unsyncd again...
+      if (runningOutOfConnections) {
+        try {
+          // sleep a randomly with increasing time according to loopcount
+          int baseMs = loopCount * BASE_MS;
+          long ms = baseMs + random.nextInt(baseMs);
+          LOGGER.warning("{0}: Running out of connections! Putting {1} to sleep for {2} ms, attempt {3}",
+                         this, session, ms, loopCount);
+          Thread.sleep(ms);
+        }
+        catch (InterruptedException ex) {
+          // just start over and try again
+        }
+      }
+      else {
         if (request) {
           // start a new request for bringing up connections
           synchronized(connectGoMutex) {
@@ -379,10 +386,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         // wait for connections to be brought up
         synchronized(connectDoneMutex) {
           try {
-            connectDoneMutex.wait(1000);     // wait max 1 second
+            connectDoneMutex.wait(MUTEX_MS);     // wait max 1 second
           }
           catch (InterruptedException ex) {
-            // just continue
+            // just start over and try again
           }
         }
       }
@@ -393,14 +400,16 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public void detach(Db session) {
     assertSessionBelongsToMe(session);
-    ManagedConnection con = session.getConnection();
-    if (con == null) {
-      throw new PersistenceException(this + ": no connection attached to " + session);
-    }
 
     boolean closeIt = false;
+    ManagedConnection con;
 
     synchronized (this) {
+
+      con = session.getConnection();
+      if (con == null) {
+        throw new PersistenceException(this + ": no connection attached to " + session);
+      }
 
       con.detachSession(session);
 
@@ -448,10 +457,16 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       }
     }
 
+    // unsyncd...
     if (closeIt) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
-      con.close();
+      try {
+        con.close();
+      }
+      catch (RuntimeException rex) {
+        LOGGER.warning("closing old connection failed", rex);
+      }
       reopenConnections();
     }
   }
@@ -621,12 +636,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       LOGGER.info("{0} started", getName());
 
       while (!shutdownRequested) {
-        synchronized (connectGoMutex) {
+        synchronized (connectGoMutex) {     // syncs conRequestCount as well
           try {
-            connectGoMutex.wait(1000);
+            connectGoMutex.wait(MUTEX_MS);
           }
           catch (InterruptedException ex) {
-            LOGGER.fine("interrupted!");
           }
 
           if (!shutdownRequested && conRequestCount > 0) {
@@ -638,14 +652,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             try {
               // create missing connections
               int count = createConnections(conRequestCount);
-              synchronized (MpxConnectionManager.this) {
-                conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
-              }
+              conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
             }
             catch (Exception e) {
               LOGGER.warning(MpxConnectionManager.this + ": creating connections failed", e);
             }
-            synchronized (connectDoneMutex) {
+
+            synchronized (connectDoneMutex) {   // syncs conRequestCount as well
               connectDoneMutex.notifyAll();
             }
           }

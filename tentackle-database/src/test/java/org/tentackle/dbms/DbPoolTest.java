@@ -68,8 +68,10 @@ public class DbPoolTest {
             throw new PersistenceException("cannot read 1");
           }
         }
-        db.setOwnerThread(null);
-        pool.putSession(db);
+        finally {
+          db.setOwnerThread(null);
+          pool.putSession(db);
+        }
       }
     }
 

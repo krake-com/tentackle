@@ -203,10 +203,15 @@ public class ManagedConnection {
   /**
    * Gets the low level connection.
    *
-   * @return the physical connection
+   * @return the physical connection, never null
+   * @throws PersistenceException if connection is closed
    */
   public Connection getConnection() {
-    return connection;
+    Connection c = connection;
+    if (c == null) {
+      throw new PersistenceException("connection is closed");
+    }
+    return c;
   }
 
 
@@ -314,7 +319,7 @@ public class ManagedConnection {
    * @return true if connection still valid, false if invalid
    */
   public boolean verifyConnection() {
-    try (Statement stmt = connection.createStatement()) {
+    try (Statement stmt = getConnection().createStatement()) {
       stmt.executeQuery("SELECT 1");
       return true;
     }
@@ -742,7 +747,7 @@ public class ManagedConnection {
   public void setAutoCommit(boolean autoCommit) {
     assertAttached();
     try {
-      connection.setAutoCommit(autoCommit);
+      getConnection().setAutoCommit(autoCommit);
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "setting autocommit failed", ex);
@@ -757,7 +762,7 @@ public class ManagedConnection {
    */
   public boolean getAutoCommit() {
     try {
-      return connection.getAutoCommit();
+      return getConnection().getAutoCommit();
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "getting autocommit failed", ex);
@@ -771,7 +776,7 @@ public class ManagedConnection {
   public void commit() {
     assertAttached();
     try {
-      connection.commit();
+      getConnection().commit();
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "commit failed", ex);
@@ -790,7 +795,7 @@ public class ManagedConnection {
       if (withLog && LOGGER.isInfoLoggable()) {
         LOGGER.info(toDiagnosticString());
       }
-      connection.rollback();
+      getConnection().rollback();
       // unmark all statements marked ready
       unmarkPreparedStatements();
     }
@@ -808,7 +813,7 @@ public class ManagedConnection {
   public Savepoint setSavepoint() {
     assertAttached();
     try {
-      return connection.setSavepoint();
+      return getConnection().setSavepoint();
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "setting unnamed savepoint failed: " + toDiagnosticString(), ex);
@@ -825,7 +830,7 @@ public class ManagedConnection {
   public Savepoint setSavepoint(String name) {
     assertAttached();
     try {
-      return connection.setSavepoint(name);
+      return getConnection().setSavepoint(name);
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
@@ -840,7 +845,7 @@ public class ManagedConnection {
   public void rollback(Savepoint savepoint) {
     assertAttached();
     try {
-      connection.rollback(savepoint);
+      getConnection().rollback(savepoint);
     }
     catch (SQLException ex) {
       throw new PersistenceException(db, "rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
@@ -857,7 +862,7 @@ public class ManagedConnection {
     assertAttached();
     if (db.getBackend().isReleaseSavepointSupported()) {
       try {
-        connection.releaseSavepoint(savepoint);
+        getConnection().releaseSavepoint(savepoint);
       }
       catch (SQLException ex) {
         throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
@@ -920,7 +925,7 @@ public class ManagedConnection {
   /**
    * Unmark all prepared statements that are marked ready.
    */
-  public void unmarkPreparedStatements() {
+  private void unmarkPreparedStatements() {
     // unmark all statements marked ready
     for (PreparedStatementWrapper stmt: preparedStatements.values()) {
       if (stmt != null && stmt.isMarkedReady()) {
@@ -945,12 +950,12 @@ public class ManagedConnection {
   public void logAndClearWarnings() {
     try {
       // log connection warning
-      SQLWarning warning = connection.getWarnings();
+      SQLWarning warning = getConnection().getWarnings();
       while (warning != null) {
         LOGGER.warning(warning.getMessage());
         warning = warning.getNextWarning();
       }
-      connection.clearWarnings();  // release memory used by warnings
+      getConnection().clearWarnings();  // release memory used by warnings
       // log prepared statement warnings
       for (PreparedStatementWrapper stmt: preparedStatements.values()) {
         if (!stmt.isClosed()) { // if not closed
@@ -1011,11 +1016,10 @@ public class ManagedConnection {
 
 
   /**
-   * Forces a detach of the db connection.
+   * Forces a detach of the db connection.<br>
    * The method is used from connection managers only, hence package scope.
-   * Syncd because may be invoked from scavenger threads simultaneously.
    */
-  synchronized void forceDetached() {
+  void forceDetached() {
     if (isAttached()) {
       // database is still attached
       LOGGER.warning("forcing detach of connection " + this + " attached to " + db);
@@ -1056,9 +1060,9 @@ public class ManagedConnection {
     if (!isClosed()) {
       try {
         // rollback before close to prevent an implicit commit (JDBC implementation specific behaviour)
-        if (!connection.getAutoCommit())  {
+        if (!getConnection().getAutoCommit())  {
           LOGGER.warning("closing connection while in transaction:\n" + toDiagnosticString());
-          connection.rollback();
+          getConnection().rollback();
         }
       }
       catch (SQLException ex) {
@@ -1079,7 +1083,7 @@ public class ManagedConnection {
    */
   private void closeImpl() {
     try {
-      connection.close();
+      getConnection().close();
     }
     catch (SQLException ex) {
       LOGGER.warning("low level close failed: " + ex.getMessage() + " -> " + this + " marked closed!");
@@ -1107,7 +1111,7 @@ public class ManagedConnection {
     try {
       if (!isClosed()) {
         LOGGER.warning("closing unreferenced open connection: " + this);
-        close();
+        closeImpl();
       }
     }
     catch (Exception ex) {
@@ -1192,7 +1196,7 @@ public class ManagedConnection {
    */
   public StatementWrapper createStatement (int resultSetType, int resultSetConcurrency) {
     try {
-      Statement stmt = connection.createStatement(resultSetType, resultSetConcurrency);
+      Statement stmt = getConnection().createStatement(resultSetType, resultSetConcurrency);
       return new StatementWrapper(this, stmt);
     }
     catch (SQLException ex) {
@@ -1215,7 +1219,7 @@ public class ManagedConnection {
       sql = backend.optimizeSql(sql);
       return new PreparedStatementWrapper(
               this,
-              connection.prepareStatement(sql, resultSetType, resultSetConcurrency),
+              getConnection().prepareStatement(sql, resultSetType, resultSetConcurrency),
               statementKey,
               sql);
     }
@@ -1230,9 +1234,6 @@ public class ManagedConnection {
    *
    * The statement will be reused if already prepared.
    * Else it will be prepared according to the statement definition in BackendStatement.
-   * <p>
-   * Notice: this method will be invoked from within a synchronized block from a Db-instance,
-   * so there's no need for special multi-threading handling.
    *
    * @param statementKey the unique statement key
    * @param alwaysPrepare true if always do a physical prepare
@@ -1242,7 +1243,8 @@ public class ManagedConnection {
    * @return the prepared statement for this connection
    */
   public PreparedStatementWrapper getPreparedStatement (StatementKey statementKey, boolean alwaysPrepare,
-                                                        int resultSetType, int resultSetConcurrency, Supplier<String> sqlSupplier)  {
+                                                        int resultSetType, int resultSetConcurrency,
+                                                        Supplier<String> sqlSupplier)  {
 
     if (statementKey == null) {
       throw new PersistenceException("statement key required");

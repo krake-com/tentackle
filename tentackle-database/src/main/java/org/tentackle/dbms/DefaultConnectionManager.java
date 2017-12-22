@@ -96,7 +96,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   private int maxCountForClearWarnings = 1000;  // trigger when to clearWarning() on a connection (enabled by default)
-  private volatile long attachTimeout;          // max. attach timeout, 0 to disable check (default)
+  private long attachTimeout;                   // max. attach timeout, 0 to disable check (default)
   private volatile boolean shutdownRequested;   // true if connection manager and timeout thread should shutdown
   private Thread timeoutThread;                 // thread to check for connections attached too long (default null)
 
@@ -202,7 +202,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    *
    * @return the max. attach time, 0 if check is disabled (default)
    */
-  public long getAttachTimeout() {
+  public synchronized long getAttachTimeout() {
     return attachTimeout;
   }
 
@@ -211,7 +211,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    *
    * @param attachTimeout the max. attach time, 0 if check is disabled (default)
    */
-  public void setAttachTimeout(long attachTimeout) {
+  public synchronized void setAttachTimeout(long attachTimeout) {
     this.attachTimeout = attachTimeout;
     if (attachTimeout > 0) {
       if (timeoutThread == null) {
@@ -546,7 +546,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * Attaches the session to a connection.
    *
    * @param session the session
-   * @return null if attached, the connection if it needs to be reopened
+   * @return null if attached, the connection if dead or expired and needs to be reopened
    */
   private synchronized ManagedConnection attachImpl(Db session) {
     assertSessionBelongsToMe(session);
@@ -558,6 +558,9 @@ public class DefaultConnectionManager implements ConnectionManager {
     else if (con.isExpired()) {
       LOGGER.info("{0}: closing connection {1}, open since {2}",
                   this, con, FormatHelper.formatTimestamp(new Date(con.getEstablishedSince())));
+    }
+    else if (con.isClosed()) {
+      LOGGER.warning("{0}: connection {1} is closed", this, con);
     }
     else {
       con.attachSession(session);
@@ -593,24 +596,27 @@ public class DefaultConnectionManager implements ConnectionManager {
           long curTime = System.currentTimeMillis();
 
           ManagedConnection[] connections;
-          synchronized (this) {
+          synchronized (DefaultConnectionManager.this) {
             connections = conList.clone();    // fast array copy!
           }
           for (ManagedConnection con : connections) {
             if (con != null) {
-              long attachedMillis = curTime - con.getAttachedSince();
-              if (con.isAttached() && attachedMillis > timeout) {
+              if (con.isAttached() && (curTime - con.getAttachedSince()) > timeout) {
                 Db db = con.getSession();
-                synchronized (db) {    // set/get connection is sync'd on Db
-                  if (db.getConnection() == con && con.isAttached()) {
-                    // timed out
-                    try {
-                      LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
-                              " (" + attachedMillis + "ms)");
-                      con.forceDetached();
-                    }
-                    catch (RuntimeException rex) {
-                      LOGGER.severe("detaching " + con + " failed", rex);
+                if (db != null) {   // still unsyncd..
+                  synchronized (DefaultConnectionManager.this) {    // attach/detach is syncd on me
+                    long attachedMillis = curTime - con.getAttachedSince();
+                    if (db.getConnection() == con && con.isAttached() &&
+                        attachedMillis > timeout) {   // double check within syncd block
+                      // timed out
+                      try {
+                        LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
+                                " (" + attachedMillis + "ms)");
+                        db.forceDetached();
+                      }
+                      catch (RuntimeException rex) {
+                        LOGGER.severe("detaching " + con + " failed", rex);
+                      }
                     }
                   }
                 }
