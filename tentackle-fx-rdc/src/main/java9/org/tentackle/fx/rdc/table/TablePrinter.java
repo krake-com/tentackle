@@ -391,6 +391,7 @@ public class TablePrinter extends AbstractFxController {
         }
         PageInfo page = new PageInfo(rowOffset, printableRows);
         pages.add(page);
+        Platform.runLater(() -> stage.setTitle(MessageFormat.format(resources.getString("preparing page {0}"), pages.size())));
         rowOffset += printableRows;
         LOGGER.fine("page {0}: {1}", pages.size(), page);
         getSession().setAlive(true);
@@ -413,6 +414,8 @@ public class TablePrinter extends AbstractFxController {
               rowOffset = page.rowStart;
               tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
               tableView.getSelectionModel().clearSelection();
+              stage.setTitle(MessageFormat.format(resources.getString("printing page {0}/{1}"),
+                                                  pageNo, pages.size()));
               updatePageLabel(pageNo++);
               job.printPage(pageLayout, getView());
               if (terminationRequested) {
