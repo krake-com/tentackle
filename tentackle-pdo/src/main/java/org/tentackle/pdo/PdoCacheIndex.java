@@ -194,7 +194,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   private void assertKeyIsUnchanged(T object, CacheKey<C> ck) {
     // assert that key was not changed in object by application
-    CacheKey<C> objck = new CacheKey<>(object.getDomainContext(), extract(object));
+    CacheKey<C> objck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
     if (objck.compareTo(ck) != 0) {
       throw new PdoCacheException(object,
                                   "modified key detected in " + this + " for " + object.toGenericString() +
@@ -349,16 +349,16 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param pdo the PDO
    */
   protected void processPdo(T pdo) {
-    DomainContext context = pdo.getDomainContext();
+    DomainContext context = pdo.getPersistenceDelegate().getDomainContext();
     DomainContext processedContext = cache.processContext(context);
     if (processedContext != context) {
-      pdo.setDomainContextImmutable(false);   // for sure
-      pdo.setDomainContext(processedContext);
+      pdo.getPersistenceDelegate().setDomainContextImmutable(false);   // for sure
+      pdo.getPersistenceDelegate().setDomainContext(processedContext);
     }
     if (isReadOnly()) {
-      pdo.setImmutable(true);
-      pdo.setDomainContextImmutable(true);
-      pdo.setSessionImmutable(true);
+      pdo.getPersistenceDelegate().setImmutable(true);
+      pdo.getPersistenceDelegate().setDomainContextImmutable(true);
+      pdo.getPersistenceDelegate().setSessionImmutable(true);
     }
   }
 
@@ -374,7 +374,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected boolean add(T object) {
     processPdo(object);
     try {
-      return cacheMap.put(new CacheKey<>(object.getDomainContext(), extract(object)), object) == null;
+      return cacheMap.put(new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object)), object) == null;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -396,7 +396,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     processPdo(object);
     CacheKey<C> ck;
     try {
-      ck = new CacheKey<>(object.getDomainContext(), extract(object));
+      ck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -424,7 +424,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected boolean remove(T object) {
     try {
-      return cacheMap.remove(new CacheKey<>(object.getDomainContext(), extract(object))) != null;
+      return cacheMap.remove(new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object))) != null;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -442,7 +442,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected void removeExisting(T object) {
     CacheKey<C> ck;
     try {
-      ck = new CacheKey<>(object.getDomainContext(), extract(object));
+      ck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);

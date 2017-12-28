@@ -122,8 +122,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     idIndex = new PdoCacheIndex<T,Long>(ReflectionHelper.getClassBaseName(clazz) + ":ID") {
 
       @Override
-      public Long extract(T object) {
-        return object.getId();
+      public Long extract(T pdo) {
+        return pdo.getPersistenceDelegate().getId();
       }
 
       @Override
@@ -401,14 +401,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     Set<Long> foundSet = new HashSet<>();     // holds the IDs that were found in cache
     List<T> objList = getObjects();           // check all objects in cache
     for (T object: objList) {
-      Long id = object.getId();
+      Long id = object.getPersistenceDelegate().getId();
       if (idSet.contains(id))  {
         object.setExpired(true);
         foundSet.add(id);
         if (!inToString && LOGGER.isFinerLoggable()) {
           inToString = true;    // avoid recursion cause context.toString
           LOGGER.finer(object.toGenericString() + " context=" +
-                       object.getDomainContext().toDiagnosticString() + " expired in " + this);
+                       object.getPersistenceDelegate().getDomainContext().toDiagnosticString() + " expired in " + this);
           inToString = false;
         }
       }
@@ -544,7 +544,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   private void expireObjects(Session session, long oldSerial, long maxSerial)  {
     try {
 
-      T obj = Pdo.create(clazz, session);
+      T pdo = Pdo.create(clazz, session);
 
       // align oldserial to minTableSerial
       if (oldSerial < minTableSerial) {
@@ -553,8 +553,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
       // load info of objects that have expired
       List<IdSerialTuple> expireSet = maxSerial > 0 ?
-              obj.getExpiredTableSerials(oldSerial, maxSerial) :
-              obj.selectExpiredTableSerials(oldSerial);
+              pdo.getPersistenceDelegate().getExpiredTableSerials(oldSerial, maxSerial) :
+              pdo.getPersistenceDelegate().selectExpiredTableSerials(oldSerial);
 
       // process expiration info and update minTableSerial
       expireByExpirationInfo(expireSet, maxSerial);
@@ -594,7 +594,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * update minTableSerial
+   * update minTableSerial.
    */
   private long selectCurrentTableSerial(Session session) {
     return ModificationTracker.getInstance().getSerial(clazz);
@@ -603,10 +603,12 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
 
   /**
-   * updates the tableserial
+   * updates the tableserial for a PDO.
+   *
+   * @param pdo the PDO
    */
-  private void updateTableSerial(T obj) {
-    long ts = obj.getTableSerial();
+  private void updateTableSerial(T pdo) {
+    long ts = pdo.getPersistenceDelegate().getTableSerial();
     if (ts > tableSerial) {
       tableSerial = ts;
     }
@@ -652,10 +654,10 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           if (keep > size/2)  {
             // remove
             int remove = size - keep;
-            for (T obj: objects)  {
+            for (T pdo: objects)  {
               if (remove > 0)  {
                 for (PdoCacheIndex<T,?> index: indexes)  {
-                  index.removeExisting(obj);    // must exist!
+                  index.removeExisting(pdo);    // must exist!
                 }
               }
               remove--;
@@ -665,11 +667,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             // invalidate and add again
             invalidateImpl();
             int skip = size - keep;
-            for (T obj: objects)  {
+            for (T pdo: objects)  {
               if (skip <= 0)  {
                 // add object
                 for (PdoCacheIndex<T,?> index: indexes)  {
-                  index.addUnique(obj);    // complain if not unique
+                  index.addUnique(pdo);    // complain if not unique
                 }
               }
               skip--;
@@ -746,11 +748,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     int count = 0;
     try {
       for (Iterator<T> iter = getObjects().iterator(); iter.hasNext();) {
-        T obj = iter.next();
-        if (!obj.isCacheable()) {
+        T pdo = iter.next();
+        if (!pdo.getPersistenceDelegate().isCacheable()) {
           // remove from indexes
           for (PdoCacheIndex<T,?> index: indexes)  {
-            index.removeExisting(obj);   // complain if vanished!
+            index.removeExisting(pdo);   // complain if vanished!
           }
           iter.remove();    // remove from collection
           count++;
@@ -822,44 +824,46 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       }
     }
 
-    T obj;    // returned PDO
+    T pdo;    // returned PDO
 
     if (enabled && allEnabled)  {
       // check if the object is in cache
       try {
-        obj = index.get(context, key);
+        pdo = index.get(context, key);
         boolean expired = false;
 
-        if (obj != null) {    // found in cache
-          if (obj.isExpired())  {
+        if (pdo != null) {    // found in cache
+          if (pdo.getPersistenceDelegate().isExpired())  {
             expired = true;
-            remove(obj);    // remove it from indexes (but leave in lists!)
+            remove(pdo);    // remove it from indexes (but leave in lists!)
             if (!inToString && LOGGER.isFinerLoggable()) {
               inToString = true;    // avoid recursion cause context.toString
-              LOGGER.finer("expired object " + obj.toGenericString() +
-                           " context=" + obj.getDomainContext().toDiagnosticString() + " removed from " + this);
+              LOGGER.finer("expired object " + pdo.toGenericString() +
+                           " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
+                           " removed from " + this);
               inToString = false;
             }
-            obj = null;   // treat as if not in cache
+            pdo = null;   // treat as if not in cache
           }
           // else: not expired: use it!
         }
 
-        if (obj == null && loadIfMissing && (!isPreloading() || expired))  {
+        if (pdo == null && loadIfMissing && (!isPreloading() || expired))  {
           // not in cache and not preloaded or expired: get it from db
-          obj = index.select(context, key);
-          if (obj != null) {
-            if (obj.isCacheable()) {
+          pdo = index.select(context, key);
+          if (pdo != null) {
+            if (pdo.getPersistenceDelegate().isCacheable()) {
               selectCount++;
               // add to all indexes
               for (PdoCacheIndex<T,?> ndx: indexes)  {
-                ndx.addUnique(obj);     // complain if not unique
+                ndx.addUnique(pdo);     // complain if not unique
               }
-              updateTableSerial(obj);   // update tableSerial if higher
+              updateTableSerial(pdo);   // update tableSerial if higher
               if (!inToString && LOGGER.isFinerLoggable()) {
                 inToString = true;    // avoid recursion cause of context.toString
-                LOGGER.finer("added object " + obj.toGenericString() +
-                             " context=" + obj.getDomainContext().toDiagnosticString() + " to " + this);
+                LOGGER.finer("added object " + pdo.toGenericString() +
+                             " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
+                             " to " + this);
                 inToString = false;
               }
             }
@@ -872,8 +876,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           }
         }
 
-        if (obj != null)  {
-          obj.markCacheAccess();
+        if (pdo != null)  {
+          pdo.getPersistenceDelegate().markCacheAccess();
         }
       }
       catch (PdoCacheException e)  {
@@ -889,16 +893,16 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     }
     else  {
       // always read from storage
-      obj = index.select(context, key);
+      pdo = index.select(context, key);
     }
 
-    if (obj != null && checkSecurity) {
-      if (!obj.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission())) {
-        obj = null; // no read permission
+    if (pdo != null && checkSecurity) {
+      if (!pdo.getPersistenceDelegate().isPermissionAccepted(SecurityFactory.getInstance().getReadPermission())) {
+        pdo = null; // no read permission
       }
     }
 
-    return obj;
+    return pdo;
   }
 
 
@@ -955,10 +959,10 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Notice: if the cache is preloading the preloading info should be updated
    * via {@link #updateContextInfo()}.
    *
-   * @param obj is the PDO to add
+   * @param pdo is the PDO to add
    * @return true if added, false if object already in cache
    */
-  public boolean add(T obj)  {
+  public boolean add(T pdo)  {
     /**
      * (notice: no initializeMinTableSerial() because we cannot guarantee that
      * the table hasn't been updated between fetching the object and invokation
@@ -973,7 +977,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         boolean uniqueViolation = false;
         int i = 0;
         while (i < indexes.size())  {
-          if (!indexes.get(i).add(obj))  {
+          if (!indexes.get(i).add(pdo))  {
             uniqueViolation = true;
             break;
           }
@@ -982,12 +986,12 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         if (uniqueViolation) {
           // unique violation: rollback
           while(--i >= 0) {
-            indexes.get(i).remove(obj);
+            indexes.get(i).remove(pdo);
           }
           return false;
         }
-        obj.markCacheAccess();
-        updateTableSerial(obj);
+        pdo.getPersistenceDelegate().markCacheAccess();
+        updateTableSerial(pdo);
         return true;
       }
     }
@@ -1003,14 +1007,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Can be used by apps to remove an object explicitly.
    * Does NOT remove the object from any list!
    *
-   * @param obj is the PersistentDomainObject to remove
+   * @param pdo is the PersistentDomainObject to remove
    * @return true if removed, false if object not in cache
    */
-  public synchronized boolean remove(T obj)  {
+  public synchronized boolean remove(T pdo)  {
     // remove from indexes
     boolean rv = false;
     for (PdoCacheIndex<T,?> index: indexes)  {
-      rv |= index.remove(obj);
+      rv |= index.remove(pdo);
     }
     return rv;
   }
@@ -1063,8 +1067,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         // find all contexts and fill lists per context
         preloadedContexts.clear();
         lists.clear();
-        for (T obj: getObjects()) {
-          DomainContext effectiveContext = processContext(obj.getDomainContext());
+        for (T pdo: getObjects()) {
+          DomainContext effectiveContext = processContext(pdo.getPersistenceDelegate().getDomainContext());
           DomainContext clonedContext = null;
           if (!preloadedContexts.contains(effectiveContext)) {
             clonedContext = effectiveContext.clone(); // clone to avoid further modification
@@ -1079,7 +1083,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             }
             lists.put(clonedContext, list);
           }
-          list.add(obj);
+          list.add(pdo);
         }
         if (isReadOnly()) {
           // make lists immutable (elements are already immutable)
@@ -1198,14 +1202,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           list.setSimpleEqualsAndHashCode(true);
 
           // add cacheable objects to all indexes
-          for (T object : sList) {
-            if (object.isCacheable()) {
-              list.add(object);
+          for (T pdo : sList) {
+            if (pdo.getPersistenceDelegate().isCacheable()) {
+              list.add(pdo);
               for (PdoCacheIndex<T, ?> index : indexes) {
-                index.add(object);    // don't complain if object is already in cache!
+                index.add(pdo);    // don't complain if object is already in cache!
               }
-              object.markCacheAccess();
-              updateTableSerial(object);
+              pdo.getPersistenceDelegate().markCacheAccess();
+              updateTableSerial(pdo);
             }
           }
 
@@ -1229,9 +1233,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             int size = list.size();
             int i = 0;
             while (i < size) {
-              T object = list.get(i); // list is an ArrayList(): get(i) is fast!
-              if (object.isExpired()) {
-                T reloadedObject = object.reload();
+              T pdo = list.get(i); // list is an ArrayList(): get(i) is fast!
+              if (pdo.getPersistenceDelegate().isExpired()) {
+                T reloadedObject = pdo.getPersistenceDelegate().reload();
                 if (reloadedObject == null) { // vanished, i.e. object has been deleted in db
                   list.remove(i--);   // remove from list too (costly but better than loading the whole list!)
                   // notice: this will only happen for explicitly expired objects because deleted objects cannot
@@ -1239,7 +1243,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
                   size--;
                   if (!inToString && LOGGER.isFinerLoggable()) {
                     inToString = true;    // avoid recursion cause context.toString
-                    LOGGER.finer("object " + object.toGenericString() +
+                    LOGGER.finer("object " + pdo.toGenericString() +
                                  " removed from list for context " + context.toDiagnosticString());
                     inToString = false;
                   }
@@ -1282,9 +1286,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       // notice that only root-entities are allowed to be cached! (see PdoCache-wurblet)
       List<T> checked = new ArrayList<>();
       ReadPermission permission = SecurityFactory.getInstance().getReadPermission();
-      for (T obj : all) {
-        if (obj.isPermissionAccepted(permission)) {
-          checked.add(obj);
+      for (T pdo : all) {
+        if (pdo.getPersistenceDelegate().isPermissionAccepted(permission)) {
+          checked.add(pdo);
         }
       }
       all = checked;
@@ -1461,13 +1465,16 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     @Override
     public int compare(PersistentDomainObject<?> o1, PersistentDomainObject<?> o2) {
       // compare access time (the newer the higher, i.e. TreeSet begins with oldest entry)
-      int rv = Long.compare(o1.getCacheAccessTime(), o2.getCacheAccessTime());
+      int rv = Long.compare(o1.getPersistenceDelegate().getCacheAccessTime(),
+                            o2.getPersistenceDelegate().getCacheAccessTime());
       if (rv == 0)  {
         // take accesscount
-        rv = Long.compare(o1.getCacheAccessCount(), o2.getCacheAccessCount());
+        rv = Long.compare(o1.getPersistenceDelegate().getCacheAccessCount(),
+                          o2.getPersistenceDelegate().getCacheAccessCount());
         if (rv == 0)  {
           // still the same: take the ID (can't be the same)
-          rv = Long.compare(o1.getId(), o2.getId());
+          rv = Long.compare(o1.getPersistenceDelegate().getId(),
+                            o2.getPersistenceDelegate().getId());
         }
       }
       return rv;
@@ -1484,13 +1491,16 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     @Override
     public int compare(PersistentDomainObject<?> o1, PersistentDomainObject<?> o2) {
       // compare access count
-      int rv = Long.compare(o1.getCacheAccessCount(), o2.getCacheAccessCount());
+      int rv = Long.compare(o1.getPersistenceDelegate().getCacheAccessCount(),
+                            o2.getPersistenceDelegate().getCacheAccessCount());
       if (rv == 0)  {
         // take access time
-        rv = Long.compare(o1.getCacheAccessTime(), o2.getCacheAccessTime());
+        rv = Long.compare(o1.getPersistenceDelegate().getCacheAccessTime(),
+                          o2.getPersistenceDelegate().getCacheAccessTime());
         if (rv == 0)  {
           // still the same: take the ID (can't be the same)
-          rv = Long.compare(o1.getId(), o2.getId());
+          rv = Long.compare(o1.getPersistenceDelegate().getId(),
+                            o2.getPersistenceDelegate().getId());
         }
       }
       return rv;

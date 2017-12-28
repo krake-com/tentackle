@@ -270,7 +270,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @return the pdo to join
    */
   public J createJoinedPdo(T pdo) {
-    return Pdo.create(joinedClass, pdo.getDomainContext());
+    return Pdo.create(joinedClass, pdo.getPersistenceDelegate().getDomainContext());
   }
 
   /**

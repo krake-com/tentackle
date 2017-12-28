@@ -163,7 +163,7 @@ public class PdoUtilities {
       classId = SessionUtilities.getInstance().getClassId(pdoClassName);
       if (classId == 0) {  // not annotated with @ClassId
         // get from pdo instance
-        classId = Pdo.create(clazz).getClassId();
+        classId = Pdo.create(clazz).getPersistenceDelegate().getClassId();
         tableClassIdMap.put(clazz, classId);
       }
     }

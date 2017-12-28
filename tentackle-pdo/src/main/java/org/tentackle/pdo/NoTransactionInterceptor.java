@@ -45,8 +45,8 @@ public class NoTransactionInterceptor extends AbstractInterceptor {
         // may be an operation as well, hence the test
         PersistentDomainObject<?> pdo = orgProxy instanceof PdoHolder ?
                 ((PdoHolder) orgProxy).getPdo() : null;
-        if (pdo != null && !pdo.isRootEntity()) {
-          PersistentDomainObject<?> root = pdo.getDomainContext().getRootEntity();
+        if (pdo != null && !pdo.getPersistenceDelegate().isRootEntity()) {
+          PersistentDomainObject<?> root = pdo.getPersistenceDelegate().getDomainContext().getRootEntity();
           if (root == null) {
             throw new PersistenceException("cannot determine root-entity for component-PDO " + pdo.toGenericString());
           }

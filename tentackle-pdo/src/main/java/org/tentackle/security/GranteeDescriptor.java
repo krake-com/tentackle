@@ -49,7 +49,7 @@ public class GranteeDescriptor {
    * @param pdo the PDO
    */
   public GranteeDescriptor(PersistentDomainObject<?> pdo) {
-    this(pdo.getClassId(), pdo.getId());
+    this(pdo.getPersistenceDelegate().getClassId(), pdo.getPersistenceDelegate().getId());
   }
 
   /**

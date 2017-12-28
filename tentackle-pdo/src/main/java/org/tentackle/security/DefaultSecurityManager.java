@@ -33,6 +33,8 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.security.pdo.SecurityDomain;
+import org.tentackle.security.pdo.SecurityPersistence;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationListener;
 import org.tentackle.session.ModificationTracker;
@@ -79,11 +81,12 @@ public class DefaultSecurityManager implements SecurityManager {
      */
     public SecurityResult getResult() {
       if (result == null) {
-        if (security.isAllowed()) {
-          result = createAcceptedSecurityResult(security.getMessage(), false);
+        SecurityPersistence spo = (SecurityPersistence) security;   // bypass IH to speed up
+        if (spo.isAllowed()) {
+          result = createAcceptedSecurityResult(spo.getMessage(), false);
         }
         else {
-          result = createDeniedSecurityResult(security.getMessage(), false);
+          result = createDeniedSecurityResult(spo.getMessage(), false);
         }
       }
       return result;
@@ -652,8 +655,8 @@ public class DefaultSecurityManager implements SecurityManager {
           if (fineLoggable) {
             LOGGER.fine("evaluate {0}", sec);
           }
-          // check if rule fires
-          if (sec.evaluate(context, permission)) {
+          // check if rule fires (bypassing IH for speed)
+          if (((SecurityDomain) sec.getDomainDelegate()).evaluate(context, permission)) {
             if (fineLoggable) {
               LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
             }

@@ -1150,9 +1150,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T findDuplicate() {
     T thisPdo = getPdo();
-    Object key = thisPdo.getUniqueDomainKey();
+    Object key = thisPdo.getDomainDelegate().getUniqueDomainKey();
     if (key != null) {
-      T otherPdo = thisPdo.findByUniqueDomainKey(key);
+      T otherPdo = thisPdo.getDomainDelegate().findByUniqueDomainKey(key);
       if (otherPdo != null && !otherPdo.equals(thisPdo)) {
         return otherPdo;
       }
@@ -3556,7 +3556,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj)  {
-    setEditedBy(obj == null ? 0 : obj.getId());
+    setEditedBy(obj == null ? 0 : obj.getPersistenceDelegate().getId());
   }
 
 

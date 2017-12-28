@@ -32,6 +32,7 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityDomain;
+import org.tentackle.security.pdo.SecurityPersistence;
 import org.tentackle.session.SessionUtilities;
 
 /**
@@ -58,7 +59,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
 
   @Override
   public Object getUniqueDomainKey() {
-    return getPdo().getId();
+    return getPdo().getPersistenceDelegate().getId();
   }
 
   @Override
@@ -68,10 +69,11 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
 
   @Override
   public boolean evaluate(DomainContext context, Permission permission) {
+    SecurityPersistence po = po();
     return // check that the context applies
-           (context == null || context.isWithinContext(pdo().getDomainContextId(), pdo().getDomainContextClassId())) &&
+           (context == null || context.isWithinContext(po.getDomainContextId(), po.getDomainContextClassId())) &&
            // check that requested permission applies to this rule
-           (pdo().isAllowed() ?
+           (po.isAllowed() ?
               permission.isAllowedBy(getPermissions()) :
               permission.isDeniedBy(getPermissions()));
   }
@@ -79,15 +81,15 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   @Override
   public String securableToString() {
     StringBuilder buf = new StringBuilder();
-    if (pdo().getObjectClassId() != 0) {
+    if (po().getObjectClassId() != 0) {
       // is a PDO
-      String className = SessionUtilities.getInstance().getClassName(pdo().getObjectClassId());
+      String className = SessionUtilities.getInstance().getClassName(po().getObjectClassId());
       PersistentDomainObject<?> securedPdo = Pdo.create(className, getDomainContext());
-      if (pdo().getObjectId() != 0) {
+      if (po().getObjectId() != 0) {
         buf.append(securedPdo.getSingular()).append(' ');
-        PersistentDomainObject<?> sobj = securedPdo.select(pdo().getObjectId());
+        PersistentDomainObject<?> sobj = securedPdo.select(po().getObjectId());
         if (sobj == null) {
-          buf.append("<?").append(pdo().getObjectId()).append("?>");
+          buf.append("<?").append(po().getObjectId()).append("?>");
         }
         else {
           buf.append(sobj);
@@ -97,8 +99,8 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
         buf.append(securedPdo.getPlural());
       }
     }
-    else if (pdo().getObjectClassName() != null) {
-      buf.append(ReflectionHelper.getClassBaseName(pdo().getObjectClassName()));
+    else if (po().getObjectClassName() != null) {
+      buf.append(ReflectionHelper.getClassBaseName(po().getObjectClassName()));
     }
     return buf.toString();
   }
@@ -106,7 +108,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   @Override
   public String granteeToString() {
     StringBuilder buf = new StringBuilder();
-    PersistentDomainObject<?> grantee = pdo().getGrantee();
+    PersistentDomainObject<?> grantee = po().getGrantee();
     if (grantee != null) {
       buf.append(grantee.getSingular()).append(' ').append(grantee);
     }
@@ -115,7 +117,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
 
   @Override
   public String contextToString() {
-    PersistentDomainObject<?> contextPdo = pdo().getDomainContextObject();
+    PersistentDomainObject<?> contextPdo = po().getDomainContextObject();
     return contextPdo == null ? null : contextPdo.toString();
   }
 
@@ -127,11 +129,11 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
   @SuppressWarnings("unchecked")
   protected Class<? extends Permission>[] getPermissions() {
     if (permissions == null) {
-      if (pdo().getPermissions() == null) {
+      if (po().getPermissions() == null) {
         permissions = new Class[0];
       }
       else  {
-        StringTokenizer stok = new StringTokenizer(pdo().getPermissions(), ", ");
+        StringTokenizer stok = new StringTokenizer(po().getPermissions(), ", ");
         List<Class<? extends Permission>> perms = new ArrayList<>();
         while (stok.hasMoreTokens()) {
           String permissionName = stok.nextToken();
@@ -147,4 +149,12 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
     return permissions;
   }
 
+  /**
+   * Bypass the invocation handler.
+   *
+   * @return the persistence delegate
+   */
+  protected SecurityPersistence po() {
+    return (SecurityPersistence) pdo().getPersistenceDelegate();
+  }
 }
