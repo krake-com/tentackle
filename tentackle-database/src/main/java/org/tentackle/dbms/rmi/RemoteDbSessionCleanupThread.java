@@ -88,7 +88,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
     interrupt();
   }
 
-  
+
   @Override
   public void run() {
 
@@ -153,28 +153,21 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
           boolean timedOut = session.hasTimedOut();
 
           if (timedOut) {
-            boolean inTransaction;
-            synchronized (RemoteDbSessionImpl.class) {
-              // synchronized double check
-              inTransaction = db.isTxRunning();
-              timedOut = session.hasTimedOut();
-            }
-            if (timedOut) {
+            boolean inTransaction = db.isTxRunning();
               // database has timed out
-              if (group == 0) {
-                // database without a group: close session immediately
-                LOGGER.info("disconnect dead " + session + ", ungrouped");
-                cleanupSession(session);
-                iter.remove();
-                continue; // don't run into polled() below (would cause a nullp)
+            if (group == 0) {
+              // database without a group: close session immediately
+              LOGGER.info("disconnect dead " + session + ", ungrouped");
+              cleanupSession(session);
+              iter.remove();
+              continue; // don't run into polled() below (would cause a nullp)
+            }
+            else  {
+              if (inTransaction) {
+                // there is a dead session within a transaction for this group
+                deadTxGroups.add(group);
               }
-              else  {
-                if (inTransaction) {
-                  // there is a dead session within a transaction for this group
-                  deadTxGroups.add(group);
-                }
-                // grouped connections are handled below
-              }
+              // grouped connections are handled below
             }
           }
 

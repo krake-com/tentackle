@@ -963,7 +963,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    *
    * @return true if timed out
    */
-  public boolean hasTimedOut() {
+  protected boolean hasTimedOut() {
     Db ldb = db;    // local copy in case of race cond avoids NPE
     if (ldb == null || ldb.isAlive()) {
       timeoutCount = 0;
@@ -978,7 +978,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Sets this session as being polled for timeout.
    */
-  public void polled() {
+  protected void polled() {
     Db ldb = db;    // local copy in case of race cond avoids NPE
     if (ldb != null) {
       ldb.setAlive(false);
