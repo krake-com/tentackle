@@ -103,19 +103,25 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected DomainContext context;
 
   /**
-   * Bundle count.
+   * Bundle bundleCount.
    */
-  protected int count;
+  protected int bundleCount;
 
   /**
-   * Error count.
+   * Error bundleCount.
    */
   protected int errors;
 
   /**
-   * Warning count.
+   * Warning bundleCount.
    */
   protected int warnings;
+
+  /**
+   * Number of updated translations.
+   */
+  protected int updates;
+
 
   @Override
   public DomainContext getDomainContext() {
@@ -218,9 +224,10 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       }
     }
 
-    getLog().info(count + " bundle" + (count == 1 ? "" : "s") + " processed, " +
+    getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
                   warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
-                  errors + " error" + (errors == 1 ? "" : "s"));
+                  errors + " error" + (errors == 1 ? "" : "s") + ", " +
+                  updates + " update" + (updates == 1 ? "" : "s"));
 
     if (errors > 0) {
       throw new MojoExecutionException("pushing to the database failed");

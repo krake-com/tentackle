@@ -48,7 +48,7 @@ public class PushMojo extends AbstractI18nMojo {
 
   @Override
   public void processBundle(ClassLoader classLoader, String bundleName, String locale, String resourceName) {
-    count++;
+    bundleCount++;
     Properties props = new Properties();
     InputStream is = null;
     try {
@@ -100,6 +100,7 @@ public class PushMojo extends AbstractI18nMojo {
       String oldValue = bundle.getTranslation(key);
       if (oldValue == null || override && !Objects.equals(value, oldValue)) {
         bundle.setTranslation(key, value);
+        updates++;
       }
     }
     if (bundle.isModified()) {
