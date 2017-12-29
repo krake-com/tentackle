@@ -174,13 +174,12 @@ public abstract class AbstractClassMapper<S> {
   private S mapNameWithPackages(String className, boolean lenient) throws ClassNotFoundException {
     if (className.indexOf('.') < 0) {
       String packageNames[] = getPackageNames();
-      if (packageNames == null) {
-        packageNames = new String[0];
-      }
-      for (String packageName: packageNames) {
-        S result = mapName(packageName + "." + className, lenient);
-        if (result != null)  {
-          return result;
+      if (packageNames != null) {
+        for (String packageName: packageNames) {
+          S result = mapName(packageName + "." + className, lenient);
+          if (result != null)  {
+            return result;
+          }
         }
       }
       return null;    // no such class in all packages
