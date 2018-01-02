@@ -104,7 +104,9 @@ For more options, see {\@link DbModelWurblet}.
       if (rel.getSelectionType() == SelectionType.LAZY ||
           rel.getSelectionType() == SelectionType.EAGER)  {
         generateDeclarations = true;
-        generateSetSession   = true;
+        if (!rel.isSelectionCached()) {
+          generateSetSession = true;
+        }
       }
       if (rel.isComposite()) {
         generateIsComposite         = true;
@@ -695,7 +697,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
 
-    // gerenate setSession for referenced objects (necessary for RMI)
+    // gerenate setSession and setDomainContext for referenced objects (necessary for RMI)
     if (generateSetSession)  {
 ]@
 
