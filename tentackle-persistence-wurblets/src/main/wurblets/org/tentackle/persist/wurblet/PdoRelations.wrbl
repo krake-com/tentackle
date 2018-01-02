@@ -704,7 +704,10 @@ For more options, see {\@link DbModelWurblet}.
     super.setSession(session);
 @[
       for (Relation rel: getEntity().getRelations()) {
-        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER || rel.isComposite()) {
+        if (!rel.isSelectionCached() &&
+            (rel.getSelectionType() == SelectionType.LAZY ||
+             rel.getSelectionType() == SelectionType.EAGER ||
+             rel.isComposite())) {
 ]@
     session.applyTo(@(rel.getVariableName())@);
 @[
@@ -718,7 +721,10 @@ For more options, see {\@link DbModelWurblet}.
     super.setDomainContext(context);
 @[
       for (Relation rel: getEntity().getRelations()) {
-        if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER || rel.isComposite()) {
+        if (!rel.isSelectionCached() &&
+            (rel.getSelectionType() == SelectionType.LAZY ||
+             rel.getSelectionType() == SelectionType.EAGER ||
+             rel.isComposite())) {
 ]@
     context.applyTo(@(rel.getVariableName())@);
 @[
