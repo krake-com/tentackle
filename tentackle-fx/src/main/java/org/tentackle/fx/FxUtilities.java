@@ -242,12 +242,14 @@ public class FxUtilities {
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.setResizable(true);   // RT-38998
-    Button cancelButton = (Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL);
-    Button okButton = (Button) alert.getDialogPane().lookupButton(ButtonType.OK);
-    cancelButton.setDefaultButton(!defaultYes);
-    okButton.setDefaultButton(defaultYes);
+    alert.getButtonTypes().clear();
+    alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
+    Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
+    Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
+    noButton.setDefaultButton(!defaultYes);
+    yesButton.setDefaultButton(defaultYes);
     Optional<ButtonType> result = alert.showAndWait();
-    return result.get() == ButtonType.OK;
+    return result.get() == ButtonType.YES;
   }
 
   /**
