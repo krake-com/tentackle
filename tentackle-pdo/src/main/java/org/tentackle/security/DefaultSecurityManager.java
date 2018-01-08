@@ -728,7 +728,7 @@ public class DefaultSecurityManager implements SecurityManager {
   /**
    * Creates the modification listener.
    *
-   * @return the listener, null if modifications detected somehow differently
+   * @return the listener
    */
   protected ModificationListener createModificationListener() {
     return new PdoListener(Security.class) {
