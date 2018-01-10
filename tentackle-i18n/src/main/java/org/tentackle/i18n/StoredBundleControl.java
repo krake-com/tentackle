@@ -133,9 +133,11 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   private static class StoredResourceBundle extends ResourceBundle {
 
     private final Properties props;
+    private final String name;
 
     private StoredResourceBundle(StoredBundle bundle) {
       props = new Properties();
+      name = bundle.toString();
       for (StoredBundleKey bundleKey : bundle.getKeys()) {
         props.setProperty(bundleKey.getKey(), bundleKey.getValue());
       }
@@ -153,6 +155,11 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
     public Enumeration<String> getKeys() {
       ResourceBundle p = this.parent;
       return new BundleEnumeration(props.stringPropertyNames(), (p != null) ? p.getKeys() : null);
+    }
+
+    @Override
+    public String toString() {
+      return name;
     }
   }
 
