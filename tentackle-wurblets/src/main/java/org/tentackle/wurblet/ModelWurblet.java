@@ -632,7 +632,7 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
     catch (ModelException mex) {
-        throw new WurbelException("errors in model loaded from file '" + getModelName() + "'", mex);
+      throw new WurbelTerminationException("errors in model loaded from file '" + getModelName() + "'", mex);
     }
 
     if (entity == null) {
@@ -643,7 +643,7 @@ public class ModelWurblet extends AbstractWurblet {
           delayedModelException = wex.getCause();
         }
       }
-      throw new WurbelException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
+      throw new WurbelTerminationException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
     }
 
 
