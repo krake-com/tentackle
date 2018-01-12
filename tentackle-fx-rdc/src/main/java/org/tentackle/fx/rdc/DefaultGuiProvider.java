@@ -30,6 +30,7 @@ import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.SessionUtilities;
 
@@ -133,30 +134,12 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * the methods {@link #isDragAccepted} and {@link #dropPdo} need to be overridden.
    *
    * @param dragboard the dragboard
-   * @return the key, null if invalid dragboard or no such classId
+   * @return the key, null if dragboard's string is null or empty
    */
   public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
-    String str = dragboard.getString();
-    if (str != null) {
-      StringTokenizer stok = new StringTokenizer(str, ":");
-      if (stok.hasMoreTokens()) {
-        int classId = Integer.parseInt(stok.nextToken());
-        if (stok.hasMoreTokens()) {
-          int id = Integer.parseInt(stok.nextToken());
-          String className = SessionUtilities.getInstance().getClassName(classId);
-          if (className != null && id != 0) {
-            try {
-              return new IdentifiableKey<>(className, id);
-            }
-            catch (ClassNotFoundException cx) {
-              LOGGER.severe("cannot load PDO class " + className + " for classId " + classId, cx);
-            }
-          }
-          else {
-            LOGGER.warning("no PDO key for {0}:{1}", classId, id);
-          }
-        }
-      }
+    String idString = dragboard.getString();
+    if (idString != null && !idString.isEmpty()) {
+      return PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
     }
     return null;
   }
