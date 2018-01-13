@@ -125,7 +125,7 @@ public class RemoteIncludes {
   /**
    * Marks the heapfiles as discarded.<br>
    * Such files should not be used to generate code because their contents are incomplete
-   * because of former errors. Wurblets reading this file should throw a {@link WurbelDiscardException}.
+   * because of former errors. Wurblets reading this file should throw a {@link org.wurbelizer.wurbel.WurbelDiscardException}.
    */
   public void discard() {
     implStream.discard();
