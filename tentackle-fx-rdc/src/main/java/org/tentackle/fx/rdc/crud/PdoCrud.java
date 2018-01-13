@@ -471,6 +471,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
               // set does not work for SortedList (-> UnsupportedOperationException).
               if (pdoList instanceof SortedList) {
                 ((SortedList) pdoList).getSource().set(((SortedList) pdoList).getSourceIndex(pdoListIndex), pdo);
+                pdoListIndex = pdoList.indexOf(pdo);    // may be changed!
+                updatePrevNextButtons();
               }
               else {
                 pdoList.set(pdoListIndex, pdo);

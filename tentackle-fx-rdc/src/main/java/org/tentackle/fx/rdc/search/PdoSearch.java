@@ -204,8 +204,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       int i = 0;
                       for (TreeItem<T> item : treeItems) {
                         if (updatedPdo.equals(item.getValue())) {
-                          TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
-                                  createTreeItem();
+                          TreeItem<T> updatedItem =
+                                  GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
                           treeItems.set(i, updatedItem);
                           getTreeView().refresh();
                           updatedItem.setExpanded(item.isExpanded());
@@ -214,20 +214,22 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                         i++;
                       }
                     }
-
-                    int ndx = items.indexOf(firstPdo);
-                    if (ndx >= 0) {
-                      items.set(ndx, updatedPdo);
+                    else if (!tableViewInvalid) {   // items where updated in PdoCrud.save()!
+                      int ndx = tableView.getItems().indexOf(updatedPdo);
+                      if (ndx >= 0) {
+                        tableView.getSelectionModel().clearSelection();
+                        tableView.getSelectionModel().select(ndx);
+                      }
                     }
                   }
                   else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
                     // do fast checks first (assumed the user did not change the selection)
                     int ndx = tableView.getSelectionModel().getSelectedIndex();
-                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx-1))) {
+                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx - 1))) {
                       ndx--;
                     }
                     else if (ndx < tableView.getItems().size() - 1 &&
-                             e.getPdo().equals(tableView.getItems().get(ndx+1))) {
+                             e.getPdo().equals(tableView.getItems().get(ndx + 1))) {
                       ndx++;
                     }
                     else {
