@@ -40,6 +40,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  * If no normtext, all PDOs are selected.
  *
  * @author harald
+ * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFinder<T> {
@@ -56,7 +57,7 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
       String pattern = StringHelper.toLikeString(StringHelper.normalize(patternField.getText()));
       return FXCollections.observableArrayList(getPdo().selectByNormText(pattern));
     }
-    return FXCollections.observableArrayList(getPdo().selectAllCached());
+    return FXCollections.observableArrayList(getPdo().selectAll());
   }
 
 

@@ -78,6 +78,7 @@ import org.tentackle.task.AbstractTask;
  * Search controller for PDOs.
  *
  * @author harald
+ * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoHolder<T> {
