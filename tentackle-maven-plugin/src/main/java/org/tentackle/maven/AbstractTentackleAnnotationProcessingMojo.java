@@ -170,7 +170,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
   /**
    * Gets the number of compile errors.
-   * @return 0 if analyze phase completed, > 0 if analyze info may be incomplete due to errors
+   * @return 0 if analyze phase completed, &gt; 0 if analyze info may be incomplete due to errors
    */
   public int getTotalCompileErrors() {
     return totalCompileErrors;
