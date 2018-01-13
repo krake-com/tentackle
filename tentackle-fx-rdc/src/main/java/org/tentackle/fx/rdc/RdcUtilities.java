@@ -22,7 +22,6 @@ package org.tentackle.fx.rdc;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -109,7 +108,7 @@ public class RdcUtilities {
    * @return the possibly changed pdo if modal
    */
   public <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner,
+          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner,
           Consumer<PdoCrud<T>> configurator) {
 
     PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
@@ -172,7 +171,7 @@ public class RdcUtilities {
    */
   @SuppressWarnings("unchecked")
   public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-                T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
+                T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
     Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);

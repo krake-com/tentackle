@@ -27,6 +27,7 @@ import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.fxml.FXML;
@@ -131,7 +132,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private PdoEditor<T> editor;                      // the editor
   private SimpleBooleanProperty editAllowed;        // is editing allowed effectively
   private SimpleBooleanProperty pdoIsNew;           // pdo is new
-  private List<T> pdoList;                          // optional list of PDOs
+  private ObservableList<T> pdoList;                // optional list of PDOs
   private int pdoListIndex;                         // index in list
   private boolean editable;                         // editability requested by the application
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
@@ -162,9 +163,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   /**
    * Sets a list of PDOs to walk through via the up and next buttons.
    *
-   * @param pdoList the pdos
+   * @param pdoList the pdos, null to disable list navigation
    */
-  public void setPdoList(List<T> pdoList) {
+  public void setPdoList(ObservableList<T> pdoList) {
     this.pdoList = pdoList;
     pdoListIndex = 0;
     boolean prevNextVisible = pdoList != null && pdoList.size() > 1;
@@ -172,7 +173,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     previousButton.setVisible(prevNextVisible);
     nextButton.setManaged(prevNextVisible);
     nextButton.setVisible(prevNextVisible);
-    if (pdoList != null) {
+    if (prevNextVisible) {
       T pdo = getPdo();
       if (pdo != null) {
         pdoListIndex = pdoList.indexOf(getPdo());
@@ -405,7 +406,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void previous() {
     if (pdoListIndex > 0) {
       if (releasePdo()) {
-        setPdo(pdoList.get(--pdoListIndex));
+        T prevPdo = pdoList.get(--pdoListIndex);
+        if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
+          prevPdo = prevPdo.reload();
+        }
+        setPdo(prevPdo);
         updatePrevNextButtons();
         eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
       }
@@ -418,7 +423,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void next() {
     if (pdoListIndex < pdoList.size() - 1) {
       if (releasePdo()) {
-        setPdo(pdoList.get(++pdoListIndex));
+        T nextPdo = pdoList.get(++pdoListIndex);
+        if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
+          nextPdo = nextPdo.reload();
+        }
+        setPdo(nextPdo);
         updatePrevNextButtons();
         eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
       }
@@ -447,6 +456,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   /**
    * Saves the current PDO.
    */
+  @SuppressWarnings("unchecked")
   public void save() {
     try {
       getPdo().getSession().transaction(() -> {   // validate and save within transaction!
@@ -457,7 +467,19 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
           }
           else {
             T pdo = getPdo().persist();
-            if (!closeIfModal()) {
+            if (pdoList != null && pdoListIndex >= 0 && pdoListIndex < pdoList.size()) {
+              // set does not work for SortedList (-> UnsupportedOperationException).
+              if (pdoList instanceof SortedList) {
+                ((SortedList) pdoList).getSource().set(((SortedList) pdoList).getSourceIndex(pdoListIndex), pdo);
+              }
+              else {
+                pdoList.set(pdoListIndex, pdo);
+              }
+            }
+            if (closeIfModal()) {
+              editor.setPdo(pdo);     // make getPdo() deliver the updated reference
+            }
+            else {
               setPdo(pdo);
               getEditor().requestInitialFocus();
             }

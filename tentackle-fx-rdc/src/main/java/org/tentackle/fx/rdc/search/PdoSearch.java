@@ -589,13 +589,29 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Switches to the table view.
    */
+  @SuppressWarnings("unchecked")
   public void showTable() {
     if (treeShown) {
       tablePane.toFront();
       treeShown = false;
       treeButton.setGraphic(Fx.createImageView("tree"));
       if (tableViewInvalid) {
-        setItems(getItems());
+        int index = 0;
+        for (TreeItem<T> item: treeView.getRoot().getChildren()) {
+          T listPdo = items.get(index);
+          T treePdo = item.getValue();
+          if (listPdo.getSerial() != treePdo.getSerial()) {
+            // item was modified in tree
+            if (items instanceof SortedList) {
+              ((SortedList) items).getSource().set(((SortedList) items).getSourceIndex(index), treePdo);
+            }
+            else {
+              items.set(index, treePdo);
+            }
+          }
+          index++;
+        }
+        setItems(items);
       }
       bindOkButton();
     }

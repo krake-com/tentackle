@@ -57,7 +57,7 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
       String pattern = StringHelper.toLikeString(StringHelper.normalize(patternField.getText()));
       return FXCollections.observableArrayList(getPdo().selectByNormText(pattern));
     }
-    return FXCollections.observableArrayList(getPdo().selectAll());
+    return FXCollections.observableArrayList(getPdo().selectAllCached());
   }
 
 
