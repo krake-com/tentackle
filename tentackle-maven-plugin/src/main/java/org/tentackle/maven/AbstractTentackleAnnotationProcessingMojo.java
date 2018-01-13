@@ -88,6 +88,16 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   private ClassLoader processingClassloader;
 
+  /**
+   * Total number of compile errors.
+   */
+  private int totalCompileErrors;
+
+  /**
+   * THe compiler log (if showCompileOutput set).
+   */
+  private StringBuilder compileErrorLog;
+
 
   /**
    * Sets the mojo parameters.
@@ -158,6 +168,31 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     // default does nothing
   }
 
+  /**
+   * Gets the number of compile errors.
+   * @return 0 if analyze phase completed, > 0 if analyze info may be incomplete due to errors
+   */
+  public int getTotalCompileErrors() {
+    return totalCompileErrors;
+  }
+
+  /**
+   * Gets the compiler error log.
+   *
+   * @return the log, empty if no errors
+   */
+  public String getCompileErrorLog() {
+    return compileErrorLog == null ? "" : compileErrorLog.toString();
+  }
+
+  /**
+   * Gets the number of analyze errors.
+   *
+   * @return the error count
+   */
+  public int getTotalErrors() {
+    return totalErrors;
+  }
 
 
   @Override
@@ -173,6 +208,8 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     createMissingDirs();
 
     totalErrors = 0;
+    totalCompileErrors = 0;
+    compileErrorLog = new StringBuilder();
 
     // wurbel
     if (filesets != null && filesets.size() > 0) {
@@ -359,8 +396,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       for (Diagnostic<? extends JavaFileObject> diag: diagnosticCollector.getDiagnostics()) {
         if (showCompileOutput) {
           JavaFileObject source = diag.getSource();
+          String msg;
           if (source == null) {
-            getLog().info(diag.getMessage(null));
+            msg = diag.getMessage(null);
           }
           else  {
             String filename = source.getName();
@@ -368,8 +406,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
             if (ndx > 0) {
               filename = filename.substring(ndx + 1);
             }
-            getLog().info(filename + ":" + diag.getLineNumber() + ":" + diag.getColumnNumber() + ": " + diag.getMessage(null));
+            msg = filename + ":" + diag.getLineNumber() + ":" + diag.getColumnNumber() + ": " + diag.getMessage(null);
           }
+          getLog().info(msg);
+          compileErrorLog.append(msg).append('\n');
         }
         if (diag.getKind() == Diagnostic.Kind.ERROR) {
           compileErrorCount++;
@@ -388,6 +428,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
                     " Java compilation errors! Some annotations may have been processed improperly or not processed at all");
     }
 
+    totalCompileErrors += compileErrorCount;
     totalErrors += errorCount;
   }
 
