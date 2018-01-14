@@ -135,6 +135,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private ObservableList<T> pdoList;                // optional list of PDOs
   private int pdoListIndex;                         // index in list
   private boolean editable;                         // editability requested by the application
+  private boolean modal;                            // true if dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
 
 
@@ -157,6 +158,25 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public boolean isEditable() {
     return editable;
+  }
+
+  /**
+   * Returns whether CRUD should be treated as modal.
+   *
+   * @return true if modal
+   */
+  public boolean isModal() {
+    return modal;
+  }
+
+  /**
+   * Sets this CRUD should be treated as modal.<br>
+   * Modality cannot be retrieved from the stage because there may be no stage yet.
+   *
+   * @param modal true if modal
+   */
+  public void setModal(boolean modal) {
+    this.modal = modal;
   }
 
 
@@ -259,8 +279,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     updateTitle();
     GuiProvider<T> guiProvider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     treeButton.setDisable(pdo.isNew() || !guiProvider.providesTreeChildObjects());
-    deleteButton.setDisable(!editAllowed.get() || !editor.isRemoveAllowed());
-    newButton.setDisable(!editAllowed.get() || !editor.isNewAllowed());
+    deleteButton.setDisable(!editAllowed.get() || !editor.isRemoveAllowed() || isModal());
+    newButton.setDisable(!editAllowed.get() || !editor.isNewAllowed() || isModal());
+    findButton.setDisable(!isEditable() || isModal());
     saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).and(editAllowed).not());
     securityButton.setDisable(!pdo.isRootEntity() ||
                               !SecurityDialogFactory.getInstance().isDialogAllowed(pdo.getDomainContext()));

@@ -45,10 +45,11 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param editable true if user may edit the pdo, false if to view only
+   * @param modal true if modal mode
    * @return the crud controller
    */
-  public static <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable) {
-    return RdcFactory.getInstance().createPdoCrud(pdo, editable);
+  public static <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal) {
+    return RdcFactory.getInstance().createPdoCrud(pdo, editable, modal);
   }
 
   /**

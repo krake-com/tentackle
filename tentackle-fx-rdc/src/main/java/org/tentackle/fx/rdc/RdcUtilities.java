@@ -186,6 +186,7 @@ public class RdcUtilities {
       if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
         // not showing (i.e. unused) and same modality and owner
         crud.setEditable(editable);
+        crud.setModal(modality != Modality.NONE);
         crud.setPdo(pdo);
         crud.setPdoList(pdoList);
         return crud;
@@ -209,7 +210,7 @@ public class RdcUtilities {
     }
 
     // no unused cruds: create a new one
-    PdoCrud<T> crud = RdcFactory.getInstance().createPdoCrud(pdo, editable);
+    PdoCrud<T> crud = RdcFactory.getInstance().createPdoCrud(pdo, editable, modality != Modality.NONE);
     crud.setPdoList(pdoList);
     cruds.add(crud);
     return crud;

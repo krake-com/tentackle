@@ -117,7 +117,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * The items found.<br>
    * Initially empty, never null.
    */
-  private ObservableList<T> items = FXCollections.observableArrayList();
+  private SortedList<T> items = new SortedList<>(FXCollections.observableArrayList());
 
   private InvalidationListener itemsListener;   // listener for items totals change
   private ResourceBundle resources;             // the resources
@@ -194,7 +194,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           }
           else {
             if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
-              Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
+              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(),
                 // event filter will removed when stage is hidden (see RdcUtilities)
                 crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                   if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
@@ -204,37 +204,36 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       int i = 0;
                       for (TreeItem<T> item : treeItems) {
                         if (updatedPdo.equals(item.getValue())) {
+                          // need new TreeItem in case childs have changed as well
                           TreeItem<T> updatedItem =
                                   GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
                           treeItems.set(i, updatedItem);
-                          getTreeView().refresh();
                           updatedItem.setExpanded(item.isExpanded());
                           break;
                         }
                         i++;
                       }
                     }
-                    else if (!tableViewInvalid) {   // items where updated in PdoCrud.save()!
-                      int ndx = tableView.getItems().indexOf(updatedPdo);
-                      if (ndx >= 0) {
-                        tableView.getSelectionModel().clearSelection();
-                        tableView.getSelectionModel().select(ndx);
-                      }
+                    // items where updated in PdoCrud.save()!
+                    int ndx = items.indexOf(updatedPdo);
+                    if (ndx >= 0) {
+                      ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
+                      tableView.getSelectionModel().clearSelection();
+                      tableView.getSelectionModel().select(ndx);
                     }
                   }
                   else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
                     // do fast checks first (assumed the user did not change the selection)
                     int ndx = tableView.getSelectionModel().getSelectedIndex();
-                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx - 1))) {
+                    if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
                       ndx--;
                     }
-                    else if (ndx < tableView.getItems().size() - 1 &&
-                             e.getPdo().equals(tableView.getItems().get(ndx + 1))) {
+                    else if (ndx < items.size() - 1 && e.getPdo().equals(items.get(ndx + 1))) {
                       ndx++;
                     }
                     else {
                       // full scan
-                      ndx = tableView.getItems().indexOf(e.getPdo());
+                      ndx = items.indexOf(e.getPdo());
                     }
                     if (ndx >= 0) {
                       tableView.getSelectionModel().clearSelection();
@@ -454,7 +453,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       sortedItems = new SortedList<>(items);
       sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
     }
-    this.items = items;
+    this.items = sortedItems;
     countLabel.setText(Integer.toString(items.size()));
 
     if (treeShown) {
@@ -470,7 +469,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableViewInvalid = true;
     }
     else {
-      tableView.setItems(sortedItems);
+      tableView.setItems(this.items);
       tableView.getSelectionModel().clearSelection();
       tableView.refresh();
       treeViewInvalid = true;
@@ -604,12 +603,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
           T treePdo = item.getValue();
           if (listPdo.getSerial() != treePdo.getSerial()) {
             // item was modified in tree
-            if (items instanceof SortedList) {
-              ((SortedList) items).getSource().set(((SortedList) items).getSourceIndex(index), treePdo);
-            }
-            else {
-              items.set(index, treePdo);
-            }
+            ((List) items.getSource()).set(items.getSourceIndex(index), treePdo);
           }
           index++;
         }

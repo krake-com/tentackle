@@ -36,13 +36,14 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class DefaultRdcFactory implements RdcFactory {
 
   @Override
-  public <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable) {
+  public <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal) {
     GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
     PdoEditor<T> editor = provider.createEditor();
     @SuppressWarnings("unchecked")
     PdoCrud<T> crud = Fx.load(PdoCrud.class);
     crud.setEditable(editable);
     crud.setEditor(editor);
+    crud.setModal(modal);
     crud.setPdo(pdo);
     return crud;
   }

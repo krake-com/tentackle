@@ -54,9 +54,10 @@ public interface RdcFactory {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param editable true if edit pdo, false to view only
+   * @param modal true if modal mode
    * @return the crud controller
    */
-  <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable);
+  <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal);
 
   /**
    * Creates a search controller for a pdo.
