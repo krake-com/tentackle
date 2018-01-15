@@ -68,6 +68,7 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.rdc.RdcFactory;
+import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -122,6 +123,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private InvalidationListener itemsListener;   // listener for items totals change
   private ResourceBundle resources;             // the resources
   private PdoFinder<T> finder;                  // the finder
+  private PdoCrud<T> pdoCrud;                   // the CRUD view
   private FxBorderPane tablePane;               // the border pane holding the table view
   private FxTableView<T> tableView;             // the table showing the results
   private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
@@ -168,6 +170,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     return finder;
   }
 
+
   /**
    * Sets the pdo as a template for the search.
    *
@@ -193,10 +196,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             close();
           }
           else {
-            if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
-              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(),
+            if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
+              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), crud -> {
+                pdoCrud = crud;
                 // event filter will removed when stage is hidden (see RdcUtilities)
-                crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
+                crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                   if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
                     T updatedPdo = firstPdo.reload();
                     if (!treeViewInvalid) {
@@ -218,8 +222,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                     int ndx = items.indexOf(updatedPdo);
                     if (ndx >= 0) {
                       ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
-                      tableView.getSelectionModel().clearSelection();
-                      tableView.getSelectionModel().select(ndx);
                     }
                   }
                   else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
@@ -242,8 +244,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                     }
                   }
                   e.consume();
-                }
-              ));
+                });
+              });
             }
           }
         }
@@ -722,6 +724,22 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         okButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
       }
     }
+  }
+
+  /**
+   * Returns whether a CRUD is currently shown for this search.
+   *
+   * @return true if shown
+   */
+  protected boolean isCrudShown() {
+    if (pdoCrud != null) {
+      Stage stage = pdoCrud.getStage();
+      if (stage != null && stage.isShowing() && stage.getOwner() == getStage()) {
+        return true;
+      }
+    }
+    pdoCrud = null;
+    return false;
   }
 
 }
