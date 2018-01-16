@@ -400,7 +400,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     TreeItem<T> item = GuiProviderFactory.getInstance().createGuiProvider(getPdo()).createTreeItem();
     item.setExpanded(true);
     tree.setRoot(item);
-    tree.setMinWidth(400);    // don't make it too small (@todo: make it depend on the contents shown)
+    // apply PdoCrud.css
+    tree.getStylesheets().addAll(getView().getStylesheets());
     Scene scene = new Scene(tree);
     stage.setScene(scene);
     stage.setTitle(MessageFormat.format(resources.getString("{0} {1} (modal)"),
