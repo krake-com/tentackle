@@ -184,7 +184,7 @@ public class RdcUtilities {
       PdoCrud<T> crud = (PdoCrud<T>) iter.next();
       Stage stage = Fx.getStage(crud.getView());
       if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-        // not showing (i.e. unused) and same modality and owner
+        // not showing (i.e. unused), never used or same modality and owner
         crud.setEditable(editable);
         crud.setModal(modality != Modality.NONE);
         crud.setPdo(pdo);
@@ -194,12 +194,12 @@ public class RdcUtilities {
       // is showing or other modality or different owner, i.e. part of some window which is showing
       if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing()) {
         // same PDO
-        if (editable && crud.isEditable()) {
-          // already being edited
+        if (crud.isEditing() || !editable) {
+          // already being edited or just shown and view-only requested
           stage.toFront();
           return null;
         }
-        // else: being edited, being shown or requested !editable: get a fresh one
+        // else: being edited, being shown or requested editable does not match: get a fresh one
       }
       if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
           stage.getOwner() != null && !stage.getOwner().isShowing()) {

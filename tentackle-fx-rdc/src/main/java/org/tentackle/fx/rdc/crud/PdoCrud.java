@@ -135,8 +135,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   private boolean modal;                            // true if dialog is modal
   private EventListenerProxy<PdoEvent> eventProxy;  // event proxy to maintain PdoEvents registered on the View
 
-  private final SimpleBooleanProperty editAllowed  = new SimpleBooleanProperty();   // is editing allowed effectively?
-  private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();       // pdo is new?
+  private final SimpleBooleanProperty editing  = new SimpleBooleanProperty();   // is editing allowed effectively?
+  private final SimpleBooleanProperty pdoIsNew = new SimpleBooleanProperty();   // pdo is new?
 
 
   /**
@@ -156,6 +156,15 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public boolean isEditable() {
     return editable;
+  }
+
+  /**
+   * Returns whether the PDO is being edited effectively.
+   *
+   * @return true if isEditable() and editing is allowed according to the security rules
+   */
+  public boolean isEditing() {
+    return editing.get();
   }
 
   /**
@@ -239,26 +248,26 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     if (editor.isViewAllowed()) {
       noViewLabel.setVisible(false);
       editor.getView().setVisible(true);
-      editAllowed.set(isEditable() && editor.isEditAllowed());
+      editing.set(isEditable() && editor.isEditAllowed());
       // make contents editable if application requested it and the pdo is editable
-      editor.setChangeable(editAllowed.get());
+      editor.setChangeable(isEditing());
     }
     else {
       noViewLabel.setVisible(true);
       editor.getView().setVisible(false);
-      editAllowed.set(false);    // no view -> no edit (no need to check again)
+      editing.set(false);    // no view -> no edit (no need to check again)
     }
     pdoIsNew.set(pdo.isNew());
     getContainer().saveView();                    // triggerViewModified when view has changed
     updateTitle();
     updateButtons();
 
-    if (editAllowed.get() && !pdo.isNew() && pdo.isTokenLockProvided()) {
+    if (isEditing() && !pdo.isNew() && pdo.isTokenLockProvided()) {
       try {
         pdo.requestTokenLock();
       }
       catch (LockException lx) {
-        editAllowed.set(false);
+        editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
         if (lx.getTokenLock() != null) {
@@ -294,7 +303,12 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     Stage stage = getStage();
     if (stage != null) {
       stage.setTitle(MessageFormat.format(
-              resources.getString("Edit {0} {1}"), getPdo().getSingular(), getPdo().toString()));
+              isModal() ?
+                (isEditing() ?
+                        resources.getString("Edit {0} {1} (modal)") : resources.getString("View {0} {1} (modal)")) :
+                (isEditing() ?
+                        resources.getString("Edit {0} {1}") : resources.getString("View {0} {1}")),
+              getPdo().getSingular(), getPdo().toString()));
     }
   }
 
@@ -341,7 +355,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   @Override
   public void configure() {
 
-    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).and(editAllowed).not());
+    saveButton.disableProperty().bind(getContainer().viewModifiedProperty().or(pdoIsNew).and(editing).not());
 
     eventProxy = new EventListenerProxy<>(getView());
 
@@ -386,8 +400,11 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     TreeItem<T> item = GuiProviderFactory.getInstance().createGuiProvider(getPdo()).createTreeItem();
     item.setExpanded(true);
     tree.setRoot(item);
+    tree.setMinWidth(400);    // don't make it too small (@todo: make it depend on the contents shown)
     Scene scene = new Scene(tree);
     stage.setScene(scene);
+    stage.setTitle(MessageFormat.format(resources.getString("{0} {1} (modal)"),
+                   getPdo().getSingular(), getPdo().toString()));
     stage.showAndWait();
   }
 
@@ -543,7 +560,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   public boolean releasePdo() {
     T oldPdo = getPdo();
-    if (oldPdo != null && editAllowed.get()) {
+    if (oldPdo != null && isEditing()) {
       if (getContainer().isViewModified()) {
         Boolean answer = Rdc.showSaveDiscardCancelDialog();
         if (Boolean.TRUE.equals(answer)) {
@@ -653,8 +670,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     T pdo = getPdo();
     treeButton.setDisable(pdo == null || pdo.isNew() ||
                           !GuiProviderFactory.getInstance().createGuiProvider(pdo).providesTreeChildObjects());
-    deleteButton.setDisable(!editAllowed.get() || !editor.isRemoveAllowed());
-    newButton.setDisable(!editAllowed.get() || !editor.isNewAllowed());
+    deleteButton.setDisable(!isEditing() || !editor.isRemoveAllowed());
+    newButton.setDisable(!isEditing() || !editor.isNewAllowed());
     findButton.setDisable(!isEditable());
 
     securityButton.setDisable(pdo == null || !pdo.isRootEntity() ||
