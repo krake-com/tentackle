@@ -394,7 +394,6 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void tree() {
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.initOwner(getStage());
-    @SuppressWarnings("unchecked")
     TreeView<T> tree = Fx.createNode(TreeView.class);
     tree.setCellFactory(p -> Rdc.createTreeCell());
     TreeItem<T> item = GuiProviderFactory.getInstance().createGuiProvider(getPdo()).createTreeItem();
