@@ -598,7 +598,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tablePane.toFront();
       treeShown = false;
       treeButton.setGraphic(Fx.createImageView("tree"));
-      if (tableViewInvalid) {
+      if (tableViewInvalid && treeView.getRoot() != null) {   // root becomes null if stage closed
         int index = 0;
         for (TreeItem<T> item: treeView.getRoot().getChildren()) {
           T listPdo = items.get(index);

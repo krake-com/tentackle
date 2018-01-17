@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -43,6 +44,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -123,8 +125,13 @@ public class RdcUtilities {
         Scene scene = new Scene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
-                e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
+        final Stage s = stage;
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+          Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
+          s.setX(location.getX());
+          s.setY(location.getY());
+          crud.getEditor().requestInitialFocus();
+        }));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
             e.consume();    // don't close
@@ -261,8 +268,13 @@ public class RdcUtilities {
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
-              e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
+      final Stage s = stage;
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+        Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
+        s.setX(location.getX());
+        s.setY(location.getY());
+        search.getFinder().requestInitialFocus();
+      }));
       stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
               // runlater to avoid clearing the modal return value
               e -> Platform.runLater(() -> search.setItems(null)));
