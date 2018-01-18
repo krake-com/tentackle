@@ -72,9 +72,11 @@ import static java.util.Calendar.YEAR;
  * <li><tt>:;'"</tt>: current time</li>
  * <li><tt>+3d</tt>: today 0:00:00 plus 3 days</li>
  * <li><tt>-2y</tt>: today 2 years ago.</li>
- * <li><tt>17</tt>: the "smallest" unit of the field will be set to 17.
+ * <li><tt>17</tt>: the unit is determined according to the model's type. If {@link Time} the unit
+ *  defaults to the most significant format-pattern (usually hours). Else if {@link Date} or {@link Timestamp},
+ *  the unit defaults to 'd'.
  *  For dates this means the 17th of the current month.
- *  If the smalles unit are minutes, it means current hour 17 minutes.</li>
+ *  If the type is a {@link Time}, it means 5pm.</li>
  * <li><tt>+14</tt>: same as above but the value will be added (or subtracted if negative)
  *    to (from) the current time. For date fields, for example, this is again shorter than "+14d".</li>
  * <li><tt>4m</tt>: the unit according to the letter following the number will be set _and_
@@ -331,9 +333,9 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
            * current +/-Nt expression, i.e. current time plus or minus
            * some seconds, minutes, hours, days, weeks, months or years.
            * E.g.: +1d
-           * The type defaults to the least significant value according
-           * to the format. I.e. if the format is dd.MM.yy hh:mm,
-           * +7 means plus 7 minutes.
+           * The type defaults to 'd' if the type is Date or Timestamp
+           * and to the most significant value according to the format
+           * if the type is Time (usually 'h').
            * The + can also be ommitted for 1 or 2-digit numbers and means
            * 'set' instead of 'add'.
            * I.e. 17 means 17th of current month (if date-format) or
@@ -352,27 +354,23 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             char type = str.charAt(slen-1);
             int value;
             if (Character.isDigit(type))  {
-              // determine according to format
-              if      (pattern.indexOf('s') >= 0) {
-                type = 's';
+              // missing type: determine according to model type and/or format
+              if (Time.class.isAssignableFrom(getComponent().getType())) {
+                if (pattern.indexOf('H') >= 0 || pattern.indexOf('h') >= 0) {
+                  type = 'h';
+                }
+                else if (pattern.indexOf('m') >= 0) {
+                  type = 'm';
+                }
+                else if (pattern.indexOf('s') >= 0) {
+                  type = 's';
+                }
+                else {
+                  type = 'h';
+                }
               }
-              else if (pattern.indexOf('m') >= 0) {
-                type = 'm';
-              }
-              else if (pattern.indexOf('h') >= 0) {
-                type = 'h';
-              }
-              else if (pattern.indexOf('H') >= 0) {
-                type = 'H';
-              }
-              else if (pattern.indexOf('d') >= 0) {
+              else {    // date or timestamp
                 type = 'd';
-              }
-              else if (pattern.indexOf('M') >= 0) {
-                type = 'M';
-              }
-              else if (pattern.indexOf('Y') >= 0) {
-                type = 'y';
               }
               value = Integer.parseInt(str.charAt(0) == '+' ? str.substring(1) : str);
             }
