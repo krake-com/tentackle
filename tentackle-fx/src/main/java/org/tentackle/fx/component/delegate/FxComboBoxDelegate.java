@@ -138,10 +138,11 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
   @Override
   public void mapErrorOffsetToCaretPosition() {
-    if (getErrorOffset() != null && component.isEditable()) {
+    Integer errorOffset = getErrorOffset();
+    if (errorOffset != null && component.isEditable()) {
       Platform.runLater(() -> {
         component.getEditor().deselect();
-        component.getEditor().positionCaret(getErrorOffset());
+        component.getEditor().positionCaret(errorOffset);
       });
     }
   }
@@ -160,6 +161,18 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
     // else determine from type and/or binding
     return !(getType() != null && getType().isPrimitive() ||
              component.isMandatory());
+  }
+
+  @Override
+  public void autoSelect() {
+    if (component.isEditable()) {
+      if (isAutoSelect()) {
+        component.getEditor().selectAll();
+      }
+      else {
+        component.getEditor().deselect();
+      }
+    }
   }
 
 }

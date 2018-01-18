@@ -508,6 +508,10 @@ public class FxTextField extends TextField implements FxTextComponent {
     getDelegate().mapErrorOffsetToCaretPosition();
   }
 
+  @Override
+  public void autoSelect() {
+    getDelegate().autoSelect();
+  }
   // </editor-fold>//GEN-END:textcomponent
 
 }

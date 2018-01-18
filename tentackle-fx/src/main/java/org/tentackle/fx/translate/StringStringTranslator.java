@@ -18,7 +18,7 @@
 
 package org.tentackle.fx.translate;
 
-import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
@@ -34,7 +34,7 @@ public class StringStringTranslator extends IdentityTranslator<String> {
    *
    * @param component the text component
    */
-  public StringStringTranslator(FxTextComponent component) {
+  public StringStringTranslator(FxComponent component) {
     super(component);
   }
 

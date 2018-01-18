@@ -498,6 +498,10 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
     getDelegate().mapErrorOffsetToCaretPosition();
   }
 
+  @Override
+  public void autoSelect() {
+    getDelegate().autoSelect();
+  }
   // </editor-fold>//GEN-END:textcomponent
 
 }

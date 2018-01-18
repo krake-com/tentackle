@@ -245,4 +245,11 @@ public interface FxTextComponent extends FxComponent {
    */
   Function<String,String> getTextConverter();
 
+  /**
+   * Selects or deselects all text in the text input.<br>
+   *
+   * @see #isAutoSelect()
+   */
+  void autoSelect();
+
 }

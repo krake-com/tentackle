@@ -311,9 +311,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (slen == 1) {
           // only one char: check for shortcut
           char c = str.charAt(0);
-          if (withDate &&
-              (LEGACY_DATE_DELIMITERS.indexOf(c) >= 0 ||
-               dateDelimiters.indexOf(c) >= 0)) {
+          if (withDate && LEGACY_DATE_DELIMITERS.indexOf(c) >= 0) {
             // current date at 0:00:00
             GregorianCalendar cal = new GregorianCalendar();
             DateHelper.setMidnight(cal);
@@ -326,9 +324,10 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           // else not allowed
         }
 
-        if (str.indexOf('-') == 0 || str.indexOf('+') == 0 ||
-            (slen <= 2 && StringHelper.isAllDigits(str)) ||
-            "sSmMhHdDwWyY".indexOf(str.charAt(slen-1)) >= 0) {
+        if (slen > 0 &&
+            (str.indexOf('-') == 0 || str.indexOf('+') == 0 ||
+             (slen <= 2 && StringHelper.isAllDigits(str)) ||
+             "sSmMhHdDwWyY".indexOf(str.charAt(slen-1)) >= 0)) {
           /**
            * current +/-Nt expression, i.e. current time plus or minus
            * some seconds, minutes, hours, days, weeks, months or years.

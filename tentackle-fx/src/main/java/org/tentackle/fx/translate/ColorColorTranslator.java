@@ -29,14 +29,14 @@ import org.tentackle.fx.ValueTranslatorService;
  * @author harald
  */
 @ValueTranslatorService(modelClass = Color.class, viewClass = Color.class)
-public class ColorTranslator extends IdentityTranslator<Color> {
+public class ColorColorTranslator extends IdentityTranslator<Color> {
 
   /**
    * Creates the translator.
    *
    * @param component the component
    */
-  public ColorTranslator(FxComponent component) {
+  public ColorColorTranslator(FxComponent component) {
     super(component);
   }
 
