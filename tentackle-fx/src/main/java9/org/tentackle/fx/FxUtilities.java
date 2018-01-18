@@ -46,7 +46,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.control.skin.TableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.GridPane;
@@ -346,14 +345,14 @@ public class FxUtilities {
   public void focusGained(FxComponent component) {
     if (component.getError() == null) {  // don't override view if there is a parsing error
       component.updateView();
-      if (component instanceof FxTextComponent && component instanceof TextInputControl) {
+      if (component.isChangeable() && component instanceof FxTextComponent) {
+        // By default, FX autoselects a field if on re-focus.
+        // This cannot be configured and is hard wired (for whatever reason).
+        // In TT, this is configurable via the autoSelect feature.
         // in FX components are autoselected if the field is focused by TAB (or ENTER in TT).
         // If by mouse, the cursor is positioned where the mouse points to and nothing is selected.
         // For numeric fields, however, (and where desired) this behaviour leads to unexpected data entry.
-        FxTextComponent textComponent = (FxTextComponent) component;
-        if (textComponent.isAutoSelect()) {
-          Platform.runLater(((TextInputControl) component)::selectAll);
-        }
+        Platform.runLater(((FxTextComponent) component)::autoSelect);
       }
     }
   }
@@ -575,7 +574,7 @@ public class FxUtilities {
    */
   public ObservableList<Stage> getAllShowingStages() {
     ObservableList<Stage> stages = FXCollections.observableArrayList();
-    for (Window w: Window.getWindows()) {
+    for (Window w : Window.getWindows()) {
       if (w instanceof Stage) {
         stages.add((Stage) w);
       }
@@ -613,7 +612,7 @@ public class FxUtilities {
    * @param stage the stage to be positioned on the screen
    * @return the location
    */
-  public Point2D determineStageLocation(Stage stage)  {
+  public Point2D determinePreferredStageLocation(Stage stage)  {
 
     Point2D location = new Point2D(stage.getX(), stage.getY());
 
