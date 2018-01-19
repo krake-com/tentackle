@@ -37,8 +37,9 @@ import org.tentackle.fx.component.delegate.FxDatePickerDelegate;
 
 /**
  * Extended DatePicker.<br>
- * Tentackle's FxDatePicker is a TextComponent and maps to Date, Time or Timestamp
- * instead of LocalDate. It uses the DateStringTranslator to map to/from the model.
+ * Tentackle's FxDatePicker is a TextComponent and maps to Date or Timestamp.<br>
+ * It uses the DateStringTranslator to map to/from the model. DatePicker's LocalDate
+ * is only used internally.
  *
  * @author harald
  */

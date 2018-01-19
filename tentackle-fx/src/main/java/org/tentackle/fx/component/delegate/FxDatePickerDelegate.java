@@ -6,6 +6,7 @@
 
 package org.tentackle.fx.component.delegate;
 
+import java.sql.Time;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,9 +15,11 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.TextFormatter;
 import javafx.util.StringConverter;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxDatePicker;
@@ -109,6 +112,22 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
     }
   }
 
+  @Override
+  public void setType(Class<?> type) {
+    // allow only Date and Timestamp, others don't make any sense to the datepicker popup.
+    if (!Date.class.isAssignableFrom(type) ||
+        Time.class.isAssignableFrom(type)) {
+      throw new FxRuntimeException(type.getName() + " not applicable to " + component.getClass().getName());
+    }
+    super.setType(type);
+  }
+
+  @Override
+  public Node getNode() {
+    return component.getEditor();
+  }
+
+
 
   /**
    * Converter used for the LocalDate part only.
@@ -120,7 +139,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
 		public String toString(LocalDate object) {
-      if (getError() == null) {
+      if (getError() == null && component.isChangeable()) {
         if (object != null) {
           // merge localDate into lastDate
           GregorianCalendar cal = new GregorianCalendar();

@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import javafx.scene.Node;
 import javafx.scene.control.DatePicker;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -46,7 +45,8 @@ public class DatePickerConfigurator<T extends DatePicker> extends ComponentConfi
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
       if (event.getCode() == KeyCode.BACK_SPACE && event.isShiftDown() &&
           !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
-        if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+        if (event.getEventType() == KeyEvent.KEY_PRESSED &&
+            !control.getEditor().isDisabled() && control.getEditor().isEditable()) {
           control.getEditor().clear();
         }
         event.consume();
