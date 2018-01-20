@@ -58,7 +58,7 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
           !event.isShiftDown() && !event.isShortcutDown()) {
         if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
-            isDeselectAllowed()) {
+            !component.isDisabled() && isDeselectAllowed()) {
           event.consume();
           component.getSelectionModel().clearSelection();
         }

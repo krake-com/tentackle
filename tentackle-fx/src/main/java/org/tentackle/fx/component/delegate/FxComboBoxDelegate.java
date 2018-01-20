@@ -74,7 +74,7 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
           !event.isShiftDown() && !event.isShortcutDown()) {
         if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
-            !component.isEditable() && isDeselectAllowed()) {
+            !component.isEditable() && !component.isDisabled() && isDeselectAllowed()) {
           event.consume();
           component.getSelectionModel().clearSelection();
         }
