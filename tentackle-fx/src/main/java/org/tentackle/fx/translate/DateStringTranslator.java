@@ -204,7 +204,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (informationLossLogLevel != null &&
             informationLossLogLevel != Logger.Level.SEVERE &&
             LOGGER.isLoggable(informationLossLogLevel)) {
-          String msg = "possible information loss while formatting " + value +
+          String msg = "possible information loss while formatting " + value.getClass().getName() + " " + value +
                        " with format " + getFormat().toPattern() + " in:\n" +
                        FxUtilities.getInstance().dumpComponentHierarchy((Node) getComponent());
           FxRuntimeException uix = informationLossLogLevel == Logger.Level.FINE ||
@@ -315,11 +315,11 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             // current date at 0:00:00
             GregorianCalendar cal = new GregorianCalendar();
             DateHelper.setMidnight(cal);
-            return parse(format(cal.getTime()));  // start over
+            return parse(format(toType(cal.getTime())));  // start over
           }
           if (withTime && LEGACY_TIME_DELIMITERS.indexOf(c) >= 0) {
             // current date and time
-            return parse(format(new Date()));    // start over
+            return parse(format(toType(new Date())));    // start over
           }
           // else not allowed
         }
@@ -468,7 +468,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             }
 
             // start over
-            return parse(format(cal.getTime()));
+            return parse(format(toType(cal.getTime())));
           }
           catch (ParseException e) {
             getComponent().setErrorOffset(e.getErrorOffset());
@@ -506,12 +506,27 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
         catch (ParseException e) {
           getComponent().setErrorOffset(e.getErrorOffset());
-          getComponent().setError(MessageFormat.format(FxFxBundle.getString("INVALID DATE: {0}"), str));
+          getComponent().setError(MessageFormat.format(FxFxBundle.getString(
+                  withDate ? "INVALID DATE: {0}" : "INVALID TIME: {0}"), str));
+          char errorChar = 0;
+          if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen) {
+            errorChar = str.charAt(e.getErrorOffset() - 1);
+          }
           // check for user entered 1.1. and meant 1.1.<current year>
-          if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen &&
-              dateDelimiters.indexOf(str.charAt(e.getErrorOffset() - 1)) >= 0) {
+          if (errorChar > 0 && dateDelimiters.indexOf(errorChar) >= 0) {
             // last char was a date-delimiter: try appending current year
             str += new GregorianCalendar().get(YEAR);
+          }
+          else if (errorChar == ':') {
+            // last char was a time-delimiter: try appending 00
+            str += "00";
+          }
+          else if ((slen > 2 && Character.isDigit(errorChar) && Character.isDigit(str.charAt(slen - 2)) &&
+                    (str.charAt(slen - 3) == ':' || str.charAt(slen - 3) == ' ')) ||
+                   (slen > 1 && Character.isDigit(errorChar) &&
+                    (str.charAt(slen - 2) == ':' || str.charAt(slen - 2) == ' '))) {
+            // ends with ":NN", ":N", " NN" or " N" -> add another ":00"
+            str += ":00";
           }
           else { // check for user omitted the delimiters at all, e.g. 0105
             StringBuilder nBuf = new StringBuilder();    // new generated input
@@ -654,6 +669,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     if (format == null || !pat.equals(pattern)) {
       pattern = pat;
       format = new SimpleDateFormat(pattern);
+      format.setLenient(getComponent().isLenient());
     }
 
     // extract date-delimiters
@@ -661,7 +677,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     String f = format.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
-      if (!Character.isLetterOrDigit(c))  {
+      if (c != ':' && !Character.isLetterOrDigit(c))  {
         dateDelimiters += c;
       }
     }

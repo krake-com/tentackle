@@ -57,6 +57,11 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   private String pattern;
 
   /**
+   * whether parsing to model should be lenient.
+   */
+  private boolean lenient;
+
+  /**
    * The numeric scale.
    */
   private int scale;
@@ -403,6 +408,16 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
   @Override
   public String getPattern() {
     return pattern;
+  }
+
+  @Override
+  public boolean isLenient() {
+    return lenient;
+  }
+
+  @Override
+  public void setLenient(boolean lenient) {
+    this.lenient = lenient;
   }
 
   @Override

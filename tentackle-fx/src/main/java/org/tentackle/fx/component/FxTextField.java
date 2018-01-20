@@ -404,6 +404,16 @@ public class FxTextField extends TextField implements FxTextComponent {
   }
 
   @Override
+  public boolean isLenient() {
+    return getDelegate().isLenient();
+  }
+
+  @Override
+  public void setLenient(boolean lenient) {
+    getDelegate().setLenient(lenient);
+  }
+
+  @Override
   public void setScale(int scale) {
     getDelegate().setScale(scale);
   }
