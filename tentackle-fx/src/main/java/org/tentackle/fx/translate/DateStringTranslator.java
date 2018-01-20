@@ -204,8 +204,8 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (informationLossLogLevel != null &&
             informationLossLogLevel != Logger.Level.SEVERE &&
             LOGGER.isLoggable(informationLossLogLevel)) {
-          String msg = "possible information loss while formatting " + value.getClass().getName() + " " + value +
-                       " with format " + getFormat().toPattern() + " in:\n" +
+          String msg = "possible information loss while formatting " + value.getClass().getName() + " '" + value +
+                       "' with format " + getFormat().toPattern() + " in:\n" +
                        FxUtilities.getInstance().dumpComponentHierarchy((Node) getComponent());
           FxRuntimeException uix = informationLossLogLevel == Logger.Level.FINE ||
                                     informationLossLogLevel == Logger.Level.FINER ?
