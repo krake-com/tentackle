@@ -52,7 +52,6 @@ public class UtilDateCellType<T extends Date> extends AbstractTableCellType<T> {
    * Gets the date format.
    *
    * @param tableCell the cell
-   * @param item the date
    * @return the format, null if default toString()
    */
   protected DateFormat getFormat(FxTableCell<?, T> tableCell) {

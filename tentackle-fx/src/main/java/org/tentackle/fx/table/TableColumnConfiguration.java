@@ -22,6 +22,7 @@ package org.tentackle.fx.table;
 import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableColumn;
 import org.tentackle.fx.bind.FxTableBinding;
@@ -115,6 +116,13 @@ public interface TableColumnConfiguration<S,T> {
    * @return the date format, null if default
    */
   DateFormat getDateFormat();
+
+  /**
+   * Gets the date or time formatter.
+   *
+   * @return the formatter, null if default
+   */
+  DateTimeFormatter getDateTimeFormatter();
 
   /**
    * Defines the alignment of the column.
