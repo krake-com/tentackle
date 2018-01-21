@@ -22,12 +22,17 @@ package org.tentackle.misc;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.Timestamp;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.HOUR;
@@ -175,6 +180,27 @@ public class FormatHelper {
     /** localized {@link java.text.DateFormat} for a short time. */
     private final SimpleDateFormat shortTimeFormat;
 
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a timestamp. */
+    private final DateTimeFormatter localDateTimeFormat;
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a date. */
+    private final DateTimeFormatter localDateFormat;
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a time. */
+    private final DateTimeFormatter localTimeFormat;
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a short timestamp. */
+    private final DateTimeFormatter shortLocalDateTimeFormat;
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a short date. */
+    private final DateTimeFormatter shortLocalDateFormat;
+
+    /** localized {@link java.time.format.DateTimeFormatter} for a short time. */
+    private final DateTimeFormatter shortLocalTimeFormat;
+
+
+
     /** short letter for "debit" (soll). */
     private final char debitLetter;
     private final String debitString;    // used in betragSH
@@ -208,6 +234,13 @@ public class FormatHelper {
       shortTimestampFormat = new SimpleDateFormat(shortTimestampPattern, locale);
       shortDateFormat = new SimpleDateFormat(shortDatePattern, locale);
       shortTimeFormat = new SimpleDateFormat(shortTimePattern, locale);
+      // new java.time package
+      localDateTimeFormat = DateTimeFormatter.ofPattern(timestampPattern, locale);
+      localDateFormat = DateTimeFormatter.ofPattern(datePattern, locale);
+      localTimeFormat = DateTimeFormatter.ofPattern(timePattern, locale);
+      shortLocalDateTimeFormat = DateTimeFormatter.ofPattern(shortTimestampPattern, locale);
+      shortLocalDateFormat = DateTimeFormatter.ofPattern(shortDatePattern, locale);
+      shortLocalTimeFormat = DateTimeFormatter.ofPattern(shortTimePattern, locale);
     }
 
     private String debitCreditToString(BMoney money, boolean debit) {
@@ -385,8 +418,8 @@ public class FormatHelper {
    * @return the timestamp
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseTimestamp(String str) throws ParseException {
-    return getFormatting().timestampFormat.parse(str);
+  public static synchronized Timestamp parseTimestamp(String str) throws ParseException {
+    return new Timestamp(getFormatting().timestampFormat.parse(str).getTime());
   }
 
   /**
@@ -396,8 +429,8 @@ public class FormatHelper {
    * @return the timestamp
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseShortTimestamp(String str) throws ParseException {
-    return getFormatting().shortTimestampFormat.parse(str);
+  public static synchronized Timestamp parseShortTimestamp(String str) throws ParseException {
+    return new Timestamp(getFormatting().shortTimestampFormat.parse(str).getTime());
   }
 
   /**
@@ -407,8 +440,8 @@ public class FormatHelper {
    * @return the date
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseDate(String str) throws ParseException {
-    return getFormatting().dateFormat.parse(str);
+  public static synchronized org.tentackle.common.Date parseDate(String str) throws ParseException {
+    return new org.tentackle.common.Date(getFormatting().dateFormat.parse(str).getTime());
   }
 
   /**
@@ -418,8 +451,8 @@ public class FormatHelper {
    * @return the date
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseShortDate(String str) throws ParseException {
-    return getFormatting().shortDateFormat.parse(str);
+  public static synchronized org.tentackle.common.Date parseShortDate(String str) throws ParseException {
+    return new org.tentackle.common.Date(getFormatting().shortDateFormat.parse(str).getTime());
   }
 
   /**
@@ -429,8 +462,8 @@ public class FormatHelper {
    * @return the time
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseTime(String str) throws ParseException {
-    return getFormatting().timeFormat.parse(str);
+  public static synchronized org.tentackle.common.Time parseTime(String str) throws ParseException {
+    return new org.tentackle.common.Time(getFormatting().timeFormat.parse(str).getTime());
   }
 
   /**
@@ -440,8 +473,75 @@ public class FormatHelper {
    * @return the time
    * @throws ParseException if parsing failed
    */
-  public static synchronized Date parseShortTime(String str) throws ParseException {
-    return getFormatting().shortTimeFormat.parse(str);
+  public static synchronized org.tentackle.common.Time parseShortTime(String str) throws ParseException {
+    return new org.tentackle.common.Time(getFormatting().shortTimeFormat.parse(str).getTime());
+  }
+
+
+  /**
+   * Parses a timestamp.
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   * @throws ParseException if parsing failed
+   */
+  public static LocalDateTime parseLocalDateTime(String str) throws ParseException {
+    return LocalDateTime.parse(str, getFormatting().localDateTimeFormat);
+  }
+
+  /**
+   * Parses a short timestamp.
+   *
+   * @param str the string to parse
+   * @return the timestamp
+   * @throws java.time.format.DateTimeParseException if parsing failed
+   */
+  public static LocalDateTime parseShortLocalDateTime(String str) throws ParseException {
+    return LocalDateTime.parse(str, getFormatting().shortLocalDateTimeFormat);
+  }
+
+  /**
+   * Parses a date.
+   *
+   * @param str the string to parse
+   * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
+   */
+  public static LocalDate parseLocalDate(String str) throws ParseException {
+    return LocalDate.parse(str, getFormatting().localDateFormat);
+  }
+
+  /**
+   * Parses a short date.
+   *
+   * @param str the string to parse
+   * @return the date
+   * @throws java.time.format.DateTimeParseException if parsing failed
+   */
+  public static LocalDate parseShortLocalDate(String str) throws ParseException {
+    return LocalDate.parse(str, getFormatting().shortLocalDateFormat);
+  }
+
+  /**
+   * Parses a time.
+   *
+   * @param str the string to parse
+   * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
+   */
+  public static LocalTime parseLocalTime(String str) throws ParseException {
+    return LocalTime.parse(str, getFormatting().localTimeFormat);
+  }
+
+  /**
+   * Parses a short time.
+   *
+   * @param str the string to parse
+   * @return the time
+   * @throws java.time.format.DateTimeParseException if parsing failed
+   */
+  public static LocalTime parseShortLocalTime(String str) throws ParseException {
+    return LocalTime.parse(str, getFormatting().shortLocalTimeFormat);
   }
 
 
@@ -535,6 +635,68 @@ public class FormatHelper {
   public static synchronized String formatShortTime(Date time) {
     return getFormatting().shortTimeFormat.format(time);
   }
+
+
+  /**
+   * Formats a timestamp.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatLocalDateTime(LocalDateTime timestamp) {
+    return getFormatting().localDateTimeFormat.format(timestamp);
+  }
+
+  /**
+   * Formats a short timestamp.
+   *
+   * @param timestamp the timestamp to format
+   * @return the formatted string
+   */
+  public static String formatShortLocalDateTime(LocalDateTime timestamp) {
+    return getFormatting().shortLocalDateTimeFormat.format(timestamp);
+  }
+
+  /**
+   * Formats a date.
+   *
+   * @param date the date to format
+   * @return the formatted string
+   */
+  public static String formatLocalDate(LocalDate date) {
+    return getFormatting().localDateFormat.format(date);
+  }
+
+  /**
+   * Formats a short date.
+   *
+   * @param date the date to format
+   * @return the formatted string
+   */
+  public static String formatShortLocalDate(LocalDate date) {
+    return getFormatting().shortLocalDateFormat.format(date);
+  }
+
+  /**
+   * Formats a time.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatLocalTime(LocalTime time) {
+    return getFormatting().localTimeFormat.format(time);
+  }
+
+  /**
+   * Formats a short time.
+   *
+   * @param time the time to format
+   * @return the formatted string
+   */
+  public static String formatShortLocalTime(LocalTime time) {
+    return getFormatting().shortLocalTimeFormat.format(time);
+  }
+
 
 
   /**

@@ -25,6 +25,9 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.DMoney;
@@ -51,6 +54,15 @@ public enum DataType {
 
   /** A {@link java.sql.Timestamp}. */
   TIMESTAMP("Timestamp", false, true, false, true, false, SqlType.TIMESTAMP),
+
+  /** A {@link java.time.LocalDate}. */
+  LOCALDATE("LocalDate", false, false, false, true, false, SqlType.DATE),
+
+  /** A {@link java.time.LocalTime}. */
+  LOCALTIME("LocalTime", false, false, false, true, false, SqlType.TIME),
+
+  /** A {@link java.time.LocalDateTime}. */
+  LOCALDATETIME("LocalDateTime", false, false, false, true, false, SqlType.TIMESTAMP),
 
   /** A {@link org.tentackle.common.Binary} (tentackle type). */
   BINARY("Binary", false, true, false, false, false, SqlType.LONGVARBINARY),
@@ -393,10 +405,16 @@ public enum DataType {
           return StringHelper.parseString(str);
         case DATE:
           return parseDate(str);
+        case LOCALDATE:
+          return parseDate(str).toLocalDate();
         case TIME:
           return parseTime(str);
+        case LOCALTIME:
+          return parseTime(str).toLocalTime();
         case TIMESTAMP:
           return parseTimestamp(str);
+        case LOCALDATETIME:
+          return parseTimestamp(str).toLocalDateTime();
         case BIGDECIMAL:
           return new BigDecimal(StringHelper.parseString(str));
         case BMONEY:
@@ -458,11 +476,20 @@ public enum DataType {
         case DATE:
           str = printDate((java.util.Date) object);
           break;
+        case LOCALDATE:
+          str = printDate(java.sql.Date.valueOf((LocalDate) object));
+          break;
         case TIME:
           str = printTime((java.util.Date) object);
           break;
+        case LOCALTIME:
+          str = printTime(java.sql.Time.valueOf((LocalTime) object));
+          break;
         case TIMESTAMP:
           str = printTimestamp((java.util.Date) object);
+          break;
+        case LOCALDATETIME:
+          str = printTimestamp(java.sql.Timestamp.valueOf((LocalDateTime) object));
           break;
         default:
           str = object.toString();

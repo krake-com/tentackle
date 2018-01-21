@@ -24,6 +24,9 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.common.BMoney;
@@ -413,6 +416,15 @@ public class Query {
           }
           else if (data instanceof Time) {
             st.setTime(ndx++, (Time) data);
+          }
+          else if (data instanceof LocalDateTime) {
+            st.setLocalDateTime(ndx++, (LocalDateTime) data);
+          }
+          else if (data instanceof LocalDate) {
+            st.setLocalDate(ndx++, (LocalDate) data);
+          }
+          else if (data instanceof LocalTime) {
+            st.setLocalTime(ndx++, (LocalTime) data);
           }
           else if (data instanceof Binary<?>) {
             st.setBinary(ndx++, (Binary<?>) data);

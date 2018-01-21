@@ -10,6 +10,7 @@ import java.sql.Time;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -115,8 +116,10 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
   @Override
   public void setType(Class<?> type) {
     // allow only Date and Timestamp, others don't make any sense to the datepicker popup.
-    if (!Date.class.isAssignableFrom(type) ||
-        Time.class.isAssignableFrom(type)) {
+    if ((!Date.class.isAssignableFrom(type) || Time.class.isAssignableFrom(type)) &&
+        !LocalDate.class.isAssignableFrom(type) &&
+        !LocalTime.class.isAssignableFrom(type) &&
+        !LocalDateTime.class.isAssignableFrom(type)) {
       throw new FxRuntimeException(type.getName() + " not applicable to " + component.getClass().getName());
     }
     super.setType(type);
@@ -154,7 +157,17 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
           }
           cal.set(object.getYear(), object.getMonthValue() - 1, object.getDayOfMonth());
           ValueTranslator translator = getValueTranslator();
-          return (String) translator.toView(cal.getTime());
+          Object modelValue;
+          if (LocalDate.class.isAssignableFrom(component.getType())) {
+            modelValue = new java.sql.Date(cal.getTime().getTime()).toLocalDate();
+          }
+          else if (LocalDateTime.class.isAssignableFrom(component.getType())) {
+            modelValue = new java.sql.Timestamp(cal.getTime().getTime()).toLocalDateTime();
+          }
+          else {
+            modelValue = cal.getTime();
+          }
+          return (String) translator.toView(modelValue);
         }
         else {
           return null;
@@ -173,6 +186,12 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
         Object modelValue = translator.toModel(value);
         if (modelValue instanceof Date) {
           lastDate = (Date) modelValue;
+        }
+        else if (modelValue instanceof LocalDate) {
+          lastDate = java.sql.Date.valueOf((LocalDate) modelValue);
+        }
+        else if (modelValue instanceof LocalDateTime) {
+          lastDate = java.sql.Timestamp.valueOf((LocalDateTime) modelValue);
         }
         else {
           lastDate = null;

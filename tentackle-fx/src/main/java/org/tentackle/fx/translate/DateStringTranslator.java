@@ -23,6 +23,9 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.function.Function;
@@ -244,13 +247,13 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
       else if (org.tentackle.common.Date.class.isAssignableFrom(type)) {
         return new org.tentackle.common.Date(date.getTime());
       }
-      else if (java.sql.Timestamp.class.isAssignableFrom(type)) {
+      else if (java.sql.Timestamp.class.isAssignableFrom(type) || LocalDateTime.class.isAssignableFrom(type)) {
         return new java.sql.Timestamp(date.getTime());
       }
-      else if (java.sql.Time.class.isAssignableFrom(type)) {
+      else if (java.sql.Time.class.isAssignableFrom(type) || LocalTime.class.isAssignableFrom(type)) {
         return new java.sql.Time(date.getTime());
       }
-      else if (java.sql.Date.class.isAssignableFrom(type)) {
+      else if (java.sql.Date.class.isAssignableFrom(type) || LocalDate.class.isAssignableFrom(type)) {
         return new java.sql.Date(date.getTime());
       }
     }
@@ -284,10 +287,22 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (str.charAt(0) == '@') {
           str = str.substring(1, slen);
           slen--;
-          @SuppressWarnings("unchecked")
-          Supplier<Date> dateSupplier = (Supplier<Date>) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
+          @SuppressWarnings({ "unchecked", "rawtypes" })
+          Supplier dateSupplier = (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
           if (dateSupplier != null) {
-            referenceDate = dateSupplier.get();
+            Object refDate = dateSupplier.get();
+            if (refDate instanceof Date) {
+              referenceDate = (Date) refDate;
+            }
+            else if (refDate instanceof LocalDate) {
+              referenceDate = java.sql.Date.valueOf((LocalDate) refDate);
+            }
+            else if (refDate instanceof LocalTime) {
+              referenceDate = java.sql.Time.valueOf((LocalTime) refDate);
+            }
+            else if (refDate instanceof LocalDateTime) {
+              referenceDate = java.sql.Timestamp.valueOf((LocalDateTime) refDate);
+            }
             if (slen == 0) {
               str = "+0";
               slen = 2;
@@ -354,7 +369,8 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             int value;
             if (Character.isDigit(type))  {
               // missing type: determine according to model type and/or format
-              if (Time.class.isAssignableFrom(getComponent().getType())) {
+              if (Time.class.isAssignableFrom(getComponent().getType()) ||
+                  LocalTime.class.isAssignableFrom(getComponent().getType())) {
                 if (pattern.indexOf('H') >= 0 || pattern.indexOf('h') >= 0) {
                   type = 'h';
                 }
@@ -643,10 +659,10 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     String pat;
     // derive from type
     Class<?> type = getComponent().getType();
-    if (Time.class.isAssignableFrom(type)) {
+    if (Time.class.isAssignableFrom(type) || LocalTime.class.isAssignableFrom(type)) {
       pat = FormatHelper.getTimePattern();
     }
-    else if (Timestamp.class.isAssignableFrom(type)) {
+    else if (Timestamp.class.isAssignableFrom(type) || LocalDateTime.class.isAssignableFrom(type)) {
       pat = FormatHelper.getTimestampPattern();
     }
     else {

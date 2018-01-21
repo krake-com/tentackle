@@ -28,6 +28,9 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -432,6 +435,57 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     else {
       setInt(p, i);
     }
+  }
+
+
+  @Override
+  public void setLocalDate(int p, LocalDate d, Calendar timezone, boolean mapNull) {
+    setDate(p, d == null ? null : Date.valueOf(d), timezone, mapNull);
+  }
+
+  @Override
+  public void setLocalDate(int p, LocalDate d) {
+    setLocalDate(p, d, null, false);
+  }
+
+  @Override
+  public void setLocalDate(int p, LocalDate d, boolean mapNull) {
+    setLocalDate(p, d, null, mapNull);
+  }
+
+  @Override
+  public void setLocalDate(int p, LocalDate d, Calendar timezone) {
+    setLocalDate(p, d, timezone, false);
+  }
+
+  @Override
+  public void setLocalDateTime(int p, LocalDateTime ts) {
+    setLocalDateTime(p, ts, null, false);
+  }
+
+  @Override
+  public void setLocalDateTime(int p, LocalDateTime ts, boolean mapNull) {
+    setLocalDateTime(p, ts, null, mapNull);
+  }
+
+  @Override
+  public void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone) {
+    setLocalDateTime(p, ts, timezone, false);
+  }
+
+  @Override
+  public void setLocalDateTime(int p, LocalDateTime ts, Calendar timezone, boolean mapNull) {
+    setTimestamp(p, ts == null ? null : Timestamp.valueOf(ts), timezone, mapNull);
+  }
+
+  @Override
+  public void setLocalTime(int p, LocalTime t) {
+    setLocalTime(p, t, null);
+  }
+
+  @Override
+  public void setLocalTime(int p, LocalTime t, Calendar timezone) {
+    setTime(p, t == null ? null : Time.valueOf(t), timezone);
   }
 
 
