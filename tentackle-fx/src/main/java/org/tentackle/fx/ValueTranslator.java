@@ -31,43 +31,36 @@ import java.util.function.Function;
  * @param <M> the model's type
  * @param <V> the view's type
  */
-public abstract class ValueTranslator<M,V> {
+public interface ValueTranslator<M,V> {
 
   /**
-   * the component.
-   */
-  private final FxComponent component;
-
-  /**
-   * If true the translator will parse to model even incomplete information
-   * as much as possible. No exceptions are thrown.
-   */
-  private boolean lenient;
-
-
-  /**
-   * Creates a string translator for a given text component.
+   * Gets the component.
    *
-   * @param component the component
+   * @return the component
    */
-  public ValueTranslator(FxComponent component) {
-    this.component = component;
-  }
-
+  FxComponent getComponent();
 
   /**
    * Function to translate a model value to a view value.<br>
    *
    * @return the function
    */
-  public abstract Function<M,V> toViewFunction();
+  Function<M,V> toViewFunction();
 
   /**
    * Function to translate a view value to a model value.<br>
    *
    * @return the function
    */
-  public abstract Function<V,M> toModelFunction();
+  Function<V,M> toModelFunction();
+
+  /**
+   * Returns whether parsing to model should be lenient.
+   *
+   * @return true if lenient, false is default
+   */
+  boolean isLenient();
+
 
   /**
    * Returns whether toModel must be invoked twice.<br>
@@ -80,17 +73,8 @@ public abstract class ValueTranslator<M,V> {
    * </ul>
    * @return true if needs a second translation roundtrip
    */
-  public boolean needsToModelTwice() {
+  default boolean needsToModelTwice() {
     return false;
-  }
-
-  /**
-   * Gets the component.
-   *
-   * @return the component
-   */
-  public FxComponent getComponent() {
-    return component;
   }
 
   /**
@@ -99,7 +83,7 @@ public abstract class ValueTranslator<M,V> {
    * @param value the model's value
    * @return the view's value
    */
-  public V toView(M value) {
+  default V toView(M value) {
     return toViewFunction().apply(value);
   }
 
@@ -109,27 +93,8 @@ public abstract class ValueTranslator<M,V> {
    * @param value the view's value
    * @return the model's value
    */
-  public M toModel(V value) {
+  default M toModel(V value) {
     return toModelFunction().apply(value);
-  }
-
-
-  /**
-   * Returns whether parsing to model should be lenient.
-   *
-   * @return true if lenient, false is default
-   */
-  public boolean isLenient() {
-    return lenient;
-  }
-
-  /**
-   * Sets whether parsing to model should be lenient.
-   *
-   * @param lenient true if lenient
-   */
-  public void setLenient(boolean lenient) {
-    this.lenient = lenient;
   }
 
 }
