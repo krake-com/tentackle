@@ -39,6 +39,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   /**
    * maps PDO-classes to the constructors of the provider classes.
    */
+  @SuppressWarnings("rawtypes")
   private final ConcurrentHashMap<Class, Constructor> serviceMap = new ConcurrentHashMap<>();
 
   /**
@@ -58,7 +59,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
 
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo) {
     Class<T> pdoClass = pdo.getEffectiveClass();
     Constructor<T> con = serviceMap.get(pdoClass);
@@ -79,11 +80,12 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
           }
         }
         if (con == null) {
-          throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() + "(" + pdoClass.getName() + ")");
+          throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() +
+                                        "(" + pdoClass.getName() + ")");
         }
       }
       catch (ClassNotFoundException ex) {
-        throw new PdoRuntimeException("cannot load GUI service class for " + pdoClass.getName());
+        throw new PdoRuntimeException("cannot load GUI service class for " + pdoClass.getName(), ex);
       }
     }
 

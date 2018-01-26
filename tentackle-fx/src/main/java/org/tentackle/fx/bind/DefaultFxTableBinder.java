@@ -159,10 +159,14 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   public void assertAllBound() throws BindingException {
     Collection<String> unboundColumns = getUnboundColumns();
     if (!unboundColumns.isEmpty()) {
+      StringBuilder buf = new StringBuilder();
       for (String columnName: unboundColumns) {
-        LOGGER.severe("unbound column " + columnName + " in table " + tableConfig);
+        if (buf.length() > 0) {
+          buf.append(", ");
+        }
+        buf.append(columnName);
       }
-      throw new BindingException("unbound columns in " + tableConfig);
+      throw new BindingException("unbound columns in " + tableConfig + ": " + buf);
     }
   }
 
