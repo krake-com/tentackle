@@ -55,7 +55,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
     Reflections reflections = new Reflections(packagePrefix);
     reflections.getSubTypesOf(PersistentDomainObject.class).forEach(c -> {
       try {
-        PersistentDomainObject pdo = PdoFactory.getInstance().create(c);
+        PersistentDomainObject pdo = PdoFactory.getInstance().create(c, getDomainContext());
         GuiProvider provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
         Reporter.log("testing GuiProvider for PDO " + c.getName() + "<br>");
         if (provider.editorExists()) {
