@@ -13,13 +13,10 @@
 
 package org.tentackle.test.fx.rdc;
 
-import com.sun.javafx.application.PlatformImpl;
-import java.awt.GraphicsEnvironment;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
-import org.tentackle.test.pdo.TestApplication;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
@@ -36,7 +33,7 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
-public abstract class ControllerTest extends TestApplication {
+public abstract class ControllerTest extends FxRdcTestApplication {
 
   public ControllerTest() {
     super("fx-rdc-conroller-test");
@@ -44,24 +41,6 @@ public abstract class ControllerTest extends TestApplication {
 
   @Test(alwaysRun = true)
   public void testControllers() {
-
-    if (getDomainContext().getSession() == null) {
-      Reporter.log("no backend found -> no FX tests<br>");
-      return;
-    }
-
-    if (GraphicsEnvironment.isHeadless()) {
-      Reporter.log("JVM is headless -> no FX tests<br>");
-      return;
-    }
-
-    try {
-      PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
-    }
-    catch(RuntimeException rex) {
-      Reporter.log("FX not supported -> no FX tests<br>");
-      return;
-    }
 
     for (Class<FxController> clazz : FxFactory.getInstance().getControllerClasses()) {
       FxControllerService anno = clazz.getAnnotation(FxControllerService.class);

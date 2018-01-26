@@ -13,16 +13,12 @@
 
 package org.tentackle.test.fx.rdc;
 
-import com.sun.javafx.application.PlatformImpl;
-import java.awt.GraphicsEnvironment;
-import javafx.scene.control.Label;
 import org.reflections.Reflections;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.test.pdo.TestApplication;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
@@ -43,7 +39,7 @@ import org.testng.annotations.Test;
  *
  * @author harald
  */
-public abstract class GuiProviderTest extends TestApplication {
+public abstract class GuiProviderTest extends FxRdcTestApplication {
 
   private final String packagePrefix;
 
@@ -55,24 +51,6 @@ public abstract class GuiProviderTest extends TestApplication {
   @Test(alwaysRun = true)
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public void testGuiProviders() {
-
-    if (getDomainContext().getSession() == null) {
-      Reporter.log("no backend found -> no FX tests<br>");
-      return;
-    }
-
-    if (GraphicsEnvironment.isHeadless()) {
-      Reporter.log("JVM is headless -> no FX tests<br>");
-      return;
-    }
-
-    try {
-      PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
-    }
-    catch(RuntimeException rex) {
-      Reporter.log("FX not supported -> no FX tests<br>");
-      return;
-    }
 
     Reflections reflections = new Reflections(packagePrefix);
     reflections.getSubTypesOf(PersistentDomainObject.class).forEach(c -> {

@@ -26,6 +26,7 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
@@ -58,8 +59,7 @@ public abstract class TestApplication extends AbstractApplication {
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete
-      session = null;
-      return;
+      throw new SkipException("no backend found -> no tests");
     }
     Session.setCurrentSession(session);
     ModificationTracker.getInstance().setSession(session);
