@@ -466,13 +466,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param session the session
    */
   protected void removeObjectsForSession(Session session) {
-    for (Iterator<CacheKey<C>> iter = cacheMap.keySet().iterator(); iter.hasNext(); ) {
-      CacheKey<C> key = iter.next();
-      if (key.context.getSession() == session ||    // == is ok here
-          key.sessionInstanceNumber == session.getInstanceNumber()) {
-        iter.remove();
-      }
-    }
+    cacheMap.keySet().removeIf(key ->
+            key.context.getSession() == session ||    // == is ok here
+            key.sessionInstanceNumber == session.getInstanceNumber());
   }
 
 

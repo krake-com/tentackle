@@ -18,6 +18,8 @@
 
 package org.tentackle.common;
 
+import java.util.Objects;
+
 /**
  * Key to map service finders.
  *
@@ -63,9 +65,19 @@ public class ServiceFinderKey {
     return servicePath;
   }
 
+  @Override
+  public int hashCode() {
+    int hash = 7;
+    hash = 19 * hash + Objects.hashCode(this.classLoader);
+    hash = 19 * hash + Objects.hashCode(this.servicePath);
+    return hash;
+  }
 
   @Override
   public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
     if (obj == null) {
       return false;
     }
@@ -73,18 +85,13 @@ public class ServiceFinderKey {
       return false;
     }
     final ServiceFinderKey other = (ServiceFinderKey) obj;
-    if (this.classLoader != other.classLoader && (this.classLoader == null || !this.classLoader.equals(other.classLoader))) {
+    if (!Objects.equals(this.servicePath, other.servicePath)) {
       return false;
     }
-    return !((this.servicePath == null) ? (other.servicePath != null) : !this.servicePath.equals(other.servicePath));
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 89 * hash + (this.classLoader != null ? this.classLoader.hashCode() : 0);
-    hash = 89 * hash + (this.servicePath != null ? this.servicePath.hashCode() : 0);
-    return hash;
+    if (!Objects.equals(this.classLoader, other.classLoader)) {
+      return false;
+    }
+    return true;
   }
 
 }

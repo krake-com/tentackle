@@ -55,9 +55,9 @@ public enum WurbletArgumentType {
   private final boolean relopOptional;
 
 
-  private WurbletArgumentType(boolean pathOptional, boolean pathRequired,
-                              boolean attributeOptional, boolean attributeRequired,
-                              boolean nameOptional, boolean relopOptional) {
+  WurbletArgumentType(boolean pathOptional, boolean pathRequired,
+                      boolean attributeOptional, boolean attributeRequired,
+                      boolean nameOptional, boolean relopOptional) {
 
     this.pathOptional = pathOptional;
     this.pathRequired = pathRequired;

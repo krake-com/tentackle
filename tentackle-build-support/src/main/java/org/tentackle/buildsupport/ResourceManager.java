@@ -190,11 +190,6 @@ public class ResourceManager {
 
 
   private Resource getResource(String name) {
-    Resource resource = resourceMap.get(name);
-    if (resource == null) {
-      resource = new Resource(name);
-      resourceMap.put(name, resource);
-    }
-    return resource;
+    return resourceMap.computeIfAbsent(name, Resource::new);
   }
 }

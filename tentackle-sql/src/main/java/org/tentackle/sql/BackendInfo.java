@@ -258,9 +258,7 @@ public class BackendInfo {
       }
     }
     catch (SQLException sqx) {
-      if (connection != null) {
-        connection.close();
-      }
+      connection.close();
       throw sqx;
     }
     return connection;

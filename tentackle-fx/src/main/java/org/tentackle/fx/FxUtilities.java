@@ -253,7 +253,7 @@ public class FxUtilities {
     noButton.setDefaultButton(!defaultYes);
     yesButton.setDefaultButton(defaultYes);
     Optional<ButtonType> result = alert.showAndWait();
-    return result.get() == ButtonType.YES;
+    return result.isPresent() && result.get() == ButtonType.YES;
   }
 
   /**
@@ -287,13 +287,11 @@ public class FxUtilities {
       GridPane.setHgrow(textArea, Priority.ALWAYS);
       alert.getDialogPane().setExpandableContent(expContent);
       // because of resize bug in FX8 (@todo: remove in later versions if fixed)
-      alert.getDialogPane().expandedProperty().addListener((l) -> {
-        Platform.runLater(() -> {
-          alert.getDialogPane().requestLayout();
-          Window w = alert.getDialogPane().getScene().getWindow();
-          w.sizeToScene();
-        });
-      });
+      alert.getDialogPane().expandedProperty().addListener((l) -> Platform.runLater(() -> {
+        alert.getDialogPane().requestLayout();
+        Window w = alert.getDialogPane().getScene().getWindow();
+        w.sizeToScene();
+      }));
     }
 
     alert.showAndWait();
@@ -539,10 +537,10 @@ public class FxUtilities {
             Callback cellFactory = column.getCellFactory();
             if (cellFactory != null) {
               TableCell cell = (TableCell) cellFactory.call(column);
-              Font cellFont = cell.getFont();
-              // BOLD may not work if header is styled with CSS, but that's ok for default configs
-              Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
               if (cell != null) {
+                Font cellFont = cell.getFont();
+                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkin
                 double maxWidth = 20;   // don't go below this so that column remains visible
                 // apply header text first

@@ -518,12 +518,7 @@ public class FormUtilities {
        * not always deliver the event, which leaves the window in the list.
        * So we check again for "isShowing"
        */
-      for (Iterator<Window> iter = windows.iterator(); iter.hasNext(); )  {
-        Window w = iter.next();
-        if (!w.isShowing()) {
-          iter.remove();
-        }
-      }
+      windows.removeIf(w -> !w.isShowing());
       return windows.toArray(remainingWindows);
     }
   }

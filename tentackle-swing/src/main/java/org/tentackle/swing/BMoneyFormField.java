@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.Currency;
-import java.util.Locale;
 import javax.swing.text.Document;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.Constants;

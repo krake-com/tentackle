@@ -61,6 +61,12 @@ public class StatementKey {
    * @param usingClass the using class
    */
   public StatementKey(StatementId statementId, Class<?> usingClass) {
+    if (statementId == null) {
+      throw new IllegalArgumentException("statementId must not be null");
+    }
+    if (usingClass == null) {
+      throw new IllegalArgumentException("usingClass must not be null");
+    }
     this.statementId = statementId;
     this.usingClass = usingClass;
     this.sql = null;
@@ -74,6 +80,9 @@ public class StatementKey {
   public StatementKey(String sql) {
     this.statementId = null;
     this.usingClass = null;
+    if (sql == null || sql.isEmpty()) {
+      throw new IllegalArgumentException("sql must not be null or empty");
+    }
     this.sql = sql;
   }
 

@@ -214,7 +214,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
                                     informationLossLogLevel == Logger.Level.FINER ?
                                           new FxRuntimeException(msg) : null;
           LOGGER.log(informationLossLogLevel, uix == null ? msg : "", uix);
-          if (informationLossLogLevel == Logger.Level.FINER) {
+          if (informationLossLogLevel == Logger.Level.FINER && uix != null) {
             throw uix;
           }
         }
@@ -689,14 +689,15 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     }
 
     // extract date-delimiters
-    dateDelimiters = "";
+    StringBuilder buf = new StringBuilder();
     String f = format.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
       if (c != ':' && !Character.isLetterOrDigit(c))  {
-        dateDelimiters += c;
+        buf.append(c);
       }
     }
+    dateDelimiters = buf.toString();
 
     return format;
   }

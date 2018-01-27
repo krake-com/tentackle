@@ -35,7 +35,7 @@ public interface ModelDirectory {
    *
    * @return the path
    */
-  public String getPath();
+  String getPath();
 
   /**
    * Gets the model file names.

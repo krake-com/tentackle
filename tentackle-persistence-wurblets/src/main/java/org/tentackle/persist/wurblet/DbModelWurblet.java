@@ -481,7 +481,6 @@ public class DbModelWurblet extends ModelWurblet {
       String lastJoinName = null;
       if (!path.getElements().isEmpty()) {
         Join join = path.getElements().get(0);    // normalized, i.e. only one (see above)
-        String ins = inset;
         Relation relation = join.getRelation();
         lastJoinName = join.getName();
         String poImpl = deriveClassNameForEntity(relation.getEntity());
@@ -489,9 +488,9 @@ public class DbModelWurblet extends ModelWurblet {
         String leftClass = relation.getEntity().equals(getEntity()) ? pdoType : relation.getEntity().getName();
         String joinClass = relation.getForeignEntity().getName();
         String joinAlias = relation.getForeignEntity().getTableProvidingEntity().getTableAlias();
-        buf.append(ins).append(".addJoin(\n");
+        buf.append(inset).append(".addJoin(\n");
         if (relation.getRelationType() == RelationType.LIST) {
-          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          buf.append(inset).append("  new Join<>(JoinType.LEFT, ");
           if (parentName == null) {
             buf.append("getColumnName(CN_ID), \"");
           }
@@ -502,12 +501,12 @@ public class DbModelWurblet extends ModelWurblet {
              .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n");
           String extraSql = createOptionalWhereForJoin(relation, parentName, join.getName());
           if (!extraSql.isEmpty()) {
-            buf.append(ins).append("             ").append(extraSql).append(",\n");
+            buf.append(inset).append("             ").append(extraSql).append(",\n");
           }
-          buf.append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
+          buf.append(inset).append("    (").append(leftClass).append(" ").append(alias).append(", ")
              .append(joinClass).append(" ").append(joinAlias).append(") -> {\n");
           if (relation.isReversed()) {
-            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+            buf.append(inset).append("      ((").append(poImpl).append(") ").append(alias)
                .append(".getPersistenceDelegate()).").append(relation.getSetterName());
             if (relation.isSerialized()) {
               buf.append("Blunt");
@@ -515,19 +514,19 @@ public class DbModelWurblet extends ModelWurblet {
             buf.append("(").append(joinAlias).append(");\n");
           }
           else {
-            buf.append(ins).append("      ((").append(poImpl).append(") ").append(alias)
+            buf.append(inset).append("      ((").append(poImpl).append(") ").append(alias)
                .append(".getPersistenceDelegate()).").append(relation.getGetterName()).append("Blunt().addBlunt(")
                .append(joinAlias).append(");\n");
             if (relation.getLinkMethodName() != null) {
               String joinImpl = deriveClassNameForEntity(relation.getForeignEntity());
-              buf.append(ins).append("      ((").append(joinImpl).append(") ")
+              buf.append(inset).append("      ((").append(joinImpl).append(") ")
                  .append(joinAlias).append(".getPersistenceDelegate()).")
                  .append(createRelationUpdateReferenceCode(relation, alias, true)).append(";\n");
             }
           }
         }
         else {
-          buf.append(ins).append("  new Join<>(JoinType.LEFT, ");
+          buf.append(inset).append("  new Join<>(JoinType.LEFT, ");
           if (parentName == null) {
             buf.append("getColumnName(CN_").append(relation.getAttribute().getName().toUpperCase()).append("), \"");
           }
@@ -536,9 +535,9 @@ public class DbModelWurblet extends ModelWurblet {
           }
           buf.append(join.getName()).append(".id\", ")
              .append(joinClass).append(".class, \"").append(join.getName()).append("\",\n")
-             .append(ins).append("    (").append(leftClass).append(" ").append(alias).append(", ")
+             .append(inset).append("    (").append(leftClass).append(" ").append(alias).append(", ")
              .append(joinClass).append(" ").append(joinAlias).append(") -> {\n")
-             .append(ins).append("      ((").append(poImpl).append(") ")
+             .append(inset).append("      ((").append(poImpl).append(") ")
              .append(alias).append(".getPersistenceDelegate()).")
              .append(relation.getSetterName());
           if (relation.isSerialized()) {
@@ -546,8 +545,8 @@ public class DbModelWurblet extends ModelWurblet {
           }
           buf.append("(").append(joinAlias).append(");\n");
         }
-        buf.append(ins).append("    }\n")
-           .append(ins).append("  )\n");
+        buf.append(inset).append("    }\n")
+           .append(inset).append("  )\n");
       }
       List<JoinPath> subPaths = path.getPaths();
       if (!subPaths.isEmpty()) {

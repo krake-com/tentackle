@@ -65,11 +65,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    */
   public static synchronized void collect(StatementHistory history) {
     StatementStatistics key = new StatementStatistics(history.getSql(), history.getTxName(), with_parameters ? history.getParameters() : null);
-    StatementStatistics value = STAT_MAP.get(key);
-    if (value == null) {
-      value = key;
-      STAT_MAP.put(key, value);
-    }
+    StatementStatistics value = STAT_MAP.computeIfAbsent(key, k -> k);
     value.countInvocation(history.getDuration());
   }
 

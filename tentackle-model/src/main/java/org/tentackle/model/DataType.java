@@ -333,7 +333,7 @@ public enum DataType {
   /**
    * Converts to a Java primitive.
    *
-   * @return the primitive type, null if no primitive for given type
+   * @return the primitive type, never null
    */
   public DataType toPrimitive() {
     switch (this) {
@@ -354,7 +354,7 @@ public enum DataType {
       case DOUBLE:
         return DOUBLE_PRIMITIVE;
       default:
-        return null;
+        return this;
     }
   }
 
@@ -362,7 +362,7 @@ public enum DataType {
   /**
    * Converts a primitive to a Java class.
    *
-   * @return the non-primitive type, null if this is not a primitive
+   * @return the non-primitive type, never null
    */
   public DataType toNonPrimitive() {
     switch (this) {
@@ -383,7 +383,7 @@ public enum DataType {
       case DOUBLE_PRIMITIVE:
         return DOUBLE;
       default:
-        return null;
+        return this;
     }
   }
 

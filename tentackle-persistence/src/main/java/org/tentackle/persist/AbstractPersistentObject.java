@@ -366,6 +366,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param snapshot the snapshot
    */
+  @SuppressWarnings("rawtypes")
   protected void createAttributesInSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
     super.createAttributesInSnapshot(snapshot);
@@ -380,10 +381,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Updates the components in snapshot object.<br>
- The snapshot object is assumed to be a clone of this object.
+   * The snapshot object is assumed to be a clone of this object.
    *
    * @param snapshot the snapshot
    */
+  @SuppressWarnings("rawtypes")
   protected void createComponentsInSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
     // default implementation does nothing
@@ -423,7 +425,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param snapshot the snapshot object
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected void revertAttributesToSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
     super.revertAttributesToSnapshot(snapshot);
@@ -455,6 +457,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param snapshot the snapshot object
    */
+  @SuppressWarnings("rawtypes")
   protected void revertComponentsToSnapshot(AbstractPersistentObject snapshot) {
     // Important: no snapshot<T,P> cause of inheritance problems
     // default implementation does nothing
@@ -1555,7 +1558,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private <J extends PersistentDomainObject<J>> void readJoin(ResultSetWrapper rs, J nextPdo, Join<? super J,?> join) {
     PersistentDomainObject joinedPdo = join.createJoinedPdo(nextPdo);
     AbstractPersistentObject joinedPo = (AbstractPersistentObject) joinedPdo.getPersistenceDelegate();
@@ -1686,6 +1689,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param ndx the next parameter ndx
    * @return the next parameter index
    */
+  @SuppressWarnings("rawtypes")
   protected int setClassIdsInStatement(JoinedSelect<T> js, PreparedStatementWrapper st, int ndx) {
     for (Join<? super T,?> join: js.getJoins()) {
       if (!join.getJoins().isEmpty()) {   // just to make sure...
@@ -2941,6 +2945,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param <X> the pdo type
    * @param pdos the objects to mark deleted
    */
+  @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> void markDeleted(Collection<X> pdos)  {
     if (pdos != null) {
       for (X pDo: pdos)  {
@@ -2977,6 +2982,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param <X> the pdo type
    * @param pdos the list of object to delete
    */
+  @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> void delete(Collection<X> pdos) {
     if (pdos != null) {
       Session session = null;
@@ -3027,6 +3033,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param oldCollection the list of objects stored in db
    * @param newCollection the new list of objects
    */
+  @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> void deleteMissingInCollection(Collection<X> oldCollection,
                                                                                  Collection<X> newCollection) {
     if (oldCollection != null && oldCollection.size() > 0) {
@@ -3141,7 +3148,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param pdos the list to save
    * @param modifiedOnly true if only modified objects are saved
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   protected <X extends PersistentDomainObject<X>> void save(Collection<X> pdos, boolean modifiedOnly) {
     if (pdos != null) {
       Session session = null;
@@ -3274,6 +3281,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param pdos the objects
    * @return true if modified
    */
+  @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> boolean isModified(Collection<X> pdos) {
     // TrackedArrayLists are modified if elements added, replaced or removed
     if (pdos instanceof TrackedList<?> &&
@@ -3840,7 +3848,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * The default scopes are: {@link PersistenceScope}, {@link MandatoryScope} and {@link ChangeableScope}.
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getDefaultScopes() {
     return new Class[] { PersistenceScope.class, MandatoryScope.class, ChangeableScope.class };
   }

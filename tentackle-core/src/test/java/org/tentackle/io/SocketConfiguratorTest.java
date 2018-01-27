@@ -72,9 +72,8 @@ public class SocketConfiguratorTest {
     DefaultSocketConfigurator csc2 = new DefaultSocketConfigurator();
     csc2.applyParameters(CONFIG);
     assertEquals(csc1, csc2);
-    assertFalse(csc1.equals(null));
     DefaultSocketConfigurator csc3 = new DefaultSocketConfigurator();
-    assertTrue(csc3.equals(null));
+    assertNotEquals(csc1, csc3);
   }
 
 }

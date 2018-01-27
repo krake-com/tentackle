@@ -90,10 +90,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       // apply binding options defined for the UDK in the PDO, if provided
       Bindable bindable = getBindableAnnotation(proxy);
       if (bindable != null) {
-        String bindingOptions = bindable.options();
-        if (bindingOptions != null) {
-          FxUtilities.getInstance().applyBindingOptions(component, component.getBinding().getMember(), bindingOptions);
-        }
+        FxUtilities.getInstance().applyBindingOptions(component, component.getBinding().getMember(), bindable.options());
       }
     }
     catch (RuntimeException rex) {

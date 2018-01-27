@@ -74,7 +74,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       for (RemoteDbSessionImpl remoteSession: RemoteDbSessionImpl.getOpenSessions()) {
         sessions.add(new SessionDataImpl(remoteSession));
       }
-      Collections.sort(sessions, (SessionData o1, SessionData o2) -> {
+      sessions.sort((SessionData o1, SessionData o2) -> {
         int rv = Compare.compare(o1.getUserName(), o2.getUserName());
         if (rv == 0) {
           rv = Long.compare(o1.getSessionNumber(), o2.getSessionNumber());

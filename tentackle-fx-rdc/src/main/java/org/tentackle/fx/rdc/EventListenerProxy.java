@@ -151,11 +151,7 @@ public class EventListenerProxy<T extends Event> {
 
 
   private void addListener(Map<EventType<T>, List<EventHandler<T>>> map, EventType<T> eventType, EventHandler<T> handler) {
-    List<EventHandler<T>> list = map.get(eventType);
-    if (list == null) {
-      list = new ArrayList<>();
-      map.put(eventType, list);
-    }
+    List<EventHandler<T>> list = map.computeIfAbsent(eventType, k -> new ArrayList<>());
     list.add(handler);
   }
 

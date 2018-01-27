@@ -1205,10 +1205,7 @@ public final class StringHelper {
     if (binaryData != null) {
       char[] text = new char[binaryData.length << 1];
       int j = 0;
-      byte b;
-
-      for (int i=0; i < binaryData.length; ++i) {
-        b = binaryData[i];
+      for (byte b : binaryData) {
         text[j++] = HEX_DIGITS[(b & 0xf0) >> 4];
         text[j++] = HEX_DIGITS[b & 0x0f];
       }
@@ -1237,11 +1234,9 @@ public final class StringHelper {
     if (chars != null) {
       byte[] b = new byte[chars.length << 1];
       int j = 0;
-      char c;
-      for (int i=0; i < chars.length; ++i)  {
-        c = chars[i];
-        b[j++] = (byte)(c & 0xff);
-        b[j++] = (byte)((c >> 8) & 0xff);
+      for (char c : chars) {
+        b[j++] = (byte) (c & 0xff);
+        b[j++] = (byte) ((c >> 8) & 0xff);
       }
       return b;
     }

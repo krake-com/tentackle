@@ -257,10 +257,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     treeView = Fx.createNode(TreeView.class);
     treeView.setCellFactory(p -> Rdc.createTreeCell());
     wrongTypeSelected = new SimpleBooleanProperty();
-    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> {
-      wrongTypeSelected.set(nv == null || nv.getValue() == null ||
-                            !pdo.getClass().isAssignableFrom(nv.getValue().getClass()));
-    });
+    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
+            wrongTypeSelected.set(nv == null || nv.getValue() == null ||
+                                  !pdo.getClass().isAssignableFrom(nv.getValue().getClass())));
 
     StackPane stackPane = Fx.createNode(StackPane.class);
     if (treeShown) {
@@ -534,7 +533,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     else {
       if (treeShown) {
         selectedItems = FXCollections.observableArrayList();
-        treeView.getSelectionModel().getSelectedItems().stream().forEach(p -> selectedItems.add(p.getValue()));
+        treeView.getSelectionModel().getSelectedItems().forEach(p -> selectedItems.add(p.getValue()));
 
       }
       else {

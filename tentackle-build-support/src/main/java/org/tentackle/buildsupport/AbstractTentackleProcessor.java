@@ -97,11 +97,7 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
    * @return the resource manager
    */
   public ResourceManager getResourceManager(File directory) {
-    ResourceManager resourceManager = resourceManagers.get(directory);
-    if (resourceManager == null) {
-      resourceManager = new ResourceManager(directory);
-      resourceManagers.put(directory, resourceManager);
-    }
+    ResourceManager resourceManager = resourceManagers.computeIfAbsent(directory, ResourceManager::new);
     return resourceManager;
   }
 

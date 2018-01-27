@@ -150,7 +150,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
       while (stok.hasMoreTokens()) {
         String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
-        if (localeName != null && !localeName.isEmpty()) {
+        if (!localeName.isEmpty()) {
           localeSuffixes.add(localeName);
         }
       }

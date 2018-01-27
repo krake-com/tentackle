@@ -89,9 +89,8 @@ public class TablePrinter extends AbstractFxController {
     if (jobTitle != null) {
       job.getJobSettings().setJobName(jobTitle);
     }
-    stage.setOnShown(e -> {
-      Platform.runLater(() -> printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage));
-    });
+    stage.setOnShown(e -> Platform.runLater(() ->
+            printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
     stage.setOnCloseRequest((e) -> {
       if (Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false)) {
         printer.terminationRequested = true;
@@ -362,9 +361,7 @@ public class TablePrinter extends AbstractFxController {
           tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
           getView().layout();   // this does the trick to make getVisibleRowCount below work!
         });
-        Fx.runAndWait(() -> {
-          setPrintableRows(getVisibleRowCount());
-        });
+        Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount()));
         if (printableRows <= 0) {
           // no space to print (may be renedering problem, whatsoever....)
           Platform.runLater(() -> {

@@ -93,12 +93,8 @@ public interface PathFactory<P extends Path<P,E>, E> {
       }
       else {
         E element = elements.get(0);
-        List<P> pathList = pathMap.get(element);
-        if (pathList == null) {
-          // element is new
-          pathList = new ArrayList<>();
-          pathMap.put(element, pathList);
-        }
+        List<P> pathList = pathMap.computeIfAbsent(element, k -> new ArrayList<>());
+        // element is new
         pathList.add(path);
       }
     }

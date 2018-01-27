@@ -105,7 +105,8 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
         }
         else {
           // all from source dir with default java-extension
-          if (sourceDir.isDirectory() && sourceDir.list().length > 0) {
+          String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+          if (files != null && files.length > 0) {
             final FileSet fs = new FileSet();
             fs.setDirectory(sourceDir.getPath());
             fs.addInclude("**/*BeanInfo" + Constants.JAVA_SOURCE_EXTENSION);

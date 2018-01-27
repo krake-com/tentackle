@@ -148,7 +148,7 @@ public class EntityPrinter {
           annotations.add(anno);
         }
       }
-      if (annotations != null && !annotations.isEmpty()) {
+      if (!annotations.isEmpty()) {
         if (needBlankLine) {
           line("\n");
         }

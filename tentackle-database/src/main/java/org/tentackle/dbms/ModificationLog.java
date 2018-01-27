@@ -653,8 +653,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   @Override
   public void setSession(Session session) {
     super.setSession(session);
-    if (lazyObject instanceof SessionDependable) {
-      ((SessionDependable) lazyObject).setSession(session);
+    if (lazyObject != null) {
+      lazyObject.setSession(session);
     }
   }
 

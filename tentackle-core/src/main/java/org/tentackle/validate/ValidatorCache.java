@@ -155,11 +155,8 @@ public class ValidatorCache {
    * @return the validators for this class and scope
    */
   public List<Validator> getFieldValidators(Class<?> clazz) {
-    List<Validator> validators = fieldMap.get(clazz);
-    if (validators == null) {
-      validators = ValidationUtilities.getInstance().getFieldValidators(clazz, null);
-      fieldMap.put(clazz, validators);
-    }
+    List<Validator> validators = fieldMap.computeIfAbsent(clazz,
+            k -> ValidationUtilities.getInstance().getFieldValidators(clazz, null));
     return validators;
   }
 
@@ -173,11 +170,8 @@ public class ValidatorCache {
    */
   public List<Validator> getFieldValidators(Field field, Method method) {
     FieldMethodKey key = new FieldMethodKey(field, method);
-    List<Validator> validators = fieldMethodMap.get(key);
-    if (validators == null) {
-      validators = ValidationUtilities.getInstance().getFieldValidators(field, method, null);
-      fieldMethodMap.put(key, validators);
-    }
+    List<Validator> validators = fieldMethodMap.computeIfAbsent(key,
+            k -> ValidationUtilities.getInstance().getFieldValidators(field, method, null));
     return validators;
   }
 
@@ -189,11 +183,8 @@ public class ValidatorCache {
    * @return the list of field validators
    */
   public List<Validator> getObjectValidators(Class<?> clazz) {
-    List<Validator> validators = objectMap.get(clazz);
-    if (validators == null) {
-      validators = ValidationUtilities.getInstance().getObjectValidators(clazz, null);
-      objectMap.put(clazz, validators);
-    }
+    List<Validator> validators = objectMap.computeIfAbsent(clazz,
+            k -> ValidationUtilities.getInstance().getObjectValidators(clazz, null));
     return validators;
   }
 

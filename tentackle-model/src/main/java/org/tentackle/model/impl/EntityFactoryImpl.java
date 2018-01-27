@@ -350,8 +350,8 @@ public class EntityFactoryImpl implements EntityFactory {
    * @throws ModelException if processing failed
    */
   protected void processGlobalOptions(EntityImpl entity, GlobalOptionLine line) throws ModelException {
-    if (!entity.getAttributes().isEmpty()) {
-      line.createModelException("global options must appear before attributes declaration section");
+    if (entity.getAttributes().size() > 2) {    // ID and Serial predefined
+      throw line.createModelException("global options must appear before attributes declaration section");
     }
     EntityOptionsImpl options = entity.getOptions();
     for (String option: line.getOptions()) {

@@ -96,12 +96,8 @@ public class ModelCommentSupport {
       }
 
       Relation nmRel = relation.getNmRelation();
-      Relation rel = relation;
       if (nmRel == null && relation.getForeignRelation() != null) {
         nmRel = relation.getForeignRelation().getNmRelation();
-        if (nmRel != null) {
-          rel = relation.getForeignRelation();
-        }
       }
 
       if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
@@ -249,9 +245,7 @@ public class ModelCommentSupport {
       }
     }
 
-    Collections.sort(sortedRelations, (o1, o2) -> {
-      return o1.getForeignEntity().getName().compareTo(o2.getForeignEntity().getName());
-    });
+    sortedRelations.sort((o1, o2) -> o1.getForeignEntity().getName().compareTo(o2.getForeignEntity().getName()));
 
     for (Relation relation: sortedRelations) {
       out.print(indent);
@@ -305,9 +299,7 @@ public class ModelCommentSupport {
 
     if (!roots.isEmpty()) {
 
-      Collections.sort(roots, (o1, o2) -> {
-        return o1.getName().compareTo(o2.getName());
-      });
+      roots.sort((o1, o2) -> o1.getName().compareTo(o2.getName()));
 
       out.print(" (");
       boolean needComma = false;

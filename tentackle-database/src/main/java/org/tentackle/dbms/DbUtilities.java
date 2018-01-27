@@ -188,7 +188,7 @@ public class DbUtilities {
 
       @Override
       public Consumer<Db> getConsumer() {
-        return (db) -> db.reOpen();
+        return Db::reOpen;
       }
     };
   }

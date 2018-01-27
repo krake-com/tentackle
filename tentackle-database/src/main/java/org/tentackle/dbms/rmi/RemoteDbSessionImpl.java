@@ -777,7 +777,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
             break;
           }
           catch (ClassNotFoundException e) {
-            if (currentClazz == Object.class) {
+            if (currentClazz == Object.class && nfe != null) {
               // abort with first exception thrown
               throw nfe;
             }

@@ -81,7 +81,7 @@ public class DefaultSecurityManager implements SecurityManager {
      */
     public SecurityResult getResult() {
       if (result == null) {
-        SecurityPersistence spo = (SecurityPersistence) security;   // bypass IH to speed up
+        SecurityPersistence spo = (SecurityPersistence) security.getPersistenceDelegate();   // bypass IH to speed up
         if (spo.isAllowed()) {
           result = createAcceptedSecurityResult(spo.getMessage(), false);
         }
@@ -614,11 +614,8 @@ public class DefaultSecurityManager implements SecurityManager {
         return noGranteeResult;
       }
 
-      Collection<GranteeDescriptor> granteesToCheck = granteeMap.get(sessionGrantee);
-      if (granteesToCheck == null) {
-        granteesToCheck = determineGranteesToCheck(context, sessionGrantee);
-        granteeMap.put(sessionGrantee, granteesToCheck);
-      }
+      Collection<GranteeDescriptor> granteesToCheck = granteeMap.computeIfAbsent(sessionGrantee,
+              g -> determineGranteesToCheck(context, g));
 
       for (GranteeDescriptor grantee : granteesToCheck) {
 

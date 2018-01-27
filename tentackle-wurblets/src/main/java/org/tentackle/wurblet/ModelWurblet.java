@@ -101,6 +101,9 @@ public class ModelWurblet extends AbstractWurblet {
   /** != null if detected whether this is a pdo or not. */
   private Boolean isPdo;
 
+  /** true if isPdo != null and wurblet anchor is declared within an interface. */
+  private boolean isInterface;
+
   /** true if --remote option set. */
   private boolean remote;
 
@@ -167,6 +170,7 @@ public class ModelWurblet extends AbstractWurblet {
             pdoClassName = persistentIface.substring(0, ndx);
             if (pdoClassName.length() > 1 && pdoClassName.indexOf('<') < 0) {   // not T or some other generic type
               isPdo = true;
+              isInterface = true;
               return pdoClassName;
             }
           }
@@ -242,6 +246,16 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
     return isPdo;
+  }
+
+  /**
+   * Returns whether wurblet is defined within an interface.<br>
+   * Only valid if isPdo() returns non-null.
+   *
+   * @return true if interface
+   */
+  public boolean isInterface() {
+    return isInterface;
   }
 
   /**
@@ -356,7 +370,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the sorted entities (same reference as argument)
    */
   public List<Entity> orderByInheritanceLevelAndClassId(List<Entity> entities) {
-    Collections.sort(entities, (Entity o1, Entity o2) -> {
+    entities.sort((Entity o1, Entity o2) -> {
       int rv = o1.getInheritanceLevel() - o2.getInheritanceLevel();
       if (rv == 0) {
         rv = Long.compare(o1.getClassId(), o2.getClassId());

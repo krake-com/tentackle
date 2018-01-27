@@ -105,13 +105,18 @@ public class SecuredInterceptor extends AbstractInterceptor {
       }
       
       if (!success) {
-        // ored, i.e. all permissions failed: collect messages and throw exception
+        // all permissions failed: collect messages and throw exception
         StringBuilder buf = new StringBuilder();
-        for (SecurityException sx : failedSx) {
-          if (buf.length() > 0) {
-            buf.append('\n');
+        if (ored) {
+          for (SecurityException sx : failedSx) {
+            if (buf.length() > 0) {
+              buf.append('\n');
+            }
+            buf.append(sx.getMessage());
           }
-          buf.append(sx.getMessage());
+        }
+        else {
+          buf.append("no permissions in annotation");
         }
         throw new SecurityException(context.getSession(), buf.toString());
       }

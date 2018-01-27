@@ -53,12 +53,8 @@ public class DefaultLogger implements Logger {
    */
   public static DefaultLogger getLogger(String name) {
     synchronized(LOGGERS) {
-      DefaultLogger logger = LOGGERS.get(name);
-      if (logger == null) {
-        // create a new one
-        logger = new DefaultLogger(name);
-        LOGGERS.put(name, logger);
-      }
+      DefaultLogger logger = LOGGERS.computeIfAbsent(name, DefaultLogger::new);
+      // create a new one
       return logger;
     }
   }

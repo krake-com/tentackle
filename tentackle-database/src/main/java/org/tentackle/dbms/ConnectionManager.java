@@ -53,7 +53,7 @@ public interface ConnectionManager {
    *
    * @param session the session to login
    * @return the unique ID of the session (&gt; 0)
-   * @throws PersistenceException if login failed.
+   * @throws org.tentackle.session.PersistenceException if login failed.
    */
   int login(Db session);
 
@@ -64,7 +64,7 @@ public interface ConnectionManager {
    * a rollback of any pending transaction is done and an exception thrown.
    *
    * @param session the session to logout
-   * @throws PersistenceException if logout failed.
+   * @throws org.tentackle.session.PersistenceException if logout failed.
    */
   void logout(Db session);
 
@@ -103,7 +103,7 @@ public interface ConnectionManager {
    * Upon return the the session will reference the connection.
    *
    * @param session the session
-   * @throws org.tentackle.pdo.PersistenceException if attach failed.
+   * @throws org.tentackle.session.PersistenceException if attach failed.
    */
   void attach(Db session);
 
@@ -117,7 +117,7 @@ public interface ConnectionManager {
    * unbinds the connection from the Db.
    *
    * @param session the session
-   * @throws org.tentackle.pdo.PersistenceException if detach failed.
+   * @throws org.tentackle.session.PersistenceException if detach failed.
    */
   void detach(Db session);
 

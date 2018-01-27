@@ -69,7 +69,7 @@ public class OptionParser {
         // escape if next char is not []()
         c = text.charAt(pos++);
         if (optionLevel > 0) {
-          if (c != ']' && c != ']' && c != '(' && c != ')') {
+          if (c != '[' && c != ']' && c != '(' && c != ')') {
             option.append('\\');
           }
           option.append(c);

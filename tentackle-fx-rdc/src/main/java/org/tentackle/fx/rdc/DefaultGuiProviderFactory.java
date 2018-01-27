@@ -62,24 +62,21 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T extends PersistentDomainObject<T>> GuiProvider<T> createGuiProvider(T pdo) {
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Constructor<T> con = serviceMap.get(pdoClass);
-    if (con == null) {
+    Constructor<T> constructor = serviceMap.get(pdoClass);
+    if (constructor == null) {
       // no harm if replaced by concurrent threads...
       try {
         Class serviceClass = guiClassMapper.mapLenient(pdoClass);
-
         // find matching constructor
-        Constructor<T>[] cons = serviceClass.getConstructors();
-        for (int i=0; i < cons.length; i++) {
-          con = cons[i];
+        for (Constructor<T> con : serviceClass.getConstructors()) {
           Class<?>[] params = con.getParameterTypes();
-          if (params.length == 1 &&
-              pdoClass.isAssignableFrom(params[0])) {
-            serviceMap.put(pdoClass, con);
+          if (params.length == 1 && pdoClass.isAssignableFrom(params[0])) {
+            constructor = con;
+            serviceMap.put(pdoClass, constructor);
             break;
           }
         }
-        if (con == null) {
+        if (constructor == null) {
           throw new PdoRuntimeException("no matching constructor found for " + serviceClass.getName() +
                                         "(" + pdoClass.getName() + ")");
         }
@@ -90,7 +87,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
     }
 
     try {
-      return (GuiProvider<T>) con.newInstance(pdo);
+      return (GuiProvider<T>) constructor.newInstance(pdo);
     }
     catch (Exception e) {
       throw new PdoRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);

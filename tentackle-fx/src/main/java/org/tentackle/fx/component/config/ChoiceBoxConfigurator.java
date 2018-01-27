@@ -41,7 +41,7 @@ public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConf
     control.getProperties().put(PrefixSelectionFeature.ENABLED, "");
     new PrefixSelectionFeature<>(control,
                                  () -> true,
-                                 () -> control.getItems(),
+                                 control::getItems,
                                  control.getConverter(),
                                  (index) -> control.getSelectionModel().select(index))
         .configure();

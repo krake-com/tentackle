@@ -63,12 +63,7 @@ public class WebSessionKeyCache<T> {
       while (!interrupted() && !stop) {
         try {
           sleep(ms);
-          for (Iterator<SoftReference<SessionInfo>> iter = userInfoMap.values().iterator(); iter.hasNext(); ) {
-            SoftReference<SessionInfo> ref = iter.next();
-            if (ref.get() == null) {
-              iter.remove();
-            }
-          }
+          userInfoMap.values().removeIf(ref -> ref.get() == null);
         }
         catch (InterruptedException ex) {
           if (stop) {

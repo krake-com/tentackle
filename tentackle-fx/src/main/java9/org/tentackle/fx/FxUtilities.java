@@ -539,10 +539,10 @@ public class FxUtilities {
             Callback cellFactory = column.getCellFactory();
             if (cellFactory != null) {
               TableCell cell = (TableCell) cellFactory.call(column);
-              Font cellFont = cell.getFont();
-              // BOLD may not work if header is styled with CSS, but that's ok for default configs
-              Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
               if (cell != null) {
+                Font cellFont = cell.getFont();
+                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkin
                 double maxWidth = 20;   // don't go below this so that column remains visible
                 // apply header text first

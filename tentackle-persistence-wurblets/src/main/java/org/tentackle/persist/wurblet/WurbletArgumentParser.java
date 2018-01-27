@@ -303,7 +303,7 @@ public class WurbletArgumentParser {
                 if (expressionLevel < 0) {
                   throw new WurbelException("unbalanced braces: more closed than opened");
                 }
-                WurbletArgumentExpression parent = expr.getParent();
+                WurbletArgumentExpression parent = expr != null ? expr.getParent() : null;
                 lastOperator = operators.pop();
                 if (parent != null) {
                   parent.addOperand(lastOperator, expr);

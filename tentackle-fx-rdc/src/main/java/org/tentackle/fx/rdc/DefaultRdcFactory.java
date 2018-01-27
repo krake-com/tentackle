@@ -72,7 +72,7 @@ public class DefaultRdcFactory implements RdcFactory {
   @Override
   public <S> TablePopup<S> createTablePopup(FxTableView<S> table, String preferencesSuffix, boolean noViewSize,
           String title) {
-    return new TablePopup<S>(table, preferencesSuffix, noViewSize, title);
+    return new TablePopup<>(table, preferencesSuffix, noViewSize, title);
   }
 
 }

@@ -181,11 +181,7 @@ public class RdcUtilities {
                 T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
-    if (cruds == null) {
-      cruds = new HashSet<>();
-      crudCache.put(pdoClass, cruds);
-    }
+    Set<PdoCrud<?>> cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
     for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
       PdoCrud<T> crud = (PdoCrud<T>) iter.next();
@@ -313,11 +309,7 @@ public class RdcUtilities {
          getSearch(T pdo, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoSearch<?>> searches = searchCache.get(pdoClass);
-    if (searches == null) {
-      searches = new HashSet<>();
-      searchCache.put(pdoClass, searches);
-    }
+    Set<PdoSearch<?>> searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
     for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
       PdoSearch<T> search = (PdoSearch<T>) iter.next();
@@ -358,11 +350,13 @@ public class RdcUtilities {
     Button cancelButton = (Button) alert.getDialogPane().lookupButton(cancelButtonType);
     cancelButton.setDefaultButton(true);
     Optional<ButtonType> result = alert.showAndWait();
-    if (result.get() == saveButtonType) {
-      return Boolean.TRUE;
-    }
-    if (result.get() == discardButtonType) {
-      return Boolean.FALSE;
+    if (result.isPresent()) {
+      if (result.get() == saveButtonType) {
+        return Boolean.TRUE;
+      }
+      if (result.get() == discardButtonType) {
+        return Boolean.FALSE;
+      }
     }
     return null;
   }

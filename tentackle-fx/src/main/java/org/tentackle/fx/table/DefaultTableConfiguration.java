@@ -340,9 +340,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     for (TableColumnConfiguration<S,?> config: columnConfigurations) {
       table.getColumns().add(config.getTableColumn());
     }
-    if (table instanceof FxTableView) {
-      table.setConfiguration(this);
-    }
+    table.setConfiguration(this);
   }
 
   @Override

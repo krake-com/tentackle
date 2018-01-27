@@ -223,14 +223,17 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       if (sourceDir == null) {
         getLog().warn("no sourceDir");
       }
-      else if (sourceDir.isDirectory() && sourceDir.list().length > 0) {
-        final FileSet fs = new FileSet();
-        fs.setDirectory(sourceDir.getPath());
-        fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
-        processFileSet(fs);
-      }
       else {
-        getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+        String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+        if (files != null && files.length > 0) {
+          final FileSet fs = new FileSet();
+          fs.setDirectory(sourceDir.getPath());
+          fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
+          processFileSet(fs);
+        }
+        else {
+          getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+        }
       }
     }
 
