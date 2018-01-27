@@ -50,8 +50,7 @@ public class Log4JLogger implements Logger {
    */
   public static Log4JLogger getLogger(String name) {
     synchronized(LOGGERS) {
-      Log4JLogger logger = LOGGERS.computeIfAbsent(name, Log4JLogger::new);
-      return logger;
+      return LOGGERS.computeIfAbsent(name, Log4JLogger::new);
     }
   }
 

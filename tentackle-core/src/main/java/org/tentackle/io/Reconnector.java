@@ -83,12 +83,7 @@ public class Reconnector {
       reconnect(policy);
     }
     else {
-      executorService.submit(() -> new Runnable() {
-        @Override
-        public void run() {
-          reconnect(policy);
-        }
-      });
+      executorService.submit(() -> (Runnable) () -> reconnect(policy));
     }
   }
 

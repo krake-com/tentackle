@@ -19,7 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.tentackle.log.Logger;

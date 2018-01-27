@@ -50,8 +50,7 @@ public class SLF4JLogger implements Logger {
    */
   public static SLF4JLogger getLogger(String name) {
     synchronized(LOGGERS) {
-      SLF4JLogger logger = LOGGERS.computeIfAbsent(name, SLF4JLogger::new);
-      return logger;
+      return LOGGERS.computeIfAbsent(name, SLF4JLogger::new);
     }
   }
 

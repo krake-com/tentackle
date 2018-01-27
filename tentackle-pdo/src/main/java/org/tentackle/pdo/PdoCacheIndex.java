@@ -21,7 +21,6 @@ package org.tentackle.pdo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -475,19 +474,19 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
   /**
    * key for the cache map.<br>
-   * We must compare C with ontextDb, because the same object may live in different
+   * We must compare C with domain context, because the same object may live in different
    * contexts. The domain context is essential, especially when it comes to different
    * Db (database connections)!
    * The CacheKey does not allow null context or null keys and throws PdoCacheException
    * if it detects such.
    *
-   * @param <C> the {@link Comparable} type
+   * @param <K> the {@link Comparable} type
    */
-  private class CacheKey<C extends Comparable<? super C>> implements Comparable<CacheKey<C>> {
+  private class CacheKey<K extends Comparable<? super K>> implements Comparable<CacheKey<K>> {
 
     private DomainContext context;      // the context the object lives in
     private int sessionInstanceNumber;  // to avoid memleaks if application changed the session of an object
-    private C key;                      // the comparable that uniquely identifies the object
+    private K key;                      // the comparable that uniquely identifies the object
 
     /**
      * Creates a cache key.
@@ -495,7 +494,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
      * @param context the domain context
      * @param key the unique key from the PDO
      */
-    private CacheKey(DomainContext context, C key) {
+    private CacheKey(DomainContext context, K key) {
       if (context == null) {
         throw new PdoCacheException("null context");
       }
@@ -508,7 +507,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     }
 
     @Override
-    public int compareTo (CacheKey<C> obj) {
+    public int compareTo (CacheKey<K> obj) {
       // db first cause of getObjects( fromKey, toKey )
       int rv = context.compareTo(obj.context);  // never null
       if (rv == 0)  {
@@ -521,7 +520,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     public boolean equals(Object obj) {
       if (obj != null && obj.getClass() == getClass()) {
         @SuppressWarnings("unchecked")
-        CacheKey<C> otherKey = (CacheKey<C>) obj;
+        CacheKey<K> otherKey = (CacheKey<K>) obj;
         return otherKey.context.equals(context) &&
                otherKey.key.equals(key);
       }

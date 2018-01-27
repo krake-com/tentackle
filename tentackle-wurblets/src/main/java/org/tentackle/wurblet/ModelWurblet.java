@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -370,13 +370,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the sorted entities (same reference as argument)
    */
   public List<Entity> orderByInheritanceLevelAndClassId(List<Entity> entities) {
-    entities.sort((Entity o1, Entity o2) -> {
-      int rv = o1.getInheritanceLevel() - o2.getInheritanceLevel();
-      if (rv == 0) {
-        rv = Long.compare(o1.getClassId(), o2.getClassId());
-      }
-      return rv;
-    });
+    entities.sort(Comparator.comparingInt(Entity::getInheritanceLevel).thenComparingInt(Entity::getClassId));
     return entities;
   }
 

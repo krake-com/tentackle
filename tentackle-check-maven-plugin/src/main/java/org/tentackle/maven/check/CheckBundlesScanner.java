@@ -114,10 +114,8 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
    */
   private String buildUsingClassName(TreePath path) {
     StringBuilder name = new StringBuilder();
-    Iterator<Tree> iter = path.iterator();
-    while (iter.hasNext()) {
-      Tree tree = iter.next();
-      if (tree.getKind() == Tree.Kind.CLASS) {
+    for (Tree tree : path) {
+      if (tree.getKind() == Kind.CLASS) {
         String simpleName = ((ClassTree) tree).getSimpleName().toString();
         if (name.length() == 0) {
           name.append(simpleName);
@@ -127,7 +125,7 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
           name.insert(0, simpleName);
         }
       }
-      else if (tree.getKind() == Tree.Kind.COMPILATION_UNIT) {
+      else if (tree.getKind() == Kind.COMPILATION_UNIT) {
         name.insert(0, ((CompilationUnitTree) tree).getPackageName().toString() + ".");
       }
     }

@@ -227,7 +227,7 @@ public class TablePrinter extends AbstractFxController {
    * @param job the printer job
    * @param pageLayout the printing layout
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private void print(FxTableView<?> table, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
 
     LOGGER.fine("table print job {0}", job);
@@ -326,7 +326,7 @@ public class TablePrinter extends AbstractFxController {
   /**
    * Task using the ModificationTracker to print the table.
    */
-  @SuppressWarnings("serial")
+  @SuppressWarnings({"serial", "rawtypes" })
   private class PrinterTask extends AbstractSessionTask {
 
     private final ObservableList items;

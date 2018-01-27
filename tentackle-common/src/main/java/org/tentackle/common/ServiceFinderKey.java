@@ -88,10 +88,7 @@ public class ServiceFinderKey {
     if (!Objects.equals(this.servicePath, other.servicePath)) {
       return false;
     }
-    if (!Objects.equals(this.classLoader, other.classLoader)) {
-      return false;
-    }
-    return true;
+    return Objects.equals(this.classLoader, other.classLoader);
   }
 
 }

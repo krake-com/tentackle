@@ -98,10 +98,9 @@ public class PathTest {
   @Test
   public void testSimpleConsolidation() {
 
-    List<StringPath> paths = Arrays.asList(new StringPath[] {
-      new StringPath("b"),
-      new StringPath("a")
-    });
+    List<StringPath> paths = Arrays.asList(
+            new StringPath("b"),
+            new StringPath("a"));
 
     List<StringPath> consPaths = new StringPathFactory().merge(paths);
 
@@ -118,15 +117,14 @@ public class PathTest {
   @Test
   public void testComplexConsolidation() {
 
-    List<StringPath> paths = Arrays.asList(new StringPath[] {
-      new StringPath("a1", "b1", "c1", "d1", "eX"),
-      new StringPath("a1", "b1", "c1", "d2"),
-      new StringPath("a1", "b1", "c2"),
-      new StringPath("a1", "b1", "c2", "d3"),
-      new StringPath("a1", "b1", "c2", "d3", "eX"),
-      new StringPath("a1", "b2", "cX", "dX"),
-      new StringPath("a1", "b2")
-    });
+    List<StringPath> paths = Arrays.asList(
+            new StringPath("a1", "b1", "c1", "d1", "eX"),
+            new StringPath("a1", "b1", "c1", "d2"),
+            new StringPath("a1", "b1", "c2"),
+            new StringPath("a1", "b1", "c2", "d3"),
+            new StringPath("a1", "b1", "c2", "d3", "eX"),
+            new StringPath("a1", "b2", "cX", "dX"),
+            new StringPath("a1", "b2"));
 
     /**
      * expected result:
