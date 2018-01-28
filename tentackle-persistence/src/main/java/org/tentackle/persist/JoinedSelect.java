@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.PersistenceException;
@@ -110,7 +109,7 @@ public class JoinedSelect<T extends PersistentDomainObject<T>> {
     if (join.getType() != JoinType.INNER && join.getType() != JoinType.LEFT) {
         throw new PersistenceException(pdo, "unsupported JoinType: " + join.getType().name());
       }
-      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass(), pdo.getDomainContext());
+      PersistentDomainObject<?> joinedPdo = Pdo.create(join.getJoinedClass(), pdo.getPersistenceDelegate().getDomainContext());
       AbstractPersistentObject<?,?> joinPD = (AbstractPersistentObject<?,?>) joinedPdo.getPersistenceDelegate();
       String columnName = join.getColumnName();
       String joinedColumnName = join.getJoinedColumnName();

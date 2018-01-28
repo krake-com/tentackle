@@ -66,7 +66,7 @@ public class AttributeOptionsPrinter {
 
     buf.append(printBindOptions());
 
-    if (attribute.getDataType().isNumeric()) {
+    if (attribute.getDataType().isNumeric() || attribute.getDataType().isDateOrTime()) {
       printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), entityOptions.isAutoSelect());
     }
     printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), entityOptions.isBind());

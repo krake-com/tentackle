@@ -337,11 +337,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       }
 
       String key = parts.get(1);
-      Set<String> serviceList = nameMap.get(key);
-      if (serviceList == null) {
-        serviceList = new HashSet<>();
-        nameMap.put(key, serviceList);
-      }
+      Set<String> serviceList = nameMap.computeIfAbsent(key, k -> new HashSet<>());
       serviceList.add(parts.get(0));
     }
 

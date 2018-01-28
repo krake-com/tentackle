@@ -9,6 +9,9 @@
 .totalstable .column-header-background {
 	visibility: hidden;
 	-fx-padding: -1.0em;
+  -fx-max-height: 0;
+  -fx-pref-height: 0;
+  -fx-min-height: 0;
 }
 
 /* Hide the horizontal scrollbar */

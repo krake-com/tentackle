@@ -197,9 +197,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
     else {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-        updated = db.transaction(() -> {
-          return topNode.flushImpl(db);
-        } , "flush");
+        updated = db.transaction("flush", () -> topNode.flushImpl(db));
       }
     }
 
@@ -233,7 +231,6 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     if (!rootNode.isNew()) {
       // build whole subtree
       Map<Long,DbPreferencesNode> subNodes = new HashMap<>();
-      Map<Long,DbPreferencesKey> subKeys = new HashMap<>();
 
       for (DbPreferencesNode prefNode : rootNode.selectByRootNodeId(rootNode.getId())) {
         if (prefNode.getId() != rootNode.getId()) {
@@ -265,7 +262,6 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
       // add keys
       for (DbPreferencesKey prefKey : new DbPreferencesKey(db).selectByRootNodeId(rootNode.getId())) {
         prefKey.setSession(null);   // clear the reference!
-        subKeys.put(prefKey.getId(), prefKey);
         DbPreferences parent = childs.get(prefKey.getNodeId());
         if (parent != null) {
           parent.putPersistentKey(prefKey);
@@ -308,7 +304,6 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    *
    * @param node the node
    * @param prefNodes the nodes mapped by ID
-   * @param pathNodeMap the nodes mapped by path
    * @param prefKeys the keys mapped by ID
    */
   private void addNodeToLists(DbPreferences node,

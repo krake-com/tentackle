@@ -31,4 +31,17 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(ComboBox.class)
 public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseConfigurator<T> {
 
+  @Override
+  public void configure(T control) {
+    super.configure(control);
+
+    control.getProperties().put(PrefixSelectionFeature.ENABLED, "");
+    new PrefixSelectionFeature<>(control,
+                                 () -> !control.isEditable(),
+                                 control::getItems,
+                                 control.getConverter(),
+                                 (index) -> control.getSelectionModel().select(index))
+        .configure();
+  }
+
 }

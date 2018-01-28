@@ -270,13 +270,17 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
   @Override
   public void assertAllBound() throws BindingException {
     if (isUnboundPending()) {
-      for (FxComponent comp: eligibleComponents.values()) {   // sorted by bindingPath
+      StringBuilder buf = new StringBuilder();
+      for (FxComponent comp : eligibleComponents.values()) {   // sorted by bindingPath
         if (comp.getBinding() == null) {
-          LOGGER.severe("unbound component " + comp.getComponentPath());
+          if (buf.length() > 0) {
+            buf.append(", ");
+          }
+          buf.append(comp.getComponentPath());
         }
       }
-      throw new BindingException("unbound components in controller " +
-                                 ReflectionHelper.getClassBaseName(controller.getClass()));
+      throw new BindingException("unbound components in " +
+                                 ReflectionHelper.getClassBaseName(controller.getClass()) + ": " + buf);
     }
   }
 

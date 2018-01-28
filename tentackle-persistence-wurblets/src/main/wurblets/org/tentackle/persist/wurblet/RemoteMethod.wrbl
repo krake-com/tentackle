@@ -58,6 +58,11 @@ For more options, see {\@link DbModelWurblet}.
 
     if (isRemote()) {
 
+      // create includes
+      RemoteIncludes genInc = new RemoteIncludes(this);
+      PrintStream implOut   = genInc.getImplStream();
+      PrintStream remoteOut = genInc.getRemoteStream();
+
       // load the info file
       String infoName = (packageName + "." + className + "." + methodName).replace('.', '/') +
                         RemoteMethodInfo.INFO_FILE_EXTENSION;
@@ -65,8 +70,14 @@ For more options, see {\@link DbModelWurblet}.
       try {
         info = RemoteMethodInfo.readInfo(getContainer().getAnalyzeFile(infoName));
       }
-      catch (Exception ex) {
-        throw new WurbelException("reading info " + infoName + " failed", ex);
+      catch (IOException ex) {
+        if (getContainer().getAnalyzeFile(AnalyzeProcessor.COMPILE_ERROR_LOG).exists()) {
+          genInc.discard();
+          throw new WurbelDiscardException("reading info '" + infoName + "' failed", ex);
+        }
+        else {
+          throw new WurbelException("reading info '" + infoName + "' failed (@RemoteMethod annotation missing?)", ex);
+        }
       }
 
       RemoteMethodHelper helper = new RemoteMethodHelper(info, pdoClassName, addThis);
@@ -136,10 +147,6 @@ For more options, see {\@link DbModelWurblet}.
         dbObject = instanceName;
       }
 
-      // create includes
-      RemoteIncludes genInc = new RemoteIncludes(this);
-      PrintStream implOut   = genInc.getImplStream();
-      PrintStream remoteOut = genInc.getRemoteStream();
 ]@
     if (getSession().isRemote())  {
       // invoke remote method

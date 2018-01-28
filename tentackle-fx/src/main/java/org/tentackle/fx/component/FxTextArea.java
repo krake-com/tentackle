@@ -403,6 +403,16 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   }
 
   @Override
+  public boolean isLenient() {
+    return getDelegate().isLenient();
+  }
+
+  @Override
+  public void setLenient(boolean lenient) {
+    getDelegate().setLenient(lenient);
+  }
+
+  @Override
   public void setScale(int scale) {
     getDelegate().setScale(scale);
   }
@@ -507,6 +517,10 @@ public class FxTextArea extends TextArea implements FxTextComponent {
     getDelegate().mapErrorOffsetToCaretPosition();
   }
 
+  @Override
+  public void autoSelect() {
+    getDelegate().autoSelect();
+  }
   // </editor-fold>//GEN-END:textcomponent
 
 }

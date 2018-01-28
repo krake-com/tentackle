@@ -250,7 +250,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       setObjectClassName(null);
     }
     else  {
-      setObjectId(object.getId());
+      setObjectId(object.getPersistenceDelegate().getId());
       setObjectClassName(object.getClass().getName());
     }
   }
@@ -280,8 +280,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       setGranteeClassId(0);
     }
     else  {
-      setGranteeId(grantee.getId());
-      setGranteeClassId(grantee.getClassId());
+      setGranteeId(grantee.getPersistenceDelegate().getId());
+      setGranteeClassId(grantee.getPersistenceDelegate().getClassId());
     }
   }
 
@@ -312,8 +312,8 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       setDomainContextClassId(0);
     }
     else {
-      setDomainContextId(contextObject.getId());
-      setDomainContextClassId(contextObject.getClassId());
+      setDomainContextId(contextObject.getPersistenceDelegate().getId());
+      setDomainContextClassId(contextObject.getPersistenceDelegate().getClassId());
     }
   }
 

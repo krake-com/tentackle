@@ -21,12 +21,13 @@ package org.tentackle.wurblet;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
+import org.tentackle.model.ModelElement;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 
@@ -96,12 +97,8 @@ public class ModelCommentSupport {
       }
 
       Relation nmRel = relation.getNmRelation();
-      Relation rel = relation;
       if (nmRel == null && relation.getForeignRelation() != null) {
         nmRel = relation.getForeignRelation().getNmRelation();
-        if (nmRel != null) {
-          rel = relation.getForeignRelation();
-        }
       }
 
       if (nmRel != null && !entity.equals(relation.getForeignEntity())) {
@@ -249,9 +246,7 @@ public class ModelCommentSupport {
       }
     }
 
-    Collections.sort(sortedRelations, (o1, o2) -> {
-      return o1.getForeignEntity().getName().compareTo(o2.getForeignEntity().getName());
-    });
+    sortedRelations.sort(Comparator.comparing(o -> o.getForeignEntity().getName()));
 
     for (Relation relation: sortedRelations) {
       out.print(indent);
@@ -305,9 +300,7 @@ public class ModelCommentSupport {
 
     if (!roots.isEmpty()) {
 
-      Collections.sort(roots, (o1, o2) -> {
-        return o1.getName().compareTo(o2.getName());
-      });
+      roots.sort(Comparator.comparing(ModelElement::getName));
 
       out.print(" (");
       boolean needComma = false;

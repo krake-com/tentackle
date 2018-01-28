@@ -68,6 +68,7 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.rdc.RdcFactory;
+import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -78,6 +79,7 @@ import org.tentackle.task.AbstractTask;
  * Search controller for PDOs.
  *
  * @author harald
+ * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoHolder<T> {
@@ -116,11 +118,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * The items found.<br>
    * Initially empty, never null.
    */
-  private ObservableList<T> items = FXCollections.observableArrayList();
+  private SortedList<T> items = new SortedList<>(FXCollections.observableArrayList());
 
   private InvalidationListener itemsListener;   // listener for items totals change
   private ResourceBundle resources;             // the resources
   private PdoFinder<T> finder;                  // the finder
+  private PdoCrud<T> pdoCrud;                   // the CRUD view
   private FxBorderPane tablePane;               // the border pane holding the table view
   private FxTableView<T> tableView;             // the table showing the results
   private TotalsTableView<T> totalsView;        // the (optional) table showing the totals
@@ -167,6 +170,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     return finder;
   }
 
+
   /**
    * Sets the pdo as a template for the search.
    *
@@ -192,10 +196,11 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             close();
           }
           else {
-            if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists()) {
-              Rdc.displayCrudStage(firstPdo.reload(), tableView.getItems(), true, Modality.NONE, getStage(),
+            if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
+              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), crud -> {
+                pdoCrud = crud;
                 // event filter will removed when stage is hidden (see RdcUtilities)
-                crud -> crud.addPdoEventFilter(PdoEvent.ANY, e -> {
+                crud.addPdoEventFilter(PdoEvent.ANY, e -> {
                   if (e.getEventType() == PdoEvent.UPDATE) {    // INSERT or DELETE doesn't happen in this config
                     T updatedPdo = firstPdo.reload();
                     if (!treeViewInvalid) {
@@ -203,35 +208,34 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                       int i = 0;
                       for (TreeItem<T> item : treeItems) {
                         if (updatedPdo.equals(item.getValue())) {
-                          TreeItem<T> updatedItem = GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).
-                                  createTreeItem();
+                          // need new TreeItem in case childs have changed as well
+                          TreeItem<T> updatedItem =
+                                  GuiProviderFactory.getInstance().createGuiProvider(updatedPdo).createTreeItem();
                           treeItems.set(i, updatedItem);
-                          getTreeView().refresh();
                           updatedItem.setExpanded(item.isExpanded());
                           break;
                         }
                         i++;
                       }
                     }
-
-                    int ndx = items.indexOf(firstPdo);
+                    // items where updated in PdoCrud.save()!
+                    int ndx = items.indexOf(updatedPdo);
                     if (ndx >= 0) {
-                      items.set(ndx, updatedPdo);
+                      ((List) items.getSource()).set(items.getSourceIndex(ndx), updatedPdo);
                     }
                   }
                   else if (e.getEventType() == PdoEvent.READ) { // up/down button pressed
                     // do fast checks first (assumed the user did not change the selection)
                     int ndx = tableView.getSelectionModel().getSelectedIndex();
-                    if (ndx > 0 && e.getPdo().equals(tableView.getItems().get(ndx-1))) {
+                    if (ndx > 0 && e.getPdo().equals(items.get(ndx - 1))) {
                       ndx--;
                     }
-                    else if (ndx < tableView.getItems().size() - 1 &&
-                             e.getPdo().equals(tableView.getItems().get(ndx+1))) {
+                    else if (ndx < items.size() - 1 && e.getPdo().equals(items.get(ndx + 1))) {
                       ndx++;
                     }
                     else {
                       // full scan
-                      ndx = tableView.getItems().indexOf(e.getPdo());
+                      ndx = items.indexOf(e.getPdo());
                     }
                     if (ndx >= 0) {
                       tableView.getSelectionModel().clearSelection();
@@ -240,8 +244,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
                     }
                   }
                   e.consume();
-                }
-              ));
+                });
+              });
             }
           }
         }
@@ -253,10 +257,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     treeView = Fx.createNode(TreeView.class);
     treeView.setCellFactory(p -> Rdc.createTreeCell());
     wrongTypeSelected = new SimpleBooleanProperty();
-    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) -> {
-      wrongTypeSelected.set(nv == null || nv.getValue() == null ||
-                            !pdo.getClass().isAssignableFrom(nv.getValue().getClass()));
-    });
+    treeView.getSelectionModel().selectedItemProperty().addListener((obs, ov, nv) ->
+            wrongTypeSelected.set(nv == null || nv.getValue() == null ||
+                                  !pdo.getClass().isAssignableFrom(nv.getValue().getClass())));
 
     StackPane stackPane = Fx.createNode(StackPane.class);
     if (treeShown) {
@@ -451,7 +454,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       sortedItems = new SortedList<>(items);
       sortedItems.comparatorProperty().bind(tableView.comparatorProperty());
     }
-    this.items = items;
+    this.items = sortedItems;
     countLabel.setText(Integer.toString(items.size()));
 
     if (treeShown) {
@@ -467,7 +470,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       tableViewInvalid = true;
     }
     else {
-      tableView.setItems(sortedItems);
+      tableView.setItems(this.items);
       tableView.getSelectionModel().clearSelection();
       tableView.refresh();
       treeViewInvalid = true;
@@ -530,7 +533,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     else {
       if (treeShown) {
         selectedItems = FXCollections.observableArrayList();
-        treeView.getSelectionModel().getSelectedItems().stream().forEach(p -> selectedItems.add(p.getValue()));
+        treeView.getSelectionModel().getSelectedItems().forEach(p -> selectedItems.add(p.getValue()));
 
       }
       else {
@@ -588,13 +591,24 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   /**
    * Switches to the table view.
    */
+  @SuppressWarnings("unchecked")
   public void showTable() {
     if (treeShown) {
       tablePane.toFront();
       treeShown = false;
       treeButton.setGraphic(Fx.createImageView("tree"));
-      if (tableViewInvalid) {
-        setItems(getItems());
+      if (tableViewInvalid && treeView.getRoot() != null) {   // root becomes null if stage closed
+        int index = 0;
+        for (TreeItem<T> item: treeView.getRoot().getChildren()) {
+          T listPdo = items.get(index);
+          T treePdo = item.getValue();
+          if (listPdo.getSerial() != treePdo.getSerial()) {
+            // item was modified in tree
+            ((List) items.getSource()).set(items.getSourceIndex(index), treePdo);
+          }
+          index++;
+        }
+        setItems(items);
       }
       bindOkButton();
     }
@@ -709,6 +723,22 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
         okButton.disableProperty().bind(tableView.getSelectionModel().selectedItemProperty().isNull());
       }
     }
+  }
+
+  /**
+   * Returns whether a CRUD is currently shown for this search.
+   *
+   * @return true if shown
+   */
+  protected boolean isCrudShown() {
+    if (pdoCrud != null) {
+      Stage stage = pdoCrud.getStage();
+      if (stage != null && stage.isShowing() && stage.getOwner() == getStage()) {
+        return true;
+      }
+    }
+    pdoCrud = null;
+    return false;
   }
 
 }

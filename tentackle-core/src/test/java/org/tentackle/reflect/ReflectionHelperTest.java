@@ -67,7 +67,7 @@ public class ReflectionHelperTest {
     }
 
     try {
-      Assert.assertTrue(ReflectionHelper.getValueByPath(this, "myClass.myField").equals(10));
+      Assert.assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
     }
     catch (ApplicationException ex) {
       Assert.fail(ex.getAllMessages());

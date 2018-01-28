@@ -400,8 +400,8 @@ public class DefaultDomainContext implements DomainContext {
   public Object writeReplace() throws ObjectStreamException {
   // public! Otherwise writeReplace would not be invoked in subclasses!
     if (rootEntity != null && rootClassId == 0) {
-      rootClassId = rootEntity.getClassId();
-      rootId = rootEntity.getId();
+      rootClassId = rootEntity.getPersistenceDelegate().getClassId();
+      rootId = rootEntity.getPersistenceDelegate().getId();
     }
     return this;
   }
@@ -413,12 +413,12 @@ public class DefaultDomainContext implements DomainContext {
 
   @Override
   public int getRootClassId() {
-    return rootEntity == null ? rootClassId : rootEntity.getClassId();
+    return rootEntity == null ? rootClassId : rootEntity.getPersistenceDelegate().getClassId();
   }
 
   @Override
   public long getRootId() {
-    return rootEntity == null ? rootId : rootEntity.getId();
+    return rootEntity == null ? rootId : rootEntity.getPersistenceDelegate().getId();
   }
 
 }

@@ -33,7 +33,8 @@ import org.tentackle.reflect.ReflectionHelper;
  *
  * @author harald
  */
-public abstract class FxTextComponentDelegate extends FxComponentDelegate implements FxTextComponent, UnaryOperator<TextFormatter.Change> {
+public abstract class FxTextComponentDelegate extends FxComponentDelegate
+       implements FxTextComponent, UnaryOperator<TextFormatter.Change> {
 
   /**
    * The text alignment.
@@ -54,6 +55,11 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
    * The format pattern.
    */
   private String pattern;
+
+  /**
+   * whether parsing to model should be lenient.
+   */
+  private boolean lenient;
 
   /**
    * The numeric scale.
@@ -387,8 +393,6 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
   @Override
   public void setAutoSelect(boolean autoSelect) {
     this.autoSelect = autoSelect;
-    // not implemented so far
-    // see https://bugs.openjdk.java.net/browse/JDK-8092126
   }
 
   @Override
@@ -404,6 +408,16 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
   @Override
   public String getPattern() {
     return pattern;
+  }
+
+  @Override
+  public boolean isLenient() {
+    return lenient;
+  }
+
+  @Override
+  public void setLenient(boolean lenient) {
+    this.lenient = lenient;
   }
 
   @Override
@@ -457,6 +471,18 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate implem
   @Override
   public char getFiller() {
     return filler;
+  }
+
+  @Override
+  public void autoSelect() {
+    if (getComponent() instanceof TextInputControl) {
+      if (isAutoSelect()) {
+        ((TextInputControl) getComponent()).selectAll();
+      }
+      else {
+        ((TextInputControl) getComponent()).deselect();
+      }
+    }
   }
 
 }

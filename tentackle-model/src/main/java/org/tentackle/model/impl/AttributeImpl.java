@@ -436,6 +436,29 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     }
 
     getOptions().validate();
+
+    if (getOptions().isUTC() && dataType != DataType.TIMESTAMP) {
+      throw createModelException("UTC option not applicable to " + dataType);
+    }
+
+    if (getOptions().isWithTimezone() && !dataType.isDateOrTime()) {
+      throw createModelException("TZ option not applicable to " + dataType);
+    }
+
+    if (getOptions().isMapNull()) {
+      switch(dataType) {
+        case CHARACTER:
+        case STRING:
+        case DATE:
+        case TIMESTAMP:
+        case LOCALDATE:
+        case LOCALDATETIME:
+          break;    // ok
+
+        default:
+          throw createModelException("MAPNULL option not applicable to " + dataType);
+      }
+    }
   }
 
   /**

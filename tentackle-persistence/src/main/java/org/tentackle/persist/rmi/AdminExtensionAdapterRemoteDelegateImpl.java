@@ -23,18 +23,17 @@ import java.rmi.RemoteException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RemoteDelegateImpl;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.dbms.Db;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.dbms.rmi.RemoteDelegateImpl;
 import org.tentackle.persist.AdminExtensionAdapter;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
@@ -74,7 +73,7 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
       for (RemoteDbSessionImpl remoteSession: RemoteDbSessionImpl.getOpenSessions()) {
         sessions.add(new SessionDataImpl(remoteSession));
       }
-      Collections.sort(sessions, (SessionData o1, SessionData o2) -> {
+      sessions.sort((SessionData o1, SessionData o2) -> {
         int rv = Compare.compare(o1.getUserName(), o2.getUserName());
         if (rv == 0) {
           rv = Long.compare(o1.getSessionNumber(), o2.getSessionNumber());

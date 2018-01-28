@@ -959,9 +959,7 @@ public abstract class AbstractBackend implements Backend {
   private boolean isExceptionStateStartingWith(SQLException ex, String prefix) {
     if (ex != null) {
       String state = ex.getSQLState();
-      if (state != null && state.startsWith(prefix)) {
-        return true;
-      }
+      return state != null && state.startsWith(prefix);
     }
     return false;
   }

@@ -20,7 +20,6 @@ package org.tentackle.fx.translate;
 
 import java.util.function.Function;
 import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
@@ -30,7 +29,7 @@ import org.tentackle.fx.ValueTranslatorService;
  * @param <T> the enum type
  */
 @ValueTranslatorService(modelClass = Enum.class, viewClass = String.class)
-public class EnumStringTranslator<T extends Enum<T>> extends ValueTranslator<T,String> {
+public class EnumStringTranslator<T extends Enum<T>> extends AbstractValueTranslator<T,String> {
 
   private final Class<T> clazz;   // the enum type
 

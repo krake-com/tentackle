@@ -969,7 +969,7 @@ For more options, see {\@link DbModelWurblet}.
     // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
 @[
-          if (attr.getDataType().isDateOrTime()) {
+          if (attr.getDataType().isDateOrTime() && attr.getDataType().isMutable()) {
 ]@
     if (@(name)@ != null) {
       @(name)@.setTime(snapshot.@(name)@Snapshot.getTime());

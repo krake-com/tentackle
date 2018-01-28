@@ -63,7 +63,7 @@ public class PersistenceUtilities extends DbUtilities {
     if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
       PersistentDomainObject<?> pdo = Pdo.create((Class) clazz, session).select(objectId);
       if (pdo != null) {
-        pdo.setDomainContext(pdo.createValidContext());
+        pdo.getPersistenceDelegate().setDomainContext(pdo.getPersistenceDelegate().createValidContext());
         if (loadLazyReferences) {
           ((AbstractDbObject) pdo.getPersistenceDelegate()).loadLazyReferences();
         }

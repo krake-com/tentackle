@@ -130,16 +130,13 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
       }
     }
     else  {
-      if (operator == null && !operands.isEmpty()) {
+      if (operator == null) {
         operator = WurbletArgumentOperator.AND;
       }
       else {
         if (operator == WurbletArgumentOperator.NOT) {
           if (!(operand instanceof WurbletArgumentExpression)) {
             throw new WurbelException("operator NOT must be followed by an expression");
-          }
-          if (!operands.isEmpty()) {
-            throw new WurbelException("operator NOT cannot follow an operand");
           }
         }
       }

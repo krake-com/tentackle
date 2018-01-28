@@ -24,9 +24,9 @@ import org.tentackle.fx.FxTextComponent;
  * Abstract base class for fraction number translators.
  *
  * @author harald
- * @param <T> the number type
+ * @param <M> the model's number type
  */
-public abstract class FractionNumberStringTranslator<T extends Number> extends NumberStringTranslator<T> {
+public abstract class FractionNumberStringTranslator<M extends Number> extends NumberStringTranslator<M> {
 
   /**
    * Creates a fraction number translator.

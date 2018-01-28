@@ -51,6 +51,15 @@ import static javax.lang.model.SourceVersion.RELEASE_9;
 @SupportedOptions("verbosity")
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 
+  /**
+   * Logfile for compilation errors during the analyze phase.<br>
+   * The logfile is missing, if no errors where detected. Otherwise, analyze info files
+   * may be incomplete or missing.
+   */
+  public static final String COMPILE_ERROR_LOG = "error.log";
+
+
+
   private static final int MAX_HANDLERS = 1000;   // to detect endless loops
   private static final int MAX_DEPTH = 100;       // dto...
   private static final String ANALYZE_CLASSNAME = Analyze.class.getName();

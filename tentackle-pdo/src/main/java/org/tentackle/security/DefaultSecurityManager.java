@@ -33,6 +33,8 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.security.pdo.Security;
+import org.tentackle.security.pdo.SecurityDomain;
+import org.tentackle.security.pdo.SecurityPersistence;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationListener;
 import org.tentackle.session.ModificationTracker;
@@ -79,11 +81,12 @@ public class DefaultSecurityManager implements SecurityManager {
      */
     public SecurityResult getResult() {
       if (result == null) {
-        if (security.isAllowed()) {
-          result = createAcceptedSecurityResult(security.getMessage(), false);
+        SecurityPersistence spo = (SecurityPersistence) security.getPersistenceDelegate();   // bypass IH to speed up
+        if (spo.isAllowed()) {
+          result = createAcceptedSecurityResult(spo.getMessage(), false);
         }
         else {
-          result = createDeniedSecurityResult(security.getMessage(), false);
+          result = createDeniedSecurityResult(spo.getMessage(), false);
         }
       }
       return result;
@@ -611,11 +614,8 @@ public class DefaultSecurityManager implements SecurityManager {
         return noGranteeResult;
       }
 
-      Collection<GranteeDescriptor> granteesToCheck = granteeMap.get(sessionGrantee);
-      if (granteesToCheck == null) {
-        granteesToCheck = determineGranteesToCheck(context, sessionGrantee);
-        granteeMap.put(sessionGrantee, granteesToCheck);
-      }
+      Collection<GranteeDescriptor> granteesToCheck = granteeMap.computeIfAbsent(sessionGrantee,
+              g -> determineGranteesToCheck(context, g));
 
       for (GranteeDescriptor grantee : granteesToCheck) {
 
@@ -652,8 +652,8 @@ public class DefaultSecurityManager implements SecurityManager {
           if (fineLoggable) {
             LOGGER.fine("evaluate {0}", sec);
           }
-          // check if rule fires
-          if (sec.evaluate(context, permission)) {
+          // check if rule fires (bypassing IH for speed)
+          if (((SecurityDomain) sec.getDomainDelegate()).evaluate(context, permission)) {
             if (fineLoggable) {
               LOGGER.fine(sec.isAllowed() ? "-> ACCEPT" : "-> DENY");
             }
@@ -725,7 +725,7 @@ public class DefaultSecurityManager implements SecurityManager {
   /**
    * Creates the modification listener.
    *
-   * @return the listener, null if modifications detected somehow differently
+   * @return the listener
    */
   protected ModificationListener createModificationListener() {
     return new PdoListener(Security.class) {

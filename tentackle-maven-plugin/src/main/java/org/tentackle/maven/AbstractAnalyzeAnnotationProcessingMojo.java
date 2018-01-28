@@ -132,7 +132,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
     p.setProcessingClassLoader(getProcessingClassloader());
   }
 
-  
+
   @Override
   protected void cleanupProcessors(File srcDir) throws MojoFailureException {
     if (index != null && processors != null) {
@@ -207,6 +207,20 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
         throw new MojoFailureException("cannot create resource index", ix);
       }
     }
+
+    if (getTotalCompileErrors() > 0) {
+      // create a file that tells subsequent build phases that there were compilation errors
+      // and the analyze info may be incomplete
+      try (PrintWriter writer = new ResourceManager(analyzeDir).getWriter(AnalyzeProcessor.COMPILE_ERROR_LOG)) {
+        writer.print(getCompileErrorLog());
+        writer.print(getTotalCompileErrors());
+        writer.println(" compilation errors");
+      }
+      catch (IOException ix) {
+        throw new MojoFailureException("cannot create compiler error log", ix);
+      }
+    }
+
     super.finishExecute();
   }
 

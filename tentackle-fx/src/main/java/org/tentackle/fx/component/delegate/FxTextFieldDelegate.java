@@ -80,10 +80,11 @@ public class FxTextFieldDelegate extends FxTextComponentDelegate {
 
   @Override
   public void mapErrorOffsetToCaretPosition() {
-    if (getErrorOffset() != null) {
+    Integer errorOffset = getErrorOffset();
+    if (errorOffset != null) {
       Platform.runLater(() -> {
         component.deselect();
-        component.positionCaret(getErrorOffset());
+        component.positionCaret(errorOffset);
       });
     }
   }

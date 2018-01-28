@@ -114,7 +114,7 @@ public interface StoredBundle extends PersistentDomainObject<StoredBundle>, Stor
   /**
    * The unique domain key for StoredBundle.
    */
-  public static class StoredBundleUDK implements Serializable, Comparable<StoredBundleUDK> {
+  class StoredBundleUDK implements Serializable, Comparable<StoredBundleUDK> {
 
     private static final long serialVersionUID = 1L;
 

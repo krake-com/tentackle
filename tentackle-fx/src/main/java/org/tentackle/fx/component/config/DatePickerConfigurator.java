@@ -20,7 +20,10 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.DatePicker;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
+import org.tentackle.fx.FxComponent;
 
 /**
  * Configures a DatePicker.
@@ -29,6 +32,26 @@ import org.tentackle.fx.ConfiguratorService;
  * @param <T> the datepicker type
  */
 @ConfiguratorService(DatePicker.class)
-public class DatePickerConfigurator<T extends DatePicker> extends ComboBoxBaseConfigurator<T> {
+public class DatePickerConfigurator<T extends DatePicker> extends ComponentConfigurator<T> {
+
+  @Override
+  public void configure(T control) {
+    super.configure(control);
+
+    // first keystroke triggers check for modification
+    control.getEditor().textProperty().addListener(o -> ((FxComponent) control).triggerViewModified());
+
+    // Shift-Backspace clears the field
+    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+      if (event.getCode() == KeyCode.BACK_SPACE && event.isShiftDown() &&
+          !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
+        if (event.getEventType() == KeyEvent.KEY_PRESSED &&
+            !control.getEditor().isDisabled() && control.getEditor().isEditable()) {
+          control.getEditor().clear();
+        }
+        event.consume();
+      }
+    });
+  }
 
 }

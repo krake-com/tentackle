@@ -19,7 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.tentackle.log.Logger;
@@ -164,12 +163,8 @@ public class ModificationTally {
   public synchronized void performPendingCount() {
     if (pendingCount > 0) {
       // don't flush to database because listeners could be triggered that may not see the uncommitted data
-      for (Iterator<Session> iter = sessionsInTx.keySet().iterator(); iter.hasNext(); ) {
-        Session session = iter.next();
-        if (!session.isTxRunning()) {
-          iter.remove();    // committed
-        }
-      }
+      // committed
+      sessionsInTx.keySet().removeIf(session -> !session.isTxRunning());
       if (sessionsInTx.isEmpty()) {
         LOGGER.fine("increment serial for {0} by {1}", dbModification, pendingCount);
         if (dbModification.countModification(pendingCount) != 2)  {

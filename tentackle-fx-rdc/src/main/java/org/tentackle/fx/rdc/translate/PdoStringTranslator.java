@@ -22,11 +22,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
@@ -54,6 +53,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  * TODO: DnD support
  *
  * @author harald
+ * @param <T> the PDO type
  */
 @ValueTranslatorService(modelClass = PersistentDomainObject.class, viewClass = String.class)
 public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends ValueStringTranslator<T> {
@@ -90,10 +90,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       // apply binding options defined for the UDK in the PDO, if provided
       Bindable bindable = getBindableAnnotation(proxy);
       if (bindable != null) {
-        String bindingOptions = bindable.options();
-        if (bindingOptions != null) {
-          FxUtilities.getInstance().applyBindingOptions(component, component.getBinding().getMember(), bindingOptions);
-        }
+        FxUtilities.getInstance().applyBindingOptions(component, component.getBinding().getMember(), bindable.options());
       }
     }
     catch (RuntimeException rex) {
@@ -110,7 +107,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         if (event.getCode() == KeyCode.F2) {
           event.consume();
           if (pdo != null) {
-            List<T> pdoList = new ArrayList<>();    // pdo list will disable new,delete and find buttons!
+            ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
             pdoList.add(pdo);
             pdo = RdcUtilities.getInstance().displayCrudStage(
                     pdo, pdoList, !pdo.isImmutable(),

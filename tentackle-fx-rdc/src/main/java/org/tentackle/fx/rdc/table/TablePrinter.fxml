@@ -27,7 +27,7 @@
       </HBox>
    </bottom>
    <center>
-      <TableView fx:id="tableView" focusTraversable="false" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <TableView fx:id="tableView" focusTraversable="false" prefHeight="200.0" prefWidth="400.0" BorderPane.alignment="CENTER">
         <columns>
           <TableColumn prefWidth="75.0" text="C1" />
           <TableColumn prefWidth="75.0" text="C2" />

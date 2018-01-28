@@ -35,8 +35,8 @@ import org.tentackle.misc.FormatHelper;
 public class DateCellType extends UtilDateCellType<Date> {
 
   @Override
-  public DateFormat getFormat(FxTableCell<?, Date> tableCell, Date item) {
-    DateFormat fmt = super.getFormat(tableCell, item);
+  public DateFormat getFormat(FxTableCell<?, Date> tableCell) {
+    DateFormat fmt = super.getFormat(tableCell);
     if (fmt == null) {
       fmt = new SimpleDateFormat(FormatHelper.getDatePattern());
     }

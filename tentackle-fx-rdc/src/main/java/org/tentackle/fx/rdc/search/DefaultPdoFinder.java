@@ -40,6 +40,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  * If no normtext, all PDOs are selected.
  *
  * @author harald
+ * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFinder<T> {

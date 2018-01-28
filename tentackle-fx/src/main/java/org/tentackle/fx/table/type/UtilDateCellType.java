@@ -36,7 +36,7 @@ public class UtilDateCellType<T extends Date> extends AbstractTableCellType<T> {
   @Override
   public void updateItem(FxTableCell<?, T> tableCell, T item) {
     tableCell.setGraphic(null);
-    DateFormat fmt = getFormat(tableCell, item);
+    DateFormat fmt = getFormat(tableCell);
     String text;
     if (fmt != null) {
       text = fmt.format(item);
@@ -52,10 +52,9 @@ public class UtilDateCellType<T extends Date> extends AbstractTableCellType<T> {
    * Gets the date format.
    *
    * @param tableCell the cell
-   * @param item the date
    * @return the format, null if default toString()
    */
-  protected DateFormat getFormat(FxTableCell<?, T> tableCell, T item) {
+  protected DateFormat getFormat(FxTableCell<?, T> tableCell) {
     return tableCell.getColumnConfiguration().getDateFormat();
   }
 

@@ -270,7 +270,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @return the pdo to join
    */
   public J createJoinedPdo(T pdo) {
-    return Pdo.create(joinedClass, pdo.getDomainContext());
+    return Pdo.create(joinedClass, pdo.getPersistenceDelegate().getDomainContext());
   }
 
   /**
@@ -280,11 +280,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
    * @param pdoToJoin the pdo to join, null to finish the joining process
    */
   public void join(T pdo, J pdoToJoin) {
-    Set<J> lastJoined = lastJoinedPdoMap.get(pdo);
-    if (lastJoined == null) {
-      lastJoined = new HashSet<>();
-      lastJoinedPdoMap.put(pdo, lastJoined);
-    }
+    Set<J> lastJoined = lastJoinedPdoMap.computeIfAbsent(pdo, k -> new HashSet<>());
     if (lastJoined.add(pdoToJoin)) {
       joiner.accept(pdo, pdoToJoin);
     }

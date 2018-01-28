@@ -388,6 +388,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param snapshot the snapshot
    */
+  @SuppressWarnings("rawtypes")
   protected void createAttributesInSnapshot(AbstractDbObject snapshot) {
     snapshot.id = id;   // was cleared in clone()
     snapshot.serial = serial;
@@ -399,6 +400,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param snapshot the snapshot object
    */
+  @SuppressWarnings("rawtypes")
   protected void revertAttributesToSnapshot(AbstractDbObject snapshot) {
     // Important: no snapshot<P> cause of inheritance problems
     id = snapshot.id;
@@ -602,7 +604,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return the new object
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public P newInstance() {
     try {
       AbstractDbObject obj = getClass().getConstructor().newInstance();

@@ -272,11 +272,11 @@ public interface Session extends Comparable<Session> {
    * Runs a transaction provided by a transaction envelope.
    *
    * @param <T> the return type
-   * @param txe the transaction envelope
    * @param txName the transaction name, null if none
+   * @param txe the transaction envelope
    * @return the return value of the envelope
    */
-  <T> T transaction(TransactionEnvelope<T> txe, String txName);
+  <T> T transaction(String txName, TransactionEnvelope<T> txe);
 
   /**
    * Runs a transaction provided by a transaction envelope.

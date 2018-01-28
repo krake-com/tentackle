@@ -23,7 +23,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
@@ -101,6 +101,9 @@ public class ModelWurblet extends AbstractWurblet {
   /** != null if detected whether this is a pdo or not. */
   private Boolean isPdo;
 
+  /** true if isPdo != null and wurblet anchor is declared within an interface. */
+  private boolean isInterface;
+
   /** true if --remote option set. */
   private boolean remote;
 
@@ -167,6 +170,7 @@ public class ModelWurblet extends AbstractWurblet {
             pdoClassName = persistentIface.substring(0, ndx);
             if (pdoClassName.length() > 1 && pdoClassName.indexOf('<') < 0) {   // not T or some other generic type
               isPdo = true;
+              isInterface = true;
               return pdoClassName;
             }
           }
@@ -242,6 +246,16 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
     return isPdo;
+  }
+
+  /**
+   * Returns whether wurblet is defined within an interface.<br>
+   * Only valid if isPdo() returns non-null.
+   *
+   * @return true if interface
+   */
+  public boolean isInterface() {
+    return isInterface;
   }
 
   /**
@@ -356,13 +370,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the sorted entities (same reference as argument)
    */
   public List<Entity> orderByInheritanceLevelAndClassId(List<Entity> entities) {
-    Collections.sort(entities, (Entity o1, Entity o2) -> {
-      int rv = o1.getInheritanceLevel() - o2.getInheritanceLevel();
-      if (rv == 0) {
-        rv = Long.compare(o1.getClassId(), o2.getClassId());
-      }
-      return rv;
-    });
+    entities.sort(Comparator.comparingInt(Entity::getInheritanceLevel).thenComparingInt(Entity::getClassId));
     return entities;
   }
 
@@ -632,7 +640,7 @@ public class ModelWurblet extends AbstractWurblet {
       }
     }
     catch (ModelException mex) {
-        throw new WurbelException("errors in model loaded from file '" + getModelName() + "'", mex);
+      throw new WurbelTerminationException("errors in model loaded from file '" + getModelName() + "'", mex);
     }
 
     if (entity == null) {
@@ -643,7 +651,7 @@ public class ModelWurblet extends AbstractWurblet {
           delayedModelException = wex.getCause();
         }
       }
-      throw new WurbelException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
+      throw new WurbelTerminationException("no such entity '" + getModelName() + "' in model " + modelDir, delayedModelException);
     }
 
 

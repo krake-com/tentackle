@@ -112,7 +112,7 @@ public class TotalsTableView<S> extends FxTableView<S> {
       if (e.isControlDown() && e.getCode() == KeyCode.C) {
         StringBuilder buf = new StringBuilder();
         for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {
-          Object cell = (Object) getColumns().get(pos.getColumn()).getCellData(pos.getRow());
+          Object cell = getColumns().get(pos.getColumn()).getCellData(pos.getRow());
           if (cell != null) {
             if (buf.length() > 0) {
               buf.append('\t');

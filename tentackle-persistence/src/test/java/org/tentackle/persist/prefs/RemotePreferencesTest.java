@@ -65,7 +65,6 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   private final List<NodeChangeEvent> nodeEvents = new ArrayList<>();
   private final List<PreferenceChangeEvent> keyEvents = new ArrayList<>();
 
-  private Process process;    // server process
   private Db session;
 
 
@@ -93,7 +92,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   @Test(priority = 999)   // must be the last test!
   public void writePreferences() throws Exception {
 
-    process = AbstractPersistenceTest.runClass(AddAndRemovePrefsInServer.class);
+    Process process = AbstractPersistenceTest.runClass(AddAndRemovePrefsInServer.class);
     Thread.sleep(1500);
 
     try {

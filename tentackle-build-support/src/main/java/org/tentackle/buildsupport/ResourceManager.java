@@ -100,6 +100,10 @@ public class ResourceManager {
         writer = null;
       }
     }
+
+    private boolean exists() throws IOException {
+      return getFile().exists();
+    }
   }
 
 
@@ -148,6 +152,7 @@ public class ResourceManager {
     return getResource(name).getWriter();
   }
 
+
   /**
    * Gets the reader.
    *
@@ -161,6 +166,18 @@ public class ResourceManager {
 
 
   /**
+   * Returns whether given resource file exists.
+   *
+   * @param name the file;s name
+   * @return true if exists
+   * @throws IOException
+   */
+  public boolean exists(String name) throws IOException {
+    return getResource(name).exists();
+  }
+
+  
+  /**
    * Closes all resources.
    *
    * @throws IOException if closing a resource failed
@@ -173,11 +190,6 @@ public class ResourceManager {
 
 
   private Resource getResource(String name) {
-    Resource resource = resourceMap.get(name);
-    if (resource == null) {
-      resource = new Resource(name);
-      resourceMap.put(name, resource);
-    }
-    return resource;
+    return resourceMap.computeIfAbsent(name, Resource::new);
   }
 }

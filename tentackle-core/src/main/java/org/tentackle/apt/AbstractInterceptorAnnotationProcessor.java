@@ -98,7 +98,7 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
         if (type == Type.PUBLIC && enclosingElement.getKind().equals(ElementKind.INTERFACE) ||
             type == Type.HIDDEN && enclosingElement.getKind().equals(ElementKind.CLASS) ||
             type == Type.ALL && (enclosingElement.getKind().equals(ElementKind.INTERFACE) ||
-            enclosingElement.getKind().equals(ElementKind.CLASS))) {
+                                 enclosingElement.getKind().equals(ElementKind.CLASS))) {
 
           TypeElement classElement = (TypeElement) enclosingElement;
           // check interfaces of this class and superclasses

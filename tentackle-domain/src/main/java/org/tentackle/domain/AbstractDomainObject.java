@@ -132,7 +132,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   public String toString() {
     StringBuilder buf = new StringBuilder();
     try {
-      Object key = pdo().isRootEntity() ? pdo().getUniqueDomainKey() : getSingular();
+      Object key = pdo().isRootEntity() ? getUniqueDomainKey() : getSingular();
       if (key != null) {
         buf.append(key);
       }
@@ -218,7 +218,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
    * Checks if the PDO is a root entity.
    */
   public void assertRootEntity() {
-    if (!pdo().isRootEntity()) {
+    if (!pdo().getPersistenceDelegate().isRootEntity()) {
       throw new DomainException(pdo(), "not a root-entity");
     }
   }

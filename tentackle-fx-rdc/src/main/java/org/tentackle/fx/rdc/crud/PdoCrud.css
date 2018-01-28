@@ -1,0 +1,5 @@
+
+/* min width for browser tree */
+.tree-view {
+  -fx-min-width: 400;
+}

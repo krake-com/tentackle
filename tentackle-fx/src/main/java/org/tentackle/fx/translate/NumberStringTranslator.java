@@ -29,9 +29,9 @@ import org.tentackle.fx.FxTextComponent;
  * Abstract base class for number translators.
  *
  * @author harald
- * @param <T> the number type
+ * @param <M> the model's number type
  */
-public abstract class NumberStringTranslator<T extends Number> extends ValueStringTranslator<T> {
+public abstract class NumberStringTranslator<M extends Number> extends ValueStringTranslator<M> {
 
   private String pattern;         // the cached pattern
   private DecimalFormat format;   // the cached format

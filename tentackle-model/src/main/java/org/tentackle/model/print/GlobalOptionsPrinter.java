@@ -214,7 +214,7 @@ public class GlobalOptionsPrinter {
   private void printBool(StringBuilder buf, String name, boolean optionValue, Boolean defaultValue) {
     if (defaultValue == null && optionValue ||
         defaultValue != null && defaultValue != optionValue) {
-      if (!optionValue && defaultValue != null) {
+      if (!optionValue) {
         buf.append('!');
       }
       buf.append(name).append(',');

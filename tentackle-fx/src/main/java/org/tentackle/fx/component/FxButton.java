@@ -157,7 +157,7 @@ public class FxButton extends Button implements InfoPopupSupported {
   public void setInfo(String infoMessage) {
     boolean wasInfoMessage = this.infoMessage != null;
     this.infoMessage = infoMessage;
-    if (wasInfoMessage != (infoMessage != null)) {
+    if (wasInfoMessage == (infoMessage == null)) {
       // update style
       if (wasInfoMessage) {
         getStyleClass().remove(INFO_STYLE);

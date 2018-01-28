@@ -655,8 +655,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     if (processed && !composite) {
       throw createModelException("processed only allowed for composite relations");
     }
-    if (serialized && (isComposite() || selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER)) {
-      throw createModelException("serialized is only allowed for lazy or eager non-composite relations");
+    if (serialized) {
+      if (selectionCached) {
+        throw createModelException("cached select is not allowed for serialized relations");
+      }
+      if (isComposite() || selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+        throw createModelException("serialized is only allowed for lazy or eager non-composite relations");
+      }
     }
 
     if (nmName != null && (!composite || relationType == RelationType.OBJECT)) {

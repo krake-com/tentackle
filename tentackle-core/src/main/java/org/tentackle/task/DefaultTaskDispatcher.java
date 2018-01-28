@@ -880,7 +880,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    */
   private boolean _unlock(Object key) {
 
-    int lockingLevel = 0;
+    int lockingLevel;
 
     if (usingMutexLocking) {
       /**

@@ -22,7 +22,6 @@ package org.tentackle.fx.component;
 import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.collections.ObservableList;
 import javafx.scene.control.ChoiceBox;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
@@ -40,11 +39,35 @@ import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
  */
 public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
 
+  private Boolean deselectAllowed;
+  
+
   /**
    * Create a new ChoiceBox which has an empty list of items.
    */
   public FxChoiceBox() {
     super();
+  }
+
+  /**
+   * Returns whether deselect is allowed via delete or backspace key.<br>
+   * If null, it is determined according to type and/or mandatory property.
+   * If the type is a primitive or the component is mandatory, deselect is not allowed.
+   * Otherwise it is allowed by default.
+   *
+   * @return true if allowed, null if determined from type and/or mandatory property
+   */
+  public Boolean isDeselectAllowed() {
+    return deselectAllowed;
+  }
+
+  /**
+   * Sets whether deselect is allowed via delete or backspace key.
+   *
+   * @param deselectAllowed true if allowed, null if determined from type and/or mandatory property
+   */
+  public void setDeselectAllowed(Boolean deselectAllowed) {
+    this.deselectAllowed = deselectAllowed;
   }
 
 

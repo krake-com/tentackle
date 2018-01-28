@@ -195,11 +195,7 @@ public class MigrationHints {
           if (oldColumnName != null) {
             // column migration
             ColumnKey colKey = new ColumnKey(oldColumnName, newColumnName);
-            Map<ColumnKey,String> columns = migrateColumns.get(tableName);
-            if (columns == null) {
-              columns = new HashMap<>();
-              migrateColumns.put(tableName, columns);
-            }
+            Map<ColumnKey, String> columns = migrateColumns.computeIfAbsent(tableName, k -> new HashMap<>());
             String migrate = columns.get(colKey);
             if (migrate != null) {
               text.insert(0, '\n');
@@ -221,11 +217,7 @@ public class MigrationHints {
         case HINT:
           try {
             Pattern pattern = Pattern.compile(text.toString(), Pattern.DOTALL);
-            Collection<Pattern> patterns = hints.get(tableName);
-            if (patterns == null) {
-              patterns = new ArrayList<>();
-              hints.put(tableName, patterns);
-            }
+            Collection<Pattern> patterns = hints.computeIfAbsent(tableName, k -> new ArrayList<>());
             patterns.add(pattern);
           }
           catch (PatternSyntaxException pex) {
@@ -234,11 +226,7 @@ public class MigrationHints {
           break;
 
         case DEPEND:
-          Collection<String> tables = dependencies.get(tableName);
-          if (tables == null) {
-            tables = new ArrayList<>();
-            dependencies.put(tableName, tables);
-          }
+          Collection<String> tables = dependencies.computeIfAbsent(tableName, k -> new ArrayList<>());
           StringTokenizer stok = new StringTokenizer(text.toString(), ", \t\r\n");
           while (stok.hasMoreTokens()) {
             tables.add(stok.nextToken().trim().toLowerCase());

@@ -50,13 +50,7 @@ public class Log4JLogger implements Logger {
    */
   public static Log4JLogger getLogger(String name) {
     synchronized(LOGGERS) {
-      Log4JLogger logger = LOGGERS.get(name);
-      if (logger == null) {
-        // create a new one
-        logger = new Log4JLogger(name);
-        LOGGERS.put(name, logger);
-      }
-      return logger;
+      return LOGGERS.computeIfAbsent(name, Log4JLogger::new);
     }
   }
 

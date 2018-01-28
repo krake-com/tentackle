@@ -67,7 +67,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (js != null) {
       js.initialize(null);
     }
-    context = pdo.getDomainContext();
+    context = pdo.getPersistenceDelegate().getDomainContext();
     session = context.getSession();
     remoteCursor = null;
 

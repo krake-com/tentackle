@@ -21,7 +21,6 @@ package org.tentackle.fx.translate;
 
 import java.util.function.Function;
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.ValueTranslator;
 
 /**
  * The identity translator base class.
@@ -29,7 +28,7 @@ import org.tentackle.fx.ValueTranslator;
  * @author harald
  * @param <T> the type
  */
-public abstract class IdentityTranslator<T> extends ValueTranslator<T,T> {
+public abstract class IdentityTranslator<T> extends AbstractValueTranslator<T,T> {
 
   /**
    * Creates a dummy translator.

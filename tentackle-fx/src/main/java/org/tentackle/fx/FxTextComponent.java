@@ -129,6 +129,20 @@ public interface FxTextComponent extends FxComponent {
   String getPattern();
 
   /**
+   * Returns whether parsing to model should be lenient.
+   *
+   * @return true if lenient, false is default
+   */
+  boolean isLenient();
+
+  /**
+   * Sets whether parsing to model should be lenient.
+   *
+   * @param lenient true if lenient
+   */
+  void setLenient(boolean lenient);
+
+  /**
    * Changes the format according to the given scale.
    *
    * @param scale the number of digits after the comma
@@ -244,5 +258,12 @@ public interface FxTextComponent extends FxComponent {
    * @return the converter
    */
   Function<String,String> getTextConverter();
+
+  /**
+   * Selects or deselects all text in the text input.<br>
+   *
+   * @see #isAutoSelect()
+   */
+  void autoSelect();
 
 }

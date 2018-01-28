@@ -27,7 +27,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
@@ -39,7 +38,7 @@ import org.tentackle.fx.ValueTranslatorService;
  * @param <C> the collection type
  */
 @ValueTranslatorService(modelClass = List.class, viewClass = ObservableList.class)
-public class ObservableListTranslator<T, C extends List<T>> extends ValueTranslator<C,ObservableList<T>> {
+public class ObservableListTranslator<T, C extends List<T>> extends AbstractValueTranslator<C,ObservableList<T>> {
 
   /**
    * Creates a translator for components maintaining a list of objects.

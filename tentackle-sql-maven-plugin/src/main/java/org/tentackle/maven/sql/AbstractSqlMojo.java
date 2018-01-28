@@ -463,7 +463,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         }
         else {
           // all from model dir
-          if (modelDir.isDirectory() && modelDir.list().length > 0) {
+          String[] files = modelDir.isDirectory() ? modelDir.list() : null;
+          if (files != null && files.length > 0) {
             final FileSet fs = new FileSet();
             fs.setDirectory(modelDir.getPath());
             processFileSet(backendInfo, fs);

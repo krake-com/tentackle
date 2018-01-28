@@ -20,14 +20,14 @@
 package org.tentackle.fx.translate;
 
 import org.tentackle.fx.FxTextComponent;
-import org.tentackle.fx.ValueTranslator;
 
 /**
  * A value translator for text components.
  *
  * @author harald
+ * @param <M> the model's type
  */
-public abstract class ValueStringTranslator<T> extends ValueTranslator<T,String> {
+public abstract class ValueStringTranslator<M> extends AbstractValueTranslator<M,String> {
 
   /**
    * Creates the translator.
@@ -44,7 +44,7 @@ public abstract class ValueStringTranslator<T> extends ValueTranslator<T,String>
   }
 
   @Override
-  public T toModel(String text) {
+  public M toModel(String text) {
     if (text != null) {
       char filler = getComponent().getFiller();
       if (filler != ' ') {
