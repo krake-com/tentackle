@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.2-SNAPSHOT</version>
+    <version>2.1.2</version>
   </parent>
 
   <artifactId>tentackle-fx</artifactId>
-  <version>2.2-SNAPSHOT</version>
+  <version>2.1.2</version>
   <packaging>jar</packaging>
   <name>Tentackle FX</name>
   <description>UI components based on FX</description>
