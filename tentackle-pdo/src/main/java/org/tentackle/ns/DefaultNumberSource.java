@@ -19,6 +19,7 @@
 package org.tentackle.ns;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -129,8 +130,8 @@ public class DefaultNumberSource implements NumberSource {
     return Session.getSession().transaction(() -> {
       lockPool();
       findCurrentRange();
-      Set<Range> ranges = new TreeSet<>(    // returned ranges sorted by begin
-        (Range o1, Range o2) -> Long.compare(o1.getBegin(), o2.getBegin()));
+      // returned ranges sorted by begin
+      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::getBegin));
 
       long remains = count;
       while (remains > 0) {
@@ -153,8 +154,8 @@ public class DefaultNumberSource implements NumberSource {
   public synchronized Range[] popNumbers(long begin, long end) {
     return Session.getSession().transaction(() -> {
       lockPool();
-      Set<Range> ranges = new TreeSet<>(    // returned ranges sorted by begin
-        (Range o1, Range o2) -> Long.compare(o1.getBegin(), o2.getBegin()));
+      // returned ranges sorted by begin
+      Set<Range> ranges = new TreeSet<>(Comparator.comparingLong(Range::getBegin));
 
       List<NumberRange> splitRanges = new ArrayList<>();  // splitted ranges (to add)
       for (Iterator<NumberRange> iter =  pool.getNumberRangeList().iterator(); iter.hasNext(); ) {
@@ -322,8 +323,7 @@ public class DefaultNumberSource implements NumberSource {
    */
   private void fixRanges() {
     // ranges sorted by begin
-    Map<Range, NumberRange> rangeMap = new TreeMap<>(
-        (Range o1, Range o2) -> Long.compare(o1.getBegin(), o2.getBegin()));
+    Map<Range, NumberRange> rangeMap = new TreeMap<>(Comparator.comparingLong(Range::getBegin));
     for (NumberRange range: pool.getNumberRangeList()) {
       rangeMap.put(new Range(range.getBegin(), range.getEnd()), range);
     }

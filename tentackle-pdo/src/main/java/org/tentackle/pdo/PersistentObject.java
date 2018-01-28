@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import java.util.List;
+import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Identifiable;
@@ -69,6 +70,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    */
   @Persistent("object id")
   @Override
+  @Bindable
   long getId();
 
   /**
@@ -97,6 +99,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    */
   @Persistent("object version")
   @Override
+  @Bindable
   long getSerial();
 
 
@@ -122,6 +125,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the table serial
    */
   @Persistent("table version")
+  @Bindable
   long getTableSerial();
 
   /**
@@ -186,6 +190,8 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the root id
    */
+  @Persistent("root id")
+  @Bindable
   long getRootId();
 
   /**
@@ -193,6 +199,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param rootId the root id
    */
+  @Persistent("root id")
   void setRootId(long rootId);
 
   /**
@@ -207,6 +214,8 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the root class id
    */
+  @Persistent("root class id")
+  @Bindable
   int getRootClassId();
 
   /**
@@ -214,6 +223,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param rootClassId the root class id
    */
+  @Persistent("root class id")
   void setRootClassId(int rootClassId);
 
   /**
@@ -239,6 +249,8 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the class id
    */
+  @Persistent("class id")
+  @Bindable
   int getClassId();
 
   /**
@@ -900,6 +912,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the id or 0 if not being edited currently.
    */
   @Persistent("userId of token holder")
+  @Bindable
   long getEditedBy();
 
   /**
@@ -919,6 +932,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the time, null if not being edited.
    */
   @Persistent("time since token given to user")
+  @Bindable
   Timestamp getEditedSince();
 
   /**
@@ -937,6 +951,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the time, null if not being edited.
    */
   @Persistent("time when token expires")
+  @Bindable
   Timestamp getEditedExpiry();
 
   /**

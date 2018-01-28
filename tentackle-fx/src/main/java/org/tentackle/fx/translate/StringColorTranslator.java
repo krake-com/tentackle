@@ -22,7 +22,6 @@ package org.tentackle.fx.translate;
 import java.util.function.Function;
 import javafx.scene.paint.Color;
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ValueTranslatorService;
 
 /**
@@ -32,7 +31,7 @@ import org.tentackle.fx.ValueTranslatorService;
  * @author harald
  */
 @ValueTranslatorService(modelClass = String.class, viewClass = Color.class)
-public class StringColorTranslator extends ValueTranslator<String, Color> {
+public class StringColorTranslator extends AbstractValueTranslator<String, Color> {
 
   /**
    * The fixed color string length.

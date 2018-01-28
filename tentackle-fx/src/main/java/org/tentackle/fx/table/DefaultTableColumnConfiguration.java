@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
@@ -86,16 +87,22 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private String pattern;
 
   /**
-   * The decimal format.
+   * The decimal format.<br>
    * null if pattern and scale is null.
    */
   private DecimalFormat numberFormat;
 
   /**
-   * The date format.
-   * nullif pattern is null.
+   * The date format.<br>
+   * null if pattern is null.
    */
   private DateFormat dateFormat;
+
+  /**
+   * Date and time formatter.<br>
+   * null if pattern is null.
+   */
+  private DateTimeFormatter dateTimeFormatter;
 
   /**
    * Alignment within cell.
@@ -240,6 +247,14 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
       dateFormat = new SimpleDateFormat(pattern);
     }
     return dateFormat;
+  }
+
+  @Override
+  public DateTimeFormatter getDateTimeFormatter() {
+    if (dateTimeFormatter == null && pattern != null) {
+      dateTimeFormatter = DateTimeFormatter.ofPattern(pattern);
+    }
+    return dateTimeFormatter;
   }
 
   @Override

@@ -48,7 +48,7 @@ public abstract class AbstractPersistenceTest {
   /**
    * The transaction handling for the test class.
    */
-  public static enum TransactionType {
+  public enum TransactionType {
     /** transaction per test class. */
     CLASS,
 

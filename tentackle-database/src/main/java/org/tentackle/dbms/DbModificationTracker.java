@@ -731,12 +731,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
             if (listenerEntry.tableEntry.id == idSer.getId() && listenerEntry.tableEntry.serial != idSer.getSerial()) {
               // table entry for listener has changed
               LOGGER.fine("modification detected for {0}, new serial {1}", listenerEntry.tableEntry, idSer.getSerial());
-              Set<ModificationEventDetail> details = detailMap.get(listenerEntry.listener);
-              if (details == null) {
-                // create a new one
-                details = new HashSet<>();
-                detailMap.put(listenerEntry.listener, details);
-              }
+              Set<ModificationEventDetail> details = detailMap.computeIfAbsent(listenerEntry.listener, k -> new HashSet<>());
+              // create a new one
               if (!listenerEntry.isMaster()) {
                 getCounter(listenerEntry.tableEntry.tableName);   // configure counter if not yet done
                 details.add(listenerEntry.createDetail(idSer.getSerial()));

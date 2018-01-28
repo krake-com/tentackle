@@ -319,11 +319,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   public synchronized void addPreferenceChangeListener(DbPreferences node, PreferenceChangeListener pcl) {
     ListenerKey lk = new ListenerKey(node);
-    Set<PreferenceChangeListener> listeners = prefListeners.get(lk);
-    if (listeners == null) {
-      listeners = new HashSet<>();
-      prefListeners.put(lk, listeners);
-    }
+    Set<PreferenceChangeListener> listeners = prefListeners.computeIfAbsent(lk, k -> new HashSet<>());
     listeners.add(pcl);
   }
 
@@ -356,11 +352,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    */
   public synchronized void addNodeChangeListener(DbPreferences node, NodeChangeListener ncl) {
     ListenerKey lk = new ListenerKey(node);
-    Set<NodeChangeListener> listeners = nodeListeners.get(lk);
-    if (listeners == null) {
-      listeners = new HashSet<>();
-      nodeListeners.put(lk, listeners);
-    }
+    Set<NodeChangeListener> listeners = nodeListeners.computeIfAbsent(lk, k -> new HashSet<>());
     listeners.add(ncl);
   }
 
@@ -661,7 +653,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           removeRoot(root.node);   // force reload next access
         }
         else {
-          boolean updated = false;
+          boolean updated;
           DbPreferencesKey key = node.getPersistentKey(prefKey.getKey());
           if (key == null) {
             node.putPersistentKey(prefKey);

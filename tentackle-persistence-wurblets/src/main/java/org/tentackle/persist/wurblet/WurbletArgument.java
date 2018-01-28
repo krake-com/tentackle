@@ -208,7 +208,7 @@ public class WurbletArgument implements WurbletArgumentOperand {
         }
     }
 
-    String str = null;
+    String str;
 
     int ndx = text.indexOf(':');
     if (ndx > 0) {

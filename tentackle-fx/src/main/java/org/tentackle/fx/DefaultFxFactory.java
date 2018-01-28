@@ -165,14 +165,11 @@ public class DefaultFxFactory implements FxFactory {
     viewTranslatorMap = new HashMap<>();
     for (Map.Entry<ValueTranslatorKey<?,?>, Class<ValueTranslator>> entry: translatorMap.entrySet()) {
       Class<?> viewClass = entry.getKey().getViewClass();
-      DefaultClassMapper translators = viewTranslatorMap.get(viewClass);
-      if (translators == null) {
-        translators = new DefaultClassMapper(
-                ReflectionHelper.getClassBaseName(viewClass) + "-translator",
-                ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
-                new HashMap<>(), null);
-        viewTranslatorMap.put(viewClass, translators);
-      }
+      DefaultClassMapper translators = viewTranslatorMap.computeIfAbsent(viewClass, k ->
+              new DefaultClassMapper(
+                      ReflectionHelper.getClassBaseName(viewClass) + "-translator",
+                      ServiceFactory.getClassLoader(Constants.DEFAULT_SERVICE_PATH, ValueTranslator.class.getName()),
+                      new HashMap<>(), null));
       translators.getNameMap().put(entry.getKey().getModelClass().getName(), entry.getValue().getName());
     }
 
@@ -191,7 +188,7 @@ public class DefaultFxFactory implements FxFactory {
     Configurator<?> configurator = null;
     Optional<Configurator<?>> optional = fxToConfiguratorMap.get(clazz);
     if (optional != null) {
-      configurator = optional.isPresent() ? optional.get() : null;
+      configurator = optional.orElse(null);
     }
     else {
       Class<?> cls = clazz;

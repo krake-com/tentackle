@@ -106,7 +106,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     setLowerCase(options.isLowerCase());
     setMaxCol(options.isMaxCol());
     setBindOptions(options.getBindOptions());
-    if (dataType.isNumeric()) {
+    if (dataType.isNumeric() || dataType.isDateOrTime()) {
       setAutoSelect(options.isAutoSelect());
     }
     else  {

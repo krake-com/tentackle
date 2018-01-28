@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.List;
 import java.util.function.Consumer;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -46,10 +45,11 @@ public class Rdc {
    * @param <T> the pdo type
    * @param pdo the pdo
    * @param editable true if user may edit the pdo, false if to view only
+   * @param modal true if modal mode
    * @return the crud controller
    */
-  public static <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable) {
-    return RdcFactory.getInstance().createPdoCrud(pdo, editable);
+  public static <T extends PersistentDomainObject<T>> PdoCrud<T> createPdoCrud(T pdo, boolean editable, boolean modal) {
+    return RdcFactory.getInstance().createPdoCrud(pdo, editable, modal);
   }
 
   /**
@@ -101,7 +101,7 @@ public class Rdc {
    * @return the possibly changed pdo if modal
    */
   public static <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
+          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
     return RdcUtilities.getInstance().displayCrudStage(pdo, pdoList, editable, modality, owner, configurator);
   }
 
@@ -119,7 +119,7 @@ public class Rdc {
    */
   @SuppressWarnings("unchecked")
   public static <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
+          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
     return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality, owner);
   }
 

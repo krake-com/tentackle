@@ -54,8 +54,10 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   // preloaded methods of java.lang.Object
   private static final Method HASHCODE_METHOD;
   private static final Method EQUALS_METHOD;
-  private static final Method COMPARETO_METHOD;
   private static final Method TOSTRING_METHOD;
+
+  // preloaded methods of java.lang.Comparable
+  private static final Method COMPARETO_METHOD;
 
   // preloaded methods of PersistentDomainObject
   private static final Method CLONE_METHOD;
@@ -76,8 +78,8 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
     try {
       HASHCODE_METHOD = Object.class.getMethod("hashCode");
       EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
-      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
       TOSTRING_METHOD = Object.class.getMethod("toString");
+      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
       CLONE_METHOD = PersistentDomainObject.class.getMethod("clonePdo");
       GETDOMAINOBJECT_METHOD = PersistentDomainObject.class.getMethod("getDomainDelegate");
       GETPERSISTENTOBJECT_METHOD = PersistentDomainObject.class.getMethod("getPersistenceDelegate");
@@ -94,7 +96,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
-  private final Class<T> clazz;                               // the pdo class
+  private final Class<T> clazz;                            // the pdo class
   private final Mixin<T,PdoHolder<T>> persistenceMixin;    // the persistence mixin
   private final Mixin<T,PdoHolder<T>> domainMixin;         // the domain mixin
 
@@ -290,7 +292,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       }
       else if (method.equals(EQUALS_METHOD)) {
         Object obj = args[0];
-        if (obj != null && obj instanceof PersistentDomainObject) {
+        if (obj instanceof PersistentDomainObject) {
           args = new Object[] { ((PersistentDomainObject) obj).getPersistenceDelegate() };
           delegate = persistenceMixin.getDelegate();
         }
@@ -305,12 +307,12 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
     else if (declaringClass == Comparable.class) {
       if (method.equals(COMPARETO_METHOD)) {
         Object obj = args[0];
-        if (obj != null && obj instanceof PersistentDomainObject) {
+        if (obj instanceof PersistentDomainObject) {
           args = new Object[] { ((PersistentDomainObject) obj).getPersistenceDelegate() };
           delegate = persistenceMixin.getDelegate();
         }
         else  {
-          return false;
+          return Integer.MAX_VALUE;
         }
       }
     }

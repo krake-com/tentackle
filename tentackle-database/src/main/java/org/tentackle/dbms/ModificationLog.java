@@ -25,18 +25,17 @@ import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Canonicalizer;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.ParameterString;
-import org.tentackle.common.StringHelper;
-import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
-import org.tentackle.session.SessionDependable;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
 
@@ -653,8 +652,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   @Override
   public void setSession(Session session) {
     super.setSession(session);
-    if (lazyObject instanceof SessionDependable) {
-      ((SessionDependable) lazyObject).setSession(session);
+    if (lazyObject != null) {
+      lazyObject.setSession(session);
     }
   }
 

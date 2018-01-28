@@ -86,6 +86,7 @@ public class Login extends AbstractFxController {
     cancelButton.setGraphic(Fx.createImageView("close"));
     loginButton.setOnAction(e -> login());
     loginButton.setGraphic(Fx.createImageView("ok"));
+    usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
   }
 
@@ -127,7 +128,7 @@ public class Login extends AbstractFxController {
       login();
     });
   }
-  
+
 
   private void login() {
     if (progressBar.getProgress() <= 0.0) {

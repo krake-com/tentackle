@@ -462,11 +462,7 @@ public class ServiceFactory {
    */
   protected synchronized void addExplicitClassLoaderImpl(String servicePath, String serviceName, ClassLoader classLoader) {
     ClassLoaderKey key = new ClassLoaderKey(servicePath, serviceName);
-    LinkedList<ClassLoader> loaders = explicitLoaders.get(key);
-    if (loaders == null) {
-      loaders = new LinkedList<>();
-      explicitLoaders.put(key, loaders);
-    }
+    LinkedList<ClassLoader> loaders = explicitLoaders.computeIfAbsent(key, k -> new LinkedList<>());
     // remove previously added loader (-> Set)
     // if the same classloader is added twice, the cl is moved to the start of the list
     loaders.remove(classLoader);

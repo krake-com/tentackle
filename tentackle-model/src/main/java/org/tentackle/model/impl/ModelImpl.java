@@ -708,8 +708,7 @@ public class ModelImpl implements Model {
         // check
         Map<String,Attribute> columnMap = new HashMap<>();  // map by column name
         Map<String,Attribute> nameMap = new HashMap<>();    // map by java name
-        List<Attribute> allAttributes = new ArrayList<>();
-        allAttributes.addAll(entity.getAttributes());
+        List<Attribute> allAttributes = new ArrayList<>(entity.getAttributes());
         for (Entity child: entity.getAllSubEntities()) {
           allAttributes.addAll(child.getAttributes());
         }

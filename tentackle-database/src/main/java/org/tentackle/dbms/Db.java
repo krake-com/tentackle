@@ -1337,7 +1337,7 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public <T> T transaction(TransactionEnvelope<T> txe, String txName) {
+  public <T> T transaction(String txName, TransactionEnvelope<T> txe) {
     if (txName == null) {
       Method method = txe.getClass().getEnclosingMethod();
       if (method != null) {
@@ -1379,7 +1379,7 @@ public class Db implements Session, Cloneable {
 
   @Override
   public <T> T transaction(TransactionEnvelope<T> txe) {
-    return transaction(txe, null);
+    return transaction(null, txe);
   }
 
 
@@ -2102,43 +2102,47 @@ public class Db implements Session, Cloneable {
       }
     }
     catch (RuntimeException rex) {
-      ManagedConnection c = con;
-      if (c != null && !c.isClosed()) {
-        // check low level transaction state
-        boolean connectionInTransaction;
-        try {
-          connectionInTransaction = c.getConnection().getAutoCommit();
-        }
-        catch (SQLException ex) {
-          LOGGER.warning("cannot determine transaction state of " + c + ": assume transaction still running", ex);
-          connectionInTransaction = true;
-        }
-        if (connectionInTransaction) {
-          /**
-           * If the physical connection is still running a transaction,
-           * we need a low-level rollback and mark the connection dead
-           * to avoid further use by the application.
-           */
-          LOGGER.warning(c + " still in transaction: performing low-level rollback");
+      try {
+        ManagedConnection c = con;
+        if (c != null && !c.isClosed()) {
+          // check low level transaction state
+          boolean connectionInTransaction;
           try {
-            c.getConnection().rollback();
-            c.getConnection().setAutoCommit(true);
+            connectionInTransaction = c.getConnection().getAutoCommit();
           }
           catch (SQLException ex) {
-            LOGGER.warning("low-level connection rollback failed for " + c, ex);
+            LOGGER.warning("cannot determine transaction state of " + c + ": assume transaction still running", ex);
+            connectionInTransaction = true;
           }
-          try {
-            // this may yield some additional information
-            c.logAndClearWarnings();
+          if (connectionInTransaction) {
+            /**
+             * If the physical connection is still running a transaction,
+             * we need a low-level rollback and mark the connection dead
+             * to avoid further use by the application.
+             */
+            LOGGER.warning(c + " still in transaction: performing low-level rollback");
+            try {
+              c.getConnection().rollback();
+              c.getConnection().setAutoCommit(true);
+            }
+            catch (SQLException ex) {
+              LOGGER.warning("low-level connection rollback failed for " + c, ex);
+            }
+            try {
+              // this may yield some additional information
+              c.logAndClearWarnings();
+            }
+            catch (PersistenceException ex) {
+              LOGGER.warning("clear warnings failed for " + c, ex);
+            }
           }
-          catch (PersistenceException ex) {
-            LOGGER.warning("clear warnings failed for " + c, ex);
-          }
+          c.setDead(true);    // don't use this connection anymore!
+          LOGGER.warning("connection " + c + " marked dead");
         }
-        c.setDead(true);    // don't use this connection anymore!
-        LOGGER.warning("connection " + c + " marked dead");
       }
-      handleExceptionForScavenger(rex);
+      finally {
+        handleExceptionForScavenger(rex);
+      }
       return transaction != null;
     }
   }
@@ -2181,10 +2185,8 @@ public class Db implements Session, Cloneable {
    * Detach the session.<br>
    * Used in execption handling to cleanup all pending statements and result sets.
    */
-  public void forceDetached() {
-    if (con != null) {
-      conMgr.forceDetach(this);
-    }
+  void forceDetached() {
+    conMgr.forceDetach(this);
   }
 
 

@@ -35,9 +35,7 @@ import java.util.function.Function;
 public enum SqlType {
 
   /** String. */
-  VARCHAR(Types.VARCHAR, false, false, "", (t) -> {
-    return removeSingleQuotes(t);
-  }),
+  VARCHAR(Types.VARCHAR, false, false, "", SqlType::removeSingleQuotes),
 
   /** Date. */
   DATE(Types.DATE, false, false, new Date(0), (t) -> {

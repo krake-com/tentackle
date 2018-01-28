@@ -394,6 +394,16 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
   }
 
   @Override
+  public boolean isLenient() {
+    return getDelegate().isLenient();
+  }
+
+  @Override
+  public void setLenient(boolean lenient) {
+    getDelegate().setLenient(lenient);
+  }
+
+  @Override
   public void setScale(int scale) {
     getDelegate().setScale(scale);
   }
@@ -498,6 +508,10 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
     getDelegate().mapErrorOffsetToCaretPosition();
   }
 
+  @Override
+  public void autoSelect() {
+    getDelegate().autoSelect();
+  }
   // </editor-fold>//GEN-END:textcomponent
 
 }

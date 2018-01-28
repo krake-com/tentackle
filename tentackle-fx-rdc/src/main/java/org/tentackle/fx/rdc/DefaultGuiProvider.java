@@ -8,7 +8,6 @@ package org.tentackle.fx.rdc;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import javafx.scene.Node;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
@@ -19,6 +18,7 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import org.tentackle.common.BundleFactory;
+import org.tentackle.common.Constants;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
@@ -30,8 +30,8 @@ import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.session.SessionUtilities;
 
 /**
  * Default implementation of a {@link GuiProvider}.<br>
@@ -133,30 +133,12 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * the methods {@link #isDragAccepted} and {@link #dropPdo} need to be overridden.
    *
    * @param dragboard the dragboard
-   * @return the key, null if invalid dragboard or no such classId
+   * @return the key, null if dragboard's string is null or empty
    */
   public IdentifiableKey<PersistentDomainObject<?>> getPdoKeyFromDragboard(Dragboard dragboard) {
-    String str = dragboard.getString();
-    if (str != null) {
-      StringTokenizer stok = new StringTokenizer(str, ":");
-      if (stok.hasMoreTokens()) {
-        int classId = Integer.parseInt(stok.nextToken());
-        if (stok.hasMoreTokens()) {
-          int id = Integer.parseInt(stok.nextToken());
-          String className = SessionUtilities.getInstance().getClassName(classId);
-          if (className != null && id != 0) {
-            try {
-              return new IdentifiableKey<>(className, id);
-            }
-            catch (ClassNotFoundException cx) {
-              LOGGER.severe("cannot load PDO class " + className + " for classId " + classId, cx);
-            }
-          }
-          else {
-            LOGGER.warning("no PDO key for {0}:{1}", classId, id);
-          }
-        }
-      }
+    String idString = dragboard.getString();
+    if (idString != null && !idString.isEmpty()) {
+      return PdoUtilities.getInstance().idStringToIdentifiableKey(idString);
     }
     return null;
   }
@@ -188,8 +170,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   public TableConfiguration<T> createTableConfiguration() {
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
     // the default just provides the id and serial
-    config.addColumn("id", "ID");
-    config.addColumn("serial", "Serial");
+    config.addColumn(Constants.CN_ID, Constants.AN_ID);
+    config.addColumn(Constants.CN_SERIAL, Constants.AN_SERIAL);
     return config;
   }
 
@@ -201,6 +183,9 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     }
     else if (config.getBindingType() == TableConfiguration.BINDING.INHERITED) {
       config.getBinder().bindAllInherited();
+    }
+    if (config.getBindingType() != TableConfiguration.BINDING.NO) {
+      config.getBinder().assertAllBound();
     }
     @SuppressWarnings("unchecked")
     FxTableView<T> tableView = Fx.createNode(TableView.class);

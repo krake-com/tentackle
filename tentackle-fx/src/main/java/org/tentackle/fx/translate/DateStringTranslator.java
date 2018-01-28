@@ -23,6 +23,9 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.function.Function;
@@ -72,9 +75,11 @@ import static java.util.Calendar.YEAR;
  * <li><tt>:;'"</tt>: current time</li>
  * <li><tt>+3d</tt>: today 0:00:00 plus 3 days</li>
  * <li><tt>-2y</tt>: today 2 years ago.</li>
- * <li><tt>17</tt>: the "smallest" unit of the field will be set to 17.
+ * <li><tt>17</tt>: the unit is determined according to the model's type. If {@link Time} the unit
+ *  defaults to the most significant format-pattern (usually hours). Else if {@link Date} or {@link Timestamp},
+ *  the unit defaults to 'd'.
  *  For dates this means the 17th of the current month.
- *  If the smalles unit are minutes, it means current hour 17 minutes.</li>
+ *  If the type is a {@link Time}, it means 5pm.</li>
  * <li><tt>+14</tt>: same as above but the value will be added (or subtracted if negative)
  *    to (from) the current time. For date fields, for example, this is again shorter than "+14d".</li>
  * <li><tt>4m</tt>: the unit according to the letter following the number will be set _and_
@@ -202,14 +207,14 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (informationLossLogLevel != null &&
             informationLossLogLevel != Logger.Level.SEVERE &&
             LOGGER.isLoggable(informationLossLogLevel)) {
-          String msg = "possible information loss while formatting " + value +
-                       " with format " + getFormat().toPattern() + " in:\n" +
+          String msg = "possible information loss while formatting " + value.getClass().getName() + " '" + value +
+                       "' with format " + getFormat().toPattern() + " in:\n" +
                        FxUtilities.getInstance().dumpComponentHierarchy((Node) getComponent());
           FxRuntimeException uix = informationLossLogLevel == Logger.Level.FINE ||
                                     informationLossLogLevel == Logger.Level.FINER ?
                                           new FxRuntimeException(msg) : null;
           LOGGER.log(informationLossLogLevel, uix == null ? msg : "", uix);
-          if (informationLossLogLevel == Logger.Level.FINER) {
+          if (informationLossLogLevel == Logger.Level.FINER && uix != null) {
             throw uix;
           }
         }
@@ -242,13 +247,13 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
       else if (org.tentackle.common.Date.class.isAssignableFrom(type)) {
         return new org.tentackle.common.Date(date.getTime());
       }
-      else if (java.sql.Timestamp.class.isAssignableFrom(type)) {
+      else if (java.sql.Timestamp.class.isAssignableFrom(type) || LocalDateTime.class.isAssignableFrom(type)) {
         return new java.sql.Timestamp(date.getTime());
       }
-      else if (java.sql.Time.class.isAssignableFrom(type)) {
+      else if (java.sql.Time.class.isAssignableFrom(type) || LocalTime.class.isAssignableFrom(type)) {
         return new java.sql.Time(date.getTime());
       }
-      else if (java.sql.Date.class.isAssignableFrom(type)) {
+      else if (java.sql.Date.class.isAssignableFrom(type) || LocalDate.class.isAssignableFrom(type)) {
         return new java.sql.Date(date.getTime());
       }
     }
@@ -282,10 +287,22 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (str.charAt(0) == '@') {
           str = str.substring(1, slen);
           slen--;
-          @SuppressWarnings("unchecked")
-          Supplier<Date> dateSupplier = (Supplier<Date>) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
+          @SuppressWarnings({ "unchecked", "rawtypes" })
+          Supplier dateSupplier = (Supplier) ((Node) getComponent()).getProperties().get(REFERENCE_DATE_SUPPLIER);
           if (dateSupplier != null) {
-            referenceDate = dateSupplier.get();
+            Object refDate = dateSupplier.get();
+            if (refDate instanceof Date) {
+              referenceDate = (Date) refDate;
+            }
+            else if (refDate instanceof LocalDate) {
+              referenceDate = java.sql.Date.valueOf((LocalDate) refDate);
+            }
+            else if (refDate instanceof LocalTime) {
+              referenceDate = java.sql.Time.valueOf((LocalTime) refDate);
+            }
+            else if (refDate instanceof LocalDateTime) {
+              referenceDate = java.sql.Timestamp.valueOf((LocalDateTime) refDate);
+            }
             if (slen == 0) {
               str = "+0";
               slen = 2;
@@ -309,31 +326,30 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
         if (slen == 1) {
           // only one char: check for shortcut
           char c = str.charAt(0);
-          if (withDate &&
-              (LEGACY_DATE_DELIMITERS.indexOf(c) >= 0 ||
-               dateDelimiters.indexOf(c) >= 0)) {
+          if (withDate && LEGACY_DATE_DELIMITERS.indexOf(c) >= 0) {
             // current date at 0:00:00
             GregorianCalendar cal = new GregorianCalendar();
             DateHelper.setMidnight(cal);
-            return parse(format(cal.getTime()));  // start over
+            return parse(format(toType(cal.getTime())));  // start over
           }
           if (withTime && LEGACY_TIME_DELIMITERS.indexOf(c) >= 0) {
             // current date and time
-            return parse(format(new Date()));    // start over
+            return parse(format(toType(new Date())));    // start over
           }
           // else not allowed
         }
 
-        if (str.indexOf('-') == 0 || str.indexOf('+') == 0 ||
-            (slen <= 2 && StringHelper.isAllDigits(str)) ||
-            "sSmMhHdDwWyY".indexOf(str.charAt(slen-1)) >= 0) {
+        if (slen > 0 &&
+            (str.indexOf('-') == 0 || str.indexOf('+') == 0 ||
+             (slen <= 2 && StringHelper.isAllDigits(str)) ||
+             "sSmMhHdDwWyY".indexOf(str.charAt(slen-1)) >= 0)) {
           /**
            * current +/-Nt expression, i.e. current time plus or minus
            * some seconds, minutes, hours, days, weeks, months or years.
            * E.g.: +1d
-           * The type defaults to the least significant value according
-           * to the format. I.e. if the format is dd.MM.yy hh:mm,
-           * +7 means plus 7 minutes.
+           * The type defaults to 'd' if the type is Date or Timestamp
+           * and to the most significant value according to the format
+           * if the type is Time (usually 'h').
            * The + can also be ommitted for 1 or 2-digit numbers and means
            * 'set' instead of 'add'.
            * I.e. 17 means 17th of current month (if date-format) or
@@ -352,27 +368,24 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             char type = str.charAt(slen-1);
             int value;
             if (Character.isDigit(type))  {
-              // determine according to format
-              if      (pattern.indexOf('s') >= 0) {
-                type = 's';
+              // missing type: determine according to model type and/or format
+              if (Time.class.isAssignableFrom(getComponent().getType()) ||
+                  LocalTime.class.isAssignableFrom(getComponent().getType())) {
+                if (pattern.indexOf('H') >= 0 || pattern.indexOf('h') >= 0) {
+                  type = 'h';
+                }
+                else if (pattern.indexOf('m') >= 0) {
+                  type = 'm';
+                }
+                else if (pattern.indexOf('s') >= 0) {
+                  type = 's';
+                }
+                else {
+                  type = 'h';
+                }
               }
-              else if (pattern.indexOf('m') >= 0) {
-                type = 'm';
-              }
-              else if (pattern.indexOf('h') >= 0) {
-                type = 'h';
-              }
-              else if (pattern.indexOf('H') >= 0) {
-                type = 'H';
-              }
-              else if (pattern.indexOf('d') >= 0) {
+              else {    // date or timestamp
                 type = 'd';
-              }
-              else if (pattern.indexOf('M') >= 0) {
-                type = 'M';
-              }
-              else if (pattern.indexOf('Y') >= 0) {
-                type = 'y';
               }
               value = Integer.parseInt(str.charAt(0) == '+' ? str.substring(1) : str);
             }
@@ -471,7 +484,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             }
 
             // start over
-            return parse(format(cal.getTime()));
+            return parse(format(toType(cal.getTime())));
           }
           catch (ParseException e) {
             getComponent().setErrorOffset(e.getErrorOffset());
@@ -509,12 +522,27 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
 
         catch (ParseException e) {
           getComponent().setErrorOffset(e.getErrorOffset());
-          getComponent().setError(MessageFormat.format(FxFxBundle.getString("INVALID DATE: {0}"), str));
+          getComponent().setError(MessageFormat.format(FxFxBundle.getString(
+                  withDate ? "INVALID DATE: {0}" : "INVALID TIME: {0}"), str));
+          char errorChar = 0;
+          if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen) {
+            errorChar = str.charAt(e.getErrorOffset() - 1);
+          }
           // check for user entered 1.1. and meant 1.1.<current year>
-          if (e.getErrorOffset() > 0 && e.getErrorOffset() == slen &&
-              dateDelimiters.indexOf(str.charAt(e.getErrorOffset() - 1)) >= 0) {
+          if (errorChar > 0 && dateDelimiters.indexOf(errorChar) >= 0) {
             // last char was a date-delimiter: try appending current year
             str += new GregorianCalendar().get(YEAR);
+          }
+          else if (errorChar == ':') {
+            // last char was a time-delimiter: try appending 00
+            str += "00";
+          }
+          else if ((slen > 2 && Character.isDigit(errorChar) && Character.isDigit(str.charAt(slen - 2)) &&
+                    (str.charAt(slen - 3) == ':' || str.charAt(slen - 3) == ' ')) ||
+                   (slen > 1 && Character.isDigit(errorChar) &&
+                    (str.charAt(slen - 2) == ':' || str.charAt(slen - 2) == ' '))) {
+            // ends with ":NN", ":N", " NN" or " N" -> add another ":00"
+            str += ":00";
           }
           else { // check for user omitted the delimiters at all, e.g. 0105
             StringBuilder nBuf = new StringBuilder();    // new generated input
@@ -631,10 +659,10 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     String pat;
     // derive from type
     Class<?> type = getComponent().getType();
-    if (Time.class.isAssignableFrom(type)) {
+    if (Time.class.isAssignableFrom(type) || LocalTime.class.isAssignableFrom(type)) {
       pat = FormatHelper.getTimePattern();
     }
-    else if (Timestamp.class.isAssignableFrom(type)) {
+    else if (Timestamp.class.isAssignableFrom(type) || LocalDateTime.class.isAssignableFrom(type)) {
       pat = FormatHelper.getTimestampPattern();
     }
     else {
@@ -657,17 +685,19 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     if (format == null || !pat.equals(pattern)) {
       pattern = pat;
       format = new SimpleDateFormat(pattern);
+      format.setLenient(getComponent().isLenient());
     }
 
     // extract date-delimiters
-    dateDelimiters = "";
+    StringBuilder buf = new StringBuilder();
     String f = format.toPattern();
     for (int i=0; i < f.length(); i++)  {
       char c = f.charAt(i);
-      if (!Character.isLetterOrDigit(c))  {
-        dateDelimiters += c;
+      if (c != ':' && !Character.isLetterOrDigit(c))  {
+        buf.append(c);
       }
     }
+    dateDelimiters = buf.toString();
 
     return format;
   }

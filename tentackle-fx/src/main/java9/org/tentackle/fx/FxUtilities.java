@@ -29,6 +29,10 @@ import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.print.PageLayout;
 import javafx.print.PrinterJob;
 import javafx.scene.Node;
@@ -42,7 +46,6 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.control.skin.TableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
 import javafx.scene.layout.GridPane;
@@ -51,6 +54,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Scale;
 import javafx.stage.PopupWindow;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
@@ -242,12 +246,14 @@ public class FxUtilities {
     alert.setHeaderText(null);
     alert.setContentText(message);
     alert.setResizable(true);   // RT-38998
-    Button cancelButton = (Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL);
-    Button okButton = (Button) alert.getDialogPane().lookupButton(ButtonType.OK);
-    cancelButton.setDefaultButton(!defaultYes);
-    okButton.setDefaultButton(defaultYes);
+    alert.getButtonTypes().clear();
+    alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
+    Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
+    Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
+    noButton.setDefaultButton(!defaultYes);
+    yesButton.setDefaultButton(defaultYes);
     Optional<ButtonType> result = alert.showAndWait();
-    return result.get() == ButtonType.OK;
+    return result.get() == ButtonType.YES;
   }
 
   /**
@@ -339,14 +345,14 @@ public class FxUtilities {
   public void focusGained(FxComponent component) {
     if (component.getError() == null) {  // don't override view if there is a parsing error
       component.updateView();
-      if (component instanceof FxTextComponent && component instanceof TextInputControl) {
+      if (component.isChangeable() && component instanceof FxTextComponent) {
+        // By default, FX autoselects a field if on re-focus.
+        // This cannot be configured and is hard wired (for whatever reason).
+        // In TT, this is configurable via the autoSelect feature.
         // in FX components are autoselected if the field is focused by TAB (or ENTER in TT).
         // If by mouse, the cursor is positioned where the mouse points to and nothing is selected.
         // For numeric fields, however, (and where desired) this behaviour leads to unexpected data entry.
-        FxTextComponent textComponent = (FxTextComponent) component;
-        if (textComponent.isAutoSelect()) {
-          Platform.runLater(((TextInputControl) component)::selectAll);
-        }
+        Platform.runLater(((FxTextComponent) component)::autoSelect);
       }
     }
   }
@@ -533,10 +539,10 @@ public class FxUtilities {
             Callback cellFactory = column.getCellFactory();
             if (cellFactory != null) {
               TableCell cell = (TableCell) cellFactory.call(column);
-              Font cellFont = cell.getFont();
-              // BOLD may not work if header is styled with CSS, but that's ok for default configs
-              Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
               if (cell != null) {
+                Font cellFont = cell.getFont();
+                // BOLD may not work if header is styled with CSS, but that's ok for default configs
+                Font headerFont = Font.font(cellFont.getFamily(), FontWeight.BOLD, cellFont.getSize());
                 cell.getProperties().put("deferToParentPrefWidth", Boolean.TRUE); // see TableCellSkin
                 double maxWidth = 20;   // don't go below this so that column remains visible
                 // apply header text first
@@ -560,6 +566,118 @@ public class FxUtilities {
     }
   }
 
+
+  /**
+   * Delivers a lis of all showing stages.
+   *
+   * @return the stages
+   */
+  public ObservableList<Stage> getAllShowingStages() {
+    ObservableList<Stage> stages = FXCollections.observableArrayList();
+    for (Window w : Window.getWindows()) {
+      if (w instanceof Stage) {
+        stages.add((Stage) w);
+      }
+    }
+    return stages;
+  }
+
+
+  /**
+   * Calculates the location of a window so that it will be centered on the screen.
+   *
+   * @param window the window
+   * @return the location (top left corner)
+   */
+  public Point2D determineCenteredLocation(Window window)  {
+    Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
+    // align sizes (for computation below)
+    double windowWidth = window.getWidth();
+    double windowHeight = window.getHeight();
+    if (window.getWidth() > screenSize.getWidth())  {
+      windowWidth = screenSize.getWidth();
+    }
+    if (windowHeight > screenSize.getHeight())  {
+      windowHeight = screenSize.getHeight();
+    }
+    return new Point2D((screenSize.getWidth()  - windowWidth) / 2.0,
+                       (screenSize.getHeight() - windowHeight) / 2.0);
+  }
+
+
+  /**
+   * Calculates the position of a stage on the screen so that
+   * it is being display in an optimal manner.
+   *
+   * @param stage the stage to be positioned on the screen
+   * @return the location
+   */
+  public Point2D determinePreferredStageLocation(Stage stage)  {
+
+    Point2D location = new Point2D(stage.getX(), stage.getY());
+
+    if (location.getX() == 0.0 && location.getY() == 0.0) {   // if no position yet
+      // place in the middle of the owner if possibe
+      Window owner = stage.getOwner();
+      if (owner != null) {
+        location = new Point2D(owner.getX() + (owner.getWidth() - stage.getWidth()) / 2.0,
+                               owner.getY() + (owner.getHeight() - stage.getHeight()) / 2.0);
+      }
+      else  {
+        // not much we can do: center it
+        location = determineCenteredLocation(stage);
+      }
+    }
+
+    return determineAlignedStageLocation(stage, location);
+  }
+
+
+  /**
+   * Calculates the location of a stage so that it
+   * is completely visible on the screen, using a "free" spot.
+   *
+   * @param stage the current stage
+   * @param location the desired (not necessarily current!) location
+   * @return the aligned location
+   */
+  public Point2D determineAlignedStageLocation(Stage stage, Point2D location) {
+
+    Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
+
+    double maxWidth  = screenSize.getWidth() - screenSize.getWidth() / XY_STEP_DIVISOR;
+    double maxHeight = screenSize.getHeight() - screenSize.getHeight() / XY_STEP_DIVISOR;
+    double minX      = screenSize.getWidth() / XY_STEP_DIVISOR;
+    double minY      = screenSize.getHeight() / XY_STEP_DIVISOR;
+
+    if (location.getX() + stage.getWidth() > maxWidth) {
+      location = new Point2D(maxWidth - stage.getWidth(), location.getY());
+    }
+    if (location.getX() < 0.0) {
+      location = new Point2D(0.0, location.getY());
+    }
+    else if (location.getX() < minX && location.getX() + stage.getWidth() < maxWidth) {
+      location = new Point2D(minX, location.getY());
+    }
+
+    if (location.getY() + stage.getHeight() > maxHeight) {
+      location = new Point2D(location.getX(), maxHeight - stage.getHeight());
+    }
+    if (location.getY() < 0.0) {
+      location = new Point2D(location.getX(), 0.0);
+    }
+    else if (location.getY() < minY && location.getY() + stage.getHeight() < maxHeight) {
+      location = new Point2D(location.getX(), minY);
+    }
+
+    return determineFreeStageLocation(stage, location);
+  }
+
+
+
+
+
+
   private double maxColumnWidth(double maxWidth, TableCell cell, TableViewSkin<?> tableSkin) {
     if ((cell.getText() != null && !cell.getText().isEmpty()) || cell.getGraphic() != null) {
       tableSkin.getChildren().add(cell);
@@ -568,6 +686,126 @@ public class FxUtilities {
       tableSkin.getChildren().remove(cell);
     }
     return maxWidth;
+  }
+
+
+  private static final double XY_STEP_DIVISOR = 32.0;
+  private static final int MAX_LOCATION_LOOP = 4;
+
+  /**
+   * Determines a location for a stage that does not overlap with stages belonging to the same owner.
+   *
+   * @param stage the stage
+   * @param startLocation the start location
+   * @return the free location
+   */
+  private Point2D determineFreeStageLocation(Stage stage, Point2D startLocation)  {
+
+    // get screensize
+    Rectangle2D screenSize = Screen.getPrimary().getVisualBounds();
+
+    final double stepX = screenSize.getWidth() / XY_STEP_DIVISOR;
+    final double stepY = screenSize.getHeight() / XY_STEP_DIVISOR;
+
+    // compute the center of the window
+    double x = startLocation.getX() + stage.getWidth() / 2.0;
+    double y = startLocation.getY() + stage.getHeight() / 2.0;
+
+    // initial diff-stepping
+    double dx;
+    double dy;
+
+    if (x > screenSize.getWidth() / 2.0) {
+      dx = -stepX;
+    }
+    else {
+      dx = stepX;
+    }
+
+    if (y > screenSize.getHeight() / 2.0) {
+      dy = -stepY;
+    }
+    else {
+      dy = stepY;
+    }
+
+    for (int loop=0; loop < MAX_LOCATION_LOOP; loop++)  {
+
+      boolean abort = false;
+      Point2D location = startLocation;
+
+      while (!abort && isStageOverlapping(stage, location, dx, dy))  {
+        location = location.add(dx, dy);
+        if (location.getX() < 0.0) {
+          location = new Point2D(0.0, location.getY());
+          abort = true;
+        }
+        if (location.getX() + stage.getWidth() > screenSize.getWidth())  {
+          location = new Point2D(screenSize.getWidth() - stage.getWidth(), location.getY());
+          abort = true;
+        }
+        if (location.getY() < 0.0) {
+          location = new Point2D(location.getX(), 0.0);
+          abort = true;
+        }
+        if (location.getY() + stage.getHeight() > screenSize.getHeight())  {
+          location = new Point2D(location.getX(), screenSize.getHeight() - stage.getHeight());
+          abort = true;
+        }
+      }
+
+      if (!abort) {
+        // !isStageOverlapping
+        return location;
+      }
+
+      // try other direction clockwise
+      if (dx > 0.0 && dy > 0.0) {
+        dx = -stepX;
+      }
+      else if (dx < 0.0 && dy > 0.0) {
+        dy = -stepY;
+      }
+      else if (dx < 0.0 && dy < 0.0) {
+        dx = stepX;
+      }
+      else if (dx > 0 && dy < 0) {
+        dy = stepY;
+      }
+    }
+
+    return startLocation;
+  }
+
+
+  /**
+   * Checks if a stage would overlay any other stage that belongs to the same owner.
+   *
+   * @param stage the stage
+   * @param location the requested location for this stage
+   * @param dx maximum overlapping width
+   * @param dy maximum overlapping height
+   * @return true if overlapping, false if on free space
+   */
+  private boolean isStageOverlapping(Stage stage, Point2D location, double dx, double dy)  {
+    Window owner = stage.getOwner();
+    if (dx < 0.0) {
+      dx = -dx;
+    }
+    if (dy < 0.0) {
+      dy = -dy;
+    }
+    for (Stage w: getAllShowingStages())  {
+      Window o = w.getOwner();
+      if (w != stage && o == owner &&
+          ((location.getX() <= w.getX() + dx &&
+            location.getX() + stage.getWidth() + dx >= w.getX() + w.getWidth()) ||
+           (location.getY() <= w.getY() + dy &&
+            location.getY() + stage.getHeight() + dy >= w.getY() + w.getHeight())))  {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

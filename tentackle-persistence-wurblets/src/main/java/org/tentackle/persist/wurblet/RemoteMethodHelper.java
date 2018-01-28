@@ -35,7 +35,6 @@ public class RemoteMethodHelper {
 
   private final RemoteMethodInfo info;              // the analyze info
   private final RemoteMethodInfoParameter[] params; // parameters
-  private final String classBaseName;               // the class basename
   private final boolean staticMethod;               // true if method is static
   private final boolean returningVoid;              // true if method returns void
   private final String pdoClassName;                // the PDO classname, null if not a PDO
@@ -56,7 +55,7 @@ public class RemoteMethodHelper {
     this.info = info;
     this.pdoClassName = pdoClassName;
 
-    classBaseName = info.getClassName().substring(info.getClassName().lastIndexOf('.') + 1);
+    String classBaseName = info.getClassName().substring(info.getClassName().lastIndexOf('.') + 1);
     String returnType = info.getReturnType();
     returningVoid = returnType.equals("void");
     returningCollection = info.isReturningDbObjectCollection();  // PDO implies this as well

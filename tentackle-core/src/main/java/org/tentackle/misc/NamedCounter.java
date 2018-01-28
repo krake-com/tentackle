@@ -47,12 +47,8 @@ public class NamedCounter {
    * @return the number, starting at 1
    */
   public synchronized long next(String name) {
-    Counter counter = counters.get(name);
-    if (counter == null) {
-      // create new counter
-      counter = new Counter();
-      counters.put(name, counter);
-    }
+    Counter counter = counters.computeIfAbsent(name, k -> new Counter());
+    // create new counter
     return ++counter.count;
   }
 

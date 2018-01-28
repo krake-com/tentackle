@@ -55,11 +55,7 @@ public class MethodStatistics {
    */
   public synchronized void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
     MethodStatisticsKey key = new MethodStatisticsKey(method, servicedClass);
-    StatisticsResult result = stats.get(key);
-    if (result == null) {
-      result = new StatisticsResult();
-      stats.put(key, result);
-    }
+    StatisticsResult result = stats.computeIfAbsent(key, k -> new StatisticsResult());
     result.count(duration);
   }
 

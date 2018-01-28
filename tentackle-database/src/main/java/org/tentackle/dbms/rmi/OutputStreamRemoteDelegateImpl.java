@@ -40,11 +40,11 @@ public class OutputStreamRemoteDelegateImpl extends RemoteDelegateImpl<InputStre
    * Note that we don't extend {@link java.rmi.server.UnicastRemoteObject} to allow
    * adding interceptors via dynamic proxies. Therefore, the object
    * must be explicitly exported by
-   * {@link RemoteDbSessionImpl#exportRemoteDelegate(org.tentackle.persist.rmi.RemoteDelegate)}.
+   * {@link RemoteDbSessionImpl#exportRemoteDelegate}.
    *
    * @param serverSession the RMI serverSession
    * @param servicedClass the class the delegate provides service for
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   public OutputStreamRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<InputStream> servicedClass) throws RemoteException {
     super(serverSession, servicedClass);

@@ -89,9 +89,8 @@ public class TablePrinter extends AbstractFxController {
     if (jobTitle != null) {
       job.getJobSettings().setJobName(jobTitle);
     }
-    stage.setOnShown(e -> {
-      Platform.runLater(() -> printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage));
-    });
+    stage.setOnShown(e -> Platform.runLater(() ->
+            printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
     stage.setOnCloseRequest((e) -> {
       if (Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false)) {
         printer.terminationRequested = true;
@@ -228,7 +227,7 @@ public class TablePrinter extends AbstractFxController {
    * @param job the printer job
    * @param pageLayout the printing layout
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private void print(FxTableView<?> table, String title, PrinterJob job, PageLayout pageLayout, Stage stage) {
 
     LOGGER.fine("table print job {0}", job);
@@ -327,7 +326,7 @@ public class TablePrinter extends AbstractFxController {
   /**
    * Task using the ModificationTracker to print the table.
    */
-  @SuppressWarnings("serial")
+  @SuppressWarnings({"serial", "rawtypes" })
   private class PrinterTask extends AbstractSessionTask {
 
     private final ObservableList items;
@@ -362,9 +361,7 @@ public class TablePrinter extends AbstractFxController {
           tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
           getView().layout();   // this does the trick to make getVisibleRowCount below work!
         });
-        Fx.runAndWait(() -> {
-          setPrintableRows(getVisibleRowCount());
-        });
+        Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount()));
         if (printableRows <= 0) {
           // no space to print (may be renedering problem, whatsoever....)
           Platform.runLater(() -> {
@@ -376,6 +373,7 @@ public class TablePrinter extends AbstractFxController {
         }
         PageInfo page = new PageInfo(rowOffset, printableRows);
         pages.add(page);
+        Platform.runLater(() -> stage.setTitle(MessageFormat.format(resources.getString("preparing page {0}"), pages.size())));
         rowOffset += printableRows;
         LOGGER.fine("page {0}: {1}", pages.size(), page);
         getSession().setAlive(true);
@@ -398,6 +396,8 @@ public class TablePrinter extends AbstractFxController {
               rowOffset = page.rowStart;
               tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
               tableView.getSelectionModel().clearSelection();
+              stage.setTitle(MessageFormat.format(resources.getString("printing page {0}/{1}"),
+                                                  pageNo, pages.size()));
               updatePageLabel(pageNo++);
               job.printPage(pageLayout, getView());
               if (terminationRequested) {

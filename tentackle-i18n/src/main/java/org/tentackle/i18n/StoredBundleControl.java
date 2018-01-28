@@ -89,9 +89,8 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       context = Pdo.createDomainContext();
     }
 
-    if (baseName == null || locale == null ||
-             format == null || loader == null) {
-      throw new NullPointerException();
+    if (baseName == null || locale == null || format == null || loader == null) {
+      throw new IllegalArgumentException("baseName, locale, format and loader must not be null");
     }
 
     String bundleName = toBundleName(baseName, locale);
@@ -114,7 +113,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
     if (fallbackToPropertyFile) {
       LOGGER.fine("no stored bundle {0}[{1}] -> trying property file ...", name, locText);
-      if (format == null || format.isEmpty()) {
+      if (format.isEmpty()) {
         format = "java.properties";
       }
       ResourceBundle rb = super.newBundle(baseName, locale, format, loader, reload);
@@ -133,9 +132,11 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   private static class StoredResourceBundle extends ResourceBundle {
 
     private final Properties props;
+    private final String name;
 
     private StoredResourceBundle(StoredBundle bundle) {
       props = new Properties();
+      name = bundle.toString();
       for (StoredBundleKey bundleKey : bundle.getKeys()) {
         props.setProperty(bundleKey.getKey(), bundleKey.getValue());
       }
@@ -144,7 +145,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
     @Override
     protected Object handleGetObject(String key) {
       if (key == null) {
-        throw new NullPointerException();
+        throw new NullPointerException("key is null");
       }
       return props.get(key);
     }
@@ -153,6 +154,11 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
     public Enumeration<String> getKeys() {
       ResourceBundle p = this.parent;
       return new BundleEnumeration(props.stringPropertyNames(), (p != null) ? p.getKeys() : null);
+    }
+
+    @Override
+    public String toString() {
+      return name;
     }
   }
 

@@ -28,7 +28,6 @@ import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +37,9 @@ import org.tentackle.bind.Binder;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.validator.FailedValidationResult;
@@ -760,14 +759,12 @@ public class ValidationUtilities {
    * @param validators the validators
    */
   protected void sortValidatorsByPriority(List<Validator> validators) {
-    Collections.sort(validators, (Validator o1, Validator o2) -> {
+    validators.sort((Validator o1, Validator o2) -> {
       if (o1 == null) {
         return o2 == null ? 0 : -1;
-      }
-      else if (o2 == null) {
+      } else if (o2 == null) {
         return 1;
-      }
-      else  {
+      } else {
         return o1.getPriority() - o2.getPriority();
       }
     });

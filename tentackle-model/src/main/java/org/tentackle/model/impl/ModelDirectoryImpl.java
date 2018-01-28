@@ -79,8 +79,11 @@ public class ModelDirectoryImpl implements ModelDirectory {
   @Override
   public List<String> getFileNames() {
     List<String> names = new ArrayList<>();
-    for (File file: dir.listFiles()) {
-      names.add(file.getAbsolutePath());
+    File[] files = dir.listFiles();
+    if (files != null) {
+      for (File file : files) {
+        names.add(file.getAbsolutePath());
+      }
     }
     return names;
   }

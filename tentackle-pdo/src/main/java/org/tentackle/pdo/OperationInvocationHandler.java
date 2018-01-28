@@ -33,7 +33,7 @@ import org.tentackle.session.Session;
 
 /**
  * Invocation handler for operations.<br>
- * Each instance of a operation gets its own handler.
+ * Each instance of an operation gets its own handler.
  *
  * @param <T> the operation type
  * @author harald
@@ -51,6 +51,9 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   private static final Method HASHCODE_METHOD;
   private static final Method EQUALS_METHOD;
   private static final Method TOSTRING_METHOD;
+
+  // preloaded methods of java.lang.Comparable
+  private static final Method COMPARETO_METHOD;
 
   // preloaded methods of Operation
   private static final Method CLONE_METHOD;
@@ -70,6 +73,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       HASHCODE_METHOD = Object.class.getMethod("hashCode");
       EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
       TOSTRING_METHOD = Object.class.getMethod("toString");
+      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
       CLONE_METHOD = Operation.class.getMethod("clone");
       GETDOMAINDELEGATE_METHOD = Operation.class.getMethod("getDomainDelegate");
       GETPERSISTENTDELEGATE_METHOD = Operation.class.getMethod("getPersistenceDelegate");
@@ -84,7 +88,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   }
 
 
-  private final Class<T> clazz;                               // the pdo class
+  private final Class<T> clazz;                            // the operation class
   private Mixin<T,OperationHolder<T>> persistenceMixin;    // the persistence mixin
   private Mixin<T,OperationHolder<T>> domainMixin;         // the domain mixin
 
@@ -282,6 +286,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException,
                 IllegalArgumentException, InvocationTargetException {
+
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class },
                                     new Object[] { operation });
 
@@ -304,30 +309,59 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       }
       else if (method.equals(EQUALS_METHOD)) {
         Object obj = args[0];
-        if (obj != null) {
-          args = new Object[] { ((Operation) obj).getPersistenceDelegate() };
-          delegate = persistenceMixin.isDummy() ? domainMixin.getDelegate() : persistenceMixin.getDelegate();
+        if (obj instanceof Operation) {
+          if (persistenceMixin.isDummy()) {   // persistence delegate takes precedence over domain for equals
+            delegate = domainMixin.getDelegate();
+            args = new Object[] { ((Operation) obj).getDomainDelegate() };
+          }
+          else {
+            // at least one of domain- or persistence delegate is present
+            delegate = persistenceMixin.getDelegate();
+            args = new Object[] { ((Operation) obj).getPersistenceDelegate() };
+          }
         }
         else  {
           return false;
         }
       }
       else if (method.equals(TOSTRING_METHOD)) {
+        // domain delegate takes precedence over persistence for toString
         delegate = domainMixin.isDummy() ? persistenceMixin.getDelegate() : domainMixin.getDelegate();
+      }
+    }
+    else if (declaringClass == Comparable.class) {
+      if (method.equals(COMPARETO_METHOD)) {
+        Object obj = args[0];
+        if (obj instanceof Operation) {
+          // persistence delegate takes precedence over domain for compareTo
+          if (persistenceMixin.isDummy()) {
+            delegate = domainMixin.getDelegate();
+            args = new Object[] { ((Operation) obj).getDomainDelegate() };
+          }
+          else {
+            delegate = persistenceMixin.getDelegate();
+            args = new Object[] { ((Operation) obj).getPersistenceDelegate() };
+          }
+        }
+        else  {
+          return Integer.MAX_VALUE;
+        }
       }
     }
     else if (declaringClass == Operation.class) {
       if (method.equals(GETDOMAINDELEGATE_METHOD)) {
-        return domainMixin.isDummy() ? persistenceMixin.getDelegate() : domainMixin.getDelegate();
+        return domainMixin.getDelegate();
       }
       else if (method.equals(GETPERSISTENTDELEGATE_METHOD)) {
-        return persistenceMixin.isDummy() ? domainMixin.getDelegate() : persistenceMixin.getDelegate();
+        return persistenceMixin.getDelegate();
       }
       else if (method.equals(CLONE_METHOD)) {
-        T pdo = (T) proxy;
+        T op = (T) proxy;
         return Pdo.createOperation(clazz,
-                                   pdo.getPersistenceDelegate().clonePersistentOperation(),
-                                   pdo.getDomainDelegate().cloneDomainOperation());
+                                   op.getPersistenceDelegate() == null ?
+                                           null : op.getPersistenceDelegate().clonePersistentOperation(),
+                                   op.getDomainDelegate() == null ?
+                                           null : op.getDomainDelegate().cloneDomainOperation());
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {

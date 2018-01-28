@@ -17,27 +17,33 @@
  *
  */
 
-package org.tentackle.fx.translate;
+package org.tentackle.fx.table.type;
 
-import javafx.scene.paint.Color;
-import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.ValueTranslatorService;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import javafx.geometry.Pos;
+import org.tentackle.fx.table.FxTableCell;
+import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.misc.FormatHelper;
 
 /**
- * A color/color identity translator.
+ * LocalDate cell type.
  *
  * @author harald
  */
-@ValueTranslatorService(modelClass = Color.class, viewClass = Color.class)
-public class ColorTranslator extends IdentityTranslator<Color> {
+@TableCellTypeService(LocalDate.class)
+public class LocalDateCellType extends AbstractTableCellType<LocalDate> {
 
-  /**
-   * Creates the translator.
-   *
-   * @param component the component
-   */
-  public ColorTranslator(FxComponent component) {
-    super(component);
+  @Override
+  public void updateItem(FxTableCell<?, LocalDate> tableCell, LocalDate item) {
+    tableCell.setGraphic(null);
+    DateTimeFormatter fmt = tableCell.getColumnConfiguration().getDateTimeFormatter();
+    if (fmt == null) {
+      fmt = FormatHelper.getLocalDateFormatter();
+    }
+    String text = fmt.format(item);
+    tableCell.setText(text);
+    updateAlignment(tableCell, Pos.CENTER);
   }
 
 }

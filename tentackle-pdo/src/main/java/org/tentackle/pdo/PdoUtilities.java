@@ -23,11 +23,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
+import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
@@ -163,7 +165,7 @@ public class PdoUtilities {
       classId = SessionUtilities.getInstance().getClassId(pdoClassName);
       if (classId == 0) {  // not annotated with @ClassId
         // get from pdo instance
-        classId = Pdo.create(clazz).getClassId();
+        classId = Pdo.create(clazz).getPersistenceDelegate().getClassId();
         tableClassIdMap.put(clazz, classId);
       }
     }
@@ -476,6 +478,39 @@ public class PdoUtilities {
    */
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos) {
     return saveCollection(pdos, false);
+  }
+
+
+  /**
+   * Determines the identifiable key from a string created by {@link PersistentObject#toIdString()}.
+   *
+   * @param idString the id string "classid:objectid"
+   * @return the key
+   * @throws PersistenceException if not an id string or invalid class id
+   */
+  public IdentifiableKey<PersistentDomainObject<?>> idStringToIdentifiableKey(String idString) {
+    if (idString != null) {
+      StringTokenizer stok = new StringTokenizer(idString, ":");
+      if (stok.hasMoreTokens()) {
+        int classId = Integer.parseInt(stok.nextToken());
+        if (stok.hasMoreTokens()) {
+          int id = Integer.parseInt(stok.nextToken());
+          String className = SessionUtilities.getInstance().getClassName(classId);
+          if (className != null && id != 0) {
+            try {
+              return new IdentifiableKey<>(className, id);
+            }
+            catch (ClassNotFoundException cx) {
+              throw new PersistenceException("cannot load PDO class " + className + " for classId " + classId, cx);
+            }
+          }
+          else {
+            throw new PersistenceException("no PDO key for " + classId + ":" + id);
+          }
+        }
+      }
+    }
+    throw new PersistenceException("not an id-string: '" + idString + "'");
   }
 
 }

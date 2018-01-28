@@ -9,6 +9,8 @@ package org.tentackle.fx.component.delegate;
 import java.util.Arrays;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.component.FxChoiceBox;
@@ -47,8 +49,22 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   @SuppressWarnings("unchecked")
   public void setType(Class<?> type) {
     super.setType(type);
+
     // choice box does not need a value translator because the items are already of model type
     // and choice-box is not editable
+
+    // deselect by DELETE- or BACKSPACE-key
+    component.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
+          !event.isShiftDown() && !event.isShortcutDown()) {
+        if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
+            !component.isDisabled() && isDeselectAllowed()) {
+          event.consume();
+          component.getSelectionModel().clearSelection();
+        }
+      }
+    });
+
     if (type.isEnum()) {
       ObservableList items = component.getItems();
       items.clear();
@@ -80,6 +96,22 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   public <T> T getViewValue() {
     // no value translator needed because items are of model's type already
     return (T) getViewObject();
+  }
+
+
+  /**
+   * Returns whether deselect is allowed.
+   *
+   * @return true if allowed
+   */
+  public boolean isDeselectAllowed() {
+    Boolean allowed = component.isDeselectAllowed();
+    if (allowed != null) {
+      return allowed;
+    }
+    // else determine from type and/or binding
+    return !(getType() != null && getType().isPrimitive() ||
+             component.isMandatory());
   }
 
 }

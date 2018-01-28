@@ -40,12 +40,14 @@ For more options, see {\@link ModelWurblet}.
 @[
     }
     else  {
+      // public static is noise if within an interface
+      String modifiers = isInterface() ? "" : "public static ";
 ]@
 
   /**
    * The unique domain key for @(getEntity())@.
    */
-  public static class @(getEntity())@UDK implements Serializable, Comparable<@(getEntity())@UDK> {
+  @(modifiers)@class @(getEntity())@UDK implements Serializable, Comparable<@(getEntity())@UDK> {
 
     private static final long serialVersionUID = 1L;
 @[

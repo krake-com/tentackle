@@ -35,8 +35,8 @@ import org.tentackle.misc.FormatHelper;
 public class TimestampCellType extends UtilDateCellType<Timestamp> {
 
   @Override
-  public DateFormat getFormat(FxTableCell<?, Timestamp> tableCell, Timestamp item) {
-    DateFormat fmt = super.getFormat(tableCell, item);
+  public DateFormat getFormat(FxTableCell<?, Timestamp> tableCell) {
+    DateFormat fmt = super.getFormat(tableCell);
     if (fmt == null) {
       fmt = new SimpleDateFormat(FormatHelper.getTimestampPattern());
     }

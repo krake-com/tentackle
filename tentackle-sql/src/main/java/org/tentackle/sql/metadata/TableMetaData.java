@@ -73,7 +73,6 @@ public class TableMetaData {
   public void setupTableFromMetaData(DatabaseMetaData metaData, String[] schemas, String schemaPattern, String tablePattern) throws SQLException {
     try (ResultSet resultSet = metaData.getTables(null, schemaPattern, tablePattern, null)) {
       boolean valid = false;    // true if valid table found
-      outer:
       while (resultSet.next()) {
         schemaName = resultSet.getString("TABLE_SCHEM");
         tableName = resultSet.getString("TABLE_NAME");

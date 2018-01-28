@@ -83,12 +83,7 @@ public class Reconnector {
       reconnect(policy);
     }
     else {
-      executorService.submit(() -> new Runnable() {
-        @Override
-        public void run() {
-          reconnect(policy);
-        }
-      });
+      executorService.submit(() -> (Runnable) () -> reconnect(policy));
     }
   }
 
@@ -130,9 +125,8 @@ public class Reconnector {
    * @return the executor service
    */
   protected ExecutorService createExecutorService() {
-    return Executors.newCachedThreadPool((Runnable runnable) -> {
-      return new Thread(runnable, "reconnector " + threadNumber.incrementAndGet());
-    });
+    return Executors.newCachedThreadPool((runnable) ->
+      new Thread(runnable, "reconnector " + threadNumber.incrementAndGet())
+    );
   }
-
 }

@@ -22,7 +22,6 @@ package org.tentackle.fx.rdc;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -44,6 +44,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -109,7 +110,7 @@ public class RdcUtilities {
    * @return the possibly changed pdo if modal
    */
   public <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner,
+          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner,
           Consumer<PdoCrud<T>> configurator) {
 
     PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
@@ -124,8 +125,13 @@ public class RdcUtilities {
         Scene scene = new Scene(crud.getView());
         stage.setScene(scene);
         crud.updateTitle();
-        stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
-                e -> Platform.runLater(() -> crud.getEditor().requestInitialFocus()));
+        final Stage s = stage;
+        stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+          Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
+          s.setX(location.getX());
+          s.setY(location.getY());
+          crud.getEditor().requestInitialFocus();
+        }));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
           if (!crud.releasePdo()) {
             e.consume();    // don't close
@@ -172,21 +178,18 @@ public class RdcUtilities {
    */
   @SuppressWarnings("unchecked")
   public synchronized <T extends PersistentDomainObject<T>> PdoCrud<T> getCrud(
-                T pdo, List<T> pdoList, boolean editable, Modality modality, Window owner) {
+                T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoCrud<?>> cruds = crudCache.get(pdoClass);
-    if (cruds == null) {
-      cruds = new HashSet<>();
-      crudCache.put(pdoClass, cruds);
-    }
+    Set<PdoCrud<?>> cruds = crudCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
     for (Iterator<PdoCrud<?>> iter = cruds.iterator(); iter.hasNext(); ) {
       PdoCrud<T> crud = (PdoCrud<T>) iter.next();
       Stage stage = Fx.getStage(crud.getView());
       if (stage == null || (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() == owner)) {
-        // not showing (i.e. unused) and same modality and owner
+        // not showing (i.e. unused), never used or same modality and owner
         crud.setEditable(editable);
+        crud.setModal(modality != Modality.NONE);
         crud.setPdo(pdo);
         crud.setPdoList(pdoList);
         return crud;
@@ -194,12 +197,12 @@ public class RdcUtilities {
       // is showing or other modality or different owner, i.e. part of some window which is showing
       if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing()) {
         // same PDO
-        if (editable && crud.isEditable()) {
-          // already being edited
+        if (crud.isEditing() || !editable) {
+          // already being edited or just shown and view-only requested
           stage.toFront();
           return null;
         }
-        // else: being edited, being shown or requested !editable: get a fresh one
+        // else: being edited, being shown or requested editable does not match: get a fresh one
       }
       if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&
           stage.getOwner() != null && !stage.getOwner().isShowing()) {
@@ -210,7 +213,7 @@ public class RdcUtilities {
     }
 
     // no unused cruds: create a new one
-    PdoCrud<T> crud = RdcFactory.getInstance().createPdoCrud(pdo, editable);
+    PdoCrud<T> crud = RdcFactory.getInstance().createPdoCrud(pdo, editable, modality != Modality.NONE);
     crud.setPdoList(pdoList);
     cruds.add(crud);
     return crud;
@@ -261,8 +264,13 @@ public class RdcUtilities {
       stage.setScene(scene);
       search.updateTitle();
       search.setSingleSelectMode(Fx.isModal(stage));
-      stage.addEventFilter(WindowEvent.WINDOW_SHOWN,
-              e -> Platform.runLater(() -> search.getFinder().requestInitialFocus()));
+      final Stage s = stage;
+      stage.addEventFilter(WindowEvent.WINDOW_SHOWN, e -> Platform.runLater(() -> {
+        Point2D location = FxUtilities.getInstance().determinePreferredStageLocation(s);
+        s.setX(location.getX());
+        s.setY(location.getY());
+        search.getFinder().requestInitialFocus();
+      }));
       stage.addEventFilter(WindowEvent.WINDOW_HIDDEN,
               // runlater to avoid clearing the modal return value
               e -> Platform.runLater(() -> search.setItems(null)));
@@ -301,11 +309,7 @@ public class RdcUtilities {
          getSearch(T pdo, Modality modality, Window owner) {
 
     Class<T> pdoClass = pdo.getEffectiveClass();
-    Set<PdoSearch<?>> searches = searchCache.get(pdoClass);
-    if (searches == null) {
-      searches = new HashSet<>();
-      searchCache.put(pdoClass, searches);
-    }
+    Set<PdoSearch<?>> searches = searchCache.computeIfAbsent(pdoClass, k -> new HashSet<>());
 
     for (Iterator<PdoSearch<?>> iter = searches.iterator(); iter.hasNext(); ) {
       PdoSearch<T> search = (PdoSearch<T>) iter.next();
@@ -346,11 +350,13 @@ public class RdcUtilities {
     Button cancelButton = (Button) alert.getDialogPane().lookupButton(cancelButtonType);
     cancelButton.setDefaultButton(true);
     Optional<ButtonType> result = alert.showAndWait();
-    if (result.get() == saveButtonType) {
-      return Boolean.TRUE;
-    }
-    if (result.get() == discardButtonType) {
-      return Boolean.FALSE;
+    if (result.isPresent()) {
+      if (result.get() == saveButtonType) {
+        return Boolean.TRUE;
+      }
+      if (result.get() == discardButtonType) {
+        return Boolean.FALSE;
+      }
     }
     return null;
   }
