@@ -1337,7 +1337,7 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public <T> T transaction(TransactionEnvelope<T> txe, String txName) {
+  public <T> T transaction(String txName, TransactionEnvelope<T> txe) {
     if (txName == null) {
       Method method = txe.getClass().getEnclosingMethod();
       if (method != null) {
@@ -1379,7 +1379,7 @@ public class Db implements Session, Cloneable {
 
   @Override
   public <T> T transaction(TransactionEnvelope<T> txe) {
-    return transaction(txe, null);
+    return transaction(null, txe);
   }
 
 

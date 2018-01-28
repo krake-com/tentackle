@@ -103,7 +103,7 @@ public class SecuredInterceptor extends AbstractInterceptor {
           success = true;
         }
       }
-      
+
       if (!success) {
         // all permissions failed: collect messages and throw exception
         StringBuilder buf = new StringBuilder();
@@ -116,7 +116,7 @@ public class SecuredInterceptor extends AbstractInterceptor {
           }
         }
         else {
-          buf.append("no permissions in annotation");
+          buf.append("no permissions in @Secured annotation");
         }
         throw new SecurityException(context.getSession(), buf.toString());
       }

@@ -197,7 +197,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
     else {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-        updated = db.transaction(() -> topNode.flushImpl(db), "flush");
+        updated = db.transaction("flush", () -> topNode.flushImpl(db));
       }
     }
 
