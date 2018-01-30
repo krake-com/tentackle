@@ -5,25 +5,25 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1.2</version>
+    <version>2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tentackle-swing</artifactId>
-  <version>2.1.2</version>
+  <artifactId>tentackle-swing-substance</artifactId>
+  <version>2.2-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Tentackle Swing</name>
-  <description>UI components based on Swing</description>
+  <name>Tentackle Swing Substance Look And Feel</name>
+  <description>Substance Look And Feel extended for Tentackle-Swing</description>
   <url>http://www.tentackle.org</url>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-core</artifactId>
+      <artifactId>tentackle-swing</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
+      <groupId>org.java.net.substance</groupId>
+      <artifactId>substance</artifactId>
     </dependency>
   </dependencies>
 
@@ -44,26 +44,11 @@
               <goal>analyze</goal>
             </goals>
           </execution>
-          <execution>
-            <id>beaninfo</id>
-            <goals>
-              <goal>beaninfo</goal>
-            </goals>
-          </execution>
         </executions>
         <configuration>
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>${tentackle.manifestDirectory}/META-INF/MANIFEST.MF</manifestFile>
-          </archive>
         </configuration>
       </plugin>
     </plugins>

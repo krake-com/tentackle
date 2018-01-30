@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>2.1.2</version>
+  <version>2.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -60,12 +60,6 @@
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
     <module>tentackle-fx-rdc</module>
-    <module>tentackle-swing</module>
-    <module>tentackle-swing-tinylaf</module>
-    <module>tentackle-swing-looks</module>
-    <module>tentackle-swing-substance</module>
-    <module>tentackle-swing-print</module>
-    <module>tentackle-swing-rdc</module>
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>

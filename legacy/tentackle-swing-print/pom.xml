@@ -5,30 +5,20 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1.2</version>
+    <version>2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tentackle-swing-rdc</artifactId>
-  <version>2.1.2</version>
+  <artifactId>tentackle-swing-print</artifactId>
+  <version>2.2-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Tentackle Swing Rich Desktop Client</name>
-  <description>Rich Desktop Client based on Tentackle Swing</description>
+  <name>Tentackle Swing Printing</name>
+  <description>Printing Components based on Tentackle-Swing</description>
   <url>http://www.tentackle.org</url>
 
   <dependencies>
     <dependency>
-      <groupId>org.tentackle</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-swing</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-swing-print</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -40,7 +30,7 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.tentackle</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>tentackle-maven-plugin</artifactId>
         <version>${project.version}</version>
         <executions>
@@ -65,14 +55,6 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
-          <compilerArgument>-proc:none</compilerArgument>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
           <archive>
@@ -84,8 +66,4 @@
   </build>
 
 </project>
-
-
-
-
 
