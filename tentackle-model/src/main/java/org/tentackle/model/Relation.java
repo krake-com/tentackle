@@ -341,8 +341,8 @@ public interface Relation extends ModelElement {
   /**
    * Gets the declared java type of the relation.
    *
-   * @param isReferencing true if we need the type from within the foreign entity,
-   *                      else from within the relation's entity
+   * @param withinForeignEntity true if we need the type from within the foreign entity,
+   *                            else from within the relation's entity
    * @return the declared java type
    */
   String getDeclaredJavaType(boolean withinForeignEntity);
