@@ -64,9 +64,10 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
   /** <language-name> : <converter> */
   private static final Map<String, ScriptConverter> MESSAGE_CONVERTER_MAP = new HashMap<>();
+  private static final Map<String, ScriptConverter> VALIDATION_CONVERTER_MAP = new HashMap<>();
 
   static {
-    // load converters
+    // load message converters
     for (Map.Entry<String,String> entry:
          ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
       try {
@@ -76,6 +77,19 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
       }
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
         throw new ValidationRuntimeException("message script converter configuration failed", ex);
+      }
+    }
+
+    // load validation converters
+    for (Map.Entry<String,String> entry:
+         ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
+      try {
+        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        VALIDATION_CONVERTER_MAP.put(language, converter);
+      }
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+        throw new ValidationRuntimeException("validation script converter configuration failed", ex);
       }
     }
   }
@@ -110,7 +124,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
 
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Class<? extends ValidationScope>[] getConfiguredScopes(ValidationContext validationContext) {
     Class<? extends ValidationScope>[] scopes = getScope();
     if (scopes.length == 1 && DefaultScope.class.isAssignableFrom(scopes[0])) {
@@ -210,7 +224,12 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the created compound value
    */
   protected CompoundValue createValueParameter(String value, Class<?> clazz) {
-    return createCompoundValue(value, clazz);
+    CompoundValue compVal = createCompoundValue(value, clazz);
+    Script script = compVal.getScript();
+    if (script != null) {
+      script.setConverter(VALIDATION_CONVERTER_MAP.get(script.getLanguage().getName()));  // null is ok
+    }
+    return compVal;
   }
 
 
@@ -221,7 +240,12 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the created compound value
    */
   protected CompoundValue createConditionParameter(String condition) {
-    return createCompoundValue(condition, Boolean.class);
+    CompoundValue compVal = createCompoundValue(condition, Boolean.class);
+    Script script = compVal.getScript();
+    if (script != null) {
+      script.setConverter(VALIDATION_CONVERTER_MAP.get(script.getLanguage().getName()));  // null is ok
+    }
+    return compVal;
   }
 
 
@@ -235,7 +259,7 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
     CompoundValue compVal = createCompoundValue(message, String.class);
     Script script = compVal.getScript();
     if (script != null) {
-      // set the translator
+      // set the message script converter
       ScriptConverter converter = MESSAGE_CONVERTER_MAP.get(script.getLanguage().getName());
       if (converter == null) {
         throw new ValidationRuntimeException("missing message script converter for " + script.getLanguage());
