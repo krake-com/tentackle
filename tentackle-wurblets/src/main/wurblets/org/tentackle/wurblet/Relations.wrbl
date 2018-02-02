@@ -32,7 +32,7 @@ For more options, see {\@link ModelWurblet}.
       }
 
       String var = rel.getVariableName();
-      String type = rel.getDeclaredJavaType();
+      String type = rel.getDeclaredJavaType(false);
       String firstArg = rel.getMethodArgs().get(0).getMethodArgument();
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
@@ -97,13 +97,13 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /**
-   * Gets list of @(nmRel.getDeclaredJavaType())@ joined via @(rel)@.
+   * Gets list of @(nmRel.getDeclaredJavaType(false))@ joined via @(rel)@.
    *
    * \@return list of @(nmRel.getVariableName())@
    */
   \@Bindable
   \@Persistent(value=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
-  TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@();
+  TrackedList<@(nmRel.getDeclaredJavaType(false))@> get@(nmName)@();
 @[
         }
 
@@ -190,7 +190,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
    * \@return @(rel.getComment())@
    */
-  @(rel.getDeclaredJavaType())@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
+  @(rel.getDeclaredJavaType(true))@ @(createRelationSelectMethodName(rel))@(@(declaredArgs)@);
 @[
             if (rel.isComposite() && !rel.isDeletionCascaded() && !useDatabaseRefInt) {
 ]@

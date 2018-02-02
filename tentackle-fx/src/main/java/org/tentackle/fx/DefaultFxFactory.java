@@ -104,6 +104,7 @@ public class DefaultFxFactory implements FxFactory {
   /**
    * Creates the default factory.
    */
+  @SuppressWarnings("rawtypes")
   public DefaultFxFactory() {
 
     builderFactory = createBuilderFactory();

@@ -1084,10 +1084,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   }
 
   @Override
-  public String getDeclaredJavaType() {
+  public String getDeclaredJavaType(boolean withinForeignEntity) {
     String type = getClassName();
     if (getForeignEntity().isAbstract()) {
-      type += "<?>";
+      if (withinForeignEntity) {
+        type = "T";
+      }
+      else {
+        type += "<?>";
+      }
     }
     if (getRelationType() == RelationType.LIST && !reversed) {
       return (isTracked() ? "TrackedList" : "List") + "<" + type + ">";

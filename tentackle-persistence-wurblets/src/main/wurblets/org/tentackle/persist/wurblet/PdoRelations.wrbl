@@ -172,7 +172,7 @@ For more options, see {\@link DbModelWurblet}.
       // declarations
       for (Relation rel: getEntity().getRelations()) {
         if (rel.getSelectionType() != SelectionType.ALWAYS || rel.isComposite())  {
-          String type = rel.getDeclaredJavaType();
+          String type = rel.getDeclaredJavaType(false);
           String transientModifier = isRelationTransient(rel) ? "transient " : "";
 ]@
 
@@ -214,7 +214,7 @@ For more options, see {\@link DbModelWurblet}.
             nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
           }
 ]@
-  private transient TrackedList<@(rel.getNmRelation().getDeclaredJavaType())@> @(nmVar)@;
+  private transient TrackedList<@(rel.getNmRelation().getDeclaredJavaType(false))@> @(nmVar)@;
 @[
         }
       }
@@ -248,7 +248,7 @@ For more options, see {\@link DbModelWurblet}.
     // generate getter/setter
     for (Relation rel: getEntity().getRelations()) {
       String var = rel.getVariableName();
-      String type = rel.getDeclaredJavaType();
+      String type = rel.getDeclaredJavaType(false);
       String effType = rel.getJavaType();
       String scope = rel.getAccessScope().toString();
       boolean createGetter = !rel.isWriteOnly();
@@ -525,12 +525,13 @@ For more options, see {\@link DbModelWurblet}.
         }
 
         if (nmRel != null) {
+          String nmType = nmRel.getDeclaredJavaType(false);
 ]@
 
   \@Override
-  public TrackedList<@(nmRel.getDeclaredJavaType())@> get@(nmName)@() {
+  public TrackedList<@(nmType)@> get@(nmName)@() {
     if (@(nmVar)@ == null) {
-      @(nmVar)@ = new TrackedArrayList<@(nmRel.getDeclaredJavaType())@>() {
+      @(nmVar)@ = new TrackedArrayList<@(nmType)@>() {
 
         \@Override
         public boolean isModified() {
@@ -542,17 +543,17 @@ For more options, see {\@link DbModelWurblet}.
         @(nmVar)@.add(obj.@(nmRel.getGetterName())@());
       }
 
-      @(nmVar)@.addListener(new TrackedListListener<@(nmRel.getDeclaredJavaType())@>() {
+      @(nmVar)@.addListener(new TrackedListListener<@(nmType)@>() {
 
         \@Override
-        public void added(@(nmRel.getDeclaredJavaType())@ element) {
+        public void added(@(nmType)@ element) {
           @(rel.getClassName())@ obj = on(@(rel.getClassName())@.class);
           obj.@(nmRel.getSetterName())@(element);
           getNmLinks().add(obj);
         }
 
         \@Override
-        public void removed(@(nmRel.getDeclaredJavaType())@ element) {
+        public void removed(@(nmType)@ element) {
           for (Iterator<@(rel.getClassName())@> iter = @(rel.getGetterName())@().iterator(); iter.hasNext(); ) {
             @(rel.getClassName())@ obj = iter.next();
             if (Objects.equals(obj.@(nmRel.getGetterName())@(), element)) {

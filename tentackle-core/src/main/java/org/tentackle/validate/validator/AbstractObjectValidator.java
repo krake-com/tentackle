@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
  * Object validator base class.
  *
  * @author harald
+ * @param <T> the annotation type
  */
 public abstract class AbstractObjectValidator<T extends Annotation> extends AbstractValidator<T>{
 

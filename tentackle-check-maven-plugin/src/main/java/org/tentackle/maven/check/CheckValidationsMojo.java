@@ -43,6 +43,7 @@ import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.Validator;
 import org.tentackle.validate.validator.MessageScriptConverter;
+import org.tentackle.validate.validator.ValidationScriptConverter;
 
 
 /**
@@ -61,6 +62,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
 
   private final CheckValidationsProcessor processor;
   private final Map<String, ScriptConverter> messageConverterMap;
+  private final Map<String, ScriptConverter> validationConverterMap;
   private int errors;
   private int scriptCount;
 
@@ -72,6 +74,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
     processor = new CheckValidationsProcessor();
     addProcessor(processor);
     messageConverterMap = new HashMap<>();
+    validationConverterMap = new HashMap<>();
   }
 
 
@@ -101,6 +104,17 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
              InvocationTargetException | NoSuchMethodException ex) {
         throw new MojoFailureException("message script converter configuration failed", ex);
+      }
+    }
+    for (Map.Entry<String,String> entry:
+         ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
+      try {
+        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        validationConverterMap.put(language, converter);
+      }
+      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+        throw new MojoFailureException("validation script converter configuration failed", ex);
       }
     }
 
@@ -201,6 +215,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
         if (cv.getType() == CompoundValue.Type.SCRIPT) {
           Script script = cv.getScript();
           if (script != null) {
+            script.setConverter(validationConverterMap.get(script.getLanguage().getName()));
             scriptCount++;
             script.parse();
           }
