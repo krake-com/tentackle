@@ -76,7 +76,7 @@ For more options, see {\@link DbModelWurblet}.
           throw new WurbelDiscardException("reading info '" + infoName + "' failed", ex);
         }
         else {
-          throw new WurbelException("reading info '" + infoName + "' failed (@RemoteMethod annotation missing?)", ex);
+          throw new WurbelException("reading info '" + infoName + "' failed (\@RemoteMethod annotation missing?)", ex);
         }
       }
 

@@ -1017,8 +1017,20 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createRelationSelectCode(Relation relation) {
     StringBuilder text = new StringBuilder();
-    if (relation.getForeignEntity().isAbstract()) {
-      // we need a cast
+    if (relation.getForeignEntity().isAbstract() &&
+        relation.getRelationType() == RelationType.OBJECT &&
+        relation.getMethodName() == null) {
+      /**
+       * we need a cast for object relations of type T and methods "select" or "selectCached" (i.e. from framework).
+       * Ex.:
+       *
+       * OrgUnit<?> ou = on(OrgUnit.class).select(id);    ERROR because on(OrgUnit.class) is of type OrgUnit and not OrgUnit<?>
+       *
+       * but:
+       *
+       * OrgUnit<?> ou = on(OrgUnit.class);  OK!
+       * ou = ou.select(id);                 OK!
+       */
       text.append("(").append(relation.getClassName()).append("<?>) ");
     }
     text.append("on(").append(relation.getClassName()).append(".class).")
