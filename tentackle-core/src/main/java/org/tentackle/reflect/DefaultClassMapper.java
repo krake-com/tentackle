@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.common.Constants;
+import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -77,6 +79,30 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
     for (String key: nameProps.stringPropertyNames()) {
       nameMap.put(key, nameProps.getProperty(key));
     }
+  }
+
+
+  /**
+   * Creates a class mapper for a given mapped service name.
+   *
+   * @param name the mapper's name
+   * @param mappedName the mapped name
+   */
+  public DefaultClassMapper(String name, String mappedName) {
+    this(name,
+         ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, mappedName),
+         ServiceFactory.getServiceFinder().createNameMap(mappedName), null);
+  }
+
+  /**
+   * Creates a class mapper for a given mapped service class.<br>
+   * This is the most common usage of a class mapper.
+   *
+   * @param name the mapper's name
+   * @param clazz the mapped class
+   */
+  public DefaultClassMapper(String name, Class<?> clazz) {
+    this(name, clazz.getName());
   }
 
 
