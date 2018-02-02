@@ -249,7 +249,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * Begins a transaction.
    */
   protected void beginTransaction() {
-    txVoucher = session.begin("test");
+    if (session != null) {
+      txVoucher = session.begin("test");
+    }
   }
 
   /**
