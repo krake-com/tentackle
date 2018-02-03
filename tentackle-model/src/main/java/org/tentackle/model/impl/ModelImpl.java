@@ -432,16 +432,25 @@ public class ModelImpl implements Model {
             attributeName = StringHelper.firstToLower(attributeName);
             Attribute foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
             if (foreignAttribute == null) {
-              if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
-                  (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-                errors.add(new ModelError(relation,
-                        "no such attribute: " + attributeName + " in " + foreignEntity +
-                        " referenced by " + entity));
+              for (Relation fRel: foreignEntity.getRelations()) {
+                if (fRel.getRelationType() == RelationType.OBJECT &&
+                    relation.getEntity().getName().equals(fRel.getClassName())) {
+                  // explicit backward relation given: try <namd>Id
+                  attributeName = StringHelper.firstToLower(fRel.getName() + "Id");
+                  foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
+                  break;
+                }
+              }
+              if (foreignAttribute == null) {
+                if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
+                    (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+                  errors.add(new ModelError(relation,
+                          "no such attribute: " + attributeName + " in " + foreignEntity +
+                          " referenced by " + entity));
+                }
               }
             }
-            else  {
-              ((RelationImpl) relation).setForeignAttribute(foreignAttribute);
-            }
+            ((RelationImpl) relation).setForeignAttribute(foreignAttribute);
 
             if (relation.getNmName() != null) {
               Relation nmRelation = foreignEntity.getRelation(relation.getNmName(), false);
