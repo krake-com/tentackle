@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
+import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.impl.IndexImpl;
 import org.testng.annotations.Test;
 
 import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
@@ -100,6 +102,9 @@ public class EntityPrinterTest {
    public void printEntity() throws Exception {
      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
      Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
+     for (Index index : entity.getIndexes()) {   // due to delayed parsing
+       ((IndexImpl) index).parse(entity);
+     }
      ModelDefaults defaults = new ModelDefaults("AUTOSELECT,ATTRACKED,ROOT");
      List<String> optionAnnos = new ArrayList<>();
      optionAnnos.add("@MyAnno");
