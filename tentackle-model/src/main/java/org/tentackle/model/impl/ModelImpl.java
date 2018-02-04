@@ -44,6 +44,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.ForeignKey;
+import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.Model;
@@ -156,6 +157,18 @@ public class ModelImpl implements Model {
       if (updateRelations) {
         updateRelations(defaults, aliases);
       }
+    }
+
+    // indexes are parsed when the model is complete
+    for (ModelEntity modelEntity: mapByEntityName.values()) {
+      EntityImpl entity = (EntityImpl) modelEntity.getEntity();
+      for (Index idx: entity.getIndexes()) {
+        IndexImpl index = (IndexImpl) idx;
+        if (!index.isParsed()) {
+          index.parse(entity);
+        }
+      }
+      entity.validate();  // validate again
     }
   }
 

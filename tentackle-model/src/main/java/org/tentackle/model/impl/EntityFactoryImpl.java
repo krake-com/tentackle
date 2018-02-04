@@ -333,11 +333,9 @@ public class EntityFactoryImpl implements EntityFactory {
    */
   protected void processIndexConfiguration(EntityImpl entity, ConfigurationLine line) throws ModelException {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
-    index.parse(entity, line);
+    index.setSourceLine(line);    // delayed parsing!
     String comment = consumePendingComment();
-    if (StringHelper.isAllWhitespace(index.getComment())) {
-      index.setComment(comment);
-    }
+    index.setComment(comment);
     entity.getIndexes().add(index);
   }
 

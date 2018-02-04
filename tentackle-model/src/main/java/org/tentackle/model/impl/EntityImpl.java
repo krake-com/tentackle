@@ -1319,9 +1319,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
     Set<String> indexNames = new HashSet<>();
     for (Index index: getIndexes()) {
-      index.validate();
-      if (!indexNames.add(normalizeName(index.getName()))) {
-        throw new ModelException("duplicate index name '" + index.getName() + "'", this);
+      if (((IndexImpl) index).isParsed()) {
+        index.validate();
+        if (!indexNames.add(normalizeName(index.getName()))) {
+          throw new ModelException("duplicate index name '" + index.getName() + "'", this);
+        }
       }
     }
 
