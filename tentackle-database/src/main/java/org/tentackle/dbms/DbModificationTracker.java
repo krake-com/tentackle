@@ -340,6 +340,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private final Set<DelayedEvent> delayedEvents;                    // delayed events
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
+  private boolean localClientMode;                                  // true if local session and not a server
 
 
   /**
@@ -502,6 +503,40 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
+   * Returns whether tracker runs in local client mode.<br>
+   * In this mode, modifications will be persisted immediately.
+   * This is necessary for applications without a middle tier server,
+   * i.e. directly talking to the database.<p>
+   * In servers, however, modifications will be persisted delayed,
+   * when no transactions are running that refer to the modified tables.<p>
+   * Important: in local client mode, the thread local session must be valid,
+   * because the session used to persist the modification count must be the
+   * same as the current transaction, if any.
+   *
+   * @return true if in local client mode, false if remote client or server
+   */
+  public boolean isLocalClientMode() {
+    return localClientMode;
+  }
+
+  /**
+   * Sets local client mode.
+   *
+   * @param localClientMode true if in local client mode, false if remote client or server
+   * @see #isLocalClientMode()
+   */
+  public void setLocalClientMode(boolean localClientMode) {
+    if (countersById.isEmpty()) {
+      this.localClientMode = localClientMode;
+      LOGGER.info(getName() + " running in {0} mode", localClientMode ? "local-client" : "optimized");
+    }
+    else if (this.localClientMode != localClientMode) {
+      throw new PersistenceException(getSession(), "operating mode cannot be changed once counters are created");
+    }
+  }
+
+
+  /**
    * Gets the current master serial.<br>
    * Used in remote connections.
    *
@@ -594,8 +629,8 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     ModificationTally counter = getCounter(tableName);
     // put pending count
     counter.countPending(session);
-    if (!isAlive()) {
-      // no poll() -> persist now
+    if (localClientMode || !isAlive()) {
+      // immediate mode or no poll() because not alive -> persist now
       counter.performPendingCount();
     }
     // else optimize:
@@ -924,7 +959,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
     Task task = new AbstractSessionTask() {
       @Override
       public void run() {
-        ModificationTally counter = new ModificationTally(DbModificationTracker.this.getSession(), tableName);
+        ModificationTally counter = new ModificationTally(DbModificationTracker.this, tableName);
         IdSerialTuple idSer = selectIdSerialForName(tableName);
         long lastSerial = idSer == null ? 0 : idSer.getSerial();
         counter.setLastSerial(lastSerial);

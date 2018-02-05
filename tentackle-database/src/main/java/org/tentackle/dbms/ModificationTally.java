@@ -43,6 +43,7 @@ public class ModificationTally {
   private static final Logger LOGGER = LoggerFactory.getLogger(ModificationTally.class);
 
 
+  private final DbModificationTracker tracker;        // the mod tracker
   private final DbModification dbModification;        // the persisted modification object
   private DbObjectClassVariables<?> clazzVar;         // the classvariables if tablename belongs to a PDO, null if just a name
   private Boolean isTableSerialProvided;              // true if table serial is managed by table, null if not known yet
@@ -55,12 +56,13 @@ public class ModificationTally {
   /**
    * Creates a modification counter for a given tracked name.
    *
-   * @param db the db connection
+   * @param tracker the modification tracker
    * @param trackedName the tracked name
    */
-  public ModificationTally(Db db, String trackedName) {
+  public ModificationTally(DbModificationTracker tracker, String trackedName) {
+    this.tracker = tracker;
     sessionsInTx = new WeakHashMap<>();     // keys are weak! Db does not override equals!
-    dbModification = new DbModification(db, trackedName);
+    dbModification = new DbModification(tracker.isLocalClientMode() ? null : tracker.getSession(), trackedName);
     clazzVar = DbObjectClassVariables.getVariables(trackedName);
     if (clazzVar == null) {
       // try to load the class by its name (may be not referenced so far)
@@ -119,7 +121,7 @@ public class ModificationTally {
     if (session.isRemote()) {
       throw new PersistenceException(session, "modification counting not allowed for remote sessions");
     }
-    if (session.isTxRunning()) {
+    if (session.isTxRunning() && !tracker.isLocalClientMode()) {
       sessionsInTx.putIfAbsent(session, null);
     }
     ++pendingCount;

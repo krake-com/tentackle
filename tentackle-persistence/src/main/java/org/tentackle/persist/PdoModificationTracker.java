@@ -18,11 +18,13 @@
 
 package org.tentackle.persist;
 
+import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.DbModificationTracker;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
 
 /**
  * The modification tracker for the tentackle persistence layer.
@@ -48,6 +50,12 @@ public class PdoModificationTracker extends DbModificationTracker {
       return getSerial(PdoUtilities.getInstance().getTableName((Class) clazz));
     }
     return super.getSerial(clazz);
+  }
+
+  @Override
+  public void setSession(Session session) {
+    super.setSession(session);
+    setLocalClientMode(!session.isRemote() && !AbstractApplication.getRunningApplication().isServer());
   }
 
 }
