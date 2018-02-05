@@ -32,7 +32,11 @@ public class ThreadLocalSessionHolder implements SessionHolder {
 
   @Override
   public Session getSession() {
-    return Session.getCurrentSession();
+    Session session = Session.getCurrentSession();
+    if (session == null) {      // avoid NPE
+      throw new PersistenceException("thread-local session not set");
+    }
+    return session;
   }
 
   @Override
