@@ -57,6 +57,9 @@ public class ModelTest {
     try {
       String model = StringHelper.readTextFromResource(MODEL_FILENAME);
       Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
+      for (Index index : entity.getIndexes()) {   // due to delayed parsing
+        ((IndexImpl) index).parse(entity);
+      }
 
       assertEquals(entity.getOptions().getComment(), "the invoice header");
       assertEquals(entity.getName(), "Invoice");

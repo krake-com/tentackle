@@ -44,6 +44,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
 import org.tentackle.model.ForeignKey;
+import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.Model;
@@ -156,6 +157,18 @@ public class ModelImpl implements Model {
       if (updateRelations) {
         updateRelations(defaults, aliases);
       }
+    }
+
+    // indexes are parsed when the model is complete
+    for (ModelEntity modelEntity: mapByEntityName.values()) {
+      EntityImpl entity = (EntityImpl) modelEntity.getEntity();
+      for (Index idx: entity.getIndexes()) {
+        IndexImpl index = (IndexImpl) idx;
+        if (!index.isParsed()) {
+          index.parse(entity);
+        }
+      }
+      entity.validate();  // validate again
     }
   }
 
@@ -432,16 +445,25 @@ public class ModelImpl implements Model {
             attributeName = StringHelper.firstToLower(attributeName);
             Attribute foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
             if (foreignAttribute == null) {
-              if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
-                  (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-                errors.add(new ModelError(relation,
-                        "no such attribute: " + attributeName + " in " + foreignEntity +
-                        " referenced by " + entity));
+              for (Relation fRel: foreignEntity.getRelations()) {
+                if (fRel.getRelationType() == RelationType.OBJECT &&
+                    relation.getEntity().getName().equals(fRel.getClassName())) {
+                  // explicit backward relation given: try <namd>Id
+                  attributeName = StringHelper.firstToLower(fRel.getName() + "Id");
+                  foreignAttribute = foreignEntity.getAttributeByJavaName(attributeName, true);
+                  break;
+                }
+              }
+              if (foreignAttribute == null) {
+                if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
+                    (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+                  errors.add(new ModelError(relation,
+                          "no such attribute: " + attributeName + " in " + foreignEntity +
+                          " referenced by " + entity));
+                }
               }
             }
-            else  {
-              ((RelationImpl) relation).setForeignAttribute(foreignAttribute);
-            }
+            ((RelationImpl) relation).setForeignAttribute(foreignAttribute);
 
             if (relation.getNmName() != null) {
               Relation nmRelation = foreignEntity.getRelation(relation.getNmName(), false);

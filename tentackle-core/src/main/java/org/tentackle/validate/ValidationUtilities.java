@@ -80,6 +80,27 @@ public class ValidationUtilities {
   private ClassLoader validationBundleClassLoader;
 
   /**
+   * In testmode all validators will be executed, regardless of scope or condition.
+   */
+  private Logger.Level testLogLevel;
+
+
+  /**
+   * Configures test mode.<p>
+   * In test mode, all validators will be executed, regardless of scope or condition
+   * and logged in given LogLevel.<br>
+   * Useful to check whether validators work at all, scripts compile and run, etc...<br>
+   * Notice that even the result is not used, the conditions and scopes will be executed/checked in test mode as well.<p>
+   * Test mode is disabled by default.
+   *
+   * @param testLogLevel != null if running in test mode, null to clear test mode
+   */
+  public void configureTestMode(Logger.Level testLogLevel) {
+    this.testLogLevel = testLogLevel;
+  }
+
+
+  /**
    * Gets the classloader to load the validation bundle class.
    *
    * @return the classloader, never null (default to this classes classloader)
@@ -304,6 +325,8 @@ public class ValidationUtilities {
 
     List<ValidationResult> allResults = new ArrayList<>();
 
+    boolean inTest = testLogLevel != null;
+
     for (Validator validator : validators) {
 
       // build validation context
@@ -343,11 +366,17 @@ public class ValidationUtilities {
               validationPath + "." + validator.getValidatedElementName(),
               type, objectSupplier, parentObject, effectiveScope);
 
+      if (inTest) {
+        logTest(validator, validationContext);
+      }
 
       // check if scope applies
-      if (validator.isConditionValid(validationContext)
-              && (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
-        // scope applies
+      // runs condition check even if in testmode
+      if (validator.isConditionValid(validationContext) &&
+           (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
+          ||
+          inTest) {
+        // condition and scope applies
         List<? extends ValidationResult> results = validator.validate(validationContext);
         if (results != null) {
           boolean failed = false;
@@ -396,12 +425,20 @@ public class ValidationUtilities {
       ValidationContext validationContext = new ValidationContext(
                 validationPath, type, object, parentObject, effectiveScope);
 
+      boolean inTest = testLogLevel != null;
+
       for (Validator validator : validators) {
 
-        // check if scope applies and validator is valid
+        if (inTest) {
+          logTest(validator, validationContext);
+        }
+
+        // check if scope applies and validator is valid (even if in testmode)
         if (validator.isConditionValid(validationContext) &&
-            (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))) {
-          // scope applies
+             (effectiveScope == null || effectiveScope.appliesTo(validator.getConfiguredScopes(validationContext)))
+            ||
+            inTest) {
+          // condition and scope applies
           try {
             List<? extends ValidationResult> results = validator.validate(validationContext);
             if (results != null) {
@@ -858,7 +895,7 @@ public class ValidationUtilities {
         validators.add(validator);
       }
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | InstantiationException ex) {
       throw new ValidationRuntimeException("could not create validator", ex);
     }
   }
@@ -877,6 +914,11 @@ public class ValidationUtilities {
       extractValidators(annotation, element, validators, scope);
     }
     return validators;
+  }
+
+
+  private void logTest(Validator validator, ValidationContext validationContext) {
+    LOGGER.log(testLogLevel, "applying " + validator + " to " + validationContext, null);
   }
 
 }

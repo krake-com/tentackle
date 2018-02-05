@@ -48,6 +48,7 @@ public class IndexImpl implements Index {
   private String comment;
   private boolean unique;
   private String filterCondition;
+  private boolean parsed;
 
 
   /**
@@ -84,33 +85,33 @@ public class IndexImpl implements Index {
    * Parses a configuration line.
    *
    * @param entity the entity
-   * @param line the source line
    * @throws ModelException if parsing the model failed
    */
-  public void parse(Entity entity, ConfigurationLine line) throws ModelException {
+  public void parse(Entity entity) throws ModelException {
+
+    parsed = true;
 
     // parse the index
-    StringTokenizer stok = new StringTokenizer(line.getKey());
+    StringTokenizer stok = new StringTokenizer(sourceLine.getKey());
     boolean indexFound = false;
     boolean uniqueFound = false;
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
       switch(token.toLowerCase()) {
         case "index":
-          setSourceLine(line);
           setUnique(uniqueFound);
           indexFound = true;
           uniqueFound = false;
           break;
         case "unique":
           if (indexFound) {
-            throw line.createModelException("keyword 'unique' not allowed after 'index'");
+            throw sourceLine.createModelException("keyword 'unique' not allowed after 'index'");
           }
           uniqueFound = true;
           break;
         default:
           if (!indexFound) {
-            throw line.createModelException("unknown configuration keyword: " + token);
+            throw sourceLine.createModelException("unknown configuration keyword: " + token);
           }
           int ndx = token.indexOf('.');
           if (ndx > 0) {
@@ -121,15 +122,15 @@ public class IndexImpl implements Index {
       }
     }
     if (!indexFound) {
-      throw line.createModelException("illegal configuration: " + line.getKey());
+      throw sourceLine.createModelException("illegal configuration: " + sourceLine.getKey());
     }
 
     // parse the attributes
     if (entity.getAttributes().isEmpty()) {
-      throw line.createModelException("index configuration line not allowed before attribute section");
+      throw sourceLine.createModelException("index configuration line not allowed before attribute section");
     }
 
-    String text = line.getValue();
+    String text = sourceLine.getValue();
     int ndx = text.indexOf('|');
     if (ndx > 0) {
       setFilterCondition(text.substring(ndx + 1));
@@ -149,13 +150,13 @@ public class IndexImpl implements Index {
       String token = stok.nextToken();
       if (token.toLowerCase().equals("desc")) {
         if (indexAttribute == null) {
-          throw line.createModelException("keyword 'desc' must follow column name");
+          throw sourceLine.createModelException("keyword 'desc' must follow column name");
         }
         indexAttribute.setDescending(true);
       }
       else if (token.toLowerCase().equals("asc")) {
         if (indexAttribute == null) {
-          throw line.createModelException("keyword 'asc' must follow column name");
+          throw sourceLine.createModelException("keyword 'asc' must follow column name");
         }
         indexAttribute.setDescending(false);
       }
@@ -189,7 +190,7 @@ public class IndexImpl implements Index {
         }
         if (indexAttribute == null) {
           // not found
-          throw line.createModelException("undefined column name: " + token);
+          throw sourceLine.createModelException("undefined column name: " + token);
         }
       }
     }
@@ -255,6 +256,17 @@ public class IndexImpl implements Index {
   @Override
   public String toString() {
     return getName();
+  }
+
+  /**
+   * Returns whether index is already parsed.<br>
+   * Indexes are parsed delayed because some attributes may be added later when
+   * the whole model is known.
+   *
+   * @return true if parsed
+   */
+  public boolean isParsed() {
+    return parsed;
   }
 
 

@@ -55,6 +55,10 @@ public class ComponentInfo {
       extraClassName = null;
       topEntity = joinedEntity;
       while (topEntity != null) {
+        if (topEntity.getOptions().isRootIdProvided()) {
+          // extra rootid column provided -> take that!
+          break;
+        }
         rootAttribute = topEntity.getRootAttribute();
         if (rootAttribute != null) {
           break;

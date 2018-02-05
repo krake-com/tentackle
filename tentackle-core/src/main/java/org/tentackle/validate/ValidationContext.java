@@ -135,4 +135,9 @@ public class ValidationContext {
     return parentObject;
   }
 
+  @Override
+  public String toString() {
+    return validationPath;
+  }
+
 }
