@@ -27,8 +27,10 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.AfterSuite;
@@ -119,8 +121,10 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    */
   @AfterSuite(alwaysRun = true)
   public void closeSessionsAndTerminateModificationTracker() throws Exception {
-    ModificationTracker.getInstance().terminate();
-    session.close();
+    if (session != null) {
+      ModificationTracker.getInstance().terminate();
+      session.close();
+    }
   }
 
   /**
@@ -221,7 +225,13 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    */
   protected Session openSession() {
     Session s = Pdo.createSession();
-    s.open();
+    try {
+      s.open();
+    }
+    catch (PersistenceException ex) {
+      // no database? wrong database? whatever: testing environment incomplete
+      throw new SkipException("no backend found -> no tests");
+    }
     s.makeCurrent();
     return s;
   }
@@ -239,7 +249,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * Begins a transaction.
    */
   protected void beginTransaction() {
-    txVoucher = session.begin("test");
+    if (session != null) {
+      txVoucher = session.begin("test");
+    }
   }
 
   /**

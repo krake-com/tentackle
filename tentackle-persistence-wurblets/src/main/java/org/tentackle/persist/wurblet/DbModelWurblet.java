@@ -495,7 +495,7 @@ public class DbModelWurblet extends ModelWurblet {
             buf.append("getColumnName(CN_ID), \"");
           }
           else {
-            buf.append('"').append(parentName).append(".id, \"");
+            buf.append('"').append(parentName).append(".id\", \"");
           }
           buf.append(join.getName()).append('.').append(relation.getForeignAttribute().getColumnName())
              .append("\", ").append(joinClass).append(".class, \"").append(join.getName()).append("\",\n");

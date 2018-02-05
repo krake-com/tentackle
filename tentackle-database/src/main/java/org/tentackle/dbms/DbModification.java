@@ -24,6 +24,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
 
 
@@ -129,12 +130,15 @@ public class DbModification extends AbstractDbObject<DbModification> {
   /**
    * Creates a modification object for a given tablename.
    *
-   * @param db the database connection
+   * @param db the database connection, null if thread-local
    * @param trackedName the tracked name
    */
   public DbModification(Db db, String trackedName) {
     super(db);
     this.trackedName = trackedName;
+    if (db == null) {
+      setSessionHolder(new ThreadLocalSessionHolder());
+    }
   }
 
   /**
