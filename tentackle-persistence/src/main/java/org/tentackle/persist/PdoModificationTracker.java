@@ -55,7 +55,9 @@ public class PdoModificationTracker extends DbModificationTracker {
   @Override
   public void setSession(Session session) {
     super.setSession(session);
-    setLocalClientMode(!session.isRemote() && !AbstractApplication.getRunningApplication().isServer());
+    setLocalClientMode(!session.isRemote() &&
+                       (AbstractApplication.getRunningApplication() == null ||
+                        !AbstractApplication.getRunningApplication().isServer()));
   }
 
 }
