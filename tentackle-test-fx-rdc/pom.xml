@@ -74,6 +74,15 @@
           </compilerArgs>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <additionalJOptions>
+            <additionalJOption>--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</additionalJOption>
+          </additionalJOptions>
+        </configuration>
+      </plugin>
     </plugins>
 
   </build>

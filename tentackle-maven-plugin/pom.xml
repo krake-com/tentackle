@@ -84,6 +84,18 @@
           </compilerArgs>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <additionalJOptions>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac=ALL-UNNAMED</additionalJOption>
+            <additionalJOption>--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</additionalJOption>
+          </additionalJOptions>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
