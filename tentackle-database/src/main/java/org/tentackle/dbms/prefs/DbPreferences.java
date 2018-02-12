@@ -655,6 +655,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   /**
    * Recursive implementation of flush.
    *
+   * @param db the session
    * @return true if some nodes or keys were updated from storage
    */
   protected boolean flushImpl(Db db) {

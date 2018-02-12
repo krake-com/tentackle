@@ -1475,8 +1475,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
   /**
-   * Selects all objects of this class and returns the ResultSetWrapper.
+   * Selects all objects of this class with a higher tableserial and returns the ResultSetWrapper.
    *
+   * @param oldSerial the last known serial
    * @return the result set
    */
   public ResultSetWrapper resultObjectsWithExpiredTableSerials(long oldSerial) {

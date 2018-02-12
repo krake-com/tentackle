@@ -40,7 +40,7 @@
         <filtering>true</filtering>
       </testResource>
     </testResources>
-    
+
     <plugins>
 
       <plugin>
@@ -144,7 +144,7 @@
             </tag>
           </tags>
           <!-- don't complain about wurblet args -->
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <doclint>none</doclint>
         </configuration>
       </plugin>
 

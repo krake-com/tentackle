@@ -44,7 +44,7 @@ public interface RemoteDbConnection extends Remote {
    * Gets the application-specific version information of the server.<br>
    *
    * @return the version info
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   Serializable getServerVersionInfo() throws RemoteException;
 

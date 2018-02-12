@@ -42,7 +42,7 @@ public interface RemoteDbSession extends Remote {
    * of interest by the client application, for example the userId.
    *
    * @return the session info
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   SessionInfo getClientSessionInfo() throws RemoteException;
 
@@ -50,7 +50,7 @@ public interface RemoteDbSession extends Remote {
   /**
    * Closes a session.
    *
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   void close() throws RemoteException;
 
@@ -60,7 +60,7 @@ public interface RemoteDbSession extends Remote {
    *
    * @param level the logging level
    * @param message the message
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   void log(Level level, String message) throws RemoteException;
 
@@ -80,7 +80,7 @@ public interface RemoteDbSession extends Remote {
    * Gets the delegate for the remote db-connection.
    *
    * @return the delegate
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   DbRemoteDelegate getDbRemoteDelegate() throws RemoteException;
 
@@ -92,13 +92,10 @@ public interface RemoteDbSession extends Remote {
    * <tt>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;.class</tt> on the client-side and<br>
    * <tt>&lt;package&gt;.rmi.&lt;last-element-of-classname&gt;Impl.class</tt> on the server-side.<br>
    *
-   * The delegates are cached on the client side in order to speed up access.
-   * Delegates are bound to a session, i.e. there will be one delegate for each
-   * session and class.
-   *
+   * @param <T> the delegate type
    * @param classname is the name of class
    * @return the delegate
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   <T extends RemoteDelegate> T getRemoteDelegate(String classname) throws RemoteException;
 

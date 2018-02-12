@@ -420,7 +420,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Flushes a node and all of its subnodes to the backing store.
    *
    * @param node the preferences node
-   * @throws BackingStoreException
+   * @throws BackingStoreException if failed
    */
   public synchronized void flush(DbPreferences node) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
@@ -455,7 +455,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    *
    *
    * @param node the preferences node
-   * @throws BackingStoreException
+   * @throws BackingStoreException if failed
    */
   public synchronized void sync(DbPreferences node) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);

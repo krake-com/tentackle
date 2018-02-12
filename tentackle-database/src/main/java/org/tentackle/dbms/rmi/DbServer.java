@@ -48,7 +48,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  * <ul>
  * <li>
  * <tt>service=service-name</tt>:
- *  defaults to the basename of the DbServer-class instance, i.e. -> rmi://localhost:1099/&lt;Basename&gt;
+ *  defaults to the basename of the DbServer-class instance, i.e. -&gt; rmi://localhost:1099/&lt;Basename&gt;
  * </li>
  *
  * <li>
@@ -74,7 +74,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *
  * <li>
  * <tt>timeout=session-timeout</tt>:
- *  The default session timeout (in polling-intervals) for dead client connections (see Db -> keepAlive).
+ *  The default session timeout (in polling-intervals) for dead client connections (see Db -&gt; keepAlive).
  *  Defaults to 0, i.e. no timeout (sessions may request an individual timeout).
  * </li>
  *
@@ -110,7 +110,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *              {@link org.tentackle.io.CompressedSslClientSocketFactory} and
  *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.
  * </li>
- * <p>
+ *
  * For SSL only:
  * <li>
  * <tt>ciphersuites=...</tt>: comma separated list of enabled cipher suites
@@ -654,7 +654,7 @@ public class DbServer {
    * Stops the server.
    * <p>
    * Unbinds the connection object.
-   * @throws ApplicationException
+   * @throws ApplicationException if failed
    */
   public void stop() throws ApplicationException {
     try {

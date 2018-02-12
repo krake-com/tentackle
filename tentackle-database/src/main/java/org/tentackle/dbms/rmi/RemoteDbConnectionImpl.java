@@ -45,7 +45,7 @@ import org.tentackle.session.VersionInfoIncompatibleException;
  * <li>client gets a reference to a RemoteDbConnection in the server</li>
  * <li>client invokes login() on the connection and gets a reference to
  *   a RemoteDbSession.</li>
- * <li>each session runs in its own thread (server & client) and the server
+ * <li>each session runs in its own thread (server and client) and the server
  *   session gets its own Db.</li>
  * <li>all further client requests work through the session object and
  *     the remote delegates created within the session</li>
@@ -77,7 +77,7 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * @param port the tcp-port, 0 = system default
    * @param csf the client socket factory, null = system default
    * @param ssf the server socket factory, null = system default
-   * @throws RemoteException
+   * @throws RemoteException if failed to export object
    * @see DbServer
    */
   public RemoteDbConnectionImpl(DbServer server,
@@ -240,6 +240,7 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * Exports the given remote object.
    *
    * @param remoteObject the object to unexport
+   * @throws RemoteException if the remote object is not currently exported
    */
   public void unexportRemoteObject(Remote remoteObject) throws RemoteException {
     UnicastRemoteObject.unexportObject(remoteObject, true);

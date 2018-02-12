@@ -673,9 +673,9 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
+   * {@inheritDoc}
+   * <p>
    * Cleanup in case someone forgot to logoff().
-   *
-   * @throws java.lang.Throwable
    */
   @Override
   protected void finalize() throws Throwable {
@@ -881,12 +881,12 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param clazz the serviced class
    * @param effectiveClass the optional effective serviced class, null if clazz
    * @param configArgs optional arguments to configure the delegate
-   * @return the created
-   * @throws InstantiationException
-   * @throws NoSuchMethodException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @return the created delegate
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws NoSuchMethodException if delegate does not provide the necessary constructor
+   * @throws IllegalAccessException if access denied
+   * @throws IllegalArgumentException if wrong arguments
+   * @throws InvocationTargetException if invocation failed
    */
   @SuppressWarnings("unchecked")
   public <T extends RemoteDelegate, I extends RemoteDelegateImpl<?>> T  createRemoteDelegateInstance(
@@ -931,11 +931,11 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param effectiveClass the effectively serviced class, null if clazz
    * @param configArgs optional configuration arguments passed to {@link #createRemoteDelegateInstance}
    * @return the created
-   * @throws InstantiationException
-   * @throws NoSuchMethodException
-   * @throws IllegalAccessException
-   * @throws IllegalArgumentException
-   * @throws InvocationTargetException
+   * @throws InstantiationException if delegate could not be instantiated
+   * @throws NoSuchMethodException if delegate does not provide the necessary constructor
+   * @throws IllegalAccessException if access denied
+   * @throws IllegalArgumentException if wrong arguments
+   * @throws InvocationTargetException if invocation failed
    */
   @SuppressWarnings("unchecked")
   public <T extends RemoteDelegate, I extends RemoteDelegateImpl<?>> T createRemoteDelegate(

@@ -332,6 +332,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   /**
    * Lazily gets the properties.<br>
    * Loads and initially processes the properties.
+   *
+   * @return the properties, never null
    */
   public Properties getProperties() {
     if (properties == null) {
