@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -357,10 +358,12 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
       // JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();   // picks the wrong classloader :(
       JavaCompiler compiler = JavacTool.create();
+      boolean withModules = compiler.getSourceVersions().contains(SourceVersion.RELEASE_9);
 
       if (compiler == null) {
-        throw new MojoExecutionException(
-                "No Java compiler! Make sure you're using the JDK or tools.jar is in your classpath.");
+        throw new MojoExecutionException(withModules ?
+                "No Java compiler! jdk.compiler in module path?" :
+                "No Java compiler! Make sure you're using the JDK and tools.jar is in your classpath.");
       }
       DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
@@ -369,17 +372,23 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       options.add("-encoding");
       options.add(encoding);
       options.add("-proc:only");    // run only the annotation processing
-      options.add("-classpath");
-      StringBuilder buf = new StringBuilder();
-      if (classpathElements != null) {
-        for (String element: classpathElements) {
+      if (classpathElements != null && !classpathElements.isEmpty()) {
+        options.add("-classpath");
+        StringBuilder buf = new StringBuilder();
+        for (String element : classpathElements) {
           if (buf.length() > 0) {
             buf.append(File.pathSeparatorChar);
           }
           buf.append(element);
         }
+        options.add(buf.toString());
+
+        if (withModules) {
+          // and add to the module path as well (since Java 9)
+          options.add("--module-path");
+          options.add(buf.toString());
+        }
       }
-      options.add(buf.toString());
       // options started with -A are passed to the annotation processors (without leading -A)
       options.add("-Averbosity=" + verbosityLevel);
 

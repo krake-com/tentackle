@@ -104,6 +104,12 @@
         <configuration>
           <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
           <compilerArgument>-proc:none</compilerArgument>
+          <compilerArgs>
+            <arg>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</arg>
+            <arg>--add-exports=javafx.graphics/com.sun.javafx.scene=org.tentackle.fx</arg>
+            <arg>--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx</arg>
+            <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
     </plugins>
