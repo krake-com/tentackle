@@ -38,7 +38,7 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.Session;
 
-import static javax.lang.model.SourceVersion.RELEASE_8;
+import static javax.lang.model.SourceVersion.RELEASE_9;
 
 /**
  * Annotation processor for the {@code @PersistentObjectService} annotation.<br>
@@ -54,7 +54,7 @@ import static javax.lang.model.SourceVersion.RELEASE_8;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.PersistentObjectService")
-@SupportedSourceVersion(RELEASE_8)
+@SupportedSourceVersion(RELEASE_9)
 @AnnotationProcessor
 public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

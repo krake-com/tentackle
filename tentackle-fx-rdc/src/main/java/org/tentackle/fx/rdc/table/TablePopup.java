@@ -21,27 +21,21 @@
 
 package org.tentackle.fx.rdc.table;
 
-import java.awt.Desktop;
 import java.io.File;
-import java.io.IOException;
-import java.util.prefs.BackingStoreException;
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
-import javafx.stage.FileChooser;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.prefs.PersistedPreferences;
+import org.tentackle.fx.rdc.FileUtilities;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 
 
 
@@ -59,15 +53,6 @@ public class TablePopup<S> {
    * the logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(TablePopup.class);
-
-  private static final String EXCEL_EXTENSION = ".xls";
-  private static final String LAST_EXCEL_PREFIX = "/_lastExcelNames_";
-  private static final String EXCEL_KEY = "path";
-
-  private static final String XML_EXTENSION = ".xml";
-  private static final String LAST_XML_PREFIX = "/_lastXmlNames_";
-  private static final String XML_KEY = "path";
-
 
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
@@ -98,7 +83,7 @@ public class TablePopup<S> {
     }
   }
 
-  
+
   /**
    * Gets the table.
    *
@@ -163,7 +148,7 @@ public class TablePopup<S> {
     if (columnMenuEnabled)  {
       // build columns-menu
       columnMenu = new Menu();
-      columnMenu.setText(FxFxBundle.getString("COLUMNS..."));
+      columnMenu.setText(RdcFxRdcBundle.getString("COLUMNS..."));
       menu.getItems().add(columnMenu);
     }
     else {
@@ -171,63 +156,63 @@ public class TablePopup<S> {
     }
 
     MenuItem autoWidthItem = new MenuItem();
-    autoWidthItem.setText(FxFxBundle.getString("AUTO WIDTH"));
+    autoWidthItem.setText(RdcFxRdcBundle.getString("AUTO ADJUST"));
     autoWidthItem.setOnAction(e -> autoWidth());
     menu.getItems().add(autoWidthItem);
 
     MenuItem printItem = new MenuItem();
-    printItem.setText(FxFxBundle.getString("PRINT"));
+    printItem.setText(RdcFxRdcBundle.getString("PRINT"));
     printItem.setOnAction(e -> print());
     menu.getItems().add(printItem);
 
     MenuItem excelItem = new MenuItem();
-    excelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL"));
+    excelItem.setText(RdcFxRdcBundle.getString("EXPORT TO SPREADSHEET"));
     excelItem.setOnAction(e -> toSpreadsheet(false));
     menu.getItems().add(excelItem);
 
     MenuItem selectedExcelItem = new MenuItem();
-    selectedExcelItem.setText(FxFxBundle.getString("EXPORT TO EXCEL (ONLY SELECTED)"));
+    selectedExcelItem.setText(RdcFxRdcBundle.getString("EXPORT TO SPREADSHEET (SELECTED)"));
     selectedExcelItem.setOnAction(e -> toSpreadsheet(true));
     menu.getItems().add(selectedExcelItem);
 
     MenuItem xmlItem = new MenuItem();
-    xmlItem.setText(FxFxBundle.getString("EXPORT TO XML"));
+    xmlItem.setText(RdcFxRdcBundle.getString("EXPORT TO XML"));
     xmlItem.setOnAction(e -> toXml(false));
     menu.getItems().add(xmlItem);
 
     MenuItem selectedXmlItem = new MenuItem();
-    selectedXmlItem.setText(FxFxBundle.getString("EXPORT TO XML (ONLY SELECTED)"));
+    selectedXmlItem.setText(RdcFxRdcBundle.getString("EXPORT TO XML (SELECTED)"));
     selectedXmlItem.setOnAction(e -> toXml(true));
     menu.getItems().add(selectedXmlItem);
 
     if (PersistedPreferencesFactory.getInstance().isSystemOnly()) {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly())  {
         MenuItem saveItem = new MenuItem();
-        saveItem.setText(FxFxBundle.getString("SAVE SYSTEM PREFERENCES"));
+        saveItem.setText(RdcFxRdcBundle.getString("SAVE SYSTEM PREFERENCES"));
         saveItem.setOnAction(e -> savePreferences(true));
         menu.getItems().add(saveItem);
       }
 
       MenuItem restoreItem = new MenuItem();
-      restoreItem.setText(FxFxBundle.getString("LOAD SYSTEM PREFERENCES"));
+      restoreItem.setText(RdcFxRdcBundle.getString("LOAD SYSTEM PREFERENCES"));
       restoreItem.setOnAction(e -> loadPreferences(true));
       menu.getItems().add(restoreItem);
     }
     else  {
       if (!PersistedPreferencesFactory.getInstance().isReadOnly())  {
         MenuItem saveItem = new MenuItem();
-        saveItem.setText(FxFxBundle.getString("SAVE USER PREFERENCES"));
+        saveItem.setText(RdcFxRdcBundle.getString("SAVE USER PREFERENCES"));
         saveItem.setOnAction(e -> savePreferences(false));
         menu.getItems().add(saveItem);
       }
 
       MenuItem restoreItem = new MenuItem();
-      restoreItem.setText(FxFxBundle.getString("LOAD USER PREFERENCES"));
+      restoreItem.setText(RdcFxRdcBundle.getString("LOAD USER PREFERENCES"));
       restoreItem.setOnAction(e -> loadPreferences(false));
       menu.getItems().add(restoreItem);
 
       MenuItem restoreSysItem = new MenuItem();
-      restoreSysItem.setText(FxFxBundle.getString("LOAD SYSTEM PREFERENCES"));
+      restoreSysItem.setText(RdcFxRdcBundle.getString("LOAD SYSTEM PREFERENCES"));
       restoreSysItem.setOnAction(e -> loadPreferences(true));
       menu.getItems().add(restoreSysItem);
     }
@@ -252,7 +237,7 @@ public class TablePopup<S> {
           columnMenu.getItems().add(item);
         }
         if (!allVisible) {
-          MenuItem showAllItem = new MenuItem(FxFxBundle.getString("SHOW ALL"));
+          MenuItem showAllItem = new MenuItem(RdcFxRdcBundle.getString("SHOW ALL"));
           showAllItem.setOnAction(e -> {
             for (TableColumn<S,?> column: columns)  {
               column.setVisible(true);
@@ -261,7 +246,7 @@ public class TablePopup<S> {
           columnMenu.getItems().add(showAllItem);
         }
         if (!allInvisible) {
-          MenuItem hideAllItem = new MenuItem(FxFxBundle.getString("HIDE ALL"));
+          MenuItem hideAllItem = new MenuItem(RdcFxRdcBundle.getString("HIDE ALL"));
           hideAllItem.setOnAction(e -> {
             for (TableColumn<S,?> column: columns)  {
               column.setVisible(false);
@@ -299,124 +284,36 @@ public class TablePopup<S> {
    */
   public void toSpreadsheet(boolean onlySelected) {
     try {
-      // remember the pathname
-      String prefName = StringHelper.trimRight(LAST_EXCEL_PREFIX + table.getConfiguration().getName(), '/');
-      PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
-      String lastName = prefs.get(EXCEL_KEY, null);
-
-      FileChooser fc = new FileChooser();
-      if (lastName != null) {
-        fc.setInitialFileName(lastName);
-      }
-      fc.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter(FxFxBundle.getString("EXCEL FILE"), EXCEL_EXTENSION)
-      );
-      File selectedFile = fc.showSaveDialog(Fx.getStage(table));
-      if (selectedFile != null) {
-        if (!selectedFile.getName().toLowerCase().endsWith(EXCEL_EXTENSION))  {
-          selectedFile = new File(selectedFile.getPath() + EXCEL_EXTENSION);
-        }
-        TableUtilities.getInstance().toSpreadsheet(table, selectedFile, onlySelected);
-        if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-          prefs.put(EXCEL_KEY, selectedFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
-        }
-      }
-
-      // open Excel
-      if (selectedFile != null) {
-        final File excelFile = selectedFile;
-        new Thread(() -> {  // needs another thread because Desktop will block the FX-application thread
-          try {
-            LOGGER.info("launching EDIT action for {0}", excelFile);
-            Desktop.getDesktop().edit(excelFile);
-          }
-          catch (UnsupportedOperationException | IOException ex) {
-            LOGGER.info("{0} -> trying OPEN action for {1}", ex.getMessage(), excelFile);
-            try {
-              Desktop.getDesktop().open(excelFile);
-              LOGGER.info("success!");
-            }
-            catch (IOException ex2) {
-              LOGGER.severe("cannot open spreadsheet file", ex2);
-            }
-          }
-        }).start();
+      File file = TableUtilities.getInstance().selectSpreadsheetFile(table.getConfiguration().getName(), Fx.getStage(table));
+      if (file != null) {
+        TableUtilities.getInstance().toSpreadsheet(table, file, onlySelected);
+        FileUtilities.getInstance().editFile(file);
       }
     }
-    catch (BackingStoreException | RuntimeException ex)  {
+    catch (RuntimeException ex)  {
       LOGGER.severe("creating spreadsheet failed", ex);
-      Fx.error(FxFxBundle.getString("COULD NOT CREATE EXCEL FILE"), ex);
+      Fx.error(RdcFxRdcBundle.getString("COULD NOT CREATE SPREADSHEET FILE"), ex);
     }
 
   }
 
 
   /**
-   * Opens a dialog to export a table to an Excel sheet.
+   * Opens a dialog to export a table to a spreadsheet.
    *
    * @param onlySelected true if export only selected rows
    */
   public void toXml(boolean onlySelected) {
     try {
-      // Pfadname fuer diese Tabelle merken (immer in den userPrefs und immer abseits der normalen prefs)
-      String prefName = StringHelper.trimRight(LAST_XML_PREFIX + table.getConfiguration().getName(), '/');
-      PersistedPreferences prefs = PersistedPreferences.userRoot().node(prefName);
-      String lastName = prefs.get(XML_KEY, null);
-
-      FileChooser fc = new FileChooser();
-      if (lastName != null) {
-        fc.setInitialFileName(lastName);
-      }
-      fc.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter(FxFxBundle.getString("XML FILE"), XML_EXTENSION)
-      );
-      File selectedFile = fc.showSaveDialog(Fx.getStage(table));
-      if (selectedFile != null) {
-        if (!selectedFile.getName().toLowerCase().endsWith(XML_EXTENSION))  {
-          selectedFile = new File(selectedFile.getPath() + XML_EXTENSION);
-        }
-        TableUtilities.getInstance().toXml(table, selectedFile, onlySelected);
-        if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
-          prefs.put(XML_KEY, selectedFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
-        }
-      }
-
-      // open XML
-      if (selectedFile != null) {
-        final File xmlFile = selectedFile;
-        new Thread(() -> {  // needs another thread because Desktop will block the FX-application thread
-          try {
-            LOGGER.info("launching EDIT action for {0}", xmlFile);
-            Desktop.getDesktop().edit(xmlFile);
-          }
-          catch (UnsupportedOperationException | IOException ex) {
-            LOGGER.info("{0} -> trying OPEN action for {1}", ex.getMessage(), xmlFile);
-            try {
-              Desktop.getDesktop().open(xmlFile);
-              LOGGER.info("success!");
-            }
-            catch (IOException ex2) {
-              LOGGER.severe("cannot open XML file", ex2);
-            }
-          }
-        }).start();
+      File file = TableUtilities.getInstance().selectXmlFile(table.getConfiguration().getName(), Fx.getStage(table));
+      if (file != null) {
+        TableUtilities.getInstance().toXml(table, file, onlySelected);
+        FileUtilities.getInstance().editFile(file);
       }
     }
-    catch (BackingStoreException | RuntimeException ex)  {
+    catch (RuntimeException ex)  {
       LOGGER.severe("creating XML file failed", ex);
-      Fx.error(FxFxBundle.getString("COULD NOT CREATE XML FILE"), ex);
+      Fx.error(RdcFxRdcBundle.getString("COULD NOT CREATE XML FILE"), ex);
     }
   }
 
@@ -432,7 +329,7 @@ public class TablePopup<S> {
     }
     catch (RuntimeException ex) {
       LOGGER.severe("saving table preferences failed", ex);
-      Fx.error(FxFxBundle.getString("PREFERENCES COULD NOT BE SAVED"), ex);
+      Fx.error(RdcFxRdcBundle.getString("SAVING PREFERENCES FAILED"), ex);
     }
   }
 
@@ -448,7 +345,7 @@ public class TablePopup<S> {
     }
     catch (RuntimeException ex) {
       LOGGER.severe("loading table preferences failed", ex);
-      Fx.error(FxFxBundle.getString("PREFERENCES COULD NOT BE LOADED"), ex);
+      Fx.error(RdcFxRdcBundle.getString("LOADING PREFERENCES FAILED"), ex);
     }
   }
 

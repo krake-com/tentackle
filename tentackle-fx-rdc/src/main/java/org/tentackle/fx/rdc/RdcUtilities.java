@@ -42,7 +42,6 @@ import javafx.stage.WindowEvent;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
@@ -340,7 +339,7 @@ public class RdcUtilities {
    */
   public Boolean showSaveDiscardCancelDialog() {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(FxFxBundle.getString("QUESTION"));
+    alert.setTitle(RdcFxRdcBundle.getString("QUESTION"));
     alert.setHeaderText(null);
     alert.setContentText(RdcFxRdcBundle.getString("DATA_HAS_BEEN_MODIFIED!_DISCARD,_SAVE_OR_CANCEL?"));
     ButtonType saveButtonType = new ButtonType(RdcFxRdcBundle.getString("SAVE"));

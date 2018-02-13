@@ -60,6 +60,7 @@
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
     <module>tentackle-fx-rdc</module>
+    <module>tentackle-fx-rdc-poi</module>
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>

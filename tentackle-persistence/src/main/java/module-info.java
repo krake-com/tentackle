@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.persist {
+module org.tentackle.persistence {
   exports org.tentackle.persist;
   exports org.tentackle.persist.app;
   exports org.tentackle.persist.ns;
@@ -28,7 +28,7 @@ module org.tentackle.persist {
   requires org.tentackle.pdo;
   requires org.tentackle.session;
   requires org.tentackle.core;
-  requires org.tentackle.dbms;
+  requires org.tentackle.database;
   requires org.tentackle.sql;
   requires org.tentackle.common;
 

@@ -18,16 +18,14 @@
 
 module org.tentackle.web {
   exports org.tentackle.web.app;
-  exports org.tentackle.web.misc;
 
-  requires org.tentackle.persist;
+  requires org.tentackle.persistence;
   requires org.tentackle.pdo;
   requires org.tentackle.session;
   requires org.tentackle.core;
-  requires org.tentackle.dbms;
+  requires org.tentackle.database;
   requires org.tentackle.sql;
   requires org.tentackle.common;
-  requires servlet.api;
 
   requires java.naming;
 }

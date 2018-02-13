@@ -27,7 +27,7 @@ import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.Operation;
 
-import static javax.lang.model.SourceVersion.RELEASE_8;
+import static javax.lang.model.SourceVersion.RELEASE_9;
 
 /**
  * Annotation processor for the {@code @DomainOperationService} annotation.<br>
@@ -41,7 +41,7 @@ import static javax.lang.model.SourceVersion.RELEASE_8;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.DomainOperationService")
-@SupportedSourceVersion(RELEASE_8)
+@SupportedSourceVersion(RELEASE_9)
 @AnnotationProcessor
 public class DomainOperationServiceAnnotationProcessor extends AbstractDomainServiceAnnotationProcessor {
 

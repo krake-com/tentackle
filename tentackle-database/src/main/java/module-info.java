@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.dbms {
+module org.tentackle.database {
   exports org.tentackle.dbms;
   exports org.tentackle.dbms.prefs;
   exports org.tentackle.dbms.prefs.rmi;

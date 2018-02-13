@@ -26,10 +26,6 @@
       <artifactId>tentackle-pdo</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-    </dependency>
   </dependencies>
 
   <properties>
