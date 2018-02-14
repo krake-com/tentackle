@@ -48,7 +48,7 @@ public class Binary<T> implements Serializable, Cloneable {
   /**
    * initial default buffersize when reading from the database.
    */
-  public static int bufSize = 1024;
+  private static final int INITIAL_SIZE = 1024;
 
 
   private byte[] data;                   // byte array of arbitrary data or serialized object
@@ -124,23 +124,27 @@ public class Binary<T> implements Serializable, Cloneable {
     if (stream == null) {
       return null;
     }
-    Binary<?> b = new Binary<>();
-    if (bufSize <= 0) {
-      bufSize = Binary.bufSize;
-    }
-    b.data = new byte[bufSize];
-    int count;
-    while ((count = stream.read(b.data, b.length, bufSize - b.length)) >= 0) {
-      b.length += count;
-      if (b.length == bufSize) {
-        byte[] oldData = b.data;
-        bufSize <<= 1;    // double the buffer size
-        b.data = new byte[bufSize];
-        System.arraycopy(oldData, 0, b.data, 0, b.length);
+    try {
+      Binary<?> b = new Binary<>();
+      if (bufSize <= 0) {
+        bufSize = Binary.INITIAL_SIZE;
       }
+      b.data = new byte[bufSize];
+      int count;
+      while ((count = stream.read(b.data, b.length, bufSize - b.length)) >= 0) {
+        b.length += count;
+        if (b.length == bufSize) {
+          byte[] oldData = b.data;
+          bufSize <<= 1;    // double the buffer size
+          b.data = new byte[bufSize];
+          System.arraycopy(oldData, 0, b.data, 0, b.length);
+        }
+      }
+      return b.length == 0 ? null : b;
     }
-    stream.close();
-    return b.length == 0 ? null : b;
+    finally {
+      stream.close();
+    }
   }
 
 

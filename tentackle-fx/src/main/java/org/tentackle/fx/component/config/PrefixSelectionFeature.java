@@ -52,7 +52,7 @@ public class PrefixSelectionFeature<T extends Control> {
   /**
    * Timeout in milliseconds to start over from index 0.
    */
-  public static long TIMEOUT = 500;
+  public static long timeout = 500;
 
 
   protected final T control;
@@ -108,7 +108,7 @@ public class PrefixSelectionFeature<T extends Control> {
         String chr = event.getCharacter();
         if (chr != null) {    // for sure... can it be null at all?
            long now = System.currentTimeMillis();
-           if (now > lastPressMillis + TIMEOUT) {
+           if (now > lastPressMillis + timeout) {
              // clear after timeout
              prefixBuf.setLength(0);
              index = 0;

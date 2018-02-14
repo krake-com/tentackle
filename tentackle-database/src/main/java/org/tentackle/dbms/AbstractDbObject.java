@@ -154,16 +154,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public static final String AN_CLASSID = org.tentackle.common.Constants.AN_CLASSID;
 
 
-
-  // avoids excessive creation of comparators
-  /** ID comparator **/
-  public static IdComparator<AbstractDbObject<?>>     idComparator     = new IdComparator<>();
-  /** name comparator **/
-  public static NameComparator<AbstractDbObject<?>>   nameComparator   = new NameComparator<>();
-  /** name + ID comparator **/
-  public static NameIdComparator<AbstractDbObject<?>> nameIdComparator = new NameIdComparator<>();
-
-
   /** transaction name: insert plain **/
   public static final String TX_INSERT_PLAIN                  = "insert plain";
   /** transaction name: insert object **/
@@ -195,13 +185,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDbObject.class);
 
   private static final long serialVersionUID = 3452560056309085969L;
-
 
 
 
