@@ -1221,13 +1221,13 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @Override
   public boolean equals (Object object) {
-    if (object != null) {
+    if (object != null && getClass() == object.getClass()) {
       long objectId = ((AbstractDbObject<?>) object).getId();
       if (objectId == 0 || getId() == 0) {
         // no Id -> no PDO identity -> use object address
         return super.equals(object);
       }
-      return objectId == getId() && getClass() == object.getClass();
+      return objectId == getId();
     }
     return false;
   }

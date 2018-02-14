@@ -173,7 +173,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   }
 
   @Override
-  public boolean isUsingMutexLocking() {
+  public synchronized boolean isUsingMutexLocking() {
     return usingMutexLocking;
   }
 
@@ -281,7 +281,8 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     assertNotKilled();
     synchronized(task) {
       if (task.getDispatcher() != null && task.getDispatcher() != this) {
-        throw new TaskException("task " + task + " already belongs to dispatcher " + task.getDispatcher() + ", cannot be added to " + this);
+        throw new TaskException("task " + task + " already belongs to dispatcher " +
+                                task.getDispatcher() + ", cannot be added to " + this);
       }
       if (task.getId() != 0 && queue.contains(task)) {
         LOGGER.fine("{0}: task {1} already in queue -- not added", this, task);

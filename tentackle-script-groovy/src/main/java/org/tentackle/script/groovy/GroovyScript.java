@@ -21,6 +21,7 @@ package org.tentackle.script.groovy;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.tentackle.log.Logger;
@@ -45,7 +46,7 @@ public class GroovyScript extends AbstractScript {
   private static final Logger LOGGER = LoggerFactory.getLogger(GroovyScript.class);
 
   /** compiled script classes. */
-  public static final GroovyScriptClassCache scriptCache = new GroovyScriptClassCache();
+  private static final GroovyScriptClassCache SCRIPT_CACHE = new GroovyScriptClassCache();
 
 
 
@@ -128,14 +129,18 @@ public class GroovyScript extends AbstractScript {
   public CompiledScript parse() throws ScriptRuntimeException {
     try {
       String effectiveCode = getEffectiveCode();
-      Class<groovy.lang.Script> scriptClass = scriptCache.getScriptClass(effectiveCode);
+      Class<groovy.lang.Script> scriptClass = SCRIPT_CACHE.getScriptClass(effectiveCode);
       if (scriptClass == null) {
         LOGGER.fine("compiling script:\n{0}", effectiveCode);
         ClassLoader parent = getClass().getClassLoader();
-        GroovyClassLoader loader = new GroovyClassLoader(parent);
-        scriptClass = loader.parseClass(effectiveCode);
+        try (GroovyClassLoader loader = new GroovyClassLoader(parent)) {
+          scriptClass = loader.parseClass(effectiveCode);
+        }
+        catch (IOException ix) {
+          throw new ScriptRuntimeException("closing groovy classloader failed", ix);
+        }
         if (isCached()) {
-          scriptCache.putScriptClass(effectiveCode, scriptClass);
+          SCRIPT_CACHE.putScriptClass(effectiveCode, scriptClass);
         }
       }
       else  {

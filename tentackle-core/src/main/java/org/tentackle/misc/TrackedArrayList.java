@@ -140,7 +140,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     TrackedArrayList<E> snapshot = (TrackedArrayList<E>) super.clone();
     snapshots.add(snapshot);
     snapshot.removedObjects = removedObjects == null ? null : new LinkedHashSet<>(removedObjects);
-    snapshot.snapshots = snapshots == null ? null : new ArrayList<>(snapshots);
+    snapshot.snapshots = new ArrayList<>(snapshots);
     // create snapshots for elements in new list.
     // there is a 1:1 relation between the snapshot list and the element snapshots
     // and this relation must not be modified anymore! Hence, snapshots are immutable.

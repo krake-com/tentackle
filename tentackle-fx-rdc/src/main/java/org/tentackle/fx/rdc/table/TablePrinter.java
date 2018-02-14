@@ -235,7 +235,7 @@ public class TablePrinter extends AbstractFxController {
     dateLabel.setText(FormatHelper.formatShortTimestamp(new Timestamp()));
 
     // copy the columns to the printing table
-    double tableWidth = 0;
+    double tableWidth = 0.0;
     tableView.getColumns().clear();
     tableView.setConfiguration((TableConfiguration) table.getConfiguration());
     for (TableColumn<?,?> column: table.getColumns()) {

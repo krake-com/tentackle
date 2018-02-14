@@ -81,109 +81,110 @@ public class PoiTableUtilities extends TableUtilities {
   @Override
   public <S> void toSpreadsheet(FxTableView<S> table, File file, boolean onlySelected) {
 
-    HSSFWorkbook wb = new HSSFWorkbook();
-    HSSFSheet sheet = wb.createSheet();
+    try (HSSFWorkbook wb = new HSSFWorkbook()) {
+      HSSFSheet sheet = wb.createSheet();
 
-    int srow = 0;   // current spreadsheet row
+      int srow = 0;   // current spreadsheet row
 
-    // column headers
-    HSSFRow row = sheet.createRow(srow++);
-    HSSFFont font = wb.createFont();
-    font.setItalic(true);
-    font.setBold(true);
-    HSSFCellStyle cs = wb.createCellStyle();
-    cs.setAlignment(HorizontalAlignment.CENTER);
-    cs.setFont(font);
-    int columnIndex = 0;
-    for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
-      HSSFCell cell = row.createCell(columnIndex);
-      cell.setCellValue(new HSSFRichTextString(tc.getDisplayedName()));
-      cell.setCellStyle(cs);
-      columnIndex++;
-    }
-
-    // default cell-style for date
-    HSSFCellStyle dateStyle = wb.createCellStyle();
-    dateStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("m/d/yy"));
-
-    // cellstyles for numbers
-    List<HSSFCellStyle> numberStyles = new ArrayList<>();
-    HSSFDataFormat format = wb.createDataFormat();
-
-    List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
-
-    for (S item : items) {
-
-      row = sheet.createRow(srow++);
-      columnIndex = 0;
-
+      // column headers
+      HSSFRow row = sheet.createRow(srow++);
+      HSSFFont font = wb.createFont();
+      font.setItalic(true);
+      font.setBold(true);
+      HSSFCellStyle cs = wb.createCellStyle();
+      cs.setAlignment(HorizontalAlignment.CENTER);
+      cs.setFont(font);
+      int columnIndex = 0;
       for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
-
-        FxTableBinding<S, ?> binding = tc.getBinding();
-        if (binding != null) {
-          binding.setBoundRootObject(item);
-          Object value = binding.getModelValue();
-
-          HSSFCell cell = row.createCell(columnIndex);
-
-          if (value instanceof Boolean) {
-            cell.setCellValue(((Boolean) value));
-          }
-          else if (value instanceof BMoney) {
-            BMoney money = (BMoney) value;
-            cell.setCellValue(money.doubleValue());
-
-            String fmt = "#,##0";
-            if (money.scale() > 0) {
-              StringBuilder buf = new StringBuilder(fmt).append('.');
-              for (int j = 0; j < money.scale(); j++) {
-                buf.append('0');
-              }
-              fmt = buf.toString();
-            }
-            // create format
-            short fmtIndex = format.getFormat(fmt);
-
-            // check if there is already a cellstyle with this scale
-            Iterator<HSSFCellStyle> iter = numberStyles.iterator();
-            boolean found = false;
-            while (iter.hasNext()) {
-              cs = iter.next();
-              if (cs.getDataFormat() == fmtIndex) {
-                // reuse that
-                found = true;
-                break;
-              }
-            }
-            if (!found) {
-              // create a new style
-              cs = wb.createCellStyle();
-              cs.setDataFormat(fmtIndex);
-              numberStyles.add(cs);
-            }
-            cell.setCellStyle(cs);
-          }
-          else if (value instanceof Number) {
-            cell.setCellValue(((Number) value).doubleValue());
-          }
-          else if (value instanceof Date) {
-            cell.setCellValue((Date) value);
-            cell.setCellStyle(dateStyle);
-          }
-          else if (value instanceof GregorianCalendar) {
-            cell.setCellValue((GregorianCalendar) value);
-            cell.setCellStyle(dateStyle);
-          }
-          else if (value != null) {
-            cell.setCellValue(new HSSFRichTextString(value.toString()));
-          }
-        }
+        HSSFCell cell = row.createCell(columnIndex);
+        cell.setCellValue(new HSSFRichTextString(tc.getDisplayedName()));
+        cell.setCellStyle(cs);
         columnIndex++;
       }
-    }
 
-    try (FileOutputStream fileOut = new FileOutputStream(file)) {
-      wb.write(fileOut);
+      // default cell-style for date
+      HSSFCellStyle dateStyle = wb.createCellStyle();
+      dateStyle.setDataFormat(HSSFDataFormat.getBuiltinFormat("m/d/yy"));
+
+      // cellstyles for numbers
+      List<HSSFCellStyle> numberStyles = new ArrayList<>();
+      HSSFDataFormat format = wb.createDataFormat();
+
+      List<S> items = onlySelected ? table.getSelectionModel().getSelectedItems() : table.getItems();
+
+      for (S item : items) {
+
+        row = sheet.createRow(srow++);
+        columnIndex = 0;
+
+        for (TableColumnConfiguration<S, ?> tc : table.getConfiguration().getColumnConfigurations()) {
+
+          FxTableBinding<S, ?> binding = tc.getBinding();
+          if (binding != null) {
+            binding.setBoundRootObject(item);
+            Object value = binding.getModelValue();
+
+            HSSFCell cell = row.createCell(columnIndex);
+
+            if (value instanceof Boolean) {
+              cell.setCellValue(((Boolean) value));
+            }
+            else if (value instanceof BMoney) {
+              BMoney money = (BMoney) value;
+              cell.setCellValue(money.doubleValue());
+
+              String fmt = "#,##0";
+              if (money.scale() > 0) {
+                StringBuilder buf = new StringBuilder(fmt).append('.');
+                for (int j = 0; j < money.scale(); j++) {
+                  buf.append('0');
+                }
+                fmt = buf.toString();
+              }
+              // create format
+              short fmtIndex = format.getFormat(fmt);
+
+              // check if there is already a cellstyle with this scale
+              Iterator<HSSFCellStyle> iter = numberStyles.iterator();
+              boolean found = false;
+              while (iter.hasNext()) {
+                cs = iter.next();
+                if (cs.getDataFormat() == fmtIndex) {
+                  // reuse that
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                // create a new style
+                cs = wb.createCellStyle();
+                cs.setDataFormat(fmtIndex);
+                numberStyles.add(cs);
+              }
+              cell.setCellStyle(cs);
+            }
+            else if (value instanceof Number) {
+              cell.setCellValue(((Number) value).doubleValue());
+            }
+            else if (value instanceof Date) {
+              cell.setCellValue((Date) value);
+              cell.setCellStyle(dateStyle);
+            }
+            else if (value instanceof GregorianCalendar) {
+              cell.setCellValue((GregorianCalendar) value);
+              cell.setCellStyle(dateStyle);
+            }
+            else if (value != null) {
+              cell.setCellValue(new HSSFRichTextString(value.toString()));
+            }
+          }
+          columnIndex++;
+        }
+      }
+
+      try (FileOutputStream fileOut = new FileOutputStream(file)) {
+        wb.write(fileOut);
+      }
     }
     catch (IOException ex) {
       throw new FxRuntimeException("creating spreadsheet file failed", ex);

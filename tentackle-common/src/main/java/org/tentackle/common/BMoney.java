@@ -43,7 +43,7 @@ public class BMoney extends BigDecimal implements Cloneable {
    * @param scale the digits after comma the value should be rounded to
    */
   public BMoney (double val, int scale)   {
-    super(new BigDecimal(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
+    super(BigDecimal.valueOf(val).setScale(scale, RoundingMode.HALF_UP).unscaledValue(), scale);
   }
 
   /**

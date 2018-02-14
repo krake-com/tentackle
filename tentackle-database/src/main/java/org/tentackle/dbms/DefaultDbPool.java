@@ -264,7 +264,7 @@ public class DefaultDbPool implements SessionPool {
    * @param ui the userinfo for the created Db
    */
   public DefaultDbPool (ConnectionManager conMgr, SessionInfo ui) {
-    this("default-pool", conMgr, ui, 8, 2, 4, conMgr.getMaxSessions(), 60, 24*60);
+    this("default-pool", conMgr, ui, 8, 2, 4, conMgr.getMaxSessions(), 60L, 24*60L);
   }
 
 

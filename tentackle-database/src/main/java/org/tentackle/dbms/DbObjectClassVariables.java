@@ -491,16 +491,8 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
       try {
         @SuppressWarnings("unchecked")
         AbstractDbObject<?> obj = AbstractDbObject.newInstance(db, (Class<AbstractDbObject<?>>) ref.method.getDeclaringClass());
-        // autoboxing does not work with reflection, so we must check whether Long or long is used for "id"
-        if (ref.method.getParameterTypes()[0] == Long.TYPE) {
-          if (ref.method.invoke(obj, id).equals(Boolean.TRUE)) {
-            return true;
-          }
-        }
-        else  {
-          if (ref.method.invoke(obj, id).equals(Boolean.TRUE)) {
-            return true;
-          }
+        if (ref.method.invoke(obj, id).equals(Boolean.TRUE)) {
+          return true;
         }
       }
       catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {

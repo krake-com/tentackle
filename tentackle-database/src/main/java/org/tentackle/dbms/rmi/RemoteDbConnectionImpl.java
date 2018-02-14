@@ -226,9 +226,9 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
         lastEx = ex;
       }
     }
-    if (effectivePort == -1) {
+    if (effectivePort == -1 && lastEx != null) {
       // export failed for all ports in range
-      throw lastEx;   // cannot be null
+      throw lastEx;
     }
 
     LOGGER.fine("{0} exported on port {1}", remoteObject, effectivePort);

@@ -547,13 +547,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         buf.append(attribute);
       }
       else  {
-        buf.append(foreignEntity).append('#');
-        if (foreignAttribute != null) {
-          buf.append(foreignAttribute);
-        }
-        else {
-          buf.append('?');
-        }
+        buf.append(foreignEntity).append('#').append(foreignAttribute);
       }
     }
     else if (!methodArgs.isEmpty()) {
