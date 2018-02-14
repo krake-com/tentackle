@@ -21,6 +21,8 @@ package org.tentackle.script.groovy;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
+import java.lang.reflect.InvocationTargetException;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.AbstractScript;
@@ -139,10 +141,11 @@ public class GroovyScript extends AbstractScript {
       else  {
         LOGGER.fine("re-using compiled script:\n{0}", effectiveCode);
       }
-      compiledScript = new CompiledScript(effectiveCode, scriptClass.getConstructor().newInstance());
+      compiledScript = new CompiledScript(effectiveCode, scriptClass.getDeclaredConstructor().newInstance());
       return compiledScript;
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException | CompilationFailedException ex) {
       throw new ScriptRuntimeException("creating script failed: " + this, ex);
     }
   }
@@ -176,7 +179,7 @@ public class GroovyScript extends AbstractScript {
         result = executeImpl(script, binding);
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new ScriptRuntimeException(ex);
     }
 

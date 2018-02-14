@@ -336,16 +336,19 @@ public class ValidationUtilities {
       AnnotatedElement element = validator.getAnnotatedElement();
       if (element instanceof Field) {
         Field field = (Field) element;
-        if (!field.isAccessible()) {
-          field.setAccessible(true);
-        }
         type = field.getType();
         objectSupplier = parentObject == null ? null : () -> {
           try {
             return field.get(parentObject);
           }
-          catch (IllegalAccessException ex) {
-            throw new ValidationRuntimeException("cannot access field " + field, ex);
+          catch (IllegalAccessException ex1) {
+            field.setAccessible(true);    // set accessible and try again
+            try {
+              return field.get(parentObject);
+            }
+            catch (IllegalAccessException ex2) {
+              throw new ValidationRuntimeException("cannot access field " + field, ex2);
+            }
           }
         };
       }
@@ -354,9 +357,15 @@ public class ValidationUtilities {
         type = method.getReturnType();
         objectSupplier = parentObject == null ? null : () -> {
           try {
-            return method.invoke(parentObject);
+            try {
+              return method.invoke(parentObject);
+            }
+            catch (IllegalAccessException ex) {
+              method.setAccessible(true);    // set accessible and try again
+              return method.invoke(parentObject);
+            }
           }
-          catch (IllegalAccessException | InvocationTargetException ex) {
+          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new ValidationRuntimeException("cannot invoke method " + method, ex);
           }
         };
@@ -886,7 +895,7 @@ public class ValidationUtilities {
                               List<Validator> validators, ValidationScope scope,
                               Class<? extends Validator> validatorClass) {
     try {
-      Validator validator = validatorClass.newInstance();
+      Validator validator = validatorClass.getDeclaredConstructor().newInstance();
       validator.setAnnotation(annotation);
       validator.setAnnotatedElement(element);
       validator.setValidatedElementName(getAnnotatedElementName(element));
@@ -895,7 +904,8 @@ public class ValidationUtilities {
         validators.add(validator);
       }
     }
-    catch (IllegalAccessException | InstantiationException ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException ex) {
       throw new ValidationRuntimeException("could not create validator", ex);
     }
   }

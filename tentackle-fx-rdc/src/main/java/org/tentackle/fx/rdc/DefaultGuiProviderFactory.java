@@ -19,6 +19,7 @@
 package org.tentackle.fx.rdc;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.pdo.PdoRuntimeException;
@@ -84,7 +85,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
     try {
       return (GuiProvider<T>) constructor.newInstance(pdo);
     }
-    catch (Exception e) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot instantiate GUI service object for " + pdoClass.getName(), e);
     }
   }

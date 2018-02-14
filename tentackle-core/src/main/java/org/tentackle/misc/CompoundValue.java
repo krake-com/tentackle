@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.StringTokenizer;
 import org.tentackle.common.BMoney;
@@ -399,7 +400,7 @@ public class CompoundValue {
           Object value = ReflectionHelper.getValueByPath(parentObject, reference);
           return negate ? negateBoolean(value) : value;
         }
-        catch (Exception ex) {
+        catch (ApplicationException ex) {
           throw new IllegalArgumentException("cannot evaluate reference '" + reference + "'", ex);
         }
 
@@ -412,7 +413,7 @@ public class CompoundValue {
         catch (ClassNotFoundException e1) {
           throw new IllegalArgumentException("cannot evaluate static reference '" + staticClassName + "." + reference + "'", e1);
         }
-        catch (Exception e2) {
+        catch (ApplicationException e2) {
           throw new IllegalArgumentException("cannot evaluate reference '" + reference + "'", e2);
         }
 
@@ -438,7 +439,7 @@ public class CompoundValue {
           }
           return result;
         }
-        catch (Exception ex) {
+        catch (RuntimeException ex) {
           throw new IllegalArgumentException("evaluating script '" + script + "' failed", ex);
         }
 
@@ -614,7 +615,7 @@ public class CompoundValue {
         return FormatHelper.parseDate(value);
       }
     }
-    catch (Exception ex) {
+    catch (NumberFormatException | ParseException ex) {
       throw new IllegalArgumentException("cannot create " + clazz.getName() + " from '" + value + "'", ex);
     }
 
@@ -807,7 +808,7 @@ public class CompoundValue {
         }
       }
     }
-    catch (Exception ex) {
+    catch (NumberFormatException | ParseException ex) {
       throw new IllegalArgumentException("conversion failed", ex);
     }
 

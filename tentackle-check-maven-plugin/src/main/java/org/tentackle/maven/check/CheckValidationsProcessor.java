@@ -229,7 +229,7 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
         if (validatorClass != null) {
           try {
-            Validator validator = (Validator) validatorClass.getConstructor().newInstance();
+            Validator validator = (Validator) validatorClass.getDeclaredConstructor().newInstance();
             validator.setAnnotation(annotation);
             Element enclosingClass = element;
             while (enclosingClass != null &&

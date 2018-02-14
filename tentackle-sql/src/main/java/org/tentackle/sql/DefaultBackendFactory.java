@@ -49,7 +49,7 @@ public class DefaultBackendFactory implements BackendFactory {
     backends = new ArrayList<>();
     try {
       for (Class<Backend> backendClass: ServiceFactory.getServiceFinder().findServiceProviders(Backend.class)) {
-        backends.add(backendClass.getConstructor().newInstance());
+        backends.add(backendClass.getDeclaredConstructor().newInstance());
       }
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |

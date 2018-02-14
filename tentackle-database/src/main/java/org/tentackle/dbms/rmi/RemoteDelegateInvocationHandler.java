@@ -288,7 +288,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
     try {
       return method.invoke(delegate, args);
     }
-    catch (Exception cause) {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException cause) {
       throw handleInvocationException(proxy, method, args, cause);
     }
   }

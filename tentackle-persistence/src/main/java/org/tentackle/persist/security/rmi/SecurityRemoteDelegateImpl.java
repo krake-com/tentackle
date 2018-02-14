@@ -32,7 +32,8 @@ public class SecurityRemoteDelegateImpl
    * @param pdoClass the pdo interface class
    * @throws java.rmi.RemoteException
    */
-  public SecurityRemoteDelegateImpl(RemoteDbSessionImpl session, Class<SecurityPersistenceImpl> persistenceClass, Class<Security> pdoClass) throws RemoteException {
+  public SecurityRemoteDelegateImpl(RemoteDbSessionImpl session, Class<SecurityPersistenceImpl> persistenceClass,
+                                    Class<Security> pdoClass) throws RemoteException {
     super(session, persistenceClass, pdoClass);
   }
 
@@ -40,9 +41,10 @@ public class SecurityRemoteDelegateImpl
   public void assertRemoteSecurityManagerInitialized(DomainContext contextDb) throws RemoteException {
     try {
       setDomainContext(contextDb);
-      dbObject.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission());   // sufficient to update the security manager's table
+      // sufficient to update the security manager's table
+      dbObject.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission());
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -61,7 +63,7 @@ public class SecurityRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByGrantee(granteeClassId, granteeId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -72,7 +74,7 @@ public class SecurityRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByObject(objectClassId, objectId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -83,7 +85,7 @@ public class SecurityRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByObjectClass(objectClassName);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -94,7 +96,7 @@ public class SecurityRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByDomainContext(domainContextClassId, domainContextId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -104,7 +106,7 @@ public class SecurityRemoteDelegateImpl
     try {
       return dbObject.deleteByGrantee(granteeClassId, granteeId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -114,7 +116,7 @@ public class SecurityRemoteDelegateImpl
     try {
       return dbObject.deleteByObject(objectClassId, objectId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -124,7 +126,7 @@ public class SecurityRemoteDelegateImpl
     try {
       return dbObject.deleteByObjectClass(objectClassName);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -134,7 +136,7 @@ public class SecurityRemoteDelegateImpl
     try {
       return dbObject.deleteByDomainContext(domainContextClassId, domainContextId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

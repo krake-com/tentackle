@@ -47,7 +47,7 @@ public class DbPreferencesOperationRemoteDelegateImpl
     try {
       return dbOperation.loadRootTree(user, forced);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -58,7 +58,7 @@ public class DbPreferencesOperationRemoteDelegateImpl
       DbPreferences node = DbPreferencesFactory.getInstance().getRootTree(getSession(), user);
       return dbOperation.loadRefreshInfo(node, serial);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -68,7 +68,7 @@ public class DbPreferencesOperationRemoteDelegateImpl
     try {
       return dbOperation.flush(node);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

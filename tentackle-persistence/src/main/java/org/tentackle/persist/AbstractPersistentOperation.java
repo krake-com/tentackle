@@ -192,7 +192,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   public PersistentOperation<T> newInstance() {
     try {
       @SuppressWarnings("unchecked")
-      T obj = (T) getClass().getConstructor().newInstance();
+      T obj = (T) getClass().getDeclaredConstructor().newInstance();
       obj.setSession(getSession());
       return obj;
     }

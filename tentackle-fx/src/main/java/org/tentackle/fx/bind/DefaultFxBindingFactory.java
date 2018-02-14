@@ -20,6 +20,7 @@
 package org.tentackle.fx.bind;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.bind.AbstractBindingFactory;
@@ -115,7 +116,8 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
             FxComponentBinder.class, BindingMember[].class, BindingMember.class, FxComponent.class, String.class);
         binding = con.newInstance(binder, parents, member, component, componentOptions);
       }
-      catch (Exception ex) {
+      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+             SecurityException | InvocationTargetException ex) {
         throw new BindingException("could not instantiate binding " + bindingClass.getName(), ex);
       }
     }

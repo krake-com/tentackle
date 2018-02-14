@@ -101,7 +101,7 @@ public class AbstractJSRScript extends AbstractScript {
       }
       return compiledScript;
     }
-    catch (Exception ex) {
+    catch (ScriptException ex) {
       throw new ScriptRuntimeException("creating script failed: " + this, ex);
     }
   }
@@ -135,7 +135,7 @@ public class AbstractJSRScript extends AbstractScript {
         result = executeImpl(script, bindings);
       }
     }
-    catch (Exception ex) {
+    catch (ScriptException ex) {
       throw new ScriptRuntimeException(ex);
     }
 

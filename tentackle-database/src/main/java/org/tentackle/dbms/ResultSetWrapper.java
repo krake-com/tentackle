@@ -206,11 +206,11 @@ public class ResultSetWrapper implements AutoCloseable {
         close();
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       try {
         LOGGER.severe("closing pending resultset '" + this + "' failed in finalizer");
       }
-      catch (Exception ex2) {
+      catch (RuntimeException ex2) {
         // don't stop finalization if just the logging failed
       }
     }

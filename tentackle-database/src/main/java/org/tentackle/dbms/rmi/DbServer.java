@@ -22,9 +22,14 @@ package org.tentackle.dbms.rmi;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
@@ -634,7 +639,9 @@ public class DbServer {
         RemoteDbSessionImpl.startCleanupThread(sessionTimeoutCheckInterval);
       }
     }
-    catch (Exception e) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException | MalformedURLException | URISyntaxException |
+           AlreadyBoundException | RemoteException e) {
       throw new ApplicationException("server startup failed", e);
     }
   }
@@ -676,7 +683,7 @@ public class DbServer {
         Naming.unbind(service);
       }
     }
-    catch (Exception e) {
+    catch (MalformedURLException | NotBoundException | RemoteException e) {
       throw new ApplicationException("server shutdown failed", e);
     }
   }

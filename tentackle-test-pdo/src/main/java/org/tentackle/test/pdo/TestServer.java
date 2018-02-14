@@ -129,7 +129,7 @@ public class TestServer extends ServerApplication {
       server.sleep(duration);
       server.stop();
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.severe("test server failed", ex);
       System.exit(1);
     }

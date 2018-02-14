@@ -20,6 +20,7 @@
 package org.tentackle.bind;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.log.Logger;
@@ -114,7 +115,8 @@ public class AbstractBindingFactory implements BindingFactory {
         Constructor<? extends BindableElement> con = elementClass.getConstructor(String.class);
         element = con.newInstance(camelName);
       }
-      catch (Exception ex) {
+      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+             SecurityException | InvocationTargetException ex) {
         throw new BindingException("could not instantiate bindable element " + elementClass.getName(), ex);
       }
     }

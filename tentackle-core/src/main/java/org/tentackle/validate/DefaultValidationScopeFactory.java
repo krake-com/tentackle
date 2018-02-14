@@ -19,6 +19,7 @@
 
 package org.tentackle.validate;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
           throw new ValidationRuntimeException("scope implementation " + scopeImplementation.getName() +
                                                " does not implement " + scopeInterface.getName());
         }
-        ValidationScope scope = scopeImplementation.newInstance();
+        ValidationScope scope = scopeImplementation.getDeclaredConstructor().newInstance();
         if (scope.getClass().getInterfaces()[0] != scopeInterface) {
           throw new ValidationRuntimeException("scope interface of " + scopeImplementation.getName() +
                                                " is not a " + scopeInterface.getName());
@@ -120,7 +121,8 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
         throw new ValidationRuntimeException("no PersistenceScope configured");
       }
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException nfe) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | SecurityException | InvocationTargetException | ValidationRuntimeException nfe) {
       throw new ValidationRuntimeException("supported scopes could not be determined", nfe);
     }
   }

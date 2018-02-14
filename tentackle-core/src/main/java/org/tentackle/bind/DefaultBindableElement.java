@@ -20,6 +20,7 @@
 package org.tentackle.bind;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
@@ -117,13 +118,25 @@ public class DefaultBindableElement implements BindableElement {
     try {
       // getter takes precedence over field
       if (getter != null) {
-        return getter.invoke(parent);
+        try {
+          return getter.invoke(parent);
+        }
+        catch (IllegalAccessException ex) {
+          getter.setAccessible(true);
+          return getter.invoke(parent);
+        }
       }
       else {
-        return field.get(parent);
+        try {
+          return field.get(parent);
+        }
+        catch (IllegalAccessException ex) {
+          field.setAccessible(true);
+          return field.get(parent);
+        }
       }
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new BindingException("cannot get " + camelName, ex);
     }
   }
@@ -146,14 +159,26 @@ public class DefaultBindableElement implements BindableElement {
       }
       // setter takes precedence over field
       if (setter != null) {
-        setter.invoke(parent, value);
+        try {
+          setter.invoke(parent, value);
+        }
+        catch (IllegalAccessException ex) {
+          setter.setAccessible(true);
+          setter.invoke(parent, value);
+        }
       }
       else if (field != null) {
-        field.set(parent, value);
+        try {
+          field.set(parent, value);
+        }
+        catch (IllegalAccessException ex) {
+          field.setAccessible(true);
+          field.set(parent, value);
+        }
       }
       // it is okay that there's no setter and no field (for example read-only methods)
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new BindingException("cannot set " + camelName, ex);
     }
   }

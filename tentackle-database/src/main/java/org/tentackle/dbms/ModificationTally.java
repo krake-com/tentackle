@@ -74,8 +74,8 @@ public class ModificationTally {
           // try again
           clazzVar = DbObjectClassVariables.getVariables(trackedName);
         }
-        catch (Exception ex) {
-          // may be not a PDO class...
+        catch (ClassNotFoundException | RuntimeException ex) {
+          LOGGER.fine("not a PDO class", ex);
         }
       }
     }

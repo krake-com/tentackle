@@ -22,6 +22,7 @@ package org.tentackle.dbms;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -502,7 +503,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
           }
         }
       }
-      catch (Exception ex) {
+      catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
         throw new PersistenceException("couldn't invoke " + ref.method, ex);
       }
     }

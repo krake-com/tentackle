@@ -743,7 +743,7 @@ public class DefaultDbPool implements SessionPool {
             }
           }
         }
-        catch (Exception ex) {
+        catch (RuntimeException ex) {
           LOGGER.severe("cleaning up unused Db instance(s) failed", ex);
         }
       }

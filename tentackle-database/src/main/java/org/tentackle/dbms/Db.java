@@ -21,10 +21,13 @@
 package org.tentackle.dbms;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -75,6 +78,7 @@ import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionTaskDispatcher;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.session.TransactionEnvelope;
+import org.tentackle.session.VersionInfoIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
@@ -370,8 +374,8 @@ public class Db implements Session, Cloneable {
         try {
           backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
         }
-        catch (FileNotFoundException e1) {
-          throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' not found");
+        catch (IOException e1) {
+          throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' could not be loaded", e1);
         }
       }
 
@@ -403,7 +407,7 @@ public class Db implements Session, Cloneable {
     catch (PersistenceException rex) {
       throw rex;
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new PersistenceException(this, "database configuration failed", ex);
     }
   }
@@ -1004,10 +1008,9 @@ public class Db implements Session, Cloneable {
 
       registerSession();
     }
-
-    // warning causes
-    catch (Exception e)  {
-      throw handleConnectException(e);
+    catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException |
+           VersionInfoIncompatibleException ex)  {
+      throw handleConnectException(ex);
     }
   }
 
@@ -1103,7 +1106,7 @@ public class Db implements Session, Cloneable {
           try {
             closeHandler.beforeClose(this);
           }
-          catch (Exception ex) {
+          catch (RuntimeException ex) {
             LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
           }
         }
@@ -1111,7 +1114,7 @@ public class Db implements Session, Cloneable {
           try {
             closeHandler.beforeClose(this);
           }
-          catch (Exception ex) {
+          catch (RuntimeException ex) {
             LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
           }
         }
@@ -1133,7 +1136,7 @@ public class Db implements Session, Cloneable {
               try {
                 c.closePreparedStatements(true);   // cleanup all pending statements
               }
-              catch (Exception ex) {
+              catch (RuntimeException ex) {
                 LOGGER.warning("closing prepared statements failed for " + this, ex);
               }
             }
@@ -1146,7 +1149,7 @@ public class Db implements Session, Cloneable {
           try {
             closeHandler.afterClose(this);
           }
-          catch (Exception ex) {
+          catch (RuntimeException ex) {
             LOGGER.warning("closehandler.afterClose failed for " + this, ex);
           }
         }
@@ -1154,12 +1157,15 @@ public class Db implements Session, Cloneable {
           try {
             closeHandler.afterClose(this);
           }
-          catch (Exception ex) {
+          catch (RuntimeException ex) {
             LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
           }
         }
       }
-      catch (Exception e) {
+      catch (PersistenceException pe) {
+        throw pe;
+      }
+      catch (RemoteException | RuntimeException e) {
         throw new PersistenceException(this, "closing session failed", e);
       }
       finally {
@@ -1184,11 +1190,11 @@ public class Db implements Session, Cloneable {
         close();
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
        try {
         LOGGER.severe("closing unreferenced session '" + this + "' failed in finalizer");
       }
-      catch (Exception ex2) {
+      catch (RuntimeException ex2) {
         // don't stop finalization if just the logging failed
       }
     }
@@ -2665,7 +2671,7 @@ public class Db implements Session, Cloneable {
       newDb.registerSession();
       return newDb;
     }
-    catch (Exception e)  {
+    catch (CloneNotSupportedException | RuntimeException e)  {
       throw handleConnectException(e);
     }
   }

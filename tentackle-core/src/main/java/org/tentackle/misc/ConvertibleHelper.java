@@ -18,6 +18,7 @@
 
 package org.tentackle.misc;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +63,7 @@ public final class ConvertibleHelper {
     try {
       return (C) method.invoke(null, external);
     }
-    catch (Exception e) {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
       throw new RuntimeException("invocation of " + method + " failed", e);
     }
   }
@@ -72,5 +73,5 @@ public final class ConvertibleHelper {
    * prevent instantiation.
    */
   private ConvertibleHelper() {}
-  
+
 }

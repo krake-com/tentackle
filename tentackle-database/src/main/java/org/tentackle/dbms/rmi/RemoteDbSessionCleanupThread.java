@@ -103,7 +103,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       catch (InterruptedException ix) {
         // ignore
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         LOGGER.severe("cleanup sessions failed", ex);
       }
     }
@@ -223,7 +223,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       session.cleanup(true);
       session.closeDb(true);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.severe("session cleanup failed for " + session + "\n    -> moved to zombie sessions!", ex);
       zombieSessions.put(session, 1);
     }
@@ -269,7 +269,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
       session.closeDb(true);
       return true;
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.severe("zombie session cleanup failed for " + session, ex);
       return false;
     }

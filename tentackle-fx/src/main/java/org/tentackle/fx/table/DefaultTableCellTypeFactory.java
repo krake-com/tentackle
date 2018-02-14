@@ -61,7 +61,7 @@ public class DefaultTableCellTypeFactory implements TableCellTypeFactory {
       // not created yet
       try {
         Class<TableCellType<T>> cellTypeClass = (Class<TableCellType<T>>) cellTypeMapper.mapLenient(clazz);
-        cellType = cellTypeClass.getConstructor().newInstance();
+        cellType = cellTypeClass.getDeclaredConstructor().newInstance();
         cellTypeMap.put(itemClass, cellType);
       }
       catch (ClassNotFoundException | SecurityException | InstantiationException |

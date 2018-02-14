@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms.rmi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
@@ -75,9 +76,10 @@ public class AbstractDbOperationRemoteDelegateImpl<P extends AbstractDbOperation
    */
   protected P newInstance() {
     try {
-      return getServicedClass().getConstructor(Db.class).newInstance(getSession());
+      return getServicedClass().getDeclaredConstructor(Db.class).newInstance(getSession());
     }
-    catch (Exception e) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException e) {
       throw new PersistenceException(getSession(), "creating object for class '" + getServicedClass() + "' failed", e);
     }
   }

@@ -164,7 +164,7 @@ public class RubyScript extends AbstractScript {
         result = executeImpl(script, variables);
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new ScriptRuntimeException(ex);
     }
 

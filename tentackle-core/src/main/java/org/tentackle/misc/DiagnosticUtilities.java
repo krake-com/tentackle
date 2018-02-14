@@ -132,7 +132,7 @@ public class DiagnosticUtilities {
     try {
       doCreateStackDump(buf);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       buf.append("CREATING STACKDUMP FAILED:\n")
          .append(ExceptionHelper.getStackTraceAsString(ex));
     }

@@ -98,7 +98,7 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
          ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
       try {
         String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getConstructor().newInstance();
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
         messageConverterMap.put(language, converter);
       }
       catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
@@ -110,10 +110,11 @@ public class CheckValidationsMojo extends AbstractCheckMojo {
          ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
       try {
         String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
         validationConverterMap.put(language, converter);
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
         throw new MojoFailureException("validation script converter configuration failed", ex);
       }
     }

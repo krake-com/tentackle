@@ -239,9 +239,9 @@ public class RemoteMethodInfo {
     Element classElement = methodElement.getEnclosingElement();
     setClassName(classElement.toString());
     try {
-      setSuperClassName(((TypeElement)classElement).getSuperclass().toString());
+      setSuperClassName(((TypeElement) classElement).getSuperclass().toString());
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       setSuperClassName(null);    // no superclass
     }
     setMethodName(methodElement.getSimpleName().toString());

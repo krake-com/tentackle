@@ -19,6 +19,7 @@
 
 package org.tentackle.app;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Driver;
@@ -550,9 +551,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     String secman = getProperty("secman");   // NOI18N
     if (secman != null && !secman.isEmpty()) {
       try {
-        System.setSecurityManager((java.lang.SecurityManager)(Class.forName(secman).getConstructor().newInstance()));
+        System.setSecurityManager((java.lang.SecurityManager)(Class.forName(secman).getDeclaredConstructor().newInstance()));
       }
-      catch (Exception ex) {
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
         throw new ApplicationException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
       }
     }

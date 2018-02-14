@@ -21,6 +21,7 @@
 package org.tentackle.dbms.rmi;
 
 import java.rmi.RemoteException;
+import java.text.ParseException;
 import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.ModificationLog;
@@ -46,7 +47,7 @@ public class ModificationLogRemoteDelegateImpl
       obj.setSession(getSession());
       obj.updateProcessed(processed);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -57,7 +58,7 @@ public class ModificationLogRemoteDelegateImpl
       obj.setSession(getSession());
       obj.updateDiagnostics(processed, comment);
     }
-    catch (Exception e) {
+    catch (RuntimeException | ParseException e) {
       throw createException(e);
     }
   }
@@ -73,7 +74,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return newInstance().selectFirstUnprocessed();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -83,7 +84,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return newInstance().selectFirstUnprocessedGreater(id);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -93,7 +94,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return newInstance().selectGreaterId(id);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -103,7 +104,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return newInstance().selectLastProcessed();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -113,7 +114,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.selectByObject(objectClassId, objectId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -123,7 +124,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.selectByUserAndType(user, modType);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -133,7 +134,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.isReferencingUser(user);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -143,7 +144,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.isReferencingObject(objectClassId, objectId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -153,7 +154,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.updateByObjectTypeSerial(processed, objectClassId, objectId, modType, serial);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -163,7 +164,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.deleteByObjectTypeSerial(objectClassId, objectId, modType, serial);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -173,7 +174,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.selectByTxId(txId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -183,7 +184,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.updateUnprocessedByTxId(processed, txId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -193,7 +194,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.deleteByTxId(txId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -203,7 +204,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.deleteProcessed(processed);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -213,7 +214,7 @@ public class ModificationLogRemoteDelegateImpl
     try {
       return dbObject.selectUpTo(processed);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

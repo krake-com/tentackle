@@ -21,6 +21,7 @@ package org.tentackle.web.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Properties;
 import javax.naming.InitialContext;
@@ -135,7 +136,7 @@ public abstract class WebApplication<T> extends AbstractApplication
       WebApplication<T> app = getWebApplication();
       if (app == null) {
         try {
-          app = clazz.newInstance();
+          app = clazz.getDeclaredConstructor().newInstance();
           if (app.isRunningInContainer()) {
             // if in container: add extra properties
             javax.naming.Context env = (javax.naming.Context) new InitialContext().lookup("java:comp/env"); // must work!
@@ -159,12 +160,11 @@ public abstract class WebApplication<T> extends AbstractApplication
           // start the app
           app.start(props);
         }
-
-        catch (InstantiationException | IllegalAccessException | NamingException | ApplicationException ex) {
-          LOGGER.logStacktrace(ex);
-          if (ex instanceof ApplicationException) {
-            throw (ApplicationException)ex;
-          }
+        catch (ApplicationException ax) {
+          throw ax;
+        }
+        catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+               SecurityException | InvocationTargetException | NamingException ex) {
           if (app != null) {
             app.doStop(4);
           }
@@ -559,7 +559,7 @@ public abstract class WebApplication<T> extends AbstractApplication
         deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
       }
     }
-    catch (Exception anyEx) {
+    catch (ApplicationException | RuntimeException anyEx) {
       LOGGER.severe("web server stopped ungracefully", anyEx);
     }
 

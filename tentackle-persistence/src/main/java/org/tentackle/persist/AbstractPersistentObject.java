@@ -319,12 +319,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   protected Method findSnapshotMethod(String methodName, Class<?> clazz) throws NoSuchMethodException {
     while(clazz != null) {
       try {
-        Method method = clazz.getDeclaredMethod(methodName, clazz);
-        if (!method.isAccessible()) {
-          // generated methods are usually protected or private, make them accessible
-          method.setAccessible(true);
-        }
-        return method;
+        return clazz.getDeclaredMethod(methodName, clazz);
       }
       catch (NoSuchMethodException ex) {
         clazz = clazz.getSuperclass();
@@ -349,13 +344,27 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Class<?> persistentClass = persistentSnapshot.getClass();
     try {
       Method createAttributesInSnapshotMethod = findSnapshotMethod("createAttributesInSnapshot", persistentClass);
+      try {
+        createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+      catch (IllegalAccessException ex) {
+        createAttributesInSnapshotMethod.setAccessible(true);
+        createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+
       Method createComponentsInSnapshotMethod = findSnapshotMethod("createComponentsInSnapshot", persistentClass);
-      createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
-      createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
+      try {
+        createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+      catch (IllegalAccessException ex) {
+        createComponentsInSnapshotMethod.setAccessible(true);
+        createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+
       addSnapshot(snapshot);
       return snapshot;
     }
-    catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+    catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | InvocationTargetException ex) {
       throw new PersistenceException(this, "creating snapshot incorrectly implemented", ex);
     }
   }
@@ -409,9 +418,22 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       Class<?> persistentClass = persistentSnapshot.getClass();
       try {
         Method revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", persistentClass);
+        try {
+          revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
+        }
+        catch (IllegalAccessException ex) {
+          revertAttributesToSnapshotMethod.setAccessible(true);
+          revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
+        }
+
         Method revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", persistentClass);
-        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+        try {
+          revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+        }
+        catch (IllegalAccessException ex) {
+          revertComponentsToSnapshotMethod.setAccessible(true);
+          revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+        }
       }
       catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
         throw new PersistenceException(this, "reverting snapshot incorrectly implemented", ex);

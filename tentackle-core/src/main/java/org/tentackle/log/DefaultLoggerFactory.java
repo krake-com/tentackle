@@ -41,7 +41,7 @@ public class DefaultLoggerFactory implements LoggerFactory {
     try {
       return ServiceFactory.createServiceClass(Logger.class);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       Logger logger = new DefaultLogger(DefaultLoggerFactory.class.getName());
       String msg = "could not configure logging backend -> using DefaultLogger";
       if (logger.isFineLoggable()) {

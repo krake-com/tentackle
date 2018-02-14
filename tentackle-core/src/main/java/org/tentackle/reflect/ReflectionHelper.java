@@ -21,6 +21,7 @@ package org.tentackle.reflect;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -120,7 +121,7 @@ public final class ReflectionHelper {
       sb.append(')');
       return sb.toString();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       return "<" + e + ">";
     }
   }
@@ -298,7 +299,7 @@ public final class ReflectionHelper {
       else if ("S".equals(type))  {
         type = "short";
       }
-      
+
       buf.insert(0, type);
 
       return buf.toString();
@@ -657,22 +658,34 @@ public final class ReflectionHelper {
         Method method = getMethodForElement(clazz, element);
         if (method != null && isGetter(method)) {
           try {
-            value = method.invoke(root);
+            try {
+              value = method.invoke(root);
+            }
+            catch (IllegalAccessException ex) {
+              method.setAccessible(true);
+              value = method.invoke(root);
+            }
           }
-          catch (Exception ex) {
+          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new ApplicationException("cannot retrieve '" + donePath + "' in " +
-                            root.getClass().getName() + " by method " + method.getName(), ex);
+                                           root.getClass().getName() + " by method " + method.getName(), ex);
           }
         }
         else  {
           Field field = getFieldForElement(clazz, element);
           if (field != null) {
             try {
-              value = field.get(root);
+              try {
+                value = field.get(root);
+              }
+              catch (IllegalAccessException ex) {
+                field.setAccessible(true);
+                value = field.get(root);
+              }
             }
-            catch (Exception ex) {
+            catch (IllegalAccessException | IllegalArgumentException ex) {
               throw new ApplicationException("cannot retrieve '" + donePath + "' in " +
-                          root.getClass().getName() + " by field " + field.getName(), ex);
+                                             root.getClass().getName() + " by field " + field.getName(), ex);
             }
           }
           else  {
@@ -739,11 +752,17 @@ public final class ReflectionHelper {
       Method method = getMethodForElement(clazz, element);
       if (method != null && Modifier.isStatic(method.getModifiers())) {
         try {
-          return getValueByPath(method.invoke(null), path);
+          try {
+            return getValueByPath(method.invoke(null), path);
+          }
+          catch (IllegalAccessException ex) {
+            method.setAccessible(true);
+            return getValueByPath(method.invoke(null), path);
+          }
         }
-        catch (Exception ex) {
+        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | ApplicationException ex) {
           throw new ApplicationException("cannot retrieve '" + path + "' in " +
-                      clazz.getClass().getName() + " by method " + method.getName(), ex);
+                                         clazz.getClass().getName() + " by method " + method.getName(), ex);
         }
       }
     }
@@ -790,24 +809,12 @@ public final class ReflectionHelper {
 
         Method method = getMethodForElement(clazz, element);
         if (method != null) {
-          try {
-            clazz = method.getReturnType();
-          }
-          catch (Exception ex) {
-            throw new ApplicationException("cannot determine '" + donePath + "' in " +
-                          clazz.getName() + " by method " + method.getName(), ex);
-          }
+          clazz = method.getReturnType();
         }
         else  {
           Field field = getFieldForElement(clazz, element);
           if (field != null) {
-            try {
-              clazz = field.getType();
-            }
-            catch (Exception ex) {
-              throw new ApplicationException("cannot determine '" + donePath + "' in " +
-                          clazz.getName() + " by field " + field.getName(), ex);
-            }
+            clazz = field.getType();
           }
           else  {
             throw new ApplicationException("cannot find '" + element + "' in " + clazz.getName());
@@ -856,9 +863,6 @@ public final class ReflectionHelper {
         }
       }
     }
-    if (method != null && !method.isAccessible()) {
-      method.setAccessible(true);
-    }
     return method;
   }
 
@@ -867,9 +871,6 @@ public final class ReflectionHelper {
     Field field = null;
     try {
       field = clazz.getField(element);
-      if (!field.isAccessible()) {
-        field.setAccessible(true);
-      }
     }
     catch (NoSuchFieldException ex1) {
       // return null below

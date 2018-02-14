@@ -1042,7 +1042,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       try {
         r.run();
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         // log but don't cause MD to stop
         LOGGER.logStacktrace(Level.SEVERE, ex);
       }

@@ -236,7 +236,8 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
     int count = 0;
 
     // all fields and/or setter/getters annotated with the @Bindable annotation
-    for (BindableElement element: FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
+    for (BindableElement element:
+         FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
 
       String fieldMemberName = StringHelper.firstToLower(element.getCamelName());
       String fieldMemberPath = (parentMemberPath == null ? "" : (parentMemberPath + ".")) + fieldMemberName;
@@ -255,16 +256,12 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
       }
 
       try {
-
-        if (element.getField() != null && !element.getField().isAccessible()) {
-          element.getField().setAccessible(true);  // make this directly accessible
-        }
-
         // try to bind this member
         for (TableColumnConfiguration<S,?> columnConfig: tableConfig.getColumnConfigurations()) {
           String bindingPath = columnConfig.getName();
           if (bindingPath != null && bindingPath.equals(fieldMemberPath)) {
-            addBinding(FxBindingFactory.getInstance().createTableBinding(this, parents, fieldMember, columnConfig, element.getBindingOptions()));
+            addBinding(FxBindingFactory.getInstance().createTableBinding(
+                    this, parents, fieldMember, columnConfig, element.getBindingOptions()));
             count++;
           }
         }
@@ -272,7 +269,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
         // recursively try to bind sub-members
         count += doBind(fieldParents, fieldMemberPath, fieldMember.getType(), declaredOnly);
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         throw new BindingException("binding " + fieldMemberPath + " failed", ex);
       }
     }

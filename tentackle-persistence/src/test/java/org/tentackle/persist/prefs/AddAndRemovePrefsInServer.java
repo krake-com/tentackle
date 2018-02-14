@@ -22,6 +22,7 @@ package org.tentackle.persist.prefs;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.util.prefs.BackingStoreException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
@@ -125,7 +126,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
           prefs.put(RemotePreferencesTest.KEY_4, RemotePreferencesTest.VALUE_4);
           prefs.flush();
         }
-        catch (Exception bx) {
+        catch (BackingStoreException | RuntimeException bx) {
           LOGGER.severe("adding prefs failed", bx);
           stop();
         }
@@ -144,7 +145,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
           prefs.removeNode();
           prefs.flush();
         }
-        catch (Exception bx) {
+        catch (BackingStoreException | RuntimeException bx) {
           LOGGER.severe("removing prefs failed", bx);
           stop();
         }
@@ -167,7 +168,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
             }
           }
         }
-        catch (Exception bx) {
+        catch (RuntimeException bx) {
           LOGGER.severe("cleanup prefs failed", bx);
           stop();
         }
@@ -208,7 +209,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       server.runTests();
       server.stop();
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       ex.printStackTrace();
       System.exit(1);
     }

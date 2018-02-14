@@ -129,7 +129,7 @@ public class DefaultBundleFactory implements BundleFactory {
         if (providerList == null) {
           providerList = new ArrayList<>();
         }
-        providerList.add(clazz.getConstructor().newInstance());
+        providerList.add(clazz.getDeclaredConstructor().newInstance());
       }
     }
     catch (ClassNotFoundException | InstantiationException | IllegalAccessException |

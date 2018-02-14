@@ -60,7 +60,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
     try {
       return createMasterSerial(((DbModificationTracker) ModificationTracker.getInstance()).getMasterSerial());
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -70,7 +70,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
     try {
       return ((DbModificationTracker) ModificationTracker.getInstance()).getIdSerialForName(tableName);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -80,7 +80,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
     try {
       return ((DbModificationTracker) ModificationTracker.getInstance()).getAllSerials();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }

@@ -48,7 +48,7 @@ public abstract class FxApplication extends Application {
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.severe("start failed", ex);
       throw ex;
     }

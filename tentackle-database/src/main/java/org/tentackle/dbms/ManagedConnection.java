@@ -970,7 +970,7 @@ public class ManagedConnection {
       // as this statement is called when there are no more running statements
       // we ignore the unprepared running statements.
     }
-    catch (Exception e) {
+    catch (SQLException e) {
       throw new PersistenceException (db, "reading warnings failed", e);
     }
   }
@@ -1114,11 +1114,11 @@ public class ManagedConnection {
         closeImpl();
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       try {
         LOGGER.warning("closing unreferenced connection '" + this + "' failed in finalizer", ex);
       }
-      catch (Exception ex2) {
+      catch (RuntimeException ex2) {
         // don't stop finalization if just the logging failed
       }
     }

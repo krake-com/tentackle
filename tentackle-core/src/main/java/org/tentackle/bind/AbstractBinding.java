@@ -257,7 +257,7 @@ public abstract class AbstractBinding implements Binding {
         try {
           object = parentMember.getObject(object);
         }
-        catch (Exception ex) {
+        catch (RuntimeException ex) {
           throw new BindingException("can't walk down to " + parentMember, ex);
         }
       }

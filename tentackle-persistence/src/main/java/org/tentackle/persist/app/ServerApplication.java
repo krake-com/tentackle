@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.app;
 
+import java.rmi.RemoteException;
 import java.util.Properties;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
@@ -158,7 +159,7 @@ public abstract class ServerApplication extends AbstractApplication
       // start the RMI-server
       doStartDbServer();
     }
-    catch (Exception e) {
+    catch (ApplicationException | RuntimeException e) {
       // doStop with error
       doStop(3, e);
     }
@@ -470,7 +471,7 @@ public abstract class ServerApplication extends AbstractApplication
         deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
       }
     }
-    catch (Exception anyEx) {
+    catch (RemoteException | ApplicationException | RuntimeException anyEx) {
       LOGGER.severe("server application stopped ungracefully", anyEx);
     }
 

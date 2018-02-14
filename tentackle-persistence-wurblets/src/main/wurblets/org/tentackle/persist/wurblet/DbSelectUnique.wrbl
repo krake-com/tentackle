@@ -99,7 +99,7 @@ For more options, see {\@link DbModelWurblet}.
     try {
       return newInstance().@(methodName)@(@(iparms)@);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

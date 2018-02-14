@@ -21,6 +21,7 @@
 
 package org.tentackle.dbms.rmi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import org.tentackle.dbms.Db;
@@ -108,6 +109,9 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    * @return the exception
    */
   public RemoteException createException(Throwable t) {
+    if (t instanceof InvocationTargetException) {
+      t = t.getCause();
+    }
     RemoteException rex = new RemoteException(toString(), t);
     rex.setStackTrace(t.getStackTrace());
     return rex;

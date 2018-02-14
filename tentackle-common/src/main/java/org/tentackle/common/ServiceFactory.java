@@ -155,7 +155,7 @@ public class ServiceFactory {
     try {
       return INSTANCE.getServiceFinderImpl().findFirstServiceProvider(serviceClass);
     }
-    catch (Exception ex) {
+    catch (ClassNotFoundException ex) {
       throw new TentackleRuntimeException("cannot create service class for " + serviceClass, ex);
     }
   }
@@ -174,7 +174,8 @@ public class ServiceFactory {
     try {
       return createServiceClass(serviceClass).getDeclaredConstructor().newInstance();
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException ex) {
       throw new TentackleRuntimeException("cannot create instance for " + serviceClass, ex);
     }
   }
@@ -202,7 +203,8 @@ public class ServiceFactory {
                 re);
         return defaultClass.getDeclaredConstructor().newInstance();
       }
-      catch (Exception ex) {
+      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+             SecurityException | InvocationTargetException ex) {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);
       }
     }
@@ -361,7 +363,7 @@ public class ServiceFactory {
       // service finder used to load the effective finder class
       serviceFinderClass = new DefaultServiceFinder().findFirstServiceProvider(ServiceFinder.class);
     }
-    catch (Exception ex) {
+    catch (ClassNotFoundException ex) {
       // we cannot use LOGGER here because this may use the createService as well
       java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(java.util.logging.Level.INFO,
               "cannot load ServiceFinder class -> fallback to " + DefaultServiceFinder.class.getName(), ex);
@@ -582,7 +584,8 @@ public class ServiceFactory {
         finder = getServiceFinderClass().getConstructor(ClassLoader.class, String.class).newInstance(loader, servicePath);
         getFinderMap().put(key, finder);
       }
-      catch (Exception ex) {
+      catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+             SecurityException | InvocationTargetException ex) {
         throw new TentackleRuntimeException("cannot instantiate service finder", ex);
       }
     }

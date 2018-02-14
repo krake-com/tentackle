@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.session.Session;
@@ -75,7 +76,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, context);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " in context " + context, e);
     }
   }
@@ -89,7 +91,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, session);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for session " + session, e);
     }
   }
@@ -103,7 +106,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, persistenceDelegate);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for persistence delegate " + persistenceDelegate, e);
     }
   }
@@ -117,7 +121,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, context, domainDelegate);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
@@ -131,7 +136,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, session, domainDelegate);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
@@ -145,8 +151,9 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, persistenceDelegate, domainDelegate);
       return instance;
     }
-    catch (Exception e) {
-      throw new PdoRuntimeException("cannot create operation for class " + clazz + " for delegates " + persistenceDelegate + " : " + domainDelegate, e);
+    catch (ClassNotFoundException e) {
+      throw new PdoRuntimeException("cannot create operation for class " + clazz + " for delegates " +
+                                    persistenceDelegate + " : " + domainDelegate, e);
     }
   }
 
@@ -159,7 +166,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation for class " + clazz, e);
     }
   }
@@ -175,7 +183,8 @@ public abstract class AbstractOperationFactory implements OperationFactory {
       handler.setupDelegates(instance, op.getDomainContext());
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new PdoRuntimeException("cannot create operation from template " + op, e);
     }
   }

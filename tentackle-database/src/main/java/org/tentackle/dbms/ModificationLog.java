@@ -876,7 +876,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       lazyObject = loadObject(session, clazz, objectId);
       return (T) lazyObject;
     }
-    catch (Exception ex) {
+    catch (ClassNotFoundException | RuntimeException ex) {
       throw new PersistenceException(this, "can't load object " + className + "[" + objectId + "]", ex);
     }
   }

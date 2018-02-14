@@ -155,7 +155,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   public PersistentOperation<T> newInstance() {
     try {
       @SuppressWarnings("unchecked")
-      T obj = (T) getClass().getConstructor().newInstance();
+      T obj = (T) getClass().getDeclaredConstructor().newInstance();
       obj.setSession(getSession());
       return obj;
     }

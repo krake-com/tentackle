@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.rmi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -68,7 +69,7 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
     try {
       dbOperation = newInstance(Pdo.createDomainContext(getSession()));
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       /**
        * Application requires an extended contextdb.
        * Try construction with a session only.
@@ -102,7 +103,8 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
       context.setSession(getSession());
       return getServicedClass().getConstructor(DomainContext.class).newInstance(context);
     }
-    catch (Exception e) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           SecurityException | InvocationTargetException e) {
       throw new PersistenceException("creating object for class '" + getServicedClass() + "' in failed", e);
     }
   }

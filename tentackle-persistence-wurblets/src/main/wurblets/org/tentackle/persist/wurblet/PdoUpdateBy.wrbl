@@ -92,7 +92,7 @@ For more options, see {\@link DbModelWurblet}.
       setDomainContext(context);
       return dbObject.@(methodName)@(@(iparms)@);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -112,7 +112,7 @@ For more options, see {\@link DbModelWurblet}.
     try {
       return dbObject.@(methodName)@(@(iparms)@);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

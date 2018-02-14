@@ -224,7 +224,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       try {
         return Pdo.create(objectClassName, getDomainContext()).select(objectId);
       }
-      catch (Exception e) {
+      catch (RuntimeException e) {
         LOGGER.warning("can't get secured object for " + objectClassName + ", " + objectId);
       }
     }

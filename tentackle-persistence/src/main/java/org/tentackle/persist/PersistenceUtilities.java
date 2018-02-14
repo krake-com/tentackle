@@ -97,7 +97,7 @@ public class PersistenceUtilities extends DbUtilities {
       }
       return tableSerialTableName;
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new IllegalStateException(
               "can't evaluate the name of the table holding the tableserial for " + clazzVar, ex);
     }

@@ -82,7 +82,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
           throw new SecurityException("permission implementation " + permissionImplementation.getName() +
                                       " does not implement " + permissionInterface.getName());
         }
-        Permission permission = permissionImplementation.getConstructor().newInstance();
+        Permission permission = permissionImplementation.getDeclaredConstructor().newInstance();
         if (permission.getClass().getInterfaces()[0] != permissionInterface) {
           throw new SecurityException("permission interface of " + permissionImplementation.getName() +
                                       " is not a " + permissionInterface.getName());

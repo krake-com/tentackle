@@ -139,7 +139,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
       // finish startup
       doFinishStartup();
     }
-    catch (Exception e) {
+    catch (ApplicationException | RuntimeException e) {
       // print message to user, if GUI in window, else if headless to console
       LOGGER.logStacktrace(e);
       // doStop with error
@@ -156,7 +156,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
       unregister();   // not really necessary cause of System.exit in doStop...
       doStop(0);
     }
-    catch (Exception e) {
+    catch (ApplicationException | RuntimeException e) {
       LOGGER.logStacktrace(e);
       // doStop with error
       doStop(4, e);
@@ -296,7 +296,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
         }
       }
     }
-    catch (Exception anyEx) {
+    catch (RuntimeException anyEx) {
       LOGGER.severe("console application stopped ungracefully", anyEx);
     }
 

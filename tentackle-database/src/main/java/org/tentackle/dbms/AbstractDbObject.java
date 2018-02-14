@@ -106,7 +106,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   static public <P extends AbstractDbObject<?>> P newInstance(Class<P> clazz) {
     try {
       // load the class
-      return clazz.getConstructor().newInstance();
+      return clazz.getDeclaredConstructor().newInstance();
     }
     catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
       throw new PersistenceException("creating object for " + clazz + " failed", e);
@@ -607,7 +607,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public P newInstance() {
     try {
-      AbstractDbObject obj = getClass().getConstructor().newInstance();
+      AbstractDbObject obj = getClass().getDeclaredConstructor().newInstance();
       obj.session = session;
       obj.sessionHolder = sessionHolder;
       return (P) obj;
@@ -1221,7 +1221,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @Override
   public boolean equals (Object object) {
-    try {
+    if (object != null) {
       long objectId = ((AbstractDbObject<?>) object).getId();
       if (objectId == 0 || getId() == 0) {
         // no Id -> no PDO identity -> use object address
@@ -1229,9 +1229,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       return objectId == getId() && getClass() == object.getClass();
     }
-    catch (Exception ex) {
-      return false;
-    }
+    return false;
   }
 
 
@@ -1249,7 +1247,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @Override
   public int compareTo(P obj) {
-    try {
+    if (obj != null) {
       int rv = Long.compare(getId(), obj.getId());
       if (rv == 0) {
         // should not happen, but one never knows: check the class
@@ -1259,9 +1257,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       }
       return rv;
     }
-    catch (Exception ex)  {
-      return 1;
-    }
+    return 1;
   }
 
 

@@ -413,7 +413,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     int count = 0;
 
     // all fields and/or setter/getters annotated with the @Bindable annotation
-    for (BindableElement element: FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
+    for (BindableElement element:
+         FxBindingFactory.getInstance().getBindableCache().getBindableMap(parentClass, declaredOnly).values()) {
 
       String fieldMemberName = StringHelper.firstToLower(element.getCamelName());
       String fieldMemberPath = (parentMemberPath == null ? "" : (parentMemberPath + ".")) + fieldMemberName;
@@ -432,11 +433,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
       }
 
       try {
-
-        if (element.getField() != null && !element.getField().isAccessible()) {
-          element.getField().setAccessible(true);  // make this directly accessible
-        }
-
         // try to bind this member
         FxComponent component = findComponent(fieldMemberPath);
         if (component != null && component.getBinding() == null) {
@@ -450,7 +446,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         // recursively try to bind sub-members
         count += doBind(fieldParents, fieldMemberPath, fieldMember.getType(), declaredOnly);
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         throw new BindingException("binding " + fieldMemberPath + " failed", ex);
       }
     }
@@ -555,10 +551,13 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     FxComponent component = null;
     try {
       if (FxComponent.class.isAssignableFrom(field.getType())) {
-        if (!field.isAccessible()) {
-          field.setAccessible(true);
+        try {
+          component = (FxComponent) field.get(controller);
         }
-        component = (FxComponent) field.get(controller);
+        catch (IllegalAccessException ex) {
+          field.setAccessible(true);
+          component = (FxComponent) field.get(controller);
+        }
         if (component == null) {
           throw new BindingException(field + " is null");
         }
@@ -567,7 +566,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
     catch (BindingException bx) {
       throw bx;
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException ex) {
       throw new BindingException("cannot access " + field, ex);
     }
     return component;

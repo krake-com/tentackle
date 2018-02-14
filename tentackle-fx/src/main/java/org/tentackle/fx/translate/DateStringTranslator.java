@@ -491,7 +491,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             getComponent().setError(e.getMessage());
             return null;    // start over
           }
-          catch (Exception e) {
+          catch (RuntimeException e) {
             // fall through...
           }
         }

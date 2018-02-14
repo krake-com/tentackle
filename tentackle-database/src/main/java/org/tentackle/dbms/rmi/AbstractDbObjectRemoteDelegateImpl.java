@@ -80,7 +80,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
     try {
       return AbstractDbObject.newInstance(getSession(), getServicedClass());
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw new PersistenceException(getSession(), "creating object for class '" + getServicedClass() + "' failed", e);
     }
   }
@@ -102,7 +102,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    try {
       return -dbObject.getIdSource().nextId(getSession());
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -377,7 +377,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
     try {
       return dbObject.countModification();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

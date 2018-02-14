@@ -145,7 +145,7 @@ public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implemen
         LOGGER.fine("{0}: keep alive on {1}", this, session);
         session.setAlive(true);
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         // some severe exception, e.g. connection lost, backend error, etc...
         LOGGER.severe("ping failed -> terminating " + this, ex);
         requestTermination();

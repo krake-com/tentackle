@@ -70,7 +70,7 @@ For more options, see {\@link DbModelWurblet}.
     try {
       return dbObject.@(methodName)@(@(iparms)@);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

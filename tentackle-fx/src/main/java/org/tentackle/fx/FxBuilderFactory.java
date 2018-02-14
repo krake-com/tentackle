@@ -78,7 +78,7 @@ public class FxBuilderFactory implements BuilderFactory {
          * and not cached by FXMLLoader in any way.
          * This allows the builder to extend BeanAdapter and wrap a single node.
          */
-        builder = (Builder<?>) builderClass.getConstructor().newInstance();
+        builder = (Builder<?>) builderClass.getDeclaredConstructor().newInstance();
       }
       catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException ex) {
         throw new FxRuntimeException("cannot create builder for " + type, ex);

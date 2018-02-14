@@ -491,7 +491,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
       return !isSecurityEnabled() ||
              SecurityFactory.getInstance().getSecurityManager().evaluate(context, permission, classId, 0).isAccepted();
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       // either context not set or security manager or whatever...
       return false;
     }

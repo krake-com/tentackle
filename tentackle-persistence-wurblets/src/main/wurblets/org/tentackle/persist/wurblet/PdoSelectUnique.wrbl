@@ -120,7 +120,7 @@ For more options, see {\@link DbModelWurblet}.
     try {
       return newInstance(context).@(methodName)@(@(iparms)@);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

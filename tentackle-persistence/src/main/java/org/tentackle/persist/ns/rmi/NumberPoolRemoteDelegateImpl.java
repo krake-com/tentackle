@@ -45,7 +45,7 @@ public class NumberPoolRemoteDelegateImpl
     try {
       return newInstance(context).selectByUniqueDomainKey(name);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -55,7 +55,7 @@ public class NumberPoolRemoteDelegateImpl
     try {
       return newInstance(context).selectByNameRealm(name, realm);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

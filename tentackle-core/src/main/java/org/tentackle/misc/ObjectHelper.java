@@ -19,6 +19,7 @@
 
 package org.tentackle.misc;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
@@ -57,7 +58,7 @@ public final class ObjectHelper {
             // ok, let's clone...
             cobj = m.invoke(obj);
           }
-          catch (Exception ex) {
+          catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             throw new CloneNotSupportedException("clone() failed: " + ex.getMessage());
           }
         }

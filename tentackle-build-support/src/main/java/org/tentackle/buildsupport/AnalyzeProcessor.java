@@ -181,7 +181,7 @@ public class AnalyzeProcessor extends AbstractTentackleProcessor {
               try {
                 @SuppressWarnings("unchecked")
                 Class<AnalyzeHandler> handlerClass = (Class<AnalyzeHandler>) Class.forName(handlerClassName);
-                AnalyzeHandler handler = handlerClass.getConstructor().newInstance();
+                AnalyzeHandler handler = handlerClass.getDeclaredConstructor().newInstance();
                 handler.setProcessor(this);
                 handlers.add(handler);
                 if (handlers.size() > MAX_HANDLERS) {

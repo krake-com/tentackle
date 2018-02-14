@@ -258,7 +258,7 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
     try {
       LOGGER.warning("Connection object " + getClass().getName() + " finalized unexpectedly:\n" + this);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       // don't stop finalization if just the logging failed
     }
     finally {

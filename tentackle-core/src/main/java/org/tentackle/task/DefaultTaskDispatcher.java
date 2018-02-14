@@ -486,7 +486,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       try {
         listener.started(task);
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         LOGGER.warning("invoking listener failed", ex);
       }
     }
@@ -503,7 +503,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       try {
         listener.completed(task);
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         LOGGER.warning("invoking listener failed", ex);
       }
     }
@@ -578,7 +578,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           try {
             executeTask(task);
           }
-          catch (Exception ex) {
+          catch (RuntimeException ex) {
             // some other exception (not task.run)
             LOGGER.severe("executing task failed", ex);
           }
@@ -593,7 +593,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     try {
       cleanup();
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.warning("cleanup failed", ex);
     }
 
@@ -651,7 +651,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         try {
           task.setCompleted(lastMillis);
         }
-        catch (Exception ex) {
+        catch (RuntimeException ex) {
           LOGGER.severe("cannot set task '" + task + "', ID=" + task.getId() + " completed", ex);
         }
         lastActivity = lastMillis;

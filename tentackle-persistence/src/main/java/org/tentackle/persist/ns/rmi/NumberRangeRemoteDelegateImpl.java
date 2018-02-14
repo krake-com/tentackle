@@ -47,7 +47,7 @@ public class NumberRangeRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByNumberPoolId(numberPoolId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

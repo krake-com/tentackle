@@ -21,6 +21,7 @@
 package org.tentackle.dbms.rmi;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -65,7 +66,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getSessionId();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -75,7 +76,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setSessionGroupId(number);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -85,7 +86,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getSessionGroupId();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -95,7 +96,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().groupWith(number);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -105,7 +106,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().isAlive();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -115,7 +116,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setAlive(alive);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -125,7 +126,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().commit(txVoucher);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -135,7 +136,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().rollback(txVoucher, withLog);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -145,7 +146,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return (long) beginMethod.invoke(getSession(), txName, true);
     }
-    catch (Exception ex)  {
+    catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)  {
       throw createException(ex);
     }
   }
@@ -155,7 +156,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().setSavepoint();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -165,7 +166,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().setSavepoint(name);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -175,7 +176,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().rollback(handle);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -185,7 +186,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().releaseSavepoint(handle);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -195,7 +196,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setReadOnly(flag);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -205,7 +206,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setCountModificationAllowed(flag);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -215,7 +216,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setLogModificationAllowed(flag);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -225,7 +226,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setLogModificationTxEnabled(flag);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -235,7 +236,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       getSession().setLogModificationTxId(txId);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -245,7 +246,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getLogModificationTxId();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -256,7 +257,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
       getSession().setLogModificationDeferred(flag);
       return getSession().isLogModificationDeferred();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -266,7 +267,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().popModificationLogsOfTransaction();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -276,7 +277,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().registerPersistenceVisitor(visitor);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -286,7 +287,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().unregisterPersistenceVisitor(handle);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -296,7 +297,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getPersistenceVisitors();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -307,7 +308,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().registerCommitTxRunnable(runnable);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -317,7 +318,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().unregisterCommitTxRunnable(handle);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -327,7 +328,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getCommitTxRunnables();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -338,7 +339,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().registerRollbackTxRunnable(runnable);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -348,7 +349,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().unregisterRollbackTxRunnable(handle);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -358,7 +359,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getRollbackTxRunnables();
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -368,7 +369,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().setProperty(key, value);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }
@@ -378,7 +379,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
     try {
       return getSession().getProperty(key);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw createException(ex);
     }
   }

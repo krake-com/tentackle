@@ -62,11 +62,13 @@ public class InvokeInBuddyDelegateInterceptor extends AbstractInterceptor {
 
     String effectiveMethodName = methodName.equals(Constants.NAME_UNKNOWN) ? method.getName() : methodName;
     Method buddyMethod = buddyDelegate.getClass().getDeclaredMethod(effectiveMethodName, method.getParameterTypes());
-    if (!buddyMethod.isAccessible()) {
-      // allow private methods
-      buddyMethod.setAccessible(true);
+    try {
+      return buddyMethod.invoke(buddyDelegate, args);
     }
-    return buddyMethod.invoke(buddyDelegate, args);
+    catch (IllegalAccessException ex) {
+      buddyMethod.setAccessible(true);
+      return buddyMethod.invoke(buddyDelegate, args);
+    }
   }
 
 }

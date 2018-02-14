@@ -46,7 +46,7 @@ public class StoredBundleKeyRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.selectByBundleId(bundleId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }

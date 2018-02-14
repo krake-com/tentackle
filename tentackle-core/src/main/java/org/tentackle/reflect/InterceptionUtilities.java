@@ -20,6 +20,7 @@
 package org.tentackle.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -147,11 +148,12 @@ public class InterceptionUtilities {
           implClass = (Class<? extends Interceptor>) Class.forName(entry.getKey());
         }
       }
-      Interceptor interceptor = implClass.newInstance();
+      Interceptor interceptor = implClass.getDeclaredConstructor().newInstance();
       interceptor.setAnnotation(annotation);
       return interceptor;
     }
-    catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | SecurityException | InvocationTargetException ex) {
       throw new TentackleRuntimeException("interceptor @" + annotation + " could not be created", ex);
     }
   }

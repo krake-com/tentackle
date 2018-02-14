@@ -18,6 +18,7 @@
 
 package org.tentackle.reflect;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import org.tentackle.common.Service;
 import org.tentackle.common.TentackleRuntimeException;
@@ -48,7 +49,8 @@ public class DefaultInterceptableFactory implements InterceptableFactory {
       handler.setupDelegate(instance, clazz);
       return instance;
     }
-    catch (Exception e) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException e) {
       throw new TentackleRuntimeException("cannot create interceptable for class " + clazz, e);
     }
   }

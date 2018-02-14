@@ -28,6 +28,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -235,7 +236,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       // switch to client info for logging
       db.setSessionInfo(clientInfo);
     }
-    catch (Exception ex)  {
+    catch (ServerNotActiveException | RuntimeException ex) {
       if (db != null) {
         cleanup(false);
         closeDb(false);
@@ -486,7 +487,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         LOGGER.info("using {0}", pooledDb);
         return pooledDb;
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         throw new LoginFailedException("open Db failed", ex);
       }
     }
@@ -576,7 +577,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           zombieDb.getPool().putSession(zombieDb);
         }
       }
-      catch (Exception ex) {
+      catch (RuntimeException ex) {
         LOGGER.warning("forced cleanup may be incomplete", ex);
       }
     }
@@ -685,11 +686,11 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
       close();    // cleanup in case client forgot
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       try {
         LOGGER.severe("closing unreferenced session '" + this + "' failed in finalizer", ex);
       }
-      catch (Exception ex2) {
+      catch (RuntimeException ex2) {
         // don't stop finalization if just the logging failed
       }
     }
@@ -719,7 +720,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         closeDb(false);
       }
     }
-    catch (Exception ex)  {
+    catch (RemoteException | RuntimeException ex)  {
       throw new RemoteException("closing db failed", ex);
     }
   }
@@ -730,7 +731,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       LOGGER.log(level, message, null);
     }
-    catch (Exception ex)  {
+    catch (RuntimeException ex)  {
       throw new RemoteException("log() failed", ex);
     }
   }
@@ -741,7 +742,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       doLogStatistics(level, clear);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new RemoteException("logStatistics failed", ex);
     }
   }
@@ -808,7 +809,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     catch (RemoteException remex) {
       throw remex;
     }
-    catch (Exception ex)  {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+           NoSuchMethodException | InvocationTargetException ex)  {
       throw new RemoteException("coudn't create delegate for " + classname, ex);
     }
   }
@@ -821,7 +823,8 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       exportRemoteDelegate(delegate);
       return delegate;
     }
-    catch (Exception ex)  {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           InvocationTargetException | RemoteException ex)  {
       throw new RemoteException("coudn't create delegate for " + db, ex);
     }
   }

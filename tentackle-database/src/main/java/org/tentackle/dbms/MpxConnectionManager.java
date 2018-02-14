@@ -654,7 +654,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
               int count = createConnections(conRequestCount);
               conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
             }
-            catch (Exception e) {
+            catch (RuntimeException e) {
               LOGGER.warning(MpxConnectionManager.this + ": creating connections failed", e);
             }
 

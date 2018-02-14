@@ -21,6 +21,7 @@ package org.tentackle.validate.validator;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -72,10 +73,11 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
          ServiceFactory.getServiceFinder().createNameMap(MessageScriptConverter.class.getName()).entrySet()) {
       try {
         String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
         MESSAGE_CONVERTER_MAP.put(language, converter);
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("message script converter configuration failed", ex);
       }
     }
@@ -85,10 +87,11 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
          ServiceFactory.getServiceFinder().createNameMap(ValidationScriptConverter.class.getName()).entrySet()) {
       try {
         String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
-        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).newInstance();
+        ScriptConverter converter = (ScriptConverter) Class.forName(entry.getValue()).getDeclaredConstructor().newInstance();
         VALIDATION_CONVERTER_MAP.put(language, converter);
       }
-      catch (ClassNotFoundException | IllegalAccessException | InstantiationException ex) {
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+             NoSuchMethodException | SecurityException | InvocationTargetException ex) {
         throw new ValidationRuntimeException("validation script converter configuration failed", ex);
       }
     }

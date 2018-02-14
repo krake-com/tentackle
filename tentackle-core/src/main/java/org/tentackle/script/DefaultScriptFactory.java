@@ -19,6 +19,7 @@
 
 package org.tentackle.script;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class DefaultScriptFactory implements ScriptFactory {
       languages = new HashMap<>();
       try {
         for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
-          ScriptingLanguage language = clazz.newInstance();
+          ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
           for (String abbrv: language.getAbbreviations()) {
             String abbrvLC = abbrv.toLowerCase();
             languages.put(abbrvLC, language);
@@ -91,7 +92,8 @@ public class DefaultScriptFactory implements ScriptFactory {
         }
         setDefaultLanguage(JavaScriptLanguage.NAME);
       }
-      catch (ClassNotFoundException | InstantiationException | IllegalAccessException nfe) {
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+             NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
         throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
       }
     }

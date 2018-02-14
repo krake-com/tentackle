@@ -22,6 +22,7 @@ package org.tentackle.dbms.prefs;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Base64;
 import java.util.Collection;
@@ -647,7 +648,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       exportMethod.setAccessible(true);               // it's package scope!
       exportMethod.invoke(null, os, this, subtree);   // static method
     }
-    catch (Exception ex) {
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException |
+           SecurityException | InvocationTargetException ex) {
       LOGGER.severe("exporting node failed", ex);
     }
   }

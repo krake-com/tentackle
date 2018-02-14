@@ -22,9 +22,11 @@ package org.tentackle.buildsupport;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
@@ -86,7 +88,8 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
               methodName = value;
             }
           }
-          catch (Exception nme) {
+          catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException |
+                 InvocationTargetException nme) {
             processor.getProcessingEnvironment().getMessager().printMessage(
                   Kind.ERROR, "no value method for annotation " + annotationClass, element);
             return;
@@ -112,7 +115,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
                   Kind.NOTE, "created " + outputFile, element);
             }
           }
-          catch (Exception ex) {
+          catch (IOException ex) {
             processor.getProcessingEnvironment().getMessager().printMessage(
                   Kind.ERROR, "extracting AnalyzeInfo failed: " + ex, element);
           }

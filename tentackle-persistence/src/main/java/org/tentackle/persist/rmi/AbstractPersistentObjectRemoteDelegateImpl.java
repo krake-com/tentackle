@@ -19,6 +19,7 @@
 
 package org.tentackle.persist.rmi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.util.List;
 import org.tentackle.common.Timestamp;
@@ -234,7 +235,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       P po = (P) obj.getPersistenceDelegate();
       return po.persist();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -247,7 +248,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       P po = (P) obj.getPersistenceDelegate();
       po.save();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -261,7 +262,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       po.delete();
       po.markDeleted();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -273,7 +274,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.assertRootEntity();
       return dbObject.selectAll();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -284,7 +285,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     try {
       return ((P) newInstance(cb).getPersistenceDelegate()).select(id, locked);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -296,7 +297,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.assertRootEntity();
       return dbObject.selectByNormText(normText);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -308,7 +309,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.assertRootEntity();
       return createRemoteResultSetCursorDelegate(dbObject.selectByNormTextAsCursor(normText));
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -321,7 +322,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       // load via cache, if there is a cache at all
       return dbObject.selectAllCached();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -333,7 +334,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       // load via cache, if there is a cache at all
       return (newInstance(cb).getPersistenceDelegate()).selectCached(id);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -345,7 +346,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.assertRootEntity();
       return createRemoteResultSetCursorDelegate(dbObject.selectAllAsCursor());
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -357,7 +358,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.assertRootEntity();
       return dbObject.selectAllWithExpiredTableSerials(oldSerial);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -368,7 +369,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       T obj = newInstance(cb).select(id);
       return obj != null && obj.isReferenced();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -380,7 +381,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.updateTokenLock(tokenExpiry, userId, curTime);
       return new TokenLock(dbObject);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -390,7 +391,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     try {
       return pdo.transferTokenLock(userId);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -404,7 +405,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       dbObject.setEditedExpiry(editedExpiry);
       dbObject.updateTokenLockOnly();
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -426,7 +427,8 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       getServerSession().exportRemoteDelegate(cursorDelegate);
       return cursorDelegate;
     }
-    catch (Exception ex) {
+    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+           InvocationTargetException | RemoteException ex) {
       throw createException(ex);
     }
   }

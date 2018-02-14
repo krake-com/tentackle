@@ -486,7 +486,7 @@ public class DefaultSecurityManager implements SecurityManager {
       }
       session.commit(txVoucher);    // this will invalidate via listener
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       session.rollback(txVoucher);
       LOGGER.severe("removing rules failed", ex);
     }

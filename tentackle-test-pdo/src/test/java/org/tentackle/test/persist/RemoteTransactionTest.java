@@ -128,7 +128,7 @@ public class RemoteTransactionTest implements DomainContextProvider {
       runTx(this::transaction0);
       runTx(this::transaction1);
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       LOGGER.severe("", ex);
       throw ex;
     }

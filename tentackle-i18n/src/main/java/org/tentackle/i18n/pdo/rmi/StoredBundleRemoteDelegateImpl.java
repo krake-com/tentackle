@@ -45,7 +45,7 @@ public class StoredBundleRemoteDelegateImpl
     try {
       return newInstance(context).selectByUniqueDomainKey(name, locale);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -55,7 +55,7 @@ public class StoredBundleRemoteDelegateImpl
     try {
       return newInstance(context).selectCachedByUniqueDomainKey(udk);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -66,7 +66,7 @@ public class StoredBundleRemoteDelegateImpl
       setDomainContext(context);
       return dbObject.findByName(name);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
@@ -76,7 +76,7 @@ public class StoredBundleRemoteDelegateImpl
     try {
       return newInstance(context).findByNameAndLocale(name, locale);
     }
-    catch (Exception e) {
+    catch (RuntimeException e) {
       throw createException(e);
     }
   }
