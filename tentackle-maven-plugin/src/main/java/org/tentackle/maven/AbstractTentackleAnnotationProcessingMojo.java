@@ -65,6 +65,21 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
   protected String encoding;
 
   /**
+   * Arguments to be passed to the compiler.<br>
+   * (see maven-compiler-plugin)
+   */
+  @Parameter
+  protected List<String> compilerArgs;
+
+  /**
+   * Sets the unformatted single argument string to be passed to the compiler.<br>
+   * (see maven-compiler-plugin)
+   */
+  @Parameter
+  protected String compilerArgument;
+
+
+  /**
    * Directory holding the sources to be processed.
    */
   private File sourceDir;
@@ -391,6 +406,15 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
       // options started with -A are passed to the annotation processors (without leading -A)
       options.add("-Averbosity=" + verbosityLevel);
+
+      if (compilerArgument != null && !compilerArgument.isEmpty()) {
+        options.add(compilerArgument);
+      }
+      if (compilerArgs != null) {
+        for (String arg: compilerArgs) {
+          options.add(arg);
+        }
+      }
 
       CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null,
                                               fileManager.getJavaFileObjects(fileNames));

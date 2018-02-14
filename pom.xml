@@ -84,7 +84,6 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <!-- wurbelizer still on java8 since plexus-component-metadata:1.7.1:generate-metadata doesnt work with java 9 bytecode yet -->
     <wurbelizer.version>2.1.1</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
@@ -143,6 +142,7 @@
         <groupId>org.wurbelizer</groupId>
         <artifactId>wurbelizer-maven-plugin</artifactId>
         <version>${wurbelizer.version}</version>
+        <type>maven-plugin</type>
       </dependency>
 
       <dependency>

@@ -74,6 +74,10 @@
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
+          <compilerArgs>
+            <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
+            <arg>--add-exports=javafx.graphics/com.sun.javafx.application=org.tentackle.fx.rdc</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
@@ -83,6 +87,8 @@
           <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
           <compilerArgument>-proc:none</compilerArgument>
           <compilerArgs>
+            <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
+            <arg>-proc:none</arg>
             <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.application=org.tentackle.fx.rdc</arg>
           </compilerArgs>

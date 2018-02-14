@@ -17,9 +17,6 @@
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>
-    <!-- @TODO: need to stick to 1.8 since plexus-component-metadata:1.7.1:generate-metadata doesnt work with java 9 bytecode -->
-    <javac.version.src>1.8</javac.version.src>
-    <javac.version.target>1.8</javac.version.target>
   </properties>
 
   <dependencies>
