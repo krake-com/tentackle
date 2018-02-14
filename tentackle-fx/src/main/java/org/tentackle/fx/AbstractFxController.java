@@ -97,10 +97,6 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
         if (field.isAnnotationPresent(FXML.class)) {
           fxmlFields.add(field);
           LOGGER.fine("added {0} to @FXML-fields", field);
-          if (!field.isAccessible()) {
-            LOGGER.fine("@FXML-field {0} set accessible", field);
-            field.setAccessible(true);
-          }
         }
       }
       fxmlFields.setImmutable(true);
@@ -116,10 +112,6 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
         if (method.isAnnotationPresent(FXML.class)) {
           fxmlMethods.add(method);
           LOGGER.fine("added {0} to @FXML-methods", method);
-          if (!method.isAccessible()) {
-            LOGGER.fine("@FXML-method {0} set accessible", method);
-            method.setAccessible(true);
-          }
         }
       }
       fxmlMethods.setImmutable(true);
@@ -131,7 +123,15 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
   public void validateInjections() {
     for (Field field: getFXMLFields()) {
       try {
-        if (field.get(this) == null) {
+        Object comp;
+        try {
+          comp = field.get(this);
+        }
+        catch (IllegalAccessException ex) {
+          field.setAccessible(true);
+          comp = field.get(this);
+        }
+        if (comp == null) {
           throw new FxRuntimeException(field + " annotated with @FXML was not injected");
         }
       }
