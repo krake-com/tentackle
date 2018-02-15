@@ -26,7 +26,7 @@ import java.util.StringTokenizer;
  *
  * @author harald
  */
-abstract public class AbstractAnalyzeHandler implements AnalyzeHandler {
+public abstract class AbstractAnalyzeHandler implements AnalyzeHandler {
 
   /**
    * Creates a directory in given basedir for a classname.

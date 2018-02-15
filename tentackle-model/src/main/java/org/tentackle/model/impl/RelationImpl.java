@@ -192,7 +192,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public ModelElement getParent() {
-    return entity;
+    return getEntity();
   }
 
 
@@ -419,13 +419,11 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
         /** property method = ... */
         case METHOD:
-          // method = &lt;methodname&lt;
           setMethodName(entry.getValue());
           break;
 
         /** property nm = ... */
         case NM:
-          // nm = &lt;N:M relation name&lt [mnMethodName]
           setNmName(stok.nextToken());
           if (stok.hasMoreTokens()) {
             setNmMethodName(stok.nextToken());
@@ -608,16 +606,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
     // check constraints
 
-    if (composite) {
-      if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("composite relations must be eager or lazy");
-      }
+    if (composite &&
+        selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+      throw createModelException("composite relations must be eager or lazy");
     }
 
-    if (reversed) {
-      if (composite || relationType != RelationType.LIST) {
-        throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
-      }
+    if (reversed && (composite || relationType != RelationType.LIST)) {
+      throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
     }
 
     if (relationType == RelationType.LIST) {

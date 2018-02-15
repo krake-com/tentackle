@@ -57,7 +57,7 @@ import org.tentackle.session.VersionInfoIncompatibleException;
  */
 
 
-abstract public class RemoteDbConnectionImpl extends RemoteServerObject implements RemoteDbConnection {
+public abstract class RemoteDbConnectionImpl extends RemoteServerObject implements RemoteDbConnection {
 
   private static final long serialVersionUID = -1008588987968414154L;
 
@@ -171,7 +171,7 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * @return the created session
    * @throws RemoteException if creation failed
    */
-  abstract public RemoteDbSession createSession(SessionInfo clientInfo) throws RemoteException;
+  public abstract RemoteDbSession createSession(SessionInfo clientInfo) throws RemoteException;
 
 
   /**

@@ -74,7 +74,7 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
    *
    * @return the pattern
    */
-  abstract public String getDefaultPattern();
+  public abstract String getDefaultPattern();
 
   /**
    * Gets the decimal format.

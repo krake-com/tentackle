@@ -27,7 +27,7 @@ import org.tentackle.model.ModelException;
  *
  * @author harald
  */
-abstract public class MultiLine extends Line {
+public abstract class MultiLine extends Line {
 
   /**
    * Creates a multi-line.<br>

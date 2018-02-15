@@ -266,11 +266,9 @@ public class ModelImpl implements Model {
 
     ModelEntity modelEntity = mapByFileName.get(fileName);
 
-    if (modelEntity != null) {
+    if (modelEntity != null && modelEntity.hasChanged()) {
       // check modification time
-      if (modelEntity.hasChanged()) {
-        modelEntity = null;    // force reload
-      }
+      modelEntity = null;    // force reload
     }
 
     if (modelEntity == null) {
@@ -398,12 +396,11 @@ public class ModelImpl implements Model {
         }
         else  {
           ((EntityImpl) entity).setSuperEntity(superEntity);
-          if (superEntity.getInheritanceType() == InheritanceType.NONE) {
-            if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-              errors.add(new ModelError(entity,
-                      "super entity '" + superEntity + "' extended by '" + entity +
-                      "' is not extensible (missing inheritance := ... ?)"));
-            }
+          if (superEntity.getInheritanceType() == InheritanceType.NONE &&
+              (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+            errors.add(new ModelError(entity,
+                    "super entity '" + superEntity + "' extended by '" + entity +
+                    "' is not extensible (missing inheritance := ... ?)"));
           }
           superEntity.getSubEntities().add(entity);
         }
@@ -454,13 +451,11 @@ public class ModelImpl implements Model {
                   break;
                 }
               }
-              if (foreignAttribute == null) {
-                if (relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
-                    (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
-                  errors.add(new ModelError(relation,
-                          "no such attribute: " + attributeName + " in " + foreignEntity +
-                          " referenced by " + entity));
-                }
+              if (foreignAttribute == null &&
+                  relation.getMethodArgs().isEmpty() &&   // not an error if args given (means no simple link via id)
+                   (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+                errors.add(new ModelError(relation, "no such attribute: " + attributeName + " in " + foreignEntity +
+                                                    " referenced by " + entity));
               }
             }
             ((RelationImpl) relation).setForeignAttribute(foreignAttribute);
@@ -474,19 +469,17 @@ public class ModelImpl implements Model {
                 }
               }
               else  {
-                if (nmRelation.isComposite() || nmRelation.getRelationType() == RelationType.LIST) {
-                  if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-                    errors.add(new ModelError(nmRelation,
-                            "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
-                            " must be non-composite object"));
-                  }
+                if ((nmRelation.isComposite() || nmRelation.getRelationType() == RelationType.LIST) &&
+                    (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+                  errors.add(new ModelError(nmRelation,
+                          "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
+                          " must be non-composite object"));
                 }
-                if (translateAlias(aliases, nmRelation.getClassName()).equals(entity.getName())) {
-                  if (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity)) {
-                    errors.add(new ModelError(nmRelation,
-                            "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
-                            " points back to " + entity));
-                  }
+                if (translateAlias(aliases, nmRelation.getClassName()).equals(entity.getName()) &&
+                    (loadedEntity == null || loadedEntity.getAssociatedEntities().contains(entity))) {
+                  errors.add(new ModelError(nmRelation,
+                          "nm-relation " + nmRelation.getName() + " in " + foreignEntity +
+                          " points back to " + entity));
                 }
                 if (nmRelation.getSelectionType() == SelectionType.LAZY && !nmRelation.isSerialized()) {
                   // PdoRelations-Wurblet will generate --join which makes only sense if pdos are transferred via network
@@ -509,10 +502,8 @@ public class ModelImpl implements Model {
         Entity otherEntity = otherModelEntity.getEntity();
         for (Relation relation: otherEntity.getRelations()) {
           Entity foreignEntity = relation.getForeignEntity();
-          if (foreignEntity != null) {
-            if (foreignEntity.equals(entity)) {
-              entity.getReferencingRelations().add(relation);
-            }
+          if (foreignEntity != null && foreignEntity.equals(entity)) {
+            entity.getReferencingRelations().add(relation);
           }
         }
       }

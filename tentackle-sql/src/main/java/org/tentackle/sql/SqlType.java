@@ -38,7 +38,7 @@ public enum SqlType {
   VARCHAR(Types.VARCHAR, false, false, "", SqlType::removeSingleQuotes),
 
   /** Date. */
-  DATE(Types.DATE, false, false, new Date(0), (t) -> {
+  DATE(Types.DATE, false, false, new Date(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Date.valueOf(t);
@@ -49,7 +49,7 @@ public enum SqlType {
   }),
 
   /** Time. */
-  TIME(Types.TIME, false, false, new Time(0), (t) -> {
+  TIME(Types.TIME, false, false, new Time(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Time.valueOf(t);
@@ -60,7 +60,7 @@ public enum SqlType {
   }),
 
   /** Timestamp. */
-  TIMESTAMP(Types.TIMESTAMP, false, false, new Timestamp(0), (t) -> {
+  TIMESTAMP(Types.TIMESTAMP, false, false, new Timestamp(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Timestamp.valueOf(t);
@@ -71,12 +71,12 @@ public enum SqlType {
   }),
 
   /** Binary. */
-  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, (t) -> {
+  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, t -> {
     return null;    // cannot be converted
   }),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0), (t) -> {
+  DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return BigDecimal.valueOf(Double.valueOf(t));
@@ -87,7 +87,7 @@ public enum SqlType {
   }),
 
   /** Character and char. */
-  CHAR(Types.CHAR, false, false, ' ', (t) -> {
+  CHAR(Types.CHAR, false, false, ' ', t -> {
     t = removeSingleQuotes(t);
     try {
       return t.isEmpty() ? ' ' : t.charAt(0);
@@ -98,7 +98,7 @@ public enum SqlType {
   }),
 
   /** Boolean and boolean. */
-  BIT(Types.BIT, false, false, false, (t) -> {
+  BIT(Types.BIT, false, false, false, t -> {
     t = removeSingleQuotes(t);
     try {
       return Boolean.valueOf(t);
@@ -109,7 +109,7 @@ public enum SqlType {
   }),
 
   /** Byte and byte. */
-  TINYINT(Types.TINYINT, true, false, (byte) 0, (t) -> {
+  TINYINT(Types.TINYINT, true, false, (byte) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Byte.valueOf(t);
@@ -120,7 +120,7 @@ public enum SqlType {
   }),
 
   /** Short and short. */
-  SMALLINT(Types.SMALLINT, true, false, (short) 0, (t) -> {
+  SMALLINT(Types.SMALLINT, true, false, (short) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Short.valueOf(t);
@@ -131,7 +131,7 @@ public enum SqlType {
   }),
 
   /** Integer and int. */
-  INTEGER(Types.INTEGER, true, false, 0, (t) -> {
+  INTEGER(Types.INTEGER, true, false, 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Integer.valueOf(t);
@@ -142,7 +142,7 @@ public enum SqlType {
   }),
 
   /** Long and long. */
-  BIGINT(Types.BIGINT, true, false, 0L, (t) -> {
+  BIGINT(Types.BIGINT, true, false, 0L, t -> {
     t = removeSingleQuotes(t);
     try {
       return Long.valueOf(t);
@@ -153,7 +153,7 @@ public enum SqlType {
   }),
 
   /** Float and float. */
-  FLOAT(Types.FLOAT, true, true, 0.0f, (t) -> {
+  FLOAT(Types.FLOAT, true, true, 0.0f, t -> {
     t = removeSingleQuotes(t);
     try {
       return Float.valueOf(t);
@@ -164,7 +164,7 @@ public enum SqlType {
   }),
 
   /** Double and double. */
-  DOUBLE(Types.DOUBLE, true, true, 0.0d, (t) -> {
+  DOUBLE(Types.DOUBLE, true, true, 0.0d, t -> {
     t = removeSingleQuotes(t);
     try {
       return Double.valueOf(t);
@@ -175,7 +175,7 @@ public enum SqlType {
   }),
 
   /** Application specific. */
-  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, (t) -> {
+  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, t -> {
     return null;    // conversion not possible (never returned from meta data)
   });
 

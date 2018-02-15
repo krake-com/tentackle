@@ -86,7 +86,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    *
    * @return the selected object or null if it does not exist.
    */
-  abstract public T select(DomainContext context, C key);
+  public abstract T select(DomainContext context, C key);
 
 
   /**
@@ -98,7 +98,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @return the Comparable (can be null)
    *
    */
-  abstract public C extract(T object);
+  public abstract C extract(T object);
 
 
 

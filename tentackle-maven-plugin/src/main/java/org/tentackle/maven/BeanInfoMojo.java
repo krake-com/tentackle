@@ -97,7 +97,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
         ps.println("Build-Jdk: " + System.getProperty("java.version"));
 
         // process files
-        if (filesets != null && filesets.size() > 0) {
+        if (filesets != null && !filesets.isEmpty()) {
           // explicit filesets given instead of source dir
           for (FileSet fileSet : filesets) {
             processFileSet(fileSet, ps);

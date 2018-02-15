@@ -124,17 +124,16 @@ public class AttributeLine extends SingleLine {
         if (token.charAt(0) == '(') {
           ssBuf = new StringBuilder(token);
         }
-        if (token.endsWith(")")) {
-          if (ssBuf != null) {
+        if (ssBuf != null) {
+          if (token.endsWith(")")) {
             ssBuf.append(token);
           }
+          if (ssBuf.charAt(ssBuf.length() - 1) == ')') {
+            extractSizeAndOrScale(ssBuf.substring(1, ssBuf.length() - 1));
+            ssBuf = null;
+          }
         }
-        if (ssBuf != null && ssBuf.charAt(ssBuf.length() - 1) == ')') {
-          extractSizeAndOrScale(ssBuf.substring(1, ssBuf.length() - 1));
-          ssBuf = null;
-          continue;
-        }
-        if (ssBuf == null) {
+        else {
           javaName = token;
         }
       }

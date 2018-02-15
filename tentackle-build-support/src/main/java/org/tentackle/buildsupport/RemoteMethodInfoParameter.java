@@ -19,7 +19,6 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -180,7 +179,7 @@ public class RemoteMethodInfoParameter {
    * @param writer the writer bound to the infofile
    * @throws java.io.IOException if write failed
    */
-  public void write(PrintWriter writer) throws IOException {
+  public void write(PrintWriter writer) {
     StringBuilder buf = new StringBuilder();
     buf.append(name);
     buf.append(' ');

@@ -148,13 +148,13 @@ public class IndexImpl implements Index {
     IndexAttributeImpl indexAttribute = null;
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
-      if (token.toLowerCase().equals("desc")) {
+      if (token.equalsIgnoreCase("desc")) {
         if (indexAttribute == null) {
           throw sourceLine.createModelException("keyword 'desc' must follow column name");
         }
         indexAttribute.setDescending(true);
       }
-      else if (token.toLowerCase().equals("asc")) {
+      else if (token.equalsIgnoreCase("asc")) {
         if (indexAttribute == null) {
           throw sourceLine.createModelException("keyword 'asc' must follow column name");
         }

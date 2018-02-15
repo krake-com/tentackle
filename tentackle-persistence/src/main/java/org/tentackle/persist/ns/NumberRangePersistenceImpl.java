@@ -24,8 +24,6 @@ import java.util.List;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
@@ -56,11 +54,6 @@ import org.tentackle.sql.Backend;
 public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberRange, NumberRangePersistenceImpl> implements NumberRangePersistence {
 
   private static final long serialVersionUID = -1178387730540795339L;
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(NumberRangePersistenceImpl.class);
 
 
   // @wurblet classVariables ClassVariables

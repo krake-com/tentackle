@@ -24,8 +24,6 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
@@ -41,11 +39,6 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @author harald
  */
 public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements GuiProvider<T> {
-
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultGuiProvider.class);
 
   private T pdo;                    // the PDO
   private ResourceBundle bundle;    // optional resource bundle

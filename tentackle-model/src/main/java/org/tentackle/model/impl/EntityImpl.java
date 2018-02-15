@@ -141,7 +141,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public ModelElement getParent() {
-    return superEntity;
+    return getSuperEntity();
   }
 
 
@@ -1376,12 +1376,11 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
-    if (getIntegrity().isCompositesCheckedByDatabase()) {
-      // either all composite relations must be cascaded or none, not mixed!
-      if (isDeletionCascaded() == null) {
-        throw new ModelException(getIntegrity() +
-                " integrity requires all composite relations to be either cascaded or non-cascaded", this);
-      }
+    if (getIntegrity().isCompositesCheckedByDatabase() &&
+        // either all composite relations must be cascaded or none, not mixed!
+        isDeletionCascaded() == null) {
+      throw new ModelException(getIntegrity() +
+              " integrity requires all composite relations to be either cascaded or non-cascaded", this);
     }
   }
 

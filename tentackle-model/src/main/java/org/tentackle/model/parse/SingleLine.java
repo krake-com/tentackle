@@ -25,7 +25,7 @@ import org.tentackle.model.ModelException;
  *
  * @author harald
  */
-abstract public class SingleLine extends Line {
+public abstract class SingleLine extends Line {
 
   /**
    * Creates a line.<br>

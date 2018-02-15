@@ -80,7 +80,7 @@ public abstract class AbstractInterceptor implements Interceptor {
    * @return the method's return value
    * @throws Throwable if invoked method failed
    */
-  abstract public Object proceed(Object proxy, Method method, Object[] args,
+  public abstract Object proceed(Object proxy, Method method, Object[] args,
                                  Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable;
 
 }

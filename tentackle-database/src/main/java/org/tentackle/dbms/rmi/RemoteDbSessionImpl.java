@@ -62,7 +62,7 @@ import org.tentackle.session.SessionPool;
  *
  * @author  harald
  */
-abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable {
+public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable {
 
   /**
    * logger for this class.
@@ -316,7 +316,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param sessionInfo the session info
    * @throws LoginFailedException if login is not allowed for whatever reason
    */
-  abstract public void verifySessionInfo(SessionInfo sessionInfo) throws LoginFailedException;
+  public abstract void verifySessionInfo(SessionInfo sessionInfo) throws LoginFailedException;
 
 
   /**

@@ -29,7 +29,7 @@ public class ModelException extends Exception {
 
   private static final long serialVersionUID = 3405985077474898397L;
 
-  private ModelElement element;   // the related model element
+  private transient final ModelElement element;   // the related model element
 
 
   /**
@@ -63,6 +63,7 @@ public class ModelException extends Exception {
    */
   public ModelException(String message, Throwable cause) {
     super(message, cause);
+    this.element = null;
   }
 
   /**
@@ -72,6 +73,7 @@ public class ModelException extends Exception {
    */
   public ModelException(String message) {
     super(message);
+    this.element = null;
   }
 
   /**
@@ -81,13 +83,7 @@ public class ModelException extends Exception {
    */
   public ModelException(Collection<ModelError> errors) {
     super(ModelError.toString(errors));
-    // pick the first element
-    for (ModelError error: errors) {
-      if (error.getElement() != null) {
-        element = error.getElement();
-        break;
-      }
-    }
+    element = pickFirstElement(errors);
   }
 
 
@@ -115,6 +111,22 @@ public class ModelException extends Exception {
       elem = elem.getParent();
     }
     return false;
+  }
+
+
+  /**
+   * Picks the first model element from a collection of errors.
+   *
+   * @param errors the errors
+   * @return the element, null if none
+   */
+  private ModelElement pickFirstElement(Collection<ModelError> errors) {
+    for (ModelError error: errors) {
+      if (error.getElement() != null) {
+        return error.getElement();
+      }
+    }
+    return null;
   }
 
 }

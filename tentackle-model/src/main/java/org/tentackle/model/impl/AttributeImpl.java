@@ -80,7 +80,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public ModelElement getParent() {
-    return entity;
+    return getEntity();
   }
 
 

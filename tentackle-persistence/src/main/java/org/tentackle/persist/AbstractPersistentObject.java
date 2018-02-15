@@ -1057,7 +1057,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public int deletePlainWithComponents(Collection<? extends PersistentDomainObject<?>> objects) {
     int count = 0;
-    if (objects != null && objects.size() > 0) {
+    if (objects != null && !objects.isEmpty()) {
       Session session = null;
       long txVoucher = 0;
       try {
@@ -1118,7 +1118,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public int insertPlainWithComponents(Collection<? extends PersistentDomainObject<?>> objects) {
     int count = 0;
-    if (objects != null && objects.size() > 0) {
+    if (objects != null && !objects.isEmpty()) {
       Session session = null;
       long txVoucher = 0;
       try {
@@ -1321,15 +1321,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       getSession().commit(txVoucher);
       return obj;
     }
+    catch (PersistenceException px) {
+      getSession().rollback(txVoucher);
+      px.updateDbObject(this);
+      throw px;
+    }
     catch (RuntimeException ex) {
       getSession().rollback(txVoucher);
-      if (ex instanceof PersistenceException) {
-        ((PersistenceException) ex).updateDbObject(this);
-        throw ex;
-      }
-      else  {
-        throw new PersistenceException(this, ex);
-      }
+      throw new PersistenceException(this, ex);
     }
   }
 
@@ -3058,7 +3057,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @SuppressWarnings("rawtypes")
   protected <X extends PersistentDomainObject<X>> void deleteMissingInCollection(Collection<X> oldCollection,
                                                                                  Collection<X> newCollection) {
-    if (oldCollection != null && oldCollection.size() > 0) {
+    if (oldCollection != null && !oldCollection.isEmpty()) {
       Session session = null;
       for (X pDo: oldCollection) {
         if (pDo != null) {
@@ -3810,16 +3809,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           }
           db.commit(txVoucher);
         }
+        catch (PersistenceException px) {
+          setPersistable(false);
+          db.rollback(txVoucher);
+          px.updateDbObject(this);
+          throw px;
+        }
         catch (RuntimeException ex) {
           setPersistable(false);
           db.rollback(txVoucher);
-          if (ex instanceof PersistenceException) {
-            ((PersistenceException) ex).updateDbObject(this);
-            throw ex;
-          }
-          else  {
-            throw new PersistenceException(this, ex);
-          }
+          throw new PersistenceException(this, ex);
         }
       }
       return pdo;

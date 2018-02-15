@@ -27,7 +27,7 @@ import org.tentackle.model.SourceInfo;
  *
  * @author harald
  */
-abstract public class Line {
+public abstract class Line {
 
   private final Document document;
   private final int offset;
@@ -158,7 +158,7 @@ abstract public class Line {
    *
    * @throws ModelException if parsing failed
    */
-  abstract public void parse() throws ModelException;
+  public abstract void parse() throws ModelException;
 
 
   /**

@@ -331,7 +331,7 @@ public class EntityFactoryImpl implements EntityFactory {
    * @param line the configuration line
    * @throws ModelException if processing failed
    */
-  protected void processIndexConfiguration(EntityImpl entity, ConfigurationLine line) throws ModelException {
+  protected void processIndexConfiguration(EntityImpl entity, ConfigurationLine line) {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
     index.setSourceLine(line);    // delayed parsing!
     String comment = consumePendingComment();

@@ -163,13 +163,9 @@ public class RemoteMethodInfo {
       }
     }
 
-    if (info != null) {
-      if (info.getType().equals(TYPE_METHOD)) {
-        // set vararg in the last parameter
-        if (info.isVarArgsMethod()) {
-          info.parameterList.get(info.parameterList.size()-1).setVarArg(true);
-        }
-      }
+    if (info != null && info.getType().equals(TYPE_METHOD) && info.isVarArgsMethod()) {
+      // set vararg in the last parameter
+      info.parameterList.get(info.parameterList.size()-1).setVarArg(true);
     }
 
     return info;
