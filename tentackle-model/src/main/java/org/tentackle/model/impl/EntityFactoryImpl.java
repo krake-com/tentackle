@@ -329,7 +329,6 @@ public class EntityFactoryImpl implements EntityFactory {
    *
    * @param entity the entity
    * @param line the configuration line
-   * @throws ModelException if processing failed
    */
   protected void processIndexConfiguration(EntityImpl entity, ConfigurationLine line) {
     IndexImpl index = createIndex(entity, line.getSourceInfo());
