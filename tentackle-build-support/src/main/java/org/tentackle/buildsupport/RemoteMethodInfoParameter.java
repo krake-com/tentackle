@@ -177,7 +177,6 @@ public class RemoteMethodInfoParameter {
    * Writes this parameter to the infofile.
    *
    * @param writer the writer bound to the infofile
-   * @throws java.io.IOException if write failed
    */
   public void write(PrintWriter writer) {
     StringBuilder buf = new StringBuilder();
