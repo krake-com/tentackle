@@ -18,10 +18,13 @@
 
 package org.tentackle.persist;
 
+import java.lang.ref.Cleaner;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -38,10 +41,48 @@ import org.tentackle.session.Session;
  */
 public class ResultSetCursor<T extends PersistentDomainObject<T>> implements ScrollableResource<T> {
 
+  /**
+   * the logger for this class.
+   */
+  private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetCursor.class);
+
+  private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
+
+  /**
+   * Holds the resources to be cleaned up.
+   */
+  private static class Resources<T extends PersistentDomainObject<T>> implements Runnable {
+
+    private ResultSetWrapper rs;                      // the result set (only for local sessions, null if remote)
+    private RemoteResultSetCursor<T> remoteCursor;    // the remote cursor (only for remote sessions, null if local)
+
+    public Resources(ResultSetWrapper rs, RemoteResultSetCursor<T> remoteCursor) {
+      this.rs = rs;
+      this.remoteCursor = remoteCursor;
+    }
+
+    @Override
+    public void run() {
+      if (rs != null) {
+        LOGGER.warning("closing unreferenced local ResultSetCursor {0}", rs);
+        rs.close();
+      }
+      else if (remoteCursor != null) {
+        LOGGER.warning("closing unreferenced remote ResultSetCursor {0}", remoteCursor);
+        try {
+          remoteCursor.close();
+        }
+        catch (RemoteException ex) {
+          LOGGER.severe("cleanup failed for " + remoteCursor, ex);
+        }
+      }
+    }
+  }
+
+
+  private final Resources<T> resources;                   // resources for cleanup
   private final T pdoProxy;                               // the pdo proxy (only for local sessions)
-  private final ResultSetWrapper rs;                      // the result set (only for local sessions)
   private final JoinedSelect<T> js;                       // the join configuration (only for local sessions)
-  private final RemoteResultSetCursor<T> remoteCursor;    // the remote cursor (only for remote sessions)
   private final Session session;                          // the session
   private final DomainContext context;                    // the domain context
 
@@ -49,7 +90,6 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   private boolean firstInvoked;                           // true = first() has been invoked
   private boolean noNext;                                 // true = no next() in joined get
   private boolean eof;                                    // true = end of result set in joined get
-  private boolean closed;                                 // true if closed
 
 
   /**
@@ -61,7 +101,6 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   public ResultSetCursor(T pdo, ResultSetWrapper rs, JoinedSelect<T> js) {
     this.pdoProxy = pdo;
-    this.rs = rs;
     this.js = js;
 
     if (js != null) {
@@ -69,10 +108,11 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
     context = pdo.getPersistenceDelegate().getDomainContext();
     session = context.getSession();
-    remoteCursor = null;
+    resources = new Resources<>(rs, null);
 
     assertSessionIsLocal();
     ((AbstractPersistentObject) pdo.getPersistenceDelegate()).assertRootContextIsAccepted();
+    CLEANER.register(this, resources);
   }
 
   /**
@@ -95,14 +135,14 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   public ResultSetCursor(DomainContext context, RemoteResultSetCursor<T> remoteCursor) {
     this.context = context;
-    this.remoteCursor = remoteCursor;
-    session = context.getSession();
 
+    session = context.getSession();
     pdoProxy = null;
-    rs = null;
     js = null;
+    resources = new Resources<>(null, remoteCursor);
 
     assertSessionIsRemote();
+    CLEANER.register(this, resources);
   }
 
   /**
@@ -112,7 +152,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   public ResultSetWrapper getResultSet() {
     assertSessionIsLocal();
-    return rs;
+    return resources.rs;
   }
 
   /**
@@ -134,7 +174,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   public RemoteResultSetCursor<T> getRemoteCursor() {
     assertSessionIsRemote();
-    return remoteCursor;
+    return resources.remoteCursor;
   }
 
   /**
@@ -163,19 +203,18 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public void close() {
-    if (!closed) {
-      if (session.isRemote()) {
-        try {
-          remoteCursor.close();
-        }
-        catch (RemoteException ex) {
-          throw new PersistenceException(session, ex);
-        }
+    if (resources.rs != null) {
+      resources.rs.close();
+      resources.rs = null;
+    }
+    else if (resources.remoteCursor != null) {
+      try {
+        resources.remoteCursor.close();
+        resources.remoteCursor = null;
       }
-      else  {
-        rs.close();
+      catch (RemoteException ex) {
+        throw new PersistenceException(session, ex);
       }
-      closed = true;
     }
   }
 
@@ -187,7 +226,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public boolean isClosed() {
-    return closed;
+    return resources.rs == null && resources.remoteCursor == null;
   }
 
 
@@ -217,7 +256,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (session.isRemote()) {
       try {
-        this.row = remoteCursor.setRow(row);
+        this.row = resources.remoteCursor.setRow(row);
         return this.row == row;
       }
       catch (RemoteException ex) {
@@ -226,12 +265,12 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     assertNoJoins();
-    boolean rv = rs.absolute(row);
+    boolean rv = resources.rs.absolute(row);
     if (rv) {
       this.row = row;
     }
     else  {
-      this.row = rs.getRow();
+      this.row = resources.rs.getRow();
     }
     firstInvoked = false;
     return rv;
@@ -247,7 +286,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (session.isRemote()) {
       try {
-        boolean rv = remoteCursor.first();
+        boolean rv = resources.remoteCursor.first();
         row = rv ? 1 : 0;
         return rv;
       }
@@ -277,7 +316,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       rv = true;    // already at first record
     }
     // rewind
-    else if (rs.first()) {
+    else if (resources.rs.first()) {
       row = 1;
       rv = true;
     }
@@ -300,7 +339,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (session.isRemote()) {
       try {
-        row = remoteCursor.last();
+        row = resources.remoteCursor.last();
         return row > 0;
       }
       catch (RemoteException ex) {
@@ -310,8 +349,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     assertNoJoins();
     boolean rv = false;
-    if (rs.last()) {
-      row = rs.getRow();
+    if (resources.rs.last()) {
+      row = resources.rs.getRow();
       rv = true;
     }
     else {
@@ -334,7 +373,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (session.isRemote()) {
       try {
-        boolean rv = remoteCursor.next();
+        boolean rv = resources.remoteCursor.next();
         if (rv) {
           row++;
         }
@@ -355,7 +394,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       rv = true;
     }
     else {
-      rv = rs.next();
+      rv = resources.rs.next();
       if (rv) {
         row++;
       }
@@ -376,7 +415,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     if (session.isRemote()) {
       try {
-        boolean rv = remoteCursor.previous();
+        boolean rv = resources.remoteCursor.previous();
         if (rv) {
           row--;
         }
@@ -388,7 +427,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     assertNoJoins();
-    boolean rv = rs.previous();
+    boolean rv = resources.rs.previous();
     if (rv) {
       row--;
     }
@@ -408,7 +447,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (session.isRemote()) {
       try {
         int expectedRow = row + rows;
-        row = remoteCursor.scroll(rows);
+        row = resources.remoteCursor.scroll(rows);
         return row == expectedRow;
       }
       catch (RemoteException ex) {
@@ -423,13 +462,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
   /**
    * Positions the cursor before the first row.<br>
-   * Works even for empty cursors.
+   * Works even for empty cursoresources.rs.
    */
   @Override
   public void beforeFirst() {
     if (session.isRemote()) {
       try {
-        remoteCursor.beforeFirst();
+        resources.remoteCursor.beforeFirst();
         row = 0;
         return;
       }
@@ -443,20 +482,20 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       eof = false;
       noNext = true;
     }
-    rs.beforeFirst();
+    resources.rs.beforeFirst();
     row = 0;
     firstInvoked = false;
   }
 
   /**
    * Positions the cursor after the last row.<br>
-   * Works even for empty cursors.
+   * Works even for empty cursoresources.rs.
    */
   @Override
   public void afterLast() {
     if (session.isRemote()) {
       try {
-        row = remoteCursor.afterLast();
+        row = resources.remoteCursor.afterLast();
         return;
       }
       catch (RemoteException ex) {
@@ -465,8 +504,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     assertNoJoins();
-    rs.afterLast();
-    row = rs.getRow();
+    resources.rs.afterLast();
+    row = resources.rs.getRow();
     firstInvoked = false;
   }
 
@@ -480,7 +519,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (session.isRemote()) {
       return row == 0;
     }
-    return rs.isBeforeFirst();
+    return resources.rs.isBeforeFirst();
   }
 
   /**
@@ -492,13 +531,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   public boolean isAfterLast() {
     if (session.isRemote()) {
       try {
-        return remoteCursor.isAfterLast();
+        return resources.remoteCursor.isAfterLast();
       }
       catch (RemoteException ex) {
         throw new PersistenceException(session, ex);
       }
     }
-    return rs.isAfterLast();
+    return resources.rs.isAfterLast();
   }
 
   /**
@@ -507,12 +546,12 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    * @return the object, null if invalid row or no such object
    */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public T get() {
     if (row > 0) {
       if (session.isRemote()) {
         try {
-          T obj = remoteCursor.get();
+          T obj = resources.remoteCursor.get();
           configureRemoteObject(obj);
           return obj;
         }
@@ -524,7 +563,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       if (js == null) {
         T pdo = Pdo.create(pdoProxy);
         AbstractPersistentObject po = (AbstractPersistentObject) pdo.getPersistenceDelegate();
-        return (T) po.derivePdoFromPo(pdo, po.readFromResultSetWrapper(rs));
+        return (T) po.derivePdoFromPo(pdo, po.readFromResultSetWrapper(resources.rs));
       }
       else {
         T pdo = js.currentPdo();
@@ -534,7 +573,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
             break;    // EOF
           }
           noNext = false;
-          ((AbstractPersistentObject) pdoProxy.getPersistenceDelegate()).readJoinedRow(rs, js);
+          ((AbstractPersistentObject) pdoProxy.getPersistenceDelegate()).readJoinedRow(resources.rs, js);
           if (pdo == null) {
             // first access
             pdo = js.currentPdo();
@@ -562,7 +601,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     if (session.isRemote())  {
       try {
         // this is faster then a getObject()-loop because it saves rmi-roundtrips
-        list = remoteCursor.toList();    // unchecked
+        list = resources.remoteCursor.toList();    // unchecked
         if (list != null) {
           for (T obj: list) {
             configureRemoteObject(obj);
@@ -604,14 +643,14 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   public void setFetchSize(int rows) {
     if (session.isRemote())  {
       try {
-        remoteCursor.setFetchSize(rows);
+        resources.remoteCursor.setFetchSize(rows);
       }
       catch (RemoteException ex) {
         throw PersistenceException.createFromRemoteException(session, ex);
       }
     }
     else  {
-      rs.setFetchSize(rows);
+      resources.rs.setFetchSize(rows);
     }
   }
 
@@ -624,13 +663,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
   public int getFetchSize() {
     if (session.isRemote())  {
       try {
-        return remoteCursor.getFetchSize();
+        return resources.remoteCursor.getFetchSize();
       }
       catch (RemoteException ex) {
         throw PersistenceException.createFromRemoteException(session, ex);
       }
     }
-    return rs.getFetchSize();
+    return resources.rs.getFetchSize();
   }
 
   /**
@@ -639,7 +678,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    * @param direction the direction, see {@link java.sql.ResultSet#setFetchDirection}.
    */
   public void setFetchDirection(int direction) {
-    rs.setFetchDirection(direction);
+    resources.rs.setFetchDirection(direction);
   }
 
   /**
@@ -648,13 +687,13 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    * @return the direction
    */
   public int getFetchDirection() {
-    return rs.getFetchDirection();
+    return resources.rs.getFetchDirection();
   }
 
   /**
    * Fetches the next objects up to the fetchsize.<br>
    * This method is provided to minimize the number of
-   * roundtrips especially for remote cursors.
+   * roundtrips especially for remote cursoresources.rs.
    * The cursor is closed at the end of the cursor.
    *
    * @return the list of objects, null if no more objects found
@@ -664,11 +703,11 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     FetchList<T> list = null;
 
-    if (!closed) {
+    if (!isClosed()) {
       if (session.isRemote()) {
         try {
           // this is faster then a get()-loop because it saves rmi-roundtrips
-          list = remoteCursor.fetch();    // unchecked
+          list = resources.remoteCursor.fetch();    // unchecked
           if (list != null) {
             for (T obj : list) {
               configureRemoteObject(obj);
@@ -679,11 +718,11 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
               row--;    // subtract cause row started at 1, not 0
             }
             if (list.closed) {
-              closed = true;    // already closed on remote side
+              resources.remoteCursor = null;    // already closed on remote side
             }
           }
           else {
-            closed = true;    // already closed on remote side
+            resources.remoteCursor = null;    // already closed on remote side
           }
         }
         catch (RemoteException ex) {
@@ -737,12 +776,6 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     }
 
     return list;
-  }
-
-  @Override
-  protected void finalize() throws Throwable {
-    close();
-    super.finalize();
   }
 
 

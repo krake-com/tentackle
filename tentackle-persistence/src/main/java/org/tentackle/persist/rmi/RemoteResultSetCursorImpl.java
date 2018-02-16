@@ -61,6 +61,11 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
     super(session, clazz);
   }
 
+  @Override
+  public String toString() {
+    return "RemoteResultSetCursorImpl for " + getServicedClass() + ", session " + getServerSession();
+  }
+
   /**
    * Configures the delegate.<p>
    * Invoked from {@link RemoteDbSessionImpl#createRemoteDelegateInstance} by reflection.

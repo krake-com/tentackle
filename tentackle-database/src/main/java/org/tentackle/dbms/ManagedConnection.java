@@ -159,7 +159,7 @@ public class ManagedConnection {
           connection.close();
         }
         catch (SQLException sx) {
-          LOGGER.severe("low level close failed for {0}: {1}", name, sx.getMessage());
+          LOGGER.severe("cleanup failed for " + name, sx);
         }
       }
     }
