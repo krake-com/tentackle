@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.lang.ref.WeakReference;
 import java.util.Date;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -75,9 +76,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   // connect thread
 
   private boolean shutdownRequested;        // true if shutdown procedure initiated
-  private Thread connectThread;             // thread to bring up connections
-  private final Object connectGoMutex;      // mutex to trigger connect thread to go for more connections
-  private final Object connectDoneMutex;    // mutex to signal waiting threads that connections were brought up
+  private final Thread connectThread;       // thread to bring up connections
   private int conRequestCount;              // number of new connections requested
   private int warnLogSize;                  // number of connections when to start WARNING logging
   private int infoLogSize;                  // number of connections when to start INFO logging
@@ -121,12 +120,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     // setup initial connections
     unConList = new int[iniSize];
 
-    // create and start the connect thread
-    connectGoMutex   = new Object();
-    connectDoneMutex = new Object();
-
     // connections are brought up in an extra thread
-    connectThread = new ConnectionThread(getName() + " Connection Management Thread");
+    connectThread = new ConnectionThread(this);
   }
 
 
@@ -154,7 +149,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   /**
    * Shuts down this connection manager.<br>
    * All connections are closed and the threads stopped.
-   * Application servers should invoke this method when shut down.
    */
   @Override
   public synchronized void shutdown() {
@@ -343,7 +337,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       boolean request = false;
       boolean runningOutOfConnections = false;
 
-      synchronized(this) {
+      synchronized (this) {
         if (conRequestCount == 0) {
           // no request running: request more connections
           conRequestCount = incSize;
@@ -379,14 +373,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       else {
         if (request) {
           // start a new request for bringing up connections
-          synchronized(connectGoMutex) {
-            connectGoMutex.notifyAll();
+          synchronized(connectThread) {
+            connectThread.notifyAll();
           }
         }
-        // wait for connections to be brought up
-        synchronized(connectDoneMutex) {
+
+        // wait for connections to be brought up (even if no request -> may take longer)
+        synchronized (this) {
           try {
-            connectDoneMutex.wait(MUTEX_MS);     // wait max 1 second
+            wait(MUTEX_MS);
           }
           catch (InterruptedException ex) {
             // just start over and try again
@@ -611,8 +606,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     if (reopen) {
-      synchronized(connectGoMutex) {
-        connectGoMutex.notifyAll();   // fire connect, but don't wait for completion
+      synchronized(connectThread) {
+        connectThread.notifyAll();   // fire connect, but don't wait for completion
       }
     }
   }
@@ -620,14 +615,18 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
 
   /**
-   * The connection management thread.
+   * The connection management thread.<br>
+   * The thread is stopped as soon as the connection manager is shut down or becomes unreferenced.
    */
-  private class ConnectionThread extends Thread {
+  private static class ConnectionThread extends Thread {
 
-    public ConnectionThread(String name) {
-      super(name);
+    private final WeakReference<MpxConnectionManager> cmRef;
+
+    ConnectionThread(MpxConnectionManager mgr) {
+      super(mgr.getName() + " Connection Management Thread");
       setDaemon(true);
       setPriority(MAX_PRIORITY);
+      cmRef = new WeakReference<>(mgr);
     }
 
     @Override
@@ -635,31 +634,35 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
       LOGGER.info("{0} started", getName());
 
-      while (!shutdownRequested) {
-        synchronized (connectGoMutex) {     // syncs conRequestCount as well
+      for (;;) {
+        synchronized (this) {     // syncs conRequestCount as well
           try {
-            connectGoMutex.wait(MUTEX_MS);
+            wait(MUTEX_MS);
           }
           catch (InterruptedException ex) {
           }
 
-          if (!shutdownRequested && conRequestCount > 0) {
+          MpxConnectionManager mgr = cmRef.get();
+          if (mgr == null || mgr.shutdownRequested) {
+            break;
+          }
+
+          if (mgr.conRequestCount > 0) {
             /**
-             * Bring up connections.
-             * This will probably throw exceptions that we catch here and log them.
+             * Bring up connections. This will probably throw exceptions that we catch here and log.
              * There's not much more we can do.
              */
             try {
               // create missing connections
-              int count = createConnections(conRequestCount);
-              conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
+              int count = mgr.createConnections(mgr.conRequestCount);
+              mgr.conRequestCount = count == 0 ? -1 : 0; // -1 = max. connections exhausted
             }
             catch (RuntimeException e) {
-              LOGGER.warning(MpxConnectionManager.this + ": creating connections failed", e);
+              LOGGER.warning(mgr + ": creating connections failed", e);
             }
 
-            synchronized (connectDoneMutex) {   // syncs conRequestCount as well
-              connectDoneMutex.notifyAll();
+            synchronized (mgr) {   // syncs conRequestCount as well
+              mgr.notifyAll();
             }
           }
         }

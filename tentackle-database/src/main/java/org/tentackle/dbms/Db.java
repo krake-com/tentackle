@@ -20,7 +20,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;

@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.lang.ref.Cleaner;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -134,10 +135,40 @@ public class ManagedConnection {
 
   private static final AtomicLong INSTANCE_COUNTER = new AtomicLong();
 
+  private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
+  /**
+   * Holds the resources to be cleaned up.<br>
+   * Notice that ManagedConnections are referenced by their ConnectionManager.
+   * As a consequence, they will be cleaned up when the ConnectionManager is cleaned up.
+   */
+  private static class Resources implements Runnable {
+    private Connection connection;  // the wrapped connection, null if closed
+    private String name;            // the name of the managed connection
+
+    public Resources(Connection connection) {
+      this.connection = connection;
+    }
+
+    @Override
+    public void run() {
+      if (connection != null) {
+        // application lost the reference and did not close it before
+        LOGGER.warning("closing unreferenced connection {0}", name);
+        try {
+          connection.close();
+        }
+        catch (SQLException sx) {
+          LOGGER.severe("low level close failed for {0}: {1}", name, sx.getMessage());
+        }
+      }
+    }
+  }
+
+
+  private final Resources resources;                      // resources to be cleaned up
   private final ConnectionManager manager;                // the manager that created this connection
   private final Backend backend;                          // the backend
-  private Connection connection;                          // the wrapped connection, null if closed
   private final String backendId;                         // a unique ID to identify the connection at the backend
   private final long instanceNumber;                      // unique instance number (for logging only)
   private Db db;                                          // currently attached Db, null = free connection
@@ -173,7 +204,6 @@ public class ManagedConnection {
 
     this.manager = manager;
     this.backend = backend;
-    this.connection = connection;
 
     backendId = backend.getBackendId(connection);
     instanceNumber = INSTANCE_COUNTER.incrementAndGet();
@@ -187,6 +217,10 @@ public class ManagedConnection {
     // use a threadsafe set due to concurrent cleanup of weakreferences in getOpenResultSets and cancelRunningStatements
     openResultSets = Collections.newSetFromMap(new ConcurrentHashMap<>());
     runningStatements = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    resources = new Resources(connection);
+    resources.name = toString();    // cannot be a constructor arg because of chicken egg
+    CLEANER.register(this, resources);
   }
 
 
@@ -207,7 +241,7 @@ public class ManagedConnection {
    * @throws PersistenceException if connection is closed
    */
   public Connection getConnection() {
-    Connection c = connection;
+    Connection c = resources.connection;
     if (c == null) {
       throw new PersistenceException("connection is closed");
     }
@@ -511,19 +545,19 @@ public class ManagedConnection {
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    Connection con = connection;  // local variable because could be closed between test and use
+    Connection con = resources.connection;  // local variable because could be closed between test and use
     buf.append(con == null ? "<closed connection>" : con.toString());
     buf.append('[').append(getName());
     if (index >= 0) {
       buf.append('/').append(index);
     }
+    buf.append(']');
     if (attachCount > 0) {
       buf.append(", attached ").append(attachCount).append(" since ").append(new Timestamp(attachedSince));
     }
     if (dead) {
       buf.append(", dead");
     }
-    buf.append(']');
     return buf.toString();
   }
 
@@ -1089,8 +1123,8 @@ public class ManagedConnection {
       LOGGER.warning("low level close failed: " + ex.getMessage() + " -> " + this + " marked closed!");
     }
     finally {
-      connection = null;          // to GC
-      getManagedConnections();    // remove unreferenced or closed entries
+      resources.connection = null;    // to GC
+      getManagedConnections();        // remove unreferenced or closed entries
     }
   }
 
@@ -1101,33 +1135,8 @@ public class ManagedConnection {
    * @return true if connection is closed
    */
   public boolean isClosed() {
-    return connection == null;
+    return resources.connection == null;
   }
-
-
-
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      if (!isClosed()) {
-        LOGGER.warning("closing unreferenced open connection: " + this);
-        closeImpl();
-      }
-    }
-    catch (RuntimeException ex) {
-      try {
-        LOGGER.warning("closing unreferenced connection '" + this + "' failed in finalizer", ex);
-      }
-      catch (RuntimeException ex2) {
-        // don't stop finalization if just the logging failed
-      }
-    }
-    finally {
-      super.finalize();
-    }
-  }
-
-
 
 
   /**
@@ -1214,7 +1223,8 @@ public class ManagedConnection {
    * @param resultSetConcurrency the result set concurrency
    * @return the statement
    */
-  public PreparedStatementWrapper createPreparedStatement(StatementKey statementKey, String sql, int resultSetType, int resultSetConcurrency) {
+  public PreparedStatementWrapper createPreparedStatement(StatementKey statementKey, String sql,
+                                                          int resultSetType, int resultSetConcurrency) {
     try {
       sql = backend.optimizeSql(sql);
       return new PreparedStatementWrapper(

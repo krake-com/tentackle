@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms;
 
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -214,7 +215,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     this.attachTimeout = attachTimeout;
     if (attachTimeout > 0) {
       if (timeoutThread == null) {
-        timeoutThread = new AttachTimeoutThread(name + " Attach Timeout Thread");
+        timeoutThread = new AttachTimeoutThread(this);
         timeoutThread.start();
       }
     }
@@ -573,12 +574,18 @@ public class DefaultConnectionManager implements ConnectionManager {
   /**
    * The attach timeout thread.<br>
    * Detaches connections that have been attached for longer than attachTimeout milliseconds.
+   * The thread is stopped as soon as the connection manager is shut down or becomes unreferenced.
    */
-  private class AttachTimeoutThread extends Thread {
+  private static class AttachTimeoutThread extends Thread {
 
-    public AttachTimeoutThread(String name) {
-      super(name);
+    private final WeakReference<DefaultConnectionManager> cmRef;
+    private long attachTimeout;
+
+    AttachTimeoutThread(DefaultConnectionManager mgr) {
+      super(mgr.getName() + " Attach Timeout Thread");
       setDaemon(true);
+      cmRef = new WeakReference<>(mgr);
+      attachTimeout = mgr.attachTimeout;
     }
 
     @Override
@@ -586,27 +593,33 @@ public class DefaultConnectionManager implements ConnectionManager {
 
       LOGGER.info("{0} started with timeout={1}ms", getName(), attachTimeout);
 
-      long timeout;
-      while (!shutdownRequested && (timeout = attachTimeout) > 0) {
+      for (;;) {
         try {
-          sleep(timeout);
+          sleep(attachTimeout);
+
+          DefaultConnectionManager mgr = cmRef.get();
+          if (mgr == null || mgr.shutdownRequested || mgr.attachTimeout <= 0) {
+            break;
+          }
+
+          attachTimeout = mgr.attachTimeout;
 
           // check for attached connections
           long curTime = System.currentTimeMillis();
 
           ManagedConnection[] connections;
-          synchronized (DefaultConnectionManager.this) {
-            connections = conList.clone();    // fast array copy!
+          synchronized (mgr) {
+            connections = mgr.conList.clone();    // fast array copy!
           }
           for (ManagedConnection con : connections) {
             if (con != null) {
-              if (con.isAttached() && (curTime - con.getAttachedSince()) > timeout) {
+              if (con.isAttached() && (curTime - con.getAttachedSince()) > attachTimeout) {
                 Db db = con.getSession();
                 if (db != null) {   // still unsyncd..
-                  synchronized (DefaultConnectionManager.this) {    // attach/detach is syncd on me
+                  synchronized (mgr) {    // attach/detach is syncd on me
                     long attachedMillis = curTime - con.getAttachedSince();
                     if (db.getConnection() == con && con.isAttached() &&
-                        attachedMillis > timeout) {   // double check within syncd block
+                        attachedMillis > attachTimeout) {   // double check within syncd block
                       // timed out
                       try {
                         LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
