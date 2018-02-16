@@ -56,7 +56,7 @@ public class DefaultDbPool implements SessionPool {
 
 
   // managed Db slot
-  private class PooledDb {
+  private class PooledSession {
 
     private Db db;                            // the managed db, null if currently lended
     private final String dbStr;               // the db string (not the reference!)
@@ -70,7 +70,7 @@ public class DefaultDbPool implements SessionPool {
     /**
      * Creates a pooled db.
      */
-    private PooledDb() {
+    private PooledSession() {
       /**
        * Important: userInfo must be cloned because otherwise changes
        * to the userinfo would affect all instances simultaneously.
@@ -193,7 +193,7 @@ public class DefaultDbPool implements SessionPool {
   private long maxUsageMinutes;             // usage timeout in [minutes]
 
   private boolean initialized;              // true if pool is initialized
-  private PooledDb[] pool;                  // database pool
+  private PooledSession[] pooledSessions;   // session pool
   private int[] freeList;                   // free slots in 'pool'
   private int freeCount;                    // number of entries in freeList
   private int[] unusedList;                 // unused Db instances in the pool
@@ -241,11 +241,11 @@ public class DefaultDbPool implements SessionPool {
     this.maxUsageMinutes = maxUsageMinutes;
 
     // setup the pool
-    pool = new PooledDb[iniSize];
+    pooledSessions = new PooledSession[iniSize];
     freeList = new int[iniSize];
     unusedList = new int[iniSize];
     for (int i=0; i < iniSize; i++) {
-      pool[i] = null;
+      pooledSessions[i] = null;
       freeList[freeCount++] = i;
       unusedList[i] = -1;
     }
@@ -424,25 +424,25 @@ public class DefaultDbPool implements SessionPool {
   private void createDbInstances(int num) {
     if (num > freeCount) {
       // enlarge arrays
-      int nSize = pool.length + num - freeCount;
+      int nSize = pooledSessions.length + num - freeCount;
       if (maxSize > 0 && nSize > maxSize) {
         nSize = maxSize;
       }
-      if (nSize <= pool.length) {
+      if (nSize <= pooledSessions.length) {
         throw new PersistenceException("cannot create more Db instances, max. poolsize " + maxSize + " reached");
       }
-      PooledDb[] nPool  = new PooledDb[nSize];
+      PooledSession[] nPool  = new PooledSession[nSize];
       int[] nFreeList   = new int[nSize];
       int[] nUnusedList = new int[nSize];
-      System.arraycopy(pool, 0, nPool, 0, pool.length);
-      System.arraycopy(freeList, 0, nFreeList, 0, pool.length);
-      System.arraycopy(unusedList, 0, nUnusedList, 0, pool.length);
-      for (int i=pool.length; i < nSize; i++) {
+      System.arraycopy(pooledSessions, 0, nPool, 0, pooledSessions.length);
+      System.arraycopy(freeList, 0, nFreeList, 0, pooledSessions.length);
+      System.arraycopy(unusedList, 0, nUnusedList, 0, pooledSessions.length);
+      for (int i=pooledSessions.length; i < nSize; i++) {
         nPool[i] = null;
         nFreeList[freeCount++] = i;
         nUnusedList[i] = -1;
       }
-      pool = nPool;
+      pooledSessions = nPool;
       freeList = nFreeList;
       unusedList = nUnusedList;
     }
@@ -450,7 +450,7 @@ public class DefaultDbPool implements SessionPool {
     // freeCount is at least 1: get from freelist
     while (num > 0 && freeCount > 0) {
       int index = freeList[freeCount - 1];  // no --freeCount because new PooledDb() may throw exceptions
-      pool[index] = new PooledDb();
+      pooledSessions[index] = new PooledSession();
       freeCount--;
       unusedList[unusedCount++] = index;
       num--;
@@ -468,7 +468,7 @@ public class DefaultDbPool implements SessionPool {
    * @param index the pool index
    */
   private void removeDbInstance(Db dbToRemove, int index) {
-    Db db = pool[index].refDb.get();    // pooledDb.db may be null because currently lended
+    Db db = pooledSessions[index].refDb.get();    // pooledDb.db may be null because currently lended
     if (db != dbToRemove) {
       throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool " + this + " at index " + index);
     }
@@ -495,7 +495,7 @@ public class DefaultDbPool implements SessionPool {
    * @param index the pool index
    */
   private void removeDbIndex(int index) {
-    pool[index] = null;
+    pooledSessions[index] = null;
     freeList[freeCount++] = index;  // add to freelist
 
     // check if index was in the unused list. If so, remove it
@@ -541,12 +541,12 @@ public class DefaultDbPool implements SessionPool {
     }
 
     synchronized(this) {
-      for (PooledDb pdb: pool) {
+      for (PooledSession pdb: pooledSessions) {
         if (pdb != null) {
           pdb.close();
         }
       }
-      pool = null;
+      pooledSessions = null;
       freeList = null;
       unusedList = null;
       timeoutThread = null;
@@ -556,13 +556,13 @@ public class DefaultDbPool implements SessionPool {
 
   @Override
   public synchronized boolean isShutdown() {
-    return pool == null;
+    return pooledSessions == null;
   }
 
 
   @Override
   public synchronized int getSize() {
-    return pool == null ? 0 : pool.length - freeCount;
+    return pooledSessions == null ? 0 : pooledSessions.length - freeCount;
   }
 
 
@@ -573,7 +573,7 @@ public class DefaultDbPool implements SessionPool {
       // pool is empty at begin: create instances
       createDbInstances(iniSize);
       // start timeout thread
-      timeoutThread = new TimeoutThread();
+      timeoutThread = new TimeoutThread(this);
       timeoutThread.start();
       initialized = true;    // first time initialization completed
     }
@@ -581,11 +581,11 @@ public class DefaultDbPool implements SessionPool {
       createDbInstances(incSize); // enlarge the pool (will throw Exception if pool is exhausted)
     }
     int poolId = unusedList[--unusedCount];
-    Db db = pool[poolId].db;
+    Db db = pooledSessions[poolId].db;
     if (!db.isOpen()) {
       throw new SessionClosedException(db, this + ": Db has been closed unexpectedly");
     }
-    pool[poolId].use(Thread.currentThread());
+    pooledSessions[poolId].use(Thread.currentThread());
     db.setPoolId(poolId + 1);   // starting at 1
     LOGGER.fine("{0}: Db {1} assigned to pool id {2}", this, db, poolId);
     return db;
@@ -601,7 +601,7 @@ public class DefaultDbPool implements SessionPool {
     }
     int poolId = db.getPoolId();
     // 0 = already returned to pool, -1 removed from pool, else not returned yet
-    if (poolId < -1 || poolId > pool.length) {
+    if (poolId < -1 || poolId > pooledSessions.length) {
       throw new PersistenceException(db, this + ": Db has invalid poolid " + poolId);
     }
     if (db.isOpen()) {
@@ -620,7 +620,7 @@ public class DefaultDbPool implements SessionPool {
         else {
           LOGGER.fine("{0}: Db {1} returned to pool, id {2}", this, db, poolId);
           poolId--;
-          pool[poolId].unUse(db);
+          pooledSessions[poolId].unUse(db);
           unusedList[unusedCount++] = poolId;
         }
         db.setPoolId(0);            // returned to pool
@@ -648,7 +648,7 @@ public class DefaultDbPool implements SessionPool {
    * Asserts that this pool wasn't shutdown.
    */
   private void assertNotShutdown() {
-    if (pool == null) {
+    if (pooledSessions == null) {
       throw new PersistenceException(this + " already shutdown");
     }
   }
@@ -659,18 +659,23 @@ public class DefaultDbPool implements SessionPool {
    * This is to release resources, if any, and improves memory consumption
    * for long running servers. Furthermore, if references to a closed db
    * are still in use, an exception is thrown when used again.
+   * <p>
+   * Notice: the thread will be terminated if pool is shutdown or unreferenced
    */
-  private class TimeoutThread extends Thread implements Scavenger {
+  private static class TimeoutThread extends Thread implements Scavenger {
 
-    private TimeoutThread() {
-      super("Db-Pool '" + DefaultDbPool.this.getName() + "' Timeout Thread");
+    private final WeakReference<DefaultDbPool> poolRef;
+
+    private TimeoutThread(DefaultDbPool pool) {
+      super("Db-Pool '" + pool.getName() + "' Timeout Thread");
+      poolRef = new WeakReference<>(pool);
       setDaemon(true);
     }
 
     @Override
     public void run() {
       LOGGER.info(this + " started");
-      while (!shutdownRequested) {
+      for (;;) {
         try {
           try {
             sleep(SLEEP_INTERVAL); // wait for a few seconds
@@ -678,68 +683,71 @@ public class DefaultDbPool implements SessionPool {
           catch (InterruptedException ex) {
             // just continue
           }
-          if (!shutdownRequested) {
+
+          DefaultDbPool pool = poolRef.get();
+          if (pool == null || pool.shutdownRequested) {
+            break;
+          }
 
             long curtime = System.currentTimeMillis();
-            synchronized (DefaultDbPool.this) {
+          synchronized (pool) {
 
-              // bring down timed out unused Db instances
-              int i = 0;    // start with oldest unused
-              while (i < unusedCount) {
-                int index = unusedList[i];
-                PooledDb pooledDb = pool[index];  // pooledDb.db != null because unused
+            // bring down timed out unused Db instances
+            int i = 0;    // start with oldest unused
+            while (i < pool.unusedCount) {
+              int index = pool.unusedList[i];
+              PooledSession pooledDb = pool.pooledSessions[index];  // pooledDb.db != null because unused
 
-                long idleMinutes = pooledDb.idleMinutes(curtime);
-                boolean idleTimedOut = idleMinutes > getMaxIdleMinutes();
-                if (idleTimedOut) {
-                  LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, getMaxIdleMinutes());
+              long idleMinutes = pooledDb.idleMinutes(curtime);
+              boolean idleTimedOut = idleMinutes > pool.getMaxIdleMinutes();
+              if (idleTimedOut) {
+                LOGGER.info("{0} idle for {1} (max={2}) -> closed", pooledDb, idleMinutes, pool.getMaxIdleMinutes());
+              }
+
+              long usedMinutes = pooledDb.usedMinutes(curtime);
+              boolean usageTimedOut = usedMinutes > pool.getMaxUsageMinutes();
+              if (usageTimedOut) {
+                LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, pool.getMaxUsageMinutes());
+              }
+
+              // if used at all and unused interval elapsed
+              if (idleTimedOut || usageTimedOut) {
+                pool.removeDbInstance(pooledDb.db, index);
+                i--; // start over at same slot
+              }
+              else if (pooledDb.db.isRemote()) {
+                try {
+                  // remote connections must be kept alive in order not to be closed by remote server!
+                  pooledDb.db.setAlive(true);
                 }
-
-                long usedMinutes = pooledDb.usedMinutes(curtime);
-                boolean usageTimedOut = usedMinutes > getMaxUsageMinutes();
-                if (usageTimedOut) {
-                  LOGGER.info("{0} used for {1} (max={2}) -> closed", pooledDb, usedMinutes, getMaxUsageMinutes());
-                }
-
-                // if used at all and unused interval elapsed
-                if (idleTimedOut || usageTimedOut) {
-                  removeDbInstance(pooledDb.db, index);
+                catch (RuntimeException ex) {
+                  LOGGER.severe("remote keep alive failed", ex);
+                  pool.removeDbInstance(pooledDb.db, index);
                   i--; // start over at same slot
                 }
-                else if (pooledDb.db.isRemote()) {
-                  try {
-                    // remote connections must be kept alive in order not to be closed by remote server!
-                    pooledDb.db.setAlive(true);
-                  }
-                  catch (RuntimeException ex) {
-                    LOGGER.severe("remote keep alive failed", ex);
-                    removeDbInstance(pooledDb.db, index);
-                    i--; // start over at same slot
-                  }
-                }
-                i++;
               }
+              i++;
+            }
 
-              // remove unreferenced Db instances
-              i = 0;
-              for (PooledDb pooledDb: pool) {
-                if (pooledDb != null && pooledDb.isUnreferenced()) {
-                  LOGGER.warning("unreferenced " + pooledDb +
-                                 " last used by " + pooledDb.usingThreadStr +
-                                 " in MDC{" + pooledDb.mdcStr +
-                                 "} since " + new Timestamp(pooledDb.usedSince) +
-                                 " -> removed from pool!");
-                  removeDbIndex(i);
-                  // note: the finalizer will close the Db physically
-                }
-                i++;
+            // remove unreferenced Db instances
+            i = 0;
+            for (PooledSession pooledDb : pool.pooledSessions) {
+              if (pooledDb != null && pooledDb.isUnreferenced()) {
+                LOGGER.warning("unreferenced " + pooledDb +
+                        " last used by " + pooledDb.usingThreadStr +
+                        " in MDC{" + pooledDb.mdcStr +
+                        "} since " + new Timestamp(pooledDb.usedSince) +
+                        " -> removed from pool!");
+                pool.removeDbIndex(i);
+                // note: the finalizer will close the Db physically
               }
+              i++;
+            }
 
-              // check if we need to bring up some Db for minSize
-              int size = getSize();
-              if (size < getMinSize()) {
-                createDbInstances(getMinSize() - size);
-              }
+            // check if we need to bring up some Db for minSize
+            int size = pool.getSize();
+            if (size < pool.getMinSize()) {
+              pool.createDbInstances(pool.getMinSize() - size);
             }
           }
         }
