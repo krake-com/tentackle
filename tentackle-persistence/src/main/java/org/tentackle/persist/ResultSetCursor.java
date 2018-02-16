@@ -19,6 +19,7 @@
 package org.tentackle.persist;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,32 +56,49 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     private ResultSetWrapper rs;                      // the result set (only for local sessions, null if remote)
     private RemoteResultSetCursor<T> remoteCursor;    // the remote cursor (only for remote sessions, null if local)
+    private ResultSetCursor<T> me;                    // != null if programmatic close
 
-    public Resources(ResultSetWrapper rs, RemoteResultSetCursor<T> remoteCursor) {
+    Resources(ResultSetWrapper rs, RemoteResultSetCursor<T> remoteCursor) {
       this.rs = rs;
       this.remoteCursor = remoteCursor;
     }
 
     @Override
     public void run() {
-      if (rs != null) {
-        LOGGER.warning("closing unreferenced local ResultSetCursor {0}", rs);
-        rs.close();
+      try {
+        if (rs != null) {
+          if (me == null) {
+            LOGGER.warning("closing unreferenced local ResultSetCursor {0}", rs);
+          }
+          rs.close();
+        }
+        else if (remoteCursor != null) {
+          if (me == null) {
+            LOGGER.warning("closing unreferenced remote ResultSetCursor {0}", remoteCursor);
+          }
+          try {
+            remoteCursor.close();
+          }
+          catch (RemoteException ex) {
+            if (me == null) {
+              LOGGER.severe("cleanup " + remoteCursor + " failed", ex);
+            }
+            else {
+              throw new PersistenceException(me.getSession(), ex);
+            }
+          }
+        }
       }
-      else if (remoteCursor != null) {
-        LOGGER.warning("closing unreferenced remote ResultSetCursor {0}", remoteCursor);
-        try {
-          remoteCursor.close();
-        }
-        catch (RemoteException ex) {
-          LOGGER.severe("cleanup failed for " + remoteCursor, ex);
-        }
+      finally {
+        rs = null;
+        remoteCursor = null;
       }
     }
   }
 
 
   private final Resources<T> resources;                   // resources for cleanup
+  private final Cleanable cleanable;                      // the cleanable to close
   private final T pdoProxy;                               // the pdo proxy (only for local sessions)
   private final JoinedSelect<T> js;                       // the join configuration (only for local sessions)
   private final Session session;                          // the session
@@ -112,7 +130,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
 
     assertSessionIsLocal();
     ((AbstractPersistentObject) pdo.getPersistenceDelegate()).assertRootContextIsAccepted();
-    CLEANER.register(this, resources);
+    cleanable = CLEANER.register(this, resources);
   }
 
   /**
@@ -142,7 +160,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
     resources = new Resources<>(null, remoteCursor);
 
     assertSessionIsRemote();
-    CLEANER.register(this, resources);
+    cleanable = CLEANER.register(this, resources);
   }
 
   /**
@@ -203,19 +221,8 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
    */
   @Override
   public void close() {
-    if (resources.rs != null) {
-      resources.rs.close();
-      resources.rs = null;
-    }
-    else if (resources.remoteCursor != null) {
-      try {
-        resources.remoteCursor.close();
-        resources.remoteCursor = null;
-      }
-      catch (RemoteException ex) {
-        throw new PersistenceException(session, ex);
-      }
-    }
+    resources.me = this;
+    cleanable.clean();
   }
 
 

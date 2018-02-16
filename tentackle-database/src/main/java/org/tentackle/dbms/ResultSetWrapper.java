@@ -21,6 +21,8 @@
 package org.tentackle.dbms;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -54,17 +56,92 @@ public class ResultSetWrapper implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetWrapper.class);
 
-  private ResultSet rs;                             // the wrapped result set, null if closed
-  private StatementWrapper stmt;                    // the statement wrapper
-  private Db db;                                    // db from statement
+
+  private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
+
+  /**
+   * Holds the resources and state to be cleaned up.
+   */
+  private static class Resources implements Runnable {
+
+    private StatementWrapper stmt;                  // the statement wrapper
+    private ResultSet rs;                           // the wrapped result set, null if closed
+    private Db db;                                  // db from statement
+    private ResultSetSkipBlock skipBlock;           // current skip block
+    private boolean commitOnCloseVoucherValid;      // true if commitOnCloseVoucher has been set
+    private long commitOnCloseVoucher;              // != 0 if issue a commit() before close()
+    private List<ResultSetSkipBlock> skipBlocks;    // list of skip blocks (null if not in skipmode)
+    private boolean closeStatementOnClose;          // true = close the statement after resultset is closed
+    private ResultSetWrapper me;                    // != null if normal close, else cleanup
+
+    Resources(StatementWrapper stmt, ResultSet rs) {
+      this.stmt = stmt;
+      this.rs = rs;
+      db = stmt.getSession();
+      if (db == null) {
+        stmt.consume();
+        throw new PersistenceException("connection already closed for " + this);
+      }
+      // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
+      closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
+                              ((PreparedStatementWrapper) stmt).getStatementKey() == null;
+    }
+
+    @Override
+    public void run() {
+      final ResultSet rset = rs;    // local copy in case of race-condition
+      if (rset != null) {
+        try {
+          final StatementWrapper st = stmt;
+          if (st != null && !st.isClosed()) {
+            st.unmarkReady();
+            if (me == null) {
+              LOGGER.warning("closing unreferenced result set wrapper for {0}", st);
+            }
+            else {
+              // removes me from stmt.close (see below)
+              st.forgetResultSetWrapper(me);    // st ref to me is a weak ref, so no harm if not done in cleanup
+            }
+            final boolean voucherValid = commitOnCloseVoucherValid;
+            final Db session = db;
+            if (voucherValid && session != null) {
+              session.commit(commitOnCloseVoucher);
+              commitOnCloseVoucher = 0;
+              commitOnCloseVoucherValid = false;
+            }
+          }
+          rset.close();   // this is ok even if already closed (according to the API)
+        }
+        catch (SQLException sqx) {
+          throw new PersistenceException(db, sqx);
+        }
+        catch (RuntimeException rex) {
+          LOGGER.severe("closing result set wrapper " + this + " failed", rex);
+        }
+        finally {
+          db = null;
+          rs = null;
+          skipBlock = null;
+          skipBlocks = null;
+          final StatementWrapper st = stmt;
+          if (st != null) {
+            st.detachSession();
+            if (closeStatementOnClose) {
+              st.close();
+            }
+            stmt = null;
+          }
+        }
+      }
+    }
+  }
+
+
+  private final Resources resources;                // resources to be cleaned up
+  private final Cleanable cleanable;                // to cleanup the result set
   private int columnOffset;                         // offset to add to column index (e.g. for eager loading / joins)
-  private boolean commitOnCloseVoucherValid;        // true if commitOnCloseVoucher has been set
-  private long commitOnCloseVoucher;                // != 0 if issue a commit() before close()
-  private boolean closeStatementOnClose;            // true = close the statement after resultset is closed
   private int columnCount;                          // number of columns returned, -1 if unknown
   private ResultSetMetaData metaData;               // the meta data, null if not retrieved yet
-  private List<ResultSetSkipBlock> skipBlocks;      // list of skip blocks (null if not in skipmode)
-  private ResultSetSkipBlock skipBlock;             // current skip block
   private int skipBlockIndex;                       // the current skip block
   private boolean cursorMovedInSkipMode;            // true if cursor moved the first time while in skipmode
   private Map<Object,ResultSetSection> sections;    // the configured column sections
@@ -78,23 +155,10 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param rs the original result-set
    */
   public ResultSetWrapper (StatementWrapper stmt, ResultSet rs) {
-
-    this.stmt = stmt;
-    this.rs = rs;
-
-    db = stmt.getSession();
-    if (db == null) {
-      stmt.consume();
-      throw new PersistenceException("connection already closed for " + this);
-    }
-
-    // enable statement-autoclosing if the statement is a non-prepared statement or a prepared one-shot
-    closeStatementOnClose = !(stmt instanceof PreparedStatementWrapper) ||
-                            ((PreparedStatementWrapper) stmt).getStatementKey() == null;
-
+    resources = new Resources(stmt, rs);
     columnCount = -1;
+    cleanable = CLEANER.register(this, resources);
   }
-
 
 
   /**
@@ -103,7 +167,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return the db
    */
   public Db getSession() {
-    return db;
+    return resources.db;
   }
 
   /**
@@ -112,12 +176,12 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return the statement being executes for this result set
    */
   public StatementWrapper getStatement() {
-    return stmt;
+    return resources.stmt;
   }
 
   @Override
   public String toString() {
-    return stmt == null ? "<closed resultset>" : stmt.toString();
+    return resources.stmt == null ? "<closed resultset>" : resources.stmt.toString();
   }
 
 
@@ -129,10 +193,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public ResultSetMetaData getMetaData() {
     if (metaData == null) {
       try {
-        metaData = rs.getMetaData();
+        metaData = resources.rs.getMetaData();
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(db, sqx);
+        throw new PersistenceException(resources.db, sqx);
       }
     }
     return metaData;
@@ -143,45 +207,9 @@ public class ResultSetWrapper implements AutoCloseable {
    * Closes the resultset.
    */
   @Override
-  public void close ()  {
-    final ResultSet rset = rs;    // local copy in case of race-condition
-    if (rset != null) {
-      try {
-        final StatementWrapper st = stmt;
-        if (st != null && !st.isClosed()) {
-          st.unmarkReady();
-          st.forgetResultSetWrapper(this);    // removes me from stmt.close (see below)
-          final boolean voucherValid = commitOnCloseVoucherValid;
-          final Db session = db;
-          if (voucherValid && session != null)  {
-            session.commit(commitOnCloseVoucher);
-            commitOnCloseVoucher = 0;
-            commitOnCloseVoucherValid = false;
-          }
-        }
-        rset.close();   // this is ok even if already closed (according to the API)
-      }
-      catch (SQLException sqx)  {
-        throw new PersistenceException(db, sqx);
-      }
-      catch (RuntimeException rex) {
-        LOGGER.severe("closing result set wrapper " + this + " failed", rex);
-      }
-      finally {
-        db = null;
-        rs = null;
-        skipBlock = null;
-        skipBlocks = null;
-        final StatementWrapper st = stmt;
-        if (st != null) {
-          st.detachSession();
-          if (closeStatementOnClose)  {
-            st.close();
-          }
-          stmt = null;
-        }
-      }
-    }
+  public void close () {
+    resources.me = this;      // programmatic close, not a cleanup
+    cleanable.clean();
   }
 
 
@@ -191,32 +219,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return true if closed
    */
   public boolean isClosed() {
-    return rs == null;
-  }
-
-
-  /**
-   * Overridden to close forgotten resultsets.
-   */
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      if (!isClosed()) {
-        LOGGER.warning("pending resultset '" + this + "' closed by finalizer");
-        close();
-      }
-    }
-    catch (RuntimeException ex) {
-      try {
-        LOGGER.severe("closing pending resultset '" + this + "' failed in finalizer");
-      }
-      catch (RuntimeException ex2) {
-        // don't stop finalization if just the logging failed
-      }
-    }
-    finally  {
-      super.finalize();
-    }
+    return resources.rs == null;
   }
 
 
@@ -232,8 +235,8 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param commitOnCloseVoucher the voucher to commit, 0 if none
    */
   public void setCommitOnCloseVoucher(boolean commitOnCloseVoucherValid, long commitOnCloseVoucher) {
-    this.commitOnCloseVoucherValid = commitOnCloseVoucherValid;
-    this.commitOnCloseVoucher = commitOnCloseVoucher;
+    resources.commitOnCloseVoucherValid = commitOnCloseVoucherValid;
+    resources.commitOnCloseVoucher = commitOnCloseVoucher;
   }
 
 
@@ -243,7 +246,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return true if perform a commit on close
    */
   public boolean isCommitOnCloseVoucherValid() {
-    return commitOnCloseVoucherValid;
+    return resources.commitOnCloseVoucherValid;
   }
 
   /**
@@ -255,7 +258,7 @@ public class ResultSetWrapper implements AutoCloseable {
     if (!isCommitOnCloseVoucherValid()) {
       throw new PersistenceException("commitOnCloseVoucher is not valid");
     }
-    return commitOnCloseVoucher;
+    return resources.commitOnCloseVoucher;
   }
 
 
@@ -267,7 +270,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param closeStatementOnClose true if close statement on close
    */
   public void setCloseStatementOnclose(boolean closeStatementOnClose) {
-    this.closeStatementOnClose = closeStatementOnClose;
+    resources.closeStatementOnClose = closeStatementOnClose;
   }
 
   /**
@@ -276,7 +279,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return true if close statement on close
    */
   public boolean isCloseStatementOnclose()  {
-    return closeStatementOnClose;
+    return resources.closeStatementOnClose;
   }
 
 
@@ -310,7 +313,7 @@ public class ResultSetWrapper implements AutoCloseable {
         columnCount = getMetaData().getColumnCount();
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(db, sqx);
+        throw new PersistenceException(resources.db, sqx);
       }
     }
     return columnCount;
@@ -323,7 +326,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @return true if in skipmode
    */
   public boolean isInSkipMode() {
-    return skipBlocks != null;
+    return resources.skipBlocks != null;
   }
 
   /**
@@ -338,16 +341,16 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int findColumn(String name) {
     if (isInSkipMode()) {    // skipmode
-      int ndx = skipBlock.findColumn(name);
+      int ndx = resources.skipBlock.findColumn(name);
       return ndx - columnOffset;
     }
 
     // else standard mode
     try {
-      return rs.findColumn(name) - columnOffset;
+      return resources.rs.findColumn(name) - columnOffset;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -359,7 +362,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public void skipColumns(int columnCount) {
     assertInSkipMode();
-    skipBlock.applyColumnIndex(skipBlock.getSkippedColumns() + columnCount);
+    resources.skipBlock.applyColumnIndex(resources.skipBlock.getSkippedColumns() + columnCount);
   }
 
   /**
@@ -415,14 +418,14 @@ public class ResultSetWrapper implements AutoCloseable {
     if (cursorMovedInSkipMode) {
       assertInSkipMode();
       // just rewind
-      skipBlock = skipBlocks.get(0);
+      resources.skipBlock = resources.skipBlocks.get(0);
       skipBlockIndex = 0;
     }
     else  {
       // build first skipblock
-      skipBlock = new ResultSetSkipBlock(this, 0);
-      skipBlocks = new ArrayList<>();
-      skipBlocks.add(skipBlock);
+      resources.skipBlock = new ResultSetSkipBlock(this, 0);
+      resources.skipBlocks = new ArrayList<>();
+      resources.skipBlocks.add(resources.skipBlock);
       cursorMovedInSkipMode = false;
     }
   }
@@ -431,8 +434,8 @@ public class ResultSetWrapper implements AutoCloseable {
    * Ends skip mode.
    */
   public void endSkip() {
-    skipBlocks = null;
-    skipBlock = null;
+    resources.skipBlocks = null;
+    resources.skipBlock = null;
   }
 
   /**
@@ -450,7 +453,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public List<ResultSetSkipBlock> getSkipBlocks() {
     assertInSkipMode();
-    return skipBlocks;
+    return resources.skipBlocks;
   }
 
   /**
@@ -473,15 +476,15 @@ public class ResultSetWrapper implements AutoCloseable {
     if (cursorMovedInSkipMode) {
       // re-use old skip blocks
       skipBlockIndex++;
-      if (skipBlockIndex >= skipBlocks.size()) {
-        throw new PersistenceException(db, "only " + skipBlocks.size() + " skip blocks used so far in " + this);
+      if (skipBlockIndex >= resources.skipBlocks.size()) {
+        throw new PersistenceException(resources.db, "only " + resources.skipBlocks.size() + " skip blocks used so far in " + this);
       }
-      skipBlock = skipBlocks.get(skipBlockIndex);
+      resources.skipBlock = resources.skipBlocks.get(skipBlockIndex);
     }
     else  {
-      int skippedColumns = skipBlock == null ? 0 : skipBlock.getMaxColumnIndex();
-      skipBlock = new ResultSetSkipBlock(this, skippedColumns);
-      skipBlocks.add(skipBlock);
+      int skippedColumns = resources.skipBlock == null ? 0 : resources.skipBlock.getMaxColumnIndex();
+      resources.skipBlock = new ResultSetSkipBlock(this, skippedColumns);
+      resources.skipBlocks.add(resources.skipBlock);
     }
   }
 
@@ -571,10 +574,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public void setFetchSize(int rows) {
     try {
-      rs.setFetchSize(rows);
+      resources.rs.setFetchSize(rows);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -587,10 +590,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getFetchSize() {
     try {
-      return rs.getFetchSize();
+      return resources.rs.getFetchSize();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
 
   }
@@ -614,10 +617,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public void setFetchDirection(int direction) {
     try {
-      rs.setFetchDirection(direction);
+      resources.rs.setFetchDirection(direction);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -630,10 +633,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getFetchDirection() {
     try {
-      return rs.getFetchDirection();
+      return resources.rs.getFetchDirection();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -665,10 +668,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean next()  {
     try {
       clearSection();
-      return rs.next();
+      return resources.rs.next();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -692,10 +695,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean previous ()  {
     try {
       clearSection();
-      return rs.previous();
+      return resources.rs.previous();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -710,10 +713,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean first ()  {
     try {
       clearSection();
-      return rs.first();
+      return resources.rs.first();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -728,10 +731,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean last ()  {
     try {
       clearSection();
-      return rs.last();
+      return resources.rs.last();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -744,10 +747,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public void beforeFirst()  {
     try {
       clearSection();
-      rs.beforeFirst();
+      resources.rs.beforeFirst();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -760,10 +763,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public void afterLast()  {
     try {
       clearSection();
-      rs.afterLast();
+      resources.rs.afterLast();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -782,10 +785,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean isBeforeFirst()  {
     try {
-      return rs.isBeforeFirst();
+      return resources.rs.isBeforeFirst();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -804,10 +807,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean isAfterLast()  {
     try {
-      return rs.isAfterLast();
+      return resources.rs.isAfterLast();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -824,10 +827,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getRow ()  {
     try {
-      return rs.getRow();
+      return resources.rs.getRow();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -868,10 +871,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean absolute (int row)  {
     try {
       clearSection();
-      return rs.absolute(row);
+      return resources.rs.absolute(row);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -897,10 +900,10 @@ public class ResultSetWrapper implements AutoCloseable {
   public boolean relative (int rows)  {
     try {
       clearSection();
-      return rs.relative(rows);
+      return resources.rs.relative(rows);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -918,10 +921,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean wasNull() {
     try {
-      return rs.wasNull();
+      return resources.rs.wasNull();
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -939,10 +942,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Object getObject (String name)  {
     try {
-      return rs.getObject(name);
+      return resources.rs.getObject(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -959,14 +962,14 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getString (String name, boolean mapNull)  {
     try {
-      String str = rs.getString (name);
-      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+      String str = resources.rs.getString (name);
+      if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
         return null;
       }
       return str;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1004,10 +1007,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean getBoolean (String name) {
     try {
-      return rs.getBoolean(name);
+      return resources.rs.getBoolean(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1044,10 +1047,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public float getFloat (String name) {
     try {
-      return rs.getFloat(name);
+      return resources.rs.getFloat(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1078,10 +1081,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public double getDouble (String name) {
     try {
-      return rs.getDouble(name);
+      return resources.rs.getDouble(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1113,10 +1116,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public BigDecimal getBigDecimal (String name) {
     try {
-      return rs.getBigDecimal(name);
+      return resources.rs.getBigDecimal(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1154,7 +1157,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public DMoney getDMoney (String name) {
     try {
-      BigDecimal decimal = rs.getBigDecimal(name);
+      BigDecimal decimal = resources.rs.getBigDecimal(name);
       if (!wasNull()) {
         // set scale
         return new DMoney(decimal.movePointLeft(getInt(name + "P")));
@@ -1164,7 +1167,7 @@ public class ResultSetWrapper implements AutoCloseable {
       }
     }
     catch (SQLException e) {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1180,10 +1183,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public byte getByte (String name) {
     try {
-      return rs.getByte(name);
+      return resources.rs.getByte(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1214,11 +1217,11 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public char getChar (String name) {
     try {
-      String val = rs.getString(name);
+      String val = resources.rs.getString(name);
       return val == null || val.length() == 0 ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1266,10 +1269,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public short getShort (String name) {
     try {
-      return rs.getShort(name);
+      return resources.rs.getShort(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1300,10 +1303,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getInt (String name) {
     try {
-      return rs.getInt(name);
+      return resources.rs.getInt(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1334,10 +1337,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public long getLong (String name)  {
     try {
-      return rs.getLong(name);
+      return resources.rs.getLong(name);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1372,7 +1375,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public Date getDate(String name, Calendar timezone, boolean mapNull)  {
     try {
       java.sql.Date date = timezone == null ?
-              rs.getDate(name) : rs.getDate(name, timezone);
+              resources.rs.getDate(name) : resources.rs.getDate(name, timezone);
       if (date == null ||
           (mapNull && date.equals(DateHelper.MIN_DATE)))  {
         // mindate is translated back to null
@@ -1381,7 +1384,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return new Date(date.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1506,7 +1509,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public Timestamp getTimestamp(String name, Calendar timezone, boolean mapNull)  {
     try {
       java.sql.Timestamp ts = timezone == null ?
-              rs.getTimestamp(name) : rs.getTimestamp(name, timezone);
+              resources.rs.getTimestamp(name) : resources.rs.getTimestamp(name, timezone);
       if (ts == null ||
           (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
         // mintimestamp is translated back to null
@@ -1517,7 +1520,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return tts;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1641,11 +1644,11 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       // no minTime (makes no sense, see PreparedStatementWrapper)
       java.sql.Time time = timezone == null ?
-              rs.getTime(name) : rs.getTime(name, timezone);
+              resources.rs.getTime(name) : resources.rs.getTime(name, timezone);
       return time == null ? null : new Time(time.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1705,10 +1708,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Binary<?> getBinary(String name, int bufSize)  {
     try {
-      return Binary.createBinary(rs.getBinaryStream(name), bufSize);
+      return Binary.createBinary(resources.rs.getBinaryStream(name), bufSize);
     }
     catch (SQLException | IOException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1728,10 +1731,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Object getObject (int pos)  {
     try {
-      return rs.getObject (pos + columnOffset);
+      return resources.rs.getObject (pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1747,14 +1750,14 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getString (int pos, boolean mapNull)  {
     try {
-      String str = rs.getString (pos + columnOffset);
-      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+      String str = resources.rs.getString (pos + columnOffset);
+      if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
         return null;
       }
       return str;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1792,10 +1795,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean getBoolean (int pos) {
     try {
-      return rs.getBoolean(pos + columnOffset);
+      return resources.rs.getBoolean(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1833,10 +1836,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public float getFloat (int pos) {
     try {
-      return rs.getFloat(pos + columnOffset);
+      return resources.rs.getFloat(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1867,10 +1870,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public double getDouble (int pos) {
     try {
-      return rs.getDouble(pos + columnOffset);
+      return resources.rs.getDouble(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1902,10 +1905,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public BigDecimal getBigDecimal (int pos) {
     try {
-      return rs.getBigDecimal(pos + columnOffset);
+      return resources.rs.getBigDecimal(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1961,10 +1964,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public byte getByte (int pos) {
     try {
-      return rs.getByte(pos + columnOffset);
+      return resources.rs.getByte(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -1994,11 +1997,11 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public char getChar (int pos) {
     try {
-      String val = rs.getString(pos + columnOffset);
+      String val = resources.rs.getString(pos + columnOffset);
       return val == null || val.length() == 0 ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2047,10 +2050,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public short getShort (int pos) {
     try {
-      return rs.getShort(pos + columnOffset);
+      return resources.rs.getShort(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2081,10 +2084,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getInt (int pos) {
     try {
-      return rs.getInt(pos + columnOffset);
+      return resources.rs.getInt(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2115,10 +2118,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public long getLong (int pos)  {
     try {
-      return rs.getLong(pos + columnOffset);
+      return resources.rs.getLong(pos + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2152,7 +2155,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public Date getDate(int pos, Calendar timezone, boolean mapNull)  {
     try {
       java.sql.Date date = timezone == null ?
-              rs.getDate(pos + columnOffset) : rs.getDate(pos + columnOffset, timezone);
+              resources.rs.getDate(pos + columnOffset) : resources.rs.getDate(pos + columnOffset, timezone);
       if (date == null ||
           (mapNull && date.equals(DateHelper.MIN_DATE)))  {
         // mindate is translated back to null
@@ -2161,7 +2164,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return new Date(date.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2277,7 +2280,7 @@ public class ResultSetWrapper implements AutoCloseable {
   public Timestamp getTimestamp(int pos, Calendar timezone, boolean mapNull)  {
     try {
       java.sql.Timestamp ts = timezone == null ?
-              rs.getTimestamp(pos + columnOffset) : rs.getTimestamp(pos + columnOffset, timezone);
+              resources.rs.getTimestamp(pos + columnOffset) : resources.rs.getTimestamp(pos + columnOffset, timezone);
       if (ts == null ||
           (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
         // mindate is translated back to null
@@ -2288,7 +2291,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return tts;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2404,11 +2407,11 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       // no mapNull possible
       java.sql.Time time = timezone == null ?
-              rs.getTime(pos + columnOffset) : rs.getTime(pos + columnOffset, timezone);
+              resources.rs.getTime(pos + columnOffset) : resources.rs.getTime(pos + columnOffset, timezone);
       return time == null ? null : new Time(time.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2464,10 +2467,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Binary<?> getBinary(int pos, int bufSize)  {
     try {
-      return Binary.createBinary(rs.getBinaryStream(pos + columnOffset), bufSize);
+      return Binary.createBinary(resources.rs.getBinaryStream(pos + columnOffset), bufSize);
     }
     catch (SQLException | IOException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2486,14 +2489,14 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getString (boolean mapNull)  {
     try {
-      String str = rs.getString (nextConfiguredIndex() + columnOffset);
-      if (mapNull && str != null && str.equals(db.getBackend().getEmptyString())) {
+      String str = resources.rs.getString (nextConfiguredIndex() + columnOffset);
+      if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
         return null;
       }
       return str;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2529,10 +2532,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public boolean getBoolean () {
     try {
-      return rs.getBoolean(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getBoolean(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2568,10 +2571,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public float getFloat () {
     try {
-      return rs.getFloat(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getFloat(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2600,10 +2603,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public double getDouble () {
     try {
-      return rs.getDouble(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getDouble(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2633,10 +2636,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public BigDecimal getBigDecimal () {
     try {
-      return rs.getBigDecimal(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getBigDecimal(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2687,10 +2690,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public byte getByte () {
     try {
-      return rs.getByte(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getByte(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2718,11 +2721,11 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public char getChar () {
     try {
-      String val = rs.getString(nextConfiguredIndex() + columnOffset);
+      String val = resources.rs.getString(nextConfiguredIndex() + columnOffset);
       return val == null || val.length() == 0 ? 0 : val.charAt(0);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2768,10 +2771,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public short getShort () {
     try {
-      return rs.getShort(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getShort(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2800,10 +2803,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public int getInt () {
     try {
-      return rs.getInt(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getInt(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2832,10 +2835,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public long getLong ()  {
     try {
-      return rs.getLong(nextConfiguredIndex() + columnOffset);
+      return resources.rs.getLong(nextConfiguredIndex() + columnOffset);
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2868,7 +2871,7 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       int pos = nextConfiguredIndex();
       java.sql.Date date = timezone == null ?
-              rs.getDate(pos + columnOffset) : rs.getDate(pos + columnOffset, timezone);
+              resources.rs.getDate(pos + columnOffset) : resources.rs.getDate(pos + columnOffset, timezone);
       if (date == null ||
           (mapNull && date.equals(DateHelper.MIN_DATE)))  {
         // mindate is translated back to null
@@ -2877,7 +2880,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return new Date(date.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -2986,7 +2989,7 @@ public class ResultSetWrapper implements AutoCloseable {
     try {
       int pos = nextConfiguredIndex();
       java.sql.Timestamp ts = timezone == null ?
-              rs.getTimestamp(pos + columnOffset) : rs.getTimestamp(pos + columnOffset, timezone);
+              resources.rs.getTimestamp(pos + columnOffset) : resources.rs.getTimestamp(pos + columnOffset, timezone);
       if (ts == null ||
           (mapNull && ts.equals(DateHelper.MIN_TIMESTAMP)))  {
         // mindate is translated back to null
@@ -2997,7 +3000,7 @@ public class ResultSetWrapper implements AutoCloseable {
       return tts;
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -3107,11 +3110,11 @@ public class ResultSetWrapper implements AutoCloseable {
       // no mapNull possible
       int pos = nextConfiguredIndex();
       java.sql.Time time = timezone == null ?
-              rs.getTime(pos + columnOffset) : rs.getTime(pos + columnOffset, timezone);
+              resources.rs.getTime(pos + columnOffset) : resources.rs.getTime(pos + columnOffset, timezone);
       return time == null ? null : new Time(time.getTime());
     }
     catch (SQLException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -3164,10 +3167,10 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public Binary<?> getBinary(int bufSize)  {
     try {
-      return Binary.createBinary(rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize);
+      return Binary.createBinary(resources.rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize);
     }
     catch (SQLException | IOException e)  {
-      throw new PersistenceException(db, e);
+      throw new PersistenceException(resources.db, e);
     }
   }
 
@@ -3179,7 +3182,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * Clears the configured index and sets the flag that cursor was moved.
    */
   private void clearSection() {
-    if (rs == null) {
+    if (resources.rs == null) {
       throw new PersistenceException("result set already closed");
     }
     currentSection = null;
@@ -3203,7 +3206,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   private void assertValidSection() {
     if (currentSection == null) {
-      throw new PersistenceException(db, "no current section configured for automatic indexed retrieval");
+      throw new PersistenceException(resources.db, "no current section configured for automatic indexed retrieval");
     }
   }
 
@@ -3212,7 +3215,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   private void assertInSkipMode() {
     if (!isInSkipMode()) {
-      throw new PersistenceException(db, "result set is not in skipmode");
+      throw new PersistenceException(resources.db, "result set is not in skipmode");
     }
   }
 

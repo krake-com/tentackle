@@ -20,6 +20,7 @@
 package org.tentackle.dbms;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -145,21 +146,29 @@ public class ManagedConnection {
   private static class Resources implements Runnable {
     private Connection connection;  // the wrapped connection, null if closed
     private String name;            // the name of the managed connection
+    private ManagedConnection me;   // != null if programmatic cleanup
 
-    public Resources(Connection connection) {
+    Resources(Connection connection) {
       this.connection = connection;
     }
 
     @Override
     public void run() {
-      if (connection != null) {
-        // application lost the reference and did not close it before
-        LOGGER.warning("closing unreferenced connection {0}", name);
+      Connection c = connection;
+      if (c != null) {
+        if (me == null) {
+          // application lost the reference and did not close it before
+          LOGGER.warning("closing unreferenced connection {0}", name);
+        }
         try {
-          connection.close();
+          c.close();
         }
         catch (SQLException sx) {
-          LOGGER.severe("cleanup failed for " + name, sx);
+          LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
+        }
+        finally {
+          connection = null;
+          getManagedConnections();        // remove unreferenced or closed entries
         }
       }
     }
@@ -167,6 +176,7 @@ public class ManagedConnection {
 
 
   private final Resources resources;                      // resources to be cleaned up
+  private final Cleanable cleanable;                      // to cleanup the connection
   private final ConnectionManager manager;                // the manager that created this connection
   private final Backend backend;                          // the backend
   private final String backendId;                         // a unique ID to identify the connection at the backend
@@ -220,7 +230,7 @@ public class ManagedConnection {
 
     resources = new Resources(connection);
     resources.name = toString();    // cannot be a constructor arg because of chicken egg
-    CLEANER.register(this, resources);
+    cleanable = CLEANER.register(this, resources);
   }
 
 
@@ -1116,16 +1126,8 @@ public class ManagedConnection {
    * Closes the connection.
    */
   private void closeImpl() {
-    try {
-      getConnection().close();
-    }
-    catch (SQLException ex) {
-      LOGGER.warning("low level close failed: " + ex.getMessage() + " -> " + this + " marked closed!");
-    }
-    finally {
-      resources.connection = null;    // to GC
-      getManagedConnections();        // remove unreferenced or closed entries
-    }
+    resources.me = this;
+    cleanable.clean();
   }
 
 

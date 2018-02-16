@@ -80,6 +80,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   private int conRequestCount;              // number of new connections requested
   private int warnLogSize;                  // number of connections when to start WARNING logging
   private int infoLogSize;                  // number of connections when to start INFO logging
+  private final Object creationMtx;         // connection created mutex
 
 
 
@@ -121,6 +122,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     unConList = new int[iniSize];
 
     // connections are brought up in an extra thread
+    creationMtx = new Object();
     connectThread = new ConnectionThread(this);
   }
 
@@ -379,9 +381,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         }
 
         // wait for connections to be brought up (even if no request -> may take longer)
-        synchronized (this) {
+        synchronized (creationMtx) {
           try {
-            wait(MUTEX_MS);
+            creationMtx.wait(MUTEX_MS);
           }
           catch (InterruptedException ex) {
             // just start over and try again
@@ -661,8 +663,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
               LOGGER.warning(mgr + ": creating connections failed", e);
             }
 
-            synchronized (mgr) {   // syncs conRequestCount as well
-              mgr.notifyAll();
+            synchronized (mgr.creationMtx) {   // syncs conRequestCount as well
+              mgr.creationMtx.notifyAll();
             }
           }
         }
