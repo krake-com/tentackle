@@ -90,6 +90,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
         }
       }
       finally {
+        me = null;
         rs = null;
         remoteCursor = null;
       }

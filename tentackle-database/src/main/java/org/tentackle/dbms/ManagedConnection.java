@@ -154,22 +154,27 @@ public class ManagedConnection {
 
     @Override
     public void run() {
-      Connection c = connection;
-      if (c != null) {
-        if (me == null) {
-          // application lost the reference and did not close it before
-          LOGGER.warning("closing unreferenced connection {0}", name);
+      try {
+        Connection c = connection;
+        if (c != null) {
+          if (me == null) {
+            // application lost the reference and did not close it before
+            LOGGER.warning("closing unreferenced connection {0}", name);
+          }
+          try {
+            c.close();
+          }
+          catch (SQLException sx) {
+            LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
+          }
+          finally {
+            connection = null;
+            getManagedConnections();        // remove unreferenced or closed entries
+          }
         }
-        try {
-          c.close();
-        }
-        catch (SQLException sx) {
-          LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
-        }
-        finally {
-          connection = null;
-          getManagedConnections();        // remove unreferenced or closed entries
-        }
+      }
+      finally {
+        me = null;
       }
     }
   }

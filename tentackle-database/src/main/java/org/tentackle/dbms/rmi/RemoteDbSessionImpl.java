@@ -19,6 +19,8 @@
 
 package org.tentackle.dbms.rmi;
 
+import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -187,13 +189,110 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private static final ConcurrentHashMap<String,DelegateClasses> DELEGATE_CLASSES_MAP = new ConcurrentHashMap<>();
 
 
+  private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 
-  // ------------------- end static section ------------------------
+  /**
+   * Holds the resources and state to be cleaned up.
+   */
+  private static class Resources implements Runnable {
+
+    private RemoteDbSessionImpl me;                   // != null if programmatic close
+    private String name;                              // the session name
+    private Db db;                                    // the local session
+    private final RemoteDbConnectionImpl con;         // the connection object
+    private final SessionInfo serverInfo;             // the server info for creating a new Db connection
+    private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
+    private final MethodStatistics methodStats;       // statistics for method invocations
+                                                      // (managed by invocation handler, null if no stats)
+    private RemoteException remoteException;          // caught exception, null = none
+
+    Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
+      this.db = db;
+      this.con = con;
+      this.serverInfo = serverInfo;
+      exportedDelegates = new ArrayList<>();
+      methodStats = new MethodStatistics();
+    }
+
+    @Override
+    public void run() {
+      try {
+        if (db != null) {
+          if (me == null) {
+            LOGGER.warning("cleaning up unreferenced remote session {0}", name);
+          }
+          LOGGER.info("end {0}", this);
+          for (WeakReference<RemoteDelegate> ref : exportedDelegates) {
+            RemoteDelegate delegate = ref.get();
+            if (delegate != null) {
+              con.unexportRemoteObject(delegate);
+            }
+          }
+          exportedDelegates.clear();
+          if (me != null) {
+            unexportMe(me);
+          }
+          cleanup(false);
+          closeDb(false);
+        }
+      }
+      catch (RemoteException | RuntimeException ex) {
+        remoteException = new RemoteException("closing session failed", ex);
+      }
+      finally {
+        db = null;
+        me = null;
+      }
+    }
+
+    void cleanup(boolean crashed) {
+      if (crashed) {
+        LOGGER.warning("cleaning up crashed {0}{1}", name, DiagnosticUtilities.getInstance().createStackDump());
+      }
+      if (db != null) {
+        db.setCrashed(crashed);
+        db.rollbackImmediately(null);   // roll back if anything pending
+      }
+      doLogStatistics(Level.INFO, true);
+    }
+
+    void closeDb(boolean cleanup) {
+      if (db != null) {
+        if (db.isPooled()) {
+          db.rollbackImmediately(null); // roll back if anything pending
+          if (cleanup) {
+            db.close(); // closed db will be removed from the pool in putDb
+            LOGGER.warning("pooled {0} closed due to session cleanup", db);
+          }
+          else {
+            // only return the db to the pool, don't close it
+            LOGGER.info("returning {0} to pool", db);
+          }
+          // reset the user info for this db for sure (the application may have changed it to clientInfo)
+          db.setSessionInfo(serverInfo);
+          db.getPool().putSession(db);
+        }
+        else {
+          db.close();
+        }
+        db = null;    // closed -> to GC
+      }
+    }
+
+    void unexportMe(RemoteDbSessionImpl remoteSession) throws RemoteException {
+      con.unexportRemoteObject(remoteSession);
+    }
+
+    void doLogStatistics(Level level, boolean clear) {
+      methodStats.logStatistics(level, "    >RMI-Stats: ", clear);
+    }
+  }
 
 
-  private final RemoteDbConnectionImpl con;           // the connection object
+  private final Resources resources;                      // resources to be cleaned up
+  private final Cleanable cleanable;                      // to cleanup the connection
+
   private final SessionInfo clientInfo;               // saved client info
-  private final SessionInfo serverInfo;               // the server info for creating a new Db connection
   private final long sessionNumber;                   // unique session number
 
   private String clientHost;                          // the client host string
@@ -203,11 +302,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private RMIServerSocketFactory ssf;                 // server socket factory for all delegates
 
   private int timeoutCount;                           // consecutive timeouts
-  private Db db;                                      // the local Db-connection
   private long closedSince;                           // session closed since, 0 if still open
-  private final MethodStatistics methodStats;         // statistics for method invocations
-                                                      // (managed by invocation handler, null if no stats)
-  private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
+
 
   /**
    * Creates a session on a given connection.
@@ -220,14 +316,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) throws RemoteException {
 
-    this.con = con;
     this.clientInfo = clientInfo;
-    this.serverInfo = serverInfo;
 
-    methodStats = new MethodStatistics();
     sessionNumber = LAST_SESSION_NUMBER.incrementAndGet();
-    exportedDelegates = new ArrayList<>();
 
+    Db db = null;
     try {
       clientHost = UnicastRemoteObject.getClientHost();
       db = openDb();
@@ -255,18 +348,22 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     csf = con.getClientSocketFactory(db, clientInfo, serverInfo);
     ssf = con.getServerSocketFactory(db, clientInfo, serverInfo);
     timeout = con.getSessionTimeout(db, clientInfo, serverInfo);
+
+    resources = new Resources(db, con, serverInfo);
+    resources.name = toString();    // chicken egg...
+    cleanable = CLEANER.register(this, resources);
   }
 
 
   @Override
   public void exportMe() throws RemoteException {
-    port = con.exportRemoteObject(this, port, csf, ssf);
+    port = resources.con.exportRemoteObject(this, port, csf, ssf);
     LOGGER.info("begin {0}", this);
   }
 
   @Override
   public void unexportMe() throws RemoteException {
-    con.unexportRemoteObject(this);
+    resources.unexportMe(this);
   }
 
 
@@ -279,8 +376,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @throws RemoteException if export failed
    */
   public void exportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
-    con.exportRemoteObject(delegate, port, csf, ssf);
-    exportedDelegates.add(new WeakReference<>(delegate));
+    resources.con.exportRemoteObject(delegate, port, csf, ssf);
+    resources.exportedDelegates.add(new WeakReference<>(delegate));
   }
 
   /**
@@ -293,8 +390,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @throws RemoteException if object not exported
    */
   public void unexportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
-    con.unexportRemoteObject(delegate);
-    for (Iterator<WeakReference<RemoteDelegate>> iter = exportedDelegates.iterator(); iter.hasNext(); ) {
+    resources.con.unexportRemoteObject(delegate);
+    for (Iterator<WeakReference<RemoteDelegate>> iter = resources.exportedDelegates.iterator(); iter.hasNext(); ) {
       WeakReference<RemoteDelegate> ref = iter.next();
       RemoteDelegate dg = ref.get();
       if (dg == null) {
@@ -353,7 +450,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the db connection
    */
   public Db getSession() {
-    return db;
+    return resources.db;
   }
 
 
@@ -363,7 +460,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the connection
    */
   public RemoteDbConnectionImpl getConnection() {
-    return con;
+    return resources.con;
   }
 
 
@@ -384,7 +481,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the server user info
    */
   public SessionInfo getServerSessionInfo() {
-    return serverInfo;
+    return resources.serverInfo;
   }
 
 
@@ -464,7 +561,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param duration execution duration
    */
   public void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
-    methodStats.countMethodInvocation(method, servicedClass, duration);
+    resources.methodStats.countMethodInvocation(method, servicedClass, duration);
   }
 
 
@@ -492,7 +589,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
     }
     else  {
-      Db newDb = new Db(conMgr, serverInfo);
+      Db newDb = new Db(conMgr, resources.serverInfo);
       newDb.open();
       return newDb;
     }
@@ -512,11 +609,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     if (crashed) {
       LOGGER.warning("cleaning up crashed {0}{1}", this, DiagnosticUtilities.getInstance().createStackDump());
     }
-    if (db != null) {
-      db.setCrashed(crashed);
-      db.rollbackImmediately(null);   // roll back if anything pending
-    }
-    doLogStatistics(Level.INFO, true);
+    resources.cleanup(crashed);
   }
 
 
@@ -527,7 +620,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param clear true if clear statistics after dump
    */
   protected void doLogStatistics(Level level, boolean clear) {
-    methodStats.logStatistics(level, "    >RMI-Stats: ", clear);
+    resources.doLogStatistics(level, clear);
   }
 
 
@@ -537,25 +630,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param cleanup true if db must be physically closed even if pooled, due to cleanup
    */
   protected void closeDb(boolean cleanup) {
-    if (db != null) {
-      if (db.isPooled()) {
-        db.rollbackImmediately(null); // roll back if anything pending
-        if (cleanup) {
-          db.close(); // closed db will be removed from the pool in putDb
-          LOGGER.warning("pooled {0} closed due to session cleanup", db);
-        }
-        else  {
-          // only return the db to the pool, don't close it
-          LOGGER.info("returning {0} to pool", db);
-        }
-        // reset the user info for this db for sure (the application may have changed it to clientInfo)
-        db.setSessionInfo(serverInfo);
-        db.getPool().putSession(db);
-      }
-      else  {
-        db.close();
-      }
-      db = null;    // closed -> to GC
+    if (closedSince == 0) {
+      resources.closeDb(cleanup);
       closedSince = System.currentTimeMillis();
     }
   }
@@ -568,9 +644,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   protected void forceCleanup() {
     closedSince = System.currentTimeMillis();
-    Db zombieDb = db;
+    Db zombieDb = resources.db;
     if (zombieDb != null) {
-      db = null;  // block any further RMI requests (isOpen() == false)
+      resources.db = null;  // block any further RMI requests (isOpen() == false)
       try {
         zombieDb.close();   // should work
         if (zombieDb.isPooled()) {
@@ -657,7 +733,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return true if session is open
    */
   public boolean isOpen() {
-    return db != null;
+    return resources.db != null;
   }
 
 
@@ -669,35 +745,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return true if user session
    */
   public boolean isGrouped() {
-    return db.getSessionGroupId() != 0;
+    return resources.db.getSessionGroupId() != 0;
   }
 
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Cleanup in case someone forgot to logoff().
-   */
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      if (isOpen()) {
-        LOGGER.warning("closing unreferenced open session: " + this);
-      }
-      close();    // cleanup in case client forgot
-    }
-    catch (RuntimeException ex)  {
-      try {
-        LOGGER.severe("closing unreferenced session '" + this + "' failed in finalizer", ex);
-      }
-      catch (RuntimeException ex2) {
-        // don't stop finalization if just the logging failed
-      }
-    }
-    finally {
-      super.finalize();
-    }
-  }
 
 
   // ----------------- implements RemoteDbSession ------------------------
@@ -705,23 +755,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @Override
   public void close() throws RemoteException {
-    try {
-      if (db != null) {
-        LOGGER.info("end {0}", this);
-        for (WeakReference<RemoteDelegate> ref : exportedDelegates) {
-          RemoteDelegate delegate = ref.get();
-          if (delegate != null) {
-            con.unexportRemoteObject(delegate);
-          }
-        }
-        exportedDelegates.clear();
-        unexportMe();
-        cleanup(false);
-        closeDb(false);
-      }
-    }
-    catch (RemoteException | RuntimeException ex)  {
-      throw new RemoteException("closing db failed", ex);
+    resources.me = this;    // programmatic cleanup
+    cleanable.clean();
+    if (resources.remoteException != null) {
+      throw resources.remoteException;
     }
   }
 
@@ -825,7 +862,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
            InvocationTargetException | RemoteException ex)  {
-      throw new RemoteException("coudn't create delegate for " + db, ex);
+      throw new RemoteException("coudn't create delegate for " + resources.db, ex);
     }
   }
 
@@ -967,7 +1004,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return true if timed out
    */
   protected boolean hasTimedOut() {
-    Db ldb = db;    // local copy in case of race cond avoids NPE
+    Db ldb = resources.db;    // local copy in case of race cond avoids NPE
     if (ldb == null || ldb.isAlive()) {
       timeoutCount = 0;
     }
@@ -982,7 +1019,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Sets this session as being polled for timeout.
    */
   protected void polled() {
-    Db ldb = db;    // local copy in case of race cond avoids NPE
+    Db ldb = resources.db;    // local copy in case of race cond avoids NPE
     if (ldb != null) {
       ldb.setAlive(false);
     }

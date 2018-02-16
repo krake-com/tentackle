@@ -89,49 +89,54 @@ public class ResultSetWrapper implements AutoCloseable {
 
     @Override
     public void run() {
-      final ResultSet rset = rs;    // local copy in case of race-condition
-      if (rset != null) {
-        try {
-          final StatementWrapper st = stmt;
-          if (st != null && !st.isClosed()) {
-            st.unmarkReady();
-            if (me == null) {
-              LOGGER.warning("closing unreferenced result set wrapper for {0}", st);
+      try {
+        final ResultSet rset = rs;    // local copy in case of race-condition
+        if (rset != null) {
+          try {
+            final StatementWrapper st = stmt;
+            if (st != null && !st.isClosed()) {
+              st.unmarkReady();
+              if (me == null) {
+                LOGGER.warning("closing unreferenced result set wrapper for {0}", st);
+              }
+              else {
+                // removes me from stmt.close (see below)
+                st.forgetResultSetWrapper(me);    // st ref to me is a weak ref, so no harm if not done in cleanup
+              }
+              final boolean voucherValid = commitOnCloseVoucherValid;
+              final Db session = db;
+              if (voucherValid && session != null) {
+                session.commit(commitOnCloseVoucher);
+                commitOnCloseVoucher = 0;
+                commitOnCloseVoucherValid = false;
+              }
             }
-            else {
-              // removes me from stmt.close (see below)
-              st.forgetResultSetWrapper(me);    // st ref to me is a weak ref, so no harm if not done in cleanup
-            }
-            final boolean voucherValid = commitOnCloseVoucherValid;
-            final Db session = db;
-            if (voucherValid && session != null) {
-              session.commit(commitOnCloseVoucher);
-              commitOnCloseVoucher = 0;
-              commitOnCloseVoucherValid = false;
+            rset.close();   // this is ok even if already closed (according to the API)
+          }
+          catch (SQLException sqx) {
+            throw new PersistenceException(db, sqx);
+          }
+          catch (RuntimeException rex) {
+            LOGGER.severe("closing result set wrapper " + this + " failed", rex);
+          }
+          finally {
+            db = null;
+            rs = null;
+            skipBlock = null;
+            skipBlocks = null;
+            final StatementWrapper st = stmt;
+            if (st != null) {
+              st.detachSession();
+              if (closeStatementOnClose) {
+                st.close();
+              }
+              stmt = null;
             }
           }
-          rset.close();   // this is ok even if already closed (according to the API)
         }
-        catch (SQLException sqx) {
-          throw new PersistenceException(db, sqx);
-        }
-        catch (RuntimeException rex) {
-          LOGGER.severe("closing result set wrapper " + this + " failed", rex);
-        }
-        finally {
-          db = null;
-          rs = null;
-          skipBlock = null;
-          skipBlocks = null;
-          final StatementWrapper st = stmt;
-          if (st != null) {
-            st.detachSession();
-            if (closeStatementOnClose) {
-              st.close();
-            }
-            stmt = null;
-          }
-        }
+      }
+      finally {
+        me = null;
       }
     }
   }
