@@ -305,9 +305,12 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   @Override
   public synchronized void cleanup(int sessionId, ManagedConnection connection) {
-    int index = getIndexFromSessionId(sessionId);
-    removeDb(index);
-    ManagedConnection con = removeConnection(index);
+    ManagedConnection con;
+    if (sessionId > 0) {
+      int index = getIndexFromSessionId(sessionId);
+      removeDb(index);
+      con = removeConnection(index);
+    }
     LOGGER.info("{0}: cleanup session ID {1} from connection {2}", this, sessionId, con);
     con.close();  // physically close the removed connection
   }

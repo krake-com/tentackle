@@ -243,8 +243,10 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   @Override
   public synchronized void cleanup(int sessionId, ManagedConnection connection) {
-    int index = getIndexFromSessionId(sessionId);
-    removeDb(index);
+    if (sessionId > 0) {
+      int index = getIndexFromSessionId(sessionId);
+      removeDb(index);
+    }
     LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
     freeConnection(connection);
   }
