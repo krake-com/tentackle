@@ -311,6 +311,9 @@ public class DefaultConnectionManager implements ConnectionManager {
       removeDb(index);
       con = removeConnection(index);
     }
+    else {
+      con = connection;
+    }
     LOGGER.info("{0}: cleanup session ID {1} from connection {2}", this, sessionId, con);
     con.close();  // physically close the removed connection
   }
