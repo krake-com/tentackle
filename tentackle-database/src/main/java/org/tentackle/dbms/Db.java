@@ -635,7 +635,7 @@ public class Db implements Session, Cloneable {
       }
 
       resources = new Resources(conMgr, sessionId, rdel, rcon, rses);
-      resources.name = getName();
+      resources.name = toString();
       cleanable = CLEANER.register(this, resources);
 
       registerSession();
