@@ -323,6 +323,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       clientHost = UnicastRemoteObject.getClientHost();
       db = openDb();
+      resources = new Resources(db, con, serverInfo);
       clientInfo.setSince(System.currentTimeMillis());
       verifySessionInfo(clientInfo);
       // switch to client info for logging
@@ -348,7 +349,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     ssf = con.getServerSocketFactory(db, clientInfo, serverInfo);
     timeout = con.getSessionTimeout(db, clientInfo, serverInfo);
 
-    resources = new Resources(db, con, serverInfo);
     resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
   }

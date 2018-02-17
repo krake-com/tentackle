@@ -99,32 +99,7 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing-rdc</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing-print</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing-looks</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing-substance</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-swing-tinylaf</artifactId>
+        <artifactId>tentackle-fx-rdc-poi</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -132,6 +107,7 @@
         <artifactId>tentackle-web</artifactId>
         <version>${project.version}</version>
       </dependency>
+      
       <!-- test dependencies -->
       <dependency>
         <groupId>org.tentackle</groupId>
