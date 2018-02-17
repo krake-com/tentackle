@@ -194,9 +194,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
 
   /**
-   * Connects to the database backend (or application server).
-   *
-   * @return the connected context db, null if login aborted or authentication failed
+   * Connects to the database backend or application server.
    */
   protected void doLogin() throws ApplicationException {
 
