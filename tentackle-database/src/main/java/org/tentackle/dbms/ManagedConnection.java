@@ -164,7 +164,7 @@ public class ManagedConnection {
           try {
             c.close();
           }
-          catch (SQLException sx) {
+          catch (SQLException | RuntimeException sx) {
             LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
           }
           finally {

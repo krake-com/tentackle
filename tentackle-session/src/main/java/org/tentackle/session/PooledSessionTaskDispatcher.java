@@ -116,7 +116,6 @@ public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
       session = getDbSessions()[index];
       if (session == null || !session.isOpen()) {
         session = createSession();
-        session.open();
       }
     }
     DefaultSessionTaskDispatcher dispatcher =

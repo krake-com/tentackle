@@ -74,7 +74,6 @@ public abstract class AbstractDbTest {
   @BeforeSuite
   public static void openSessionsAndStartPdoTracker() throws Exception {
     session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.open();
     session.makeCurrent();
 
     ModificationTracker tracker = ModificationTracker.getInstance();

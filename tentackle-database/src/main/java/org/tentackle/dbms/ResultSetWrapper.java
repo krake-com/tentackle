@@ -113,11 +113,8 @@ public class ResultSetWrapper implements AutoCloseable {
             }
             rset.close();   // this is ok even if already closed (according to the API)
           }
-          catch (SQLException sqx) {
-            throw new PersistenceException(db, sqx);
-          }
-          catch (RuntimeException rex) {
-            LOGGER.severe("closing result set wrapper " + this + " failed", rex);
+          catch (SQLException | RuntimeException ex) {
+            LOGGER.severe("closing result set wrapper " + this + " failed", ex);
           }
           finally {
             db = null;

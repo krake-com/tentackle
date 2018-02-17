@@ -162,10 +162,9 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     props.setProperty(Constants.BACKEND_USER, user);
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
-    session = Pdo.createSession(sessionInfo);
 
     try {
-      session.open();
+      session = Pdo.createSession(sessionInfo);
       context = Pdo.createDomainContext(session);
 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread

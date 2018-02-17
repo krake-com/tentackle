@@ -43,12 +43,18 @@ public interface SessionFactory {
     return SessionFactory$Singleton.INSTANCE;
   }
 
+  /**
+   * Creates a session with the default session info.
+   *
+   * @return the open session
+   */
+  Session create();
 
   /**
    * Creates a session.
    *
    * @param sessionInfo the session info
-   * @return the created session (still closed)
+   * @return the open session
    */
   Session create(SessionInfo sessionInfo);
 

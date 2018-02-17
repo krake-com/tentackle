@@ -53,9 +53,8 @@ public abstract class TestApplication extends AbstractApplication {
   @BeforeClass(alwaysRun = true)
   public void setUpClass() throws Exception {
     SessionInfo sessionInfo = Pdo.createSessionInfo();
-    session = Pdo.createSession(sessionInfo);
     try {
-      session.open();
+      session = Pdo.createSession(sessionInfo);
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete

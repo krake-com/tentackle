@@ -291,7 +291,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
-    int index = getIndexFromSessionId(session);
+    int index = getIndexFromSession(session);
     removeDb(index);
     try {
       ManagedConnection con = removeConnection(index);
@@ -301,6 +301,15 @@ public class DefaultConnectionManager implements ConnectionManager {
     finally {
       session.clearSessionId();
     }
+  }
+
+  @Override
+  public synchronized void cleanup(int sessionId, ManagedConnection connection) {
+    int index = getIndexFromSessionId(sessionId);
+    removeDb(index);
+    ManagedConnection con = removeConnection(index);
+    LOGGER.info("{0}: cleanup session ID {1} from connection {2}", this, sessionId, con);
+    con.close();  // physically close the removed connection
   }
 
 
@@ -326,7 +335,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       con = createConnection(session.getBackendInfo());
 
       synchronized(this) {
-        int index = getIndexFromSessionId(session);
+        int index = getIndexFromSession(session);
         conList[index] = con;
         LOGGER.info("{0}: connection {1} reopened", this, con);
         con.attachSession(session);
@@ -338,7 +347,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void detach(Db session) {
     assertSessionBelongsToMe(session);
-    int index = getIndexFromSessionId(session);
+    int index = getIndexFromSession(session);
     ManagedConnection con = conList[index];
     con.detachSession(session);
   }
@@ -347,7 +356,7 @@ public class DefaultConnectionManager implements ConnectionManager {
   @Override
   public synchronized void forceDetach(Db session) {
     assertSessionBelongsToMe(session);
-    int index = getIndexFromSessionId(session);
+    int index = getIndexFromSession(session);
     ManagedConnection con = conList[index];
     con.forceDetached();
   }
@@ -480,14 +489,32 @@ public class DefaultConnectionManager implements ConnectionManager {
    * @param session the session
    * @return the array index
    */
-  protected int getIndexFromSessionId(Db session) {
-    int id = session.getSessionId();
-    if (id <= 0) {
+  protected int getIndexFromSession(Db session) {
+    int sessionId = session.getSessionId();
+    if (sessionId <= 0) {
       throw new PersistenceException(session, this + ": session already closed");
     }
-    int ndx = id - idOffset;
+    int ndx = sessionId - idOffset;
     if (ndx < 0 || ndx >= dbSize) {
-      throw new PersistenceException(session, this + ": invalid connection id=" + id +
+      throw new PersistenceException(session, this + ": invalid connection id=" + sessionId +
+              ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
+    }
+    return ndx;
+  }
+
+  /**
+   * Gets the internal array index from the session's session ID.
+   *
+   * @param sessionId the session ID
+   * @return the array index
+   */
+  protected int getIndexFromSessionId(int sessionId) {
+    if (sessionId <= 0) {
+      throw new PersistenceException(this + ": session already closed");
+    }
+    int ndx = sessionId - idOffset;
+    if (ndx < 0 || ndx >= dbSize) {
+      throw new PersistenceException(this + ": invalid connection id=" + sessionId +
               ", expected " + idOffset + " - " + (idOffset + dbSize - 1));
     }
     return ndx;
@@ -550,7 +577,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    */
   private synchronized ManagedConnection attachImpl(Db session) {
     assertSessionBelongsToMe(session);
-    int index = getIndexFromSessionId(session);
+    int index = getIndexFromSession(session);
     ManagedConnection con = conList[index];
     if (con.isDead()) {
       LOGGER.warning("{0}: closing ***DEAD*** connection {1}", this, con);

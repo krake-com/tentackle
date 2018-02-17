@@ -24,7 +24,6 @@ import java.util.prefs.NodeChangeEvent;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
-import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -34,6 +33,7 @@ import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.testng.annotations.Test;
 
@@ -65,9 +65,6 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   private final List<NodeChangeEvent> nodeEvents = new ArrayList<>();
   private final List<PreferenceChangeEvent> keyEvents = new ArrayList<>();
 
-  private Db session;
-
-
 
   // synchronized because it's the modtracker's thread
   // Reporter.log doesnt work from other than test thread!
@@ -95,10 +92,9 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     Process process = AbstractPersistenceTest.runClass(AddAndRemovePrefsInServer.class);
     Thread.sleep(1500);
 
-    try {
-      SessionInfo sessionInfo = Pdo.createSessionInfo("client");
-      session = (Db) Pdo.createSession(sessionInfo);
-      session.open();
+    SessionInfo sessionInfo = Pdo.createSessionInfo("client");
+    
+    try (Session session = Pdo.createSession(sessionInfo)) {
       session.makeCurrent();
       ModificationTracker tracker = ModificationTracker.getInstance();
       if (tracker.isAlive()) {
@@ -180,7 +176,6 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     }
     finally {
       ModificationTracker.getInstance().terminate();
-      session.close();
       AbstractPersistenceTest.waitForProcess(process);
     }
   }

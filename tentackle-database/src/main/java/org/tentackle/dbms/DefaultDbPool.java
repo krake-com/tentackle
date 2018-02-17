@@ -77,7 +77,6 @@ public class DefaultDbPool implements SessionPool {
        */
       LOGGER.fine("open pooled Db for {0}, connection manager {1}", sessionInfo, conMgr);
       db = new Db(conMgr, sessionInfo.clone());
-      db.open();
       db.setPool(DefaultDbPool.this);
       dbStr = db.toString();
       unusedSince = System.currentTimeMillis();

@@ -224,9 +224,9 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
    * @return the thread-local session
    */
   protected Session openSession() {
-    Session s = Pdo.createSession();
+    Session s;
     try {
-      s.open();
+      s = Pdo.createSession();
     }
     catch (PersistenceException ex) {
       // no database? wrong database? whatever: testing environment incomplete

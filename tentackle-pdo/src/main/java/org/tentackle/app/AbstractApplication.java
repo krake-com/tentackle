@@ -457,10 +457,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Creates a session (still closed).
+   * Creates a session.
    *
    * @param sessionInfo the session info
-   * @return the created session
+   * @return the open session
    */
   public Session createSession(SessionInfo sessionInfo) {
     return Pdo.createSession(sessionInfo);

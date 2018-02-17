@@ -39,7 +39,7 @@ public class DbPoolTest {
   private static final int NUM_THREADS = 50;
   private static final StatementId SELECT_ONE_STATEMENT_ID = new StatementId();
 
-  private final SessionPool pool;
+  private SessionPool pool;
 
 
   private class UserThread extends Thread {
@@ -127,7 +127,17 @@ public class DbPoolTest {
 
     Reporter.log("total selects: " + totalSelects + "<br/>");
     pool.shutdown();
-
+//  to test GC/Cleaner: comment out pool.shutdown and uncomment the lines below
+//    pool = null;
+//    try {
+//      System.out.println("--------------------------------------------------");
+//      System.gc();
+//      Thread.sleep(10000);
+//      System.out.println("--------------------------------------------------");
+//      System.gc();
+//      Thread.sleep(10000);
+//    }
+//    catch (InterruptedException ex) {}
     if (!failedThreads.isEmpty()) {
       Assert.fail(failedThreads.size() + " threads died");
     }

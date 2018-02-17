@@ -22,7 +22,6 @@ import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
-import org.tentackle.session.SessionInfoFactory;
 
 /**
  * Tests for persisted preferences running in parallel in another JVM.<br>
@@ -34,23 +33,22 @@ public class AddPrefsInOtherJVM {
 
   // not annotated with @Test because invoked from shell!
   private static void addNode() throws Exception {
-    Session session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.open();
-    session.makeCurrent();
+    try (Session session = SessionFactory.getInstance().create()) {
+      session.makeCurrent();
 
-    ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(session.clone());
-    tracker.setSleepInterval(500);
-    tracker.start();
+      ModificationTracker tracker = ModificationTracker.getInstance();
+      tracker.setSession(session.clone());
+      tracker.setSleepInterval(500);
+      tracker.start();
 
-    PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
-    prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
-    prefs.flush();
+      PersistedPreferences prefs = PersistedPreferences.systemNodeForPackage(AddPrefsInOtherJVM.class).node("other");
+      prefs.put(MultiJVMPreferencesTest.KEY_4, MultiJVMPreferencesTest.VALUE_4);
+      prefs.flush();
 
-    Thread.sleep(1000);
+      Thread.sleep(1000);
 
-    tracker.terminate();
-    session.close();
+      tracker.terminate();
+    }
   }
 
   public static void main(String[] args) {

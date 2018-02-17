@@ -123,7 +123,6 @@ public class RemoteTransactionTest implements DomainContextProvider {
     try {
       SessionInfo sessionInfo = Pdo.createSessionInfo("client");
       session = (Db) Pdo.createSession(sessionInfo);
-      session.open();
       context = Pdo.createDomainContext(session);
       runTx(this::transaction0);
       runTx(this::transaction1);

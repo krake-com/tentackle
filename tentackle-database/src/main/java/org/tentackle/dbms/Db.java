@@ -22,6 +22,8 @@ package org.tentackle.dbms;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -267,14 +269,7 @@ public class Db implements Session, Cloneable {
    * Also cleans up the set by removing unreferenced or closed sessions.
    */
   private void unregisterSession() {
-    for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext(); ) {
-      WeakReference<Db> ref = iter.next();
-      Db refDb = ref.get();
-      // if closed or unreferenced or the session to remove
-      if (refDb == null || !refDb.isOpen() || refDb == this) {   // == is okay here
-        iter.remove();
-      }
-    }
+    resources.unregisterSession(this);
   }
 
 
@@ -305,13 +300,160 @@ public class Db implements Session, Cloneable {
   private static Class<?>[]         remoteClasses;        // the classes Objects for the delegates provide service for
   private static int                nextDelegateId;       // next handle per class
 
+  private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
+
+  /**
+   * Holds the resources to be cleaned up.
+   */
+  private static class Resources implements Runnable {
+    private String name;                                    // the name of the session
+    private final ConnectionManager conMgr;                 // connection manager for local connections
+    private DbRemoteDelegate rdel;                          // remote database delegate
+    private RemoteDbConnection rcon;                        // != null if remote connection established to RMI-server
+    private RemoteDbSession rses;                           // remote database session if logged in to RMI-server
+    private int sessionId;                                  // local session ID
+    private volatile ManagedConnection con;                 // connection if attached, null = detached
+    private boolean crashed;                                // true = session is closed because it is treated as crashed
+    private final Set<SessionCloseHandler> closeHandlers;   // close handlers
+    private Db me;                                          // != null if programmatic cleanup (close)
+
+    Resources(ConnectionManager conMgr, int sessionId, DbRemoteDelegate rdel, RemoteDbConnection rcon, RemoteDbSession rses) {
+      this.conMgr = conMgr;
+      this.sessionId = sessionId;
+      this.rdel = rdel;
+      this.rcon = rcon;
+      this.rses = rses;
+      closeHandlers = new HashSet<>();
+    }
+
+    @Override
+    public void run() {
+      try {
+        if (isOpen()) {
+          try {
+            if (me != null) {
+              for (SessionCloseHandler closeHandler : closeHandlers) {
+                try {
+                  closeHandler.beforeClose(me);
+                }
+                catch (RuntimeException ex) {
+                  LOGGER.warning("closehandler.beforeClose failed for " + me, ex);
+                }
+              }
+              for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+                try {
+                  closeHandler.beforeClose(me);
+                }
+                catch (RuntimeException ex) {
+                  LOGGER.warning("global closehandler.beforeClose failed for " + me, ex);
+                }
+              }
+            }
+            // else: cleanup unreferenced session. If unref, there cannot be anyone be interested in
+            // this event, because nobody has a reference to it.
+
+            if (rcon != null && rses != null) {
+              // don't rcon.logout if crashed, because connection may block.
+              // remote side must timeout anyway. (or has already timed out)
+              if (!crashed) {
+                rcon.logout(rses);
+              }
+              if (me != null) {
+                LOGGER.info("remote session {0} closed", name);
+              }
+              else {
+                LOGGER.warning("unreferenced remote session {0} cleaned up", name);
+              }
+            }
+            else if (sessionId > 0) {
+              ManagedConnection c = con;
+              if (c != null) {    // if attached
+                try {
+                  c.closePreparedStatements(true);   // cleanup all pending statements
+                }
+                catch (RuntimeException ex) {
+                  LOGGER.warning("closing prepared statements failed for " + name, ex);
+                }
+              }
+              if (me != null) {
+                conMgr.logout(me);
+                LOGGER.info("session {0} closed", name);
+              }
+              else {
+                conMgr.cleanup(sessionId, c);
+                LOGGER.warning("unreferenced session {0} cleaned up", name);
+              }
+            }
+
+            if (me != null) {
+              for (SessionCloseHandler closeHandler : closeHandlers) {
+                try {
+                  closeHandler.afterClose(me);
+                }
+                catch (RuntimeException ex) {
+                  LOGGER.warning("closehandler.afterClose failed for " + me, ex);
+                }
+              }
+              for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
+                try {
+                  closeHandler.afterClose(me);
+                }
+                catch (RuntimeException ex) {
+                  LOGGER.warning("global closehandler.afterClose failed for " + me, ex);
+                }
+              }
+            }
+          }
+          catch (PersistenceException pe) {
+            throw pe;
+          }
+          catch (RemoteException | RuntimeException e) {
+            LOGGER.severe("closing session " + name + " failed", e);
+          }
+          finally {
+            // whatever happened: make it unusable
+            clearMembers();   // clear members for re-open
+            if (me != null) {
+              unregisterSession(me);    // no harm if me==null, since session refs are weak
+            }
+          }
+        }
+      }
+      finally {
+        me = null;
+      }
+    }
+
+    boolean isOpen() {
+      return sessionId > 0 || rdel != null;
+    }
+
+    void clearMembers() {
+      rdel = null;
+      rses = null;
+      rcon = null;
+      sessionId = 0;
+    }
+
+    void unregisterSession(Db session) {
+      for (Iterator<WeakReference<Db>> iter = SESSIONS.iterator(); iter.hasNext();) {
+        WeakReference<Db> ref = iter.next();
+        Db refDb = ref.get();
+        // if closed or unreferenced or the session to remove
+        if (refDb == null || !refDb.isOpen() || refDb == session) {   // == is okay here
+          iter.remove();
+        }
+      }
+    }
+  }
+
+
+  private Resources resources;                            // resources to be cleaned up (not final due to reopen)
+  private Cleanable cleanable;                            // to cleanup the connection (not final due to reopen)
   private int instanceNumber;                             // each session gets a unique instance number
   private BackendInfo backendInfo;                        // the backend information
   private String idConfig;                                // configuration of IdSource
-  private final ConnectionManager conMgr;                 // connection manager for local connections
-  private int sessionId;                                  // local session ID
   private int sessionGroupId;                             // ID of the session group, 0 = none
-  private volatile ManagedConnection con;                 // connection if attached, null = detached
   private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool
   private int poolId;                                     // the poolid if dbPool != null
   private SessionInfo sessionInfo;                        // user information
@@ -319,7 +461,6 @@ public class Db implements Session, Cloneable {
   private volatile boolean autoCommit;                    // true if autocommit on, else false
   private boolean countModificationAllowed = true;        // allow modification count
   private boolean logModificationAllowed = true;          // allow modification log
-  private final Set<SessionCloseHandler> closeHandlers = new HashSet<>();  // close handlers
   private boolean readOnly;                               // true if database is readonly
   private IdSource defaultIdSource;                       // default ID-Source for db-connection (if not overridden in derivates)
   private int fetchSize;                                  // default fetchsize, 0 = drivers default
@@ -333,7 +474,6 @@ public class Db implements Session, Cloneable {
   private int immediatelyCommitted;                       // txLevel > 0 if a transaction has been committed by commitImmediately (only for local Db)
   private volatile boolean alive;                         // true = connection is still in use, false = connection has timed out
   private long keepAliveInterval;                         // the auto keep alive interval in ms, 0 = no keep alive
-  private boolean crashed;                                // true = session is closed because it is treated as crashed
   private volatile Thread ownerThread;                    // the exclusive owner thread
   private WeakReference<SessionTaskDispatcher> dispatcherRef;  // task dispatcher for asynchroneous tasks
   private Map<String,Serializable> applicationProperties; // application-specific properties
@@ -341,16 +481,16 @@ public class Db implements Session, Cloneable {
 
   // for RMI remote connections
   private RMIClientSocketFactory csf;                     // client socket factory, null if system default
-  private RemoteDbConnection rcon;                        // != null if remote connection established to RMI-server
-  private RemoteDbSession rses;                           // remote database session if logged in to RMI-server
-  private DbRemoteDelegate rdel;                          // remote database delegate
   private RemoteDelegate[] delegates;                     // the delegates per session
 
 
 
 
   /**
-   * Creates an instance of a logical session.
+   * Creates an instance of a logical session.<br>
+   * If the login failes due to wrong passwords
+   * or denied access by the application server,
+   * the method {@link #handleConnectException} is invoked.
    *
    * @param conMgr the connection manager if local connection (ignored if remote)
    * @param sessionInfo user information
@@ -386,7 +526,7 @@ public class Db implements Session, Cloneable {
       }
 
       if (backendInfo.isRemote()) {
-        this.conMgr = null;                         // no connection manager for remote connections
+        conMgr = null;                         // no connection manager for remote connections
         SocketFactoryType factoryType = SocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
         csf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
         LOGGER.info("using client socket factory {0}", csf);
@@ -395,19 +535,114 @@ public class Db implements Session, Cloneable {
         if (conMgr == null) {
           throw new PersistenceException("connection manager required for local connections");
         }
-        this.conMgr = conMgr;
       }
 
       String val = sessionProperties.getProperty(PROPERTY_IDSOURCE);
       if (val != null) {
         idConfig = val;
       }
+
+      open(conMgr);
     }
     catch (PersistenceException rex) {
       throw rex;
     }
     catch (RuntimeException ex) {
       throw new PersistenceException(this, "database configuration failed", ex);
+    }
+  }
+
+
+  /**
+   * Opens the session.
+   *
+   * @param conMgr the connection manager
+   */
+  private void open(ConnectionManager conMgr) {
+    try {
+      int sessionId;
+      DbRemoteDelegate rdel = null;             // remote database delegate
+      RemoteDbConnection rcon = null;           // != null if remote connection established to RMI-server
+      RemoteDbSession rses = null;              // remote database session if logged in to RMI-server
+
+      if (backendInfo.isRemote()) {
+
+        // get connection to RMI-server
+        if (csf != null) {
+          String rmiUrl = backendInfo.getUrl();
+          URI uri = new URI(rmiUrl);
+          String host = uri.getHost();
+          int port = uri.getPort();
+          String path = uri.getPath();
+          if (path.startsWith("/")) {
+            path = path.substring(1);
+          }
+          LOGGER.info("connecting to {0}:{1}/{2} using {3}", host, port, path, csf);
+          Registry registry = LocateRegistry.getRegistry(host, port, csf);
+          try {
+            rcon = (RemoteDbConnection) registry.lookup(path);
+          }
+          catch (NotBoundException nx) {
+            StringBuilder buf = new StringBuilder();
+            buf.append("bound services =");
+            String[] services = registry.list();
+            if (services != null) {
+              for (String service : services) {
+                buf.append(" '").append(service).append("'");
+              }
+            }
+            LOGGER.warning(buf.toString());
+            throw nx;
+          }
+        }
+        else {
+          rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());
+        }
+
+        /**
+         * Check that server matches expected version. The server checks the client's version in rcon.login() below. So,
+         * we have a double check.
+         */
+        sessionInfo.checkServerVersionInfo(rcon.getServerVersionInfo());
+
+        // get session
+        rses = rcon.login(sessionInfo);    // throws exception if login denied
+
+        // get delegate
+        rdel = rses.getDbRemoteDelegate();
+
+        // get the remote connection id
+        sessionId = rdel.getSessionId();
+      }
+      else {
+        // direct connection to database
+        sessionId = conMgr.login(this);
+      }
+
+      // fresh connections are always in autoCommit mode
+      autoCommit = true;
+      transaction = null;
+
+      setupIdSource();
+      if (!sessionInfo.isImmutable()) {
+        sessionInfo.setSince(System.currentTimeMillis());
+      }
+
+      alive = true;   // all sedsions start alive!
+
+      if (!isCloned()) {
+        LOGGER.info("session {0} opened", this);
+      }
+
+      resources = new Resources(conMgr, sessionId, rdel, rcon, rses);
+      resources.name = getName();
+      cleanable = CLEANER.register(this, resources);
+
+      registerSession();
+    }
+    catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException |
+           VersionInfoIncompatibleException ex) {
+      throw handleConnectException(ex);
     }
   }
 
@@ -434,8 +669,9 @@ public class Db implements Session, Cloneable {
     StringBuilder buf = new StringBuilder();
     buf.append("Db");
     buf.append(instanceNumber);
-    buf.append('c');
-    buf.append(sessionId);
+    if (resources != null) {
+      buf.append('c').append(resources.sessionId);
+    }
     if (sessionGroupId > 0) {
       buf.append('g');
       buf.append(sessionGroupId);
@@ -446,13 +682,17 @@ public class Db implements Session, Cloneable {
 
   @Override
   public String toString()  {
-    StringBuilder buf = new StringBuilder(getName());
-    if (conMgr != null || dbPool != null) {
+    StringBuilder buf = new StringBuilder();
+    buf.append(getName());
+    if (resources == null) {
+      buf.append("{uninitialized}");
+    }
+    else if (resources.conMgr != null || dbPool != null) {
       buf.append('{');
-      if (conMgr != null) {
-        buf.append(conMgr.getName());
+      if (resources.conMgr != null) {
+        buf.append(resources.conMgr.getName());
       }
-      if (conMgr != null && dbPool != null) {
+      if (resources.conMgr != null && dbPool != null) {
         buf.append('/');
       }
       if (dbPool != null) {
@@ -462,11 +702,13 @@ public class Db implements Session, Cloneable {
     }
     buf.append(':');
     buf.append(backendInfo);
-    ManagedConnection mc = con;
-    if (mc != null) {
-      buf.append('[');
-      buf.append(mc.getName());
-      buf.append(']');
+    if (resources != null) {
+      ManagedConnection mc = resources.con;
+      if (mc != null) {
+        buf.append('[');
+        buf.append(mc.getName());
+        buf.append(']');
+      }
     }
     return buf.toString();
   }
@@ -496,7 +738,7 @@ public class Db implements Session, Cloneable {
    * @return the connection manager
    */
   public ConnectionManager getConnectionManager() {
-    return conMgr;
+    return resources.conMgr;
   }
 
 
@@ -573,7 +815,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setReadOnly(readOnly);
+        resources.rdel.setReadOnly(readOnly);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -589,7 +831,7 @@ public class Db implements Session, Cloneable {
    * @return the connection object, null if local
    */
   public RemoteDbConnection getRemoteConnection() {
-    return rcon;
+    return resources.rcon;
   }
 
 
@@ -598,7 +840,7 @@ public class Db implements Session, Cloneable {
    * @return the session, null if local
    */
   public RemoteDbSession getRemoteDbSession() {
-    return rses;
+    return resources.rses;
   }
 
 
@@ -716,7 +958,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        return rdel.isAlive();
+        return resources.rdel.isAlive();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -735,7 +977,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setAlive(alive);
+        resources.rdel.setAlive(alive);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -832,7 +1074,7 @@ public class Db implements Session, Cloneable {
   public <T extends Serializable> T setProperty(String key, T value) {
     if (isRemote()) {
       try {
-        return rdel.setProperty(key, value);
+        return resources.rdel.setProperty(key, value);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -849,7 +1091,7 @@ public class Db implements Session, Cloneable {
   public <T extends Serializable> T getProperty(String key) {
     if (isRemote()) {
       try {
-        return rdel.getProperty(key);
+        return resources.rdel.getProperty(key);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -913,107 +1155,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-
-
-  /**
-   * Open a database connection.<br>
-   * If the login failes due to wrong passwords
-   * or denied access by the application server,
-   * the method {@link #handleConnectException} is invoked.
-   */
-  @Override
-  public void open() {
-
-    if (isOpen()) {
-      throw new PersistenceException(this, "session is already open");
-    }
-
-    if (getPoolId() == -1) {
-      throw new PersistenceException(this, "db was closed and removed from pool " + getPool() +", cannot be re-opened");
-    }
-
-    try {
-
-      if (isRemote()) {
-
-        // get connection to RMI-server
-        if (csf != null) {
-          String rmiUrl = backendInfo.getUrl();
-          URI uri = new URI(rmiUrl);
-          String host = uri.getHost();
-          int port = uri.getPort();
-          String path = uri.getPath();
-          if (path.startsWith("/")) {
-            path = path.substring(1);
-          }
-          LOGGER.info("connecting to {0}:{1}/{2} using {3}", host, port, path, csf);
-          Registry registry = LocateRegistry.getRegistry(host, port, csf);
-          try {
-            rcon = (RemoteDbConnection) registry.lookup(path);
-          }
-          catch (NotBoundException nx) {
-            StringBuilder buf = new StringBuilder();
-            buf.append("bound services =");
-            String[] services = registry.list();
-            if (services != null) {
-              for (String service : services) {
-                buf.append(" '").append(service).append("'");
-              }
-            }
-            LOGGER.warning(buf.toString());
-            throw nx;
-          }
-        }
-        else {
-          rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());
-        }
-
-
-        /**
-         * Check that server matches expected version.
-         * The server checks the client's version in rcon.login() below.
-         * So, we have a double check.
-         */
-        sessionInfo.checkServerVersionInfo(rcon.getServerVersionInfo());
-
-        // get session
-        rses = rcon.login(sessionInfo);    // throws exception if login denied
-
-        // get delegate
-        rdel = rses.getDbRemoteDelegate();
-
-        // get the remote connection id
-        sessionId = rdel.getSessionId();
-      }
-      else  {
-        // direct connection to database
-        sessionId = conMgr.login(this);
-      }
-
-      // fresh connections are always in autoCommit mode
-      autoCommit = true;
-      transaction = null;
-
-      setupIdSource();
-      if (!sessionInfo.isImmutable()) {
-        sessionInfo.setSince(System.currentTimeMillis());
-      }
-
-      alive = true;   // all sedsions start alive!
-
-      if (!isCloned()) {
-        LOGGER.info("session {0} opened", this);
-      }
-
-      registerSession();
-    }
-    catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException |
-           VersionInfoIncompatibleException ex)  {
-      throw handleConnectException(ex);
-    }
-  }
-
-
   /**
    * Re-opens the session.
    */
@@ -1028,7 +1169,7 @@ public class Db implements Session, Cloneable {
     }
     clearMembers();
     unregisterSession();
-    open();
+    open(resources.conMgr);
   }
 
 
@@ -1082,7 +1223,7 @@ public class Db implements Session, Cloneable {
    * @return true if added, false if already registered
    */
   public boolean registerCloseHandler(SessionCloseHandler closeHandler) {
-    return closeHandlers.add(closeHandler);
+    return resources.closeHandlers.add(closeHandler);
   }
 
 
@@ -1093,115 +1234,15 @@ public class Db implements Session, Cloneable {
    * @return true if removed, false if not registered
    */
   public boolean unregisterCloseHandler(SessionCloseHandler closeHandler) {
-    return closeHandlers.remove(closeHandler);
+    return resources.closeHandlers.remove(closeHandler);
   }
 
 
   @Override
   public void close() {
-    if (isOpen()) {
-      try {
-        for (SessionCloseHandler closeHandler : closeHandlers) {
-          try {
-            closeHandler.beforeClose(this);
-          }
-          catch (RuntimeException ex) {
-            LOGGER.warning("closehandler.beforeClose failed for " + this, ex);
-          }
-        }
-        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-          try {
-            closeHandler.beforeClose(this);
-          }
-          catch (RuntimeException ex) {
-            LOGGER.warning("global closehandler.beforeClose failed for " + this, ex);
-          }
-        }
-
-        if (isRemote()) {
-          if (rcon != null && rses != null) {
-            // don't rcon.logout if crashed, because connection may block.
-            // remote side must timeout anyway. (or has already timed out)
-            if (!crashed) {
-              rcon.logout(rses);
-            }
-            LOGGER.info("remote session {0} closed", this);
-          }
-        }
-        else {
-          if (sessionId > 0) {
-            ManagedConnection c = con;
-            if (c != null) {    // if attached
-              try {
-                c.closePreparedStatements(true);   // cleanup all pending statements
-              }
-              catch (RuntimeException ex) {
-                LOGGER.warning("closing prepared statements failed for " + this, ex);
-              }
-            }
-            conMgr.logout(this);
-            LOGGER.info("session {0} closed", this);
-          }
-        }
-
-        for (SessionCloseHandler closeHandler : closeHandlers) {
-          try {
-            closeHandler.afterClose(this);
-          }
-          catch (RuntimeException ex) {
-            LOGGER.warning("closehandler.afterClose failed for " + this, ex);
-          }
-        }
-        for (SessionCloseHandler closeHandler : GLOBAL_CLOSE_HANDLERS) {
-          try {
-            closeHandler.afterClose(this);
-          }
-          catch (RuntimeException ex) {
-            LOGGER.warning("global closehandler.afterClose failed for " + this, ex);
-          }
-        }
-      }
-      catch (PersistenceException pe) {
-        throw pe;
-      }
-      catch (RemoteException | RuntimeException e) {
-        throw new PersistenceException(this, "closing session failed", e);
-      }
-      finally {
-        // whatever happened: make it unusable
-        clearMembers();   // clear members for re-open
-        unregisterSession();
-      }
-    }
+    resources.me = this;    // programmatic close
+    cleanable.clean();
   }
-
-
-  /**
-   * Cleanup if unreferenced connection is still open.
-   * <p>
-   * {@inheritDoc}
-   */
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      if (isOpen()) {
-        LOGGER.warning("closing unreferenced open session: " + this);
-        close();
-      }
-    }
-    catch (RuntimeException ex) {
-       try {
-        LOGGER.severe("closing unreferenced session '" + this + "' failed in finalizer");
-      }
-      catch (RuntimeException ex2) {
-        // don't stop finalization if just the logging failed
-      }
-    }
-    finally {
-      super.finalize();
-    }
-  }
-
 
 
   /**
@@ -1211,7 +1252,7 @@ public class Db implements Session, Cloneable {
    * @param crashed the crash flag
    */
   public void setCrashed(boolean crashed) {
-    this.crashed = crashed;
+    resources.crashed = crashed;
   }
 
 
@@ -1222,7 +1263,7 @@ public class Db implements Session, Cloneable {
    * @return true if Db is marked as crashed
    */
   public boolean isCrashed() {
-    return crashed;
+    return resources.crashed;
   }
 
 
@@ -1233,12 +1274,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public boolean isOpen() {
-    if (isRemote()) {
-      return rdel != null;
-    }
-    else  {
-      return sessionId > 0;
-    }
+    return resources.isOpen();
   }
 
 
@@ -1427,7 +1463,7 @@ public class Db implements Session, Cloneable {
     if (isRemote()) {
       if (autoCommit) {
         try {
-          txVoucher = rdel.begin(txName);
+          txVoucher = resources.rdel.begin(txName);
           if (txVoucher != 0) {
             autoCommit = false;           // we are now within a tx
           }
@@ -1479,7 +1515,7 @@ public class Db implements Session, Cloneable {
   public SavepointHandle setSavepoint() {
     if (isRemote()) {
       try {
-        return rdel.setSavepoint();
+        return resources.rdel.setSavepoint();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1510,7 +1546,7 @@ public class Db implements Session, Cloneable {
   public SavepointHandle setSavepoint(String name) {
     if (isRemote()) {
       try {
-        return rdel.setSavepoint(name);
+        return resources.rdel.setSavepoint(name);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1539,7 +1575,7 @@ public class Db implements Session, Cloneable {
   public void rollback(SavepointHandle handle) {
     if (isRemote()) {
       try {
-        rdel.rollback(handle);
+        resources.rdel.rollback(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1565,7 +1601,7 @@ public class Db implements Session, Cloneable {
   public void releaseSavepoint(SavepointHandle handle) {
     if (isRemote()) {
       try {
-        rdel.rollback(handle);
+        resources.rdel.rollback(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1636,7 +1672,7 @@ public class Db implements Session, Cloneable {
   public DbTransactionHandle registerPersistenceVisitor(PersistenceVisitor visitor) {
     if (isRemote()) {
       try {
-        return rdel.registerPersistenceVisitor(visitor);
+        return resources.rdel.registerPersistenceVisitor(visitor);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1658,7 +1694,7 @@ public class Db implements Session, Cloneable {
   public PersistenceVisitor unregisterPersistenceVisitor(DbTransactionHandle handle) {
     if (isRemote()) {
       try {
-        return rdel.unregisterPersistenceVisitor(handle);
+        return resources.rdel.unregisterPersistenceVisitor(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1678,7 +1714,7 @@ public class Db implements Session, Cloneable {
   public Collection<PersistenceVisitor> getPersistenceVisitors() {
     if (isRemote()) {
       try {
-        return rdel.getPersistenceVisitors();
+        return resources.rdel.getPersistenceVisitors();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1715,7 +1751,7 @@ public class Db implements Session, Cloneable {
   public DbTransactionHandle registerCommitTxRunnable(CommitTxRunnable commitRunnable) {
     if (isRemote()) {
       try {
-        return rdel.registerCommitTxRunnable(commitRunnable);
+        return resources.rdel.registerCommitTxRunnable(commitRunnable);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1736,7 +1772,7 @@ public class Db implements Session, Cloneable {
   public CommitTxRunnable unregisterCommitTxRunnable(DbTransactionHandle handle) {
     if (isRemote()) {
       try {
-        return rdel.unregisterCommitTxRunnable(handle);
+        return resources.rdel.unregisterCommitTxRunnable(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1756,7 +1792,7 @@ public class Db implements Session, Cloneable {
   public Collection<CommitTxRunnable> getCommitTxRunnables() {
     if (isRemote()) {
       try {
-        return rdel.getCommitTxRunnables();
+        return resources.rdel.getCommitTxRunnables();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1778,7 +1814,7 @@ public class Db implements Session, Cloneable {
   public DbTransactionHandle registerRollbackTxRunnable(RollbackTxRunnable rollbackRunnable) {
     if (isRemote()) {
       try {
-        return rdel.registerRollbackTxRunnable(rollbackRunnable);
+        return resources.rdel.registerRollbackTxRunnable(rollbackRunnable);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1799,7 +1835,7 @@ public class Db implements Session, Cloneable {
   public RollbackTxRunnable unregisterRollbackTxRunnable(DbTransactionHandle handle) {
     if (isRemote()) {
       try {
-        return rdel.unregisterRollbackTxRunnable(handle);
+        return resources.rdel.unregisterRollbackTxRunnable(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1819,7 +1855,7 @@ public class Db implements Session, Cloneable {
   public Collection<RollbackTxRunnable> getRollbackTxRunnables() {
     if (isRemote()) {
       try {
-        return rdel.getRollbackTxRunnables();
+        return resources.rdel.getRollbackTxRunnables();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1856,7 +1892,7 @@ public class Db implements Session, Cloneable {
           if (autoCommit) {
             throw new PersistenceException(this, "no client transaction running");
           }
-          committed = rdel.commit(txVoucher);
+          committed = resources.rdel.commit(txVoucher);
           if (committed) {
             autoCommit = true;   // now outside tx again
           }
@@ -1985,7 +2021,7 @@ public class Db implements Session, Cloneable {
           if (autoCommit) {
             throw new PersistenceException(this, "no client transaction running");
           }
-          rolledBack = rdel.rollback(txVoucher, withLog);
+          rolledBack = resources.rdel.rollback(txVoucher, withLog);
           if (rolledBack) {
             autoCommit = true;   // now outside tx again
           }
@@ -2025,7 +2061,7 @@ public class Db implements Session, Cloneable {
               LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
             }
             transaction.invokeRollbackTxRunnables();
-            ManagedConnection c = con;
+            ManagedConnection c = resources.con;
             if (c != null) {
               c.rollback(withLog);  // avoid a commit ...
               setAutoCommit(true);    // ... in setAutoCommit
@@ -2078,7 +2114,7 @@ public class Db implements Session, Cloneable {
 
     try {
       // cancel all pending statements (usually max. 1)
-      ManagedConnection c = con;
+      ManagedConnection c = resources.con;
       if (c != null) {
         c.cancelRunningStatements();
       }
@@ -2108,7 +2144,7 @@ public class Db implements Session, Cloneable {
     }
     catch (RuntimeException rex) {
       try {
-        ManagedConnection c = con;
+        ManagedConnection c = resources.con;
         if (c != null && !c.isClosed()) {
           // check low level transaction state
           boolean connectionInTransaction;
@@ -2158,7 +2194,7 @@ public class Db implements Session, Cloneable {
    * is attached or detached to/from a Db by the ConnectionManager.
    */
   void setConnection(ManagedConnection con) {
-    this.con = con;
+    resources.con = con;
   }
 
 
@@ -2168,7 +2204,7 @@ public class Db implements Session, Cloneable {
    * @return the connection, null = not attached
    */
   ManagedConnection getConnection() {
-    return con;
+    return resources.con;
   }
 
 
@@ -2178,7 +2214,7 @@ public class Db implements Session, Cloneable {
    * @return the attached connection
    */
   ManagedConnection connection() {
-    ManagedConnection c = con;
+    ManagedConnection c = resources.con;
     if (c == null) {
       throw new PersistenceException(this, "not attached");
     }
@@ -2191,7 +2227,7 @@ public class Db implements Session, Cloneable {
    * Used in execption handling to cleanup all pending statements and result sets.
    */
   void forceDetached() {
-    conMgr.forceDetach(this);
+    resources.conMgr.forceDetach(this);
   }
 
 
@@ -2203,7 +2239,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public int getSessionId() {
-    return sessionId;
+    return resources.sessionId;
   }
 
   /**
@@ -2212,7 +2248,7 @@ public class Db implements Session, Cloneable {
    * Package scope!
    */
   void clearSessionId() {
-    sessionId = 0;
+    resources.sessionId = 0;
   }
 
 
@@ -2231,7 +2267,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setSessionGroupId(number);
+        resources.rdel.setSessionGroupId(number);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2254,7 +2290,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        return rdel.getSessionGroupId();
+        return resources.rdel.getSessionGroupId();
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2272,7 +2308,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        sessionGroupId = rdel.groupWith(sessionId);
+        sessionGroupId = resources.rdel.groupWith(sessionId);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2287,7 +2323,7 @@ public class Db implements Session, Cloneable {
       setSessionGroupId(sessionId);
       for (WeakReference<Db> dbRef: SESSIONS) {
         Db db = dbRef.get();
-        if (db != null && db.sessionId == sessionId) {
+        if (db != null && db.resources.sessionId == sessionId) {
           if (db.sessionGroupId > 0 && sessionId != db.sessionGroupId) {
             throw new PersistenceException(db, "session already belongs to group " + db.sessionGroupId);
           }
@@ -2308,13 +2344,13 @@ public class Db implements Session, Cloneable {
   void attach() {
     assertOpen();
     assertOwnerThread();
-    if (conMgr == null) {
+    if (resources.conMgr == null) {
       throw new PersistenceException(this, "no connection manager");
     }
     if (isPooled() && getPoolId() == 0) {
       throw new PersistenceException(this, "illegal attempt to attach a pooled session which is not in use");
     }
-    conMgr.attach(this);
+    resources.conMgr.attach(this);
   }
 
   /**
@@ -2323,9 +2359,9 @@ public class Db implements Session, Cloneable {
    * Notice: package scope!
    */
   void detach() {
-    if (sessionId > 0) {
+    if (resources.sessionId > 0) {
       assertOwnerThread();
-      conMgr.detach(this);
+      resources.conMgr.detach(this);
     }
     // else: session is already closed (may happen during cleanup)
   }
@@ -2601,23 +2637,23 @@ public class Db implements Session, Cloneable {
     if (isRemote()) {
       // cloning a remote session involves creating an entire new session via open()!
       // notice that a remote session is always open (otherwise it wouldn't be remote ;-))
-      rdel               = null;
-      rses               = null;
-      rcon               = null;
-      delegates          = null;
+      delegates = null;
       // returning to GC will also GC on server-side (if invoked from close())
     }
     else  {
-      defaultIdSource     = null;
-      transaction         = null;
+      defaultIdSource = null;
+      transaction = null;
     }
 
-    sessionGroupId  = 0;
-    sessionId       = 0;
+    sessionGroupId = 0;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
       sessionInfo.setSince(0);    // not logged in anymore
+    }
+
+    if (resources != null) {
+      resources.clearMembers();
     }
   }
 
@@ -2635,7 +2671,7 @@ public class Db implements Session, Cloneable {
    */
   @Override
   public Db clone() {
-
+    assertOpen();
     try {
 
       Db newDb = (Db) super.clone();
@@ -2644,28 +2680,15 @@ public class Db implements Session, Cloneable {
         newDb.setSessionInfo(sessionInfo.clone());
       }
 
+      newDb.resources = null;
       newDb.clearMembers();
 
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
 
-      if (isRemote()) {
-        newDb.open();
-      }
-      else  {
-        if (isOpen())  {
-          if (newDb.sessionInfo != null) {
-            newDb.getSessionInfo().setSince(System.currentTimeMillis());
-          }
-          newDb.sessionId = conMgr.login(newDb);
-          // new connections always start with autocommit on!
-          newDb.autoCommit = true;
-          newDb.transaction = null;
-          newDb.setupIdSource();
-        }
-      }
+      newDb.open(resources.conMgr);
 
-      LOGGER.info("session {0} cloned from {1}, state={2}", newDb, this, newDb.isOpen() ? "open" : "closed");
+      LOGGER.info("session {0} cloned from {1}", newDb, this);
 
       newDb.registerSession();
       return newDb;
@@ -2758,7 +2781,7 @@ public class Db implements Session, Cloneable {
   @Override
   public RemoteSession getRemoteSession() {
     assertRemote();
-    return RemoteSessionFactory.getInstance().create(rses);
+    return RemoteSessionFactory.getInstance().create(resources.rses);
   }
 
   /**
@@ -2825,7 +2848,7 @@ public class Db implements Session, Cloneable {
       // we need to prepare it
       assertOpen();
       try {
-        RemoteDelegate delegate = rses.getRemoteDelegate(remoteClasses[delegateId].getName());
+        RemoteDelegate delegate = resources.rses.getRemoteDelegate(remoteClasses[delegateId].getName());
         delegates[delegateId] = delegate;
         return delegate;
       }
@@ -2847,7 +2870,7 @@ public class Db implements Session, Cloneable {
    */
   public RemoteDelegate createRemoteDelegate(String className) throws RemoteException {
     assertOpen();
-    return rses.getRemoteDelegate(className);
+    return resources.rses.getRemoteDelegate(className);
   }
 
 
@@ -2874,7 +2897,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setCountModificationAllowed(countModificationAllowed);
+        resources.rdel.setCountModificationAllowed(countModificationAllowed);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2896,7 +2919,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setLogModificationAllowed(logModificationAllowed);
+        resources.rdel.setLogModificationAllowed(logModificationAllowed);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -2941,7 +2964,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        this.logModificationDeferred = rdel.setLogModificationDeferred(logModificationDeferred);
+        this.logModificationDeferred = resources.rdel.setLogModificationDeferred(logModificationDeferred);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3008,7 +3031,7 @@ public class Db implements Session, Cloneable {
     List<ModificationLog> list = modificationLogList;
     if (isRemote()) {
       try {
-        list = rdel.popModificationLogsOfTransaction();
+        list = resources.rdel.popModificationLogsOfTransaction();
         applyTo(list);
       }
       catch (RemoteException e)  {
@@ -3055,7 +3078,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        return rdel.getLogModificationTxId();
+        return resources.rdel.getLogModificationTxId();
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3079,7 +3102,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setLogModificationTxId(logModificationTxId);
+        resources.rdel.setLogModificationTxId(logModificationTxId);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3112,7 +3135,7 @@ public class Db implements Session, Cloneable {
     assertOpen();
     if (isRemote()) {
       try {
-        rdel.setLogModificationTxEnabled(logModificationTxEnabled);
+        resources.rdel.setLogModificationTxEnabled(logModificationTxEnabled);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);

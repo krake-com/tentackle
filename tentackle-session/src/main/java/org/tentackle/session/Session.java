@@ -37,7 +37,7 @@ interface Session$ThreadLocal {
  *
  * @author harald
  */
-public interface Session extends Comparable<Session> {
+public interface Session extends Comparable<Session>, AutoCloseable {
 
   /**
    * Gets the session used by the current thread.<br>
@@ -177,24 +177,19 @@ public interface Session extends Comparable<Session> {
   int groupWith(int sessionId);
 
   /**
-   * Opens a session.<br>
-   * Opening an already open session throws a {@link PersistenceException}.
-   */
-  void open();
-
-  /**
    * Close a session.<br>
    * Closing an already closed session is okay and ignored.
    * <p>
    * Notice: a non-blocking close can be requested by {@link #setKeepAliveInterval(long)} with
    * an interval &lt; 0.
    */
+  @Override
   void close();
 
   /**
    * Clones a session.<br>
    * If the session is open, the new session will be open as well.
-   * If the session is closed, the cloned session will be closed.
+   * If the session is closed, a PersistenceException is thrown.
    *
    * @return the cloned session
    */

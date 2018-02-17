@@ -538,7 +538,7 @@ public class Pdo {
    * Creates a session.
    *
    * @param sessionInfo the session info
-   * @return the created session (still closed)
+   * @return the open session
    */
   public static Session createSession(SessionInfo sessionInfo) {
     return SessionFactory.getInstance().create(sessionInfo);
@@ -547,7 +547,7 @@ public class Pdo {
   /**
    * Creates a session with a default session info {@code "backend"}.
    *
-   * @return the created session (still closed)
+   * @return the open session
    */
   public static Session createSession() {
     return createSession(createSessionInfo());

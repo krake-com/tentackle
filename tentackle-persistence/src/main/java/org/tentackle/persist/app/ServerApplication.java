@@ -37,7 +37,6 @@ import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.rmi.DbServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
@@ -341,35 +340,10 @@ public abstract class ServerApplication extends AbstractApplication
       throw new ApplicationException("only one server application instance allowed");
     }
     serverDb = (Db) createSession(sessionInfo);
-
-    /**
-     * If the db-properties file contained the login data (which is very often the case)
-     * copy that login data to the userinfo.
-     */
-    username = serverDb.getBackendInfo().getUser();
-    if (username != null) {
-      sessionInfo.setUserName(username);
-    }
-    char[] passwd = serverDb.getBackendInfo().getPassword();
-    if (passwd != null && passwd.length > 0 && passwd[0] != 0) {
-      // if not cleared
-      sessionInfo.setPassword(passwd);
-    }
-
-    // open the database connection
-    serverDb.open();
-
     serverDb.makeCurrent();
 
     setSessionInfo(sessionInfo);    // this will also make the session info immutable
-
-    // create the default context
-    DomainContext context = createDomainContext(serverDb);
-    if (context == null) {
-      throw new ApplicationException("creating the database context failed");
-    }
-
-    setDomainContext(context);
+    setDomainContext(createDomainContext(serverDb));
   }
 
 

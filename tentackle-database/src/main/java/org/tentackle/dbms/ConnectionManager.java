@@ -70,6 +70,20 @@ public interface ConnectionManager {
 
 
   /**
+   * Cleans up any resources for the given session ID.<br>
+   * Connection managers should not keep references to the sessions.
+   * Instead they map connections via a session ID which is unique for each session.
+   * If, for whatever reason, the session is garbage collected (see {@link java.lang.ref.Cleaner},
+   * the connection manager must be notified that the session ID is no longer valid and the
+   * connection is no more associated to a session.
+   *
+   * @param sessionId the session ID given by the connection manager
+   * @param connection the connection
+   */
+  void cleanup(int sessionId, ManagedConnection connection);
+
+
+  /**
    * Gets the maximum number of allowed sessions managed by this manager.
    *
    * @return max. number of concurrent logins, 0 = unlimited

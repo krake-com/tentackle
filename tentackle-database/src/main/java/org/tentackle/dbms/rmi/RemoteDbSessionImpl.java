@@ -204,7 +204,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
     private final MethodStatistics methodStats;       // statistics for method invocations
                                                       // (managed by invocation handler, null if no stats)
-    private RemoteException remoteException;          // caught exception, null = none
 
     Resources(Db db, RemoteDbConnectionImpl con, SessionInfo serverInfo) {
       this.db = db;
@@ -237,7 +236,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
         }
       }
       catch (RemoteException | RuntimeException ex) {
-        remoteException = new RemoteException("closing session failed", ex);
+        LOGGER.severe("closing session failed", ex);
       }
       finally {
         db = null;
@@ -589,9 +588,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
     }
     else  {
-      Db newDb = new Db(conMgr, resources.serverInfo);
-      newDb.open();
-      return newDb;
+      return new Db(conMgr, resources.serverInfo);
     }
   }
 
@@ -757,9 +754,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   public void close() throws RemoteException {
     resources.me = this;    // programmatic cleanup
     cleanable.clean();
-    if (resources.remoteException != null) {
-      throw resources.remoteException;
-    }
   }
 
 

@@ -456,32 +456,9 @@ public abstract class WebApplication<T> extends AbstractApplication
     }
     serverDb = (Db) createSession(sessionInfo);
 
-    /**
-     * If the db-properties file contained the login data (which is very often the case)
-     * copy that login data to the userinfo.
-     */
-    username = serverDb.getBackendInfo().getUser();
-    if (username != null) {
-      sessionInfo.setUserName(username);
-    }
-    char[] passwd = serverDb.getBackendInfo().getPassword();
-    if (passwd != null && passwd.length > 0 && passwd[0] != 0) {
-      // if not cleared
-      sessionInfo.setPassword(passwd);
-    }
-
-    // open the database connection
-    serverDb.open();
-
     // createPdo the default context
     DomainContext context = createDomainContext(serverDb);
-    if (context == null) {
-      throw new ApplicationException("creating the database context failed");
-    }
-
     setDomainContext(context);
-
-    updateSessionInfoAfterLogin();
   }
 
 

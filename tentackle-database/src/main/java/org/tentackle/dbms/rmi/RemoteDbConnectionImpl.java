@@ -247,26 +247,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
     LOGGER.fine("{0} unexported", remoteObject);
   }
 
-  /**
-   * Overridden to detect unwanted garbage collection as this
-   * should never happen.
-   * If using DbServer, this will not happen because it keeps a reference
-   * to the connection object.
-   */
-  @Override
-  protected void finalize() throws Throwable {
-    try {
-      LOGGER.warning("Connection object " + getClass().getName() + " finalized unexpectedly:\n" + this);
-    }
-    catch (RuntimeException ex) {
-      // don't stop finalization if just the logging failed
-    }
-    finally {
-      super.finalize();
-    }
-  }
-
-
+  
 
   // ------------------ implements RemoteDbConnection -----------------
 

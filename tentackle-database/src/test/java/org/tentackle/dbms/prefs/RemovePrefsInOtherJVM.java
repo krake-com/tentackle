@@ -35,7 +35,6 @@ public class RemovePrefsInOtherJVM {
   // not annotated with @Test because invoked from shell!
   private static void removeNode() throws Exception {
     Session session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.open();
     session.makeCurrent();
 
     ModificationTracker tracker = ModificationTracker.getInstance();

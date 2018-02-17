@@ -24,6 +24,7 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionCloseHandler;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionInfoFactory;
 
 /**
  * Session factory for Db instances.
@@ -33,6 +34,10 @@ import org.tentackle.session.SessionInfo;
 @Service(SessionFactory.class)
 public class DbFactory implements SessionFactory {
 
+  @Override
+  public Session create() {
+    return create(SessionInfoFactory.getInstance().create());
+  }
 
   @Override
   public Session create(SessionInfo sessionInfo) {

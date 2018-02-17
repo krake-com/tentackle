@@ -26,7 +26,6 @@ import org.tentackle.dbms.Db;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
-import org.tentackle.session.SessionInfoFactory;
 import org.testng.Reporter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -74,8 +73,7 @@ public abstract class AbstractPersistenceTest {
 
   @BeforeSuite
   public static void openSessionsAndStartPdoTracker() throws Exception {
-    session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.open();
+    session = SessionFactory.getInstance().create();
     session.makeCurrent();
 
     ModificationTracker tracker = ModificationTracker.getInstance();

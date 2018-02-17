@@ -80,12 +80,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
             remoteCursor.close();
           }
           catch (RemoteException ex) {
-            if (me == null) {
-              LOGGER.severe("cleanup " + remoteCursor + " failed", ex);
-            }
-            else {
-              throw new PersistenceException(me.getSession(), ex);
-            }
+            LOGGER.severe("cleanup " + remoteCursor + " failed", ex);
           }
         }
       }

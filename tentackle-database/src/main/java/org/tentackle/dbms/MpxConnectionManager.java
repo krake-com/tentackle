@@ -229,50 +229,66 @@ public class MpxConnectionManager extends DefaultConnectionManager {
   @Override
   public synchronized void logout(Db session) {
     assertSessionBelongsToMe(session);
-    int index = getIndexFromSessionId(session);
+    int index = getIndexFromSession(session);
     removeDb(index);
     LOGGER.fine("{0} logged out from {1}, id={2}", session, this, session.getSessionId());
     try {
       // check that connection is not attached, if so, detach it!
-      ManagedConnection con = session.getConnection();
-      if (con != null) {
-        con.forceDetached();
-        if (con.isDead()) {
-          // remove connection if dead and check to reopen
-          cleanupDeadConnection(con);
-          /**
-           * Client crashed due to a dead server connection.
-           * This is a strong indicator that the database is facing some severe
-           * problems. Because we don't know how many unattached connections are down
-           * we will probe them here. This is a little time consuming but better
-           * than waiting for other clients to crash.
-           */
-          int[] newUnConList = new int[unConList.length];
-          int newUnConCount = 0;
-          for (int i = 0; i < unConCount; i++) {
-            ManagedConnection c = conList[unConList[i]];
-            c.verifyConnection();
-            if (c.isDead()) {
-              cleanupDeadConnection(c);
-            }
-            else {
-              newUnConList[newUnConCount++] = c.getIndex();
-            }
-          }
-          unConList = newUnConList;
-          unConCount = newUnConCount;
-
-          // open any missing connections
-          reopenConnections();
-        }
-        else {
-          // add connection to freelist
-          pushUnattached(con.getIndex());
-        }
-      }
+      freeConnection(session.getConnection());
     }
     finally {
       session.clearSessionId();
+    }
+  }
+
+  @Override
+  public synchronized void cleanup(int sessionId, ManagedConnection connection) {
+    int index = getIndexFromSessionId(sessionId);
+    removeDb(index);
+    LOGGER.fine("{0}: session ID {1} cleaned up", this, sessionId);
+    freeConnection(connection);
+  }
+
+
+  /**
+   * Frees a connection and adds it to the unattached list.
+   *
+   * @param con the connection, null if no more attached
+   */
+  protected void freeConnection(ManagedConnection con) {
+    // check that connection is not attached, if so, detach it!
+    if (con != null) {
+      con.forceDetached();
+      if (con.isDead()) {
+        // remove connection if dead and check to reopen
+        cleanupDeadConnection(con);
+        /**
+         * Client crashed due to a dead server connection. This is a strong indicator that the database is facing some
+         * severe problems. Because we don't know how many unattached connections are down we will probe them here. This
+         * is a little time consuming but better than waiting for other clients to crash.
+         */
+        int[] newUnConList = new int[unConList.length];
+        int newUnConCount = 0;
+        for (int i = 0; i < unConCount; i++) {
+          ManagedConnection c = conList[unConList[i]];
+          c.verifyConnection();
+          if (c.isDead()) {
+            cleanupDeadConnection(c);
+          }
+          else {
+            newUnConList[newUnConCount++] = c.getIndex();
+          }
+        }
+        unConList = newUnConList;
+        unConCount = newUnConCount;
+
+        // open any missing connections
+        reopenConnections();
+      }
+      else {
+        // add connection to freelist
+        pushUnattached(con.getIndex());
+      }
     }
   }
 

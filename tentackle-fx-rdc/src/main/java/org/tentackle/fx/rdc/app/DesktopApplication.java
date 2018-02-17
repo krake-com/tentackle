@@ -176,9 +176,9 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               }
               showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.0);
               // connect to server/backend
-              Session session = createSession(sessionInfo);
+              Session session;
               try {
-                session.open();
+                session = createSession(sessionInfo);
                 // success!
                 session.makeCurrent();
                 setSessionInfo(sessionInfo);

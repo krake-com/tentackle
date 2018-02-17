@@ -126,10 +126,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
       LOGGER.fine("login to backend");
       // connect to database/application server
-      if (doLogin() == null) {
-        // no connection, immediately
-        System.exit(1);
-      }
+      doLogin();
 
       LOGGER.fine("configure application");
       // configure the application
@@ -140,9 +137,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
       doFinishStartup();
     }
     catch (ApplicationException | RuntimeException e) {
-      // print message to user, if GUI in window, else if headless to console
       LOGGER.logStacktrace(e);
-      // doStop with error
       doStop(3, e);
     }
   }
@@ -202,9 +197,8 @@ public abstract class ConsoleApplication extends AbstractApplication {
    * Connects to the database backend (or application server).
    *
    * @return the connected context db, null if login aborted or authentication failed
-   * @throws ApplicationException if login failed
    */
-  protected DomainContext doLogin() throws ApplicationException {
+  protected void doLogin() throws ApplicationException {
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
@@ -214,27 +208,11 @@ public abstract class ConsoleApplication extends AbstractApplication {
     configureSessionInfo(sessionInfo);
     setSessionInfo(sessionInfo);
     Session session = createSession(sessionInfo);
-
-    // open the database connection
-    try {
-      session.open();
-    }
-    catch (LoginFailedException ex) {
-      throw new ApplicationException(AppCoreBundle.getString("LOGIN FAILED"), ex);
-    }
-
     session.makeCurrent();
 
-    // createPdo the default context
-    DomainContext context = createDomainContext(session);
-    if (context == null)  {
-      throw new ApplicationException(AppCoreBundle.getString("LOGIN REFUSED"));
-    }
-    setDomainContext(context);
+    setDomainContext(createDomainContext(session));
 
     updateSessionInfoAfterLogin();
-
-    return context;
   }
 
 

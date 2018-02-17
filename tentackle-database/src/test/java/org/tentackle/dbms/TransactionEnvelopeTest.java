@@ -20,7 +20,6 @@ package org.tentackle.dbms;
 
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
-import org.tentackle.session.SessionInfoFactory;
 import org.tentackle.session.TransactionEnvelope;
 import org.testng.annotations.Test;
 
@@ -35,9 +34,7 @@ public class TransactionEnvelopeTest {
 
   @Test
   public void testEnvelope() {
-    Session session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
-    session.open();
-    try {
+    try (Session session = SessionFactory.getInstance().create()) {
       int rv = session.transaction(() -> {
         assertEquals(session.getTxName(), "TransactionEnvelopeTest");
         return 5;
@@ -53,9 +50,6 @@ public class TransactionEnvelopeTest {
         }
       });
       assertEquals(rv, 10);
-    }
-    finally {
-      session.close();
     }
   }
 
