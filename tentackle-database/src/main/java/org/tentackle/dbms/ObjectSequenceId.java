@@ -168,11 +168,11 @@ public class ObjectSequenceId extends AbstractIdSource {
           }
         }
       }
-      catch (RuntimeException e) {
-        if (e instanceof PersistenceException) {
-          throw e;
-        }
-        throw new PersistenceException(db, e);
+      catch (PersistenceException px) {
+        throw px;
+      }
+      catch (RuntimeException rx) {
+        throw new PersistenceException(db, rx);
       }
     }
 

@@ -309,7 +309,7 @@ public class DbServer {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       int pos = 0;
       while (stok.hasMoreTokens()) {
-        int p = Integer.valueOf(stok.nextToken());
+        int p = Integer.parseInt(stok.nextToken());
         switch (pos) {
           case 0:
             plainPort = p;

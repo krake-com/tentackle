@@ -68,10 +68,8 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
    * @param serverSession the RMI serverSession
    * @param persistenceClass the subclass of AbstractDbObject
    * @param pdoClass the PDO class (interface)
-   * @throws java.rmi.RemoteException
    */
-  public AbstractPersistentObjectRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> persistenceClass, Class<T> pdoClass)
-          throws RemoteException {
+  public AbstractPersistentObjectRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> persistenceClass, Class<T> pdoClass) {
     super(serverSession, persistenceClass);
     this.pdoClass = pdoClass;
   }

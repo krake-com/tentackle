@@ -20,7 +20,6 @@
 package org.tentackle.dbms.rmi;
 
 import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
 import org.tentackle.session.PersistenceException;
@@ -50,9 +49,8 @@ public class AbstractDbOperationRemoteDelegateImpl<P extends AbstractDbOperation
    *
    * @param serverSession is the RMI serverSession
    * @param clazz is the subclass of AbstractDbOperation
-   * @throws RemoteException
    */
-  public AbstractDbOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) throws RemoteException {
+  public AbstractDbOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) {
     super(serverSession, clazz);
   }
 

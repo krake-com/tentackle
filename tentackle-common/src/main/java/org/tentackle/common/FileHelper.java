@@ -34,7 +34,36 @@ import java.util.Properties;
 public class FileHelper {
 
   /**
-   * Loads properties.
+   * Creates an input stream from the given name.
+   *
+   * @param name the resource name
+   * @param asResource true if load from the classpath, false if from filesystem
+   * @return the input stream
+   * @throws IOException if reading the resources failed
+   * @throws FileNotFoundException if no such resources found
+   */
+  public static InputStream createInputStream(String name, boolean asResource) throws IOException {
+    InputStream is;
+    if (asResource) {
+      is = FileHelper.class.getResourceAsStream(name);
+      if (is == null) {
+        // try other variant
+        is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+        if (is == null) {
+          throw new FileNotFoundException("no such resource");
+        }
+      }
+    }
+    else {
+      is = new FileInputStream(name);
+    }
+    is = new BufferedInputStream(is);
+    return is;
+  }
+
+
+  /**
+   * Loads properties from a resource.
    *
    * @param name the properties name, null if return empty properties
    * @param asResource true if load from the classpath, false if from filesystem
@@ -51,33 +80,8 @@ public class FileHelper {
       if (!name.startsWith("/")) {
         name = "/" + name;
       }
-      InputStream is = null;
-      try {
-        if (asResource) {
-          is = FileHelper.class.getResourceAsStream(name);
-          if (is == null) {
-            // try other variant
-            is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
-            if (is == null) {
-              throw new FileNotFoundException("no such resource");
-            }
-          }
-        }
-        else  {
-          is = new FileInputStream(name);
-        }
-        is = new BufferedInputStream(is);
+      try (InputStream is = createInputStream(name, asResource)) {
         dbProps.load(is);
-      }
-      finally {
-        if (is != null) {
-          try {
-            is.close();
-          }
-          catch (IOException ex) {
-            // ignored
-          }
-        }
       }
     }
     return dbProps;

@@ -171,11 +171,9 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
             }
           }
 
-          if (!timedOut) {
-            if (group > 0) {
-              // belongs to a group and at least one connection still alive
-              aliveGroups.add(group);    // append group if not yet done
-            }
+          if (!timedOut && group > 0) {
+            // belongs to a group and at least one connection still alive
+            aliveGroups.add(group);    // append group if not yet done
           }
           session.polled();   // reset alive flag
         }

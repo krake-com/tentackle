@@ -41,17 +41,17 @@ public class Settings {
    * <p>
    * If this value is null, the {@link ServiceFactory} is loaded via the {@link java.util.ServiceLoader}.
    * However, if for whatever reason, the loader doesn't find the service configuration or cannot
-   * be used, the class defined by {@link #SERVICE_FACTORY_CLASSNAME} can be instantiated.
+   * be used, the class defined by {@link #serviceFactoryClassname} can be instantiated.
    * Applications must change this at a very early stage of startup, for example in the main-method.
    */
-  public static String SERVICE_FACTORY_CLASSNAME;
+  public static String serviceFactoryClassname;
 
   /**
    * The classloader to load the service factorty.
    * <p>
    * If this value is null, the the {@link ServiceFactory} is loaded via a default classloader.
    */
-  public static ClassLoader SERVICE_FACTORY_CLASSLOADER;
+  public static ClassLoader serviceFactoryClassloader;
 
 
 

@@ -27,9 +27,8 @@ public class NumberPoolRemoteDelegateImpl
    * @param session the RMI session
    * @param persistenceClass the persistence implementation class
    * @param pdoClass the pdo interface class
-   * @throws java.rmi.RemoteException
    */
-  public NumberPoolRemoteDelegateImpl(RemoteDbSessionImpl session, Class<NumberPoolPersistenceImpl> persistenceClass, Class<NumberPool> pdoClass) throws RemoteException {
+  public NumberPoolRemoteDelegateImpl(RemoteDbSessionImpl session, Class<NumberPoolPersistenceImpl> persistenceClass, Class<NumberPool> pdoClass) {
     super(session, persistenceClass, pdoClass);
   }
   /**

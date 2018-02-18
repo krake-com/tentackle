@@ -144,11 +144,9 @@ public class TableSerialExpirationBacklog {
           ndx = 0;
         }
         ExpirationSet exp = expirations[ndx++];
-        if (exp != null) {
-          if (exp.maxSerial >= minSerial && exp.minSerial <= maxSerial) {
-            // add to list of matched sets
-            matchedExps[matchCount++] = exp;
-          }
+        if (exp != null && exp.maxSerial >= minSerial && exp.minSerial <= maxSerial) {
+          // add to list of matched sets
+          matchedExps[matchCount++] = exp;
         }
       }
     }

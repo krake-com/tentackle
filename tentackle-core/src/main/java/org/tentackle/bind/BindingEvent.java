@@ -57,9 +57,9 @@ public class BindingEvent extends EventObject {
   }
 
 
-  private final Type type;      // the event type
-  private final Object parent;  // parent (holder) of the value
-  private final Object value;   // the data value
+  private final Type type;                // the event type
+  private final transient Object parent;  // parent (holder) of the value
+  private final transient Object value;   // the data value
 
 
   /**

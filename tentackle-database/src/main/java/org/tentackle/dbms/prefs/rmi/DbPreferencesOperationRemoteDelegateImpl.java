@@ -36,9 +36,7 @@ public class DbPreferencesOperationRemoteDelegateImpl
        implements DbPreferencesOperationRemoteDelegate {
 
   public DbPreferencesOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession,
-                                                  Class<DbPreferencesOperation> clazz)
-         throws RemoteException {
-
+                                                  Class<DbPreferencesOperation> clazz) {
     super(serverSession, clazz);
   }
 

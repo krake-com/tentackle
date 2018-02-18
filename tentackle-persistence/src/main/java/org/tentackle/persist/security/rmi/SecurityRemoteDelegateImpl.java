@@ -33,7 +33,7 @@ public class SecurityRemoteDelegateImpl
    * @throws java.rmi.RemoteException
    */
   public SecurityRemoteDelegateImpl(RemoteDbSessionImpl session, Class<SecurityPersistenceImpl> persistenceClass,
-                                    Class<Security> pdoClass) throws RemoteException {
+                                    Class<Security> pdoClass) {
     super(session, persistenceClass, pdoClass);
   }
 

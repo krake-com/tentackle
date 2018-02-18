@@ -954,15 +954,13 @@ public class ManagedConnection {
     for (Iterator<WeakReference<StatementWrapper>> iter = runningStatements.iterator(); iter.hasNext(); ) {
       WeakReference<StatementWrapper> ref = iter.next();
       StatementWrapper stmt = ref.get();
-      if (stmt != null) {
-        if (stmt.isRunning()) {
-          try {
-            stmt.cancel();
-          }
-          catch (RuntimeException ex) {
-            // just log
-            LOGGER.warning("canceling statement failed: " + stmt, ex);
-          }
+      if (stmt != null && stmt.isRunning()) {
+        try {
+          stmt.cancel();
+        }
+        catch (RuntimeException ex) {
+          // just log
+          LOGGER.warning("canceling statement failed: " + stmt, ex);
         }
       }
       iter.remove();

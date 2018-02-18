@@ -137,14 +137,13 @@ public class ObjectId extends AbstractIdSource {
         db.commit(txVoucher);
       }
     }
-    catch (RuntimeException e) {
+    catch (PersistenceException px) {
       db.rollback(txVoucher);
-      if (e instanceof PersistenceException) {
-        throw e;
-      }
-      else {
-        throw new PersistenceException(db, e);
-      }
+      throw px;
+    }
+    catch (RuntimeException rx) {
+      db.rollback(txVoucher);
+      throw new PersistenceException(db, rx);
     }
 
     return lastId;

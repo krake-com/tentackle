@@ -194,14 +194,13 @@ public class RemoteIncludes {
             s.println("   * @param session the RMI session");
             s.println("   * @param persistenceClass the persistence implementation class");
             s.println("   * @param pdoClass the pdo interface class");
-            s.println("   * @throws java.rmi.RemoteException");
             s.println("   */");
             if (entity.isAbstract()) {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> pdoClass) throws RemoteException {");
+              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> pdoClass) {");
             }
             else  {
               s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<" + className +
-                        "> persistenceClass, Class<" + pdoClassName + "> pdoClass) throws RemoteException {");
+                        "> persistenceClass, Class<" + pdoClassName + "> pdoClass) {");
             }
             s.println("    super(session, persistenceClass, pdoClass);");
             s.println("  }");
@@ -273,9 +272,8 @@ public class RemoteIncludes {
             s.println("   *");
             s.println("   * @param session the RMI session");
             s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   * @throws java.rmi.RemoteException");
             s.println("   */");
-            s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass) throws RemoteException {");
+            s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass) {");
             s.println("    super(session, persistenceClass);");
             s.println("  }");
           }

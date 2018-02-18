@@ -109,11 +109,9 @@ public class DefaultStringNormalizer implements Function<String,String> {
          * convert certain character sequences.
          * This should work with all western languages sufficiently.
          */
-        if (i + 2 < len)  {
-          if (c == 'S' && str.charAt(i+1) == 'C' && str.charAt(i+2) == 'H') {
-            // sch -> s
-            i += 2;
-          }
+        if (i + 2 < len && c == 'S' && str.charAt(i+1) == 'C' && str.charAt(i+2) == 'H') {
+          // sch -> s
+          i += 2;
         }
         if (i + 1 < len)  {
           if (c == 'C' && str.charAt(i+1) == 'H') {

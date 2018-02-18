@@ -36,7 +36,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
              implements DbModificationTrackerRemoteDelegate {
 
 
-  public DbModificationTrackerRemoteDelegateImpl(RemoteDbSessionImpl session, Class<T> clazz) throws RemoteException {
+  public DbModificationTrackerRemoteDelegateImpl(RemoteDbSessionImpl session, Class<T> clazz) {
     super(session, clazz);
   }
 

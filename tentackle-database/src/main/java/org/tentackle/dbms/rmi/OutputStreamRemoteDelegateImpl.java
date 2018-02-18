@@ -44,9 +44,8 @@ public class OutputStreamRemoteDelegateImpl extends RemoteDelegateImpl<InputStre
    *
    * @param serverSession the RMI serverSession
    * @param servicedClass the class the delegate provides service for
-   * @throws RemoteException if failed
    */
-  public OutputStreamRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<InputStream> servicedClass) throws RemoteException {
+  public OutputStreamRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<InputStream> servicedClass) {
     super(serverSession, servicedClass);
     in = new BlockingByteArrayInputStream(new NotifyingByteArrayOutputStream());
   }

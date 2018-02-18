@@ -54,6 +54,7 @@ import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.Duration;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 
@@ -311,9 +312,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param clientInfo the SessionInfo from the client
    * @param serverInfo the SessionInfo to establish the connection to the database server
    *
-   * @throws RemoteException if the session could not initiated.
+   * @throws PersistenceException if the session could not initiated.
    */
-  public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) throws RemoteException {
+  public RemoteDbSessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
 
     this.clientInfo = clientInfo;
 
@@ -337,7 +338,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       if (ex instanceof LoginFailedException) {
         throw (LoginFailedException) ex;
       }
-      throw new RemoteException("could not setup remote session", ex);
+      throw new PersistenceException("could not setup remote session", ex);
     }
 
     // add session to the set
@@ -412,7 +413,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param sessionInfo the session info
    * @throws LoginFailedException if login is not allowed for whatever reason
    */
-  public abstract void verifySessionInfo(SessionInfo sessionInfo) throws LoginFailedException;
+  public abstract void verifySessionInfo(SessionInfo sessionInfo);
 
 
   /**
@@ -571,7 +572,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the db connection
    * @throws LoginFailedException if opening the db failed
    */
-  protected Db openDb() throws LoginFailedException {
+  protected Db openDb() {
 
     SessionPool dbPool = DbUtilities.getInstance().getDefaultSessionPool();
     ConnectionManager conMgr = DbUtilities.getInstance().getDefaultConnectionManager();
@@ -931,8 +932,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           Class<?> effectiveClass,
           Object... configArgs)
 
-            throws InstantiationException, NoSuchMethodException, IllegalAccessException,
-                   IllegalArgumentException, InvocationTargetException {
+            throws InstantiationException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
     // get the constructor with args (RemoteDbSessionImpl session, Class clazz)
     Constructor<I> constructor =
@@ -947,7 +947,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     // optionally configure the created delegate
     if (configArgs != null && configArgs.length > 0) {
       Method configureMethod = delegateImplClass.getMethod("configureDelegate", Object[].class);
-      configureMethod.invoke(delegate, new Object[] { configArgs });
+      configureMethod.invoke(delegate, configArgs);
     }
     return delegate;
   }
@@ -980,8 +980,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           Class<?> effectiveClass,
           Object... configArgs)
 
-            throws InstantiationException, NoSuchMethodException, IllegalAccessException,
-                   IllegalArgumentException, InvocationTargetException {
+            throws InstantiationException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
     return (T) Proxy.newProxyInstance(
             delegateImplClass.getClassLoader(),

@@ -61,13 +61,13 @@ public class ServiceFactory {
    */
   private static ServiceFactory createServiceFactory() {
 
-    if (Settings.SERVICE_FACTORY_CLASSNAME != null) {
+    if (Settings.serviceFactoryClassname != null) {
       try {
         @SuppressWarnings("unchecked")
         Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) (
-          Settings.SERVICE_FACTORY_CLASSLOADER == null ?
-            Class.forName(Settings.SERVICE_FACTORY_CLASSNAME) :
-            Class.forName(Settings.SERVICE_FACTORY_CLASSNAME, true, Settings.SERVICE_FACTORY_CLASSLOADER));
+          Settings.serviceFactoryClassloader == null ?
+            Class.forName(Settings.serviceFactoryClassname) :
+            Class.forName(Settings.serviceFactoryClassname, true, Settings.serviceFactoryClassloader));
 
         return clazz.getDeclaredConstructor().newInstance();
       }
@@ -80,9 +80,9 @@ public class ServiceFactory {
     }
 
     try {
-      ServiceLoader<ServiceFactory> loader = Settings.SERVICE_FACTORY_CLASSLOADER == null ?
+      ServiceLoader<ServiceFactory> loader = Settings.serviceFactoryClassloader == null ?
               ServiceLoader.load(ServiceFactory.class) :
-              ServiceLoader.load(ServiceFactory.class, Settings.SERVICE_FACTORY_CLASSLOADER);
+              ServiceLoader.load(ServiceFactory.class, Settings.serviceFactoryClassloader);
       for (ServiceFactory factory: loader) {
         if (factory != null) {
           return factory;

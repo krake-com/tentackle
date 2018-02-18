@@ -1925,7 +1925,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     int ndx = 1;
     st.setTimestamp(ndx++, processed, true);
     st.setString(ndx++, parStr);
-    st.setLong(ndx++, getId());
+    st.setLong(ndx, getId());
     assertThisRowAffected(st.executeUpdate());
     this.processed = processed;
     this.message = parStr;

@@ -53,10 +53,8 @@ public abstract class RemoteDelegateImpl<T> implements RemoteDelegate {
    *
    * @param serverSession the RMI serverSession
    * @param servicedClass the class the delegate provides service for
-   * @throws RemoteException if creating the delegate failed
    */
-  public RemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<T> servicedClass)
-         throws RemoteException {
+  public RemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<T> servicedClass) {
 
     this.serverSession = serverSession;
     this.servicedClass = servicedClass;

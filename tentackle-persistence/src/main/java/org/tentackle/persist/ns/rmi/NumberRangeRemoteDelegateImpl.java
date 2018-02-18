@@ -28,9 +28,8 @@ public class NumberRangeRemoteDelegateImpl
    * @param session the RMI session
    * @param persistenceClass the persistence implementation class
    * @param pdoClass the pdo interface class
-   * @throws java.rmi.RemoteException
    */
-  public NumberRangeRemoteDelegateImpl(RemoteDbSessionImpl session, Class<NumberRangePersistenceImpl> persistenceClass, Class<NumberRange> pdoClass) throws RemoteException {
+  public NumberRangeRemoteDelegateImpl(RemoteDbSessionImpl session, Class<NumberRangePersistenceImpl> persistenceClass, Class<NumberRange> pdoClass) {
     super(session, persistenceClass, pdoClass);
   }
   /**

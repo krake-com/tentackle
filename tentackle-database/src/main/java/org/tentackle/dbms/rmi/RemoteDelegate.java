@@ -26,9 +26,7 @@ import java.rmi.Remote;
  * Tag interface for Remote delegates provided by getRemoteDelegate() in Db.<br>
  * The implementation of a RemoteDelegate must provide a constructor as follows:
  * <pre>
- * public RemoteDelegateImpl(RemoteDbSessionImpl session, Class clazz) throws RemoteException {
- *
- * }
+ * public RemoteDelegateImpl(RemoteDbSessionImpl session, Class clazz)
  * </pre>
  *
  * while session is the remote DB-session and clazz is the Class the delegate implements

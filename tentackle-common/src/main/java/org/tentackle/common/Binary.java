@@ -202,19 +202,12 @@ public class Binary<T> implements Serializable, Cloneable {
       length = 0;
     }
     else  {
-      ObjectOutputStream os = null;
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      try {
-        os = new ObjectOutputStream(bos);
+      try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
         os.writeObject(object);
         os.flush();
         data   = bos.toByteArray();
         length = bos.size();
-      }
-      finally {
-        if (os != null) {
-          os.close();
-        }
       }
     }
   }

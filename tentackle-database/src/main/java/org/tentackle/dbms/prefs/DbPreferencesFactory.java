@@ -672,14 +672,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       // remove keys
       Set<DbPreferencesKey> persistedKeys = new HashSet<>(prefKeys);
       for (DbPreferencesKey prefKey: idKeyMap.values()) {
-        if (!prefKey.isNew()) {   // if not created in this JVM
-          if (!persistedKeys.contains(prefKey)) {
-            DbPreferences node = idNodeMap.get(prefKey.getNodeId());
-            if (node != null) {
-              prefKey = node.removePersistentKey(prefKey.getKey());
-              if (prefKey != null) {
-                keyChanged(node, prefKey);
-              }
+        if (!prefKey.isNew() && !persistedKeys.contains(prefKey)) {
+          // if not created in this JVM
+          DbPreferences node = idNodeMap.get(prefKey.getNodeId());
+          if (node != null) {
+            prefKey = node.removePersistentKey(prefKey.getKey());
+            if (prefKey != null) {
+              keyChanged(node, prefKey);
             }
           }
         }
@@ -688,14 +687,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       // remove nodes
       Set<DbPreferencesNode> persistedNodes = new HashSet<>(prefNodes);
       for (DbPreferences node: idNodeMap.values()) {
-        if (!node.getPersistentNode().isNew()) {  // if not created in this JVM
-          if (!persistedNodes.contains(node.getPersistentNode())) {
-            DbPreferences parent = node.parent();
-            if (parent != null) {
-              node = parent.removeChild(node.name());
-              if (node != null) {
-                nodeChanged(node);
-              }
+        if (!node.getPersistentNode().isNew() && !persistedNodes.contains(node.getPersistentNode())) {
+          // if not created in this JVM
+          DbPreferences parent = node.parent();
+          if (parent != null) {
+            node = parent.removeChild(node.name());
+            if (node != null) {
+              nodeChanged(node);
             }
           }
         }

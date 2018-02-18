@@ -51,25 +51,25 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 
   /** name of the connection manager. */
-  final protected String name;
+  protected final String name;
 
   /** initial size. */
-  final protected int iniSize;
+  protected final int iniSize;
 
   /** offset for connection IDs. */
-  final protected int idOffset;
+  protected final int idOffset;
 
   /** min hours to close connections. */
-  final protected int minMinutes;
+  protected final int minMinutes;
 
   /** max hours to close connections. */
-  final protected int maxMinutes;
+  protected final int maxMinutes;
 
   /** randomizer. */
-  final protected Random random;
+  protected final Random random;
 
   /** maximum number of connections, 0 = unlimited. */
-  final protected int maxConSize;
+  protected final int maxConSize;
 
 
 
@@ -649,23 +649,21 @@ public class DefaultConnectionManager implements ConnectionManager {
           connections = mgr.conList.clone();    // fast array copy!
         }
         for (ManagedConnection con : connections) {
-          if (con != null) {
-            if (con.isAttached() && (curTime - con.getAttachedSince()) > attachTimeout) {
-              Db db = con.getSession();
-              if (db != null) {   // still unsyncd..
-                synchronized (mgr) {    // attach/detach is syncd on me
-                  long attachedMillis = curTime - con.getAttachedSince();
-                  if (db.getConnection() == con && con.isAttached() &&
-                      attachedMillis > attachTimeout) {   // double check within syncd block
-                    // timed out
-                    try {
-                      LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
-                              " (" + attachedMillis + "ms)");
-                      db.forceDetached();
-                    }
-                    catch (RuntimeException rex) {
-                      LOGGER.severe("detaching " + con + " failed", rex);
-                    }
+          if (con != null && con.isAttached() && (curTime - con.getAttachedSince()) > attachTimeout) {
+            Db db = con.getSession();
+            if (db != null) {   // still unsyncd..
+              synchronized (mgr) {    // attach/detach is syncd on me
+                long attachedMillis = curTime - con.getAttachedSince();
+                if (db.getConnection() == con && con.isAttached() &&
+                    attachedMillis > attachTimeout) {   // double check within syncd block
+                  // timed out
+                  try {
+                    LOGGER.warning("detaching timed out connection " + con + " from " + db.getName() +
+                            " (" + attachedMillis + "ms)");
+                    db.forceDetached();
+                  }
+                  catch (RuntimeException rex) {
+                    LOGGER.severe("detaching " + con + " failed", rex);
                   }
                 }
               }

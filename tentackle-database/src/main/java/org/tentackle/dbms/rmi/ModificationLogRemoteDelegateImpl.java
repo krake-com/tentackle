@@ -36,7 +36,7 @@ public class ModificationLogRemoteDelegateImpl
              implements ModificationLogRemoteDelegate {
 
 
-  public ModificationLogRemoteDelegateImpl(RemoteDbSessionImpl session, Class<ModificationLog> clazz) throws RemoteException {
+  public ModificationLogRemoteDelegateImpl(RemoteDbSessionImpl session, Class<ModificationLog> clazz) {
     super(session, clazz);
   }
 

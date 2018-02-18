@@ -783,7 +783,7 @@ public class FormatHelper {
    * @param format the decimal format
    * @param scale the scale
    */
-  static public void setScale(DecimalFormat format, int scale) {
+  public static void setScale(DecimalFormat format, int scale) {
     String fmt = format.toPattern();
     boolean groupingUsed = format.isGroupingUsed();
     int groupingSize = format.getGroupingSize();

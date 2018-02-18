@@ -69,8 +69,7 @@ public class TestServer extends ServerApplication {
    */
   public static class SessionImpl extends RemoteDbSessionImpl {
 
-    public SessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo)
-           throws RemoteException {
+    public SessionImpl(RemoteDbConnectionImpl con, SessionInfo clientInfo, SessionInfo serverInfo) {
       super(con, clientInfo, serverInfo);
     }
 

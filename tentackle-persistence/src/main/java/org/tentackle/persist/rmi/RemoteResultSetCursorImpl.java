@@ -55,9 +55,8 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
    *
    * @param session is the RMI session
    * @param clazz is the subclass of DbObject
-   * @throws RemoteException if creation failed
    */
-  public RemoteResultSetCursorImpl(RemoteDbSessionImpl session, Class<T> clazz) throws RemoteException {
+  public RemoteResultSetCursorImpl(RemoteDbSessionImpl session, Class<T> clazz) {
     super(session, clazz);
   }
 

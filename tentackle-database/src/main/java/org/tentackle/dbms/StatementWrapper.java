@@ -49,7 +49,7 @@ public class StatementWrapper implements AutoCloseable {
 
 
   /** the managed connection. */
-  final protected ManagedConnection con;
+  protected final ManagedConnection con;
 
   /** the sql statement, null if closed. */
   protected Statement stmt;

@@ -50,9 +50,8 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    *
    * @param serverSession is the RMI serverSession
    * @param clazz is the subclass of AbstractDbObject
-   * @throws RemoteException
    */
-  public AbstractDbObjectRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) throws RemoteException {
+  public AbstractDbObjectRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) {
     super(serverSession, clazz);
   }
 

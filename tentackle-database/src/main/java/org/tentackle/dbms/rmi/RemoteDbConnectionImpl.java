@@ -67,7 +67,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   private static final Logger LOGGER = LoggerFactory.getLogger(RemoteDbConnectionImpl.class);
 
 
-  private final DbServer server;              // the server
+  private final transient DbServer server;              // the server
 
 
   /**
@@ -247,7 +247,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
     LOGGER.fine("{0} unexported", remoteObject);
   }
 
-  
+
 
   // ------------------ implements RemoteDbConnection -----------------
 

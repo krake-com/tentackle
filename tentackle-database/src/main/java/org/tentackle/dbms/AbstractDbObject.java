@@ -103,7 +103,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param clazz the class
    * @return the object
    */
-  static public <P extends AbstractDbObject<?>> P newInstance(Class<P> clazz) {
+  public static <P extends AbstractDbObject<?>> P newInstance(Class<P> clazz) {
     try {
       // load the class
       return clazz.getDeclaredConstructor().newInstance();
@@ -121,7 +121,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param clazz the class
    * @return the object
    */
-  static public <P extends AbstractDbObject<?>> P newInstance(Session session, Class<P> clazz) {
+  public static <P extends AbstractDbObject<?>> P newInstance(Session session, Class<P> clazz) {
     // load the class
     P obj = newInstance(clazz);
     obj.setSession(session);
@@ -214,7 +214,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private transient Db session;                       // database session (transient because it shouldn't be serialized)
   private transient boolean sessionImmutable;         // true if Db is immutable
   private SessionHolder sessionHolder;                // a redirector to retrieve the session
-  private transient final boolean fromThisJVM = true; // true if object created in this JVM, else remote
+  private final transient boolean fromThisJVM = true; // true if object created in this JVM, else remote
   private transient boolean overloadable;             // true if object can be loaded more than once from the database
 
   // if this object is being replayed from a modification log
@@ -1235,11 +1235,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public int compareTo(P obj) {
     if (obj != null) {
       int rv = Long.compare(getId(), obj.getId());
-      if (rv == 0) {
-        // should not happen, but one never knows: check the class
-        if (getClass() != obj.getClass()) {   // != is okay here
-          rv = getClass().getName().compareTo(obj.getClass().getName());
-        }
+      if (rv == 0 &&
+          // should not happen, but one never knows: check the class
+          getClass() != obj.getClass()) {   // != is okay here
+
+        rv = getClass().getName().compareTo(obj.getClass().getName());
       }
       return rv;
     }

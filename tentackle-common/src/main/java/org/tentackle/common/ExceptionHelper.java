@@ -87,13 +87,11 @@ public final class ExceptionHelper {
       Throwable cause = headOfChain.getCause();
       while (cause != null) {
         String subMsg = cause.getMessage();
-        if (subMsg != null) {
-          if (buf.indexOf(subMsg) < 0) {
-            if (buf.length() > 0) {
-              buf.append('\n');
-            }
-            buf.append(subMsg);
+        if (subMsg != null && buf.indexOf(subMsg) < 0) {
+          if (buf.length() > 0) {
+            buf.append('\n');
           }
+          buf.append(subMsg);
         }
         cause = cause.getCause();
       }

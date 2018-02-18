@@ -32,6 +32,7 @@ import org.tentackle.dbms.DbTransactionHandle;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
 import org.tentackle.dbms.RollbackTxRunnable;
+import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
 
 /**
@@ -46,7 +47,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
   private Method beginMethod;             // begin method for db
 
 
-  public DbRemoteDelegateImpl(RemoteDbSessionImpl session, Class<Db> dbClass) throws RemoteException {
+  public DbRemoteDelegateImpl(RemoteDbSessionImpl session, Class<Db> dbClass) {
 
     super(session, dbClass);
 
@@ -56,7 +57,7 @@ public class DbRemoteDelegateImpl extends RemoteDelegateImpl<Db>
       beginMethod.setAccessible(true);
     }
     catch (NoSuchMethodException ex) {
-      throw new RemoteException(dbClass.getName() + " provides no begin(String,boolean)", ex);
+      throw new PersistenceException(dbClass.getName() + " provides no begin(String,boolean)", ex);
     }
   }
 

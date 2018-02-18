@@ -29,7 +29,7 @@ public class StoredBundleKeyRemoteDelegateImpl
    * @param pdoClass the pdo interface class
    * @throws java.rmi.RemoteException
    */
-  public StoredBundleKeyRemoteDelegateImpl(RemoteDbSessionImpl session, Class<StoredBundleKeyPersistenceImpl> persistenceClass, Class<StoredBundleKey> pdoClass) throws RemoteException {
+  public StoredBundleKeyRemoteDelegateImpl(RemoteDbSessionImpl session, Class<StoredBundleKeyPersistenceImpl> persistenceClass, Class<StoredBundleKey> pdoClass) {
     super(session, persistenceClass, pdoClass);
   }
   /**

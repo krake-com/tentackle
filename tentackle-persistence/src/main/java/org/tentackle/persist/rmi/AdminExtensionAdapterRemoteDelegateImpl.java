@@ -56,11 +56,8 @@ public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<
    * Creates the admin extension implementation.
    *
    * @param session the server session
-   * @throws RemoteException if failed
    */
-  public AdminExtensionAdapterRemoteDelegateImpl(RemoteDbSessionImpl session, Class<AdminExtensionAdapter> clazz)
-         throws RemoteException {
-
+  public AdminExtensionAdapterRemoteDelegateImpl(RemoteDbSessionImpl session, Class<AdminExtensionAdapter> clazz) {
     super(session, clazz);
   }
 
