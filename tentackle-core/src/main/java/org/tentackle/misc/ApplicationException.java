@@ -35,7 +35,7 @@ public class ApplicationException extends Exception {
   public static final int ERROR_DEFAULT = 1;
 
 
-  private int errorCode;    // the errorcode of this exception
+  private final int errorCode;    // the errorcode of this exception
 
 
   /**
@@ -58,7 +58,7 @@ public class ApplicationException extends Exception {
    */
   public ApplicationException(String message, int errorCode) {
     super(message);
-    setErrorCode(errorCode);
+    this.errorCode = errorCode;
   }
 
   /**
@@ -88,15 +88,6 @@ public class ApplicationException extends Exception {
   public int getErrorCode() {
     return errorCode;
   }
-
-  /**
-   * Sets the errorcode.
-   * @param errorCode  the errorcode
-   */
-  public void setErrorCode(int errorCode) {
-    this.errorCode = errorCode;
-  }
-
 
   /**
    * Gets the chain of all messages (if exception is cascaded).<br>

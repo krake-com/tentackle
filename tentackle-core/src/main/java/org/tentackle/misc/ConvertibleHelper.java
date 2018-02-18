@@ -22,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.common.TentackleRuntimeException;
 
 /**
  * Helper class for {@link Convertible}s.
@@ -30,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ConvertibleHelper {
 
-  private static final ConcurrentHashMap<Class<? extends Convertible<?>>, Method> methodMap =
+  private static final ConcurrentHashMap<Class<? extends Convertible<?>>, Method> METHOD_MAP =
           new ConcurrentHashMap<>();
 
 
@@ -47,13 +48,13 @@ public final class ConvertibleHelper {
    */
   @SuppressWarnings("unchecked")
   public static <C extends Convertible<T>, T> C toInternal(Class<C> clazz, T external) {
-    Method method = methodMap.get(clazz);
+    Method method = METHOD_MAP.get(clazz);
     if (method == null) {
       // find method "I toInternal(E external)" in clazz
       try {
         method = clazz.getDeclaredMethod("toInternal", external.getClass());
         if (Modifier.isStatic(method.getModifiers())) {
-          methodMap.put(clazz,method);
+          METHOD_MAP.put(clazz,method);
         }
       }
       catch (NoSuchMethodException nsm) {
@@ -64,7 +65,7 @@ public final class ConvertibleHelper {
       return (C) method.invoke(null, external);
     }
     catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-      throw new RuntimeException("invocation of " + method + " failed", e);
+      throw new TentackleRuntimeException("invocation of " + method + " failed", e);
     }
   }
 

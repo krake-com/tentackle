@@ -256,7 +256,7 @@ public class PdoUtilities {
    */
   public int deleteCollection (Collection<? extends PersistentDomainObject<?>> pdos) {
     int deleted = 0;
-    if (pdos != null && pdos.size() > 0) {
+    if (pdos != null && !pdos.isEmpty()) {
       Session session = null;
       long txVoucher = 0;
       try {
@@ -307,7 +307,7 @@ public class PdoUtilities {
   public int deleteMissingInCollection(Collection<? extends PersistentDomainObject<?>> oldCollection,
                                               Collection<? extends PersistentDomainObject<?>> newCollection) {
     int deleted = 0;
-    if (oldCollection != null && oldCollection.size() > 0) {
+    if (oldCollection != null && !oldCollection.isEmpty()) {
       Session session = null;
       long txVoucher = 0;
       try {
@@ -387,7 +387,7 @@ public class PdoUtilities {
   @SuppressWarnings("unchecked")
   public int saveCollection(Collection<? extends PersistentDomainObject<?>> pdos, boolean modifiedOnly, boolean usePersist) {
     int saved = 0;
-    if (pdos != null && pdos.size() > 0) {
+    if (pdos != null && !pdos.isEmpty()) {
       Session session = null;
       long txVoucher = 0;
       List<PersistentDomainObject<?>> persistedObjects = null;

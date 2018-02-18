@@ -49,7 +49,7 @@ public interface Binder extends Comparable<Binder> {
    * All unbound objects are logged.
    * @throws BindingException if at least one unbound component found
    */
-  void assertAllBound() throws BindingException;
+  void assertAllBound();
 
   /**
    * Binds objects.

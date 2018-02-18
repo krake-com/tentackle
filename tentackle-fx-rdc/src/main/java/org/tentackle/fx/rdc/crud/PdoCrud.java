@@ -379,10 +379,10 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
 
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-          !event.isShiftDown() && !event.isShortcutDown()) {
-        if (event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
-          cancel();
-        }
+          !event.isShiftDown() && !event.isShortcutDown() &&
+          event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
+
+        cancel();
       }
     });
   }
@@ -412,16 +412,14 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Navigates to the previous PDO in the list.
    */
   public void previous() {
-    if (pdoListIndex > 0) {
-      if (releasePdo()) {
-        T prevPdo = pdoList.get(--pdoListIndex);
-        if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
-          prevPdo = prevPdo.reload();
-        }
-        setPdo(prevPdo);
-        updatePrevNextButtons();
-        eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+    if (pdoListIndex > 0 && releasePdo()) {
+      T prevPdo = pdoList.get(--pdoListIndex);
+      if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
+        prevPdo = prevPdo.reload();
       }
+      setPdo(prevPdo);
+      updatePrevNextButtons();
+      eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
     }
   }
 
@@ -429,16 +427,14 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Navigates to the next PDO in the list.
    */
   public void next() {
-    if (pdoListIndex < pdoList.size() - 1) {
-      if (releasePdo()) {
-        T nextPdo = pdoList.get(++pdoListIndex);
-        if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
-          nextPdo = nextPdo.reload();
-        }
-        setPdo(nextPdo);
-        updatePrevNextButtons();
-        eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+    if (pdoListIndex < pdoList.size() - 1 && releasePdo()) {
+      T nextPdo = pdoList.get(++pdoListIndex);
+      if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
+        nextPdo = nextPdo.reload();
       }
+      setPdo(nextPdo);
+      updatePrevNextButtons();
+      eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
     }
   }
 

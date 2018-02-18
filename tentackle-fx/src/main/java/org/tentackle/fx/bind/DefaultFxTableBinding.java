@@ -28,8 +28,6 @@ import org.tentackle.bind.BindingMember;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.common.Constants;
 import org.tentackle.fx.table.TableColumnConfiguration;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
@@ -45,11 +43,6 @@ import org.tentackle.validate.Validator;
  * @author harald
  */
 public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTableBinding<S,T> {
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxTableBinding.class);
 
   private final TableColumnConfiguration<S,T> columnConfiguration;    // the column config
   private boolean mandatory;                      // mandatory attribute

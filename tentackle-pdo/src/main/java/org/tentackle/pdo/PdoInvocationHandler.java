@@ -132,8 +132,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -157,8 +156,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -182,8 +180,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceDelegate.setPdo(pdo);
     persistenceMixin.setDelegate(persistenceDelegate);
@@ -206,8 +203,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
@@ -230,8 +226,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session, DomainObject<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
@@ -267,8 +262,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class },
                                     new Object[] { pdo });

@@ -126,7 +126,7 @@ public class ColumnMigrator {
        * round 2: migrate the rest
        */
       int migratedColumnIndex = 0;
-      boolean migrated[] = new boolean[dataType.getSqlTypes().length];
+      boolean[] migrated = new boolean[dataType.getSqlTypes().length];
 
       for (int round=0; round < 2; round++) {
         int multiColumnIndex = 0;

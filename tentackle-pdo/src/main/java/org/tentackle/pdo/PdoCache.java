@@ -832,20 +832,17 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         pdo = index.get(context, key);
         boolean expired = false;
 
-        if (pdo != null) {    // found in cache
-          if (pdo.getPersistenceDelegate().isExpired())  {
-            expired = true;
-            remove(pdo);    // remove it from indexes (but leave in lists!)
-            if (!inToString && LOGGER.isFinerLoggable()) {
-              inToString = true;    // avoid recursion cause context.toString
-              LOGGER.finer("expired object " + pdo.toGenericString() +
-                           " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
-                           " removed from " + this);
-              inToString = false;
-            }
-            pdo = null;   // treat as if not in cache
+        if (pdo != null && pdo.getPersistenceDelegate().isExpired())  {
+          expired = true;
+          remove(pdo);    // remove it from indexes (but leave in lists!)
+          if (!inToString && LOGGER.isFinerLoggable()) {
+            inToString = true;    // avoid recursion cause context.toString
+            LOGGER.finer("expired object " + pdo.toGenericString() +
+                         " context=" + pdo.getPersistenceDelegate().getDomainContext().toDiagnosticString() +
+                         " removed from " + this);
+            inToString = false;
           }
-          // else: not expired: use it!
+          pdo = null;   // treat as if not in cache
         }
 
         if (pdo == null && loadIfMissing && (!isPreloading() || expired))  {
@@ -896,10 +893,9 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       pdo = index.select(context, key);
     }
 
-    if (pdo != null && checkSecurity) {
-      if (!pdo.getPersistenceDelegate().isPermissionAccepted(SecurityFactory.getInstance().getReadPermission())) {
-        pdo = null; // no read permission
-      }
+    if (pdo != null && checkSecurity &&
+        !pdo.getPersistenceDelegate().isPermissionAccepted(SecurityFactory.getInstance().getReadPermission())) {
+      pdo = null; // no read permission
     }
 
     return pdo;

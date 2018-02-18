@@ -220,15 +220,4 @@ public class PdoCacheException extends PdoRuntimeException {
     super(cause);
   }
 
-
-
-  /**
-   * Gets the PDO.
-   *
-   * @return the object, null if exception is not related to an object
-   */
-  public PersistentDomainObject<?> getPdo() {
-    return (PersistentDomainObject) getIdentifiable();
-  }
-
 }

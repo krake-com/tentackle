@@ -321,11 +321,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               // check if migration needs to be delayed
               boolean migrate = true;
               Collection<String> dependencies = backendMigrationHints.getDependencies(tableName);
-              if (dependencies != null && !dependencies.isEmpty()) {
-                if (isMigrationPending(dependencies, migratedTablenames)) {
-                  migrate = false;
-                  pendingMigrations.put(tableName, tableSql.toString());
-                }
+              if (dependencies != null && !dependencies.isEmpty() &&
+                  isMigrationPending(dependencies, migratedTablenames)) {
+                migrate = false;
+                pendingMigrations.put(tableName, tableSql.toString());
               }
 
               if (migrate) {  // no dependencies
@@ -356,7 +355,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       // process any still pending migration just one after the other.
       // obviously the dependencies are misordered, incomplete or whatever
       StringBuilder depErrors = new StringBuilder();
-      for (String pendingTablename: pendingMigrations.keySet()) {
+      for (Map.Entry<String,String> entry: pendingMigrations.entrySet()) {
+        String pendingTablename = entry.getKey();
         if (isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
           String msg = "dependency loop detected for " + pendingTablename + "! migration order may be not as expected!";
           getLog().error(msg);
@@ -365,7 +365,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           depErrors.append('\n');
           errorCount++;
         }
-        sqlCode.append(pendingMigrations.get(pendingTablename));
+        sqlCode.append(entry.getValue());
       }
 
       if (foreignKeySql.length() > 0) {

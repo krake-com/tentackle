@@ -108,7 +108,7 @@ public class TotalsTableView<S> extends FxTableView<S> {
   protected void enableCopyToClipboard() {
     getSelectionModel().setCellSelectionEnabled(true);
     getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-    setOnKeyPressed((e) -> {
+    setOnKeyPressed(e -> {
       if (e.isControlDown() && e.getCode() == KeyCode.C) {
         StringBuilder buf = new StringBuilder();
         for (TablePosition<S,?> pos: getSelectionModel().getSelectedCells()) {

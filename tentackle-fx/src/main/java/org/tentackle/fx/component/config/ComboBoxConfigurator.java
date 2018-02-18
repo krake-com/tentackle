@@ -40,7 +40,7 @@ public class ComboBoxConfigurator<T extends ComboBox<?>> extends ComboBoxBaseCon
                                  () -> !control.isEditable(),
                                  control::getItems,
                                  control.getConverter(),
-                                 (index) -> control.getSelectionModel().select(index))
+                                 index -> control.getSelectionModel().select(index))
         .configure();
   }
 

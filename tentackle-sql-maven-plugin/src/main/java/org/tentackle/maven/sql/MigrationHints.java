@@ -394,14 +394,12 @@ public class MigrationHints {
                 try {
                   while (lineTokenizer.hasMoreTokens()) {
                     String line = lineTokenizer.nextToken();
-                    if (line.length() == 1) {
-                      if (delims.contains(line)) {
-                        // delimiter
-                        if (line.equals("\n")) {
-                          lineNumber++;
-                        }
-                        continue;
+                    if (line.length() == 1 && delims.contains(line)) {
+                      // delimiter
+                      if (line.equals("\n")) {
+                        lineNumber++;
                       }
+                      continue;
                     }
                     Section newSection = nextSection(line);
                     if (newSection != null) {

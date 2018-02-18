@@ -91,7 +91,7 @@ public class TablePrinter extends AbstractFxController {
     }
     stage.setOnShown(e -> Platform.runLater(() ->
             printer.print(table, jobTitle, job, job.getJobSettings().getPageLayout(), stage)));
-    stage.setOnCloseRequest((e) -> {
+    stage.setOnCloseRequest(e -> {
       if (Fx.question(RdcFxRdcBundle.getString("cancel print job?"), false)) {
         printer.terminationRequested = true;
       }

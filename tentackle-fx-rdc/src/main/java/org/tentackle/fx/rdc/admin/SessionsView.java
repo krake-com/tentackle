@@ -127,11 +127,11 @@ public class SessionsView extends AbstractFxController {
    */
   private void kill() {
     SessionData session = sessionsNode.getSelectionModel().getSelectedItem();
-    if (session != null && Fx.question(resources.getString("really kill the session?"), false)) {
-      if (adminExt.kill(session.getUserId(), session.getSessionGroup(),
-                        session.getApplicationName(), session.getApplicationId()) > 0) {
-        refresh();
-      }
+    if (session != null &&
+        Fx.question(resources.getString("really kill the session?"), false) &&
+        adminExt.kill(session.getUserId(), session.getSessionGroup(),
+                      session.getApplicationName(), session.getApplicationId()) > 0) {
+      refresh();
     }
   }
 

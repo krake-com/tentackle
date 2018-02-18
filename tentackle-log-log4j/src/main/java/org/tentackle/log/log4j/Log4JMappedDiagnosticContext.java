@@ -53,17 +53,17 @@ public class Log4JMappedDiagnosticContext extends AbstractMappedDiagnosticContex
 
 
   @Override
-  public void put(String key, String val) throws IllegalArgumentException {
+  public void put(String key, String val) {
     MDC.put(key, val);
   }
 
   @Override
-  public String get(String key) throws IllegalArgumentException {
+  public String get(String key) {
     return (String) MDC.get(key);
   }
 
   @Override
-  public void remove(String key) throws IllegalArgumentException {
+  public void remove(String key) {
     MDC.remove(key);
   }
 

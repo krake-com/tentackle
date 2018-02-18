@@ -455,7 +455,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       openResources(backendInfo);
       try {
         // process files
-        if (filesets != null && filesets.size() > 0) {
+        if (filesets != null && !filesets.isEmpty()) {
           // explicit filesets given instead of model dir
           for (FileSet fileSet : filesets) {
             processFileSet(backendInfo, fileSet);

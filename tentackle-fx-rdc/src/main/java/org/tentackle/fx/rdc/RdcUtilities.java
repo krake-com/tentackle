@@ -194,13 +194,10 @@ public class RdcUtilities {
         return crud;
       }
       // is showing or other modality or different owner, i.e. part of some window which is showing
-      if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing()) {
-        // same PDO
-        if (crud.isEditing() || !editable) {
-          // already being edited or just shown and view-only requested
-          stage.toFront();
-          return null;
-        }
+      if (Objects.equals(pdo, crud.getPdo()) && stage.isShowing() &&    // same PDO
+          (crud.isEditing() || !editable)) {    // already being edited or just shown and view-only requested
+        stage.toFront();
+        return null;
         // else: being edited, being shown or requested editable does not match: get a fresh one
       }
       if (!stage.isShowing() && stage.getModality() == modality && stage.getOwner() != owner &&

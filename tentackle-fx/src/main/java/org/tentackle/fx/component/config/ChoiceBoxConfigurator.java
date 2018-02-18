@@ -43,7 +43,7 @@ public class ChoiceBoxConfigurator<T extends ChoiceBox<?>> extends ComponentConf
                                  () -> true,
                                  control::getItems,
                                  control.getConverter(),
-                                 (index) -> control.getSelectionModel().select(index))
+                                 index -> control.getSelectionModel().select(index))
         .configure();
   }
 

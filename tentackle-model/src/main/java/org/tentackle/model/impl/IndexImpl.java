@@ -77,7 +77,7 @@ public class IndexImpl implements Index {
 
   @Override
   public ModelElement getParent() {
-    return entity;
+    return getEntity();
   }
 
 

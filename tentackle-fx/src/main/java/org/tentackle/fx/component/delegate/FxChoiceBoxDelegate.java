@@ -46,7 +46,7 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public void setType(Class<?> type) {
     super.setType(type);
 
@@ -56,12 +56,12 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
     // deselect by DELETE- or BACKSPACE-key
     component.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-          !event.isShiftDown() && !event.isShortcutDown()) {
-        if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
-            !component.isDisabled() && isDeselectAllowed()) {
-          event.consume();
-          component.getSelectionModel().clearSelection();
-        }
+          !event.isShiftDown() && !event.isShortcutDown() &&
+          (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
+          !component.isDisabled() && isDeselectAllowed()) {
+        
+        event.consume();
+        component.getSelectionModel().clearSelection();
       }
     });
 

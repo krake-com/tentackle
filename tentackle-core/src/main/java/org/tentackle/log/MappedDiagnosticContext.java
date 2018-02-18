@@ -42,7 +42,7 @@ public interface MappedDiagnosticContext {
    * @param val the value
    * @throws IllegalArgumentException in case the "key" parameter is null
    */
-  void put(String key, String val) throws IllegalArgumentException;
+  void put(String key, String val);
 
 
   /**
@@ -55,7 +55,7 @@ public interface MappedDiagnosticContext {
    * @return the string value identified by the <code>key</code> parameter.
    * @throws IllegalArgumentException in case the "key" parameter is null
    */
-  String get(String key) throws IllegalArgumentException;
+  String get(String key);
 
 
   /**
@@ -67,7 +67,7 @@ public interface MappedDiagnosticContext {
    * @param key the key
    * @throws IllegalArgumentException in case the "key" parameter is null
    */
-  void remove(String key) throws IllegalArgumentException;
+  void remove(String key);
 
 
   /**

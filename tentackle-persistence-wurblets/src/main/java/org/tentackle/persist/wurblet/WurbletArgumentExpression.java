@@ -134,10 +134,8 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
         operator = WurbletArgumentOperator.AND;
       }
       else {
-        if (operator == WurbletArgumentOperator.NOT) {
-          if (!(operand instanceof WurbletArgumentExpression)) {
-            throw new WurbelException("operator NOT must be followed by an expression");
-          }
+        if (operator == WurbletArgumentOperator.NOT && !(operand instanceof WurbletArgumentExpression)) {
+          throw new WurbelException("operator NOT must be followed by an expression");
         }
       }
     }
@@ -187,7 +185,7 @@ public class WurbletArgumentExpression implements WurbletArgumentOperand {
   @Override
   public String toString() {
     try {
-      return toCode((t) -> {
+      return toCode(t -> {
         if (t instanceof WurbletArgumentOperator) {
           WurbletArgumentOperator operator = (WurbletArgumentOperator) t;
           if (operator == WurbletArgumentOperator.NOT) {

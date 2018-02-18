@@ -377,7 +377,7 @@ public class CompoundValue {
    * @throws IllegalArgumentException if evaluating the value failed
    * @throws IllegalStateException if compound value is not configured
    */
-  public Object getValue(Object parentObject, ScriptVariable... variables) throws IllegalArgumentException, IllegalStateException {
+  public Object getValue(Object parentObject, ScriptVariable... variables) {
 
     if (!isConfigured()) {
       throw new IllegalStateException("compound value is not configured");
@@ -458,7 +458,7 @@ public class CompoundValue {
    * @throws IllegalArgumentException if evaluating the value failed
    * @throws IllegalStateException if compound value is not configured
    */
-  public Object getValue(ScriptVariable... variables) throws IllegalArgumentException, IllegalStateException {
+  public Object getValue(ScriptVariable... variables) {
     return getValue(null, variables);
   }
 
@@ -478,7 +478,7 @@ public class CompoundValue {
    * @param parentObjectClass for {@link Type#REFERENCE}
    * @throws IllegalArgumentException if parsing failed
    */
-  public void parse(Class<?> parentObjectClass) throws IllegalArgumentException {
+  public void parse(Class<?> parentObjectClass) {
 
     switch (type) {
 
@@ -549,7 +549,7 @@ public class CompoundValue {
    * @return the constant value
    */
   @SuppressWarnings("unchecked")
-  private Object createConstantValue(Class<?> clazz, String value) throws IllegalArgumentException {
+  private Object createConstantValue(Class<?> clazz, String value) {
 
     if (clazz.isPrimitive()) {
       clazz = ReflectionHelper.primitiveToWrapperClass(clazz);

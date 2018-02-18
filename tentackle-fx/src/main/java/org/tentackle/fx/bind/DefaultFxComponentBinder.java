@@ -268,7 +268,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
 
 
   @Override
-  public void assertAllBound() throws BindingException {
+  public void assertAllBound() {
     if (isUnboundPending()) {
       StringBuilder buf = new StringBuilder();
       for (FxComponent comp : eligibleComponents.values()) {   // sorted by bindingPath
@@ -585,47 +585,45 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
                                      Set<FxController> checkedControllers, boolean declaredOnly) {
 
     Parent view = controller.getView();
-    if (view instanceof FxContainer && ((FxContainer) view).isBindable()) {
-      if (checkedControllers.add(controller)) {
-        LOGGER.finer("checking {0} for eligible components", controllerPath);
-        // find all members that are FxComponents
-        for (Field field:
-             (declaredOnly ?
-               controller.getClass().getDeclaredFields()
-                :
-               ReflectionHelper.getAllFields(controller.getClass(),
-                                             new Class<?>[] { FxController.class },
-                                             false, null, true))) {
+    if (view instanceof FxContainer && ((FxContainer) view).isBindable() && checkedControllers.add(controller)) {
+      LOGGER.finer("checking {0} for eligible components", controllerPath);
+      // find all members that are FxComponents
+      for (Field field:
+           (declaredOnly ?
+             controller.getClass().getDeclaredFields()
+              :
+             ReflectionHelper.getAllFields(controller.getClass(),
+                                           new Class<?>[] { FxController.class },
+                                           false, null, true))) {
 
-          FxComponent component = getFxComponent(controller, field);
-          if (component != null && component.isBindable() && component.getBinding() == null) {
-            // if component is bindable and not bound in advance
-            String componentPath = controllerPath + "." + field.getName();
-            component.setComponentPath(componentPath);
-            String bindingPath = component.getBindingPath();
-            if (bindingPath == null) {
-              // not set: generate binding path
-              bindingPath = field.getName();
-              // cut some common trailing text which does not belong to the binding path
-              bindingPath = StringHelper.removeTrailingText(bindingPath, "Field");
-              bindingPath = StringHelper.removeTrailingText(bindingPath, "Node");
-              bindingPath = StringHelper.removeTrailingText(bindingPath, "Comp");
-              bindingPath = StringHelper.removeTrailingText(bindingPath, "Component");
-            }
-            // else: binding path already set by the application
+        FxComponent component = getFxComponent(controller, field);
+        if (component != null && component.isBindable() && component.getBinding() == null) {
+          // if component is bindable and not bound in advance
+          String componentPath = controllerPath + "." + field.getName();
+          component.setComponentPath(componentPath);
+          String bindingPath = component.getBindingPath();
+          if (bindingPath == null) {
+            // not set: generate binding path
+            bindingPath = field.getName();
+            // cut some common trailing text which does not belong to the binding path
+            bindingPath = StringHelper.removeTrailingText(bindingPath, "Field");
+            bindingPath = StringHelper.removeTrailingText(bindingPath, "Node");
+            bindingPath = StringHelper.removeTrailingText(bindingPath, "Comp");
+            bindingPath = StringHelper.removeTrailingText(bindingPath, "Component");
+          }
+          // else: binding path already set by the application
 
-            // add to component map
-            FxComponent oldComponent = eligibleComponents.put(bindingPath, component);
-            if (oldComponent != null) {
-              if (oldComponent != component) {
-                throw new BindingException("binding path '" + bindingPath +
-                                           "' already provided by " + oldComponent.getComponentPath());
-              }
+          // add to component map
+          FxComponent oldComponent = eligibleComponents.put(bindingPath, component);
+          if (oldComponent != null) {
+            if (oldComponent != component) {
+              throw new BindingException("binding path '" + bindingPath +
+                                         "' already provided by " + oldComponent.getComponentPath());
             }
-            else {
-              LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
-              unboundComponents.add(component);
-            }
+          }
+          else {
+            LOGGER.finer("added {0}:{1} to eligible components", componentPath, bindingPath);
+            unboundComponents.add(component);
           }
         }
       }

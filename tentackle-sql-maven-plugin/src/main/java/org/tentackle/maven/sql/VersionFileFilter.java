@@ -59,9 +59,9 @@ public class VersionFileFilter implements Predicate<File> {
         String filterToken = filterTokenizer.nextToken();
         String nameToken = nameTokenizer.nextToken();
         try {
-          int filterNumber = Integer.valueOf(filterToken);
+          int filterNumber = Integer.parseInt(filterToken);
           try {
-            int nameNumber = Integer.valueOf(nameToken);
+            int nameNumber = Integer.parseInt(nameToken);
             if (filterNumber > nameNumber) {
               return false;
             }

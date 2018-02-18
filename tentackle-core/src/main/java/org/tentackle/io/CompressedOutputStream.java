@@ -57,7 +57,7 @@ public class CompressedOutputStream extends FilterOutputStream {
   public static final int MAX_BUFFER_SIZE = Short.MAX_VALUE;
 
 
-  final static int COMPRESSED = MAX_BUFFER_SIZE + 1;    // 0x8000 MSBit: 1 = compressed, 0 = uncompressed
+  static final int COMPRESSED = MAX_BUFFER_SIZE + 1;    // 0x8000 MSBit: 1 = compressed, 0 = uncompressed
 
   private int minCompressSize;          // minimum packet size for compression
   private int bufSize;                  // buffer size
@@ -236,11 +236,10 @@ public class CompressedOutputStream extends FilterOutputStream {
         int defLen = 0;
         while (!deflater.finished()) {
           int num = deflater.deflate(defBuf, defLen, bufSize - defLen);
-          if (num <= 0) {
-            // can this really happen? Yes: if minCompressSize is too small!
-            if (deflater.needsInput()) {
-              throw new IOException("Deflater needs more input! Bytes in buffer: " + orgLen);
-            }
+          if (num <= 0 &&
+              // can this really happen? Yes: if minCompressSize is too small!
+              deflater.needsInput()) {
+            throw new IOException("Deflater needs more input! Bytes in buffer: " + orgLen);
           }
           defLen += num;
         }

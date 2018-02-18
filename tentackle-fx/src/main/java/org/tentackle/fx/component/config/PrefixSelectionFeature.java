@@ -103,7 +103,7 @@ public class PrefixSelectionFeature<T extends Control> {
    * @return the handler
    */
   protected EventHandler<KeyEvent> createHandler() {
-    return (event) -> {
+    return event -> {
       if (isEnabled()) {
         String chr = event.getCharacter();
         if (chr != null) {    // for sure... can it be null at all?
@@ -137,12 +137,10 @@ public class PrefixSelectionFeature<T extends Control> {
     String prefix = getPrefix();
     int i = 0;
     for (Object item: itemProvider.get()) {
-      if (i >= index) {
-        if (isItemMatching(prefix, item)) {
-          index = i;
-          selector.accept(index);
-          break;
-        }
+      if (i >= index && isItemMatching(prefix, item)) {
+        index = i;
+        selector.accept(index);
+        break;
       }
       i++;
     }

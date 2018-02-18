@@ -190,10 +190,6 @@ public class SecurityEditor extends PdoEditor<Security> {
     allowButton.requestFocus();
   }
 
-  @Override
-  public void configure() {
-  }
-
 
   /**
    * Sets the changeability of the editor.

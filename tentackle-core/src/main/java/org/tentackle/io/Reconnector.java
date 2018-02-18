@@ -125,7 +125,7 @@ public class Reconnector {
    * @return the executor service
    */
   protected ExecutorService createExecutorService() {
-    return Executors.newCachedThreadPool((runnable) ->
+    return Executors.newCachedThreadPool(runnable ->
       new Thread(runnable, "reconnector " + threadNumber.incrementAndGet())
     );
   }

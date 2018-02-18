@@ -52,7 +52,7 @@ public class EnumStringTranslator<T extends Enum<T>> extends AbstractValueTransl
 
   @Override
   public Function<String, T> toModelFunction() {
-    return (s) -> {
+    return s -> {
       if (s != null) {
         for (T v: clazz.getEnumConstants()) {
           // not Enum.valueOf() because user's view may be localized

@@ -485,7 +485,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     itemsListener = null;   // to GC -> will remove WeakInvalidationListener eventually
     if (!this.items.isEmpty()) {
       // show totals only if result is not empty
-      itemsListener = (o) -> setTotals(finder.createTotals(this.items));
+      itemsListener = o -> setTotals(finder.createTotals(this.items));
       this.items.addListener(new WeakInvalidationListener(itemsListener));
       itemsListener.invalidated(this.items);    // show totals first time, if any totals at all
     }
@@ -700,10 +700,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   public void configure() {
     getView().addEventFilter(KeyEvent.KEY_PRESSED, (KeyEvent event) -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-              !event.isShiftDown() && !event.isShortcutDown()) {
-        if (event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
-          cancel();
-        }
+          !event.isShiftDown() && !event.isShortcutDown() &&
+          event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
+        
+        cancel();
       }
     });
   }

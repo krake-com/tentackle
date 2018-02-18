@@ -144,12 +144,10 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
    * @param pdoSet holds already expanded PDOs to detect recursion loops
    */
   protected void expand(Set<T> pdoSet) {
-    if (getGuiProvider().providesTreeChildObjects()) {
-      if (pdoSet.add(getPdo())) {
-        setExpanded(true);
-        for (TreeItem<T> childItem : getChildren()) {
-          ((PdoTreeItem<T>) childItem).expand(pdoSet);
-        }
+    if (getGuiProvider().providesTreeChildObjects() && pdoSet.add(getPdo())) {
+      setExpanded(true);
+      for (TreeItem<T> childItem : getChildren()) {
+        ((PdoTreeItem<T>) childItem).expand(pdoSet);
       }
     }
   }

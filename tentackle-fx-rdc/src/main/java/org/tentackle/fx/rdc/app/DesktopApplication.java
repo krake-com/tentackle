@@ -218,18 +218,18 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               }
 
               showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
-              final C mainController = Fx.load(getMainControllerClass());
+              final C mainCtrlr = Fx.load(getMainControllerClass());
 
               showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 1.0);
               Platform.runLater(() -> {
                 try {
                   session.makeCurrent();
-                  setMainController(mainController);
+                  setMainController(mainCtrlr);
                   Stage stage = Fx.createStage(Modality.NONE);
                   configureMainStage(stage);
-                  Scene scene = new Scene(mainController.getView());
+                  Scene scene = new Scene(mainCtrlr.getView());
                   stage.setScene(scene);
-                  stage.addEventHandler(WindowEvent.WINDOW_SHOWN, (e) -> {
+                  stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
                     // all is fine, close the login scene, application keeps running since main window is shown
                     try {
                       doFinishStartup();

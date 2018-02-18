@@ -209,7 +209,6 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
 
         Map<? extends ExecutableElement, ? extends AnnotationValue> annotationParameters = mirror.getElementValues();
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationParameters.entrySet()) {
-          ExecutableElement elem = entry.getKey();
           AnnotationValue anno = entry.getValue();
           String implName = anno.toString();
           if (implName.endsWith(".class")) {

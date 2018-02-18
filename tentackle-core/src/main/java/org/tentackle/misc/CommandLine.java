@@ -141,14 +141,12 @@ public class CommandLine {
    */
   public Properties getOptionsAsProperties() {
     Properties props = new Properties();
-    if (options != null) {
-      for (Map.Entry<String,String> entry: options.entrySet()) {
-        String value = entry.getValue();
-        if (value == null)  {
-          value = "";
-        }
-        props.setProperty(entry.getKey(), value);
+    for (Map.Entry<String,String> entry: options.entrySet()) {
+      String value = entry.getValue();
+      if (value == null)  {
+        value = "";
       }
+      props.setProperty(entry.getKey(), value);
     }
     return props;
   }

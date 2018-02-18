@@ -255,7 +255,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    * @return the serial, 0 if no access made yet
    */
   private long getTableSerial() {
-    if (objects != null && objects.size() > 0) {
+    if (objects != null && !objects.isEmpty()) {
       return ModificationTracker.getInstance().getSerial(cache.getObjectClass());
     }
     else  {

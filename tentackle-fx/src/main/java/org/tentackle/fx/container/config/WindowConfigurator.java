@@ -57,7 +57,7 @@ public class WindowConfigurator<T extends Window> implements Configurator<T> {
    */
   protected void registerEventFilters(T window) {
 
-    window.addEventFilter(MouseEvent.ANY, (event) -> {
+    window.addEventFilter(MouseEvent.ANY, event -> {
        if (event.isShiftDown() && event.isControlDown() && !event.isMetaDown() && !event.isAltDown() &&
            event.isPopupTrigger()) {
         PickResult pickResult = event.getPickResult();

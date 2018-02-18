@@ -94,7 +94,7 @@ public class AdminExtensionAdapter implements AdminExtension {
 
   @Override
   public DomainContext getBaseContext() {
-    return context;
+    return getDomainContext();
   }
 
   @Override

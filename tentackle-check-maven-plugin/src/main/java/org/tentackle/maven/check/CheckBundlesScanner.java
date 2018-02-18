@@ -31,7 +31,6 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import javax.lang.model.element.Name;
 

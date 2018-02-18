@@ -265,13 +265,7 @@ public class FormatHelper {
    */
   private static Formatting getFormatting() {
     Locale locale = LocaleProvider.getInstance().getLocale();
-    Formatting formatting = FORMATTING_MAP.get(locale);
-    if (formatting == null) {
-      Patterns patterns = new Patterns(locale);   // load from bundle
-      formatting = new Formatting(locale, patterns);
-      FORMATTING_MAP.put(locale, formatting);
-    }
-    return formatting;
+    return FORMATTING_MAP.computeIfAbsent(locale, l -> new Formatting(l, new Patterns(locale)));
   }
 
 
@@ -485,7 +479,7 @@ public class FormatHelper {
    * @return the timestamp
    * @throws ParseException if parsing failed
    */
-  public static LocalDateTime parseLocalDateTime(String str) throws ParseException {
+  public static LocalDateTime parseLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().localDateTimeFormat);
   }
 
@@ -496,7 +490,7 @@ public class FormatHelper {
    * @return the timestamp
    * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDateTime parseShortLocalDateTime(String str) throws ParseException {
+  public static LocalDateTime parseShortLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().shortLocalDateTimeFormat);
   }
 
@@ -507,7 +501,7 @@ public class FormatHelper {
    * @return the date
    * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDate parseLocalDate(String str) throws ParseException {
+  public static LocalDate parseLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().localDateFormat);
   }
 
@@ -518,7 +512,7 @@ public class FormatHelper {
    * @return the date
    * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDate parseShortLocalDate(String str) throws ParseException {
+  public static LocalDate parseShortLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().shortLocalDateFormat);
   }
 
@@ -529,7 +523,7 @@ public class FormatHelper {
    * @return the time
    * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalTime parseLocalTime(String str) throws ParseException {
+  public static LocalTime parseLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().localTimeFormat);
   }
 
@@ -540,7 +534,7 @@ public class FormatHelper {
    * @return the time
    * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalTime parseShortLocalTime(String str) throws ParseException {
+  public static LocalTime parseShortLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().shortLocalTimeFormat);
   }
 

@@ -25,8 +25,6 @@ import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
@@ -58,11 +56,6 @@ import org.tentackle.validate.ValidationUtilities;
 public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPool, NumberPoolPersistenceImpl> implements NumberPoolPersistence {
 
   private static final long serialVersionUID = -1178387730540795339L;
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(NumberPoolPersistenceImpl.class);
 
 
   // @wurblet classVariables ClassVariables

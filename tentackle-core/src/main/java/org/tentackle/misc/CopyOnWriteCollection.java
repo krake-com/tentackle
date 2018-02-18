@@ -63,7 +63,7 @@ public class CopyOnWriteCollection<E> implements Collection<E>, Serializable {
    * The clone-method.<br>
    * Not used after deserialization.
    */
-  private transient final Method cloneMethod;
+  private final transient Method cloneMethod;
 
   /**
    * If true, iterator() will clone the collection.

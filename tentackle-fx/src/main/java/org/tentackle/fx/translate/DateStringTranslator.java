@@ -193,6 +193,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
     lastDate = value;
     if (value != null) {
       boolean infoLoss = false;
+
       if (value instanceof Timestamp || value instanceof Time) {
         if (!FormatHelper.isFormattingTime(getFormat())) {
           infoLoss = true;
@@ -203,22 +204,24 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           infoLoss = true;
         }
       }
-      if (infoLoss) {
-        if (informationLossLogLevel != null &&
-            informationLossLogLevel != Logger.Level.SEVERE &&
-            LOGGER.isLoggable(informationLossLogLevel)) {
-          String msg = "possible information loss while formatting " + value.getClass().getName() + " '" + value +
-                       "' with format " + getFormat().toPattern() + " in:\n" +
-                       FxUtilities.getInstance().dumpComponentHierarchy((Node) getComponent());
-          FxRuntimeException uix = informationLossLogLevel == Logger.Level.FINE ||
-                                    informationLossLogLevel == Logger.Level.FINER ?
-                                          new FxRuntimeException(msg) : null;
-          LOGGER.log(informationLossLogLevel, uix == null ? msg : "", uix);
-          if (informationLossLogLevel == Logger.Level.FINER && uix != null) {
-            throw uix;
-          }
+
+      if (infoLoss &&
+          informationLossLogLevel != null &&
+          informationLossLogLevel != Logger.Level.SEVERE &&
+          LOGGER.isLoggable(informationLossLogLevel)) {
+
+        String msg = "possible information loss while formatting " + value.getClass().getName() + " '" + value +
+                     "' with format " + getFormat().toPattern() + " in:\n" +
+                     FxUtilities.getInstance().dumpComponentHierarchy((Node) getComponent());
+        FxRuntimeException uix = informationLossLogLevel == Logger.Level.FINE ||
+                                  informationLossLogLevel == Logger.Level.FINER ?
+                                        new FxRuntimeException(msg) : null;
+        LOGGER.log(informationLossLogLevel, uix == null ? msg : "", uix);
+        if (informationLossLogLevel == Logger.Level.FINER && uix != null) {
+          throw uix;
         }
       }
+      
       return getFormat().format(value);
     }
     return null;

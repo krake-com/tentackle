@@ -232,21 +232,19 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    * </pre>
    */
   protected void updateComponentName() {
-    if (component instanceof Component) {
-      if (((Component) component).getName() == null) {
-        // if not already set by the application
-        StringBuilder buf = new StringBuilder(getMember().getMemberPath());
-        // prepend the parent names, if any
-        Component parent = ((Component) component).getParent();
-        while (parent != null) {
-          if (parent.getName() != null) {
-            buf.insert(0, parent.getName() + "/");
-          }
-          parent = parent.getParent();
+    if (component instanceof Component && ((Component) component).getName() == null) {
+      // if not already set by the application
+      StringBuilder buf = new StringBuilder(getMember().getMemberPath());
+      // prepend the parent names, if any
+      Component parent = ((Component) component).getParent();
+      while (parent != null) {
+        if (parent.getName() != null) {
+          buf.insert(0, parent.getName() + "/");
         }
-        ((Component) component).setName(buf.toString());
-        LOGGER.fine("{0}.setName(\"{1}\")", component.getComponentPath(), ((Component) component).getName());
+        parent = parent.getParent();
       }
+      ((Component) component).setName(buf.toString());
+      LOGGER.fine("{0}.setName(\"{1}\")", component.getComponentPath(), ((Component) component).getName());
     }
   }
 

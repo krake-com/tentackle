@@ -53,7 +53,7 @@ public class LoginApplication extends FxApplication {
   public static boolean isAutoLogin(SessionInfo sessionInfo) {
     return sessionInfo.getProperties().containsKey("autologin");
   }
-  
+
 
   /**
    * the logger for this class.
@@ -75,7 +75,7 @@ public class LoginApplication extends FxApplication {
       stage.setScene(scene);
       stage.initStyle(StageStyle.TRANSPARENT);
       if (isAutoLogin(sessionInfo)) {
-        stage.setOnShown((e) -> controller.autoLogin());
+        stage.setOnShown(e -> controller.autoLogin());
       }
       stage.show();
     }

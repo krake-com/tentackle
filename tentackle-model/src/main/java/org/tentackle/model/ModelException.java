@@ -29,7 +29,7 @@ public class ModelException extends Exception {
 
   private static final long serialVersionUID = 3405985077474898397L;
 
-  private transient final ModelElement element;   // the related model element
+  private final transient ModelElement element;   // the related model element
 
 
   /**

@@ -25,15 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.tentackle.bind.AbstractBinder;
-import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 
 
@@ -44,11 +41,6 @@ import org.tentackle.common.StringHelper;
  * @author harald
  */
 public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBinder<S> {
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxTableBinder.class);
 
   private final TableConfiguration<S> tableConfig;           // the table configuration to bind
   private final Map<String,FxTableBinding<S,?>> boundPaths;  // the bindings mapped by binding path / column name
@@ -72,37 +64,12 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   }
 
 
-  /**
-   * Binds objects to a table.
-   * <p>
-   * The form and all components in the form's parent classes
-   * and all members or submembers
-   * annotated with the {@link Bindable}-annotation.
-   * Inherited members will be included as well.
-   * <p>
-   * Notice that the object references are <em>not</em> kept in the binding.
-   * <p>
-   * CAUTION: expensive operation!
-   *
-   * @return number of members bound
-   */
   @Override
   public int bindAllInherited() {
     return doBind(null, null, getTableConfiguration().getObjectClass(), false);
   }
 
 
-  /**
-   * Binds objects to a table.
-   * <p>
-   * The form will be scanned for members or submembers
-   * annotated with the {@link Bindable}-annotation.
-   * Inherited members will not be included.
-   * <p>
-   * Notice that the object references are <em>not</em> kept in the binding.
-   *
-   * @return number of members bound
-   */
   @Override
   public int bind() {
     return doBind(null, null, getTableConfiguration().getObjectClass(), true);
@@ -118,11 +85,6 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   }
 
 
-  /**
-   * Gets the list of all bindings for this form.
-   *
-   * @return the bindings, never null
-   */
   @Override
   public Collection<FxTableBinding<S,?>> getBindings() {
     return boundPaths.values();
@@ -147,16 +109,8 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   }
 
 
-  /**
-   * Tests the binding.<br>
-   * The method verifies that all components of the form are bound
-   * and throws a {@link BindingException} if it finds at least one
-   * unbound component.<br>
-   * All unbound components are logged.
-   * @throws BindingException if at least one unbound component found
-   */
   @Override
-  public void assertAllBound() throws BindingException {
+  public void assertAllBound() {
     Collection<String> unboundColumns = getUnboundColumns();
     if (!unboundColumns.isEmpty()) {
       StringBuilder buf = new StringBuilder();
@@ -171,11 +125,6 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   }
 
 
-  /**
-   * Programmatically adds a binding to this form.
-   *
-   * @param binding the binding to add
-   */
   @Override
   @SuppressWarnings("unchecked")
   public void addBinding(Binding binding) {
@@ -195,18 +144,10 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   }
 
 
-  /**
-   * Programmatically removes a binding from this form.
-   *
-   * @param bindingPath the object's binding path
-   *
-   * @return the removed binding, null if no such binding found
-   */
   @Override
   public FxTableBinding<S,?> removeBinding(String bindingPath) {
     return boundPaths.remove(bindingPath);
   }
-
 
 
   @Override
