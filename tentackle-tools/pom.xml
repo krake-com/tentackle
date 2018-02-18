@@ -6,6 +6,8 @@
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
     <version>2.2-SNAPSHOT</version>
+    <!-- not a module of tentackle-parent -->
+    <!-- to be build separately -->
   </parent>
 
   <artifactId>tentackle-tools</artifactId>

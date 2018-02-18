@@ -65,7 +65,6 @@
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>
     <module>tentackle-bom</module>
-    <module>tentackle-tools</module>
   </modules>
 
   <properties>
