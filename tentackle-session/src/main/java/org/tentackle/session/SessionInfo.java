@@ -302,6 +302,6 @@ public interface SessionInfo extends Immutable {
    * @param serverVersionInfo the server's version info
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
-  void checkServerVersionInfo(Serializable serverVersionInfo) throws VersionInfoIncompatibleException;
+  void checkServerVersionInfo(Serializable serverVersionInfo);
 
 }

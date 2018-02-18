@@ -52,7 +52,7 @@ public interface BackendFactory {
    * @return the backend
    * @throws BackendException if no such backend
    */
-  Backend getBackendByUrl(String url) throws BackendException;
+  Backend getBackendByUrl(String url);
 
 
   /**
@@ -62,7 +62,7 @@ public interface BackendFactory {
    * @return the backend
    * @throws BackendException if no such backend
    */
-  Backend getBackendByName(String name) throws BackendException;
+  Backend getBackendByName(String name);
 
 
   /**
@@ -71,6 +71,6 @@ public interface BackendFactory {
    * @return the collection of all backends
    * @throws BackendException if retrieving all configured backends failed
    */
-  Collection<Backend> getAllBackends() throws BackendException;
+  Collection<Backend> getAllBackends();
 
 }

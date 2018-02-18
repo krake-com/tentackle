@@ -127,7 +127,7 @@ public class RubyScript extends AbstractScript {
   }
 
   @Override
-  public CompiledScript parse() throws ScriptRuntimeException {
+  public CompiledScript parse() {
     try {
       String effectiveCode = getEffectiveCode();
       LOGGER.fine("compiling script:\n{0}", effectiveCode);
@@ -143,7 +143,7 @@ public class RubyScript extends AbstractScript {
 
 
   @Override
-  public void execute(ScriptVariable... variables) throws ScriptRuntimeException {
+  public void execute(ScriptVariable... variables) {
 
     executed = false;
     result = null;

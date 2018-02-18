@@ -46,7 +46,7 @@ public class ClassToServicesMapper<T> extends AbstractClassMapper<Set<String>> {
    * @param nameMap the mapping of classnames
    * @param packageNames the package names, null or empty array if none
    */
-  public ClassToServicesMapper(String name, Map<String,Set<String>> nameMap, String packageNames[]) {
+  public ClassToServicesMapper(String name, Map<String,Set<String>> nameMap, String[] packageNames) {
     super(name);
     this.packageNames = packageNames;
     this.nameMap = nameMap;

@@ -70,7 +70,7 @@ public class DefaultBackendFactory implements BackendFactory {
   }
 
   @Override
-  public Backend getBackendByName(String name) throws BackendException {
+  public Backend getBackendByName(String name) {
     for (Backend backend: backends) {
       if (backend.isMatchingName(name)) {
         return backend;
@@ -80,7 +80,7 @@ public class DefaultBackendFactory implements BackendFactory {
   }
 
   @Override
-  public Collection<Backend> getAllBackends() throws BackendException {
+  public Collection<Backend> getAllBackends() {
     return backends;
   }
 

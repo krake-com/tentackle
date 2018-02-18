@@ -80,7 +80,7 @@ public interface Script {
    * @return the compilation result (usually a script object)
    * @throws ScriptRuntimeException if parsing failed
    */
-  Object parse() throws ScriptRuntimeException;
+  Object parse();
 
 
   /**
@@ -119,7 +119,7 @@ public interface Script {
    * @param variables the script variables
    * @throws ScriptRuntimeException if execution failed
    */
-  void execute(ScriptVariable... variables) throws ScriptRuntimeException;
+  void execute(ScriptVariable... variables);
 
 
   /**

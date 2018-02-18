@@ -89,7 +89,7 @@ public class AbstractJSRScript extends AbstractScript {
 
 
   @Override
-  public CompiledScript parse() throws ScriptRuntimeException {
+  public CompiledScript parse() {
     try {
       scriptCode = getEffectiveCode();
       if (compiledScript == null) {
@@ -108,7 +108,7 @@ public class AbstractJSRScript extends AbstractScript {
 
 
   @Override
-  public void execute(ScriptVariable... variables) throws ScriptRuntimeException {
+  public void execute(ScriptVariable... variables) {
 
     executed = false;
     result = null;

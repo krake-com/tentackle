@@ -99,42 +99,36 @@ public class DefaultSecurityFactory implements SecurityFactory {
         permissionsByIface.put(permissionInterface, permission);
         permissions.add(permission);
 
-        if (permission instanceof EditPermission) {
-          if (editPermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(editPermission.getPermissionInterface())) {
-            // new or narrower type
-            editPermission = (EditPermission) permission;
-          }
+        if (permission instanceof EditPermission &&
+            (editPermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(editPermission.getPermissionInterface()))) {
+          // new or narrower type
+          editPermission = (EditPermission) permission;
         }
-        if (permission instanceof WritePermission) {
-          if (writePermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(writePermission.getPermissionInterface())) {
-            writePermission = (WritePermission) permission;
-          }
+        if (permission instanceof WritePermission &&
+            (writePermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(writePermission.getPermissionInterface()))) {
+          writePermission = (WritePermission) permission;
         }
-        if (permission instanceof ViewPermission) {
-          if (viewPermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(viewPermission.getPermissionInterface())) {
-            viewPermission = (ViewPermission) permission;
-          }
+        if (permission instanceof ViewPermission &&
+            (viewPermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(viewPermission.getPermissionInterface()))) {
+          viewPermission = (ViewPermission) permission;
         }
-        if (permission instanceof ReadPermission) {
-          if (readPermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(readPermission.getPermissionInterface())) {
-            readPermission = (ReadPermission) permission;
-          }
+        if (permission instanceof ReadPermission &&
+            (readPermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(readPermission.getPermissionInterface()))) {
+          readPermission = (ReadPermission) permission;
         }
-        if (permission instanceof ExecutePermission) {
-          if (executePermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(executePermission.getPermissionInterface())) {
-            executePermission = (ExecutePermission) permission;
-          }
+        if (permission instanceof ExecutePermission &&
+            (executePermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(executePermission.getPermissionInterface()))) {
+          executePermission = (ExecutePermission) permission;
         }
-        if (permission instanceof AllPermission) {
-          if (allPermission == null ||
-              permission.getPermissionInterface().isAssignableFrom(allPermission.getPermissionInterface())) {
-            allPermission = (AllPermission) permission;
-          }
+        if (permission instanceof AllPermission &&
+            (allPermission == null ||
+             permission.getPermissionInterface().isAssignableFrom(allPermission.getPermissionInterface()))) {
+          allPermission = (AllPermission) permission;
         }
       }
 

@@ -84,8 +84,7 @@ public class InterceptableInvocationHandler<T extends Interceptable> implements 
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegate(T proxy, Class<T> clazz)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     mixin.createDelegate(new Class<?>[] { clazz }, new Object[] { proxy });
   }
@@ -96,10 +95,8 @@ public class InterceptableInvocationHandler<T extends Interceptable> implements 
 
     Class<?> delegateClass = method.getDeclaringClass();
 
-    if (delegateClass == EffectiveClassProvider.class) {
-      if (method.equals(GETEFFECTIVECLASS_METHOD)) {
-        return clazz;
-      }
+    if (delegateClass == EffectiveClassProvider.class && method.equals(GETEFFECTIVECLASS_METHOD)) {
+      return clazz;
     }
 
     InterceptableMethod delegateMethod = METHOD_CACHE.get(method);
@@ -109,7 +106,7 @@ public class InterceptableInvocationHandler<T extends Interceptable> implements 
       delegateMethod = new InterceptableMethod(method, interceptor);
       METHOD_CACHE.put(method, delegateMethod);
     }
-
+    
     // invoke the method
     return delegateMethod.invoke(mixin.getDelegate(), args);
   }

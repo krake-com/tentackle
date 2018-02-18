@@ -229,10 +229,8 @@ public class Oracle extends AbstractSql2003Backend {
   public void assertValidName(String nameType, String name) {
     super.assertValidName(nameType, name);
     assertNameLength(nameType, name);
-    if (name != null) {
-      if (name.startsWith("_")) {
-        throw new BackendException(nameType + " '" + name + "' is illegal for backend " + this);
-      }
+    if (name != null && name.startsWith("_")) {
+      throw new BackendException(nameType + " '" + name + "' is illegal for backend " + this);
     }
   }
 

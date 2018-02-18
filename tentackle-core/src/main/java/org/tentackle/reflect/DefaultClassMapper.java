@@ -58,7 +58,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * @param nameMap the mapping of classnames
    * @param packageNames the package names, null or empty array if none
    */
-  public DefaultClassMapper(String name, ClassLoader classLoader, Map<String,String> nameMap, String packageNames[]) {
+  public DefaultClassMapper(String name, ClassLoader classLoader, Map<String,String> nameMap, String[] packageNames) {
     super(name);
     this.classLoader = classLoader;
     this.packageNames = packageNames;
@@ -74,7 +74,7 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * @param nameProps the properties holding the mapping.
    * @param packageNames the package names, null or empty array if none
    */
-  public DefaultClassMapper(String name, ClassLoader classLoader, Properties nameProps, String packageNames[]) {
+  public DefaultClassMapper(String name, ClassLoader classLoader, Properties nameProps, String[] packageNames) {
     this(name, classLoader, new HashMap<>(), packageNames);
     for (String key: nameProps.stringPropertyNames()) {
       nameMap.put(key, nameProps.getProperty(key));

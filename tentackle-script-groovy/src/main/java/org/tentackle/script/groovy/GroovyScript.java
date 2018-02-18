@@ -126,7 +126,7 @@ public class GroovyScript extends AbstractScript {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompiledScript parse() throws ScriptRuntimeException {
+  public CompiledScript parse() {
     try {
       String effectiveCode = getEffectiveCode();
       Class<groovy.lang.Script> scriptClass = SCRIPT_CACHE.getScriptClass(effectiveCode);
@@ -157,7 +157,7 @@ public class GroovyScript extends AbstractScript {
 
 
   @Override
-  public void execute(ScriptVariable... variables) throws ScriptRuntimeException {
+  public void execute(ScriptVariable... variables) {
 
     executed = false;
     result = null;

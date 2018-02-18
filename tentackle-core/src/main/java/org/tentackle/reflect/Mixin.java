@@ -134,8 +134,7 @@ public class Mixin<T,M> implements Serializable {
    */
   @SuppressWarnings("unchecked")
   public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     if (!isDummy()) {
       // find the constructor and create the object

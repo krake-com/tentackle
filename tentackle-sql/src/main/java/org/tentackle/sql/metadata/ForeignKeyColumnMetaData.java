@@ -177,13 +177,7 @@ public class ForeignKeyColumnMetaData implements Comparable<ForeignKeyColumnMeta
               foreignKeyMetaData.getDeleteRule());
     }
 
-    validate();
-  }
-
-  /**
-   * Validates and postprocesses the foreign key column data.
-   */
-  public void validate() {
+//    validate();   // nothing to validate so far
   }
 
   @Override

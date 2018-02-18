@@ -71,9 +71,7 @@ public enum SqlType {
   }),
 
   /** Binary. */
-  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, t -> {
-    return null;    // cannot be converted
-  }),
+  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, t -> null),  // cannot be converted
 
   /** BigDecimal and DMoney. */
   DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0), t -> {
@@ -175,9 +173,7 @@ public enum SqlType {
   }),
 
   /** Application specific. */
-  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, t -> {
-    return null;    // conversion not possible (never returned from meta data)
-  });
+  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, t -> null);    // conversion not possible (never returned from meta data)
 
 
   /**

@@ -477,7 +477,7 @@ public class FormatHelper {
    *
    * @param str the string to parse
    * @return the timestamp
-   * @throws ParseException if parsing failed
+   * @throws java.time.format.DateTimeParseException if parsing failed
    */
   public static LocalDateTime parseLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().localDateTimeFormat);

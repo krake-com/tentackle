@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 interface ValidatorCache$Singleton {
@@ -44,12 +42,6 @@ interface ValidatorCache$Singleton {
  */
 @Service(ValidatorCache.class)    // defaults to self
 public class ValidatorCache {
-
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ValidatorCache.class);
-
 
 
   /**

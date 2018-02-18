@@ -552,7 +552,7 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
   @Override
-  public void checkServerVersionInfo(Serializable serverVersionInfo) throws VersionInfoIncompatibleException {
+  public void checkServerVersionInfo(Serializable serverVersionInfo) {
     // default is ok
   }
 
