@@ -20,11 +20,13 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-persistence</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-domain</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
   </dependencies>
 

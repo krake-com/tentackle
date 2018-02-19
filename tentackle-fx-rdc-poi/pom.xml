@@ -20,6 +20,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-fx-rdc</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>   <!-- avoid transitive dependency -->
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
