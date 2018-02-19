@@ -93,11 +93,6 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   protected List<String> localeSuffixes;
 
   /**
-   * The backend session.
-   */
-  protected Session session;
-
-  /**
    * The domain context to access the stored bundles.
    */
   protected DomainContext context;
@@ -163,8 +158,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     props.setProperty(Constants.BACKEND_PASSWORD, password);
     SessionInfo sessionInfo = Pdo.createSessionInfo(props);
 
-    try {
-      session = Pdo.createSession(sessionInfo);
+    try (Session session = Pdo.createSession(sessionInfo)) {
       context = Pdo.createDomainContext(session);
 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
@@ -216,11 +210,6 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     }
     catch (PersistenceException rex) {
       throw new MojoExecutionException("processing the bundles failed", rex);
-    }
-    finally {
-      if (session.isOpen()) {
-        session.close();
-      }
     }
 
     getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
