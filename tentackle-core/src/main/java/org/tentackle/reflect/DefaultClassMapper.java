@@ -86,12 +86,12 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * Creates a class mapper for a given mapped service name.
    *
    * @param name the mapper's name
-   * @param mappedName the mapped name
+   * @param mappedServiceName the mapped name
    */
-  public DefaultClassMapper(String name, String mappedName) {
+  public DefaultClassMapper(String name, String mappedServiceName) {
     this(name,
-         ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, mappedName),
-         ServiceFactory.getServiceFinder().createNameMap(mappedName), null);
+         ServiceFactory.getClassLoader(Constants.MAPPED_SERVICE_PATH, mappedServiceName),
+         ServiceFactory.getServiceFinder().createNameMap(mappedServiceName), null);
   }
 
   /**
@@ -99,10 +99,10 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
    * This is the most common usage of a class mapper.
    *
    * @param name the mapper's name
-   * @param clazz the mapped class
+   * @param mappedClass the mapped service class
    */
-  public DefaultClassMapper(String name, Class<?> clazz) {
-    this(name, clazz.getName());
+  public DefaultClassMapper(String name, Class<?> mappedClass) {
+    this(name, mappedClass.getName());
   }
 
 
@@ -117,21 +117,12 @@ public class DefaultClassMapper extends AbstractClassMapper<String> implements C
   }
 
 
-  /**
-   * Gets the default class.
-   *
-   * @return the class, null if no default
-   */
+  @Override
   public Class<?> getDefaultClass() {
     return defaultClass;
   }
 
-  /**
-   * Sets the default class.<br>
-   * If there is no matching class, the mapper returns this class.
-   *
-   * @param defaultClass the default class
-   */
+  @Override
   public void setDefaultClass(Class<?> defaultClass) {
     this.defaultClass = defaultClass;
   }

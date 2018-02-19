@@ -20,12 +20,24 @@
 package org.tentackle.reflect;
 
 /**
- * Maps classes to other classes.<br>
- * Useful for factories.
+ * Maps classes to other classes.
  *
  * @author harald
  */
 public interface ClassMapper {
+
+  /**
+   * Creates a class mapper for a given mapped service.<br>
+   * The mapper maintains a map of implementation classes to other classes (usually interfaces).
+   *
+   * @param name the mapper's name
+   * @param mappedClass class of the mapped service
+   * @return the classmapper
+   * @see org.tentackle.common.MappedService
+   */
+  static ClassMapper create(String name, Class<?> mappedClass) {
+    return ClassMapperFactory.getInstance().create(name, mappedClass);
+  }
 
   /**
    * Maps a class or interface to another class or interface.
@@ -69,5 +81,20 @@ public interface ClassMapper {
    * @throws ClassNotFoundException if there is no mapping.
    */
   Class<?> mapLenient(String className) throws ClassNotFoundException;
+
+  /**
+   * Gets the default class.
+   *
+   * @return the class, null if no default
+   */
+  Class<?> getDefaultClass();
+
+  /**
+   * Sets the default class.<br>
+   * If there is no matching class, the mapper returns this class.
+   *
+   * @param defaultClass the default class
+   */
+  void setDefaultClass(Class<?> defaultClass);
 
 }

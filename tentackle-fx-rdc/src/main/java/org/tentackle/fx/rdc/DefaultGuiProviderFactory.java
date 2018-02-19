@@ -25,7 +25,6 @@ import org.tentackle.common.Service;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.reflect.ClassMapper;
-import org.tentackle.reflect.DefaultClassMapper;
 
 /**
  * The default GUI provider factory.
@@ -50,7 +49,7 @@ public class DefaultGuiProviderFactory implements GuiProviderFactory {
    * Creates the factory.
    */
   public DefaultGuiProviderFactory() {
-    guiClassMapper = new DefaultClassMapper("FX GUI-provider", GuiProvider.class);
+    guiClassMapper = ClassMapper.create("FX GUI-provider", GuiProvider.class);
   }
 
 

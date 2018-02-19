@@ -20,7 +20,6 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.Service;
 import org.tentackle.reflect.ClassMapper;
-import org.tentackle.reflect.DefaultClassMapper;
 
 /**
  * The default PDO factory.
@@ -30,15 +29,15 @@ import org.tentackle.reflect.DefaultClassMapper;
 @Service(PdoFactory.class)
 public class DefaultPdoFactory extends AbstractPdoFactory {
 
-  private final DefaultClassMapper domainClassMapper;          // mapper for the domain implementations
-  private final DefaultClassMapper persistenceClassMapper;     // mapper for the persistence implementations
+  private final ClassMapper domainClassMapper;          // mapper for the domain implementations
+  private final ClassMapper persistenceClassMapper;     // mapper for the persistence implementations
 
   /**
    * Creates a pdo factory.
    */
   public DefaultPdoFactory() {
-    domainClassMapper      = new DefaultClassMapper("pdo domain",      DomainObject.class);
-    persistenceClassMapper = new DefaultClassMapper("pdo persistence", PersistentObject.class);
+    domainClassMapper      = ClassMapper.create("pdo domain",      DomainObject.class);
+    persistenceClassMapper = ClassMapper.create("pdo persistence", PersistentObject.class);
   }
 
   @Override

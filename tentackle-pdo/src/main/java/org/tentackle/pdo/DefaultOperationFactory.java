@@ -20,7 +20,6 @@ package org.tentackle.pdo;
 
 import org.tentackle.common.Service;
 import org.tentackle.reflect.ClassMapper;
-import org.tentackle.reflect.DefaultClassMapper;
 
 /**
  * The default operation factory.
@@ -30,15 +29,15 @@ import org.tentackle.reflect.DefaultClassMapper;
 @Service(OperationFactory.class)
 public class DefaultOperationFactory extends AbstractOperationFactory {
 
-  private final DefaultClassMapper domainClassMapper;
-  private final DefaultClassMapper persistenceClassMapper;
+  private final ClassMapper domainClassMapper;
+  private final ClassMapper persistenceClassMapper;
 
   /**
    * Creates an operation factory.
    */
   public DefaultOperationFactory() {
-    domainClassMapper      = new DefaultClassMapper("operation domain",      DomainOperation.class);
-    persistenceClassMapper = new DefaultClassMapper("operation persistence", PersistentOperation.class);
+    domainClassMapper      = ClassMapper.create("operation domain",      DomainOperation.class);
+    persistenceClassMapper = ClassMapper.create("operation persistence", PersistentOperation.class);
 
     // if there is no persistence delegate (which is allowed for operations in contrast to PDOs),
     // map to a dummy delegate

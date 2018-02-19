@@ -37,7 +37,7 @@ public class DefaultInterceptableFactory implements InterceptableFactory {
    * Creates the factory.
    */
   public DefaultInterceptableFactory() {
-    classMapper = new DefaultClassMapper("interception", Interceptable.class);
+    classMapper = ClassMapper.create("interception", Interceptable.class);
   }
 
   @Override
