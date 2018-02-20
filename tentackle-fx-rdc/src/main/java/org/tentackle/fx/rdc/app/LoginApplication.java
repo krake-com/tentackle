@@ -31,6 +31,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
 
@@ -62,11 +63,11 @@ public class LoginApplication extends FxApplication {
 
 
 
-  private Login controller;       // the doLogin controller
+  private Login controller;       // the login controller
 
 
   @Override
-  public void startApplication(Stage stage) throws Exception {
+  public void startApplication(Stage stage) {
     try {
       controller = Fx.load(Login.class);
       SessionInfo sessionInfo = createSessionInfo();
@@ -79,9 +80,8 @@ public class LoginApplication extends FxApplication {
       }
       stage.show();
     }
-    catch (Throwable t) {   // must be Throwable to really catch all
-      LOGGER.severe("launching login stage failed", t);   // log the stacktrace, because ...
-      throw t;   // ... javafx.application.Application just terminates without a detailed error message
+    catch (ApplicationException t) {
+      throw new FxRuntimeException("cannot create session info", t);
     }
   }
 

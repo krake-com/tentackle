@@ -41,6 +41,9 @@ public abstract class FxApplication extends Application {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(FxApplication.class);
 
+  private static final String FATAL = "runtime or configuration error";
+
+
   @Override
   public void start(Stage stage) throws Exception {
     try {
@@ -49,13 +52,14 @@ public abstract class FxApplication extends Application {
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
     }
-    catch (Exception ex) {
-      LOGGER.severe("start failed", ex);
+    // log the stacktrace, because javafx.application.Application just terminates without a detailed error message
+    catch (RuntimeException ex) {
+      LOGGER.severe("starting tentackle fx application failed", ex);
       throw ex;
     }
     catch (Throwable t) {
-      LOGGER.severe("start failed", t);
-      throw new FxRuntimeException("java or configuration error", t);
+      LOGGER.severe(FATAL, t);
+      throw new FxRuntimeException(FATAL, t);
     }
   }
 
@@ -73,10 +77,8 @@ public abstract class FxApplication extends Application {
    * client application is really implementing this method.
    *
    * @param primaryStage the primary stage
-   * @throws Throwable if starting failed (Throwable necessary to really catch all, since
-   * LauncherImpl just prints "Exception in Application start method" without a stacktrace)
    */
-  public abstract void startApplication(Stage primaryStage) throws Throwable;
+  public abstract void startApplication(Stage primaryStage);
 
   /**
    * Updates the status in the main application scene.
