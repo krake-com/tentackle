@@ -79,9 +79,9 @@ public class LoginApplication extends FxApplication {
       }
       stage.show();
     }
-    catch (RuntimeException ex) {
-      LOGGER.severe("launching login stage failed", ex);   // log the stacktrace, because ...
-      throw ex;   // ... javafx.application.Application just terminates without a detailed error message
+    catch (Throwable t) {   // must be Throwable to really catch all
+      LOGGER.severe("launching login stage failed", t);   // log the stacktrace, because ...
+      throw t;   // ... javafx.application.Application just terminates without a detailed error message
     }
   }
 

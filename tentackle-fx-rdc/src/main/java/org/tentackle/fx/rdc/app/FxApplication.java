@@ -22,6 +22,7 @@ package org.tentackle.fx.rdc.app;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 
@@ -48,9 +49,13 @@ public abstract class FxApplication extends Application {
       application.registerUncaughtExceptionHandler();
       startApplication(stage);
     }
-    catch (RuntimeException ex) {
+    catch (Exception ex) {
       LOGGER.severe("start failed", ex);
       throw ex;
+    }
+    catch (Throwable t) {
+      LOGGER.severe("start failed", t);
+      throw new FxRuntimeException("java or configuration error", t);
     }
   }
 
@@ -68,9 +73,10 @@ public abstract class FxApplication extends Application {
    * client application is really implementing this method.
    *
    * @param primaryStage the primary stage
-   * @throws Exception if starting failed
+   * @throws Throwable if starting failed (Throwable necessary to really catch all, since
+   * LauncherImpl just prints "Exception in Application start method" without a stacktrace)
    */
-  public abstract void startApplication(Stage primaryStage) throws Exception;
+  public abstract void startApplication(Stage primaryStage) throws Throwable;
 
   /**
    * Updates the status in the main application scene.
