@@ -386,7 +386,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       List<String> options = new ArrayList<>();
       options.add("-encoding");
       options.add(encoding);
-      options.add("-proc:only");    // run only the annotation processing
+
       if (classpathElements != null && !classpathElements.isEmpty()) {
         options.add("-classpath");
         StringBuilder buf = new StringBuilder();
@@ -410,10 +410,19 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       if (compilerArgument != null && !compilerArgument.isEmpty()) {
         options.add(compilerArgument);
       }
+
+      boolean procFound = false;
       if (compilerArgs != null) {
         for (String arg: compilerArgs) {
           options.add(arg);
+          if (arg.startsWith("proc:")) {
+            procFound = true;
+          }
         }
+      }
+
+      if (!procFound) {
+        options.add("-proc:only");    // run only the annotation processing
       }
 
       CompilationTask task = compiler.getTask(null, fileManager, diagnosticCollector, options, null,
