@@ -1206,7 +1206,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @param object the object to test for equality
    */
   @Override
-  public boolean equals (Object object) {
+  public final boolean equals (Object object) {
     if (object != null && getClass() == object.getClass()) {
       long objectId = ((AbstractDbObject<?>) object).getId();
       if (objectId == 0 || getId() == 0) {
@@ -1232,7 +1232,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return 0 if objects are equal, &lt; 0 if this is logically less than obj, &gt; 0 if this is logically greater than obj
    */
   @Override
-  public int compareTo(P obj) {
+  public final int compareTo(P obj) {
     if (obj != null) {
       int rv = Long.compare(getId(), obj.getId());
       if (rv == 0 &&
@@ -1260,7 +1260,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @see     java.util.Hashtable
    */
   @Override
-  public int hashCode() {
+  public final int hashCode() {
     if (getId() == 0) {
       // no identity: use object's address
       return super.hashCode();
