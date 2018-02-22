@@ -104,66 +104,70 @@ public class DbModelWurblet extends ModelWurblet {
 
     super.run();
 
-    tracked = getEntity().getOptions().getTrackType().isTracked();
-    attracked = getEntity().getOptions().getTrackType().isAttracked();
-    fullTracked = getEntity().getOptions().getTrackType() == TrackType.FULLTRACKED;
-    contextAttribute = getEntity().getContextIdAttribute();
+    Entity entity = getEntity();
+    if (entity != null) {   // null if missingModelOk set and no such entity in model (see ModelWurblet)
 
-    for (String arg: getOptionArgs())  {
-      if ("tracked".equals(arg)) {
-        tracked = true;
-        attracked = false;
-        fullTracked = false;
-      }
-      else if ("attracked".equals(arg)) {
-        tracked = true;
-        attracked = true;
-        fullTracked = false;
-      }
-      else if ("fulltracked".equals(arg)) {
-        tracked = true;
-        attracked = true;
-        fullTracked = true;
-      }
-      else if ("untracked".equals(arg)) {
-        tracked = false;
-        attracked = false;
-        fullTracked = false;
-      }
-      else if (arg.startsWith("context="))  {
-        String ctx = arg.substring(8);
-        if (ctx.length() == 0) {
-          contextAttribute = null;
+      tracked = entity.getOptions().getTrackType().isTracked();
+      attracked = entity.getOptions().getTrackType().isAttracked();
+      fullTracked = entity.getOptions().getTrackType() == TrackType.FULLTRACKED;
+      contextAttribute = entity.getContextIdAttribute();
+
+      for (String arg: getOptionArgs())  {
+        if ("tracked".equals(arg)) {
+          tracked = true;
+          attracked = false;
+          fullTracked = false;
         }
-        else {
-          contextAttribute = getEntity().getAttributeByJavaName(arg.substring(8), false);
+        else if ("attracked".equals(arg)) {
+          tracked = true;
+          attracked = true;
+          fullTracked = false;
         }
-      }
-    }
-
-    // analyze the wurblet arguments
-    parser = new WurbletArgumentParser(getEntity(), argumentGroupingEnabled, getWurbletArgs());
-
-    if (!pathAllowed) {
-      for (WurbletArgument arg: parser.getAllArguments()) {
-        if (arg.isPath()) {
-          throw new WurbelException("relation paths not allowed in wurblet " + this);
+        else if ("fulltracked".equals(arg)) {
+          tracked = true;
+          attracked = true;
+          fullTracked = true;
         }
-      }
-    }
-
-    if (isRemote()) {
-      // check whether relations are not transient
-      for (WurbletArgument joinArgument: parser.getJoinArguments()) {
-        for (Relation relation: joinArgument.getRelations()) {
-          if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
-            throw new WurbelException("joined non-composite relation '" + relation.getName() +
-                    "' must be serialized for remote access");
+        else if ("untracked".equals(arg)) {
+          tracked = false;
+          attracked = false;
+          fullTracked = false;
+        }
+        else if (arg.startsWith("context="))  {
+          String ctx = arg.substring(8);
+          if (ctx.length() == 0) {
+            contextAttribute = null;
           }
-          Relation opRel = relation.getForeignRelation();
-          if (opRel != null && !opRel.isSerialized() && !opRel.isComposite()) {
-            throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
-                    "' must be serialized for remote access");
+          else {
+            contextAttribute = entity.getAttributeByJavaName(arg.substring(8), false);
+          }
+        }
+      }
+
+      // analyze the wurblet arguments
+      parser = new WurbletArgumentParser(entity, argumentGroupingEnabled, getWurbletArgs());
+
+      if (!pathAllowed) {
+        for (WurbletArgument arg: parser.getAllArguments()) {
+          if (arg.isPath()) {
+            throw new WurbelException("relation paths not allowed in wurblet " + this);
+          }
+        }
+      }
+
+      if (isRemote()) {
+        // check whether relations are not transient
+        for (WurbletArgument joinArgument: parser.getJoinArguments()) {
+          for (Relation relation: joinArgument.getRelations()) {
+            if (!relation.isComposite() && !relation.isSerialized() && relation.getSelectionType() != SelectionType.EAGER) {
+              throw new WurbelException("joined non-composite relation '" + relation.getName() +
+                      "' must be serialized for remote access");
+            }
+            Relation opRel = relation.getForeignRelation();
+            if (opRel != null && !opRel.isSerialized() && !opRel.isComposite()) {
+              throw new WurbelException("joined opposite relation '" + opRel.getEntity() + "." + opRel.getName() +
+                      "' must be serialized for remote access");
+            }
           }
         }
       }

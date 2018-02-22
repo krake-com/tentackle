@@ -49,6 +49,8 @@ public class RemoteIncludes {
   private String superClassName;              // name of the superclass
   private String rmiDirName;                  // directory of rmi-classes
   private String remotePrefix;                // prefix of the remote parent class (usually from ant script)
+  private String type;                        // type name (pdo or operation)
+  private boolean isOperation;                // true if not a PDO but an Operation
   private final String remotePrefixBasename;  // basename of remotePrefix
   private boolean importSuperDelegate;        // create import for supercass/interface of remote delegate
   private final HeapStream remoteStream;      // stream for remote file
@@ -107,6 +109,9 @@ public class RemoteIncludes {
     int ndx = remotePrefix.lastIndexOf('.');
     remotePrefixBasename = ndx < 0 ? remotePrefix : remotePrefix.substring(ndx + 1);
 
+    isOperation = remotePrefix.endsWith("Operation");
+    type = isOperation ? "operation" : (pdoClassName != null ? "pdo" : "object");
+
     // find directory for remote delegates
     rmiDirName = container.getProperty(Wurbler.PROPSPACE_WURBLET, Wurbler.WURBLET_DIRNAME);
     rmiDirName += "/rmi";
@@ -132,6 +137,15 @@ public class RemoteIncludes {
     remoteStream.discard();
   }
 
+
+  /**
+   * Returns whether entity is abstract.<br>
+   *
+   * @return true if abstract, false if concrete or no entity (e.g. operation)
+   */
+  private boolean isAbstract() {
+    return entity != null && entity.isAbstract();
+  }
 
   /**
    * Check if remote file exists. If not, create it.
@@ -172,13 +186,13 @@ public class RemoteIncludes {
             s.println("import org.tentackle.dbms.rmi.RemoteDbSessionImpl;\n\n");
             s.println("/**");
             s.println(" * Remote delegate implementation for {@link " + className + "}.");
-            if (entity.isAbstract()) {
+            if (isAbstract()) {
               s.println(" * ");
-              s.println(" * @param <T> the pdo interface");
+              s.println(" * @param <T> the " + type + " interface");
               s.println(" * @param <P> the persistence implementation");
             }
             s.println(" */");
-            if (entity.isAbstract()) {
+            if (isAbstract()) {
               s.println("public class " + name + "Impl<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
               s.println("       extends " + remotePrefixBasename + "RemoteDelegateImpl<T,P>");
               s.println("       implements " + name + "<T,P>  {\n\n");
@@ -193,16 +207,16 @@ public class RemoteIncludes {
             s.println("   *");
             s.println("   * @param session the RMI session");
             s.println("   * @param persistenceClass the persistence implementation class");
-            s.println("   * @param pdoClass the pdo interface class");
+            s.println("   * @param " + type + "Class the " + type + " interface class");
             s.println("   */");
-            if (entity.isAbstract()) {
-              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> pdoClass) {");
+            if (isAbstract()) {
+              s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<P> persistenceClass, Class<T> " + type + "Class) {");
             }
             else  {
               s.println("  public " + name + "Impl(RemoteDbSessionImpl session, Class<" + className +
-                        "> persistenceClass, Class<" + pdoClassName + "> pdoClass) {");
+                        "> persistenceClass, Class<" + pdoClassName + "> " + type + "Class) {");
             }
-            s.println("    super(session, persistenceClass, pdoClass);");
+            s.println("    super(session, persistenceClass, " + type + "Class);");
             s.println("  }");
           }
           else  {
@@ -211,13 +225,13 @@ public class RemoteIncludes {
             }
             s.println("\n\n/**");
             s.println(" * Remote delegate for {@link " + className + "}.");
-            if (entity.isAbstract()) {
+            if (isAbstract()) {
               s.println(" * ");
-              s.println(" * @param <T> the pdo interface");
+              s.println(" * @param <T> the " + type + " interface");
               s.println(" * @param <P> the persistence implementation");
             }
             s.println(" */");
-            if (entity.isAbstract()) {
+            if (isAbstract()) {
               s.println("public interface " + name + "<T extends " + pdoClassName + "<T>, P extends " + className + "<T,P>>");
               s.println("       extends " + remotePrefixBasename + "RemoteDelegate<T,P> {\n");
             }
@@ -227,6 +241,7 @@ public class RemoteIncludes {
             }
           }
           s.println(
+                "\n" +
                 "  /**\n" +
                 "   * Include wurblet-generated method declarations.\n" +
                 "   *\n" +
@@ -290,6 +305,7 @@ public class RemoteIncludes {
             s.println("       extends " + remotePrefixBasename + "RemoteDelegate<P> {\n");
           }
           s.println(
+                "\n" +
                 "  /**\n" +
                 "   * Include wurblet-generated method declarations.\n" +
                 "   *\n" +
@@ -303,7 +319,7 @@ public class RemoteIncludes {
         }
       }
       else  {
-        container.getLogger().warning(pathName + " cannot be generated because pdo class is unknown (missing @PersistenceObjectService?)");
+        container.getLogger().warning(pathName + " cannot be generated because " + type + " class is unknown (missing service annotation?)");
       }
     }
   }

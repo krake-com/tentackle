@@ -1,4 +1,5 @@
 @{include $currentDir/header.incl}@
+@{config missingModelOk}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Generates the remote delegate invocation code.
 <p>

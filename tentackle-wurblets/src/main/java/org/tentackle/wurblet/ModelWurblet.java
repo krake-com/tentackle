@@ -86,6 +86,9 @@ public class ModelWurblet extends AbstractWurblet {
   /** name of the model. */
   private String modelName;
 
+  /** the model defaults. */
+  private ModelDefaults modelDefaults;
+
   /** the original parsed mapping. */
   private Entity entity;
 
@@ -110,6 +113,9 @@ public class ModelWurblet extends AbstractWurblet {
   /** the pdo classname if it's a pdo. */
   private String pdoClassName;
 
+  /** true if missing model file is ok. */
+  private boolean missingModelOk;
+
 
 
   /**
@@ -126,6 +132,15 @@ public class ModelWurblet extends AbstractWurblet {
    */
   public String getModelDirName() {
     return modelDirName;
+  }
+
+  /**
+   * Gets the optional model defaults.
+   *
+   * @return the defaults, null if none
+   */
+  public ModelDefaults getModelDefaults() {
+    return modelDefaults;
   }
 
   /**
@@ -525,6 +540,13 @@ public class ModelWurblet extends AbstractWurblet {
   @Override
   public void run() throws WurbelException {
 
+    String wurbletOptions = getConfiguration();
+    if (wurbletOptions != null) {
+      if (wurbletOptions.contains("missingModelOk")) {
+        missingModelOk = true;
+      }
+    }
+
     super.run();
 
     args = Arrays.asList(container.getArgs());
@@ -580,7 +602,7 @@ public class ModelWurblet extends AbstractWurblet {
     }
 
     // scan optional model defaults
-    ModelDefaults modelDefaults = null;
+    modelDefaults = null;
     String modelDefaultsStr = getContainer().getProperty(Wurbler.PROPSPACE_EXTRA, "modelDefaults");
     if (modelDefaultsStr != null) {
       try {
@@ -643,7 +665,7 @@ public class ModelWurblet extends AbstractWurblet {
       throw new WurbelTerminationException("errors in model loaded from file '" + getModelName() + "'", mex);
     }
 
-    if (entity == null) {
+    if (entity == null && !missingModelOk) {
       Throwable delayedModelException = null;
       if (model instanceof TentackleWurbletsModel) {
         WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
@@ -655,7 +677,13 @@ public class ModelWurblet extends AbstractWurblet {
     }
 
 
-    remote = entity.getOptions().isRemote();
+    if (entity != null) {
+      remote = entity.getOptions().isRemote();
+    }
+    else if (modelDefaults != null && modelDefaults.getRemote() != null) {
+      remote = modelDefaults.getRemote();
+    }
+
     // override global option
     if (getOption("remote") != null) {
       remote = true;
@@ -667,7 +695,7 @@ public class ModelWurblet extends AbstractWurblet {
     /**
      * Throw delayed wurbel execption if the real cause is related to this entity
      */
-    if (model instanceof TentackleWurbletsModel) {
+    if (model instanceof TentackleWurbletsModel && entity != null) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
       if (wex != null && wex.getCause() instanceof ModelException) {
         ModelException mex = (ModelException) wex.getCause();

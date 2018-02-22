@@ -19,14 +19,12 @@
 
 package org.tentackle.persist.rmi;
 
-import java.lang.reflect.InvocationTargetException;
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.session.PersistenceException;
 
 
 
@@ -41,15 +39,27 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
        extends AbstractDbOperationRemoteDelegateImpl<P>
        implements AbstractPersistentOperationRemoteDelegate<T,P> {
 
+  /**
+   * The PDO interface class.
+   */
+  protected final Class<T> opClass;
+
+  /**
+   * Operation with a default domain context associated to the delegate's session.
+   */
+  protected T operation;
+
 
   /**
    * Creates a delegate on the serverSession socket.
    *
    * @param serverSession the RMI serverSession
-   * @param clazz the subclass of DbObject
+   * @param clazz the class of the persistence implementation
+   * @param opClass the operation class
    */
-  public AbstractPersistentOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) {
+  public AbstractPersistentOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz, Class<T> opClass) {
     super(serverSession, clazz);
+    this.opClass = opClass;
   }
 
 
@@ -59,21 +69,26 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    * minimizes object construction.
    */
   @Override
+  @SuppressWarnings("unchecked")
   public void initialize() {
     /**
-     * Try to set a default contextDb.
-     * This will fail in apps that extend the contextdb, but is useful for other apps.
+     * Try to set a default context.
+     * This will fail in apps that extend the domain context, but is useful for other apps.
+     * We ignore any thrown exception safely.
      */
     try {
-      dbOperation = newInstance(Pdo.createDomainContext(getSession()));
+      operation = newInstance(Pdo.createDomainContext(getSession()));
     }
     catch (RuntimeException e) {
       /**
-       * Application requires an extended contextdb.
-       * Try construction with a session only.
+       * Application requires extended contextdb.
+       * Leave the dbObject as it is for simple methods.
+       * In all other cases, the application must pass the context via the remote method
+       * and set the context explicitly.
        */
-      dbOperation = newInstance();
+      operation = newInstance(null);    // create without domain context
     }
+    dbOperation = (P) operation.getPersistenceDelegate();
   }
 
 
@@ -82,7 +97,7 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    *
    * @param context the domain context
    */
-  protected void setContextDb(DomainContext context) {
+  protected void setDomainContext(DomainContext context) {
     // set the db in the contextDb first as this will be copied to the object below
     context.setSession(getSession());   // db in contextDb is transient, so we must set it here
     dbOperation.setDomainContext(context);
@@ -91,20 +106,19 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
 
   /**
    * Creates a new instance of the required class in the given context
-   * for methods that return a new object.
+   * for methods that return a new operation.
    *
    * @param context the domain context
-   * @return the created object
+   * @return the created operation
    */
-  protected P newInstance(DomainContext context) {
-    try {
+  protected T newInstance(DomainContext context) {
+    if (context != null) {
       context.setSession(getSession());
-      return getServicedClass().getConstructor(DomainContext.class).newInstance(context);
     }
-    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-           SecurityException | InvocationTargetException e) {
-      throw new PersistenceException("creating object for class '" + getServicedClass() + "' in failed", e);
-    }
+    @SuppressWarnings("unchecked")
+    T operation = (T) (context == null ? Pdo.createOperation((Class) opClass, getSession()) :
+                                         Pdo.createOperation((Class) opClass, context));
+    return operation;
   }
 
 }
