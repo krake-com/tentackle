@@ -173,7 +173,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   private Daemon[] daemons;                   // the daemons under supervision
   private final List<Thread> killedDaemons;   // daemons killed but still alive
 
-  private transient boolean stopRequested;    // true if stop has been requested
+  private volatile boolean stopRequested;     // true if stop has been requested
   private final ReentrantReadWriteLock lock;  // to lock supervisor when number of daemons is changed
 
 
