@@ -43,7 +43,7 @@ public class DefaultLoggerFactory implements LoggerFactory {
     }
     catch (RuntimeException ex) {
       Logger logger = new DefaultLogger(DefaultLoggerFactory.class.getName());
-      String msg = "could not configure logging backend -> using DefaultLogger";
+      String msg = "no logging backend configured -> using DefaultLogger";
       if (logger.isFineLoggable()) {
         logger.fine(msg, ex);
       }

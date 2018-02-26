@@ -19,12 +19,15 @@
 package org.tentackle.log;
 
 import java.io.PrintStream;
+import java.lang.StackWalker.Option;
+import java.lang.StackWalker.StackFrame;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.logging.LogRecord;
 import org.tentackle.common.StringHelper;
-import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * Pluggable logger using the standard java logging using <tt>java.util.logging</tt>.
@@ -34,12 +37,6 @@ import org.tentackle.reflect.ReflectionHelper;
  * @author harald
  */
 public class DefaultLogger implements Logger {
-
-  // classnames to exclude from stacktrace
-  private static final String[] EXCLUDE_CLASSNAMES = new String [] {
-    DefaultLogger.class.getName()
-  };
-
 
   // cached loggers
   private static final HashMap<String,DefaultLogger> LOGGERS = new HashMap<>();
@@ -206,7 +203,6 @@ public class DefaultLogger implements Logger {
   }
 
 
-
   /**
    * Logging workhorse.
    * <p>
@@ -216,48 +212,57 @@ public class DefaultLogger implements Logger {
    * @param level the log level
    * @param message the message
    * @param cause the cause
-   * @param params optional parameters (ignored if cause != null)
+   * @param params optional parameters
    */
-  protected void doLog(Level level, String message, Throwable cause, final Object... params) {
-
-    // we check the loggability before (and thus twice, but it's still a lot faster
-    // because ReflectionHelper.getInvocation is slow due to getStackTrace())
+  protected void doLog(Level level, String message, Throwable cause, Object... params) {
     java.util.logging.Level juLevel = translateLevel(level);
     if (logger.isLoggable(juLevel)) {
-
-      Map<String, String> mdcMap = getMappedDiagnosticContext().getContext();
-      if (!mdcMap.isEmpty()) {
-        StringBuilder buf = new StringBuilder();
-        buf.append('[');
-        boolean needComma = false;
-        for (Entry<String, String> entry : mdcMap.entrySet()) {
-          if (needComma) {
-            buf.append(", ");
-          }
-          else {
-            needComma = true;
-          }
-          buf.append(StringHelper.objectToLoggableString(entry.getKey()));
-          buf.append('=');
-          buf.append(StringHelper.objectToLoggableString(entry.getValue()));
-        }
-        buf.append("] ");
-        buf.append(message);
-        message = buf.toString();
-      }
-
-      // this is really slow...
-      StackTraceElement se = ReflectionHelper.getInvocation(EXCLUDE_CLASSNAMES);
-
-      if (params != null && params.length > 0) {
-        final String msg = message;
-        logger.logp(juLevel, se.getClassName(), se.getMethodName(), cause,
-                    () -> MessageFormat.format(msg, params));
-      }
-      else  {
-        logger.logp(juLevel, se.getClassName(), se.getMethodName(), message, cause);
+      String loggerName = getClass().getName();
+      Optional<StackFrame> sfOpt = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE).
+              walk(s -> s.dropWhile(f -> f.getClassName().equals(loggerName)).findFirst());
+      if (sfOpt.isPresent()) {
+        StackFrame sf = sfOpt.get();
+        LogRecord lr = new LogRecord(juLevel, buildMessage(message, params));
+        lr.setSourceClassName(sf.getClassName());
+        lr.setSourceMethodName(sf.getMethodName());
+        lr.setThrown(cause);
+        lr.setLoggerName(logger.getName());
+        logger.log(lr);
       }
     }
+  }
+
+
+  /**
+   * Builds the message text to log.<br>
+   * Prepends the optional MDC and formats with MessageFormat if params given.
+   *
+   * @param message the original message text
+   * @param params optional parameters
+   * @return the message to log
+   */
+  protected String buildMessage(String message, Object... params) {
+    Map<String, String> mdcMap = getMappedDiagnosticContext().getContext();
+    if (!mdcMap.isEmpty()) {
+      StringBuilder buf = new StringBuilder();
+      buf.append('[');
+      boolean needComma = false;
+      for (Entry<String, String> entry : mdcMap.entrySet()) {
+        if (needComma) {
+          buf.append(", ");
+        }
+        else {
+          needComma = true;
+        }
+        buf.append(StringHelper.objectToLoggableString(entry.getKey()));
+        buf.append('=');
+        buf.append(StringHelper.objectToLoggableString(entry.getValue()));
+      }
+      buf.append("] ");
+      buf.append(message);
+      message = buf.toString();
+    }
+    return params != null && params.length > 0 ? MessageFormat.format(message, params) : message;
   }
 
 }
