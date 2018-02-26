@@ -46,7 +46,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   private static final int MAX_LOOP = 100;      // max. number of sleep-with-retry if no connection available
   private static final int BASE_MS = 50;        // base milliseconds to sleep before next try
-  private static final long MUTEX_MS = 1000;    // mutex wait timeout
+  private static final long MUTEX_MS = 500;     // mutex wait timeout
 
 
   // args
@@ -75,13 +75,12 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   // connect thread
 
-  private boolean shutdownRequested;        // true if shutdown procedure initiated
-  private final Thread connectThread;       // thread to bring up connections
-  private int conRequestCount;              // number of new connections requested
-  private int warnLogSize;                  // number of connections when to start WARNING logging
-  private int infoLogSize;                  // number of connections when to start INFO logging
-  private final Object requestMtx;          // connections requested mutex
-  private final Object doneMtx;             // connections created mutex
+  private boolean shutdownRequested;                  // true if shutdown procedure initiated
+  private final ConnectionThread connectThread;       // thread to bring up connections
+  private int conRequestCount;                        // number of new connections requested
+  private int warnLogSize;                            // number of connections when to start WARNING logging
+  private int infoLogSize;                            // number of connections when to start INFO logging
+  private final Object doneMtx;                       // connections created mutex
 
 
 
@@ -123,7 +122,6 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     unConList = new int[iniSize];
 
     // connections are brought up in an extra thread
-    requestMtx = new Object();
     doneMtx = new Object();
     connectThread = new ConnectionThread(this);
   }
@@ -395,8 +393,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       else {
         if (request) {
           // start a new request for bringing up connections
-          synchronized(requestMtx) {
-            requestMtx.notifyAll();
+          synchronized(connectThread.requestMtx) {
+            connectThread.requestMtx.notifyAll();
           }
         }
 
@@ -628,8 +626,8 @@ public class MpxConnectionManager extends DefaultConnectionManager {
     }
 
     if (reopen) {
-      synchronized(requestMtx) {
-        requestMtx.notifyAll();   // fire connect, but don't wait for completion
+      synchronized(connectThread.requestMtx) {
+        connectThread.requestMtx.notifyAll();   // fire connect, but don't wait for completion
       }
     }
   }
@@ -642,13 +640,15 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    */
   private static class ConnectionThread extends Thread {
 
-    private final WeakReference<MpxConnectionManager> cmRef;
+    private final Object requestMtx;                            // connections requested mutex
+    private final WeakReference<MpxConnectionManager> cmRef;    // weak ref to check for GC'd conn manager
 
     ConnectionThread(MpxConnectionManager mgr) {
       super(mgr.getName() + " Connection Management Thread");
       setDaemon(true);
       setPriority(MAX_PRIORITY);
       cmRef = new WeakReference<>(mgr);
+      requestMtx = new Object();
     }
 
     @Override
@@ -657,9 +657,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       LOGGER.info("{0} started", getName());
 
       for (;;) {
-        synchronized (this) {     // syncs conRequestCount as well
+        synchronized (requestMtx) {     // syncs conRequestCount as well
           try {
-            wait(MUTEX_MS);
+            requestMtx.wait(MUTEX_MS);
           }
           catch (InterruptedException ex) {
           }

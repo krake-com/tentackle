@@ -39,7 +39,7 @@ public class DbPoolTest {
   private static final int NUM_THREADS = 50;
   private static final StatementId SELECT_ONE_STATEMENT_ID = new StatementId();
 
-  private SessionPool pool;
+  private final SessionPool pool;
 
 
   private class UserThread extends Thread {
