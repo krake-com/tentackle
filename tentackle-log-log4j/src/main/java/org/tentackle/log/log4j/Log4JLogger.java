@@ -29,6 +29,8 @@ import org.tentackle.log.MappedDiagnosticContext;
 
 /**
  * Pluggable logger using <tt>org.apache.log4j</tt>.
+ * <p>
+ * Logger wrapper for Log4J version 1.
  *
  * @author harald
  */
@@ -36,7 +38,7 @@ import org.tentackle.log.MappedDiagnosticContext;
 public class Log4JLogger implements Logger {
 
   // classname to exclude from stacktrace
-  private static final String EXCLUDE_CLASSNAME = Log4JLogger.class.getName();
+  private static final String FQCN = Log4JLogger.class.getName();
 
   // cached loggers
   private static final HashMap<String,Log4JLogger> LOGGERS = new HashMap<>();
@@ -225,7 +227,7 @@ public class Log4JLogger implements Logger {
       }
       message = MessageFormat.format(message, params);
     }
-    logger.log(EXCLUDE_CLASSNAME, translateLevel(level), message, cause);
+    logger.log(FQCN, translateLevel(level), message, cause);
   }
 
 }
