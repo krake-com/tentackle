@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 /**
@@ -38,10 +37,7 @@ import org.tentackle.log.LoggerFactory;
  */
 public class DefaultClassMapper extends AbstractClassMapper<String> implements ClassMapper {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClassMapper.class);
+  private static final Logger LOGGER = Logger.get(DefaultClassMapper.class);
 
   private Class<?> defaultClass;                      // the optional default class
   private final ClassLoader classLoader;              // the classloader

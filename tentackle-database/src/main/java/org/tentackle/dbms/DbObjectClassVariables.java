@@ -33,7 +33,6 @@ import java.util.TreeSet;
 import org.tentackle.common.FileHelper;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
 
@@ -48,10 +47,7 @@ import org.tentackle.session.PersistenceException;
  */
 public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbObjectClassVariables.class);
+  private static final Logger LOGGER = Logger.get(DbObjectClassVariables.class);
 
   // all classes register here:
   private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();

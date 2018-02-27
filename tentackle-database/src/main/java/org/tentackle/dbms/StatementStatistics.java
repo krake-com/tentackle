@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.tentackle.common.Compare;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.StatisticsResult;
 import org.tentackle.misc.Duration;
 
@@ -37,10 +36,7 @@ import org.tentackle.misc.Duration;
  */
 public class StatementStatistics implements Comparable<StatementStatistics> {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(StatementStatistics.class);
+  private static final Logger LOGGER = Logger.get(StatementStatistics.class);
 
   // instance counter
   private static final AtomicInteger INSTANCE_COUNT = new AtomicInteger();

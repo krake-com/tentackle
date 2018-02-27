@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.ConstraintException;
 import org.tentackle.session.PersistenceException;
 
@@ -42,10 +41,7 @@ import org.tentackle.session.PersistenceException;
 
 public class StatementWrapper implements AutoCloseable {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(StatementWrapper.class);
+  private static final Logger LOGGER = Logger.get(StatementWrapper.class);
 
 
   /** the managed connection. */

@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
@@ -43,10 +42,7 @@ import org.tentackle.sql.BackendInfo;
  */
 public class DefaultConnectionManager implements ConnectionManager {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConnectionManager.class);
+  private static final Logger LOGGER = Logger.get(DefaultConnectionManager.class);
 
 
 

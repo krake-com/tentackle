@@ -46,7 +46,6 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.table.DefaultTableConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.DefaultClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
 
@@ -58,10 +57,7 @@ import org.tentackle.reflect.ReflectionHelper;
 @Service(FxFactory.class)
 public class DefaultFxFactory implements FxFactory {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxFactory.class);
+  private static final Logger LOGGER = Logger.get(DefaultFxFactory.class);
 
 
   /**

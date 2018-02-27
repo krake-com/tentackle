@@ -21,7 +21,6 @@
 package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.ThreadLocalSessionHolder;
@@ -64,10 +63,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
 
   private static final long serialVersionUID = -1723181864077614924L;
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbModification.class);
+  private static final Logger LOGGER = Logger.get(DbModification.class);
 
 
   /**

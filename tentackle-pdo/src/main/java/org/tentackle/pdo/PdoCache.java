@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.CopyOnWriteList;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.ImmutableArrayList;
@@ -61,10 +60,7 @@ import org.tentackle.session.Session;
  */
 public class PdoCache<T extends PersistentDomainObject<T>> {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdoCache.class);
+  private static final Logger LOGGER = Logger.get(PdoCache.class);
 
   private static boolean allEnabled = true;         // false = all caches disabled. default is true
 

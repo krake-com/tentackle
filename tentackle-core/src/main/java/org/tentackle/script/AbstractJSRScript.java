@@ -39,7 +39,7 @@ public class AbstractJSRScript extends AbstractScript {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJSRScript.class);
+  private static final Logger LOGGER = Logger.get(AbstractJSRScript.class);
 
 
   /** the JSR compiled script. */

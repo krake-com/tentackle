@@ -37,7 +37,7 @@ public class PooledTaskDispatcher extends AbstractPooledTaskDispatcher {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PooledTaskDispatcher.class);
+  private static final Logger LOGGER = Logger.get(PooledTaskDispatcher.class);
 
   private final boolean supervised;                   // true if use supervisors
   private long deadInterval;                          // if supervised: dead detection interval

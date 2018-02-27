@@ -37,7 +37,6 @@ import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.SessionInfo;
 
 /**
@@ -48,10 +47,7 @@ import org.tentackle.session.SessionInfo;
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class Login extends AbstractFxController {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(Login.class);
+  private static final Logger LOGGER = Logger.get(Login.class);
 
   private ResourceBundle resources;     // localization bundle
   private SessionInfo sessionInfo;      // the session info

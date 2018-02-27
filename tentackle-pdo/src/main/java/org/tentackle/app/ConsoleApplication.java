@@ -22,7 +22,6 @@ package org.tentackle.app;
 import java.util.Properties;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
@@ -30,7 +29,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
@@ -65,11 +63,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
     return (ConsoleApplication) getRunningApplication();
   }
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleApplication.class);
-
+  private static final Logger LOGGER = Logger.get(ConsoleApplication.class);
 
 
   private CommandLine cmdLine;       // command line

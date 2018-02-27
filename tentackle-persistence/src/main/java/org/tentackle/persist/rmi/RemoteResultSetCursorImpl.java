@@ -25,7 +25,6 @@ import java.util.List;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.dbms.rmi.RemoteDelegateImpl;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.ResultSetCursor;
 import org.tentackle.persist.ResultSetCursor.FetchList;
@@ -43,8 +42,7 @@ public class RemoteResultSetCursorImpl<T extends PersistentDomainObject<T>>
              implements RemoteResultSetCursor<T> {
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteResultSetCursorImpl.class);
-
+  private static final Logger LOGGER = Logger.get(RemoteResultSetCursorImpl.class);
 
 
   private ResultSetCursor<T> cursor;      // local cursor

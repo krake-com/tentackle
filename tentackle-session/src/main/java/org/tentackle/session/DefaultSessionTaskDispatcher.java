@@ -20,7 +20,6 @@
 package org.tentackle.session;
 
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.task.DefaultTaskDispatcher;
 import org.tentackle.task.Task;
 
@@ -31,10 +30,7 @@ import org.tentackle.task.Task;
  */
 public class DefaultSessionTaskDispatcher extends DefaultTaskDispatcher implements SessionTaskDispatcher {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSessionTaskDispatcher.class);
+  private static final Logger LOGGER = Logger.get(DefaultSessionTaskDispatcher.class);
 
 
 

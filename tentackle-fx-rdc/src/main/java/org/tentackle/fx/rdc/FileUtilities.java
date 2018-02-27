@@ -27,7 +27,6 @@ import javafx.stage.Stage;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 
@@ -52,10 +51,7 @@ public class FileUtilities {
     return FileUtilities$Singleton.INSTANCE;
   }
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(FileUtilities.class);
+  private static final Logger LOGGER = Logger.get(FileUtilities.class);
 
 
   /**

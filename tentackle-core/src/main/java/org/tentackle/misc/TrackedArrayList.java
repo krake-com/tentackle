@@ -42,7 +42,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private static final long serialVersionUID = 5820724718467532237L;
 
   /** the logger for this class. */
-  private static final Logger LOGGER = LoggerFactory.getLogger(TrackedArrayList.class);
+  private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 
   private boolean modified;                         // initial modification parameter or from setModified(true)
   private boolean removed;                          // some object has been removed

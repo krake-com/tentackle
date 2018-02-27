@@ -32,7 +32,6 @@ import javafx.stage.PopupWindow;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 
@@ -59,10 +58,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   public static final String INFO_STYLE = "tt-info";
 
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(FxComponentDelegate.class);
+  private static final Logger LOGGER = Logger.get(FxComponentDelegate.class);
 
   /**
    * The type handled by the component.

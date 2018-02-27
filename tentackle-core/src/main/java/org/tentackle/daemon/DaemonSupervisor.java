@@ -41,7 +41,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DaemonSupervisor.class);
+  private static final Logger LOGGER = Logger.get(DaemonSupervisor.class);
 
   /**
    * Daemon wrapper.

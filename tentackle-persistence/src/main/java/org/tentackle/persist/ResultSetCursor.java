@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -42,10 +41,7 @@ import org.tentackle.session.Session;
  */
 public class ResultSetCursor<T extends PersistentDomainObject<T>> implements ScrollableResource<T> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetCursor.class);
+  private static final Logger LOGGER = Logger.get(ResultSetCursor.class);
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()
 

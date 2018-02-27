@@ -22,7 +22,6 @@ package org.tentackle.dbms;
 import java.lang.ref.WeakReference;
 import java.util.Date;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
@@ -42,7 +41,7 @@ import org.tentackle.sql.BackendInfo;
  */
 public class MpxConnectionManager extends DefaultConnectionManager {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MpxConnectionManager.class);
+  private static final Logger LOGGER = Logger.get(MpxConnectionManager.class);
 
   private static final int MAX_LOOP = 100;      // max. number of sleep-with-retry if no connection available
   private static final int BASE_MS = 50;        // base milliseconds to sleep before next try

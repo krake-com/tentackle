@@ -23,7 +23,6 @@ import java.lang.ref.WeakReference;
 import org.tentackle.common.Timestamp;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionClosedException;
@@ -44,10 +43,7 @@ import org.tentackle.session.SessionPool;
  */
 public class DefaultDbPool implements SessionPool {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDbPool.class);
+  private static final Logger LOGGER = Logger.get(DefaultDbPool.class);
 
 
   private static final long SECOND = 1000L;                 // a second

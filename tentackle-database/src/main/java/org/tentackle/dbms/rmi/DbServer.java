@@ -38,7 +38,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
@@ -198,10 +197,7 @@ public class DbServer {
   public static int defaultSessionTimeout = 30;
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbServer.class);
+  private static final Logger LOGGER = Logger.get(DbServer.class);
 
   private final SessionInfo sessionInfo;                  // server session info
   private String service;                                 // name of the RMI service

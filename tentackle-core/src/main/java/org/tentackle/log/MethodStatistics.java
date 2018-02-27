@@ -34,7 +34,7 @@ public class MethodStatistics {
   /**
    * The logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodStatistics.class);
+  private static final Logger LOGGER = Logger.get(MethodStatistics.class);
 
   // the statistics map.
   private final Map<MethodStatisticsKey, StatisticsResult> stats;

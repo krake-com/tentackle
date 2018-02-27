@@ -30,7 +30,6 @@ import org.tentackle.common.LocaleProvider;
 import org.tentackle.log.Loggable;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.misc.Duration;
 import org.tentackle.common.StringHelper;
@@ -96,10 +95,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   private static final String RMI_THREAD_NAME = "RMI TCP Connection";
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteDelegateInvocationHandler.class);
+  private static final Logger LOGGER = Logger.get(RemoteDelegateInvocationHandler.class);
 
 
 

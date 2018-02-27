@@ -29,7 +29,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.ModificationLogRemoteDelegate;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Canonicalizer;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.ParameterString;
@@ -92,10 +91,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   private static final long serialVersionUID = 7997968053729155282L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ModificationLog.class);
+  private static final Logger LOGGER = Logger.get(ModificationLog.class);
 
   /** the database tablename. */
   public static final String TABLENAME = /**/"modlog"/**/;  // @wurblet < Inject --string $tablename

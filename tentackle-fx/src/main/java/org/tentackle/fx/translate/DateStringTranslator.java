@@ -37,7 +37,6 @@ import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.common.StringHelper;
@@ -125,10 +124,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
    */
   public static final String REFERENCE_DATE_SUPPLIER = "referenceDateSupplier";
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DateStringTranslator.class);
+  private static final Logger LOGGER = Logger.get(DateStringTranslator.class);
 
 
   /**
@@ -221,7 +217,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
           throw uix;
         }
       }
-      
+
       return getFormat().format(value);
     }
     return null;

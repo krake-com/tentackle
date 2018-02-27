@@ -52,7 +52,6 @@ import org.tentackle.fx.table.FxTableColumn;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.AbstractSessionTask;
@@ -102,7 +101,7 @@ public class TablePrinter extends AbstractFxController {
     stage.showAndWait();
   }
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(TablePrinter.class);
+  private static final Logger LOGGER = Logger.get(TablePrinter.class);
 
   private static final String STYLE_TITLE = "title";
   private static final String STYLE_BOTTOMLINE = "bottomline";

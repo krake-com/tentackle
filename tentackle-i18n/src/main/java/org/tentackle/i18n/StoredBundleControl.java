@@ -31,7 +31,6 @@ import java.util.Set;
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
@@ -50,10 +49,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    */
   public static boolean fallbackToPropertyFile = true;
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(StoredBundleControl.class);
+  private static final Logger LOGGER = Logger.get(StoredBundleControl.class);
 
   private static final List<String> FORMATS = Arrays.asList("");
 

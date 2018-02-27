@@ -64,7 +64,6 @@ import org.tentackle.io.Reconnector;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
@@ -212,11 +211,7 @@ public class Db implements Session, Cloneable {
   public static final String PROTOCOLS = "protocols";
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(Db.class);
-
+  private static final Logger LOGGER = Logger.get(Db.class);
 
 
   /**

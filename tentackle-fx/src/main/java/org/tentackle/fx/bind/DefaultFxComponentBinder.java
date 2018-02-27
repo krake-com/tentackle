@@ -40,7 +40,6 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.ChangeableBindingEvaluator;
@@ -58,10 +57,7 @@ import org.tentackle.validate.Validator;
  */
 public class DefaultFxComponentBinder extends AbstractBinder implements FxComponentBinder {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxComponentBinder.class);
+  private static final Logger LOGGER = Logger.get(DefaultFxComponentBinder.class);
 
   private final FxController controller;                                // the controller to bind
   private final TreeMap<String,FxComponent> eligibleComponents;         // all eligible components in given form

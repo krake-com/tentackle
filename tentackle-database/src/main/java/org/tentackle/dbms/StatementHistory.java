@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeSet;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Duration;
 
 /**
@@ -47,10 +46,7 @@ public class StatementHistory {
    */
   private static final DateFormat START_TIME_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(StatementHistory.class);
+  private static final Logger LOGGER = Logger.get(StatementHistory.class);
 
 
   private final String txName;                    // transaction name if tx was running, else null

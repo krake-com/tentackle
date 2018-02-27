@@ -61,7 +61,7 @@ public class ValidationUtilities {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ValidationUtilities.class);
+  private static final Logger LOGGER = Logger.get(ValidationUtilities.class);
 
 
   /**

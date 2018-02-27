@@ -26,7 +26,6 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 interface Reconnector$Singleton {
@@ -52,10 +51,7 @@ public class Reconnector {
 
 
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(Reconnector.class);
+  private static final Logger LOGGER = Logger.get(Reconnector.class);
 
 
   private static final int LOG_MODULO = 1000;                       // n'th failed retry to log

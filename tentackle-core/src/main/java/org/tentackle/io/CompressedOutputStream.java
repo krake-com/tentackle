@@ -49,7 +49,7 @@ public class CompressedOutputStream extends FilterOutputStream {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(CompressedOutputStream.class);
+  private static final Logger LOGGER = Logger.get(CompressedOutputStream.class);
 
   /**
    * The maximum compression buffer size. The larger the buffer, the better the compression.

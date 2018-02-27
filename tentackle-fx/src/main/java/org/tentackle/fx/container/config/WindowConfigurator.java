@@ -27,7 +27,6 @@ import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * Configures a Window.
@@ -38,10 +37,7 @@ import org.tentackle.log.LoggerFactory;
 @ConfiguratorService(Window.class)
 public class WindowConfigurator<T extends Window> implements Configurator<T> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(WindowConfigurator.class);
+  private static final Logger LOGGER = Logger.get(WindowConfigurator.class);
 
 
   @Override

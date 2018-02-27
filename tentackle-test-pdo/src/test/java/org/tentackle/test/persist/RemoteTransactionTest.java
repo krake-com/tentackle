@@ -20,7 +20,6 @@ package org.tentackle.test.persist;
 
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -40,10 +39,7 @@ import org.testng.annotations.Test;
  */
 public class RemoteTransactionTest implements DomainContextProvider {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteTransactionTest.class);
+  private static final Logger LOGGER = Logger.get(RemoteTransactionTest.class);
 
   private Db session;
   private DomainContext context;

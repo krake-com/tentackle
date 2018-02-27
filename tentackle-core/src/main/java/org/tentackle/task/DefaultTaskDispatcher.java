@@ -64,7 +64,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   public static final NamedCounter INSTANCE_COUNTER = new NamedCounter();   // daemon instance counter
 
   /** The logger for this class. */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTaskDispatcher.class);
+  private static final Logger LOGGER = Logger.get(DefaultTaskDispatcher.class);
 
   private static final DateFormat MILLIS_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");
 

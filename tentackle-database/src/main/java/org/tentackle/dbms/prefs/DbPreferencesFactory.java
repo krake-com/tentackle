@@ -36,7 +36,6 @@ import java.util.prefs.Preferences;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -73,10 +72,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     return (DbPreferencesFactory) PersistedPreferencesFactory.getInstance();
   }
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferencesFactory.class);
+  private static final Logger LOGGER = Logger.get(DbPreferencesFactory.class);
 
   /**
    * Modification tracker name.

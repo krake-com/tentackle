@@ -31,7 +31,6 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.dbms.rmi.RemoteDelegateImpl;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.persist.AdminExtensionAdapter;
@@ -47,10 +46,7 @@ import org.tentackle.session.SessionInfo;
 public class AdminExtensionAdapterRemoteDelegateImpl extends RemoteDelegateImpl<AdminExtensionAdapter>
        implements AdminExtensionAdapterRemoteDelegate {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AdminExtensionAdapterRemoteDelegateImpl.class);
+  private static final Logger LOGGER = Logger.get(AdminExtensionAdapterRemoteDelegateImpl.class);
 
   /**
    * Creates the admin extension implementation.

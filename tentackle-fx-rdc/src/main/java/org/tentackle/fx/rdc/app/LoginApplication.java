@@ -28,7 +28,6 @@ import org.tentackle.common.Constants;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
@@ -56,10 +55,7 @@ public class LoginApplication extends FxApplication {
   }
 
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(LoginApplication.class);
+  private static final Logger LOGGER = Logger.get(LoginApplication.class);
 
 
 

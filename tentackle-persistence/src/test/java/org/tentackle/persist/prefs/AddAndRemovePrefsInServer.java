@@ -32,7 +32,6 @@ import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.app.ServerApplication;
@@ -48,10 +47,7 @@ import org.tentackle.session.SessionInfo;
  */
 public class AddAndRemovePrefsInServer extends ServerApplication {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AddAndRemovePrefsInServer.class);
+  private static final Logger LOGGER = Logger.get(AddAndRemovePrefsInServer.class);
 
 
   /**

@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.UserHomeJavaDir;
 import org.tentackle.session.ModificationTracker;
@@ -53,10 +52,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
   private static final long serialVersionUID = 1029177241051535961L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdoCacheFileStore.class);
+  private static final Logger LOGGER = Logger.get(PdoCacheFileStore.class);
 
   private static final String CACHE_FILE_EXTENSION = ".ser";  // extension for cache files
 

@@ -24,7 +24,6 @@ import java.util.Properties;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
@@ -68,11 +67,7 @@ public abstract class ServerApplication extends AbstractApplication
   }
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ServerApplication.class);
-
+  private static final Logger LOGGER = Logger.get(ServerApplication.class);
 
   private final Class<? extends RemoteDbConnectionImpl> connectionClass;   // the connection class
 

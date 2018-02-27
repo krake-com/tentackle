@@ -28,7 +28,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoListener;
@@ -57,10 +56,7 @@ import org.tentackle.session.SessionUtilities;
  */
 public class DefaultSecurityManager implements SecurityManager {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSecurityManager.class);
+  private static final Logger LOGGER = Logger.get(DefaultSecurityManager.class);
 
 
   /**

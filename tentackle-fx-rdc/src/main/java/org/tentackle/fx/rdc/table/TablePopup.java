@@ -32,7 +32,6 @@ import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.prefs.PersistedPreferencesFactory;
@@ -49,10 +48,7 @@ import org.tentackle.prefs.PersistedPreferencesFactory;
  */
 public class TablePopup<S> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(TablePopup.class);
+  private static final Logger LOGGER = Logger.get(TablePopup.class);
 
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences

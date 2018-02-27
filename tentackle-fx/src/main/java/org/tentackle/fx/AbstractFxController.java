@@ -30,7 +30,6 @@ import javafx.stage.Window;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxComponentBinder;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ImmutableArrayList;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.ValidationScope;
@@ -44,10 +43,7 @@ import org.tentackle.validate.scope.MandatoryScope;
  */
 public abstract class AbstractFxController implements FxController, ScopeConfigurator {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFxController.class);
+  private static final Logger LOGGER = Logger.get(AbstractFxController.class);
 
   private Parent view;                                // the view managed by this controller
   private FxContainer container;                      // the container

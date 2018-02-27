@@ -41,7 +41,7 @@ public class DefaultScriptFactory implements ScriptFactory {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultScriptFactory.class);
+  private static final Logger LOGGER = Logger.get(DefaultScriptFactory.class);
 
 
   /**

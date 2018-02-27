@@ -36,7 +36,6 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
@@ -66,10 +65,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   }
 
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DesktopApplication.class);
+  private static final Logger LOGGER = Logger.get(DesktopApplication.class);
 
   private FxApplication fxApplication;        // the FX application instance
   private C mainController;                   // the main controller

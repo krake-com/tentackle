@@ -35,7 +35,7 @@ public class LogInterceptor extends AbstractInterceptor {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(LogInterceptor.class);
+  private static final Logger LOGGER = Logger.get(LogInterceptor.class);
 
   private Level level;   // the logging level
 

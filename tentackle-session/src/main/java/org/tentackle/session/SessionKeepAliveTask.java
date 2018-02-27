@@ -25,7 +25,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.task.AbstractTask;
 
 /**
@@ -36,10 +35,7 @@ import org.tentackle.task.AbstractTask;
  */
 public class SessionKeepAliveTask extends AbstractTask {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(SessionKeepAliveTask.class);
+  private static final Logger LOGGER = Logger.get(SessionKeepAliveTask.class);
 
   private static final int MAX_FAILURES = 10;     // max. 10 failures -> then close the db
 

@@ -34,7 +34,6 @@ import java.util.TimeZone;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.pdo.DomainContext;
@@ -58,10 +57,7 @@ import org.tentackle.session.SessionProvider;
  */
 public abstract class AbstractApplication implements SessionProvider, DomainContextProvider {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractApplication.class);
+  private static final Logger LOGGER = Logger.get(AbstractApplication.class);
 
   private static AbstractApplication running = null;   // != null if an application is running in this JVM (classloader)
 

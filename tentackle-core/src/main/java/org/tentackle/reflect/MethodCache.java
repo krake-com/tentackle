@@ -40,7 +40,7 @@ public class MethodCache {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(MethodCache.class);
+  private static final Logger LOGGER = Logger.get(MethodCache.class);
 
 
   /**

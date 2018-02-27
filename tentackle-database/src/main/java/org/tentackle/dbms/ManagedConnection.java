@@ -44,7 +44,6 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
@@ -132,7 +131,7 @@ public class ManagedConnection {
   public static Level logLevelForParallelOpenResultSets;
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ManagedConnection.class);
+  private static final Logger LOGGER = Logger.get(ManagedConnection.class);
 
   private static final AtomicLong INSTANCE_COUNTER = new AtomicLong();
 

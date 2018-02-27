@@ -40,7 +40,7 @@ public class DefaultBindableCache implements BindableCache {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultBindableCache.class);
+  private static final Logger LOGGER = Logger.get(DefaultBindableCache.class);
 
 
   /**

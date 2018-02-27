@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
@@ -40,10 +39,7 @@ public class GroovyScript extends AbstractScript {
 
   private static final long serialVersionUID = -2854720758013476291L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(GroovyScript.class);
+  private static final Logger LOGGER = Logger.get(GroovyScript.class);
 
   /** compiled script classes. */
   private static final GroovyScriptClassCache SCRIPT_CACHE = new GroovyScriptClassCache();

@@ -30,7 +30,6 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
@@ -45,10 +44,7 @@ import org.tentackle.validate.Validator;
  */
 public class DefaultFxComponentBinding extends AbstractBinding implements FxComponentBinding {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxComponentBinding.class);
+  private static final Logger LOGGER = Logger.get(DefaultFxComponentBinding.class);
 
   private List<Validator> fixedMandatoryValidators;     // fixed mandatory validators, null if none
   private List<Validator> fixedChangeableValidators;    // fixed changeable validators, null if none

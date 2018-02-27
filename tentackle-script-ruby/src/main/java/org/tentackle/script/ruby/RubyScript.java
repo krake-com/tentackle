@@ -23,7 +23,6 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.AbstractScript;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
@@ -38,10 +37,7 @@ public class RubyScript extends AbstractScript {
 
   private static final long serialVersionUID = -7188401350915879268L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RubyScript.class);
+  private static final Logger LOGGER = Logger.get(RubyScript.class);
 
 
   /**

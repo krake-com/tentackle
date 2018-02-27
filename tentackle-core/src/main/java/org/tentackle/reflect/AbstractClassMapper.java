@@ -36,7 +36,7 @@ public abstract class AbstractClassMapper<S> {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractClassMapper.class);
+  private static final Logger LOGGER = Logger.get(AbstractClassMapper.class);
 
 
   /**

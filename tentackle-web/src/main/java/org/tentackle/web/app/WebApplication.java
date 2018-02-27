@@ -29,7 +29,6 @@ import javax.naming.NamingException;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
@@ -81,10 +80,7 @@ public abstract class WebApplication<T> extends AbstractApplication
        implements SessionPoolProvider, ConnectionManagerProvider {
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(WebApplication.class);
+  private static final Logger LOGGER = Logger.get(WebApplication.class);
 
   /**
    * Gets the current web application instance.<p>

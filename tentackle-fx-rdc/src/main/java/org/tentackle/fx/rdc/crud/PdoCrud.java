@@ -64,7 +64,6 @@ import org.tentackle.fx.rdc.Rdc;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.PdoHolder;
@@ -82,10 +81,7 @@ import org.tentackle.validate.ValidationResult;
 @FxControllerService(binding = FxControllerService.BINDING.NO)
 public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoHolder<T> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdoCrud.class);
+  private static final Logger LOGGER = Logger.get(PdoCrud.class);
 
   @FXML
   private FxLabel noViewLabel;

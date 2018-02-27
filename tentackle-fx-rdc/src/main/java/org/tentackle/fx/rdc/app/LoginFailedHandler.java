@@ -24,7 +24,6 @@ import javafx.application.Platform;
 import javafx.scene.Parent;
 import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.AlreadyLoggedInException;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
@@ -37,10 +36,7 @@ import org.tentackle.session.VersionInfoIncompatibleException;
  */
 public class LoginFailedHandler {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(LoginFailedHandler.class);
+  private static final Logger LOGGER = Logger.get(LoginFailedHandler.class);
 
   private final DesktopApplication<?> application;  // the desktop application
   private final Parent view;                        // the FX view

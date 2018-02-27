@@ -48,7 +48,6 @@ import org.tentackle.io.SocketConfigurator;
 import org.tentackle.io.SocketConfiguratorHolder;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.misc.Duration;
@@ -67,11 +66,7 @@ import org.tentackle.session.SessionPool;
  */
 public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteDbSessionImpl.class);
-
+  private static final Logger LOGGER = Logger.get(RemoteDbSessionImpl.class);
 
 
   /**

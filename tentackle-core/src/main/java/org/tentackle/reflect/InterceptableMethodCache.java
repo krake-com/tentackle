@@ -70,7 +70,7 @@ public class InterceptableMethodCache {
   /**
    * The logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(InterceptableMethodCache.class);
+  private static final Logger LOGGER = Logger.get(InterceptableMethodCache.class);
 
 
   /**

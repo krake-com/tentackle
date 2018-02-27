@@ -28,7 +28,6 @@ import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Immutable;
 import org.tentackle.misc.ImmutableException;
@@ -185,7 +184,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractDbObject.class);
+  private static final Logger LOGGER = Logger.get(AbstractDbObject.class);
 
   private static final long serialVersionUID = 3452560056309085969L;
 

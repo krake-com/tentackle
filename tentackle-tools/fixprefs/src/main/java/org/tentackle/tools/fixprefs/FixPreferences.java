@@ -30,7 +30,6 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
 import org.tentackle.dbms.prefs.DbPreferencesNode;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -41,10 +40,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class FixPreferences extends ConsoleApplication {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(FixPreferences.class);
+  private static final Logger LOGGER = Logger.get(FixPreferences.class);
 
 
   private int nodeCount;                                // number of modified nodes

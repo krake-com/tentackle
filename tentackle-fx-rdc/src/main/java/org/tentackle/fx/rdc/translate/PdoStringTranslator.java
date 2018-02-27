@@ -41,7 +41,6 @@ import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainKey;
 import org.tentackle.pdo.Pdo;
@@ -58,10 +57,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 @ValueTranslatorService(modelClass = PersistentDomainObject.class, viewClass = String.class)
 public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends ValueStringTranslator<T> {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdoStringTranslator.class);
+  private static final Logger LOGGER = Logger.get(PdoStringTranslator.class);
 
 
   private ValueStringTranslator<?> udkTranslator;

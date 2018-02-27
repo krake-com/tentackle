@@ -36,7 +36,6 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
@@ -68,11 +67,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public static long defaultPollingInterval = 2000;
 
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbModificationTracker.class);
-
+  private static final Logger LOGGER = Logger.get(DbModificationTracker.class);
 
 
   /** listener key instance counter. */

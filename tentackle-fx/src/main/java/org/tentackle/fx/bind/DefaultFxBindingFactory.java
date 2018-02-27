@@ -32,7 +32,6 @@ import org.tentackle.fx.FxController;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 /**
@@ -43,10 +42,7 @@ import org.tentackle.log.LoggerFactory;
 @Service(FxBindingFactory.class)
 public class DefaultFxBindingFactory extends AbstractBindingFactory implements FxBindingFactory {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFxBindingFactory.class);
+  private static final Logger LOGGER = Logger.get(DefaultFxBindingFactory.class);
 
 
   /**

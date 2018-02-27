@@ -39,7 +39,7 @@ public abstract class ReflectiveVisitor {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ReflectiveVisitor.class);
+  private static final Logger LOGGER = Logger.get(ReflectiveVisitor.class);
 
 
   private static final String METHOD_NAME = "visit";    // fixed method name

@@ -41,7 +41,7 @@ public class CompressedInputStream extends FilterInputStream {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(CompressedInputStream.class);
+  private static final Logger LOGGER = Logger.get(CompressedInputStream.class);
 
 
   private final Inflater inflater;      // zip inflater

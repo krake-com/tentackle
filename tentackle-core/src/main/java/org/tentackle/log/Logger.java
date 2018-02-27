@@ -27,6 +27,18 @@ package org.tentackle.log;
 public interface Logger {
 
   /**
+   * Gets a logger for the given classname.
+   *
+   * @param clazz the clazz to create a logger for
+   * @return the logger
+   */
+  static Logger get(Class<?> clazz) {
+    return LoggerFactory.getInstance().getLogger(clazz.getName(), null);
+  }
+
+  
+
+  /**
    * Logging levels.
    * <p>
    * Provided are:

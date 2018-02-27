@@ -33,7 +33,6 @@ import org.tentackle.common.BMoney;
 import org.tentackle.common.Binary;
 import org.tentackle.common.DMoney;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Convertible;
 import org.tentackle.session.PersistenceException;
 
@@ -57,8 +56,7 @@ import org.tentackle.session.PersistenceException;
  */
 public class Query {
 
-  /** The logger for this class. */
-  private static final Logger LOGGER = LoggerFactory.getLogger(Query.class);
+  private static final Logger LOGGER = Logger.get(Query.class);
 
 
   private final List<QueryItem> items;    // query parameters

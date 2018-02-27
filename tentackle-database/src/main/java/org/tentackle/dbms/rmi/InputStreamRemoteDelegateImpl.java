@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.rmi.RemoteException;
 import org.tentackle.io.NotifyingByteArrayOutputStream;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  *
@@ -30,10 +29,7 @@ import org.tentackle.log.LoggerFactory;
  */
 public class InputStreamRemoteDelegateImpl extends RemoteDelegateImpl<OutputStream> implements InputStreamRemoteDelegate {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(InputStreamRemoteDelegateImpl.class);
+  private static final Logger LOGGER = Logger.get(InputStreamRemoteDelegateImpl.class);
 
 
   private final NotifyingByteArrayOutputStream out;              // current buffer to write to

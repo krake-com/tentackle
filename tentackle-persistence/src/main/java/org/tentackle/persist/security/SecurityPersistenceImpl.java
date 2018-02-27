@@ -26,7 +26,6 @@ import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
@@ -59,10 +58,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   private static final long serialVersionUID = -1178387730540795339L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(SecurityPersistenceImpl.class);
+  private static final Logger LOGGER = Logger.get(SecurityPersistenceImpl.class);
 
 
   // @wurblet classVariables ClassVariables

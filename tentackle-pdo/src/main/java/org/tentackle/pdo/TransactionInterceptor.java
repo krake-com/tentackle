@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
@@ -39,10 +38,7 @@ import org.tentackle.session.SessionProvider;
  */
 public class TransactionInterceptor extends AbstractInterceptor {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(TransactionInterceptor.class);
+  private static final Logger LOGGER = Logger.get(TransactionInterceptor.class);
 
 
   private String transactionName;   // the transaction name from the annotation

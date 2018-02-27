@@ -30,7 +30,6 @@ import org.tentackle.common.ExceptionHelper;
 import org.tentackle.io.ServerSocketConfigurator;
 import org.tentackle.io.ServerSocketConfiguratorHolder;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionInfoIncompatibleException;
@@ -61,10 +60,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
 
   private static final long serialVersionUID = -1008588987968414154L;
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemoteDbConnectionImpl.class);
+  private static final Logger LOGGER = Logger.get(RemoteDbConnectionImpl.class);
 
 
   private final transient DbServer server;              // the server

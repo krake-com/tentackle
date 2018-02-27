@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.Session;
 
 
@@ -41,10 +40,7 @@ import org.tentackle.session.Session;
  */
 public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C extends Comparable<? super C>> {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PdoCacheIndex.class);
+  private static final Logger LOGGER = Logger.get(PdoCacheIndex.class);
 
 
   private final String name;                    // symbolic name of the index

@@ -26,7 +26,6 @@ import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.persist.AbstractPersistenceTest;
 import org.tentackle.prefs.PersistedPreferences;
@@ -49,10 +48,7 @@ import static org.testng.Assert.*;
  */
 public class RemotePreferencesTest implements NodeChangeListener, PreferenceChangeListener {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(RemotePreferencesTest.class);
+  private static final Logger LOGGER = Logger.get(RemotePreferencesTest.class);
 
   private static final String KEY_1 = "key1";
   private static final String KEY_2 = "key2";
@@ -93,7 +89,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     Thread.sleep(1500);
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
-    
+
     try (Session session = Pdo.createSession(sessionInfo)) {
       session.makeCurrent();
       ModificationTracker tracker = ModificationTracker.getInstance();

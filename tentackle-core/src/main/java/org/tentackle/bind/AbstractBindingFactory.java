@@ -38,7 +38,7 @@ public class AbstractBindingFactory implements BindingFactory {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBindingFactory.class);
+  private static final Logger LOGGER = Logger.get(AbstractBindingFactory.class);
 
 
   /**

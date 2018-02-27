@@ -28,7 +28,6 @@ import java.util.TimeZone;
 import org.tentackle.common.Constants;
 import org.tentackle.common.FileHelper;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ImmutableException;
 import org.tentackle.common.StringHelper;
 
@@ -41,10 +40,7 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
 
   static final long serialVersionUID = 6002689783347165834L;
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSessionInfo.class);
+  private static final Logger LOGGER = Logger.get(DefaultSessionInfo.class);
 
 
   private String userName;                      // name of the user

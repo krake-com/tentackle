@@ -25,7 +25,6 @@ import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.dbms.AbstractDbTest;
 import org.tentackle.dbms.DbModification;
 import org.tentackle.prefs.PersistedPreferences;
@@ -43,10 +42,7 @@ import static org.testng.Assert.*;
  */
 public class MultiJVMPreferencesTest extends AbstractDbTest implements NodeChangeListener, PreferenceChangeListener {
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(MultiJVMPreferencesTest.class);
+  private static final Logger LOGGER = Logger.get(MultiJVMPreferencesTest.class);
 
   private static final String KEY_1 = "key1";
   private static final String KEY_2 = "key2";

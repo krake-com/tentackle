@@ -47,7 +47,7 @@ public abstract class AbstractBinding implements Binding {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBinding.class);
+  private static final Logger LOGGER = Logger.get(AbstractBinding.class);
 
 
 

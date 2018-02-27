@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbOperationClassVariables;
@@ -44,7 +43,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
 
   private static final long serialVersionUID = 1L;
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferencesOperation.class);
+  private static final Logger LOGGER = Logger.get(DbPreferencesOperation.class);
 
   private static final DbOperationClassVariables<DbPreferencesOperation> CLASSVARIABLES =
             new DbOperationClassVariables<>(DbPreferencesOperation.class);

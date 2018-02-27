@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.task.DefaultTaskDispatcher;
 import org.tentackle.task.Task;
 
@@ -36,10 +35,7 @@ import org.tentackle.task.Task;
  */
 public class SessionKeepAliveDaemon extends DefaultTaskDispatcher {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(SessionKeepAliveDaemon.class);
+  private static final Logger LOGGER = Logger.get(SessionKeepAliveDaemon.class);
 
   private static final long SLEEP_INTERVAL = 10000;       // 10 seconds (effective value doesn't really matter)
 

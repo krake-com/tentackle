@@ -22,7 +22,6 @@ package org.tentackle.dbms;
 import java.util.HashSet;
 import java.util.Set;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * A visitor to ignore duplicates within a persistence operation.<br>
@@ -33,12 +32,8 @@ import org.tentackle.log.LoggerFactory;
  */
 public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(IgnoreDuplicatesPersistenceVisitor.class);
+  private static final Logger LOGGER = Logger.get(IgnoreDuplicatesPersistenceVisitor.class);
 
-  /** seriialUID. */
   private static final long serialVersionUID = 8166893128074169609L;
 
 

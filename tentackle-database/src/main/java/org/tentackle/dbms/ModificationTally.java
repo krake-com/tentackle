@@ -22,7 +22,6 @@ package org.tentackle.dbms;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
@@ -37,10 +36,7 @@ import org.tentackle.session.SessionUtilities;
  */
 public class ModificationTally {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ModificationTally.class);
+  private static final Logger LOGGER = Logger.get(ModificationTally.class);
 
 
   private final DbModificationTracker tracker;        // the mod tracker

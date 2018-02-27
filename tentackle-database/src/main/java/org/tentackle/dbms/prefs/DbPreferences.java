@@ -37,7 +37,6 @@ import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.ConstraintException;
@@ -69,10 +68,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   private static final long serialVersionUID = 1L;
 
-  /**
-   * The logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(DbPreferences.class);
+  private static final Logger LOGGER = Logger.get(DbPreferences.class);
 
   private final DbPreferences root;                     // the root of thos nodd ("this" if this is a root)
   private final DbPreferences parent;                   // the parent node, null if this is a root

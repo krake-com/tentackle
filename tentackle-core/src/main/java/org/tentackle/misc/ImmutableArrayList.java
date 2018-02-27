@@ -45,7 +45,7 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   /**
    * The logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(ImmutableArrayList.class);
+  private static final Logger LOGGER = Logger.get(ImmutableArrayList.class);
 
 
 

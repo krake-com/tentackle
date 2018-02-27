@@ -21,7 +21,6 @@ package org.tentackle.session;
 
 import org.tentackle.daemon.DaemonSupervisor;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.task.PooledTaskDispatcher;
 import org.tentackle.task.TaskDispatcher;
 
@@ -31,10 +30,7 @@ import org.tentackle.task.TaskDispatcher;
  */
 public class PooledSessionTaskDispatcher extends PooledTaskDispatcher {
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(PooledSessionTaskDispatcher.class);
+  private static final Logger LOGGER = Logger.get(PooledSessionTaskDispatcher.class);
 
 
   private final SessionInfo sessionInfo;          // the session info

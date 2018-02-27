@@ -42,7 +42,6 @@ import org.tentackle.common.Date;
 import org.tentackle.common.Time;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.session.PersistenceException;
 
@@ -54,7 +53,7 @@ import org.tentackle.session.PersistenceException;
  */
 public class ResultSetWrapper implements AutoCloseable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ResultSetWrapper.class);
+  private static final Logger LOGGER = Logger.get(ResultSetWrapper.class);
 
 
   private static final Cleaner CLEANER = Cleaner.create();        // instead of deprecated finalize()

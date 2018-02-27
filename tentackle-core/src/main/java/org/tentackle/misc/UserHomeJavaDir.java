@@ -34,7 +34,7 @@ public class UserHomeJavaDir {
   /**
    * logger for this class.
    */
-  private static final Logger LOGGER = LoggerFactory.getLogger(UserHomeJavaDir.class);
+  private static final Logger LOGGER = Logger.get(UserHomeJavaDir.class);
 
 
   private static volatile boolean initialized;    // true if cacheDir initialized

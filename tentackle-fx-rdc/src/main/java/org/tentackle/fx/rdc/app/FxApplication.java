@@ -24,7 +24,6 @@ import javafx.stage.Stage;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * Tentackle FX application base class.
@@ -35,11 +34,7 @@ import org.tentackle.log.LoggerFactory;
  */
 public abstract class FxApplication extends Application {
 
-
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(FxApplication.class);
+  private static final Logger LOGGER = Logger.get(FxApplication.class);
 
   private static final String FATAL = "runtime or configuration error";
 
