@@ -43,9 +43,11 @@ public class MpxConnectionManager extends DefaultConnectionManager {
 
   private static final Logger LOGGER = Logger.get(MpxConnectionManager.class);
 
-  private static final int MAX_LOOP = 100;      // max. number of sleep-with-retry if no connection available
-  private static final int BASE_MS = 50;        // base milliseconds to sleep before next try
-  private static final long MUTEX_MS = 500;     // mutex wait timeout
+  private static final int MAX_LOOP = 100;        // max. number of sleep-with-retry if no connection available
+  private static final int BASE_MS = 50;          // base milliseconds to sleep before next try
+  private static final long REQ_MUTEX_MS = 1000;  // request connections mutex wait timeout
+  private static final long DONE_MUTEX_MS = 500;  // done connections mutex wait timeout
+
 
 
   // args
@@ -400,11 +402,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         // wait for connections to be brought up (even if no request -> may take longer)
         synchronized (doneMtx) {
           try {
-            doneMtx.wait(MUTEX_MS);
+            doneMtx.wait(DONE_MUTEX_MS);
           }
-          catch (InterruptedException ex) {
-            // just start over and try again
-          }
+          catch (InterruptedException ex) {}
         }
       }
     }
@@ -658,10 +658,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       for (;;) {
         synchronized (requestMtx) {     // syncs conRequestCount as well
           try {
-            requestMtx.wait(MUTEX_MS);
+            requestMtx.wait(REQ_MUTEX_MS);
           }
-          catch (InterruptedException ex) {
-          }
+          catch (InterruptedException ex) {}
 
           MpxConnectionManager mgr = cmRef.get();
           if (mgr == null || mgr.shutdownRequested) {
