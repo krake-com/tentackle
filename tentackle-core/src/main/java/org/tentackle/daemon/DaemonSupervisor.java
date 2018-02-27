@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * A supervisor controlling the life cycle of daemons.
@@ -38,9 +37,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(DaemonSupervisor.class);
 
   /**

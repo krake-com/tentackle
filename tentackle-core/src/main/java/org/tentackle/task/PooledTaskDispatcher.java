@@ -21,7 +21,6 @@ package org.tentackle.task;
 
 import org.tentackle.daemon.DaemonSupervisor;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * A task dispatcher using a pool with a fixed number of threads.
@@ -34,9 +33,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public class PooledTaskDispatcher extends AbstractPooledTaskDispatcher {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(PooledTaskDispatcher.class);
 
   private final boolean supervised;                   // true if use supervisors

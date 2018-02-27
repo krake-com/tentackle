@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.Duration;
 import org.tentackle.common.StringHelper;
@@ -67,9 +66,6 @@ public class InterceptableMethodCache {
   public int logMinReturnedCollectionSize;
 
 
-  /**
-   * The logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(InterceptableMethodCache.class);
 
 

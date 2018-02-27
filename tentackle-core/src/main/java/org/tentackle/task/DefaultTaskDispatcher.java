@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.tentackle.daemon.Supervisable;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.NamedCounter;
 
 
@@ -63,7 +62,6 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    */
   public static final NamedCounter INSTANCE_COUNTER = new NamedCounter();   // daemon instance counter
 
-  /** The logger for this class. */
   private static final Logger LOGGER = Logger.get(DefaultTaskDispatcher.class);
 
   private static final DateFormat MILLIS_FORMAT = new SimpleDateFormat("HH:mm:ss.SSS");

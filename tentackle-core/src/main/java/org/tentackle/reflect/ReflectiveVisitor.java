@@ -23,7 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 
 /**
@@ -36,9 +35,6 @@ import org.tentackle.common.StringHelper;
  */
 public abstract class ReflectiveVisitor {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(ReflectiveVisitor.class);
 
 

@@ -26,7 +26,6 @@ import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.nashorn.JavaScriptLanguage;
 
 
@@ -38,9 +37,6 @@ import org.tentackle.script.nashorn.JavaScriptLanguage;
 @Service(ScriptFactory.class)
 public class DefaultScriptFactory implements ScriptFactory {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(DefaultScriptFactory.class);
 
 

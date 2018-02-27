@@ -24,7 +24,6 @@ import javax.script.CompiledScript;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * A script based on JSR-223.
@@ -36,9 +35,6 @@ public class AbstractJSRScript extends AbstractScript {
   private static final long serialVersionUID = 1L;
 
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(AbstractJSRScript.class);
 
 

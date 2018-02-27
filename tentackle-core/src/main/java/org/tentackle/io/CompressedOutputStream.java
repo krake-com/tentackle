@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.zip.Deflater;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -46,9 +45,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public class CompressedOutputStream extends FilterOutputStream {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(CompressedOutputStream.class);
 
   /**

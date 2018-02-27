@@ -21,7 +21,6 @@ package org.tentackle.misc;
 import java.io.File;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * The user's home cache.
@@ -30,10 +29,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public class UserHomeJavaDir {
 
-
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(UserHomeJavaDir.class);
 
 

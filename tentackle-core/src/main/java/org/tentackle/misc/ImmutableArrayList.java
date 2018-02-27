@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * An enhanced {@link ArrayList}.<br>
@@ -42,9 +41,6 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
   private static final long serialVersionUID = 1L;
 
-  /**
-   * The logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(ImmutableArrayList.class);
 
 

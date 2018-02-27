@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -38,15 +37,12 @@ import org.tentackle.log.LoggerFactory;
  */
 public class CompressedInputStream extends FilterInputStream {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(CompressedInputStream.class);
 
 
   private final Inflater inflater;      // zip inflater
   private final byte[] byteBuf;         // single byte buffer for read()
-  
+
   private byte[] infBuf;                // buffer holding compressed data for the inflater (size is dynamically adapted)
   private boolean compressed;           // true if current packet is compressed and inf... is valid
   private int readPending;              // number of bytes pending to read from underlying stream

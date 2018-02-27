@@ -541,10 +541,8 @@ public class ModelWurblet extends AbstractWurblet {
   public void run() throws WurbelException {
 
     String wurbletOptions = getConfiguration();
-    if (wurbletOptions != null) {
-      if (wurbletOptions.contains("missingModelOk")) {
-        missingModelOk = true;
-      }
+    if (wurbletOptions != null && wurbletOptions.contains("missingModelOk")) {
+      missingModelOk = true;
     }
 
     super.run();

@@ -22,7 +22,6 @@ package org.tentackle.reflect;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * A generic class mapper.<br>
@@ -33,9 +32,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public abstract class AbstractClassMapper<S> {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(AbstractClassMapper.class);
 
 

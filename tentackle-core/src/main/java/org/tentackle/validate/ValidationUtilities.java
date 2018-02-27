@@ -39,7 +39,6 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.validator.FailedValidationResult;
@@ -58,9 +57,6 @@ interface ValidationUtilities$Singleton {
 @Service(ValidationUtilities.class)    // defaults to self
 public class ValidationUtilities {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(ValidationUtilities.class);
 
 

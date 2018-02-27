@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Set;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 
 
@@ -41,7 +40,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final long serialVersionUID = 5820724718467532237L;
 
-  /** the logger for this class. */
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 
   private boolean modified;                         // initial modification parameter or from setModified(true)

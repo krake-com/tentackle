@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 
 /**
  * Cache to speed up method lookup by reflection.
@@ -37,9 +36,6 @@ import org.tentackle.log.LoggerFactory;
  */
 public class MethodCache {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(MethodCache.class);
 
 

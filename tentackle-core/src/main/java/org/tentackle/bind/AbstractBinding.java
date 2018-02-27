@@ -22,7 +22,6 @@ package org.tentackle.bind;
 import java.util.ArrayList;
 import java.util.List;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.ValidationContext;
@@ -44,9 +43,6 @@ import org.tentackle.validate.scope.MandatoryScope;
  */
 public abstract class AbstractBinding implements Binding {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = Logger.get(AbstractBinding.class);
 
 
