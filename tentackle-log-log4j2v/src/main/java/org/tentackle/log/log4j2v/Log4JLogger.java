@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.log.log4j2;
+package org.tentackle.log.log4j2v;
 
 import java.io.PrintStream;
 import java.text.MessageFormat;
@@ -38,13 +38,13 @@ import org.tentackle.log.MappedDiagnosticContext;
  * @author harald
  */
 @Service(Logger.class)
-public class Log4J2Logger implements Logger {
+public class Log4JLogger implements Logger {
 
   // classname to exclude from stacktrace
-  private static final String FQCN = Log4J2Logger.class.getName();
+  private static final String FQCN = Log4JLogger.class.getName();
 
   // cached loggers
-  private static final HashMap<String,Log4J2Logger> LOGGERS = new HashMap<>();
+  private static final HashMap<String,Log4JLogger> LOGGERS = new HashMap<>();
 
   /**
    * Gets the Log4JLogger for given name.
@@ -53,9 +53,9 @@ public class Log4J2Logger implements Logger {
    * @param name the name of the logger
    * @return the logger
    */
-  public static Log4J2Logger getLogger(String name) {
+  public static Log4JLogger getLogger(String name) {
     synchronized(LOGGERS) {
-      return LOGGERS.computeIfAbsent(name, Log4J2Logger::new);
+      return LOGGERS.computeIfAbsent(name, Log4JLogger::new);
     }
   }
 
@@ -68,7 +68,7 @@ public class Log4J2Logger implements Logger {
    *
    * @param name the name of the logger
    */
-  public Log4J2Logger(String name) {
+  public Log4JLogger(String name) {
     org.apache.logging.log4j.Logger lgr = org.apache.logging.log4j.LogManager.getLogger(name);
     logger = new ExtendedLoggerWrapper((ExtendedLogger) lgr, lgr.getName(), lgr.getMessageFactory());
   }

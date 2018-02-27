@@ -11,8 +11,8 @@
   <artifactId>tentackle-log-log4j2</artifactId>
   <version>2.2-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Tentackle Logging Log4J2</name>
-  <description>Log4J-2 Logging Adapter for Tentackle</description>
+  <name>Tentackle Logging Log4J2V</name>
+  <description>Log4J 2nd Version Logging Adapter for Tentackle</description>
   <url>http://www.tentackle.org</url>
 
   <dependencies>

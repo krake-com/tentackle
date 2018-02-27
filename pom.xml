@@ -49,7 +49,7 @@
     <module>tentackle-check-maven-plugin</module>
     <module>tentackle-log-util</module>
     <module>tentackle-log-log4j</module>
-    <module>tentackle-log-log4j2</module>
+    <module>tentackle-log-log4j2v</module>
     <module>tentackle-log-slf4j</module>
     <module>tentackle-script-groovy</module>
     <module>tentackle-script-ruby</module>
