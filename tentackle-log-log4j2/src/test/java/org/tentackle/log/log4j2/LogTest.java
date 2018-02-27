@@ -28,10 +28,7 @@ import org.testng.annotations.Test;
  */
 public class LogTest {
 
-  /**
-   * the logger for this class.
-   */
-  private static final Logger LOGGER = Logger.get(LogTest.class);
+  private static final Logger LOGGER = Logger.get();
 
   @Test
   public void testLogging() {

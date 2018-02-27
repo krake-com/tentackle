@@ -16,8 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.log;
+
+import java.lang.StackWalker.Option;
+
 
 /**
  * A pluggable logger.
@@ -36,7 +38,16 @@ public interface Logger {
     return LoggerFactory.getInstance().getLogger(clazz.getName(), null);
   }
 
-  
+  /**
+   * Gets a logger for the invoking class.<br>
+   * The method uses the Stackwalker to determine the caller class.
+   *
+   * @return the logger
+   */
+  static Logger get() {
+    return get(StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE).getCallerClass());
+  }
+
 
   /**
    * Logging levels.
