@@ -17,32 +17,28 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.mock.MockPersistentOperation;
+import java.lang.reflect.Method;
+import org.tentackle.reflect.AbstractInterceptor;
 import org.testng.Reporter;
 
-
 /**
- * Operation persistence implementation.
+ * Logging interceptor.
  *
  * @author harald
  */
-public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOperation> implements SomeOperationPersistence {
+public class LogItInterceptor extends AbstractInterceptor {
 
-  /**
-   * Creates an operation persistence object.
-   *
-   * @param operation the operation
-   */
-  public SomeOperationPersistenceImpl(SomeOperation operation) {
-    super(operation);
-    Reporter.log("SomeOperationPersistenceImpl created<br/>");
-  }
+  public static Object lastResult;
+
 
   @Override
-  public String echo(String str) {
-    return str;
+  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
+    Reporter.log("intercepting " + orgMethod.toGenericString() + "<br/>");
+    lastResult = method.invoke(proxy, args);
+    return lastResult;
   }
 
 }
+

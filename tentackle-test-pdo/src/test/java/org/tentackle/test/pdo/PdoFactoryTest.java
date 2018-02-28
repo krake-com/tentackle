@@ -16,20 +16,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.pdo;
+package org.tentackle.test.pdo;
 
 import java.util.Map;
 import java.util.TreeMap;
+import org.tentackle.pdo.AbstractOperationFactory;
+import org.tentackle.pdo.AbstractPdoFactory;
+import org.tentackle.pdo.OperationFactory;
+import org.tentackle.pdo.PdoFactory;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.reflect.DefaultClassMapper;
-import org.tentackle.pdo.pdofactorytest.CollectiveInvoice;
-import org.tentackle.pdo.pdofactorytest.CollectiveInvoiceDomainImpl;
-import org.tentackle.pdo.pdofactorytest.Invoice;
-import org.tentackle.pdo.pdofactorytest.InvoicePersistenceImpl;
-import org.tentackle.pdo.pdofactorytest.LogItInterceptor;
-import org.tentackle.pdo.pdofactorytest.SingleInvoice;
-import org.tentackle.pdo.pdofactorytest.SingleInvoiceDomainImpl;
-import org.tentackle.pdo.pdofactorytest.SomeOperation;
+import org.tentackle.test.pdo.pdofactory.CollectiveInvoice;
+import org.tentackle.test.pdo.pdofactory.CollectiveInvoiceDomainImpl;
+import org.tentackle.test.pdo.pdofactory.Invoice;
+import org.tentackle.test.pdo.pdofactory.InvoicePersistenceImpl;
+import org.tentackle.test.pdo.pdofactory.LogItInterceptor;
+import org.tentackle.test.pdo.pdofactory.SingleInvoice;
+import org.tentackle.test.pdo.pdofactory.SingleInvoiceDomainImpl;
+import org.tentackle.test.pdo.pdofactory.SomeOperation;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -44,15 +48,15 @@ public class PdoFactoryTest {
   public void testPdoFactory() {
 
     Map<String, String> domainObjectMap = new TreeMap<>();
-    domainObjectMap.put("org.tentackle.pdo.pdofactorytest.SingleInvoice", "org.tentackle.pdo.pdofactorytest.SingleInvoiceDomainImpl");
-    domainObjectMap.put("org.tentackle.pdo.pdofactorytest.CollectiveInvoice", "org.tentackle.pdo.pdofactorytest.CollectiveInvoiceDomainImpl");
+    domainObjectMap.put("org.tentackle.test.pdo.pdofactory.SingleInvoice", "org.tentackle.test.pdo.pdofactory.SingleInvoiceDomainImpl");
+    domainObjectMap.put("org.tentackle.test.pdo.pdofactory.CollectiveInvoice", "org.tentackle.test.pdo.pdofactory.CollectiveInvoiceDomainImpl");
     final ClassMapper domainObjectMapper = new DefaultClassMapper(
-            "domain", getClass().getClassLoader(), domainObjectMap, new String[]{"org.tentackle.pdo.pdofactorytest"});
+            "domain", getClass().getClassLoader(), domainObjectMap, new String[]{"org.tentackle.test.pdo.pdofactory"});
 
     Map<String, String> persistenceObjectMap = new TreeMap<>();
-    persistenceObjectMap.put("org.tentackle.pdo.pdofactorytest.Invoice", "org.tentackle.pdo.pdofactorytest.InvoicePersistenceImpl");
+    persistenceObjectMap.put("org.tentackle.test.pdo.pdofactory.Invoice", "org.tentackle.test.pdo.pdofactory.InvoicePersistenceImpl");
     final ClassMapper persistenceObjectMapper = new DefaultClassMapper(
-            "persistence", getClass().getClassLoader(), persistenceObjectMap, new String[]{"org.tentackle.pdo.pdofactorytest"});
+            "persistence", getClass().getClassLoader(), persistenceObjectMap, new String[]{"org.tentackle.test.pdo.pdofactory"});
 
     PdoFactory pdoFactory = new AbstractPdoFactory() {
 
@@ -98,12 +102,12 @@ public class PdoFactoryTest {
 
     Map<String, String> domainOperationMap = new TreeMap<>();
     final ClassMapper domainOperationMapper = new DefaultClassMapper(
-            "domain", getClass().getClassLoader(), domainOperationMap, new String[]{"org.tentackle.pdo.pdofactorytest"});
+            "domain", getClass().getClassLoader(), domainOperationMap, new String[]{"org.tentackle.test.pdo.pdofactory"});
 
     Map<String, String> persistenceOperationMap = new TreeMap<>();
-    persistenceOperationMap.put("org.tentackle.pdo.pdofactorytest.SomeOperation", "org.tentackle.pdo.pdofactorytest.SomeOperationPersistenceImpl");
+    persistenceOperationMap.put("org.tentackle.test.pdo.pdofactory.SomeOperation", "org.tentackle.test.pdo.pdofactory.SomeOperationPersistenceImpl");
     final ClassMapper persistenceOperationMapper = new DefaultClassMapper(
-            "persistence", getClass().getClassLoader(), persistenceOperationMap, new String[]{"org.tentackle.pdo.pdofactorytest"});
+            "persistence", getClass().getClassLoader(), persistenceOperationMap, new String[]{"org.tentackle.test.pdo.pdofactory"});
 
     OperationFactory operationFactory = new AbstractOperationFactory() {
 

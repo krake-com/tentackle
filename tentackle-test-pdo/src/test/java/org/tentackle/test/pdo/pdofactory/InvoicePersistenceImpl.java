@@ -17,42 +17,44 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.mock.MockDomainObject;
+import org.tentackle.test.pdo.mock.MockPersistentObject;
 import org.testng.Reporter;
 
 
 /**
- * Invoice domain implementation.
+ * Invoice persistence implementation.
  *
  * @author harald
  */
-public class InvoiceDomainImpl<T extends Invoice<T>> extends MockDomainObject<T, InvoiceDomainImpl<T>> implements InvoiceDomain<T> {
+public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistentObject<T,InvoicePersistenceImpl<T>> implements InvoicePersistence<T> {
+
+  private String invoiceNo;
 
   /**
-   * Creates an invoice domain object.
+   * Creates an invoice persistence object.
    *
    * @param pdo the invoice
    */
-  public InvoiceDomainImpl(T pdo) {
+  public InvoicePersistenceImpl(T pdo) {
     super(pdo);
-    Reporter.log("InvoiceDomainImpl created<br/>");
+    Reporter.log("InvoicePersistenceImpl created<br/>");
   }
 
   @Override
-  public String getSumAsString() {
-    return "1234.00";
+  public void setInvoiceNo(String invoiceNo) {
+    this.invoiceNo = invoiceNo;
+  }
+
+  @Override
+  public String getInvoiceNo() {
+    return invoiceNo;
   }
 
   @Override
   public String toString() {
-    return "BlahDomain";
-  }
-
-  @Override
-  public Object getUniqueDomainKey() {
-    return getPdo().getInvoiceNo();
+    return "BlahPersist";
   }
 
 }

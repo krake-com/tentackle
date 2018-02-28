@@ -17,18 +17,38 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
+
+import org.testng.Reporter;
 
 /**
- * Collective Incoice domain interface.
+ * Collective invoice domain implementation.
  *
  * @author harald
  */
-public interface CollectiveInvoiceDomain extends InvoiceDomain<CollectiveInvoice> {
+public class CollectiveInvoiceDomainImpl extends InvoiceDomainImpl<CollectiveInvoice> implements CollectiveInvoiceDomain {
 
   /**
-   * Sums up the invoices.
+   * Creates a collective invoice domain object.
+   *
+   * @param pdo the invoice
    */
-  void sumup();
+  public CollectiveInvoiceDomainImpl(CollectiveInvoice pdo) {
+    super(pdo);
+  }
 
+  @Override
+  public void sumup() {
+    Reporter.log("sumup invoked<br/>");
+  }
+
+  @Override
+  public String toString() {
+    return "Collective" + super.toString();
+  }
+
+  @Override
+  public String getSumAsString() {
+    return "9999.00";
+  }
 }

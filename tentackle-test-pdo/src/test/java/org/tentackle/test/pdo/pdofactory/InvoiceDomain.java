@@ -17,15 +17,26 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.DomainObject;
 
 /**
- * Invoice PDO interface.
+ * Invoice domain interface.
  *
  * @author harald
  */
-public interface Invoice<T extends Invoice<T>> extends PersistentDomainObject<T>, InvoiceDomain<T>, InvoicePersistence<T> {
+public interface InvoiceDomain<T extends Invoice<T>> extends DomainObject<T> {
+
+  /**
+   * Returns the sum as a string.
+   *
+   * @return the sum
+   */
+  @LogIt
+  String getSumAsString();
+
+  @Override
+  String toString();
 
 }

@@ -17,27 +17,13 @@
  */
 
 
-
-package org.tentackle.pdo.pdofactorytest;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import org.tentackle.reflect.Interception;
+package org.tentackle.test.pdo.pdofactory;
 
 /**
- * Logging interceptor annotation.
+ * Collective invoice PDO interface.
  *
  * @author harald
  */
-@Documented
-@Inherited
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@Interception(implementedBy=LogItInterceptor.class)
-public @interface LogIt {
+public interface SingleInvoice extends Invoice<SingleInvoice>, SingleInvoiceDomain {
 
 }

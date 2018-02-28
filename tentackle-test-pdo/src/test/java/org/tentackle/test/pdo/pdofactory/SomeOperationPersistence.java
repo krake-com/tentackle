@@ -17,28 +17,23 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import java.lang.reflect.Method;
-import org.tentackle.reflect.AbstractInterceptor;
-import org.testng.Reporter;
+import org.tentackle.pdo.PersistentOperation;
 
 /**
- * Logging interceptor.
+ * Operation persistence interface.
  *
  * @author harald
  */
-public class LogItInterceptor extends AbstractInterceptor {
+public interface SomeOperationPersistence extends PersistentOperation<SomeOperation> {
 
-  public static Object lastResult;
-
-
-  @Override
-  public Object proceed(Object proxy, Method method, Object[] args, Object orgProxy, Method orgMethod, Object[] orgArgs) throws Throwable {
-    Reporter.log("intercepting " + orgMethod.toGenericString() + "<br/>");
-    lastResult = method.invoke(proxy, args);
-    return lastResult;
-  }
+  /**
+   * Echo a string.
+   *
+   * @param str the string
+   * @return the string
+   */
+  String echo(String str);
 
 }
-

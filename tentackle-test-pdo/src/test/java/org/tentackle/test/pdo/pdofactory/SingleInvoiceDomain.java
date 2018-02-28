@@ -17,22 +17,13 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
 /**
- * Collective invoice domain implementation.
+ * Collective Incoice domain interface.
  *
  * @author harald
  */
-public class SingleInvoiceDomainImpl extends InvoiceDomainImpl<SingleInvoice> implements SingleInvoiceDomain {
-
-  /**
-   * Creates a collective invoice domain object.
-   *
-   * @param pdo the invoice
-   */
-  public SingleInvoiceDomainImpl(SingleInvoice pdo) {
-    super(pdo);
-  }
+public interface SingleInvoiceDomain extends InvoiceDomain<SingleInvoice> {
 
 }

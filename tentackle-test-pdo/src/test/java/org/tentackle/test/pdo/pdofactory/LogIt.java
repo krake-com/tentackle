@@ -17,29 +17,27 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
 
-import org.tentackle.pdo.PersistentObject;
+package org.tentackle.test.pdo.pdofactory;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.tentackle.reflect.Interception;
 
 /**
- * Invoice persistence interface.
+ * Logging interceptor annotation.
  *
  * @author harald
  */
-public interface InvoicePersistence<T extends Invoice<T>> extends PersistentObject<T> {
-
-  /**
-   * Sets the invoice number.
-   *
-   * @param invoiceNo the invoice number
-   */
-  void setInvoiceNo(String invoiceNo);
-
-  /**
-   * Gets the invocie number.
-   *
-   * @return the invoice number
-   */
-  String getInvoiceNo();
+@Documented
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+@Interception(implementedBy=LogItInterceptor.class)
+public @interface LogIt {
 
 }
