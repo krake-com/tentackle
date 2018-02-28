@@ -20,7 +20,6 @@
 package org.tentackle.test.pdo.mock;
 
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainObject;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
