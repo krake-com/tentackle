@@ -20,6 +20,8 @@ package org.tentackle.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper methods dealing with exceptions.
@@ -113,6 +115,46 @@ public final class ExceptionHelper {
       ps.flush();
       return bs.toString();
     }
+  }
+
+
+  /**
+   * Checks if the class is a valuable information within a stracktrace.
+   *
+   * @param className the classname
+   * @return true if valuable, else noise
+   */
+  public static boolean isClassValuableForStackTrace(String className) {
+    return !className.startsWith("java") && !className.startsWith("com.sun.") &&
+           !className.startsWith("sun.") && !className.startsWith("jdk.") &&
+           (!className.startsWith("org.tentackle.") ||
+            !className.contains("InvocationHandler") && !className.contains("Interceptable"));
+  }
+
+
+  /**
+   * Filters a given stacktrace skipping all noisy elements without relevant information for the developer.
+   *
+   * @param trace the stacktrace
+   * @return the reduced stacktrace
+   */
+  public static StackTraceElement[] filterStackTrace(StackTraceElement[] trace) {
+    List<StackTraceElement> stackList = new ArrayList<>();
+    if (trace != null && trace.length > 0) {
+      boolean valuableFound = false;
+      for (StackTraceElement elem: trace) {
+        boolean valuable = isClassValuableForStackTrace(elem.getClassName());
+        if (valuable || !valuableFound) {
+          stackList.add(elem);
+        }
+        if (valuable) {
+          valuableFound = true;
+        }
+      }
+    }
+    trace = new StackTraceElement[stackList.size()];
+    stackList.toArray(trace);
+    return trace;
   }
 
 

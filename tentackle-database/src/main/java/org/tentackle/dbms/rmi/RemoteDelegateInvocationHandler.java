@@ -26,6 +26,7 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.log.Loggable;
 import org.tentackle.log.Logger;
@@ -218,6 +219,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         else {
           loggingLevel = Level.INFO;
         }
+        realCause.setStackTrace(ExceptionHelper.filterStackTrace(realCause.getStackTrace()));
         return (RemoteException) cause;
       }
       else  {
@@ -238,8 +240,13 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
         if (crashed) {
           message.append(" due to session cleanup");
         }
-        message.append(":\n").append(realCause.getMessage());
-        LOGGER.log(loggingLevel, message.toString(), withStacktrace ? realCause : null);
+        if (withStacktrace) {
+          LOGGER.log(loggingLevel, message.toString(), realCause);
+        }
+        else {
+          message.append(": ").append(realCause.getMessage());
+          LOGGER.log(loggingLevel, message.toString(), null);
+        }
       }
 
       cleanupDbAfterException(realCause);

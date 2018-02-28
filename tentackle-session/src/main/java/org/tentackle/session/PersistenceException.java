@@ -19,8 +19,15 @@
 
 package org.tentackle.session;
 
+import java.lang.StackWalker.Option;
+import java.lang.StackWalker.StackFrame;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
 
@@ -70,8 +77,19 @@ public class PersistenceException extends TentackleRuntimeException {
       }
     }
 
-    // add our local stacktrace until here...
-    StackTraceElement[] localTrace = new Exception().getStackTrace();
+    StackWalker walker = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE);
+    List<StackTraceElement> stack = walker.walk(s ->
+      s.filter(sf -> ExceptionHelper.isClassValuableForStackTrace(sf.getClassName())).map(sf ->
+        new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber())).
+          collect(Collectors.toList()));
+    if (stack.isEmpty()) {
+      // pathological case: don't filter
+      walker.walk(s -> s.map(sf ->
+        new StackTraceElement(sf.getDeclaringClass().getName(), sf.getMethodName(), sf.getFileName(), sf.getLineNumber())).
+          collect(Collectors.toList()));
+    }
+    StackTraceElement[] localTrace = new StackTraceElement[stack.size()];
+    stack.toArray(localTrace);
     StackTraceElement[] remoteTrace = pex.getStackTrace();
     StackTraceElement[] trace = new StackTraceElement[localTrace.length + remoteTrace.length];
     System.arraycopy(remoteTrace, 0, trace, 0, remoteTrace.length);
