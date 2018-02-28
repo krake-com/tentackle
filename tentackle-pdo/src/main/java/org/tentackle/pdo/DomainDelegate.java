@@ -30,7 +30,7 @@ public interface DomainDelegate<T> {
   /**
    * Gets the persistence delegate.
    *
-   * @return the domain delegate
+   * @return the persistence delegate
    */
   PersistenceDelegate<T> getPersistenceDelegate();
 
