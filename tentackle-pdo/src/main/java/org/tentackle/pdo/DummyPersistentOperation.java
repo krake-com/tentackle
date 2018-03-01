@@ -134,35 +134,11 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
     }
   }
 
-  /**
-   * Gets the database context.
-   *
-   * @return the domain context
-   */
   @Override
   public DomainContext getDomainContext() {
     return context;
   }
 
-
-  @Override
-  public PersistentOperation<T> getDelegate() {
-    return this;
-  }
-
-
-  @Override
-  public PersistentOperation<T> newInstance() {
-    try {
-      @SuppressWarnings("unchecked")
-      T obj = (T) getClass().getDeclaredConstructor().newInstance();
-      obj.setSession(getSession());
-      return obj;
-    }
-    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new PersistenceException(getSession(), "creating new object failed", e);
-    }
-  }
 
   @Override
   public T me() {

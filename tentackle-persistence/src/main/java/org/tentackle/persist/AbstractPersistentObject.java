@@ -1703,9 +1703,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Sets the class-ID parameters if required for the joins.<br>
    * Notice that this method only works for joins with no subjoins and
-   * is used only for eager joins, i.e. the default selects.
+   * is used only for eager joins, i.e.the default selects.<br>
    * All code for non-eager joins is generated via the DbModelWurblet.
    *
+   * @param js the join configuration
    * @param st the statement
    * @param ndx the next parameter ndx
    * @return the next parameter index
@@ -2321,6 +2322,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Gets the result set for all objects in the current context with a given expired tableserial.
    *
    * @param js the optional join config, null if no joins
+   * @param oldSerial the last known tableserial
    * @return the result set
    */
   public ResultSetWrapper resultAllWithExpiredTableSerials(JoinedSelect<T> js, long oldSerial)  {

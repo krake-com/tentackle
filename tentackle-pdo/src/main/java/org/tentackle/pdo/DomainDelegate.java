@@ -23,9 +23,16 @@ package org.tentackle.pdo;
  * Interface all delegates implementing the domain model must implement.
  *
  * @author harald
- * @param <T> the type
+ * @param <T> the PDO or Operation type
  */
 public interface DomainDelegate<T> {
+
+  /**
+   * Gets the proxy instance.
+   *
+   * @return the proxy instance
+   */
+  T me();
 
   /**
    * Gets the persistence delegate.

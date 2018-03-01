@@ -182,24 +182,18 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
 
-  @Override
-  public PersistentOperation<T> getDelegate() {
-    return this;
-  }
-
-
-  @Override
-  public PersistentOperation<T> newInstance() {
-    try {
-      @SuppressWarnings("unchecked")
-      T obj = (T) getClass().getDeclaredConstructor().newInstance();
-      obj.setSession(getSession());
-      return obj;
-    }
-    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new PersistenceException(getSession(), "creating new object failed", e);
-    }
-  }
+//  @Override
+//  public PersistentOperation<T> newInstance() {
+//    try {
+//      @SuppressWarnings("unchecked")
+//      T obj = (T) getClass().getDeclaredConstructor().newInstance();
+//      obj.setSession(getSession());
+//      return obj;
+//    }
+//    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+//      throw new PersistenceException(getSession(), "creating new object failed", e);
+//    }
+//  }
 
   @Override
   public T me() {

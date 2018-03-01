@@ -87,5 +87,4 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
   public DomainOperation<T> cloneDomainOperation() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
-
 }

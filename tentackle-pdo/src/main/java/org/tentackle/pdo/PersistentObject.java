@@ -48,15 +48,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
                Validateable, ScopeConfigurator, DomainContextDependable, SessionDependable {
 
   /**
-   * Gets the pdo instance.
-   * <p>
-   * Same as {@link PdoHolder#getPdo()} but shorter.
-   *
-   * @return the pdo
-   */
-  T me();
-
-  /**
    * Creates a clone of this PO.
    *
    * @return the cloned PO

@@ -31,21 +31,11 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
        extends DomainDelegate<T>, PdoHolder<T>, DomainContextProvider, SessionProvider {
 
   /**
-   * Gets the pdo instance.
-   * <p>
-   * Same as {@link PdoHolder#getPdo()} but shorter.
-   *
-   * @return the pdo
-   */
-  T me();
-
-  /**
    * Creates a clone of this DO.
    *
    * @return the cloned DO
    */
   DomainObject<T> cloneDomainObject();
-
 
   /**
    * Returns whether PDO provides a unique domain key.<br>

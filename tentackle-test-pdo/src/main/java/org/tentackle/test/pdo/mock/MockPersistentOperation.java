@@ -152,16 +152,6 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
-  public PersistentOperation<T> getDelegate() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public PersistentOperation<T> newInstance() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public T getOperation() {
     return operation;
   }

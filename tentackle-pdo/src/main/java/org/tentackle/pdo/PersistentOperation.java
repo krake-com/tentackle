@@ -33,36 +33,10 @@ public interface PersistentOperation<T extends Operation<T>>
        extends PersistenceDelegate<T>, OperationHolder<T>, DomainContextDependable, SessionDependable {
 
   /**
-   * Gets the operation instance.
-   * <p>
-   * Same as {@link OperationHolder#getOperation()} but shorter.
-   *
-   * @return the operation
-   */
-  T me();
-
-  /**
-   * Gets the delegate implementing the persistence operation.
-   * <p>
-   * Note: the method is intercepted and executed by the {@link org.tentackle.pdo.OperationInvocationHandler}.
-   *
-   * @return the persistent operation
-   */
-  PersistentOperation<T> getDelegate();
-
-  /**
    * Creates a clone of this PO.
    *
    * @return the cloned PO
    */
   PersistentOperation<T> clonePersistentOperation();
-
-  /**
-   * Creates a new instance similar to this object but initialized to the default values.
-   * <br>
-   * Sets the domain context as well.
-   * @return the created instance
-   */
-  PersistentOperation<T> newInstance();
 
 }

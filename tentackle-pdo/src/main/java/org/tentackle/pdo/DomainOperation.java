@@ -31,15 +31,6 @@ public interface DomainOperation<T extends Operation<T>>
        extends DomainDelegate<T>, OperationHolder<T>, DomainContextProvider, SessionProvider {
 
   /**
-   * Gets the operation instance.
-   * <p>
-   * Same as {@link OperationHolder#getOperation()} but shorter.
-   *
-   * @return the operation
-   */
-  T me();
-
-  /**
    * Creates a clone of this DO.
    *
    * @return the cloned DO
