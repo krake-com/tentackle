@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.pdo.mock;
+package org.tentackle.test.pdo.mock;
 
 import java.util.List;
 import org.tentackle.common.Timestamp;

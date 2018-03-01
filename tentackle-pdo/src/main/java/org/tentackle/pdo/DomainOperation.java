@@ -37,7 +37,7 @@ public interface DomainOperation<T extends Operation<T>>
    *
    * @return the operation
    */
-  T op();
+  T operation();
 
   /**
    * Creates a clone of this DO.

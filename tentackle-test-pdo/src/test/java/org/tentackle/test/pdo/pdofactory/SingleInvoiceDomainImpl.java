@@ -17,15 +17,22 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
-
-import org.tentackle.pdo.Operation;
+package org.tentackle.test.pdo.pdofactory;
 
 /**
- * Operation interface.
- * 
+ * Collective invoice domain implementation.
+ *
  * @author harald
  */
-public interface SomeOperation extends Operation<SomeOperation>, SomeOperationPersistence {
+public class SingleInvoiceDomainImpl extends InvoiceDomainImpl<SingleInvoice> implements SingleInvoiceDomain {
+
+  /**
+   * Creates a collective invoice domain object.
+   *
+   * @param pdo the invoice
+   */
+  public SingleInvoiceDomainImpl(SingleInvoice pdo) {
+    super(pdo);
+  }
 
 }

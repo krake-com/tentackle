@@ -17,13 +17,18 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
 /**
  * Collective Incoice domain interface.
  *
  * @author harald
  */
-public interface SingleInvoiceDomain extends InvoiceDomain<SingleInvoice> {
+public interface CollectiveInvoiceDomain extends InvoiceDomain<CollectiveInvoice> {
+
+  /**
+   * Sums up the invoices.
+   */
+  void sumup();
 
 }

@@ -17,13 +17,15 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
+
+import org.tentackle.pdo.Operation;
 
 /**
- * Collective invoice PDO interface.
- *
+ * Operation interface.
+ * 
  * @author harald
  */
-public interface CollectiveInvoice extends Invoice<CollectiveInvoice>, CollectiveInvoiceDomain {
+public interface SomeOperation extends Operation<SomeOperation>, SomeOperationPersistence {
 
 }

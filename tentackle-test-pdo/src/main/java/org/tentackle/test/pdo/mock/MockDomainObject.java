@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.pdo.mock;
+package org.tentackle.test.pdo.mock;
 
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainObject;

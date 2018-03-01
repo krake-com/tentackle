@@ -16,9 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.pdo;
+package org.tentackle.test.pdo;
 
 import java.util.MissingResourceException;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.session.SessionUtilities;
 import org.testng.Assert;
 import org.testng.annotations.Test;

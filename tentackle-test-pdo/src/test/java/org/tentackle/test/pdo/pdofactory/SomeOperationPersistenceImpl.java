@@ -17,44 +17,32 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.mock.MockPersistentObject;
+import org.tentackle.test.pdo.mock.MockPersistentOperation;
 import org.testng.Reporter;
 
 
 /**
- * Invoice persistence implementation.
+ * Operation persistence implementation.
  *
  * @author harald
  */
-public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistentObject<T,InvoicePersistenceImpl<T>> implements InvoicePersistence<T> {
-
-  private String invoiceNo;
+public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOperation> implements SomeOperationPersistence {
 
   /**
-   * Creates an invoice persistence object.
+   * Creates an operation persistence object.
    *
-   * @param pdo the invoice
+   * @param operation the operation
    */
-  public InvoicePersistenceImpl(T pdo) {
-    super(pdo);
-    Reporter.log("InvoicePersistenceImpl created<br/>");
+  public SomeOperationPersistenceImpl(SomeOperation operation) {
+    super(operation);
+    Reporter.log("SomeOperationPersistenceImpl created<br/>");
   }
 
   @Override
-  public void setInvoiceNo(String invoiceNo) {
-    this.invoiceNo = invoiceNo;
-  }
-
-  @Override
-  public String getInvoiceNo() {
-    return invoiceNo;
-  }
-
-  @Override
-  public String toString() {
-    return "BlahPersist";
+  public String echo(String str) {
+    return str;
   }
 
 }

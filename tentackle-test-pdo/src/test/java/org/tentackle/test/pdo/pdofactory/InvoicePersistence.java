@@ -17,23 +17,29 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.PersistentOperation;
+import org.tentackle.pdo.PersistentObject;
 
 /**
- * Operation persistence interface.
+ * Invoice persistence interface.
  *
  * @author harald
  */
-public interface SomeOperationPersistence extends PersistentOperation<SomeOperation> {
+public interface InvoicePersistence<T extends Invoice<T>> extends PersistentObject<T> {
 
   /**
-   * Echo a string.
+   * Sets the invoice number.
    *
-   * @param str the string
-   * @return the string
+   * @param invoiceNo the invoice number
    */
-  String echo(String str);
+  void setInvoiceNo(String invoiceNo);
+
+  /**
+   * Gets the invocie number.
+   *
+   * @return the invoice number
+   */
+  String getInvoiceNo();
 
 }

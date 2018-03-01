@@ -201,7 +201,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   @Override
-  public T op() {
+  public T operation() {
     return operation;
   }
 

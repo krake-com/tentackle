@@ -17,26 +17,42 @@
  */
 
 
-package org.tentackle.pdo.pdofactorytest;
+package org.tentackle.test.pdo.pdofactory;
 
-import org.tentackle.pdo.DomainObject;
+import org.tentackle.test.pdo.mock.MockDomainObject;
+import org.testng.Reporter;
+
 
 /**
- * Invoice domain interface.
+ * Invoice domain implementation.
  *
  * @author harald
  */
-public interface InvoiceDomain<T extends Invoice<T>> extends DomainObject<T> {
+public class InvoiceDomainImpl<T extends Invoice<T>> extends MockDomainObject<T, InvoiceDomainImpl<T>> implements InvoiceDomain<T> {
 
   /**
-   * Returns the sum as a string.
+   * Creates an invoice domain object.
    *
-   * @return the sum
+   * @param pdo the invoice
    */
-  @LogIt
-  String getSumAsString();
+  public InvoiceDomainImpl(T pdo) {
+    super(pdo);
+    Reporter.log("InvoiceDomainImpl created<br/>");
+  }
 
   @Override
-  String toString();
+  public String getSumAsString() {
+    return "1234.00";
+  }
+
+  @Override
+  public String toString() {
+    return "BlahDomain";
+  }
+
+  @Override
+  public Object getUniqueDomainKey() {
+    return getPdo().getInvoiceNo();
+  }
 
 }
