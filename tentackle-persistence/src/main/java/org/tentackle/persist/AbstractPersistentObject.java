@@ -269,7 +269,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   @Override
-  public T pdo() {
+  public T me() {
     return pdo;
   }
 

@@ -37,7 +37,7 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
    *
    * @return the pdo
    */
-  T pdo();
+  T me();
 
   /**
    * Creates a clone of this DO.

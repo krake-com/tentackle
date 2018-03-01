@@ -188,7 +188,7 @@ public class RemoteMethodHelper {
           }
           boolean isThis = par.getName().equals("this");
           if (isThis && isPdo()) {
-            buf.append("pdo()");
+            buf.append("me()");
           }
           else {
             buf.append(par.getName());

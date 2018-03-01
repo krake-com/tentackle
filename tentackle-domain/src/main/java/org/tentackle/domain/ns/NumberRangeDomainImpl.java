@@ -47,12 +47,12 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
 
   @Override
   public String toString() {
-    return String.valueOf(pdo().getNumberPool()) + '[' + pdo().getBegin() + ',' + pdo().getEnd() + ']';
+    return String.valueOf(me().getNumberPool()) + '[' + me().getBegin() + ',' + me().getEnd() + ']';
   }
 
   @Override
   public long size() {
-    long size = pdo().getEnd() - pdo().getBegin();
+    long size = me().getEnd() - me().getBegin();
     if (size < 0) {
       size = 0;   // how?
     }
@@ -67,8 +67,8 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
   @Override
   public long popNumber() {
     assertNotEmpty();
-    long number = pdo().getBegin();
-    pdo().setBegin(number + 1);
+    long number = me().getBegin();
+    me().setBegin(number + 1);
     return number;
   }
 
@@ -79,14 +79,14 @@ public class NumberRangeDomainImpl extends AbstractDomainObject<NumberRange, Num
     if (count > size) {
       count = size;
     }
-    Range range = new Range(pdo().getBegin(), pdo().getBegin() + count);
-    pdo().setBegin(range.getEnd());
+    Range range = new Range(me().getBegin(), me().getBegin() + count);
+    me().setBegin(range.getEnd());
     return range;
   }
 
   @Override
   public boolean intersects(long begin, long end) {
-    return begin < pdo().getEnd() && end > pdo().getBegin();
+    return begin < me().getEnd() && end > me().getBegin();
   }
 
 

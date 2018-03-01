@@ -51,25 +51,25 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
 
   @Override
   public StoredBundleUDK getUniqueDomainKey() {
-    return new StoredBundleUDK(pdo());
+    return new StoredBundleUDK(me());
   }
 
   @Override
   public StoredBundle findByUniqueDomainKey(Object domainKey) {
     StoredBundleUDK udk = (StoredBundleUDK) domainKey;
-    return pdo().findByNameAndLocale(udk.name, udk.locale);
+    return me().findByNameAndLocale(udk.name, udk.locale);
   }
 
   @Override
   public String toString() {
-    return pdo().getName() + "[" + pdo().getLocale() + "]";
+    return me().getName() + "[" + me().getLocale() + "]";
   }
 
   @Override
   public synchronized String getTranslation(String key) {
     if (translations == null) {
       translations = new HashMap<>();
-      for (StoredBundleKey bundleKey: pdo().getKeys()) {
+      for (StoredBundleKey bundleKey: me().getKeys()) {
         translations.put(bundleKey.getKey(), bundleKey.getValue());
       }
     }
@@ -79,7 +79,7 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
   @Override
   public synchronized void setTranslation(String key, String value) {
     translations = null;
-    for (Iterator<StoredBundleKey> iter = pdo().getKeys().iterator(); iter.hasNext(); ) {
+    for (Iterator<StoredBundleKey> iter = me().getKeys().iterator(); iter.hasNext(); ) {
       StoredBundleKey bundleKey = iter.next();
       if (key.equals(bundleKey.getKey())) {
         if (value == null) {
@@ -95,7 +95,7 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
     StoredBundleKey bundleKey = on(StoredBundleKey.class);
     bundleKey.setKey(key);
     bundleKey.setValue(value);
-    pdo().getKeys().add(bundleKey);
+    me().getKeys().add(bundleKey);
   }
 
 }

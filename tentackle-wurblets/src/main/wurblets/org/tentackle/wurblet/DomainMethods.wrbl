@@ -44,12 +44,12 @@ For more options, see {\@link ModelWurblet}.
 
   \@Override
   public @(javaType)@ getUniqueDomainKey() {
-    return pdo().@(udk.get(0).getGetterName())@();
+    return me().@(udk.get(0).getGetterName())@();
   }
 
   \@Override
   public void setUniqueDomainKey(Object domainKey) {
-    pdo().@(udk.get(0).getSetterName())@((@(udk.get(0).getJavaType())@) domainKey);
+    me().@(udk.get(0).getSetterName())@((@(udk.get(0).getJavaType())@) domainKey);
   }
 @[
         }
@@ -74,7 +74,7 @@ For more options, see {\@link ModelWurblet}.
 
   \@Override
   public @(getEntity())@UDK getUniqueDomainKey() {
-    return new @(getEntity())@UDK(pdo());
+    return new @(getEntity())@UDK(me());
   }
 
   \@Override
@@ -83,7 +83,7 @@ For more options, see {\@link ModelWurblet}.
 @[
           for (Attribute attr: udk) {
 ]@
-    pdo().@(attr.getSetterName())@(udk.@(attr.getName())@);
+    me().@(attr.getSetterName())@(udk.@(attr.getName())@);
 @[
           }
 ]@

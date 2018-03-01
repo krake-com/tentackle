@@ -236,7 +236,7 @@ For more options, see {\@link DbModelWurblet}.
     }
     if (isWithJoins()) {
 ]@
-        js.createJoinedSql(pdo(), sql);
+        js.createJoinedSql(me(), sql);
 @[
     }
 ]@
@@ -276,12 +276,12 @@ For more options, see {\@link DbModelWurblet}.
 @[
         if (isWithJoins()) {
 ]@
-    return new ResultSetCursor<>(pdo(), rs, js));
+    return new ResultSetCursor<>(me(), rs, js));
 @[
         }
         else  {
 ]@
-    return new ResultSetCursor<>(pdo(), rs);
+    return new ResultSetCursor<>(me(), rs);
 @[
         }
       } // end if cursor

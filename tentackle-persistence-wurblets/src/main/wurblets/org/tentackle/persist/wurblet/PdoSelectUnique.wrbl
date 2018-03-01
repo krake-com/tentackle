@@ -163,7 +163,7 @@ For more options, see {\@link DbModelWurblet}.
     }
     if (isWithJoins()) {
 ]@
-        js.createJoinedSql(pdo(), sql);
+        js.createJoinedSql(me(), sql);
 @[
     }
 ]@

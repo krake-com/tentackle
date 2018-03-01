@@ -155,6 +155,6 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
    * @return the persistence delegate
    */
   protected SecurityPersistence po() {
-    return (SecurityPersistence) pdo().getPersistenceDelegate();
+    return (SecurityPersistence) me().getPersistenceDelegate();
   }
 }

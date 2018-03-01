@@ -43,7 +43,7 @@ public class StoredBundleKeyDomainImpl extends AbstractDomainObject<StoredBundle
 
   @Override
   public String toString() {
-    return pdo().getKey();
+    return me().getKey();
   }
 
 }

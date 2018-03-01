@@ -61,7 +61,7 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
   }
 
   @Override
-  public T pdo() {
+  public T me() {
     return pdo;
   }
 

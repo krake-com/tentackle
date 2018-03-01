@@ -44,4 +44,13 @@ public interface OperationHolder<T extends Operation<T>> extends Interceptable {
    */
   void setOperation(T operation);
 
+  /**
+   * Creates a new instance of the same type as the operation.
+   *
+   * @return the new instance
+   */
+  default T op() {
+    return OperationFactory.getInstance().create(getOperation());
+  }
+
 }

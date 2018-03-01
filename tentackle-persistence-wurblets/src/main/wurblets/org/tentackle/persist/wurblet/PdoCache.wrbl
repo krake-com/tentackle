@@ -575,7 +575,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
     else {
-      obj = pdo().findByUniqueDomainKey(@(udkName)@);
+      obj = me().findByUniqueDomainKey(@(udkName)@);
     }
     return obj;
   }
