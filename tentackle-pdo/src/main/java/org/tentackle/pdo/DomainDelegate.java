@@ -20,7 +20,7 @@
 package org.tentackle.pdo;
 
 /**
- * Interface all delegates implementing the domain model must implement.
+ * Interface for all delegates implementing the domain model.
  *
  * @author harald
  * @param <T> the PDO or Operation type
