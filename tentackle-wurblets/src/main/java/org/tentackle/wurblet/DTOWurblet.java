@@ -44,14 +44,26 @@ public class DTOWurblet extends AbstractWurblet {
    */
   protected static class Property {
 
-    private final String type;      // the java type
-    private final String name;      // the property name
-    private final String comment;   // the comment
+    private final String type;        // the java type
+    private final String name;        // the property name
+    private final String comment;     // the comment
+    private final boolean inherited;  // true if inherited
 
     public Property(String type, String name, String comment) {
-      this.type = type;
+      if (type.startsWith("^")) {
+        inherited = true;
+        this.type = type.substring(1);
+      }
+      else {
+        this.type = type;
+        inherited = false;
+      }
       this.name = name;
       this.comment = comment == null || comment.isEmpty() ? "the " + name + " property" : comment;
+    }
+
+    public boolean isInherited() {
+      return inherited;
     }
 
     public String getType() {

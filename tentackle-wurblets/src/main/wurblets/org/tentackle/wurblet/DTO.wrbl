@@ -22,10 +22,14 @@ The model is usually stored in a heap-file such as ".$filename" created as a her
 block of the DTO-file.<br>
 Each line describes a property.<br>
 Example:
-<p>
 <pre>
 String  name    the object's name
 int     count   the counter
+</pre>
+If the line is prefixed with "^" the property is passed to the super entity within the constructor.<br>
+Example:
+<pre>
+^String name the name
 </pre>
 }@
 @[
@@ -33,9 +37,11 @@ int     count   the counter
 
     // create declarations
     for (Property property: properties) {
+      if (!property.isInherited()) {
 ]@
   private final @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
 @[
+      }
     }
 
     // create constructor
@@ -47,14 +53,21 @@ int     count   the counter
 @[
     for (Property property: properties) {
 ]@
-   * @param @(property.getName())@ @(property.getComment())@
+   * \@param @(property.getName())@ @(property.getComment())@
 @[
     }
 ]@
    */
 @[
     StringBuilder args = new StringBuilder();
+    StringBuilder superArgs = new StringBuilder();
     for (Property property: properties) {
+      if (property.isInherited()) {
+        if (superArgs.length() > 0) {
+          superArgs.append(", ");
+        }
+        superArgs.append(property.getName());
+      }
       if (args.length() > 0) {
         args.append(", ");
       }
@@ -63,10 +76,17 @@ int     count   the counter
 ]@
   public @(getClassName())@(@(args.toString())@) {
 @[
+    if (superArgs.length() > 0) {
+]@
+    super(@(superArgs)@);
+@[
+    }
     for (Property property: properties) {
+      if (!property.isInherited()) {
 ]@
     this.@(property.getName())@ = @(property.getName())@;
 @[
+      }
     }
 ]@
   }
@@ -74,17 +94,19 @@ int     count   the counter
 
     // create getter
     for (Property property: properties) {
+      if (!property.isInherited()) {
 ]@
 
   /**
    * Gets @(property.getComment())@.
    *
-   * @return @(property.getComment())@
+   * \@return @(property.getComment())@
    */
   public @(property.getType())@ @(property.getGetterName())@() {
     return @(property.getName())@;
   }
 @[
+      }
     }
   }
 ]@
