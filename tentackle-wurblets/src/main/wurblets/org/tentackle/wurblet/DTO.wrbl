@@ -1,0 +1,90 @@
+@{package org.tentackle.wurblet}@
+@{import java.util.*}@
+@{import java.io.*}@
+@{import org.wurbelizer.wurbel.*}@
+@{import org.wurbelizer.wurblet.*}@
+@{import org.wurbelizer.misc.*}@
+@{extends DTOWurblet}@
+@{args}@
+@{comment
+<strong>({\@code \@wurblet})</strong> DTO creates code for a data transfer object.
+<p>
+usage:<br>
+&#064;wurblet &lt;tag&gt; DTO &lt;filename&gt;
+<p>
+arguments:
+<ul>
+<li><em>filename:</em> the file holding the DTO model.</li>
+</ul>
+For more options, see {\@link AbstractWurblet}.
+<p>
+The model is usually stored in a heap-file such as ".$filename" created as a here-document within the leading comment
+block of the DTO-file.<br>
+Each line describes a property.<br>
+Example:
+<p>
+<pre>
+String  name    the object's name
+int     count   the counter
+</pre>
+}@
+@[
+  private void wurbel() throws WurbelException {
+
+    // create declarations
+    for (Property property: properties) {
+]@
+  private final @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+@[
+    }
+
+    // create constructor
+]@
+
+  /**
+   * Creates a @(getClassName())@.
+   *
+@[
+    for (Property property: properties) {
+]@
+   * @param @(property.getName())@ @(property.getComment())@
+@[
+    }
+]@
+   */
+@[
+    StringBuilder args = new StringBuilder();
+    for (Property property: properties) {
+      if (args.length() > 0) {
+        args.append(", ");
+      }
+      args.append(property.getType()).append(' ').append(property.getName());
+    }
+]@
+  public @(getClassName())@(@(args.toString())@) {
+@[
+    for (Property property: properties) {
+]@
+    this.@(property.getName())@ = @(property.getName())@;
+@[
+    }
+]@
+  }
+@[
+
+    // create getter
+    for (Property property: properties) {
+]@
+
+  /**
+   * Gets @(property.getComment())@.
+   *
+   * @return @(property.getComment())@
+   */
+  public @(property.getType())@ @(property.getGetterName())@() {
+    return @(property.getName())@;
+  }
+@[
+    }
+  }
+]@
