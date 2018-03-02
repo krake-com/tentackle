@@ -79,7 +79,7 @@ public class DTOWurblet extends AbstractWurblet {
     }
 
     public String getGetterName() {
-      return "get" + StringHelper.firstToUpper(name);
+      return ("boolean".equals(type) ? "is" : "get") + StringHelper.firstToUpper(name);
     }
   }
 
