@@ -48,15 +48,23 @@ public class DTOWurblet extends AbstractWurblet {
     private final String name;        // the property name
     private final String comment;     // the comment
     private final boolean inherited;  // true if inherited
+    private final boolean mutable;    // true if with setter instead of final
 
     public Property(String type, String name, String comment) {
       if (type.startsWith("^")) {
         inherited = true;
+        mutable = false;
+        this.type = type.substring(1);
+      }
+      else if (type.startsWith("=")) {
+        mutable = true;
+        inherited = false;
         this.type = type.substring(1);
       }
       else {
         this.type = type;
         inherited = false;
+        mutable = false;
       }
       this.name = name;
       this.comment = comment == null || comment.isEmpty() ? "the " + name + " property" : comment;
@@ -64,6 +72,10 @@ public class DTOWurblet extends AbstractWurblet {
 
     public boolean isInherited() {
       return inherited;
+    }
+
+    public boolean isMutable() {
+      return mutable;
     }
 
     public String getType() {
@@ -81,12 +93,18 @@ public class DTOWurblet extends AbstractWurblet {
     public String getGetterName() {
       return ("boolean".equals(type) ? "is" : "get") + StringHelper.firstToUpper(name);
     }
+
+    public String getSetterName() {
+      return "set" + StringHelper.firstToUpper(name);
+    }
+
   }
 
 
 
   protected String filename;            // filename of the here-doc holding the model (usually given as "$> .$filename")
   protected List<Property> properties;  // the DTO properties
+  protected boolean needConstructor;    // true if constructor necessary
 
 
   public DTOWurblet() {
@@ -134,12 +152,16 @@ public class DTOWurblet extends AbstractWurblet {
           if (type == null || name == null) {
             throw new WurbelException("property line too short: '" + line + "'");
           }
-          properties.add(new Property(type, name, comment.toString()));
+          Property property = new Property(type, name, comment.toString());
+          if (!property.isMutable()) {
+            needConstructor = true;
+          }
+          properties.add(property);
         }
       }
     }
     catch (IOException ex) {
-      throw new WurbelException("including " + filename + " failed", ex);
+      throw new WurbelException("reading model " + filename + " failed", ex);
     }
   }
 
