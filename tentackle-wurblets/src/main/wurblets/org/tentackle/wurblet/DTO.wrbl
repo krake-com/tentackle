@@ -26,10 +26,15 @@ Example:
 String  name    the object's name
 int     count   the counter
 </pre>
-If the line is prefixed with "^" the property is passed to the super entity within the constructor.<br>
+If the line is prefixed with "^", the property is passed to the super entity within the constructor.<br>
 Example:
 <pre>
-^String name the name
+^String name   the name
+</pre>
+If the line is prefixed with "=", the property is mutable and a setter is generated.<br>
+Example:
+<pre>
+=String name   the name
 </pre>
 }@
 @[
@@ -38,59 +43,72 @@ Example:
     // create declarations
     for (Property property: properties) {
       if (!property.isInherited()) {
+        if (property.isMutable()) {
+]@
+  private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+@[
+        }
+        else {
 ]@
   private final @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
 @[
+        }
       }
     }
 
     // create constructor
+    if (needConstructor) {
 ]@
 
   /**
    * Creates a @(getClassName())@.
    *
 @[
-    for (Property property: properties) {
+      for (Property property: properties) {
+        if (!property.isMutable()) {
 ]@
    * \@param @(property.getName())@ @(property.getComment())@
 @[
-    }
+        }
+      }
 ]@
    */
 @[
-    StringBuilder args = new StringBuilder();
-    StringBuilder superArgs = new StringBuilder();
-    for (Property property: properties) {
-      if (property.isInherited()) {
-        if (superArgs.length() > 0) {
-          superArgs.append(", ");
+      StringBuilder args = new StringBuilder();
+      StringBuilder superArgs = new StringBuilder();
+      for (Property property: properties) {
+        if (!property.isMutable()) {
+          if (property.isInherited()) {
+            if (superArgs.length() > 0) {
+              superArgs.append(", ");
+            }
+            superArgs.append(property.getName());
+          }
+          if (args.length() > 0) {
+            args.append(", ");
+          }
+          args.append(property.getType()).append(' ').append(property.getName());
         }
-        superArgs.append(property.getName());
       }
-      if (args.length() > 0) {
-        args.append(", ");
-      }
-      args.append(property.getType()).append(' ').append(property.getName());
-    }
 ]@
   public @(getClassName())@(@(args.toString())@) {
 @[
-    if (superArgs.length() > 0) {
+      if (superArgs.length() > 0) {
 ]@
     super(@(superArgs)@);
 @[
-    }
-    for (Property property: properties) {
-      if (!property.isInherited()) {
+      }
+      for (Property property: properties) {
+        if (!property.isInherited() && !property.isMutable()) {
 ]@
     this.@(property.getName())@ = @(property.getName())@;
 @[
+        }
       }
-    }
 ]@
   }
 @[
+    }
 
     // create getter
     for (Property property: properties) {
@@ -104,6 +122,23 @@ Example:
    */
   public @(property.getType())@ @(property.getGetterName())@() {
     return @(property.getName())@;
+  }
+@[
+      }
+    }
+
+    // create setter
+    for (Property property: properties) {
+      if (property.isMutable()) {
+]@
+
+  /**
+   * Sets @(property.getComment())@.
+   *
+   * \@param @(property.getName())@ @(property.getComment())@
+   */
+  public void @(property.getSetterName())@(@(property.getType())@ @(property.getName())@) {
+    this.@(property.getName())@ = @(property.getName())@;
   }
 @[
       }
