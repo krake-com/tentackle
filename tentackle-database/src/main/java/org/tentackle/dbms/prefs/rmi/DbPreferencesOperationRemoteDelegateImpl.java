@@ -66,7 +66,7 @@ public class DbPreferencesOperationRemoteDelegateImpl
   @Override
   public boolean flush(DbPreferences node, boolean sync) throws RemoteException {
     try {
-      return dbOperation.flush(node, sync);
+      return dbOperation.flush(node, sync, true);
     }
     catch (Exception e) {
       throw createException(e);

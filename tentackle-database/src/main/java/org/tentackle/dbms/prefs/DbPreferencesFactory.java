@@ -427,7 +427,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     try {
       boolean updated = db.transaction(() -> {
         try {
-          return new DbPreferencesOperation(db).flush(node, sync);
+          return new DbPreferencesOperation(db).flush(node, sync, false);
         }
         catch (RuntimeException rex) {
           // remove the root node from the repo (forces reload on next access)
@@ -448,7 +448,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-  
+
   /**
    * Removes a root node of given node from the repository.
    *
