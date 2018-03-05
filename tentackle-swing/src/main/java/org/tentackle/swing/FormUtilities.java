@@ -81,7 +81,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.swing.bind.DefaultFormBindingFactory;
 import org.tentackle.swing.bind.FormBindingFactory;
 import org.tentackle.swing.bind.FormComponentBinding;
@@ -1705,13 +1704,7 @@ public class FormUtilities {
       counter[0]++;
       prefs.putInt("height_" + counter[0] , comp.getHeight()); // NOI18N
       prefs.putInt("width_" + counter[0], comp.getWidth()); // NOI18N
-      try {
-        prefs.flush();
-      }
-      catch (PreferencesInvalidException pix) {
-        // ignore if changed meanwhile, just log that (would confuse user)
-        LOGGER.warning(pix.getMessage());
-      }
+      prefs.flush();
     }
     else if (comp instanceof Container) {
       for (Component component : ((Container) comp).getComponents()) {

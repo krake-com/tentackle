@@ -41,7 +41,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 
 
 
@@ -98,7 +97,7 @@ public class TablePopup<S> {
     }
   }
 
-  
+
   /**
    * Gets the table.
    *
@@ -319,12 +318,7 @@ public class TablePopup<S> {
         TableUtilities.getInstance().toSpreadsheet(table, selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(EXCEL_KEY, selectedFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
+          prefs.flush();
         }
       }
 
@@ -384,12 +378,7 @@ public class TablePopup<S> {
         TableUtilities.getInstance().toXml(table, selectedFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(XML_KEY, selectedFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
+          prefs.flush();
         }
       }
 

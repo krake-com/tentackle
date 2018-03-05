@@ -77,7 +77,6 @@ import org.tentackle.misc.FormatHelper;
 import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.swing.bind.FormTableBinding;
 
 
@@ -882,13 +881,7 @@ public class FormTable<T> extends JTable implements FormChangeableComponent {
       prefs.putInt(PREF_TABLE_WIDTH, getWidth());  // store just for documentation
     }
 
-    try {
-      prefs.flush();
-    }
-    catch (PreferencesInvalidException pix) {
-      // ignore if changed meanwhile, just log that (would confuse user)
-      LOGGER.warning(pix.toString());
-    }
+    prefs.flush();
   }
 
 

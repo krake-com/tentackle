@@ -73,7 +73,6 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -740,12 +739,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         toExcel(outFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(EXCEL_KEY, outFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
+          prefs.flush();
         }
       }
     }
@@ -918,12 +912,7 @@ public class FormTableUtilityPopup implements MouseListener, KeyListener {
         toXml(outFile, onlySelected);
         if (!PersistedPreferencesFactory.getInstance().isReadOnly()) {
           prefs.put(XML_KEY, outFile.getAbsolutePath());
-          try {
-            prefs.flush();
-          }
-          catch (PreferencesInvalidException pix) {
-            // ignore if changed meanwhile
-          }
+          prefs.flush();
         }
       }
     }
