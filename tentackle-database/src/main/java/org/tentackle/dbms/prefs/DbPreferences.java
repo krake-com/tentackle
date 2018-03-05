@@ -377,12 +377,12 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public void flush() throws BackingStoreException {
-    getFactory().flush(this);
+    getFactory().flush(this, false);
   }
 
   @Override
   public void sync() throws BackingStoreException {
-    getFactory().sync(this);
+    getFactory().flush(this, true);
   }
 
   @Override
