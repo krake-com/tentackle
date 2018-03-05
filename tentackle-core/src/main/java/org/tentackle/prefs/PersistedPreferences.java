@@ -577,8 +577,6 @@ public interface PersistedPreferences {
    * <p>
    * @throws BackingStoreException if this operation cannot be completed due to a failure in the backing store, or
    *                               inability to communicate with it.
-   * @throws PreferencesInvalidException if some of the nodes or preferences keys were changed in the meantime
-   * and application should reload the preferences node(s)
    * @see #sync()
    */
   void flush() throws BackingStoreException;
@@ -592,8 +590,6 @@ public interface PersistedPreferences {
    * @throws BackingStoreException if this operation cannot be completed due to a failure in the backing store, or
    *                               inability to communicate with it.
    * @throws IllegalStateException if this node (or an ancestor) has been removed with the {@link #removeNode()} method.
-   * @throws PreferencesInvalidException if some of the nodes or preferences keys were changed in the meantime
-   * and application should reload the preferences node(s)
    * @see #flush()
    */
   void sync() throws BackingStoreException;
