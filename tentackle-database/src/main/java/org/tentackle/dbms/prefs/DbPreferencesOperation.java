@@ -174,9 +174,10 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
    *
    * @param node the node
    * @param sync true if load modifications from storage before flush
+   * @param orphan true if node is an orphan not loaded from its parent, false if node is part of repository
    * @return true if some nodes or keys were updated from storage
    */
-  public boolean flush(DbPreferences node, boolean sync) {
+  public boolean flush(DbPreferences node, boolean sync, boolean orphan) {
     // go up the tree until the first persisted node or the root node
     while (!node.isRootNode() && node.getPersistentNode().isNew()) {
       node = node.parent();
@@ -204,7 +205,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
                                      new DbPreferencesNode(db).getModificationCount(),
                                      new DbPreferencesKey(db).getModificationCount());
           }
-          return topNode.flushImpl(db);
+          return topNode.flushImpl(db, !orphan);
         });
       }
     }
@@ -261,8 +262,9 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
             parent.putChild(child);
           }
           else {
-            LOGGER.warning("parent with ID={0} missing for child node {1}",
-                           child.getPersistentNode().getId(), child.getPersistentNode().getId());
+            LOGGER.warning("parent missing for child node {0} -> child removed!", child.getPersistentNode());
+            child.getPersistentNode().setSession(db);
+            child.getPersistentNode().deleteObject();
           }
         }
       }
@@ -275,8 +277,9 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
           parent.putPersistentKey(prefKey);
         }
         else {
-          LOGGER.warning("parent with ID={0} missing for key {1}",
-                         prefKey.getNodeId(), prefKey.getId());
+          LOGGER.warning("parent missing for key {0} -> key removed!", prefKey);
+          prefKey.setSession(db);
+          prefKey.deleteObject();
         }
       }
     }
