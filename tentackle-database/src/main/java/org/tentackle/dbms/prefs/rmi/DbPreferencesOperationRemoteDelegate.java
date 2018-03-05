@@ -33,7 +33,7 @@ public interface DbPreferencesOperationRemoteDelegate extends AbstractDbOperatio
 
   DbPreferences loadRootTree(String user, boolean forced) throws RemoteException;
 
-  boolean flush(DbPreferences node) throws RemoteException;
+  boolean flush(DbPreferences node, boolean sync) throws RemoteException;
 
   RefreshInfo loadRefreshInfo(String user, long serial) throws RemoteException;
 

@@ -39,7 +39,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationEventDetail;
 import org.tentackle.session.ModificationListenerAdapter;
@@ -416,14 +415,15 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
    * Flushes a node and all of its subnodes to the backing store.
    *
    * @param node the preferences node
+   * @param sync true if load modifications from storage before flush
    * @throws BackingStoreException if failed
    */
-  public synchronized void flush(DbPreferences node) throws BackingStoreException {
+  public synchronized void flush(DbPreferences node, boolean sync) throws BackingStoreException {
     Db db = requestDb(node.isUserNode(), true);
     try {
       boolean updated = db.transaction(() -> {
         try {
-          return new DbPreferencesOperation(db).flush(node);
+          return new DbPreferencesOperation(db).flush(node, sync);
         }
         catch (RuntimeException rex) {
           // remove the root node from the repo (forces reload on next access)
@@ -433,7 +433,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       });
 
       if (updated) {
-        throw new PreferencesInvalidException(node.toString());
+        LOGGER.warning("nodes where updated or deleted by another JVM");
       }
     }
     catch (RuntimeException rex) {
@@ -444,30 +444,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     }
   }
 
-  /**
-   * Syncs a node and all of its subnodes from and to the backing store.<br>
-   * Same as flush but loads any modifications into repo first and then flushes all mods.<br>
-   * Necessary if autoSync is set to false (default is true).
-   *
-   *
-   * @param node the preferences node
-   * @throws BackingStoreException if failed
-   */
-  public synchronized void sync(DbPreferences node) throws BackingStoreException {
-    Db db = requestDb(node.isUserNode(), true);
-    try {
-      updateRepository(db,
-                       new DbPreferencesNode(db).getModificationCount(),
-                       new DbPreferencesKey(db).getModificationCount());
-    }
-    finally {
-      releaseDb(db);
-    }
-    flush(node);
-  }
-
-
-
+  
   /**
    * Removes a root node of given node from the repository.
    *

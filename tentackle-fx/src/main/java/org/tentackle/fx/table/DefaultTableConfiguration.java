@@ -33,7 +33,6 @@ import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
-import org.tentackle.prefs.PreferencesInvalidException;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 
@@ -231,14 +230,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
       }
       prefs.putDouble(PREF_TABLE_HEIGHT, height);
       prefs.putDouble(PREF_TABLE_WIDTH, table.getWidth());
-
-      try {
-        prefs.flush();
-      }
-      catch (PreferencesInvalidException pix) {
-        // ignore if changed meanwhile, just log that (would confuse user)
-        LOGGER.warning(pix.toString());
-      }
+      prefs.flush();
     }
     catch (BackingStoreException | RuntimeException ex) {
       throw new FxRuntimeException("saving table preferences failed for '" + prefName + "'", ex);
