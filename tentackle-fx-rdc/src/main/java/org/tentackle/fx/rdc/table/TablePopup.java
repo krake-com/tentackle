@@ -329,6 +329,14 @@ public class TablePopup<S> {
     }
   }
 
+  /**
+   * Saves the table preferences.<br>
+   * System- or user scope is determined from {@link PersistedPreferencesFactory}.
+   */
+  public void savePreferences() {
+    savePreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
+  }
+
 
   /**
    * Loads the table preferences.
@@ -343,6 +351,14 @@ public class TablePopup<S> {
       LOGGER.severe("loading table preferences failed", ex);
       Fx.error(RdcFxRdcBundle.getString("LOADING PREFERENCES FAILED"), ex);
     }
+  }
+
+  /**
+   * Loads the table preferences.<br>
+   * System- or user scope is determined from {@link PersistedPreferencesFactory}.
+   */
+  public void loadPreferences() {
+    loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
   }
 
 }

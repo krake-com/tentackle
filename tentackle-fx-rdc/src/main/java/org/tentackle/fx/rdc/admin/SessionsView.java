@@ -34,7 +34,6 @@ import org.tentackle.pdo.AdminExtension.SessionData;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRemoteSession;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 
 
 
@@ -97,7 +96,7 @@ public class SessionsView extends AbstractFxController {
     if (context.getSession().isRemote()) {    // needs check to run tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();
       adminExt = remoteSession.getExtension(context, AdminExtension.class);
-      popup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
+      popup.loadPreferences();
       securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(context));
       refresh();
     }

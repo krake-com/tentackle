@@ -71,7 +71,6 @@ import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
 
@@ -252,7 +251,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       }
     });
     TablePopup<T> tablePopup = RdcFactory.getInstance().createTablePopup(tableView, null, false, pdo.getPlural());
-    tablePopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
+    tablePopup.loadPreferences();
 
     treeView = Fx.createNode(TreeView.class);
     treeView.setCellFactory(p -> Rdc.createTreeCell());
@@ -702,7 +701,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
           !event.isShiftDown() && !event.isShortcutDown() &&
           event.getCode() == KeyCode.ESCAPE && Fx.isModal(getStage())) {
-        
+
         cancel();
       }
     });
