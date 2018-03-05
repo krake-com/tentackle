@@ -51,7 +51,6 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.session.SessionUtilities;
@@ -197,11 +196,11 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   public void configure() {
     TablePopup<Security> classRulesPopup = RdcFactory.getInstance().createTablePopup(
             classRulesNode, "classRules", false, resources.getString("Class Rules"));
-    classRulesPopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
+    classRulesPopup.loadPreferences();
     classRulesNode.setSortable(false);
     TablePopup<Security> pdoRulesPopup = RdcFactory.getInstance().createTablePopup(
             pdoRulesNode, "pdoRules", false, resources.getString("Object Rules"));
-    pdoRulesPopup.loadPreferences(PersistedPreferencesFactory.getInstance().isSystemOnly());
+    pdoRulesPopup.loadPreferences();
     pdoRulesNode.setSortable(false);
   }
 
