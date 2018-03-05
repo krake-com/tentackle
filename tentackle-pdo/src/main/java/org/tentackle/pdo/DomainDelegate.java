@@ -25,14 +25,7 @@ package org.tentackle.pdo;
  * @author harald
  * @param <T> the PDO or Operation type
  */
-public interface DomainDelegate<T> {
-
-  /**
-   * Gets the proxy instance.
-   *
-   * @return the proxy instance
-   */
-  T me();
+public interface DomainDelegate<T> extends ProxyDelegate<T> {
 
   /**
    * Gets the persistence delegate.
