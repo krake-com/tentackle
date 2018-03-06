@@ -27,6 +27,13 @@ package org.tentackle.daemon;
 public interface Supervisable extends Killable {
 
   /**
+   * The name of the supervisable.
+   *
+   * @return the name, usually the thread's name
+   */
+  String getName();
+
+  /**
    * Returns whether this supervisable is dead and needs to be killed.
    *
    * @return true if dead, false if ok and running
