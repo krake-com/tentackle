@@ -46,8 +46,8 @@ public interface Scavenger {
    */
   static boolean isScavenger(Thread thread) {
     return thread instanceof Scavenger && ((Scavenger) thread).isScavenging() ||
-           "Finalizer".equals(thread.getName()) ||
-           "Secondary finalizer".equals(thread.getName());
+           thread.getClass().getName().startsWith("jdk.internal.") ||   // Cleaner
+           thread.getClass().getName().startsWith("java.lang.");        // Finalizer
   }
 
 }
