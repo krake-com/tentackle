@@ -40,18 +40,31 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   private static final Logger LOGGER = Logger.get(DaemonSupervisor.class);
 
   /**
+   * The daemon termination info.
+   */
+  private static class TerminationInfo {
+    private final String name;        // the daemon name
+    private final Object cause;       // the termination cause, null if daemon running
+
+    private TerminationInfo(String name, Object cause) {
+      this.name = name;
+      this.cause = cause;
+    }
+  }
+
+  /**
    * Daemon wrapper.
    */
   private class Daemon {
 
-    private Thread supervisedDaemon;      // the managed daemon
-    private final int daemonIndex;        // the slot index
-    private Supervisable supervisable;    // != null if daemon is a Supervisable
-    private boolean supervisableKilled;   // true if supervisable was killed
-    private int startCount;               // number of starts
-    private boolean enabled = true;       // true if daemon is enabled (default)
-    private Object terminationCause;      // the termination cause, null if daemon running
-    private Object lastTerminationCause;  // the saved termination cause, when new daemon was started
+    private Thread supervisedDaemon;              // the managed daemon
+    private final int daemonIndex;                // the slot index
+    private Supervisable supervisable;            // != null if daemon is a Supervisable
+    private boolean supervisableKilled;           // true if supervisable was killed
+    private int startCount;                       // number of starts
+    private boolean enabled = true;               // true if daemon is enabled (default)
+    private TerminationInfo terminationInfo;      // the termination info, null if daemon running
+    private TerminationInfo lastTerminationInfo;  // the saved termination info, when new daemon was started
 
     /**
      * Creates a daemon wrapper.
@@ -107,8 +120,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      */
     private void clear() {
       if (supervisable != null) {
-        lastTerminationCause = null;    // daemon terminated: clear old cause in case no current cause
-        terminationCause = supervisable.getTerminationCause();
+        lastTerminationInfo = null;    // daemon terminated: clear old cause in case no current cause
+        terminationInfo = new TerminationInfo(supervisable.getName(), supervisable.getTerminationCause());
       }
       supervisedDaemon = null;
       supervisable = null;
@@ -454,7 +467,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
   /**
-   * Gets the last termination cause.<br>
+   * Gets the termination cause.<br>
    * Only valid if daemon is a {@link Supervisable}.
    * <p>
    * Notice that the cause may be non-null even if the daemon is
@@ -465,16 +478,25 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * @return the termination cause, null if none
    */
   public Object getTerminationCause(int index) {
-    Object cause = null;
-    Daemon daemon = getDaemon(index);
-    if (daemon != null) {
-      cause = daemon.terminationCause;
-      if (cause == null) {
-        // new daemon started in the meantime? (i.e. current cause cleared)
-        cause = daemon.lastTerminationCause;    // try saved cause
-      }
-    }
-    return cause;
+    TerminationInfo info = getTerminationInfo(index);
+    return info == null ? null : info.cause;
+  }
+
+
+  /**
+   * Gets the name of the terminated daemon.<br>
+   * Only valid if daemon is a {@link Supervisable}.
+   * <p>
+   * Notice that the name may be non-null even if the daemon is
+   * running properly. In this case, the name refers
+   * to the previously terminated instance.
+   *
+   * @param index the daemon's slot [0 ... daemonNum-1]
+   * @return the daemon name, null if none
+   */
+  public String getTerminationName(int index) {
+    TerminationInfo info = getTerminationInfo(index);
+    return info == null ? null : info.name;
   }
 
 
@@ -645,8 +667,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
             }
             else  {
               // survived at least one interval -> clear termination cause
-              daemon.lastTerminationCause = daemon.terminationCause;    // save old cause
-              daemon.terminationCause = null;
+              daemon.lastTerminationInfo = daemon.terminationInfo;    // save old cause
+              daemon.terminationInfo = null;
             }
           }
           else {
@@ -720,6 +742,23 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     LOGGER.info("daemon supervisor {0} terminated", getClass().getName());
   }
 
+
+
+  /**
+   * Safely interrupt the dispatcher without interrupting any running task.
+   */
+  public void safeInterrupt() {
+    lock.writeLock().lock();
+    try {
+      interrupt();
+    }
+    finally {
+      lock.writeLock().unlock();
+    }
+  }
+
+
+
   /**
    * Gets the daemon for given index.
    *
@@ -742,16 +781,22 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
   /**
-   * Safely interrupt the dispatcher without interrupting any running task.
+   * Gets the latest termination info.
+   *
+   * @param index the daemon index
+   * @return the info, null if none
    */
-  public void safeInterrupt() {
-    lock.writeLock().lock();
-    try {
-      interrupt();
+  private TerminationInfo getTerminationInfo(int index) {
+    TerminationInfo info = null;
+    Daemon daemon = getDaemon(index);
+    if (daemon != null) {
+      info = daemon.terminationInfo;
+      if (info == null) {
+        // new daemon started in the meantime? (i.e. current cause cleared)
+        info = daemon.lastTerminationInfo;    // try saved cause
+      }
     }
-    finally {
-      lock.writeLock().unlock();
-    }
+    return info;
   }
 
 }
