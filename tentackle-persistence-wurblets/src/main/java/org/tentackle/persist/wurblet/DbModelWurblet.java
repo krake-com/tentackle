@@ -1090,8 +1090,16 @@ public class DbModelWurblet extends ModelWurblet {
    * @param relation the relation
    * @return the set-method name
    */
-  public String createRelationSetFirstArgMethodName(Relation relation) {
-    return "set" + StringHelper.firstToUpper(relation.getMethodArgs().get(0).getAttribute().getName());
+  public String createRelationSetFirstArgMethodName(Relation relation) throws WurbelException {
+    if (relation.getMethodArgs().size() > 1) {
+      throw new WurbelException("more than one method argument in relation " + relation);
+    }
+    MethodArgument methodArg = relation.getMethodArgs().get(0); // at least 1 element
+    Attribute attribute = methodArg.getAttribute();
+    if (attribute == null) {
+      throw new WurbelException("missing attribute for method argument " + methodArg + " in relation " + relation);
+    }
+    return "set" + StringHelper.firstToUpper(attribute.getName());
   }
 
 
