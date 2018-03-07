@@ -43,13 +43,32 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
   /**
    * The daemon termination info.
    */
-  private static class TerminationInfo {
+  public static class TerminationInfo {
+
     private final String name;        // the daemon name
     private final Object cause;       // the termination cause, null if daemon running
 
     private TerminationInfo(String name, Object cause) {
       this.name = name;
       this.cause = cause;
+    }
+
+    /**
+     * Gets the name of the terminated daemon.
+     *
+     * @return the daemon name
+     */
+    public String getName() {
+      return name;
+    }
+
+    /**
+     * Gets the termination cause.
+     *
+     * @return the cause, usually an exception
+     */
+    public Object getCause() {
+      return cause;
     }
   }
 
@@ -468,6 +487,25 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
 
   /**
+   * Gets the latest termination info.
+   *
+   * @param index the daemon index
+   * @return the info, null if none
+   */
+  public TerminationInfo getTerminationInfo(int index) {
+    TerminationInfo info = null;
+    Daemon daemon = getDaemon(index);
+    if (daemon != null) {
+      info = daemon.terminationInfo;
+      if (info == null) {
+        // new daemon started in the meantime? (i.e. current cause cleared)
+        info = daemon.lastTerminationInfo;    // try saved cause
+      }
+    }
+    return info;
+  }
+
+  /**
    * Gets the termination cause.<br>
    * Only valid if daemon is a {@link Supervisable}.
    * <p>
@@ -482,7 +520,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     TerminationInfo info = getTerminationInfo(index);
     return info == null ? null : info.cause;
   }
-
 
   /**
    * Gets the name of the terminated daemon.<br>
@@ -778,26 +815,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
     finally {
       lock.readLock().unlock();
     }
-  }
-
-
-  /**
-   * Gets the latest termination info.
-   *
-   * @param index the daemon index
-   * @return the info, null if none
-   */
-  private TerminationInfo getTerminationInfo(int index) {
-    TerminationInfo info = null;
-    Daemon daemon = getDaemon(index);
-    if (daemon != null) {
-      info = daemon.terminationInfo;
-      if (info == null) {
-        // new daemon started in the meantime? (i.e. current cause cleared)
-        info = daemon.lastTerminationInfo;    // try saved cause
-      }
-    }
-    return info;
   }
 
 }
