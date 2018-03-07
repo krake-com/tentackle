@@ -43,13 +43,24 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
    * The daemon termination info.
    */
   public static class TerminationInfo {
-    
+
+    private final long since;         // termination time
     private final String name;        // the daemon name
-    private final Object cause;       // the termination cause, null if daemon running
+    private final Object cause;       // the termination cause
 
     private TerminationInfo(String name, Object cause) {
+      this.since = System.currentTimeMillis();
       this.name = name;
       this.cause = cause;
+    }
+
+    /**
+     * Gets the epochal termination time.
+     *
+     * @return the time in millis
+     */
+    public long getSince() {
+      return since;
     }
 
     /**
@@ -487,6 +498,10 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
 
   /**
    * Gets the latest termination info.
+   * <p>
+   * Notice that the info may be non-null even if the daemon is
+   * running properly. In this case, the termination info refers
+   * to the previously terminated instance.
    *
    * @param index the daemon index
    * @return the info, null if none
@@ -502,38 +517,6 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
       }
     }
     return info;
-  }
-
-  /**
-   * Gets the termination cause.<br>
-   * Only valid if daemon is a {@link Supervisable}.
-   * <p>
-   * Notice that the cause may be non-null even if the daemon is
-   * running properly. In this case, the termination cause refers
-   * to the previously terminated instance.
-   *
-   * @param index the daemon's slot [0 ... daemonNum-1]
-   * @return the termination cause, null if none
-   */
-  public Object getTerminationCause(int index) {
-    TerminationInfo info = getTerminationInfo(index);
-    return info == null ? null : info.cause;
-  }
-
-  /**
-   * Gets the name of the terminated daemon.<br>
-   * Only valid if daemon is a {@link Supervisable}.
-   * <p>
-   * Notice that the name may be non-null even if the daemon is
-   * running properly. In this case, the name refers
-   * to the previously terminated instance.
-   *
-   * @param index the daemon's slot [0 ... daemonNum-1]
-   * @return the daemon name, null if none
-   */
-  public String getTerminationName(int index) {
-    TerminationInfo info = getTerminationInfo(index);
-    return info == null ? null : info.name;
   }
 
 
