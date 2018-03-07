@@ -1089,6 +1089,7 @@ public class DbModelWurblet extends ModelWurblet {
    *
    * @param relation the relation
    * @return the set-method name
+   * @throws WurbelException if unexpected method args
    */
   public String createRelationSetFirstArgMethodName(Relation relation) throws WurbelException {
     if (relation.getMethodArgs().size() > 1) {
