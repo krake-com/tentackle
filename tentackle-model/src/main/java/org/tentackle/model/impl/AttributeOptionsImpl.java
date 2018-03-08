@@ -148,6 +148,10 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         setWithTimezone(on);
         applied = true;
       }
+      else if (uco.equals(OPTION_HIDDEN)) {
+        setHidden(true);
+        applied = true;
+      }
       else if (uco.equals(Constants.BIND_UTC)) {
         setUTC(on);
         processBindOption(uco, on);

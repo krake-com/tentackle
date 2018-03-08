@@ -251,6 +251,7 @@ For more options, see {\@link DbModelWurblet}.
       String type = rel.getDeclaredJavaType(false);
       String effType = rel.getJavaType();
       String scope = rel.getAccessScope().toString();
+      boolean hidden = rel.getAccessScope() != AccessScope.PUBLIC;
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
                              (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
@@ -258,6 +259,7 @@ For more options, see {\@link DbModelWurblet}.
       Attribute attr = rel.getAttribute();
       if (attr != null) {
         scope = attr.getOptions().getAccessScope().toString();
+        hidden |= attr.isHidden();
         createGetter &= !attr.getOptions().isWriteOnly();
         createSetter &= !attr.getOptions().isReadOnly();
       }
@@ -292,8 +294,12 @@ For more options, see {\@link DbModelWurblet}.
         }
 ]@
 
+@[
+        if (!hidden) {
+]@
   \@Override
 @[
+        }
         if (rel.getForeignEntity().isAbstract()) { // needs a cast
 ]@
   \@SuppressWarnings("unchecked")
@@ -601,8 +607,12 @@ For more options, see {\@link DbModelWurblet}.
         String linkMethodIndex = rel.getForeignRelation() != null ? rel.getForeignRelation().getLinkMethodIndex() : null;
 ]@
 
+@[
+        if (!hidden) {
+]@
   \@Override
 @[
+        }
         if (linkMethodIndex != null) {
 ]@
   @(scope)@ void @(rel.getForeignRelation().getLinkMethodName())@(@(type)@ @(var)@, int index)  {

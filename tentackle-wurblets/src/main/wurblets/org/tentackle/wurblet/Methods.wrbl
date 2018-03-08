@@ -18,9 +18,7 @@ For more options, see {\@link ModelWurblet}.
 
     for (Attribute attr: getEntity().getAttributes())  {
 
-      if (attr.getOptions().getAccessScope() != AccessScope.PUBLIC ||
-          attr.getOptions().isFromSuper() ||
-          attr.getOptions().isHidden()) {
+      if (attr.isHidden()) {
         continue; // skip
       }
 

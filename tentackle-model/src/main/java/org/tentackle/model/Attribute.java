@@ -111,6 +111,13 @@ public interface Attribute extends ModelElement {
   boolean isImplicit();
 
   /**
+   * Returns whether attribute is hidden and not part of the interface.
+   *
+   * @return true if hidden
+   */
+  boolean isHidden();
+
+  /**
    * Gets the application specific type.
    *
    * @return the application specific type, never null or empty

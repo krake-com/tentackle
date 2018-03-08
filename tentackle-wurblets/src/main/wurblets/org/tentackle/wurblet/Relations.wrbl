@@ -34,6 +34,7 @@ For more options, see {\@link ModelWurblet}.
       String var = rel.getVariableName();
       String type = rel.getDeclaredJavaType(false);
       String firstArg = rel.getMethodArgs().get(0).getMethodArgument();
+      boolean hidden = rel.getAccessScope() != AccessScope.PUBLIC;
       boolean createGetter = !rel.isWriteOnly();
       boolean createSetter = !rel.isReadOnly() &&
                              (rel.getSelectionType() != SelectionType.ALWAYS || rel.isSelectionCached()) &&
@@ -41,8 +42,9 @@ For more options, see {\@link ModelWurblet}.
       Attribute attr = rel.getAttribute();
       if (attr != null) {
         // take from attribute
-        createGetter &= !attr.getOptions().isWriteOnly();
-        createSetter &= !attr.getOptions().isReadOnly();
+        hidden |= attr.isHidden();
+        createGetter &= !attr.getOptions().isWriteOnly() && !hidden;
+        createSetter &= !attr.getOptions().isReadOnly() && !hidden;
       }
 
       Relation nmRel = rel.getNmRelation();

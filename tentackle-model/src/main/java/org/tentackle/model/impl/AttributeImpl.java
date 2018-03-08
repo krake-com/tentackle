@@ -22,6 +22,7 @@ import java.util.Objects;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
+import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
@@ -122,6 +123,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   @Override
   public boolean isImplicit() {
     return implicit;
+  }
+
+  @Override
+  public boolean isHidden() {
+    return options.isHidden() || options.isFromSuper() ||
+           options.getAccessScope() != AccessScope.PUBLIC;
   }
 
   @Override
