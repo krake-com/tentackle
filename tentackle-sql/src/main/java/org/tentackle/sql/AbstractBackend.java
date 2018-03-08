@@ -322,7 +322,7 @@ public abstract class AbstractBackend implements Backend {
               found = true;
               break;
             }
-            catch (SQLException ex3) {
+            catch (BackendException ex3) {
               // no such table
             }
           }
