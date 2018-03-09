@@ -625,15 +625,15 @@ public class Db implements Session, Cloneable {
 
       alive = true;   // all sedsions start alive!
 
-      if (!isCloned()) {
-        LOGGER.info("session {0} opened", this);
-      }
-
       resources = new Resources(conMgr, sessionId, rdel, rcon, rses);
       resources.name = toString();
       cleanable = CLEANER.register(this, resources);
 
       registerSession();
+
+      if (!isCloned()) {
+        LOGGER.info("session {0} opened", this);
+      }
     }
     catch (MalformedURLException | URISyntaxException | NotBoundException | RemoteException |
            VersionInfoIncompatibleException ex) {
@@ -676,34 +676,25 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public String toString()  {
+  public String toString() {
     StringBuilder buf = new StringBuilder();
     buf.append(getName());
-    if (resources == null) {
-      buf.append("{uninitialized}");
+    // according to management order: pool | connection manager | managed connection | physical connection
+    if (dbPool != null) {
+      buf.append('|').append(dbPool.getName());
     }
-    else if (resources.conMgr != null || dbPool != null) {
-      buf.append('{');
-      if (resources.conMgr != null) {
-        buf.append(resources.conMgr.getName());
-      }
-      if (resources.conMgr != null && dbPool != null) {
-        buf.append('/');
-      }
-      if (dbPool != null) {
-        buf.append(dbPool.getName());
-      }
-      buf.append('}');
-    }
-    buf.append(':');
-    buf.append(backendInfo);
+    ManagedConnection mc = null;
     if (resources != null) {
-      ManagedConnection mc = resources.con;
-      if (mc != null) {
-        buf.append('[');
-        buf.append(mc.getName());
-        buf.append(']');
+      mc = resources.con;
+      if (resources.conMgr != null) {
+        buf.append('|').append(resources.conMgr.getName());
       }
+    }
+    if (backendInfo != null) {
+      buf.append('|').append(backendInfo);
+    }
+    if (mc != null) {
+      buf.append('|').append(mc.getName());
     }
     return buf.toString();
   }

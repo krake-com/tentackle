@@ -278,7 +278,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       }
 
       id += idOffset;
-      LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session, con, id);
+      LOGGER.info("{0}: assigned {1} to connection {2}, id={3}", this, session.getName(), con, id);
       return id;
     }
   }
@@ -291,7 +291,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     removeDb(index);
     try {
       ManagedConnection con = removeConnection(index);
-      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session, con, session.getSessionId());
+      LOGGER.info("{0}: released {1} from connection {2}, id={3}", this, session.getName(), con, session.getSessionId());
       con.close();  // physically close the removed connection
     }
     finally {
