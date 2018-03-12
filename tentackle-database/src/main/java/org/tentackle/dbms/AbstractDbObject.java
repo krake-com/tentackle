@@ -91,7 +91,7 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @param <P> the persistent class type
  */
 public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
-       implements Immutable, ModificationLoggable, Comparable<P>, Cloneable {
+       implements Immutable, ModificationLoggable, Comparable<P> {
 
 
 
@@ -338,32 +338,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   public boolean isFromThisJVM() {
     return fromThisJVM;
-  }
-
-
-  /**
-   * Clones an object.<p>
-   * Cloning an object yields a copy with id=0 and serial=0.
-   * Needs to be overridden if object references, etc... have to be cloned too.
-   * Subclasses should throw a {@link PersistenceException} if they should not be cloned
-   * depending on the application logic (not CloneNotSupportedException).
-   *
-   * @return a clone of this object
-   */
-  @Override
-  @SuppressWarnings("unchecked")
-  public P clone() {
-    P obj;
-    try {
-      obj = (P) super.clone();
-    }
-    catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
-    }
-    // don't use setters bec. obj might be immutable
-    ((AbstractDbObject) obj).id = 0;
-    ((AbstractDbObject) obj).serial = 0;
-    return obj;
   }
 
 

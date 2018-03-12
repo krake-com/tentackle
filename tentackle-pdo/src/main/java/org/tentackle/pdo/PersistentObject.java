@@ -48,13 +48,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
                Validateable, ScopeConfigurator, DomainContextDependable, SessionDependable {
 
   /**
-   * Creates a clone of this PO.
-   *
-   * @return the cloned PO
-   */
-  PersistentObject<T> clonePersistentObject();
-
-  /**
    * Gets the identification number.
    *
    * @return the ID
@@ -796,30 +789,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return object if loaded, null if no such object
    */
   T selectForCache(long id);
-
-
-  /**
-   * Creates a new object as a copy of the current object in another
-   * (or the same) database context.<br>
-   * The new context must be of the same class as the old one.
-   * Subclasses must override this method if they contain links to
-   * other objects (via IDs) that may have changed too (depending on
-   * the context).<br>
-   * The default implementation just clones the object, sets the context
-   * and sets the original object (see {@link #getCopiedObject}).
-   *
-   * @param otherContext the database context
-   * @return the created object
-   */
-  T createCopyInContext(DomainContext otherContext);
-
-
-  /**
-   * Gets the original object if this object was created by {@link #createCopyInContext}.
-   *
-   * @return the object or null if this object is not a copy
-   */
-  T getCopiedObject();
 
 
   /**

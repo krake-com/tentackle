@@ -372,16 +372,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
-  public T createCopyInContext(DomainContext otherContext) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public T getCopiedObject() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public void save() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
@@ -526,11 +516,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public boolean isComposite() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public T clonePersistentObject() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 

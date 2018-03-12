@@ -30,11 +30,4 @@ import org.tentackle.session.SessionProvider;
 public interface DomainOperation<T extends Operation<T>>
        extends DomainDelegate<T>, OperationHolder<T>, DomainContextProvider, SessionProvider {
 
-  /**
-   * Creates a clone of this DO.
-   *
-   * @return the cloned DO
-   */
-  DomainOperation<T> cloneDomainOperation();
-
 }

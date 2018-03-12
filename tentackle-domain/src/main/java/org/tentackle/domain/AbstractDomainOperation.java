@@ -36,7 +36,7 @@ import org.tentackle.session.Session;
  * @param <D> the domain implementation type
  */
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
-       implements DomainOperation<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
+       implements DomainOperation<T>, EffectiveClassProvider<T>, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -60,24 +60,6 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   public AbstractDomainOperation() {
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public DomainOperation<T> clone() {
-    DomainOperation<T> obj;
-    try {
-      obj = (DomainOperation<T>) super.clone();
-    }
-    catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
-    }
-    obj.setOperation(null);
-    return obj;
-  }
-
-  @Override
-  public DomainOperation<T> cloneDomainOperation() {
-    return clone();
-  }
 
   @Override
   public PersistenceDelegate<T> getPersistenceDelegate() {

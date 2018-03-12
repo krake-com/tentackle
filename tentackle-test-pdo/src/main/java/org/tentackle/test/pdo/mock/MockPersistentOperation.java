@@ -167,11 +167,6 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
-  public PersistentOperation<T> clonePersistentOperation() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public DomainDelegate<T> getDomainDelegate() {
     throw new UnsupportedOperationException("Not supported yet.");
   }

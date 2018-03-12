@@ -30,11 +30,4 @@ import org.tentackle.session.SessionDependable;
 public interface PersistentOperation<T extends Operation<T>>
        extends PersistenceDelegate<T>, OperationHolder<T>, DomainContextDependable, SessionDependable {
 
-  /**
-   * Creates a clone of this PO.
-   *
-   * @return the cloned PO
-   */
-  PersistentOperation<T> clonePersistentOperation();
-
 }

@@ -290,20 +290,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
-  @Override
-  public P clone() {
-    P obj = super.clone();
-    obj.setPdo(null);
-    return obj;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public PersistentObject<T> clonePersistentObject() {
-    return clone();
-  }
-
-
   /**
    * Finds a snapshot method.<br>
    * Snapshot methods ({@link #createAttributesInSnapshot}, {@link #createComponentsInSnapshot},
@@ -1268,73 +1254,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Creates a new object as a copy of the current object in another
-   * (or the same) database context.<br>
-   * The new context must be of the same class as the old one.
-   * Subclasses must override this method if they contain links to
-   * other objects (via IDs) that may have changed too (depending on
-   * the context).<br>
-   * The default implementation just clones the object, sets the context
-   * and sets the original object (see {@link #getCopiedObject}).
-   *
-   * @param otherContext the database context
-   * @return the created object
-   */
-  @Override
-  public T createCopyInContext(DomainContext otherContext) {
-    // first we have to clonePdo() ourself. This gives a "new" object in the same context
-    P apo = clone();
-    // set the new context
-    apo.setDomainContext(otherContext);
-    // createPdo a new PDO
-    T obj = Pdo.create(getPdoClass(), apo);
-    // set the origin of the copy (so apps may check this)
-    copiedObject = pdo;
-    // .. to be followed by ID-replacement code in subclasses (they MUST super.createCopyInContext())!!
-    return obj;
-  }
-
-
-  /**
-   * Gets the original object if this object was created by {@link #createCopyInContext}.
-   *
-   * @return the object or null if this object is not a copy
-   */
-  @Override
-  public T getCopiedObject()  {
-    return copiedObject;
-  }
-
-
-  /**
-   * Same as {@link #createCopyInContext} but saves the new object within a transaction.<br>
-   *
-   * @param otherContext the other domain context
-   * @return the created object
-   */
-  public T saveCopyInContext(DomainContext otherContext) {
-    long txVoucher = beginTx(TX_SAVE_COPY_IN_CONTEXT);
-    try {
-      // createPdo the new object
-      T obj = createCopyInContext(otherContext);
-      obj.save();
-      getSession().commit(txVoucher);
-      return obj;
-    }
-    catch (PersistenceException px) {
-      getSession().rollback(txVoucher);
-      px.updateDbObject(this);
-      throw px;
-    }
-    catch (RuntimeException ex) {
-      getSession().rollback(txVoucher);
-      throw new PersistenceException(this, ex);
-    }
-  }
-
-
-
-  /**
    * Selects an object according to a template object.
    * Useful to find corresponding objects in another context.
    * The default implementation loads the same object by its ID.
@@ -1345,41 +1264,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public T selectByTemplate(AbstractPersistentObject<T,P> template) {
     return select(template.getId());
-  }
-
-
-  /**
-   * Creates a "fast copy" of this object.
-   * <p>
-   * The method is provided as a fast alternative to deep cloning
-   * via reflection or serialization.
-   * <p>
-   * All database-attributes are copied in such a way that
-   * each attribute of the new object can be changed without modifying
-   * the state of the original object. This also applies to all related
-   * perstent objects along the object graph. Non-persistent objects or any other
-   * non-database attributes are initialized according to the object's
-   * constructor (i.e. will usually be initialized to false, 0 or null, respectively).
-   * <p>
- The method will createPdo a new object (no clonePdo!) and set all
- attributes the same way as if the object has been loaded from storage.
- <p>
-   * Notice that it differs semantically from createCopyInContext() as
-   * copy() will copy the identity (ID) from the source object as well and
-   * will retain the context.
-   * Thus, upon return we're talking about another instance of the "same" object
-   * with respect to what the database considers as "same".
-   * <p>
-   * A copied object is always not modified and not deleted,
-   * as it is when loaded from the database.
-   * <p>
-   * The default implementation throws a PersistenceException, i.e. the method
-   * must be overridden. See the PdoCopy wurblet for an implementation.
-   *
-   * @return the copied object
-   */
-  public T copy() {
-    throw new PersistenceException(this, "not implemented (consider @wurblet PdoCopy)");
   }
 
 

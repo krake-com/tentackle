@@ -356,12 +356,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         return persistenceMixin.getDelegate();
       }
       else if (method.equals(CLONE_METHOD)) {
-        T op = (T) proxy;
-        return Pdo.createOperation(clazz,
-                                   op.getPersistenceDelegate() == null ?
-                                           null : op.getPersistenceDelegate().clonePersistentOperation(),
-                                   op.getDomainDelegate() == null ?
-                                           null : op.getDomainDelegate().cloneDomainOperation());
+        throw new CloneNotSupportedException("operations are not cloneable");
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {

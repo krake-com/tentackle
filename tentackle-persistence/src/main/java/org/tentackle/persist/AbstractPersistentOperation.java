@@ -19,7 +19,6 @@
 
 package org.tentackle.persist;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
@@ -111,20 +110,6 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   public List<Class<? super T>> getEffectiveSuperClasses() {
     return operation.getEffectiveSuperClasses();
   }
-
-
-  @Override
-  public P clone() {
-    P obj = super.clone();
-    obj.setOperation(null);
-    return obj;
-  }
-
-  @Override
-  public PersistentOperation<T> clonePersistentOperation() {
-    return clone();
-  }
-
 
   /**
    * {@inheritDoc}

@@ -35,7 +35,7 @@ import org.tentackle.session.SessionHolder;
  * @author harald
  */
 public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
-                implements SessionDependable, Cloneable, Serializable {
+                implements SessionDependable, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -60,25 +60,6 @@ public abstract class AbstractDbOperation<P extends AbstractDbOperation<P>>
    */
   public AbstractDbOperation() {
     // nothing to do
-  }
-
-
-  /**
-   * Clones the operation object.<p>
-   *
-   * @return a clone of this object
-   */
-  @Override
-  @SuppressWarnings("unchecked")
-  public P clone() {
-    P obj;
-    try {
-      obj = (P) super.clone();
-    }
-    catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
-    }
-    return obj;
   }
 
 

@@ -318,9 +318,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
         return persistenceMixin.getDelegate();
       }
       else if (method.equals(CLONE_METHOD)) {
-        T pdo = (T) proxy;
-        return Pdo.create(clazz, pdo.getPersistenceDelegate().clonePersistentObject(),
-                          pdo.getDomainDelegate().cloneDomainObject());
+        throw new CloneNotSupportedException("PDOs are not cloneable");
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {

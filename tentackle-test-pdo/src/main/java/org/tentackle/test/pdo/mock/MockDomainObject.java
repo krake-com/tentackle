@@ -101,11 +101,6 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
   }
 
   @Override
-  public DomainObject<T> cloneDomainObject() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
   public DomainContext getDomainContext() {
     return pdo.getDomainContext();
   }

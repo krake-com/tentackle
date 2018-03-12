@@ -20,7 +20,6 @@
 package org.tentackle.pdo;
 
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
@@ -31,7 +30,7 @@ import org.tentackle.session.Session;
  * @author harald
  * @param <T> the operation type
  */
-public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, Cloneable, Serializable {
+public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -85,26 +84,6 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   public DomainDelegate<T> getDomainDelegate() {
     return operation.getDomainDelegate();
   }
-
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public DummyPersistentOperation<T> clone() {
-    try {
-      DummyPersistentOperation<T> obj = (DummyPersistentOperation<T>) super.clone();
-      obj.setOperation(null);
-      return obj;
-    }
-    catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
-    }
-  }
-
-  @Override
-  public PersistentOperation<T> clonePersistentOperation() {
-    return clone();
-  }
-
 
   @Override
   public void setSession(Session session)  {

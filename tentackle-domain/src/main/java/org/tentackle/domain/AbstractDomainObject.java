@@ -39,7 +39,7 @@ import org.tentackle.session.Session;
  * @author harald
  */
 public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, D extends AbstractDomainObject<T,D>>
-       implements DomainObject<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
+       implements DomainObject<T>, EffectiveClassProvider<T>, Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -146,25 +146,6 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
     return buf.toString();
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public D clone() {
-    D obj;
-    try {
-      obj = (D) super.clone();
-    }
-    catch (CloneNotSupportedException ex) {
-      throw new InternalError();    // should never happen
-    }
-    obj.setPdo(null);
-    return obj;
-  }
-
-
-  @Override
-  public DomainObject<T> cloneDomainObject() {
-    return clone();
-  }
 
   @Override
   public boolean isUniqueDomainKeyProvided() {
