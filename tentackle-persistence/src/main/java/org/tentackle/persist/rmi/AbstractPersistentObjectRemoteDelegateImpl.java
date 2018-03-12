@@ -110,8 +110,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
     if (context != null) {
       context.setSession(getSession());
     }
-    @SuppressWarnings("unchecked")
-    T newPdo = (T) (context == null ? Pdo.create((Class) pdoClass, getSession()) : Pdo.create((Class) pdoClass, context));
+    T newPdo = context == null ? Pdo.create(pdoClass, getSession()) : Pdo.create(pdoClass, context);
     // allow overloads for simple proxy objects
     ((AbstractPersistentObject) newPdo.getPersistenceDelegate()).setOverloadable(true);
     return newPdo;

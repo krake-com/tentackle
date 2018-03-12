@@ -209,10 +209,7 @@ For more options, see {\@link DbModelWurblet}.
       boolean derived = getClass() != @(className)@.class;
       while (rs.next()) {
         @(className)@ obj = derived ? newInstance() : new @(className)@(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
 @[
       if (isTracked())  {

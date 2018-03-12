@@ -153,10 +153,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
       boolean derived = getClass() != DbPreferencesNode.class;
       while (rs.next()) {
         DbPreferencesNode obj = derived ? newInstance() : new DbPreferencesNode(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       list.setModified(false);
       return list;
@@ -199,10 +196,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
       boolean derived = getClass() != DbPreferencesNode.class;
       while (rs.next()) {
         DbPreferencesNode obj = derived ? newInstance() : new DbPreferencesNode(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       list.setModified(false);
       return list;

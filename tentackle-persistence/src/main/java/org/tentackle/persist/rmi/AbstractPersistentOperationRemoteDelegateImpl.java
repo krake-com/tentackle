@@ -115,10 +115,7 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
     if (context != null) {
       context.setSession(getSession());
     }
-    @SuppressWarnings("unchecked")
-    T operation = (T) (context == null ? Pdo.createOperation((Class) opClass, getSession()) :
-                                         Pdo.createOperation((Class) opClass, context));
-    return operation;
+    return context == null ? Pdo.createOperation(opClass, getSession()) : Pdo.createOperation(opClass, context);
   }
 
 }

@@ -1553,29 +1553,27 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     rs.startSkip();
     P nextPo = newInstance();
     nextPo = nextPo.readFromResultSetWrapper(rs);
-    if (nextPo != null)  {
-      T nextPdo;
-      if (js.currentPdo() == null || js.currentPdo().getPersistenceDelegate().getId() != nextPo.getId()) {
-        // create a new PDO
-        nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
-        nextPdo = derivePdoFromPo(nextPdo, nextPo);
-        T knownPdo = js.nextPdo(nextPdo);
-        if (knownPdo != nextPdo) {
-          // already in list
-          nextPdo = knownPdo;
-          nextPo = (P) nextPdo.getPersistenceDelegate();
-        }
+    T nextPdo;
+    if (js.currentPdo() == null || js.currentPdo().getPersistenceDelegate().getId() != nextPo.getId()) {
+      // create a new PDO
+      nextPdo = Pdo.create(nextPo.getPdoClass(), nextPo);
+      nextPdo = derivePdoFromPo(nextPdo, nextPo);
+      T knownPdo = js.nextPdo(nextPdo);
+      if (knownPdo != nextPdo) {
+        // already in list
+        nextPdo = knownPdo;
+        nextPo = (P) nextPdo.getPersistenceDelegate();
       }
-      else  {
-        // stay within same PDO
-        nextPdo = js.currentPdo();
-      }
-      // skip to first join
-      rs.skip(nextPo.getColumnCount());
+    }
+    else  {
+      // stay within same PDO
+      nextPdo = js.currentPdo();
+    }
+    // skip to first join
+    rs.skip(nextPo.getColumnCount());
 
-      for (Join<? super T,?> join: js.getJoins()) {
-        readJoin(rs, nextPdo, (Join<T,?>) join);
-      }
+    for (Join<? super T,?> join: js.getJoins()) {
+      readJoin(rs, nextPdo, (Join<T,?>) join);
     }
   }
 
@@ -1589,11 +1587,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       // This is the case if ID is null (which is not nullable)
       // -> this one is valid:
       joinedPo = joinedPo.readFromResultSetWrapper(rs);
-      if (joinedPo != null) {
-        joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
-        if (joinedPdo != null) {
-          ((Join) join).join(nextPdo, joinedPdo);
-        }
+      joinedPdo = joinedPo.derivePdoFromPo(joinedPdo, joinedPo);
+      if (joinedPdo != null) {
+        ((Join) join).join(nextPdo, joinedPdo);
       }
     }
 

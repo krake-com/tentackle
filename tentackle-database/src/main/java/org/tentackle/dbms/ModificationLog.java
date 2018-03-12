@@ -667,11 +667,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   @Override
   public ModificationLog readFromResultSetWrapper(ResultSetWrapper rs) {
     ModificationLog log = super.readFromResultSetWrapper(rs);
-    if (log != null) {
-      // clear hidden attributes in case modlog is used more than once for resultSet...()
-      log.clearLazyObject();
-      log.messageParameters = null;
-    }
+    // clear hidden attributes in case modlog is used more than once for resultSet...()
+    log.clearLazyObject();
+    log.messageParameters = null;
     return log;
   }
 
@@ -1267,10 +1265,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       boolean derived = getClass() != ModificationLog.class;
       while (rs.next()) {
         ModificationLog obj = derived ? newInstance() : new ModificationLog(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       return list;
     }
@@ -1333,10 +1328,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       boolean derived = getClass() != ModificationLog.class;
       while (rs.next()) {
         ModificationLog obj = derived ? newInstance() : new ModificationLog(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       return list;
     }
@@ -1625,10 +1617,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       boolean derived = getClass() != ModificationLog.class;
       while (rs.next()) {
         ModificationLog obj = derived ? newInstance() : new ModificationLog(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       return list;
     }
@@ -1832,10 +1821,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       boolean derived = getClass() != ModificationLog.class;
       while (rs.next()) {
         ModificationLog obj = derived ? newInstance() : new ModificationLog(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       return list;
     }

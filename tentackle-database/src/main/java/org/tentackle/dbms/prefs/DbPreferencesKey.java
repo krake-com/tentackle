@@ -160,10 +160,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
       boolean derived = getClass() != DbPreferencesKey.class;
       while (rs.next()) {
         DbPreferencesKey obj = derived ? newInstance() : new DbPreferencesKey(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       list.setModified(false);
       return list;
@@ -206,10 +203,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
       boolean derived = getClass() != DbPreferencesKey.class;
       while (rs.next()) {
         DbPreferencesKey obj = derived ? newInstance() : new DbPreferencesKey(db);
-        obj = obj.readFromResultSetWrapper(rs);
-        if (obj != null)  {
-          list.add(obj);
-        }
+        list.add(obj.readFromResultSetWrapper(rs));
       }
       list.setModified(false);
       return list;
