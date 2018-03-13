@@ -59,6 +59,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   private static final Method CLONE_METHOD;
   private static final Method GETDOMAINDELEGATE_METHOD;
   private static final Method GETPERSISTENTDELEGATE_METHOD;
+  private static final Method OP_METHOD;
 
   // preloaded methods of OperationHolder
   private static final Method GETOPERATION_METHOD;
@@ -79,6 +80,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       GETPERSISTENTDELEGATE_METHOD = Operation.class.getMethod("getPersistenceDelegate");
       GETOPERATION_METHOD = OperationHolder.class.getMethod("getOperation");
       SETOPERATION_METHOD = OperationHolder.class.getMethod("setOperation", Operation.class);
+      OP_METHOD = OperationHolder.class.getMethod("op");
       GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveClass");
       GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveSuperClasses");
     }
@@ -88,9 +90,9 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   }
 
 
-  private final Class<T> clazz;                            // the operation class
-  private Mixin<T,OperationHolder<T>> persistenceMixin;    // the persistence mixin
-  private Mixin<T,OperationHolder<T>> domainMixin;         // the domain mixin
+  private final Class<T> clazz;                                 // the operation class
+  private Mixin<T,PersistentOperation<T>> persistenceMixin;     // the persistence mixin
+  private Mixin<T,DomainOperation<T>> domainMixin;              // the domain mixin
 
 
 
@@ -378,7 +380,8 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         return list;
       }
     }
-    else if (declaringClass == OperationHolder.class) {
+    else if (declaringClass == OperationHolder.class &&
+             !method.equals(OP_METHOD)) {    // op() should be executed via mixin below, if overridden
       if (method.equals(GETOPERATION_METHOD)) {
         return proxy;
       }

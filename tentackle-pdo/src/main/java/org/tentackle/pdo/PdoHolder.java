@@ -16,11 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.pdo;
-
-import org.tentackle.reflect.Interceptable;
 
 /**
  * Holder for a PDO.
@@ -28,7 +24,7 @@ import org.tentackle.reflect.Interceptable;
  * @param <T> the PDO type
  * @author harald
  */
-public interface PdoHolder<T extends PersistentDomainObject<T>> extends Interceptable {
+public interface PdoHolder<T extends PersistentDomainObject<T>> {
 
   /**
    * Gets the PDO.<br>

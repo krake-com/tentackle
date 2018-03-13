@@ -19,13 +19,15 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.Interceptable;
+
 /**
  * Interface all delegates implementing the domain model must implement.
  *
  * @author harald
  * @param <T> the type
  */
-public interface DomainDelegate<T> {
+public interface DomainDelegate<T> extends Interceptable {
 
   /**
    * Gets the persistence delegate.
