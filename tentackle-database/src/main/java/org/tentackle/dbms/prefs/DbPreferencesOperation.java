@@ -262,9 +262,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
             parent.putChild(child);
           }
           else {
-            LOGGER.warning("parent missing for child node {0} -> child removed!", child.getPersistentNode());
-            child.getPersistentNode().setSession(db);
-            child.getPersistentNode().deleteObject();
+            LOGGER.warning("parent missing for child node {0}", child.getPersistentNode());
           }
         }
       }
