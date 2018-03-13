@@ -40,7 +40,7 @@ import java.net.SocketOptions;
  */
 public class SocketImplWrapper extends SocketImpl {
 
-  private final Socket socket;    // the wrapped socket
+  private final Socket soc;    // the wrapped socket
 
 
   private static class WrappedException extends IOException {
@@ -60,7 +60,7 @@ public class SocketImplWrapper extends SocketImpl {
    * @param socket the socket to wrap
    */
   public SocketImplWrapper(Socket socket) {
-    this.socket = socket;
+    this.soc = socket;
   }
 
 
@@ -70,12 +70,12 @@ public class SocketImplWrapper extends SocketImpl {
 
   @Override
   protected void shutdownInput() throws IOException {
-    socket.shutdownInput();
+    soc.shutdownInput();
   }
 
   @Override
   protected void shutdownOutput() throws IOException {
-    socket.shutdownOutput();
+    soc.shutdownOutput();
   }
 
   @Override
@@ -85,17 +85,17 @@ public class SocketImplWrapper extends SocketImpl {
 
   @Override
   protected InetAddress getInetAddress() {
-    return socket.getInetAddress();
+    return soc.getInetAddress();
   }
 
   @Override
   protected int getPort() {
-    return socket.getPort();
+    return soc.getPort();
   }
 
   @Override
   protected int getLocalPort() {
-    return socket.getLocalPort();
+    return soc.getLocalPort();
   }
 
 
@@ -140,12 +140,12 @@ public class SocketImplWrapper extends SocketImpl {
 
   @Override
   protected InputStream getInputStream() throws IOException {
-    return socket.getInputStream();
+    return soc.getInputStream();
   }
 
   @Override
   protected OutputStream getOutputStream() throws IOException {
-    return socket.getOutputStream();
+    return soc.getOutputStream();
   }
 
   @Override
@@ -155,7 +155,7 @@ public class SocketImplWrapper extends SocketImpl {
 
   @Override
   protected void close() throws IOException {
-    socket.close();
+    soc.close();
   }
 
   @Override
@@ -187,11 +187,11 @@ public class SocketImplWrapper extends SocketImpl {
       // case SocketOptions.SO_BINDADDR:  read only!
 
       case SocketOptions.TCP_NODELAY:
-        socket.setTcpNoDelay(bval);
+        soc.setTcpNoDelay(bval);
         break;
 
       case SocketOptions.SO_REUSEADDR:
-        socket.setReuseAddress(bval);
+        soc.setReuseAddress(bval);
         break;
 
       // case SocketOptions.SO_BROADCAST:  ?? -> not supported
@@ -200,31 +200,31 @@ public class SocketImplWrapper extends SocketImpl {
       // case SocketOptions.IP_MULTICAST_LOOP:
 
       case SocketOptions.IP_TOS:
-        socket.setTrafficClass(ival);
+        soc.setTrafficClass(ival);
         break;
 
       case SocketOptions.SO_LINGER:
-        socket.setSoLinger(bval, ival);
+        soc.setSoLinger(bval, ival);
         break;
 
       case SocketOptions.SO_TIMEOUT:
-        socket.setSoTimeout(ival);
+        soc.setSoTimeout(ival);
         break;
 
       case SocketOptions.SO_SNDBUF:
-        socket.setSendBufferSize(ival);
+        soc.setSendBufferSize(ival);
         break;
 
       case SocketOptions.SO_RCVBUF:
-        socket.setReceiveBufferSize(ival);
+        soc.setReceiveBufferSize(ival);
         break;
 
       case SocketOptions.SO_KEEPALIVE:
-        socket.setKeepAlive(bval);
+        soc.setKeepAlive(bval);
         break;
 
       case SocketOptions.SO_OOBINLINE:
-        socket.setOOBInline(bval);
+        soc.setOOBInline(bval);
         break;
 
       default:
@@ -237,13 +237,13 @@ public class SocketImplWrapper extends SocketImpl {
   public Object getOption(int optID) throws SocketException {
     switch (optID) {
       case SocketOptions.TCP_NODELAY:
-        return socket.getTcpNoDelay();
+        return soc.getTcpNoDelay();
 
       case SocketOptions.SO_BINDADDR:
-        return socket.getLocalAddress();
+        return soc.getLocalAddress();
 
       case SocketOptions.SO_REUSEADDR:
-        return socket.getReuseAddress();
+        return soc.getReuseAddress();
 
       // case SocketOptions.SO_BROADCAST:  ?? -> not supported
       // case SocketOptions.IP_MULTICAST_IF:
@@ -251,25 +251,25 @@ public class SocketImplWrapper extends SocketImpl {
       // case SocketOptions.IP_MULTICAST_LOOP:
 
       case SocketOptions.IP_TOS:
-        return socket.getTrafficClass();
+        return soc.getTrafficClass();
 
       case SocketOptions.SO_LINGER:
-        return socket.getSoLinger();
+        return soc.getSoLinger();
 
       case SocketOptions.SO_TIMEOUT:
-        return socket.getSoTimeout();
+        return soc.getSoTimeout();
 
       case SocketOptions.SO_SNDBUF:
-        return socket.getSendBufferSize();
+        return soc.getSendBufferSize();
 
       case SocketOptions.SO_RCVBUF:
-        return socket.getReceiveBufferSize();
+        return soc.getReceiveBufferSize();
 
       case SocketOptions.SO_KEEPALIVE:
-        return socket.getKeepAlive();
-        
+        return soc.getKeepAlive();
+
       case SocketOptions.SO_OOBINLINE:
-        return socket.getOOBInline();
+        return soc.getOOBInline();
 
       default:
         throw new SocketException("unsupported option ID");
