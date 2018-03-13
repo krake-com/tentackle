@@ -65,7 +65,7 @@ public class LoginApplication extends FxApplication {
   @Override
   public void startApplication(Stage stage) {
     try {
-      controller = Fx.load(Login.class);
+      controller = loadLoginController();
       SessionInfo sessionInfo = createSessionInfo();
       controller.setSessionInfo(sessionInfo);
       Scene scene = new Scene(controller.getView());
@@ -75,6 +75,7 @@ public class LoginApplication extends FxApplication {
         stage.setOnShown(e -> controller.autoLogin());
       }
       stage.show();
+      stage.setResizable(false);
     }
     catch (ApplicationException t) {
       throw new FxRuntimeException("cannot create session info", t);
@@ -123,6 +124,17 @@ public class LoginApplication extends FxApplication {
     }
 
     return sessionInfo;
+  }
+
+
+  /**
+   * Loads the login controller.<br>
+   * Applications may override this method to use specific FXML or CSS files.
+   *
+   * @return the login controller
+   */
+  protected Login loadLoginController() {
+    return Fx.load(Login.class);
   }
 
 }

@@ -91,7 +91,7 @@ public class Fx {
    * @return the controller
    */
   public static <T extends FxController> T load(Class<T> controllerClass) {
-    return FxFactory.getInstance().createController(controllerClass);
+    return FxFactory.getInstance().createController(controllerClass, null, null, null);
   }
 
   /**

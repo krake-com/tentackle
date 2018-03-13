@@ -290,7 +290,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   }
 
 
-    /**
+  /**
    * Gets the FX application class.
    *
    * @return the fx application class

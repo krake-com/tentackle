@@ -19,7 +19,9 @@
 
 package org.tentackle.fx;
 
+import java.net.URL;
 import java.util.Collection;
+import java.util.ResourceBundle;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -111,9 +113,12 @@ public interface FxFactory {
    *
    * @param <T> the controller type
    * @param controllerClass the controller class
+   * @param fxmlUrl the URL to load the FXML from, null if derived from controllerClass or FxController annotation
+   * @param resources the resource bundle, null if derived from controllerClass or FxController annotation
+   * @param cssUrl the URL to load the CSS from, null if derived from controllerClass or FxController annotation
    * @return the initialized controller
    */
-  <T extends FxController> T createController(Class<T> controllerClass);
+  <T extends FxController> T createController(Class<T> controllerClass, URL fxmlUrl, ResourceBundle resources, URL cssUrl);
 
 
   /**
