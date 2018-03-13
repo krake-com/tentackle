@@ -53,7 +53,7 @@ public class LoginApplication extends FxApplication {
   public static boolean isAutoLogin(SessionInfo sessionInfo) {
     return sessionInfo.getProperties().containsKey("autologin");
   }
-  
+
 
   /**
    * the logger for this class.
@@ -78,6 +78,7 @@ public class LoginApplication extends FxApplication {
         stage.setOnShown((e) -> controller.autoLogin());
       }
       stage.show();
+      stage.setResizable(false);
     }
     catch (RuntimeException ex) {
       LOGGER.severe("launching login stage failed", ex);   // log the stacktrace, because ...
