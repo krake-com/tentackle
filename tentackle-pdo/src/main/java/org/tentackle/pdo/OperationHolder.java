@@ -16,11 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.pdo;
-
-import org.tentackle.reflect.Interceptable;
 
 /**
  * Holder for an {@link Operation}.
@@ -28,7 +24,7 @@ import org.tentackle.reflect.Interceptable;
  * @param <T> the operation type
  * @author harald
  */
-public interface OperationHolder<T extends Operation<T>> extends Interceptable {
+public interface OperationHolder<T extends Operation<T>> {
 
   /**
    * Gets the operation.<br>

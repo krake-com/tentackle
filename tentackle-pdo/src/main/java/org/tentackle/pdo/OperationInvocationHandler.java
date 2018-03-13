@@ -88,9 +88,9 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   }
 
 
-  private final Class<T> clazz;                            // the operation class
-  private Mixin<T,OperationHolder<T>> persistenceMixin;    // the persistence mixin
-  private Mixin<T,OperationHolder<T>> domainMixin;         // the domain mixin
+  private final Class<T> clazz;                                 // the operation class
+  private Mixin<T,PersistentOperation<T>> persistenceMixin;     // the persistence mixin
+  private Mixin<T,DomainOperation<T>> domainMixin;              // the domain mixin
 
 
 

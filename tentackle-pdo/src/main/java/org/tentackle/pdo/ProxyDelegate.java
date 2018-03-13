@@ -19,13 +19,15 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.Interceptable;
+
 /**
  * Base interface for all delegates of dynamic proxies.
  *
  * @author harald
  * @param <T> the PDO or Operation type
  */
-public interface ProxyDelegate<T> {
+public interface ProxyDelegate<T> extends Interceptable {
 
   /**
    * Gets the proxy instance.

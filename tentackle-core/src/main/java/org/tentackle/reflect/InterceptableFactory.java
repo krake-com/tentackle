@@ -28,7 +28,7 @@ interface InterceptableFactory$Singleton {
 
 
 /**
- * Factory to createInterceptable interceptable objects.
+ * Factory to create interceptable objects.
  *
  * @author harald
  */

@@ -96,9 +96,9 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
-  private final Class<T> clazz;                            // the pdo class
-  private final Mixin<T,PdoHolder<T>> persistenceMixin;    // the persistence mixin
-  private final Mixin<T,PdoHolder<T>> domainMixin;         // the domain mixin
+  private final Class<T> clazz;                                   // the pdo class
+  private final Mixin<T,PersistentObject<T>> persistenceMixin;    // the persistence mixin
+  private final Mixin<T,DomainObject<T>> domainMixin;             // the domain mixin
 
 
 
