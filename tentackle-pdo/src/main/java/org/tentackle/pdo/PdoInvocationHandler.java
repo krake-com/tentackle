@@ -336,7 +336,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       }
     }
     else if (declaringClass == PdoHolder.class &&
-             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
+             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below, if overridden
       if (method.equals(TOGENERICSTRING_METHOD)) {
         T pdo = (T) proxy;
         return clazz.getName() + '[' + pdo.getId() + '/' + pdo.getSerial() + ']';
