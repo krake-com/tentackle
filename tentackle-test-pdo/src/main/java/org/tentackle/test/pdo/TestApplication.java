@@ -41,8 +41,7 @@ public abstract class TestApplication extends AbstractApplication {
   private DomainContext context;
 
   /**
-   * Super constructor for all derived classes.<br>
-   * Detects whether application is running within a container or deployed by JNLP (webstart).
+   * Creates a test application.
    *
    * @param name the application name
    */
@@ -83,6 +82,10 @@ public abstract class TestApplication extends AbstractApplication {
   @Override
   public boolean isServer() {
     return false;
+  }
+
+  @Override
+  protected void startup() {
   }
 
   @Override

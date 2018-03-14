@@ -149,13 +149,13 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
   }
 
 
-  private void cleanup() {
+  private void cleanupData() {
     ModificationTracker.getInstance().addTaskAndWait(new AbstractSessionTask() {
       private static final long serialVersionUID = 1L;
       @Override
       public void run() {
         try {
-          // always cleanup because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
+          // always stop because we're not running within a transaction (there is no DbPreNode/Key.deleteAll)
           for (DbPreferencesNode node : new DbPreferencesNode((Db) getSession()).selectAllObjects()) {
             node.deletePlain();     // don't trigger modcounts
             for (DbPreferencesKey key : new DbPreferencesKey((Db) getSession()).selectByNodeId(node.getId())) {
@@ -174,7 +174,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
 
   private void runTests() {
     try {
-      cleanup();    // in case some garbage remained from failed test
+      cleanupData();    // in case some garbage remained from failed test
       System.out.println(new Timestamp() + ": server started");
       sleep(3000);  // wait for startup and client to log in
       addPreferences();
@@ -185,7 +185,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       sleep(3000);
     }
     finally {
-      cleanup();
+      cleanupData();
       System.out.println(new Timestamp() + ": preferences cleaned up");
     }
     sleep(3000);    // allow client to logout

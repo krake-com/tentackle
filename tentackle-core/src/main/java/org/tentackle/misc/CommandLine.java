@@ -37,6 +37,9 @@ import java.util.TreeMap;
  */
 public class CommandLine {
 
+  /** the original startup arguments. */
+  private String[] args;
+
   /** non-option args. */
   private final List<String> arguments = new ArrayList<>();
 
@@ -60,6 +63,14 @@ public class CommandLine {
     this(null);
   }
 
+  /**
+   * Gets the arguments.
+   *
+   * @return the value from setArgs
+   */
+  public String[] getArgs() {
+    return args;
+  }
 
   /**
    * Sets the arguments.
@@ -67,6 +78,7 @@ public class CommandLine {
    * @param args the arguments (usually from commandline)
    */
   public void setArgs(String[] args) {
+    this.args = args;
     arguments.clear();
     options.clear();
     if (args != null) {

@@ -22,13 +22,8 @@ package org.tentackle.app;
 import java.util.Properties;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
@@ -51,7 +46,7 @@ import org.tentackle.session.SessionInfo;
  *
  * @author harald
  */
-public abstract class ConsoleApplication extends AbstractApplication {
+public abstract class ConsoleApplication extends AbstractClientApplication {
 
   /**
    * Gets the running console application.<br>
@@ -65,11 +60,8 @@ public abstract class ConsoleApplication extends AbstractApplication {
   private static final Logger LOGGER = Logger.get(ConsoleApplication.class);
 
 
-  private CommandLine cmdLine;       // command line
-
-
   /**
-   * Creates an application.
+   * Creates the console application.
    *
    * @param name the application's name
    */
@@ -79,86 +71,26 @@ public abstract class ConsoleApplication extends AbstractApplication {
 
 
   @Override
-  public boolean isServer() {
-    return false;
-  }
+  protected void startup() {
+    LOGGER.fine("register application");
+    // make sure that only one application is running at a time
+    register();
 
-  /**
-   * Creates the modification thread ready for being started.<br>
-   * The default implementation creates the modthread with a polling interval of 2 seconds
-   * and which runs on the main session.
-   * The main-thread in a console application is only used to start the application.
-   * Anything else must be done either via Tasks via the PdoTracker or by spawning
-   * other threads.
-   */
-  @Override
-  protected void configureModificationTracker() {
-    super.configureModificationTracker();
-    ModificationTracker.getInstance().setSession(getSession());
-  }
+    LOGGER.fine("initialize application");
+    // initialize environment
+    initialize();
 
+    LOGGER.fine("login to backend");
+    // connect to database/application server
+    login();
 
-  /**
-   * Launches the application.
-   *
-   * @param args the arguments (usually from commandline)
-   */
-  public void start(String[] args) {
+    LOGGER.fine("configure application");
+    // configure the application
+    configure();
 
-    cmdLine = new CommandLine(args);
-    setProperties(cmdLine.getOptionsAsProperties());
-
-    try {
-      LOGGER.fine("register application");
-      // make sure that only one application is running at a time
-      register();
-
-      LOGGER.fine("initialize application");
-      // doInitialize environment
-      doInitialize();
-
-      LOGGER.fine("login to backend");
-      // connect to database/application server
-      doLogin();
-
-      LOGGER.fine("configure application");
-      // configure the application
-      doConfigureApplication();
-
-      LOGGER.fine("finish startup");
-      // finish startup
-      doFinishStartup();
-    }
-    catch (RuntimeException e) {
-      LOGGER.logStacktrace(e);
-      doStop(3, e);
-    }
-  }
-
-
-  /**
-   * Gracefully terminates the application.
-   */
-  public void stop() {
-    try {
-      unregister();   // not really necessary cause of System.exit in doStop...
-      doStop(0);
-    }
-    catch (RuntimeException e) {
-      LOGGER.logStacktrace(e);
-      // doStop with error
-      doStop(4, e);
-    }
-  }
-
-
-  /**
-   * Gets the command line.
-   *
-   * @return the command line
-   */
-  public CommandLine getCommandLine() {
-    return cmdLine;
+    LOGGER.fine("finish startup");
+    // finish startup
+    finishStartup();
   }
 
 
@@ -189,11 +121,10 @@ public abstract class ConsoleApplication extends AbstractApplication {
   /**
    * Connects to the database backend or application server.
    */
-  protected void doLogin() {
-
+  protected void login() {
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    String sessionPropsName = cmdLine.getOptionValue(Constants.BACKEND_PROPS);
+    String sessionPropsName = getCommandLine().getOptionValue(Constants.BACKEND_PROPS);
 
     SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
     configureSessionInfo(sessionInfo);
@@ -204,81 +135,6 @@ public abstract class ConsoleApplication extends AbstractApplication {
     setDomainContext(createDomainContext(session));
 
     updateSessionInfoAfterLogin();
-  }
-
-
-
-  /**
-   * Finishes the startup.<br>
-   * Invoked after all has been displayed.
-   * The default implementation starts the modification thread, unless
-   * {@code "--nomodthread"} given.
-   */
-  @Override
-  protected void doFinishStartup() {
-
-    super.doFinishStartup();
-
-    // add a shutdown handler in case the modthread terminates unexpectedly
-    ModificationTracker.getInstance().addShutdownRunnable(() -> {
-      if (!ModificationTracker.getInstance().isTerminationRequested()) {
-        LOGGER.severe("*** emergency shutdown ***");
-        doStop(5);
-      }
-    });
-
-  }
-
-
-  /**
-   * Terminates the application gracefully.
-   * (this is the only do.. method that does not throw AbstractApplicationException)
-   *
-   * @param exitValue the doStop value for System.exit()
-   * @param ex an exception causing the termination, null if none
-   */
-  protected void doStop(int exitValue, Exception ex) {
-
-    if (exitValue != 0 || ex != null) {
-      LOGGER.warning("application {0} abnormally terminated with exit code {1}", getName(), exitValue);
-      if (ex != null) {
-        LoggerOutputStream.logException(ex, LOGGER);
-      }
-    }
-    else {
-      LOGGER.info("application {0} terminated", getName());
-    }
-
-    try {
-
-      // terminate all helper threads
-      Pdo.terminateHelperThreads();
-
-      // close db
-      DomainContext context = getDomainContext();
-      if (context != null) {
-        Session session = context.getSession();
-        if (session != null) {
-          session.close();
-        }
-      }
-    }
-    catch (RuntimeException anyEx) {
-      LOGGER.severe("console application stopped ungracefully", anyEx);
-    }
-
-    // terminate runtime
-    System.exit(exitValue);
-  }
-
-
-  /**
-   * Terminates the application gracefully.
-   *
-   * @param exitValue the doStop value for System.exit()
-   */
-  protected void doStop(int exitValue) {
-    doStop(exitValue, null);
   }
 
 }

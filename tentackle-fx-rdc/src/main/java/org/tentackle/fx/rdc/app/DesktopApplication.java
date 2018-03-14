@@ -29,17 +29,14 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import org.tentackle.app.AbstractApplication;
+import org.tentackle.app.AbstractClientApplication;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
@@ -52,7 +49,7 @@ import org.tentackle.session.SessionInfo;
  * @author harald
  * @param <C> the main controller type
  */
-public abstract class DesktopApplication<C extends FxController> extends AbstractApplication {
+public abstract class DesktopApplication<C extends FxController> extends AbstractClientApplication {
 
   /**
    * Gets the running desktop application.<br>
@@ -68,7 +65,6 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
 
   private FxApplication fxApplication;        // the FX application instance
   private C mainController;                   // the main controller
-  private CommandLine cmdLine;                // command line
   private LoginFailedHandler lfh;             // the login failed handler
   private Stage mainStage;                    // the main stage
 
@@ -153,7 +149,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * @param view the view to hide if login succeeded and application window visible
    * @param sessionInfo the session info
    */
-  public void doLogin(Parent view, SessionInfo sessionInfo) {
+  public void login(Parent view, SessionInfo sessionInfo) {
 
     // run the startup from a service-thread to allow updating the FX view
     Service<Void> loginSvc = new Service<Void>() {
@@ -205,7 +201,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
 
               showApplicationStatus(AppFxRdcBundle.getString("CONFIGURE APPLICATION..."), 0.1);
               try {
-                doConfigureApplication();
+                configure();
               }
               catch (RuntimeException ex) {
                 LOGGER.severe("configure application failed", ex);
@@ -227,7 +223,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                   stage.addEventHandler(WindowEvent.WINDOW_SHOWN, e -> {
                     // all is fine, close the login scene, application keeps running since main window is shown
                     try {
-                      doFinishStartup();
+                      finishStartup();
                       view.getScene().getWindow().hide();
                     }
                     catch (RuntimeException ex) {
@@ -342,10 +338,6 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     };
   }
 
-  @Override
-  public boolean isServer() {
-    return false;
-  }
 
   /**
    * {@inheritDoc}
@@ -367,75 +359,19 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     return super.createDomainContext(null);   // thread-local immutable context
   }
 
+  @Override
+  protected void startup() {
+    LOGGER.fine("register application");
+    // make sure that only one application is running at a time
+    register();
 
-  /**
-   * Launches the application.
-   *
-   * @param args the arguments (usually from commandline)
-   */
-  public void start(String[] args) {
+    LOGGER.fine("initialize application");
+    initialize();
 
-    cmdLine = new CommandLine(args);
-    setProperties(cmdLine.getOptionsAsProperties());
-
-    try {
-
-      LOGGER.fine("register application");
-      // make sure that only one application is running at a time
-      register();
-
-      LOGGER.fine("initialize application");
-      doInitialize();
-
-      LOGGER.fine("initializing FX application");
-      Application.launch(getApplicationClass(), args);
-
-    }
-    catch (RuntimeException ex) {
-      // print message to user, if GUI in window, else if headless to console
-      try {
-        Fx.error(MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex);
-      }
-      catch (RuntimeException rex) {
-        // ignore if dialog cannot be displayed
-      }
-      // doStop with error
-      doStop(3, ex);
-    }
+    LOGGER.fine("initializing FX application");
+    Application.launch(getApplicationClass(), getCommandLine().getArgs());
   }
 
-
-  /**
-   * Gracefully terminates the application.
-   * Usually invoked from an exit-Button or when window is closed.
-   */
-  public void stop() {
-    try {
-      unregister();   // not really necessary cause of System.exit in doStop...
-      doStop(0);
-    }
-    catch (RuntimeException e) {
-      LOGGER.logStacktrace(e);
-      // doStop with error
-      doStop(4, e);
-    }
-  }
-
-
-  /**
-   * Gets the command line.
-   *
-   * @return the command line
-   */
-  public synchronized CommandLine getCommandLine() {
-    return cmdLine;
-  }
-
-
-  /**
-   * Installs the preferences backend.<br>
-   * The option {@code "systemprefs"} forces usage of system preferences only.
-   */
   @Override
   protected void configurePreferences() {
     showApplicationStatus(AppFxRdcBundle.getString("INSTALLING PREFERENCES..."), 0.3);
@@ -457,71 +393,10 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     ModificationTracker.getInstance().setSession(trackerSession);
   }
 
-
   @Override
-  protected void doFinishStartup() {
-
-    super.doFinishStartup();
-
+  protected void finishStartup() {
+    super.finishStartup();
     FxUtilities.getInstance().addTentackleStyleSheet();
-
-    // add a shutdown handler in case the modthread terminates unexpectedly
-    ModificationTracker.getInstance().addShutdownRunnable(() -> {
-      if (!ModificationTracker.getInstance().isTerminationRequested()) {
-        LOGGER.severe("*** emergency shutdown ***");
-        doStop(5);
-      }
-    });
-
-  }
-
-
-  /**
-   * Terminates the application gracefully.
-   * (this is the only do.. method that does not throw AbstractApplicationException)
-   *
-   * @param exitValue the doStop value for System.exit()
-   * @param ex an exception causing the termination, null if none
-   */
-  protected void doStop(int exitValue, Exception ex) {
-    if (exitValue != 0 || ex != null) {
-      LOGGER.log(Level.SEVERE,
-                 "application " + getName() + " abnormally terminated with exit code " + exitValue,
-                 ex);
-    }
-    else {
-      LOGGER.info("application {0} terminated", getName());
-    }
-
-    try {
-      // terminate all helper threads
-      Pdo.terminateHelperThreads();
-
-      // close db
-      DomainContext context = getDomainContext();
-      if (context != null) {
-        Session session = context.getSession();
-        if (session != null) {
-          session.close();
-        }
-      }
-    }
-    catch (RuntimeException rex) {
-      LOGGER.severe("FX application stopped ungracefully", rex);
-    }
-
-    // terminate runtime
-    System.exit(exitValue);
-  }
-
-
-  /**
-   * Terminates the application gracefully.
-   *
-   * @param exitValue the doStop value for System.exit()
-   */
-  protected void doStop(int exitValue) {
-    doStop(exitValue, null);
   }
 
 }

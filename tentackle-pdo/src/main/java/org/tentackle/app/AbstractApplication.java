@@ -35,6 +35,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -49,9 +50,8 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionProvider;
 
 
-
 /**
- * Common code shared by all different kinds of Tentackle applications.
+ * Base class for all kinds of Tentackle applications.
  *
  * @author harald
  */
@@ -77,13 +77,13 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
 
-  private volatile String name;               // the application's name
-  private volatile Properties props;          // the application's properties
-  private volatile DomainContext context;     // the server's connection context
-  private volatile SessionInfo sessionInfo;   // server's user info
-  private volatile boolean runsInContainer;   // true if application is running within a container (tomcat, EE)
-  private volatile boolean deployedByJNLP;    // true if application has been started via WebStart
-
+  private String name;                        // the application's name
+  private Properties props;                   // the application's properties
+  private CommandLine cmdLine;                // command line
+  private DomainContext context;              // the server's connection context
+  private SessionInfo sessionInfo;            // server's user info
+  private boolean runsInContainer;            // true if application is running within a container (tomcat, EE)
+  private boolean stopping;                   // true if application is stopping
   private final long creationTime;            // creation time in epochal milliseconds
 
 
@@ -96,7 +96,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   public AbstractApplication(String name) {
     setName(name);
     detectContainer();
-    detectJNLP();
     creationTime = System.currentTimeMillis();
   }
 
@@ -115,7 +114,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @param name the name
    */
-  public void setName(String name) {
+  protected void setName(String name) {
     this.name = name;
   }
 
@@ -135,6 +134,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   @Override
   public String toString() {
     return getName();
+  }
+
+
+  /**
+   * Gets the command line.
+   *
+   * @return the commandline, null if not started
+   */
+  public CommandLine getCommandLine() {
+    return cmdLine;
   }
 
 
@@ -193,16 +202,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Indicates whether this application is running within a container.
-   *
-   * @return true if running in a container, false if not
-   */
-  public boolean isRunningInContainer() {
-    return runsInContainer;
-  }
-
-
-  /**
    * Deregisters all JDBC-Drivers loaded by the app's classloader.<br>
    * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
    * Avoids memleaks.
@@ -230,6 +229,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
+   * Indicates whether this application is running within a container.
+   *
+   * @return true if running in a container, false if not
+   */
+  public boolean isRunningInContainer() {
+    return runsInContainer;
+  }
+
+
+  /**
    * Detects whether this application is running within a container.<br>
    * The result can be retrieved by {@link #isRunningInContainer()}.
    */
@@ -248,35 +257,13 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Indicates whether this application has been started by JNLP (Java Webstart).
-   *
-   * @return true if invoked by WebStart, false if not
-   */
-  public boolean isDeployedByJNLP() {
-    return deployedByJNLP;
-  }
-
-
-  /**
-   * Detects whether this application has been started by JNLP (Java Webstart).<br>
-   * The result can be retrieved by {@link #isDeployedByJNLP()}.
-   */
-  protected void detectJNLP() {
-    deployedByJNLP = System.getProperty("javawebstart.version", null) != null;
-    if (deployedByJNLP) {
-      LOGGER.info("Java Webstart detected");
-    }
-  }
-
-
-  /**
    * Sets the properties to configure the application.
    * <p>
    * Must be set before starting the application.
    *
    * @param props the properties to configure the application
    */
-  public void setProperties(Properties props) {
+  protected void setProperties(Properties props) {
     this.props = props;
   }
 
@@ -289,7 +276,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     return props;
   }
 
-
   /**
    * Gets a property.
    *
@@ -301,12 +287,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
-
   /**
-   * Gets the db connection.
+   * Gets the session.
    *
-   * @return the db connection, null if not yet configured
+   * @return the session, null if not yet configured
    */
   @Override
   public Session getSession() {
@@ -315,11 +299,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Sets the context.<br>
-   * Some apps change the context during runtime.
-   * They should set the context here, whenever changed.
+   * Sets the domain context.
    *
-   * @param context the new context
+   * @param context the context
    */
   protected void setDomainContext(DomainContext context) {
     this.context = context;
@@ -327,9 +309,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Gets the context.
+   * Gets the domain context.
    *
-   * @return the application context
+   * @return the domain context
    */
   @Override
   public DomainContext getDomainContext() {
@@ -338,43 +320,22 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Gets the session info..<br>
+   * Gets the session info.
+   *
    * @return the session info
    */
   public SessionInfo getSessionInfo() {
     return sessionInfo;
   }
 
-
   /**
-   * Sets the user info.<br>
-   * Some applications may change the sessionInfo.
+   * Sets the user info.
    *
    * @param sessionInfo the session info
    */
-  public void setSessionInfo(SessionInfo sessionInfo) {
+  protected void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
   }
-
-
-  /**
-   * Updates the session info after sucessful login.
-   */
-  public void updateSessionInfoAfterLogin() {
-    if (context != null) {
-      Session session = context.getSession();
-      if (session.isRemote()) {
-        SessionInfo remoteInfo = session.getRemoteSession().getClientSessionInfo();
-        sessionInfo.setUserId(remoteInfo.getUserId());
-        sessionInfo.setUserClassId(remoteInfo.getUserClassId());
-      }
-      else  {
-        sessionInfo.setUserId(context.getSessionInfo().getUserId());
-        sessionInfo.setUserClassId(context.getSessionInfo().getUserClassId());
-      }
-    }
-  }
-
 
 
   /**
@@ -449,7 +410,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
   /**
    * Creates a session.
    *
@@ -482,13 +442,12 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
   /**
    * Configures the modification tracker singleton.<br>
    */
   protected void configureModificationTracker() {
     ModificationTracker tracker = ModificationTracker.getInstance();
-    tracker.setSession(getDomainContext().getSession());
+    tracker.setSession(getSession());
   }
 
 
@@ -517,21 +476,19 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
   /**
    * Initializes the application.
    * <p>
    * This is the first step when an application is launched.
    * <p>
-   * The default implementation first parses the properties for system properties.
-   * System properties start with {@literal "SYSTEM_"} followed by the original property name.<br>
-   * Then the Java security manager is installed if the property {@literal "secman=...."} is given.
-   * Overrides should invoke super.doInitialize() and perform any other
-   * necessary steps before construction of the GUI.
+   * The default implementation first parses the properties for system properties. System properties start with
+   * {@literal "SYSTEM_"} followed by the original property name.<br>
+   * Then the Java security manager is installed if the property {@literal "secman=...."} is given. Overrides should
+   * invoke super.initialize() and perform any other necessary steps before construction of the GUI.
    * <p>
    * Throws TentackleRuntimeException if initialization failes.
    */
-  protected void doInitialize() {
+  protected void initialize() {
     // set system properties
     if (props != null) {
       for (String key: props.stringPropertyNames()) {
@@ -593,20 +550,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
-
   /**
    * Do anything what's necessary after the connection has been established.<br>
    * The default creates the modification thread (but does not start it),
    * and configures the preferences and security manager.
    */
-  protected void doConfigureApplication() {
+  protected void configure() {
     configureModificationTracker();
     configurePreferences();
     configureSecurityManager();
   }
-
-
 
 
   /**
@@ -614,16 +567,129 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * The default implementation starts the modification thread, unless
    * the property {@literal "nomodthread"} is given.
    */
-  protected void doFinishStartup() {
+  protected void finishStartup() {
 
     // start the modification thread
-    if (getProperty("nomodthread") == null) {   // NOI18N
+    if (getProperty("nomodthread") == null) {
       ModificationTracker.getInstance().start();
+      // add a shutdown handler in case the modthread terminates unexpectedly
+      ModificationTracker.getInstance().addShutdownRunnable(() -> {
+        if (!ModificationTracker.getInstance().isTerminationRequested()) {
+          LOGGER.severe("*** emergency shutdown ***");
+          AbstractApplication.this.stop(2, null);
+        }
+      });
     }
     else  {
       PdoCache.setAllEnabled(false);    // disable caching globally
     }
   }
 
+
+
+  /**
+   * Invokes all steps to startup the application.<br>
+   * Invoked from {@link #start(java.lang.String[]).
+   */
+  protected abstract void startup();
+
+
+  /**
+   * Starts the application server.
+   *
+   * @param args the arguments (usually from commandline)
+   */
+  public void start(String[] args) {
+    cmdLine = new CommandLine(args);
+    setProperties(cmdLine.getOptionsAsProperties());
+    try {
+      startup();
+    }
+    catch (RuntimeException e) {
+      // stop with error
+      stop(1, e);
+    }
+  }
+
+
+  /**
+   * Starts the application without further arguments.
+   */
+  public void start() {
+    start(null);
+  }
+
+
+  /**
+   * Terminates the application.
+   *
+   * @param exitValue the stop value for System.exit()
+   * @param ex an exception causing the termination, null if none
+   */
+  public void stop(int exitValue, Exception ex) {
+
+    synchronized(this) {
+      if (stopping) {
+        return;
+      }
+      stopping = true;
+    }
+
+    LOGGER.info("terminating {0} with exit value {1} ...", getName(), exitValue);
+    if (ex != null) {
+      LOGGER.logStacktrace(ex);
+    }
+
+    try {
+      cleanup();
+
+      if (isRunningInContainer()) {
+        // deregister all JDBC drivers loaded by the server app's classloader
+        deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
+      }
+    }
+    catch (Exception anyEx) {
+      LOGGER.severe(getName() + " stopped ungracefully", anyEx);
+    }
+
+    if (!isRunningInContainer()) {
+      System.exit(exitValue);
+    }
+  }
+
+
+  /**
+   * Gracefully terminates the application server.
+   */
+  public void stop() {
+    try {
+      stop(0, null);
+    }
+    catch (RuntimeException rx) {
+      LOGGER.logStacktrace(rx);
+    }
+    finally {
+      try {
+        unregister();
+      }
+      catch (RuntimeException ex) {
+        LOGGER.logStacktrace(ex);
+      }
+    }
+  }
+
+
+  /**
+   * Cleans up resources.<br>
+   * Invoked from {@link #stop(int, java.lang.Exception)
+   */
+  protected void cleanup() {
+    Pdo.terminateHelperThreads();
+
+    Session session = getSession();
+    if (session != null) {
+      session.close();
+    }
+  }
 
 }

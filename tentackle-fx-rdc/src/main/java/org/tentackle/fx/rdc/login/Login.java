@@ -132,7 +132,7 @@ public class Login extends AbstractFxController {
       String pwd = passwordField.getText();
       sessionInfo.setPassword(pwd == null ? null : pwd.toCharArray());
       setProgress(0.01);
-      ((DesktopApplication) AbstractApplication.getRunningApplication()).doLogin(getView(), sessionInfo);
+      ((DesktopApplication) AbstractApplication.getRunningApplication()).login(getView(), sessionInfo);
     }
     else {
       LOGGER.warning("login already in progress...");

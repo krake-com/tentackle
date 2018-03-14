@@ -16,46 +16,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.persist.app;
 
 import java.rmi.RemoteException;
-import java.util.Properties;
-import org.tentackle.app.AbstractApplication;
-import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.misc.CommandLine;
-import org.tentackle.common.StringHelper;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.dbms.ConnectionManager;
-import org.tentackle.dbms.ConnectionManagerProvider;
-import org.tentackle.dbms.Db;
-import org.tentackle.dbms.DefaultDbPool;
-import org.tentackle.dbms.MpxConnectionManager;
 import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionPool;
-import org.tentackle.session.SessionPoolProvider;
-
 
 
 /**
- * Application Server.
+ * RMI Application Server.
  *
  * @author harald
  */
-public abstract class ServerApplication extends AbstractApplication
-       implements SessionPoolProvider, ConnectionManagerProvider {
-
-
+public abstract class ServerApplication extends AbstractServerApplication {
 
   /**
    * Gets the running server application.<br>
@@ -69,14 +44,8 @@ public abstract class ServerApplication extends AbstractApplication
 
   private static final Logger LOGGER = Logger.get(ServerApplication.class);
 
-  private final Class<? extends RemoteDbConnectionImpl> connectionClass;   // the connection class
-
-  private CommandLine cmdLine;                        // command line
-  private RmiServer rmiServer;                        // the RMI server instance
-  private ConnectionManager connectionManager;        // the connection manager
-  private Db serverDb;                                // the primary server db
-  private SessionPool sessionPool;                    // the session pool
-  private boolean stopping;                           // true if server is stopping
+  private final Class<? extends RemoteDbConnectionImpl> connectionClass;    // the connection class
+  private RmiServer rmiServer;                                              // the RMI server instance
 
 
   /**
@@ -92,16 +61,6 @@ public abstract class ServerApplication extends AbstractApplication
 
 
   /**
-   * Gets the command line.
-   *
-   * @return the command line
-   */
-  public synchronized CommandLine getCommandLine() {
-    return cmdLine;
-  }
-
-
-  /**
    * Gets the RMI server.
    *
    * @return the RMI server
@@ -112,87 +71,12 @@ public abstract class ServerApplication extends AbstractApplication
 
 
   @Override
-  public boolean isServer() {
-    return true;
-  }
+  protected void startup() {
+    super.startup();
 
-
-  /**
-   * Starts the application server.
-   *
-   * @param args the arguments (usually from commandline)
-   */
-  public void start(String[] args) {
-
-    cmdLine = new CommandLine(args);
-    setProperties(cmdLine.getOptionsAsProperties());
-
-    try {
-
-      LOGGER.fine("register application server");
-      // make sure that only one application is running at a time
-      register();
-
-      LOGGER.fine("initialize application server");
-      // doInitialize environment
-      doInitialize();
-
-      LOGGER.fine("login to backend");
-      // login to the database server
-      doLogin();
-
-      LOGGER.fine("configure application server");
-      // configure the server
-      doConfigureApplication();
-
-      LOGGER.fine("finish startup");
-      // finish startup and start the RMI service
-      doFinishStartup();
-
-      LOGGER.fine("start services");
-      // start the RMI-server
-      doStartRmiServer();
-    }
-    catch (RuntimeException e) {
-      // doStop with error
-      doStop(3, e);
-    }
-  }
-
-
-  /**
-   * Starts the application server without further arguments.
-   */
-  public void start() {
-    start(null);
-  }
-
-
-  /**
-   * Gracefully terminates the application server.
-   */
-  public void stop() {
-    try {
-      doStop(0);
-    }
-    catch (RuntimeException rx) {
-      LOGGER.logStacktrace(rx);
-    }
-    finally {
-      try {
-        unregister();
-      }
-      catch (RuntimeException ex) {
-        LOGGER.logStacktrace(ex);
-      }
-    }
-  }
-
-
-  @Override
-  protected void configurePreferences() {
-    super.configurePreferences();
-    PersistedPreferencesFactory.getInstance().setSystemOnly(true);
+    LOGGER.fine("start RMI services");
+    // start the RMI-server
+    startRmiServer();
   }
 
 
@@ -209,147 +93,9 @@ public abstract class ServerApplication extends AbstractApplication
   }
 
 
-
-  /**
-   * Creates the connection manager for the client sessions.
-   * The default creates an MpxConnectionManager.
-   *
-   * @return the connection manager
-   */
-  public ConnectionManager createConnectionManager() {
-    return new MpxConnectionManager(serverDb.getBackendInfo(), serverDb.getSessionId() + 1);
-  }
-
-
-  /**
-   * Gets the connection manager.<br>
-   *
-   * @return the connection manager.
-   */
   @Override
-  public ConnectionManager getConnectionManager() {
-    return connectionManager;
-  }
-
-
-  /**
-   * Creates the logical SessionPool.
-   * The default implementation creates a DefaultDbPool.
-   *
-   * @return the database pool, null if don't use a pool
-   */
-  public SessionPool createSessionPool() {
-
-    return new DefaultDbPool(getConnectionManager(), getSessionInfo()) {
-
-      @Override
-      public Db getSession() {
-        Db db = super.getSession();
-        // get a fresh copy of a user info.
-        // wipe out old userinfo, i.e. force application to set the correct info and security manager
-        SessionInfo sessionInfo = getSessionInfo().clone();
-        db.setSessionInfo(sessionInfo);
-        sessionInfo.setUserId(0);
-        sessionInfo.setUserClassId(0);
-        sessionInfo.setUserName(null);
-        return db;
-      }
-    };
-  }
-
-
-  @Override
-  public SessionPool getSessionPool() {
-    return sessionPool;
-  }
-
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overwridden to protect the sessioninfo once it is set.
-   */
-  @Override
-  public void setSessionInfo(SessionInfo sessionInfo) {
-    if (sessionInfo == null) {
-      throw new NullPointerException("userinfo must not be null");
-    }
-    if (getSessionInfo() != null) {
-      throw new PersistenceException("userinfo already set, cannot be changed in a running server");
-    }
-    sessionInfo.setImmutable(true);
-    super.setSessionInfo(sessionInfo);
-  }
-
-
-  /**
-   * Configures the session info.
-   *
-   * @param sessionInfo the session info
-   */
-  protected void configureSessionInfo(SessionInfo sessionInfo) {
-    // load properties
-    Properties sessionProps = null;
-    try {
-      // try from filesystem first
-      sessionProps = sessionInfo.getProperties();
-    }
-    catch (PersistenceException e1) {
-      // neither properties file nor in classpath: set props
-      sessionInfo.setProperties(getProperties());
-    }
-
-    if (sessionProps != null) {
-      // merge (local properties override those from file or classpath)
-      for (String key: getProperties().stringPropertyNames()) {
-        sessionProps.setProperty(key, getProperties().getProperty(key));
-      }
-      sessionInfo.setProperties(sessionProps);
-    }
-
-    if (sessionInfo.getApplicationName() == null) {
-      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
-    }
-
-    sessionInfo.applyProperties();
-  }
-
-
-  /**
-   * Connects the server to the database backend.
-   * <p>
-   * Throws TentackleRuntimeException if a server application instance is already running.
-   */
-  protected void doLogin() {
-
-    String username = getProperty(Constants.BACKEND_USER);
-    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
-    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
-
-    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
-    configureSessionInfo(sessionInfo);
-
-    if (serverDb != null) {
-      throw new TentackleRuntimeException("only one server application instance allowed");
-    }
-    serverDb = (Db) createSession(sessionInfo);
-    serverDb.makeCurrent();
-
-    setSessionInfo(sessionInfo);    // this will also make the session info immutable
-    setDomainContext(createDomainContext(serverDb));
-  }
-
-
-  @Override
-  protected void doFinishStartup() {
-
-    super.doFinishStartup();
-
-    // add a shutdown handler in case the modthread terminates unexpectedly
-    ModificationTracker.getInstance().addShutdownRunnable(() -> doStop(5));
-
-    connectionManager = createConnectionManager();
-    sessionPool = createSessionPool();
+  protected void finishStartup() {
+    super.finishStartup();
     rmiServer = createRmiServer(connectionClass);
   }
 
@@ -358,95 +104,31 @@ public abstract class ServerApplication extends AbstractApplication
    * Starts the RMI-server.<br>
    * The default implementation just does {@code rmiServer.start()}.
    */
-  protected void doStartRmiServer() {
+  protected void startRmiServer() {
     rmiServer.start();
   }
 
 
-  /**
-   * Terminates the application server.
-   *
-   * @param exitValue the doStop value for System.exit()
-   * @param ex an exception causing the termination, null if none
-   */
-  protected void doStop(int exitValue, Exception ex) {
-
-    synchronized(this) {
-      if (stopping) {
-        return;
+  @Override
+  protected void cleanup() {
+    // kill all sessions and GC resources.
+    for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
+      try {
+        session.close();
       }
-      stopping = true;
-    }
-
-    LOGGER.info("terminating server {0} with exit value {1} ...", getName(), exitValue);
-
-    if (ex != null) {
-      LoggerOutputStream.logException(ex, LOGGER);
-    }
-
-    try {
-
-      /**
-       * kill all sessions and GC resources.
-       */
-      for (RemoteDbSessionImpl session: RemoteDbSessionImpl.getOpenSessions()) {
-        try {
-          session.close();
-        }
-        catch (RuntimeException rex) {
-          LOGGER.warning("closing pending session " + session + " failed:", rex);
-        }
-      }
-
-      // terminate all helper threads
-      Pdo.terminateHelperThreads();
-
-      RemoteDbSessionImpl.stopCleanupThread();
-
-      if (sessionPool != null) {
-        sessionPool.shutdown();
-        sessionPool = null;
-      }
-
-      if (serverDb != null) {
-        serverDb.close();
-        serverDb = null;
-      }
-
-      if (connectionManager != null) {
-        connectionManager.shutdown();
-        connectionManager = null;
-      }
-
-      if (rmiServer != null) {
-        rmiServer.stop();
-        rmiServer = null;
-      }
-
-      if (isRunningInContainer()) {
-        // deregister all JDBC drivers loaded by the server app's classloader
-        deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
+      catch (RemoteException | RuntimeException rex) {
+        LOGGER.warning("closing pending session " + session + " failed:", rex);
       }
     }
-    catch (RemoteException | RuntimeException anyEx) {
-      LOGGER.severe("server application stopped ungracefully", anyEx);
+
+    RemoteDbSessionImpl.stopCleanupThread();
+
+    if (rmiServer != null) {
+      rmiServer.stop();
+      rmiServer = null;
     }
 
-    if (!isRunningInContainer()) {
-      System.exit(exitValue);
-    }
-  }
-
-
-  /**
-   * Terminates the application server.
-   *
-   * @param exitValue the doStop value for System.exit()
-   */
-  protected void doStop(int exitValue) {
-    doStop(exitValue, null);
+    super.cleanup();
   }
 
 }
-
-

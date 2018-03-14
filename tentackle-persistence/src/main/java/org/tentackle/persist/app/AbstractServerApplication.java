@@ -1,0 +1,241 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.persist.app;
+
+import java.util.Properties;
+import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
+import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.ConnectionManagerProvider;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DefaultDbPool;
+import org.tentackle.dbms.MpxConnectionManager;
+import org.tentackle.log.Logger;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionPoolProvider;
+
+/**
+ * Base class for server applications.
+ *
+ * @author harald
+ */
+public abstract class AbstractServerApplication extends AbstractApplication
+                                                implements SessionPoolProvider, ConnectionManagerProvider {
+
+  private static final Logger LOGGER = Logger.get(AbstractServerApplication.class);
+
+  private SessionPool sessionPool;                    // the session pool
+  private ConnectionManager connectionManager;        // the connection manager
+
+
+  /**
+   * Creates a server.
+   *
+   * @param name the server's name
+   */
+  public AbstractServerApplication(String name) {
+    super(name);
+  }
+
+  @Override
+  public SessionPool getSessionPool() {
+    return sessionPool;
+  }
+
+  @Override
+  public boolean isServer() {
+    return true;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Overwridden to protect the sessioninfo once it is set.
+   */
+  @Override
+  protected void setSessionInfo(SessionInfo sessionInfo) {
+    if (sessionInfo == null) {
+      throw new IllegalArgumentException("session info must not be null");
+    }
+    if (getSessionInfo() != null) {
+      throw new PersistenceException("session info already set, cannot be changed in a running server");
+    }
+    sessionInfo.setImmutable(true);
+
+    super.setSessionInfo(sessionInfo);
+  }
+
+  @Override
+  protected void configurePreferences() {
+    super.configurePreferences();
+    PersistedPreferencesFactory.getInstance().setSystemOnly(true);
+  }
+
+  @Override
+  protected void finishStartup() {
+    super.finishStartup();
+    connectionManager = createConnectionManager();
+    sessionPool = createSessionPool();
+  }
+
+
+  /**
+   * Creates the logical SessionPool.
+   * The default implementation creates a DefaultDbPool.
+   *
+   * @return the database pool, null if don't use a pool
+   */
+  public SessionPool createSessionPool() {
+
+    return new DefaultDbPool(getConnectionManager(), getSessionInfo()) {
+
+      @Override
+      public Db getSession() {
+        Db db = super.getSession();
+        // get a fresh copy of a user info.
+        // wipe out old userinfo, i.e. force application to set the correct info
+        SessionInfo sessionInfo = getSessionInfo().clone();
+        db.setSessionInfo(sessionInfo);
+        sessionInfo.setUserId(0);
+        sessionInfo.setUserClassId(0);
+        sessionInfo.setUserName(null);
+        return db;
+      }
+    };
+  }
+
+  @Override
+  public Db getSession() {
+    return (Db) super.getSession();
+  }
+
+  /**
+   * Creates the connection manager for the client sessions.
+   * The default creates an MpxConnectionManager.
+   *
+   * @return the connection manager
+   */
+  protected ConnectionManager createConnectionManager() {
+    return new MpxConnectionManager(getSession().getBackendInfo(), getSession().getSessionId() + 1);
+  }
+
+
+  @Override
+  public ConnectionManager getConnectionManager() {
+    return connectionManager;
+  }
+
+
+  /**
+   * Configures the session info.
+   *
+   * @param sessionInfo the session info
+   */
+  protected void configureSessionInfo(SessionInfo sessionInfo) {
+    // load properties
+    Properties sessionProps = null;
+    try {
+      // try from filesystem first
+      sessionProps = sessionInfo.getProperties();
+    }
+    catch (PersistenceException e1) {
+      // neither properties file nor in classpath: set props
+      sessionInfo.setProperties(getProperties());
+    }
+
+    if (sessionProps != null) {
+      // merge (local properties override those from file or classpath)
+      for (String key: getProperties().stringPropertyNames()) {
+        sessionProps.setProperty(key, getProperties().getProperty(key));
+      }
+      sessionInfo.setProperties(sessionProps);
+    }
+
+    if (sessionInfo.getApplicationName() == null) {
+      sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
+    }
+
+    sessionInfo.applyProperties();
+  }
+
+
+  @Override
+  protected void startup() {
+    LOGGER.fine("register application server");
+    // make sure that only one application is running at a time
+    register();
+
+    LOGGER.fine("initialize application server");
+    // initialize environment
+    initialize();
+
+    LOGGER.fine("login to backend");
+    // login to the database server
+    login();
+
+    LOGGER.fine("configure application server");
+    // configure the server
+    configure();
+
+    LOGGER.fine("finish startup");
+    // finish startup and start the RMI service
+    finishStartup();
+  }
+
+
+  /**
+   * Connects the server to the database backend.
+   */
+  protected void login() {
+    String username = getProperty(Constants.BACKEND_USER);
+    char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
+    String sessionPropsName = getProperty(Constants.BACKEND_PROPS);
+
+    SessionInfo sessionInfo = createSessionInfo(username, password, sessionPropsName);
+    configureSessionInfo(sessionInfo);
+
+    Db serverDb = (Db) createSession(sessionInfo);
+    serverDb.makeCurrent();
+
+    setSessionInfo(sessionInfo);    // this will also make the session info immutable
+    setDomainContext(createDomainContext(serverDb));
+  }
+
+
+  @Override
+  protected void cleanup() {
+    super.cleanup();
+
+    if (sessionPool != null) {
+      sessionPool.shutdown();
+      sessionPool = null;
+    }
+
+    if (connectionManager != null) {
+      connectionManager.shutdown();
+      connectionManager = null;
+    }
+  }
+
+}
