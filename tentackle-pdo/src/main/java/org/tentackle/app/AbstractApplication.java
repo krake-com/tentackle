@@ -589,7 +589,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Invokes all steps to startup the application.<br>
-   * Invoked from {@link #start(java.lang.String[]).
+   * Invoked from {@link #start(java.lang.String[])}.
    */
   protected abstract void startup();
 
