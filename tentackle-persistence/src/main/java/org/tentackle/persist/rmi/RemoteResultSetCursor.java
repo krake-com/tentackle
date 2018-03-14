@@ -37,6 +37,8 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Closes the scrollable resource.<br>
    * The scrollable resource is opened in its constructor.
    * Closing an already closed scrollable resource is allowed.
+   *
+   * @throws RemoteException if failed
    */
   void close() throws RemoteException;
 
@@ -46,6 +48,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    *
    * @param row the row number (must be &ge; 0)
    * @return the new row number
+   * @throws RemoteException if failed
    */
   int setRow(int row) throws RemoteException;
 
@@ -53,6 +56,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Rewinds the cursor to the first row.
    *
    * @return true if rewound, false if cursor is empty
+   * @throws RemoteException if failed
    */
   boolean first() throws RemoteException;
 
@@ -60,6 +64,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Positions the cursor on the last row.
    *
    * @return the current row
+   * @throws RemoteException if failed
    */
   int last() throws RemoteException;
 
@@ -68,6 +73,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * If there are no more rows the current row remains unchanged.
    *
    * @return true if moved, false if no more rows
+   * @throws RemoteException if failed
    */
   boolean next() throws RemoteException;
 
@@ -76,6 +82,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * If we are already at the beginning, the cursor remains unchanged.
    *
    * @return true if advanced, false if already at the beginning
+   * @throws RemoteException if failed
    */
   boolean previous() throws RemoteException;
 
@@ -84,12 +91,15 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    *
    * @param rows the number of rows to move, negative to move backwards
    * @return the current row
+   * @throws RemoteException if failed
    */
   int scroll(int rows) throws RemoteException;
 
   /**
    * Positions the cursor before the first row.<br>
    * Works even for empty cursors.
+   *
+   * @throws RemoteException if failed
    */
   void beforeFirst() throws RemoteException;
 
@@ -98,6 +108,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Works even for empty cursors.
    *
    * @return the current row
+   * @throws RemoteException if failed
    */
   int afterLast() throws RemoteException;
 
@@ -105,6 +116,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Checks whether the cursor is after the last row.
    *
    * @return true if after last
+   * @throws RemoteException if failed
    */
   boolean isAfterLast() throws RemoteException;
 
@@ -112,6 +124,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Gets the data object of the current row.
    *
    * @return the object, null if invalid row or no such object
+   * @throws RemoteException if failed
    */
   T get() throws RemoteException;
 
@@ -119,6 +132,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Returns the objects of this cursor as a list.
    *
    * @return the list
+   * @throws RemoteException if failed
    */
   List<T> toList() throws RemoteException;
 
@@ -129,6 +143,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * A fetchsize of 0 means server default.
    *
    * @param rows the fetchsize
+   * @throws RemoteException if failed
    */
   void setFetchSize(int rows) throws RemoteException;
 
@@ -136,13 +151,15 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Gets the fetchsize.
    *
    * @return the fetchsize
+   * @throws RemoteException if failed
    */
   int getFetchSize() throws RemoteException;
 
   /**
    * Sets the fetch direction.
    *
-   * @param direction the direction, see {@link java.sql.ResultSet#setFetchDirection}.
+   * @param direction the direction, see {@link java.sql.ResultSet#setFetchDirection}
+   * @throws RemoteException if failed
    */
   void setFetchDirection(int direction) throws RemoteException;
 
@@ -150,6 +167,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * Gets the fetch direction.
    *
    * @return the direction
+   * @throws RemoteException if failed
    */
   int getFetchDirection() throws RemoteException;
 
@@ -160,6 +178,7 @@ public interface RemoteResultSetCursor<T> extends RemoteDelegate {
    * The cursor is closed at the end of the cursor.
    *
    * @return the list of objects, null if no more objects found
+   * @throws RemoteException if failed
    */
   FetchList<T> fetch() throws RemoteException;
 
