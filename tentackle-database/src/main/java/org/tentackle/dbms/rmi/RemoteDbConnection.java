@@ -33,7 +33,7 @@ import org.tentackle.session.SessionInfo;
  * and logout to/from a session. The socket factories used for the
  * connection object are defined by the server. The session, however,
  * and all subsequent remote objects can get different socket factories
- * depending on what the client requests. See {@link DbServer} for more details.
+ * depending on what the client requests. See {@link RmiServer} for more details.
  *
  * @author harald
  */

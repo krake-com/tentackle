@@ -22,7 +22,7 @@ package org.tentackle.test.pdo;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
-import org.tentackle.dbms.rmi.DbServer;
+import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -49,14 +49,14 @@ public class TestServer extends ServerApplication {
 
     private static final long serialVersionUID = 1L;
 
-    public ConnectionImpl(DbServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
+    public ConnectionImpl(RmiServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
            throws RemoteException {
       super(server, port, csf, ssf);
     }
 
     @Override
     public RemoteDbSession createSession(SessionInfo clientInfo) throws RemoteException {
-      return new SessionImpl(this, clientInfo, getServer().getSessionInfo().clone());
+      return new SessionImpl(this, clientInfo, getRmiServer().getSessionInfo().clone());
     }
   }
 

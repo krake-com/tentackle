@@ -39,13 +39,13 @@ import org.tentackle.session.VersionInfoIncompatibleException;
 /**
  * Server side RMI-connection implementation.
  * <p>
- * Overview of what happens in a Tentackle RMI application server:
- * <ul>
- * <li>client gets a reference to a RemoteDbConnection in the server</li>
+ Overview of what happens in a Tentackle RMI application rmiServer:
+ <ul>
+ * <li>client gets a reference to a RemoteDbConnection in the rmiServer</li>
  * <li>client invokes login() on the connection and gets a reference to
  *   a RemoteDbSession.</li>
- * <li>each session runs in its own thread (server and client) and the server
- *   session gets its own Db.</li>
+ * <li>each session runs in its own thread (rmiServer and client) and the rmiServer
+   session gets its own Db.</li>
  * <li>all further client requests work through the session object and
  *     the remote delegates created within the session</li>
  * <li>the client invokes logout() to close the session and Db.</li>
@@ -63,35 +63,35 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   private static final Logger LOGGER = Logger.get(RemoteDbConnectionImpl.class);
 
 
-  private final transient DbServer server;              // the server
+  private final transient RmiServer rmiServer;              // the rmiServer
 
 
   /**
    * Creates a connection.<br>
    *
-   * @param server the DbServer
+   * @param rmiServer the RMI-server
    * @param port the tcp-port, 0 = system default
    * @param csf the client socket factory, null = system default
-   * @param ssf the server socket factory, null = system default
+   * @param ssf the rmiServer socket factory, null = system default
    * @throws RemoteException if failed to export object
-   * @see DbServer
+   * @see RmiServer
    */
-  public RemoteDbConnectionImpl(DbServer server,
+  public RemoteDbConnectionImpl(RmiServer rmiServer,
                                 int port,
                                 RMIClientSocketFactory csf,
                                 RMIServerSocketFactory ssf) throws RemoteException {
     super(port, csf, ssf);
-    this.server = server;
+    this.rmiServer = rmiServer;
   }
 
 
   /**
-   * Gets the DbServer.
+   * Gets the RMI-server.
    *
-   * @return the db server
+   * @return the RMI server
    */
-  public DbServer getServer() {
-    return server;
+  public RmiServer getRmiServer() {
+    return rmiServer;
   }
 
 
@@ -100,11 +100,11 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database server
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the timeout
    */
   public int getSessionTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
-    return getServer().getSessionTimeout();
+    return getRmiServer().getSessionTimeout();
   }
 
   /**
@@ -112,7 +112,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database server
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the tcp-port for this connection, 0 = system default
    */
   public int getPort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
@@ -124,7 +124,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database server
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the client socket factory for this connection, null = system default
    */
   public RMIClientSocketFactory getClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
@@ -132,12 +132,12 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   }
 
   /**
-   * Gets the server socket factory.
+   * Gets the rmiServer socket factory.
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database server
-   * @return the server socket factory for this connection, null = system default
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @return the rmiServer socket factory for this connection, null = system default
    */
   public RMIServerSocketFactory getServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
     return getRMISsf();
@@ -150,7 +150,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * The default implementation does nothing.
    * It is invoked from {@link org.tentackle.dbms.Db#open()} for remote connections.
    *
-   * @param clientVersionInfo the server's version info from {@link org.tentackle.dbms.rmi.RemoteDbConnection}.
+   * @param clientVersionInfo the rmiServer's version info from {@link org.tentackle.dbms.rmi.RemoteDbConnection}.
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
   public void checkClientVersionInfo(Serializable clientVersionInfo) throws VersionInfoIncompatibleException {
@@ -178,7 +178,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * @param remoteObject the object to export
    * @param port the port to export the object on, 0 if auto
    * @param csf the client-side socket factory for making calls to the remote object, null if system default
-   * @param ssf the server-side socket factory for receiving remote calls, null if system default
+   * @param ssf the rmiServer-side socket factory for receiving remote calls, null if system default
    * @return the effective port, 0 if system default
    * @throws RemoteException if export failed
    */

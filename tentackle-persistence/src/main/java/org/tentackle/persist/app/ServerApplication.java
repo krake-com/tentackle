@@ -33,7 +33,7 @@ import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DefaultDbPool;
 import org.tentackle.dbms.MpxConnectionManager;
-import org.tentackle.dbms.rmi.DbServer;
+import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.pdo.Pdo;
@@ -72,7 +72,7 @@ public abstract class ServerApplication extends AbstractApplication
   private final Class<? extends RemoteDbConnectionImpl> connectionClass;   // the connection class
 
   private CommandLine cmdLine;                        // command line
-  private DbServer dbServer;                          // the RMI server instance
+  private RmiServer rmiServer;                        // the RMI server instance
   private ConnectionManager connectionManager;        // the connection manager
   private Db serverDb;                                // the primary server db
   private SessionPool sessionPool;                    // the session pool
@@ -104,10 +104,10 @@ public abstract class ServerApplication extends AbstractApplication
   /**
    * Gets the RMI server.
    *
-   * @return the RMI dbserver
+   * @return the RMI server
    */
-  public DbServer getDbServer() {
-    return dbServer;
+  public RmiServer getRmiServer() {
+    return rmiServer;
   }
 
 
@@ -151,7 +151,7 @@ public abstract class ServerApplication extends AbstractApplication
 
       LOGGER.fine("start services");
       // start the RMI-server
-      doStartDbServer();
+      doStartRmiServer();
     }
     catch (RuntimeException e) {
       // doStop with error
@@ -197,15 +197,15 @@ public abstract class ServerApplication extends AbstractApplication
 
 
   /**
-   * Creates the DbServer instance (but does not start it).<br>
-   * The default implementation creates a {@link DbServer}.
+   * Creates the RMI-server instance (but does not start it).<br>
+   * The default implementation creates a {@link RmiServer}.
    *
    * @param connectionClass the class of the connection object to instantiate,
    *                        null = default or from serverInfo's properties file
-   * @return the created DbServer
+   * @return the created RmiServer
    */
-  protected DbServer createDbServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
-    return new DbServer(getSessionInfo(), connectionClass);
+  protected RmiServer createRmiServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
+    return new RmiServer(getSessionInfo(), connectionClass);
   }
 
 
@@ -350,16 +350,16 @@ public abstract class ServerApplication extends AbstractApplication
 
     connectionManager = createConnectionManager();
     sessionPool = createSessionPool();
-    dbServer = createDbServer(connectionClass);
+    rmiServer = createRmiServer(connectionClass);
   }
 
 
   /**
    * Starts the RMI-server.<br>
-   * The default implementation just does {@code dbServer.start()}.
+   * The default implementation just does {@code rmiServer.start()}.
    */
-  protected void doStartDbServer() {
-    dbServer.start();
+  protected void doStartRmiServer() {
+    rmiServer.start();
   }
 
 
@@ -418,9 +418,9 @@ public abstract class ServerApplication extends AbstractApplication
         connectionManager = null;
       }
 
-      if (dbServer != null) {
-        dbServer.stop();
-        dbServer = null;
+      if (rmiServer != null) {
+        rmiServer.stop();
+        rmiServer = null;
       }
 
       if (isRunningInContainer()) {

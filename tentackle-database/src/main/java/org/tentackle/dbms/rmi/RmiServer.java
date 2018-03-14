@@ -52,7 +52,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  * <ul>
  * <li>
  * <tt>service=service-name</tt>:
- *  defaults to the basename of the DbServer-class instance, i.e. -&gt; rmi://localhost:1099/&lt;Basename&gt;
+ *  defaults to the basename of the RMI-server class instance, i.e. -&gt; rmi://localhost:1099/&lt;Basename&gt;
  * </li>
  *
  * <li>
@@ -133,7 +133,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *
  * @author harald
  */
-public class DbServer {
+public class RmiServer {
 
   /**
    * The property key for the connection class to export.
@@ -197,7 +197,7 @@ public class DbServer {
   public static int defaultSessionTimeout = 30;
 
 
-  private static final Logger LOGGER = Logger.get(DbServer.class);
+  private static final Logger LOGGER = Logger.get(RmiServer.class);
 
   private final SessionInfo sessionInfo;                  // server session info
   private String service;                                 // name of the RMI service
@@ -229,7 +229,7 @@ public class DbServer {
    * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
    */
   @SuppressWarnings("unchecked")
-  public DbServer(SessionInfo sessionInfo, Class<? extends RemoteDbConnectionImpl> connectionClass) {
+  public RmiServer(SessionInfo sessionInfo, Class<? extends RemoteDbConnectionImpl> connectionClass) {
 
     this.sessionInfo = sessionInfo;
     this.connectionClass = connectionClass == null ? RemoteDbConnectionImpl.class : connectionClass;
@@ -391,7 +391,7 @@ public class DbServer {
    * @param serverInfo the servers db-connection user info
    */
   @SuppressWarnings("unchecked")
-  public DbServer(SessionInfo serverInfo) {
+  public RmiServer(SessionInfo serverInfo) {
     this(serverInfo, null);
   }
 
@@ -587,8 +587,7 @@ public class DbServer {
       }
 
       // instantiate connection object
-      Constructor<? extends RemoteDbConnectionImpl> constructor = this.connectionClass.getConstructor(
-              DbServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
+      Constructor<? extends RemoteDbConnectionImpl> constructor = this.connectionClass.getConstructor(RmiServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
       connectionObject = constructor.newInstance(this, port, useRegSF ? loginCsf: csf, useRegSF ? loginSsf: ssf);
 
       // log

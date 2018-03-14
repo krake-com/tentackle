@@ -153,7 +153,7 @@ public class DefaultConnectionManager implements ConnectionManager {
    * <p>
    * With an initial size of 2, a maximum of 8 concurrent connections and an id offset of 1.
    * This is the default connection manager for 2-tier client applications.
-   * The max connections will prevent ill behaving applications from tearing down the dbserver
+   * The max connections will prevent ill behaving applications from tearing down the RMI server
    * by opening connections excessively. The usual application holds 2 connections and temporarily
    * 1 or 2 more. If you need more, change the connection manager in Db.
    * Within 12 to 36h (approx. once a day), close and reopen connections
