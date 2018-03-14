@@ -28,7 +28,6 @@ import org.tentackle.common.Constants;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.reflect.ReflectionHelper;
@@ -77,8 +76,8 @@ public class LoginApplication extends FxApplication {
       stage.show();
       stage.setResizable(false);
     }
-    catch (ApplicationException t) {
-      throw new FxRuntimeException("cannot create session info", t);
+    catch (RuntimeException rx) {
+      throw new FxRuntimeException("cannot create session info", rx);
     }
   }
 
@@ -99,9 +98,8 @@ public class LoginApplication extends FxApplication {
    * Creates the session info to be passed to the doLogin controller.
    *
    * @return the session info
-   * @throws ApplicationException if session info could not be created
    */
-  public SessionInfo createSessionInfo() throws ApplicationException {
+  public SessionInfo createSessionInfo() {
     DesktopApplication<?> application = (DesktopApplication) AbstractApplication.getRunningApplication();
     String username = application.getCommandLine().getOptionValue(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(application.getCommandLine().getOptionValue(Constants.BACKEND_PASSWORD));

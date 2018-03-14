@@ -33,8 +33,8 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -161,13 +161,13 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Registers the application.<br>
    * Makes sure that only one application is running at a time.
    * Should be invoked in the start-method.
-   *
-   * @throws ApplicationException if an application is already running.
+   * <p>
+   * Throws TentackleRuntimeException if an application is already running.
    */
-  protected void register() throws ApplicationException {
+  protected void register() {
     synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
       if (running != null) {
-        throw new ApplicationException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} ALREADY RUNNING"), running));
+        throw new TentackleRuntimeException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} ALREADY RUNNING"), running));
       }
       running = this;
     }
@@ -177,14 +177,14 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Unregisters the application.<br>
    * Makes sure that only one application is running at a time.
    * Should be invoked in the stop-method.
-   *
-   * @throws ApplicationException if an application is already running.
+   * <p>
+   * Throws TentackleRuntimeException if no application is running.
    */
-  protected void unregister() throws ApplicationException {
+  protected void unregister() {
     synchronized(AbstractApplication.class) {   // not getClass() because this applies to all kinds of applications!
       if (running != null) {
         if (running != this) {
-          throw new ApplicationException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} IS NOT RUNNING"), this));
+          throw new TentackleRuntimeException(MessageFormat.format(AppCoreBundle.getString("APPLICATION {0} IS NOT RUNNING"), this));
         }
         running = null;
       }
@@ -358,11 +358,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Updates the session info after sucessful login.<br>
-   *
-   * @throws ApplicationException if update failed
+   * Updates the session info after sucessful login.
    */
-  public void updateSessionInfoAfterLogin() throws ApplicationException {
+  public void updateSessionInfoAfterLogin() {
     if (context != null) {
       Session session = context.getSession();
       if (session.isRemote()) {
@@ -530,10 +528,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Then the Java security manager is installed if the property {@literal "secman=...."} is given.
    * Overrides should invoke super.doInitialize() and perform any other
    * necessary steps before construction of the GUI.
-   *
-   * @throws ApplicationException if initialization failes
+   * <p>
+   * Throws TentackleRuntimeException if initialization failes.
    */
-  protected void doInitialize() throws ApplicationException {
+  protected void doInitialize() {
     // set system properties
     if (props != null) {
       for (String key: props.stringPropertyNames()) {
@@ -551,7 +549,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
              NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-        throw new ApplicationException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
+        throw new TentackleRuntimeException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
       }
     }
 
@@ -600,11 +598,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Do anything what's necessary after the connection has been established.<br>
    * The default creates the modification thread (but does not start it),
-   * configures the preferences and security manager.
-   *
-   * @throws ApplicationException if failed
+   * and configures the preferences and security manager.
    */
-  protected void doConfigureApplication() throws ApplicationException {
+  protected void doConfigureApplication() {
     configureModificationTracker();
     configurePreferences();
     configureSecurityManager();
@@ -617,10 +613,8 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Finishes the startup.<br>
    * The default implementation starts the modification thread, unless
    * the property {@literal "nomodthread"} is given.
-   *
-   * @throws ApplicationException if failed
    */
-  protected void doFinishStartup() throws ApplicationException {
+  protected void doFinishStartup() {
 
     // start the modification thread
     if (getProperty("nomodthread") == null) {   // NOI18N

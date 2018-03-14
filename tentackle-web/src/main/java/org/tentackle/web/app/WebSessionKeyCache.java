@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.misc.ApplicationException;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.session.SessionInfo;
 
 /**
@@ -90,16 +90,17 @@ public class WebSessionKeyCache<T> {
   /**
    * Starts the session key cache.<p>
    * This will start a thread to cleanup crashed sessions.
+   * <p>
+   * Throws TentackleRuntimeException if the cleanup thread is already running.
    *
    * @param cleanupInterval interval in [ms] to run cleanup
-   * @throws ApplicationException if the cleanup thread is already running
    */
-  public void startup(long cleanupInterval) throws ApplicationException {
+  public void startup(long cleanupInterval) {
     if (cleanupInterval <= 0) {
       throw new IllegalArgumentException("cleanupInterval must be > 0");
     }
     if (cleanupThread != null && cleanupThread.isAlive()) {
-      throw new ApplicationException("session cache cleanup thread already running");
+      throw new TentackleRuntimeException("session cache cleanup thread already running");
     }
     // start the session pool cleanup thread
     cleanupThread = new CleanupThread(cleanupInterval);    // 5 minutes
@@ -108,11 +109,11 @@ public class WebSessionKeyCache<T> {
 
 
   /**
-   * Terminates the session cache.<p>
-   *
-   * @throws ApplicationException if the cleanup thread is not running at all
+   * Terminates the session cache.
+   * <p>
+   * Throws TentackleRuntimeException if the cleanup thread is not running at all.
    */
-  public void terminate() throws ApplicationException {
+  public void terminate() {
     if (cleanupThread != null) {
       boolean isAlive = cleanupThread.isAlive();
       if (isAlive) {
@@ -126,11 +127,11 @@ public class WebSessionKeyCache<T> {
       }
       cleanupThread = null;
       if (!isAlive) {
-        throw new ApplicationException("session cache cleanup thread died");
+        throw new TentackleRuntimeException("session cache cleanup thread died");
       }
     }
     else  {
-      throw new ApplicationException("session cache cleanup thread hasn't been started");
+      throw new TentackleRuntimeException("session cache cleanup thread hasn't been started");
     }
   }
 

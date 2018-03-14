@@ -400,7 +400,7 @@ public class CompoundValue {
           Object value = ReflectionHelper.getValueByPath(parentObject, reference);
           return negate ? negateBoolean(value) : value;
         }
-        catch (ApplicationException ex) {
+        catch (RuntimeException ex) {
           throw new IllegalArgumentException("cannot evaluate reference '" + reference + "'", ex);
         }
 
@@ -413,7 +413,7 @@ public class CompoundValue {
         catch (ClassNotFoundException e1) {
           throw new IllegalArgumentException("cannot evaluate static reference '" + staticClassName + "." + reference + "'", e1);
         }
-        catch (ApplicationException e2) {
+        catch (RuntimeException e2) {
           throw new IllegalArgumentException("cannot evaluate reference '" + reference + "'", e2);
         }
 
@@ -493,7 +493,7 @@ public class CompoundValue {
           }
           break;
         }
-        catch (ApplicationException ex) {
+        catch (RuntimeException ex) {
           throw new IllegalArgumentException("cannot parse reference '" + reference + "'", ex);
         }
 
@@ -508,7 +508,7 @@ public class CompoundValue {
         catch (ClassNotFoundException e1) {
           throw new IllegalArgumentException("cannot parse static reference '" + staticClassName + "." + reference + "'", e1);
         }
-        catch (ApplicationException e2) {
+        catch (RuntimeException e2) {
           throw new IllegalArgumentException("cannot parse reference '" + reference + "'", e2);
         }
 

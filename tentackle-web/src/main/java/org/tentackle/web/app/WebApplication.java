@@ -30,8 +30,8 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
@@ -117,15 +117,15 @@ public abstract class WebApplication<T> extends AbstractApplication
    * This will load the properties-file <tt>myapplication.properties</tt> from
    * the <tt>WEB-INF</tt>-directory (without <tt>"../"</tt> from <tt>WEB-INF/classes</tt>)
    * and modify the properties given by <tt>props</tt>.
+   * <p>
+   * Throws TentackleRuntimeException creating application instance failed.
    *
    * @param <T> the web session key type
    * @param clazz the application class
    * @param props the properties to configure the application
    * @return the application
-   * @throws ApplicationException if failed
    */
-  public static <T> WebApplication<T> getInstance(Class<? extends WebApplication<T>> clazz, Properties props)
-         throws ApplicationException {
+  public static <T> WebApplication<T> getInstance(Class<? extends WebApplication<T>> clazz, Properties props) {
 
     synchronized(AbstractApplication.class) {
 
@@ -156,15 +156,12 @@ public abstract class WebApplication<T> extends AbstractApplication
           // start the app
           app.start(props);
         }
-        catch (ApplicationException ax) {
-          throw ax;
-        }
-        catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
-               SecurityException | InvocationTargetException | NamingException ex) {
+        catch (IllegalAccessException | InstantiationException | NoSuchMethodException |
+               InvocationTargetException | NamingException | RuntimeException ex) {
           if (app != null) {
             app.doStop(4);
           }
-          throw new ApplicationException("creating application instance failed: " + ex.getMessage(), ex);
+          throw new TentackleRuntimeException("creating application instance failed: " + ex.getMessage(), ex);
         }
       }
       return app;
@@ -305,10 +302,9 @@ public abstract class WebApplication<T> extends AbstractApplication
    * Starts the application.
    *
    * @param props the properties to configure the application
-   * @throws ApplicationException if startup failed
    * @see AbstractApplication#setProperties(java.util.Properties)
    */
-  public void start(Properties props) throws ApplicationException {
+  public void start(Properties props) {
     synchronized (this) {
       sessionCache = new WebSessionKeyCache<>();
 
@@ -337,17 +333,13 @@ public abstract class WebApplication<T> extends AbstractApplication
   }
 
 
-
   /**
    * Gracefully terminates the web application server.
-   * @throws ApplicationException if termination failed
    */
-  public void stop() throws ApplicationException {
+  public void stop() {
     unregister();
     doStop(0);
   }
-
-
 
 
   /**
@@ -434,10 +426,10 @@ public abstract class WebApplication<T> extends AbstractApplication
    * Connects the server to the database backend.
    * The database properties may be either given by the "db" property
    * or if this is missing the application's properties will be used.
-   *
-   * @throws ApplicationException if login failed
+   * <p>
+   * Throws TentackleRuntimeException if a server instance is already running.
    */
-  protected void doLogin() throws ApplicationException {
+  protected void doLogin() {
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
@@ -448,7 +440,7 @@ public abstract class WebApplication<T> extends AbstractApplication
     setSessionInfo(sessionInfo);
 
     if (serverDb != null) {
-        throw new ApplicationException("only one server application instance allowed");
+        throw new TentackleRuntimeException("only one server application instance allowed");
     }
     serverDb = (Db) createSession(sessionInfo);
 
@@ -458,17 +450,8 @@ public abstract class WebApplication<T> extends AbstractApplication
   }
 
 
-
-  /**
-   * Finishes the startup.<br>
-   * The default implementation starts the modification thread, unless
-   * {@code "--nomodthread"} given, creates the connection cache, the Db pool,
-   * and the DbServer instance.
-   *
-   * @throws ApplicationException if failed
-   */
   @Override
-  protected void doFinishStartup() throws ApplicationException {
+  protected void doFinishStartup() {
 
     super.doFinishStartup();
 
@@ -532,7 +515,7 @@ public abstract class WebApplication<T> extends AbstractApplication
         deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
       }
     }
-    catch (ApplicationException | RuntimeException anyEx) {
+    catch (RuntimeException anyEx) {
       LOGGER.severe("web server stopped ungracefully", anyEx);
     }
 

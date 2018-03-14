@@ -27,8 +27,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -470,18 +470,20 @@ public final class ReflectionHelper {
    *
    * If a reference in the path is null, the returned value will be null by default.
    * This behaviour can be changed by appending an asterisk, i.e.
-   * <code>"invoice.invoiceLine.index*"</code> will throw an ApplicationException
+   * <code>"invoice.invoiceLine.index*"</code> will throw a TentackleRuntimeException
    * if invoice or invoiceLine is null.
    *
    * <p>
    * Notice: if path is null or empty the root object will be returned.
+   * <p>
+   * Throws TentackleRuntimeException if value cannot be retrieved
    *
    * @param root the root object the path refers to
    * @param path the member path in dot-notation relative to given object
    * @return the evaluated object
-   * @throws ApplicationException if value cannot be retrieved
+   *
    */
-  public static Object getValueByPath(Object root, String path) throws ApplicationException {
+  public static Object getValueByPath(Object root, String path) {
 
     StringBuilder donePath = new StringBuilder();
 
@@ -506,7 +508,7 @@ public final class ReflectionHelper {
 
         if (root == null) {
           if (noNullRefs) {
-            throw new ApplicationException("reference '" + donePath + "' is null");
+            throw new TentackleRuntimeException("reference '" + donePath + "' is null");
           }
           else  {
             return null;
@@ -536,8 +538,8 @@ public final class ReflectionHelper {
             }
           }
           catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            throw new ApplicationException("cannot retrieve '" + donePath + "' in " +
-                                           root.getClass().getName() + " by method " + method.getName(), ex);
+            throw new TentackleRuntimeException("cannot retrieve '" + donePath + "' in " +
+                                                root.getClass().getName() + " by method " + method.getName(), ex);
           }
         }
         else  {
@@ -553,18 +555,18 @@ public final class ReflectionHelper {
               }
             }
             catch (IllegalAccessException | IllegalArgumentException ex) {
-              throw new ApplicationException("cannot retrieve '" + donePath + "' in " +
-                                             root.getClass().getName() + " by field " + field.getName(), ex);
+              throw new TentackleRuntimeException("cannot retrieve '" + donePath + "' in " +
+                                                  root.getClass().getName() + " by field " + field.getName(), ex);
             }
           }
           else  {
-            throw new ApplicationException("cannot find '" + element + "' in " + clazz.getName());
+            throw new TentackleRuntimeException("cannot find '" + element + "' in " + clazz.getName());
           }
         }
 
         if (stok.hasMoreTokens()) {
           if (value == null && noNullRefs) {
-            throw new ApplicationException("path '" + donePath + "' is null");
+            throw new TentackleRuntimeException("path '" + donePath + "' is null");
           }
           else  {
             root = value;
@@ -579,7 +581,7 @@ public final class ReflectionHelper {
       return root;
     }
 
-    throw new ApplicationException("no such path '" + donePath + "'");
+    throw new TentackleRuntimeException("no such path '" + donePath + "'");
   }
 
 
@@ -598,12 +600,12 @@ public final class ReflectionHelper {
    * <pre>
    * SqlHelper.now()
    * </pre>
+   *
    * @param clazz the class where the path starts
    * @param path the member path in dot-notation relative to given class
    * @return the object
-   * @throws ApplicationException if value cannot be retrieved
    */
-  public static Object getStaticValueByPath(Class<?> clazz, String path) throws ApplicationException {
+  public static Object getStaticValueByPath(Class<?> clazz, String path) {
 
     if (path != null) {
 
@@ -629,14 +631,14 @@ public final class ReflectionHelper {
             return getValueByPath(method.invoke(null), path);
           }
         }
-        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | ApplicationException ex) {
-          throw new ApplicationException("cannot retrieve '" + path + "' in " +
-                                         clazz.getClass().getName() + " by method " + method.getName(), ex);
+        catch (IllegalAccessException | InvocationTargetException | RuntimeException ex) {
+          throw new TentackleRuntimeException("cannot retrieve '" + path + "' in " +
+                                              clazz.getClass().getName() + " by method " + method.getName(), ex);
         }
       }
     }
 
-    throw new ApplicationException("path is null");
+    throw new TentackleRuntimeException("path is null");
   }
 
 
@@ -651,13 +653,14 @@ public final class ReflectionHelper {
    * {@link #getValueByPath(java.lang.Object, java.lang.String)}.
    * <p>
    * Furthermore, methods may be static and are not required to be getters.
+   * <p>
+   * Throws TentackleRuntimeException if value cannot be retrieved.
    *
    * @param clazz the clazz the path refers to
    * @param path the member path in dot-notation relative to given class
    * @return true if path exists
-   * @throws ApplicationException if value cannot be retrieved
    */
-  public static boolean verifyPath(Class<?> clazz, String path) throws ApplicationException {
+  public static boolean verifyPath(Class<?> clazz, String path) {
 
     StringBuilder donePath = new StringBuilder();
 
@@ -686,13 +689,13 @@ public final class ReflectionHelper {
             clazz = field.getType();
           }
           else  {
-            throw new ApplicationException("cannot find '" + element + "' in " + clazz.getName());
+            throw new TentackleRuntimeException("cannot find '" + element + "' in " + clazz.getName());
           }
         }
 
         if (stok.hasMoreTokens()) {
           if (clazz == null) {
-            throw new ApplicationException("path '" + donePath + "' is null");
+            throw new TentackleRuntimeException("path '" + donePath + "' is null");
           }
         }
         else  {
@@ -704,7 +707,7 @@ public final class ReflectionHelper {
       return true;
     }
 
-    throw new ApplicationException("no such path '" + donePath + "'");
+    throw new TentackleRuntimeException("no such path '" + donePath + "'");
   }
 
 

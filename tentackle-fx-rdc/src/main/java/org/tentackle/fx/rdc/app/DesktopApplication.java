@@ -36,7 +36,6 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
@@ -208,7 +207,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               try {
                 doConfigureApplication();
               }
-              catch (RuntimeException | ApplicationException ex) {
+              catch (RuntimeException ex) {
                 LOGGER.severe("configure application failed", ex);
                 return null;
               }
@@ -231,7 +230,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                       doFinishStartup();
                       view.getScene().getWindow().hide();
                     }
-                    catch (RuntimeException | ApplicationException ex) {
+                    catch (RuntimeException ex) {
                       LOGGER.severe("finish startup failed", ex);
                     }
                   });
@@ -392,7 +391,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
       Application.launch(getApplicationClass(), args);
 
     }
-    catch (ApplicationException | RuntimeException ex) {
+    catch (RuntimeException ex) {
       // print message to user, if GUI in window, else if headless to console
       try {
         Fx.error(MessageFormat.format(AppFxRdcBundle.getString("LAUNCHING {0} FAILED"), getName()), ex);
@@ -415,7 +414,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
       unregister();   // not really necessary cause of System.exit in doStop...
       doStop(0);
     }
-    catch (RuntimeException | ApplicationException e) {
+    catch (RuntimeException e) {
       LOGGER.logStacktrace(e);
       // doStop with error
       doStop(4, e);
@@ -459,16 +458,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   }
 
 
-  /**
-   * Finishes the startup.<br>
-   * Invoked after all has been displayed.
-   * The default implementation starts the modification thread, unless
-   * {@code "--nomodthread"} given.
-   *
-   * @throws ApplicationException if failed
-   */
   @Override
-  protected void doFinishStartup() throws ApplicationException {
+  protected void doFinishStartup() {
 
     super.doFinishStartup();
 

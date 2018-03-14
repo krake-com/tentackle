@@ -37,8 +37,8 @@ import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
 
@@ -46,7 +46,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
 
 
 /**
- * A generic db-RMI-DbServer.<br>
+ * A generic RMI server.<br>
  *
  * The db properties file is parsed for the following keywords:
  * <ul>
@@ -227,11 +227,9 @@ public class DbServer {
    *
    * @param sessionInfo the servers db-connection user info
    * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
-   *
-   * @throws ApplicationException if some configuration error
    */
   @SuppressWarnings("unchecked")
-  public DbServer(SessionInfo sessionInfo, Class<? extends RemoteDbConnectionImpl> connectionClass) throws ApplicationException {
+  public DbServer(SessionInfo sessionInfo, Class<? extends RemoteDbConnectionImpl> connectionClass) {
 
     this.sessionInfo = sessionInfo;
     this.connectionClass = connectionClass == null ? RemoteDbConnectionImpl.class : connectionClass;
@@ -245,7 +243,7 @@ public class DbServer {
         this.connectionClass = (Class<RemoteDbConnectionImpl>) Class.forName(val);
       }
       catch (ClassNotFoundException ex) {
-        throw new ApplicationException("connection class '" + val + "' not found");
+        throw new TentackleRuntimeException("connection class '" + val + "' not found");
       }
     }
 
@@ -270,7 +268,7 @@ public class DbServer {
       }
     }
     catch (URISyntaxException ex) {
-      throw new ApplicationException("malformed service url", ex);
+      throw new TentackleRuntimeException("malformed service url", ex);
     }
 
     val = props.getProperty(CREATE_REGISTRY);
@@ -320,12 +318,12 @@ public class DbServer {
             compressedSslPort = p;
             break;
           default:
-            throw new ApplicationException("malformed 'ports = " + val + "'");
+            throw new TentackleRuntimeException("malformed 'ports = " + val + "'");
         }
         pos++;
       }
       if (pos == 0) {
-        throw new ApplicationException("missing port numbers in 'ports = " + val + "'");
+        throw new TentackleRuntimeException("missing port numbers in 'ports = " + val + "'");
       }
       else if (pos == 1) {
         // short form
@@ -334,7 +332,7 @@ public class DbServer {
         compressedSslPort = plainPort + 3;
       }
       else if (pos < 4) {
-        throw new ApplicationException("either one or all four ports must be given in 'ports = " + val + "'");
+        throw new TentackleRuntimeException("either one or all four ports must be given in 'ports = " + val + "'");
       }
       // check port range
       checkPort(plainPort);
@@ -387,21 +385,15 @@ public class DbServer {
   }
 
 
-
-
   /**
-   * Creates an instance of an RMI-db-server with default connection object
-   * (or configured entirely by db properties file)
+   * Creates an instance of an RMI-db-server with default connection object.
    *
    * @param serverInfo the servers db-connection user info
-   *
-   * @throws ApplicationException if some configuration error
    */
   @SuppressWarnings("unchecked")
-  public DbServer(SessionInfo serverInfo) throws ApplicationException {
+  public DbServer(SessionInfo serverInfo) {
     this(serverInfo, null);
   }
-
 
 
   /**
@@ -414,17 +406,14 @@ public class DbServer {
   }
 
 
-
   /**
    * Gets the rmi port for a new remote object.
    *
    * @param requestedPort the requested port by the delegate, 0 = use system default
    * @param factoryType the socket factory type
    * @return the granted port, 0 = use system default
-   *
-   * @throws ApplicationException if requested port could not be granted
    */
-  public int getPort(int requestedPort, SocketFactoryType factoryType) throws ApplicationException {
+  public int getPort(int requestedPort, SocketFactoryType factoryType) {
 
     checkPort(requestedPort);
 
@@ -459,11 +448,11 @@ public class DbServer {
     }
 
     if (requestedPort != 0 && requestedPort != p) {
-      throw new ApplicationException("protocol for requested port " + requestedPort + " is fixed to " + p);
+      throw new TentackleRuntimeException("protocol for requested port " + requestedPort + " is fixed to " + p);
     }
 
     if (p < 0) {
-      throw new ApplicationException("service at this port is disabled");
+      throw new TentackleRuntimeException("service at this port is disabled");
     }
 
     return p;
@@ -575,11 +564,9 @@ public class DbServer {
 
 
   /**
-   * Starts the server.
-   *
-   * @throws ApplicationException if startup failed
+   * Starts the RMI server.
    */
-  public void start() throws ApplicationException {
+  public void start() {
     try {
 
       int registryPort = 0;
@@ -638,7 +625,7 @@ public class DbServer {
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
            SecurityException | InvocationTargetException | MalformedURLException | URISyntaxException |
            AlreadyBoundException | RemoteException e) {
-      throw new ApplicationException("server startup failed", e);
+      throw new TentackleRuntimeException("server startup failed", e);
     }
   }
 
@@ -657,9 +644,8 @@ public class DbServer {
    * Stops the server.
    * <p>
    * Unbinds the connection object.
-   * @throws ApplicationException if failed
    */
-  public void stop() throws ApplicationException {
+  public void stop() {
     try {
       if (connectionObject != null) {
         connectionObject.unexportRemoteObject(connectionObject);
@@ -680,18 +666,16 @@ public class DbServer {
       }
     }
     catch (MalformedURLException | NotBoundException | RemoteException e) {
-      throw new ApplicationException("server shutdown failed", e);
+      throw new TentackleRuntimeException("server shutdown failed", e);
     }
   }
-
 
 
   // check port range
-  private void checkPort(int port) throws ApplicationException {
+  private void checkPort(int port) {
     if (port < -1 || (port > 0 && port < 1024)) {
-      throw new ApplicationException("illegal port number " + port + ". Possible values: -1, 0, >= 1024");
+      throw new TentackleRuntimeException("illegal port number " + port + ". Possible values: -1, 0, >= 1024");
     }
   }
-
 
 }

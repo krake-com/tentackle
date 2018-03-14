@@ -23,7 +23,6 @@ import java.util.Properties;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
@@ -130,7 +129,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
       // finish startup
       doFinishStartup();
     }
-    catch (ApplicationException | RuntimeException e) {
+    catch (RuntimeException e) {
       LOGGER.logStacktrace(e);
       doStop(3, e);
     }
@@ -145,7 +144,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
       unregister();   // not really necessary cause of System.exit in doStop...
       doStop(0);
     }
-    catch (ApplicationException | RuntimeException e) {
+    catch (RuntimeException e) {
       LOGGER.logStacktrace(e);
       // doStop with error
       doStop(4, e);
@@ -190,7 +189,7 @@ public abstract class ConsoleApplication extends AbstractApplication {
   /**
    * Connects to the database backend or application server.
    */
-  protected void doLogin() throws ApplicationException {
+  protected void doLogin() {
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
@@ -214,11 +213,9 @@ public abstract class ConsoleApplication extends AbstractApplication {
    * Invoked after all has been displayed.
    * The default implementation starts the modification thread, unless
    * {@code "--nomodthread"} given.
-   *
-   * @throws ApplicationException if failed
    */
   @Override
-  protected void doFinishStartup() throws ApplicationException {
+  protected void doFinishStartup() {
 
     super.doFinishStartup();
 

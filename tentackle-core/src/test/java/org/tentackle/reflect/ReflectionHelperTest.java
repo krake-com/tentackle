@@ -19,7 +19,7 @@
 
 package org.tentackle.reflect;
 
-import org.tentackle.misc.ApplicationException;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.DateHelper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -58,33 +58,15 @@ public class ReflectionHelperTest {
 
   @Test
   public void testGetValueByPath() {
-
-    try {
-      Assert.assertTrue(ReflectionHelper.verifyPath(DateHelper.class, "now"));
-    }
-    catch (ApplicationException ex) {
-      Assert.fail(ex.getAllMessages());
-    }
-
-    try {
-      Assert.assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
-    }
-    catch (ApplicationException ex) {
-      Assert.fail(ex.getAllMessages());
-    }
-
-    try {
-      Assert.assertTrue(ReflectionHelper.getValueByPath(this, "otherClass.myField") == null);
-    }
-    catch (ApplicationException ex) {
-      Assert.fail(ex.getAllMessages());
-    }
+    Assert.assertTrue(ReflectionHelper.verifyPath(DateHelper.class, "now"));
+    Assert.assertEquals(ReflectionHelper.getValueByPath(this, "myClass.myField"), 10);
+    Assert.assertTrue(ReflectionHelper.getValueByPath(this, "otherClass.myField") == null);
 
     try {
       ReflectionHelper.getValueByPath(this, "otherClass.myField*");
-      Assert.fail("should have thrown an ApplicationException!");
+      Assert.fail("should have thrown a TentackleRuntimeException!");
     }
-    catch (ApplicationException ex) {
+    catch (TentackleRuntimeException ex) {
       // fine
     }
   }

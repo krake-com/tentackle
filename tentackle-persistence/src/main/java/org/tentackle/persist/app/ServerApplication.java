@@ -25,9 +25,9 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
-import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
@@ -153,7 +153,7 @@ public abstract class ServerApplication extends AbstractApplication
       // start the RMI-server
       doStartDbServer();
     }
-    catch (ApplicationException | RuntimeException e) {
+    catch (RuntimeException e) {
       // doStop with error
       doStop(3, e);
     }
@@ -175,19 +175,18 @@ public abstract class ServerApplication extends AbstractApplication
     try {
       doStop(0);
     }
-    catch (Exception e) {
-      LOGGER.logStacktrace(e);
+    catch (RuntimeException rx) {
+      LOGGER.logStacktrace(rx);
     }
     finally {
       try {
         unregister();
       }
-      catch (ApplicationException ex) {
+      catch (RuntimeException ex) {
         LOGGER.logStacktrace(ex);
       }
     }
   }
-
 
 
   @Override
@@ -204,9 +203,8 @@ public abstract class ServerApplication extends AbstractApplication
    * @param connectionClass the class of the connection object to instantiate,
    *                        null = default or from serverInfo's properties file
    * @return the created DbServer
-   * @throws ApplicationException if creating the DbServer failed
    */
-  protected DbServer createDbServer(Class<? extends RemoteDbConnectionImpl> connectionClass) throws ApplicationException  {
+  protected DbServer createDbServer(Class<? extends RemoteDbConnectionImpl> connectionClass) {
     return new DbServer(getSessionInfo(), connectionClass);
   }
 
@@ -319,10 +317,10 @@ public abstract class ServerApplication extends AbstractApplication
 
   /**
    * Connects the server to the database backend.
-   *
-   * @throws ApplicationException if login failed
+   * <p>
+   * Throws TentackleRuntimeException if a server application instance is already running.
    */
-  protected void doLogin() throws ApplicationException {
+  protected void doLogin() {
 
     String username = getProperty(Constants.BACKEND_USER);
     char[] password = StringHelper.toCharArray(getProperty(Constants.BACKEND_PASSWORD));
@@ -332,7 +330,7 @@ public abstract class ServerApplication extends AbstractApplication
     configureSessionInfo(sessionInfo);
 
     if (serverDb != null) {
-      throw new ApplicationException("only one server application instance allowed");
+      throw new TentackleRuntimeException("only one server application instance allowed");
     }
     serverDb = (Db) createSession(sessionInfo);
     serverDb.makeCurrent();
@@ -342,17 +340,8 @@ public abstract class ServerApplication extends AbstractApplication
   }
 
 
-
-  /**
-   * Finishes the startup.<br>
-   * The default implementation starts the modification thread, unless
-   * {@code "--nomodthread"} given, creates the connection manager, the Db pool,
-   * and the DbServer instance.
-   *
-   * @throws ApplicationException if finish failed
-   */
   @Override
-  protected void doFinishStartup() throws ApplicationException {
+  protected void doFinishStartup() {
 
     super.doFinishStartup();
 
@@ -366,11 +355,10 @@ public abstract class ServerApplication extends AbstractApplication
 
 
   /**
-   * Starts the RMI-server.
+   * Starts the RMI-server.<br>
    * The default implementation just does {@code dbServer.start()}.
-   * @throws ApplicationException if starting the dbServer failed
    */
-  protected void doStartDbServer() throws ApplicationException {
+  protected void doStartDbServer() {
     dbServer.start();
   }
 
@@ -440,7 +428,7 @@ public abstract class ServerApplication extends AbstractApplication
         deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
       }
     }
-    catch (RemoteException | ApplicationException | RuntimeException anyEx) {
+    catch (RemoteException | RuntimeException anyEx) {
       LOGGER.severe("server application stopped ungracefully", anyEx);
     }
 
