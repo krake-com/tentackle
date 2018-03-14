@@ -681,7 +681,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Cleans up resources.<br>
-   * Invoked from {@link #stop(int, java.lang.Exception)
+   * Invoked from {@link #stop(int, java.lang.Exception)}
    */
   protected void cleanup() {
     Pdo.terminateHelperThreads();
