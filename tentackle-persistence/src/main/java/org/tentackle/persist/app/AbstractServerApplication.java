@@ -18,7 +18,13 @@
 
 package org.tentackle.persist.app;
 
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Enumeration;
 import java.util.Properties;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
@@ -47,6 +53,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
 
   private SessionPool sessionPool;                    // the session pool
   private ConnectionManager connectionManager;        // the connection manager
+  private boolean runsInContainer;                    // true if application is running within a container (tomcat, EE)
 
 
   /**
@@ -56,6 +63,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
    */
   public AbstractServerApplication(String name) {
     super(name);
+    detectContainer();
   }
 
   @Override
@@ -235,6 +243,71 @@ public abstract class AbstractServerApplication extends AbstractApplication
     if (connectionManager != null) {
       connectionManager.shutdown();
       connectionManager = null;
+    }
+
+    if (isRunningInContainer()) {
+      // deregister all JDBC drivers loaded by the server app's classloader
+      deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
+    }
+  }
+
+
+  /**
+   * Indicates whether this application is running within a container.
+   *
+   * @return true if running in a container, false if not
+   */
+  public boolean isRunningInContainer() {
+    return runsInContainer;
+  }
+
+  @Override
+  protected boolean isSystemExitNecessaryToStop() {
+    return !isRunningInContainer();
+  }
+
+
+  /**
+   * Detects whether this application is running within a container.<br>
+   * The result can be retrieved by {@link #isRunningInContainer()}.
+   */
+  protected void detectContainer() {
+    runsInContainer = false;
+    try {
+      new InitialContext().lookup("java:comp/env");
+      // the lookup worked, we're in a web container
+      runsInContainer = true;
+      LOGGER.info("container detected");
+    }
+    catch (NamingException ex) {
+      LOGGER.info("not running within a container");
+    }
+  }
+
+
+  /**
+   * Deregisters all JDBC-Drivers loaded by the app's classloader.<br>
+   * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
+   * Avoids memleaks.
+   *
+   * @param cl the app's classloader
+   */
+  protected void deregisterJdbcDrivers(ClassLoader cl) {
+    Enumeration<Driver> drivers = DriverManager.getDrivers();
+    while (drivers.hasMoreElements()) {
+      Driver driver = drivers.nextElement();
+      if (driver.getClass().getClassLoader() == cl) {
+        try {
+          LOGGER.info("deregistering JDBC driver {0}", driver);
+          DriverManager.deregisterDriver(driver);
+        }
+        catch (SQLException sx) {
+          LOGGER.severe("failed to deregister JDBC driver {0}", driver, sx);
+        }
+      }
+      else {
+        LOGGER.fine("JDBC driver {0} skipped because it does not belong to this app's ClassLoader", driver);
+      }
     }
   }
 

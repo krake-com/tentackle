@@ -30,6 +30,4 @@ module org.tentackle.pdo {
   requires org.tentackle.common;
 
   requires java.compiler;
-  requires java.sql;
-  requires java.naming;
 }

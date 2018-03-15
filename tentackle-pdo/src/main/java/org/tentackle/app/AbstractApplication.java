@@ -22,17 +22,11 @@ package org.tentackle.app;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.text.MessageFormat;
-import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
@@ -82,7 +76,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   private CommandLine cmdLine;                // command line
   private DomainContext context;              // the server's connection context
   private SessionInfo sessionInfo;            // server's user info
-  private boolean runsInContainer;            // true if application is running within a container (tomcat, EE)
   private boolean stopping;                   // true if application is stopping
   private final long creationTime;            // creation time in epochal milliseconds
 
@@ -95,7 +88,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    */
   public AbstractApplication(String name) {
     setName(name);
-    detectContainer();
     creationTime = System.currentTimeMillis();
   }
 
@@ -197,61 +189,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         }
         running = null;
       }
-    }
-  }
-
-
-  /**
-   * Deregisters all JDBC-Drivers loaded by the app's classloader.<br>
-   * Necessary in containers only (in case connected directly via JDBC and not via JNDI).
-   * Avoids memleaks.
-   *
-   * @param cl the app's classloader
-   */
-  protected void deregisterJdbcDrivers(ClassLoader cl) {
-    Enumeration<Driver> drivers = DriverManager.getDrivers();
-    while (drivers.hasMoreElements()) {
-      Driver driver = drivers.nextElement();
-      if (driver.getClass().getClassLoader() == cl) {
-        try {
-          LOGGER.info("deregistering JDBC driver {0}", driver);
-          DriverManager.deregisterDriver(driver);
-        }
-        catch (SQLException sx) {
-          LOGGER.severe("failed to deregister JDBC driver {0}", driver, sx);
-        }
-      }
-      else {
-        LOGGER.fine("JDBC driver {0} skipped because it does not belong to this app's ClassLoader", driver);
-      }
-    }
-  }
-
-
-  /**
-   * Indicates whether this application is running within a container.
-   *
-   * @return true if running in a container, false if not
-   */
-  public boolean isRunningInContainer() {
-    return runsInContainer;
-  }
-
-
-  /**
-   * Detects whether this application is running within a container.<br>
-   * The result can be retrieved by {@link #isRunningInContainer()}.
-   */
-  protected void detectContainer() {
-    runsInContainer = false;
-    try {
-      new InitialContext().lookup("java:comp/env");
-      // the lookup worked, we're in a web container
-      runsInContainer = true;
-      LOGGER.info("container detected");
-    }
-    catch (NamingException ex) {
-      LOGGER.info("not running within a container");
     }
   }
 
@@ -642,19 +579,24 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
     try {
       cleanup();
-
-      if (isRunningInContainer()) {
-        // deregister all JDBC drivers loaded by the server app's classloader
-        deregisterJdbcDrivers(Thread.currentThread().getContextClassLoader());
-      }
     }
     catch (Exception anyEx) {
       LOGGER.severe(getName() + " stopped ungracefully", anyEx);
     }
 
-    if (!isRunningInContainer()) {
+    if (isSystemExitNecessaryToStop()) {
       System.exit(exitValue);
     }
+  }
+
+
+  /**
+   * Returns whether System.exit() must be invoked to stop the application.
+   *
+   * @return true if JVM must be terminated
+   */
+  protected boolean isSystemExitNecessaryToStop() {
+    return true;
   }
 
 

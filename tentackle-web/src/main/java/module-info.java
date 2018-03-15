@@ -24,8 +24,5 @@ module org.tentackle.web {
   requires org.tentackle.session;
   requires org.tentackle.core;
   requires org.tentackle.database;
-  requires org.tentackle.sql;
   requires org.tentackle.common;
-
-  requires java.naming;
 }

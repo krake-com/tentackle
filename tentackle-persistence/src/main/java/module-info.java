@@ -34,4 +34,5 @@ module org.tentackle.persistence {
 
   requires java.rmi;
   requires java.sql;
+  requires java.naming;
 }
