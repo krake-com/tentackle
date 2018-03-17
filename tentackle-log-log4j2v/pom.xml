@@ -8,7 +8,7 @@
     <version>2.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tentackle-log-log4j2</artifactId>
+  <artifactId>tentackle-log-log4j2v</artifactId>
   <version>2.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Logging Log4J2V</name>
