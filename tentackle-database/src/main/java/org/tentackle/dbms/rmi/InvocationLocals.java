@@ -20,24 +20,20 @@ package org.tentackle.dbms.rmi;
 
 import java.util.Locale;
 import org.tentackle.common.LocaleProvider;
-import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.session.Session;
 
 /**
- * Holds the old thread-locals and MDC during remote delegate method invocation.
+ * Holds the old thread-locals during remote delegate method invocation.
  *
  * @author harald
  */
 public class InvocationLocals {
 
   private final RemoteDelegateImpl<?> delegate;
-  private final MappedDiagnosticContext mdc;
-  private final String mdcKey;
 
   private final Thread ownerThread;
   private final Session currentSession;
   private final Locale currentLocale;
-  private final String mdcValue;
 
 
   /**
@@ -47,15 +43,11 @@ public class InvocationLocals {
    * @param mdc the mapped diagnostic context
    * @param mdcKey the MDC key
    */
-  public InvocationLocals(RemoteDelegateImpl<?> delegate, MappedDiagnosticContext mdc, String mdcKey) {
+  public InvocationLocals(RemoteDelegateImpl<?> delegate) {
     this.delegate = delegate;
-    this.mdc = mdc;
-    this.mdcKey = mdcKey;
-
     ownerThread = delegate.getSession().getOwnerThread();
     currentSession = Session.getCurrentSession();
     currentLocale = LocaleProvider.getInstance().getCurrentLocale();
-    mdcValue = mdc.get(mdcKey);
   }
 
 
@@ -66,12 +58,6 @@ public class InvocationLocals {
     Session.setCurrentSession(currentSession);
     delegate.getSession().setOwnerThread(ownerThread);
     LocaleProvider.getInstance().setCurrentLocale(currentLocale);
-    if (mdcValue != null) {
-      mdc.put(mdcKey, mdcValue);
-    }
-    else {
-      mdc.remove(mdcKey);
-    }
   }
 
 }
