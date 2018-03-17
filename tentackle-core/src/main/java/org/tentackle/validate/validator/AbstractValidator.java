@@ -29,6 +29,7 @@ import java.util.Map;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.common.StringHelper;
+import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptVariable;
@@ -382,12 +383,11 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    * @return the script variables
    */
   protected ScriptVariable[] createScriptVariables(ValidationContext validationContext) {
-    return new ScriptVariable[]{
+    return new ScriptVariable[] {
       new ScriptVariable(VAR_SCOPE, validationContext.getEffectiveScope()),
       new ScriptVariable(VAR_PATH, validationContext.getValidationPath()),
       new ScriptVariable(VAR_VALUE, validationContext.getObject()),
-      new ScriptVariable(VAR_CLASS, validationContext.getParentObject() == null ?
-            null : validationContext.getParentObject().getClass())
+      new ScriptVariable(VAR_CLASS, EffectiveClassProvider.getEffectiveClass(validationContext.getParentObject()))
     };
   }
 
