@@ -26,6 +26,7 @@ import java.io.Serializable;
  *
  * @see Db#registerRollbackTxRunnable(RollbackTxRunnable)
  */
+@FunctionalInterface
 public interface RollbackTxRunnable extends Serializable {
 
   /**

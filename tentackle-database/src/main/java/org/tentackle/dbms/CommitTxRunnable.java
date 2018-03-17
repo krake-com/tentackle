@@ -29,6 +29,7 @@ import java.io.Serializable;
  *
  * @see Db#registerCommitTxRunnable(CommitTxRunnable)
  */
+@FunctionalInterface
 public interface CommitTxRunnable extends Serializable {
 
   /**

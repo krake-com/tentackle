@@ -410,11 +410,12 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
     synchronized (serverSession) {
 
       if (!serverSession.isOpen()) {
-        throw new RemoteSessionClosedException(serverSession + " already closed since " + new Date(serverSession.getClosedSince()));
+        throw new RemoteSessionClosedException(serverSession + " already closed since " +
+                                               new Date(serverSession.getClosedSince()));
       }
 
       InvocationLocals locals = Thread.currentThread().getName().startsWith(RMI_THREAD_NAME) ?
-              new InvocationLocals(delegate, LOGGER.getMappedDiagnosticContext(), MDC_SESSION_KEY) : null;
+              new InvocationLocals(delegate) : null;
 
       if (locals != null) {
         // mark session still alive
