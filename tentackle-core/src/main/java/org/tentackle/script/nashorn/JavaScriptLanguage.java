@@ -35,7 +35,7 @@ public class JavaScriptLanguage extends AbstractJSRScriptingLanguage {
   public static final String NAME = "JavaScript";
 
 
-  private static final String[] abbreviations = new String[] { NAME, "js", "nashorn" };
+  private static final String[] ABBREVIATIONS = new String[] { NAME, "js", "nashorn" };
 
   /**
    * Creates the groovy language.
@@ -51,7 +51,7 @@ public class JavaScriptLanguage extends AbstractJSRScriptingLanguage {
 
   @Override
   public String[] getAbbreviations() {
-    return abbreviations;
+    return ABBREVIATIONS;
   }
 
   @Override

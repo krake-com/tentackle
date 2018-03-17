@@ -39,7 +39,7 @@ import org.tentackle.validate.ValidationScopeFactory;
 public abstract class AbstractBinder implements Binder {
 
   /** to make binder comparable */
-  private static final AtomicLong instanceCount = new AtomicLong();
+  private static final AtomicLong INSTANCE_COUNT = new AtomicLong();
 
 
   private final long instanceNumber;                        // unique binder number
@@ -55,7 +55,7 @@ public abstract class AbstractBinder implements Binder {
    * Creates a binder.
    */
   public AbstractBinder() {
-    this.instanceNumber = instanceCount.incrementAndGet();
+    this.instanceNumber = INSTANCE_COUNT.incrementAndGet();
     bindingProperties = new HashMap<>();
     validationScope = ValidationScopeFactory.getInstance().getInteractiveScope();
   }
@@ -75,7 +75,6 @@ public abstract class AbstractBinder implements Binder {
   public Object putBindingProperty(Object key, Object value) {
     return bindingProperties.put(key, value);
   }
-
 
   /**
    * Gets a binding property.<br>
