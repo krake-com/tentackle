@@ -30,7 +30,7 @@ public interface Validateable {
 
   /**
    * Validates the object.<br>
-   * Applies all field- and object-validators.
+   * Applies to all field- and object-validators.
    *
    * @param validationPath the validation path
    * @param scope the validation scope
