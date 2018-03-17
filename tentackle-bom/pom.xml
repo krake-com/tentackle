@@ -54,6 +54,11 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-log-log4j2v</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-log-slf4j</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -107,7 +112,7 @@
         <artifactId>tentackle-web</artifactId>
         <version>${project.version}</version>
       </dependency>
-      
+
       <!-- test dependencies -->
       <dependency>
         <groupId>org.tentackle</groupId>
