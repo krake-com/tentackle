@@ -22,5 +22,5 @@ module org.tentackle.log.log4j2v {
   requires org.tentackle.core;
   requires org.tentackle.common;
   requires org.apache.logging.log4j;
-  requires org.apache.logging.log4j.core;
+//  requires org.apache.logging.log4j.core;
 }
