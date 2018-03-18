@@ -23,4 +23,9 @@ module org.tentackle.common {
   requires java.logging;
 
   exports org.tentackle.common;
+
+  uses org.tentackle.common.ServiceFactory;
+
+  provides org.tentackle.common.ServiceFactory
+      with org.tentackle.common.ServiceFactory;   // self is default!
 }
