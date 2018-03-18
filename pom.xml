@@ -77,7 +77,7 @@
     <javac.version.src>1.9</javac.version.src>
     <javac.version.target>1.9</javac.version.target>
     <maven.version>3.5.2</maven.version>
-    <postgresql.version>9.1-901-1.jdbc4</postgresql.version>
+    <postgresql.version>42.2.1</postgresql.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
@@ -216,7 +216,7 @@
       </dependency>
 
       <dependency>
-        <groupId>postgresql</groupId>
+        <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>${postgresql.version}</version>
         <scope>test</scope>
@@ -257,7 +257,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>postgresql</groupId>
+      <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
