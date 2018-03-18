@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-import org.tentackle.sql.JoinType;
-import org.tentackle.sql.Postgres;
+package org.tentackle.sql;
+
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
