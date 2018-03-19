@@ -87,7 +87,8 @@ public class DefaultImageProvider implements ImageProvider {
       for (String type: getExtensions()) {
         try {
           String url = imagePath + name + type;
-          image = new Image(url, true);    // always load in background
+          // with JPMS we must load the inputstream in our own module.
+          image = new Image(DefaultImageProvider.class.getResourceAsStream(url));
           imageMap.put(name, image);
           break;
         }
