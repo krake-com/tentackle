@@ -19,9 +19,12 @@
 
 package org.tentackle.fx;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javafx.scene.image.Image;
+import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 
 /**
@@ -31,6 +34,8 @@ import org.tentackle.reflect.ReflectionHelper;
  */
 @ImageProviderService
 public class DefaultImageProvider implements ImageProvider {
+
+  private static final Logger LOGGER = Logger.get(DefaultImageProvider.class);
 
   /**
    * File type EXTENSIONS to try.
@@ -85,15 +90,17 @@ public class DefaultImageProvider implements ImageProvider {
     Image image = imageMap.get(name);
     if (image == null) {
       for (String type: getExtensions()) {
-        try {
-          String url = imagePath + name + type;
-          // with JPMS we must load the inputstream in our own module.
-          image = new Image(DefaultImageProvider.class.getResourceAsStream(url));
-          imageMap.put(name, image);
-          break;
+        String url = imagePath + name + type;
+        // with JPMS we must load the inputstream in our own module.
+        try (InputStream is = getClass().getResourceAsStream(url)) {
+          if (is != null) {
+            image = new Image(is);
+            imageMap.put(name, image);
+            break;
+          }
         }
-        catch (IllegalArgumentException nfx) {
-          // try next extension
+        catch (IOException ix) {
+          LOGGER.warning("closing input stream failed for " + url, ix);
         }
       }
       if (image == null) {
