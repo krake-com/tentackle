@@ -31,12 +31,13 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.ServiceLoader.Provider;
 import java.util.Set;
 
 
 /**
  * Default implementation of a {@link ServiceFinder}.
- * <p>
  *
  * @author harald
  */
@@ -52,6 +53,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
+  private ModuleSorter moduleSorter;                        // module sorter, null if not initialized yet
 
 
   /**
@@ -137,9 +139,17 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @return the service's resource urls
    */
   @Override
-  public Enumeration<URL> findServiceURLs(String serviceName) {
+  public Collection<URL> findServiceURLs(String serviceName) {
     try {
-      return getClassLoader(serviceName).getResources(servicePath + serviceName);
+      Enumeration<URL> resources = getClassLoader(serviceName).getResources(servicePath + serviceName);
+      if (moduleSorter != null) {
+        return moduleSorter.sort(resources);
+      }
+      Collection<URL> mappedUrls = new ArrayList<>();
+      while (resources.hasMoreElements()) {
+        mappedUrls.add(resources.nextElement());
+      }
+      return mappedUrls;
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
@@ -156,16 +166,17 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @Override
   public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
-    Map<String,URL> services = serviceMap.get(serviceName);
-    if (services == null) {
-      services = new LinkedHashMap<>();   // linked hashmap to preserve order
-      Enumeration<URL> urls = findServiceURLs(serviceName);
-      while (urls.hasMoreElements()) {
-        parseURL(urls.nextElement(), serviceName, services);
+    return serviceMap.computeIfAbsent(serviceName, sn -> {
+      Map<String,URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
+      if (moduleSorter == null) {
+        moduleSorter = new ModuleSorter();
+        ServiceLoader.load(ServiceTrojan.class).stream().map(Provider::get).forEach(trojan -> {
+          moduleSorter.add(trojan.getClass().getModule());
+        });
       }
-      serviceMap.put(serviceName, services);
-    }
-    return services;
+      parseURLs(findServiceURLs(sn), sn, services);
+      return services;
+    });
   }
 
 
@@ -397,6 +408,16 @@ public class DefaultServiceFinder implements ServiceFinder {
     }
   }
 
+  /**
+   * Parses an enumeration of URLs.
+   *
+   * @param urls the URLs
+   * @param serviceName the service name
+   * @param services the destination map
+   */
+  protected void parseURLs(Collection<URL> urls, String serviceName, Map<String, URL> services) {
+    urls.forEach(url -> parseURL(url, serviceName, services));
+  }
 
   /**
    * Normalizes a line.<br>

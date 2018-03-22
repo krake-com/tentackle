@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.fx.rdc {
+open module org.tentackle.fx.rdc {
   exports org.tentackle.fx.rdc;
   exports org.tentackle.fx.rdc.admin;
   exports org.tentackle.fx.rdc.app;
@@ -44,4 +44,6 @@ module org.tentackle.fx.rdc {
   requires javafx.graphics;
   requires javafx.controls;
   requires javafx.fxml;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.fx.rdc.service.Trojan;
 }

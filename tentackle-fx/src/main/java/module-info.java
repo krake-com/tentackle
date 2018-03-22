@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.fx {
+open module org.tentackle.fx {
   requires org.tentackle.core;
   requires org.tentackle.common;
 
@@ -46,4 +46,6 @@ module org.tentackle.fx {
   exports org.tentackle.fx.table;
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.fx.service.Trojan;
 }

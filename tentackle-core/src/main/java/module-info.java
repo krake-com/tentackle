@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.core {
-  
+open module org.tentackle.core {
+
   requires org.tentackle.common;
 
   requires java.prefs;
@@ -43,4 +43,6 @@ module org.tentackle.core {
   exports org.tentackle.validate;
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.apt.service.Trojan;
 }

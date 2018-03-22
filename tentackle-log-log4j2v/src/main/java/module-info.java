@@ -23,4 +23,6 @@ module org.tentackle.log.log4j2v {
   requires org.tentackle.common;
   requires org.apache.logging.log4j;
 //  requires org.apache.logging.log4j.core;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.log.log4j2v.service.Trojan;
 }

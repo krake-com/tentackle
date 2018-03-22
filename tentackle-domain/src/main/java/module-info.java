@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.domain {
+open module org.tentackle.domain {
   exports org.tentackle.domain;
   exports org.tentackle.domain.ns;
   exports org.tentackle.domain.security;
@@ -25,4 +25,6 @@ module org.tentackle.domain {
   requires org.tentackle.session;
   requires org.tentackle.core;
   requires org.tentackle.common;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.domain.service.Trojan;
 }

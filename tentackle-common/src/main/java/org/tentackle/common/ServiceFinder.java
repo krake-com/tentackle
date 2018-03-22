@@ -21,7 +21,6 @@ package org.tentackle.common;
 
 import java.net.URL;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 
@@ -102,7 +101,7 @@ public interface ServiceFinder {
    * @param serviceName the service name, usually a classname
    * @return the service's resource urls
    */
-  Enumeration<URL> findServiceURLs(String serviceName);
+  Collection<URL> findServiceURLs(String serviceName);
 
   /**
    * Finds a unique service configurations by service name.<br>

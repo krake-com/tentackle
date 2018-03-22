@@ -24,8 +24,11 @@ module org.tentackle.common {
 
   exports org.tentackle.common;
 
+  // to get hold of other module's META-INF/xxxxx
+  uses org.tentackle.common.ServiceTrojan;
+
+  // optional application specific factory. Defaults to self.
   uses org.tentackle.common.ServiceFactory;
 
-  provides org.tentackle.common.ServiceFactory
-      with org.tentackle.common.ServiceFactory;   // self is default!
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.common.service.Trojan;
 }

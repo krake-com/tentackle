@@ -31,4 +31,6 @@ module org.tentackle.i18n {
   requires org.tentackle.domain;
 
   requires java.rmi;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.i18n.service.Trojan;
 }

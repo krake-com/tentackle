@@ -35,4 +35,6 @@ module org.tentackle.persistence {
   requires java.rmi;
   requires java.sql;
   requires java.naming;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.persist.service.Trojan;
 }

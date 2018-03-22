@@ -31,4 +31,6 @@ module org.tentackle.database {
   requires java.rmi;
   requires java.prefs;
   requires java.management;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.dbms.service.Trojan;
 }

@@ -21,4 +21,6 @@ module org.tentackle.log.jdk {
 
   requires org.tentackle.core;
   requires org.tentackle.common;
+
+  provides org.tentackle.common.ServiceTrojan with org.tentackle.log.jdk.service.Trojan;
 }
