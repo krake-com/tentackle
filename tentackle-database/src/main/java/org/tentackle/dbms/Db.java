@@ -25,7 +25,6 @@ import java.io.Serializable;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,6 +49,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
@@ -64,6 +64,7 @@ import org.tentackle.io.Reconnector;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.Sink;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
@@ -81,6 +82,7 @@ import org.tentackle.session.VersionInfoIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+import org.tentackle.misc.Provider;
 
 
 /**
@@ -1363,30 +1365,38 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public <T> T transaction(String txName, Supplier<T> txe) {
+  public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
     if (txName == null) {
-      Method method = txe.getClass().getEnclosingMethod();
-      if (method != null) {
-        // inner class
-        txName = ReflectionHelper.getClassBaseName(method.getDeclaringClass()) + "#" + method.getName();
-      }
-      else {
-        // lambdas don't provide an enclosing method, because they are not inner classes.
-        // can't figure out method name -> just use the classname (better than nothing...)
+      StackWalker walker = StackWalker.getInstance(Set.of(), 3);
+      Sink<String> sh = new Sink<>();   // we cannot modify txName from within the lambda below
+      walker.forEach(s -> {
+        if (!getClass().getName().equals(s.getClassName())) {
+          if (sh.get() == null) {
+            sh.accept(ReflectionHelper.getClassBaseName(s.getClassName()) + "#" + s.getMethodName());
+          }
+        }
+      });
+      if (sh.get() == null) {
+        // call tree too long? -> just use the classname (better than nothing...)
         txName = ReflectionHelper.getClassBaseName(txe.getClass());
         int ndx = txName.indexOf('$');    // cut useless info $$Lambda$0/123456789
         if (ndx > 0) {
           txName = txName.substring(0, ndx);
         }
       }
+      else {
+        txName = sh.get();
+      }
     }
+
     long txVoucher = begin(txName);
+    
     try {
       T rv = txe.get();
       commit(txVoucher);
       return rv;
     }
-    catch (RuntimeException ex) {
+    catch (Exception ex) {    // Exception ok here because of type E
       try {
         if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
           // log only if cause is a PersistenceException
@@ -1404,7 +1414,7 @@ public class Db implements Session, Cloneable {
   }
 
   @Override
-  public <T> T transaction(Supplier<T> txe) {
+  public <T, E extends Exception> T transaction(Provider<T, E> txe) throws E {
     return transaction(null, txe);
   }
 

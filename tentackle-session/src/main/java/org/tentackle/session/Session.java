@@ -21,8 +21,8 @@ package org.tentackle.session;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.function.Supplier;
 import org.tentackle.misc.TrackedList;
+import org.tentackle.misc.Provider;
 
 
 interface Session$ThreadLocal {
@@ -285,13 +285,25 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    *    return null;
    * });
    * </pre>
+   * The exception is optional. If given, it can be caught as if there was no lambda.
+   * <pre>
+   * try {
+   *   session.transaction(() -&gt; {
+   *     throw new MyException("blah");
+   *   });
+   * }
+   * catch (MyException ex) {
+   *   ...
+   * }
+   * </pre>
    *
    * @param <T> the return type
    * @param txName the transaction name, null will derive it from enclosing method
    * @param txe the transaction supplier
    * @return the return value of the transaction supplier
+   * @throws E the exception type
    */
-  <T> T transaction(String txName, Supplier<T> txe);
+  <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E;
 
   /**
    * Runs code within a transaction.<br>
@@ -300,8 +312,9 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @param <T> the return type
    * @param txe the transaction supplier
    * @return the return value of the supplier
+   * @throws E the exception type
    */
-  <T> T transaction(Supplier<T> txe);
+  <T, E extends Exception> T transaction(Provider<T, E> txe) throws E;
 
   /**
    * Creates an unnamed savepoint in the current transaction.

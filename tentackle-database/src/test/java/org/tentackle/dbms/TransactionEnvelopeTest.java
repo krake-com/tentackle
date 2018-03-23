@@ -18,12 +18,13 @@
 
 package org.tentackle.dbms;
 
-import java.util.function.Supplier;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
+
+import org.tentackle.misc.Provider;
 
 /**
  * Tests for transaction envelope.
@@ -32,17 +33,40 @@ import static org.testng.Assert.assertEquals;
  */
 public class TransactionEnvelopeTest {
 
+  @SuppressWarnings("serial")
+  private class MyException extends Exception {
+    public MyException(String message) {
+      super(message);
+    }
+  }
+
+
   @Test
   public void testEnvelope() {
     try (Session session = SessionFactory.getInstance().create()) {
+
+      // without checked exception
       int rv = session.transaction(() -> {
-        assertEquals(session.getTxName(), "TransactionEnvelopeTest");
+        assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
         return 5;
       });
       assertEquals(rv, 5);
 
-      // same without lambda
-      rv = session.transaction(new Supplier<Integer>() {
+      // with checked exception
+      try {
+        session.transaction(() -> {
+          throw new MyException("test");
+        });
+      }
+      catch (MyException ex) {
+        assertEquals(ex.getMessage(), "test");
+      }
+      catch (Throwable t) {
+        fail("exception not retained", t);
+      }
+
+      // with inner class
+      rv = session.transaction(new Provider<>() {
         @Override
         public Integer get() {
           assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
