@@ -18,9 +18,9 @@
 
 package org.tentackle.dbms;
 
+import java.util.function.Supplier;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
-import org.tentackle.session.TransactionEnvelope;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -42,9 +42,9 @@ public class TransactionEnvelopeTest {
       assertEquals(rv, 5);
 
       // same without lambda
-      rv = session.transaction(new TransactionEnvelope<Integer>() {
+      rv = session.transaction(new Supplier<Integer>() {
         @Override
-        public Integer run() {
+        public Integer get() {
           assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
           return 10;
         }

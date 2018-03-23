@@ -77,7 +77,6 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionTaskDispatcher;
 import org.tentackle.session.SessionUtilities;
-import org.tentackle.session.TransactionEnvelope;
 import org.tentackle.session.VersionInfoIncompatibleException;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
@@ -1364,7 +1363,7 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public <T> T transaction(String txName, TransactionEnvelope<T> txe) {
+  public <T> T transaction(String txName, Supplier<T> txe) {
     if (txName == null) {
       Method method = txe.getClass().getEnclosingMethod();
       if (method != null) {
@@ -1383,7 +1382,7 @@ public class Db implements Session, Cloneable {
     }
     long txVoucher = begin(txName);
     try {
-      T rv = txe.run();
+      T rv = txe.get();
       commit(txVoucher);
       return rv;
     }
@@ -1405,7 +1404,7 @@ public class Db implements Session, Cloneable {
   }
 
   @Override
-  public <T> T transaction(TransactionEnvelope<T> txe) {
+  public <T> T transaction(Supplier<T> txe) {
     return transaction(null, txe);
   }
 
