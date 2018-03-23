@@ -1370,10 +1370,8 @@ public class Db implements Session, Cloneable {
       StackWalker walker = StackWalker.getInstance(Set.of(), 3);
       Holder<String> sh = new Holder<>();   // we cannot modify txName from within the lambda below
       walker.forEach(s -> {
-        if (!getClass().getName().equals(s.getClassName())) {
-          if (sh.get() == null) {
-            sh.accept(ReflectionHelper.getClassBaseName(s.getClassName()) + "#" + s.getMethodName());
-          }
+        if (sh.get() == null && !getClass().getName().equals(s.getClassName())) {
+          sh.accept(ReflectionHelper.getClassBaseName(s.getClassName()) + "#" + s.getMethodName());
         }
       });
       if (sh.get() == null) {
@@ -1390,7 +1388,7 @@ public class Db implements Session, Cloneable {
     }
 
     long txVoucher = begin(txName);
-    
+
     try {
       T rv = txe.get();
       commit(txVoucher);
