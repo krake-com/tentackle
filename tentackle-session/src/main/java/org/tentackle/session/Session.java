@@ -298,8 +298,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * The transaction name is derived from the enclosing method.
    *
    * @param <T> the return type
-   * @param txe the transaction envelope
-   * @return the return value of the envelope
+   * @param txe the transaction supplier
+   * @return the return value of the supplier
    */
   <T> T transaction(Supplier<T> txe);
 
