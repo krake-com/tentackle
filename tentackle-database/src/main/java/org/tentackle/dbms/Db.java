@@ -1367,10 +1367,9 @@ public class Db implements Session, Cloneable {
   @Override
   public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
     if (txName == null) {
-      StackWalker walker = StackWalker.getInstance(Set.of(), 3);
       Holder<String> sh = new Holder<>();   // we cannot modify txName from within the lambda below
-      walker.forEach(s -> {
-        if (sh.get() == null && !getClass().getName().equals(s.getClassName())) {
+      StackWalker.getInstance(Set.of(), 3).forEach(s -> {
+        if (sh.get() == null && !Db.class.getName().equals(s.getClassName())) {
           sh.accept(ReflectionHelper.getClassBaseName(s.getClassName()) + "#" + s.getMethodName());
         }
       });
