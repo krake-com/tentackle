@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 /**
  * A generic consumer and supplier to hold some object.<br>
- * Useful in lambdas is some data has to be set within the enclosing method.
+ * Useful in lambdas when some data has to be set within the enclosing method.
  *
  * @author harald
  * @param <T> the object type
