@@ -64,7 +64,7 @@ import org.tentackle.io.Reconnector;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.Sink;
+import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
@@ -1368,7 +1368,7 @@ public class Db implements Session, Cloneable {
   public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
     if (txName == null) {
       StackWalker walker = StackWalker.getInstance(Set.of(), 3);
-      Sink<String> sh = new Sink<>();   // we cannot modify txName from within the lambda below
+      Holder<String> sh = new Holder<>();   // we cannot modify txName from within the lambda below
       walker.forEach(s -> {
         if (!getClass().getName().equals(s.getClassName())) {
           if (sh.get() == null) {

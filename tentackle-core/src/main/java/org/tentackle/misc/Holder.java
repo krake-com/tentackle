@@ -22,13 +22,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * A generic sink to accept some object.<br>
+ * A generic consumer and supplier to hold some object.<br>
  * Useful in lambdas is some data has to be set within the enclosing method.
  *
  * @author harald
  * @param <T> the object type
  */
-public class Sink<T> implements Consumer<T>, Supplier<T> {
+public class Holder<T> implements Consumer<T>, Supplier<T> {
 
   private T object;
 
