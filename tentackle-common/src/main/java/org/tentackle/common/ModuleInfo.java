@@ -73,6 +73,7 @@ public class ModuleInfo implements Comparable<ModuleInfo> {
   /**
    * Gets all required module names.
    *
+   * @param allModules all known modules
    * @return the direct and transitive required modules
    */
   public Set<String> getAllRequiredModuleNames(Map<String, ModuleInfo> allModules) {

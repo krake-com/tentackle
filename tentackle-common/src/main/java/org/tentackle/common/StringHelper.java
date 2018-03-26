@@ -514,30 +514,21 @@ public final class StringHelper {
 
 
   /**
-   * Reads a textfile from a resource.<br>
-   * The textfile must be in the classpath.
+   * Reads a textfile from a resource.
    * <p>
    * Example:
    * <pre>
-   *   String model = StringHelper.readTestFromResource("org/tentackle/model/TestModel.txt");
+   *   String model = StringHelper.readTextFromResource("/org/tentackle/model/TestModel.txt");
    * </pre>
    *
+   * @param caller the caller class, null to determine via Stackwalker
    * @param resourceName the name of the resource
    * @return the loaded text
-   * @throws IOException if loading failed or no such resource
+   * @throws IOException if loading failed
+   * @throws FileNotFoundException if no such resource found
    */
-  public static String readTextFromResource(String resourceName) throws IOException {
-
-    InputStream is = StringHelper.class.getResourceAsStream(resourceName);
-    if (is == null) {
-      // try other variant
-      is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
-      if (is == null) {
-        throw new FileNotFoundException("no such resource: " + resourceName);
-      }
-    }
-
-    try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+  public static String readTextFromResource(Class<?> caller, String resourceName) throws IOException {
+    try (BufferedReader br = new BufferedReader(new InputStreamReader(FileHelper.createInputStream(caller, resourceName)))) {
       StringBuilder buf = new StringBuilder();
       String line;
       while ((line = br.readLine()) != null) {

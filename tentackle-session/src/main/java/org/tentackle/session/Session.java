@@ -298,6 +298,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * </pre>
    *
    * @param <T> the return type
+   * @param <E> the exception type
    * @param txName the transaction name, null will derive it from enclosing method
    * @param txe the transaction supplier
    * @return the return value of the transaction supplier
@@ -310,6 +311,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * The transaction name is derived from the enclosing method.
    *
    * @param <T> the return type
+   * @param <E> the exception type
    * @param txe the transaction supplier
    * @return the return value of the supplier
    * @throws E the exception type

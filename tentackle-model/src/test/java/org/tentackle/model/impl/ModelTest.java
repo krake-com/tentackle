@@ -55,7 +55,7 @@ public class ModelTest {
   public void testModel() {
 
     try {
-      String model = StringHelper.readTextFromResource(MODEL_FILENAME);
+      String model = StringHelper.readTextFromResource(null, MODEL_FILENAME);
       Entity entity = Model.getInstance().getEntityFactory().createEntity(model, null);
       for (Index index : entity.getIndexes()) {   // due to delayed parsing
         ((IndexImpl) index).parse(entity);

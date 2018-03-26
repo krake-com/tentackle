@@ -40,6 +40,13 @@ public class TransactionEnvelopeTest {
     }
   }
 
+  @SuppressWarnings("serial")
+  private class OtherException extends Exception {
+    public OtherException(String message) {
+      super(message);
+    }
+  }
+
 
   @Test
   public void testEnvelope() {
@@ -52,14 +59,22 @@ public class TransactionEnvelopeTest {
       });
       assertEquals(rv, 5);
 
-      // with checked exception
+      // with checked exceptions
       try {
         session.transaction(() -> {
-          throw new MyException("test");
+          if (1 < 2) {
+            throw new MyException("test");
+          }
+          else {
+            throw new OtherException("blah");
+          }
         });
       }
-      catch (MyException ex) {
-        assertEquals(ex.getMessage(), "test");
+      catch (OtherException ex1) {
+        fail("should not be thrown", ex1);
+      }
+      catch (MyException ex2) {
+        assertEquals(ex2.getMessage(), "test");
       }
       catch (Throwable t) {
         fail("exception not retained", t);

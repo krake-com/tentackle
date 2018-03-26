@@ -34,28 +34,31 @@ import java.util.Properties;
 public class FileHelper {
 
   /**
-   * Creates an input stream from the given name.
+   * Creates an input stream from a resource.
    *
+   * @param caller the caller class, null to determine via Stackwalker
    * @param name the resource name
-   * @param asResource true if load from the classpath, false if from filesystem
    * @return the input stream
    * @throws IOException if reading the resources failed
    * @throws FileNotFoundException if no such resources found
    */
-  public static InputStream createInputStream(String name, boolean asResource) throws IOException {
-    InputStream is;
-    if (asResource) {
-      is = FileHelper.class.getResourceAsStream(name);
+  public static InputStream createInputStream(Class<?> caller, String name) throws IOException {
+    if (caller == null) {
+      caller = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).getCallerClass();
+    }
+    InputStream is = caller.getResourceAsStream(name);
+    if (is == null) {
+      // try other variant
+      is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
       if (is == null) {
-        // try other variant
-        is = Thread.currentThread().getContextClassLoader().getResourceAsStream(name);
+        Module module = caller.getClassLoader().getUnnamedModule();
+        if (module != null) {
+          is = module.getResourceAsStream(name);
+        }
         if (is == null) {
-          throw new FileNotFoundException("no such resource");
+          throw new FileNotFoundException("no such resource: " + name);
         }
       }
-    }
-    else {
-      is = new FileInputStream(name);
     }
     is = new BufferedInputStream(is);
     return is;
@@ -80,7 +83,7 @@ public class FileHelper {
       if (!name.startsWith("/")) {
         name = "/" + name;
       }
-      try (InputStream is = createInputStream(name, asResource)) {
+      try (InputStream is = asResource ? createInputStream(FileHelper.class, name) : new FileInputStream(name)) {
         dbProps.load(is);
       }
     }
