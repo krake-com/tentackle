@@ -36,6 +36,7 @@ public interface DomainOperation<T extends Operation<T>>
    * Same as {@link OperationHolder#getOperation()} but shorter.
    *
    * @return the operation
+   * @deprecated use me() instead
    */
   T operation();
 

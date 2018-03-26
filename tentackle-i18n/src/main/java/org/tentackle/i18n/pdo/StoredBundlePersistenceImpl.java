@@ -360,7 +360,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     if (!keysLoaded) {
       keys = isNew() ? new TrackedArrayList<>(false) : on(StoredBundleKey.class).selectByBundleId(getId());
       for (StoredBundleKey obj: keys)  {
-        obj.setBundle(pdo());
+        obj.setBundle(me());
       }
       if (isImmutable()) {
         keys.setImmutable(true);
@@ -422,7 +422,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     if (keys != null) {
       getDomainContext().applyTo(keys);
       for (StoredBundleKey obj: keys)  {
-        obj.setBundle(pdo());
+        obj.setBundle(me());
       }
       save(keys, true);
     }
@@ -640,7 +640,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     }
     else {
-      obj = pdo().findByUniqueDomainKey(udk);
+      obj = me().findByUniqueDomainKey(udk);
     }
     return obj;
   }
@@ -684,7 +684,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         sql.append(getColumnName(CN_NAME));
         sql.append(Backend.SQL_EQUAL_PAR);
         getBackend().buildSelectSql(sql, false, 0, 0);
-        js.createJoinedSql(pdo(), sql);
+        js.createJoinedSql(me(), sql);
         return sql.toString();
       }
     );
@@ -736,7 +736,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         sql.append(getColumnName(CN_LOCALE));
         sql.append(Backend.SQL_EQUAL_PAR);
         getBackend().buildSelectSql(sql, false, 0, 0);
-        js.createJoinedSql(pdo(), sql);
+        js.createJoinedSql(me(), sql);
         return sql.toString();
       }
     );

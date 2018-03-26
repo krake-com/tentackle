@@ -1071,13 +1071,13 @@ public class DbModelWurblet extends ModelWurblet {
 
   /**
    * Creates the java code to update the reference of a relation.<br>
-   * The pdo name is fixed {@code "pdo()"}.
+   * The pdo name is fixed {@code "me()"}.
    *
    * @param relation the relation
    * @return the java code
    */
   public String createRelationUpdateReferenceCode(Relation relation) {
-    return createRelationUpdateReferenceCode(relation, "pdo()", false);
+    return createRelationUpdateReferenceCode(relation, "me()", false);
   }
 
   /**
@@ -1123,7 +1123,7 @@ public class DbModelWurblet extends ModelWurblet {
    */
   public String createRelationLinkCode(Relation relation) {
     if (relation.getLinkMethodName() != null) {
-      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ? "(pdo(), ndx++)" : "(pdo())");
+      return relation.getLinkMethodName() + (relation.getLinkMethodIndex() != null ? "(me(), ndx++)" : "(me())");
     }
     String text = "set";
     if (relation.getMethodName() != null) {

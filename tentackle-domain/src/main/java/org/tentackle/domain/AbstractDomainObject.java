@@ -81,6 +81,11 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   }
 
   @Override
+  public T me() {
+    return pdo;
+  }
+
+  @Override
   public void setPdo(T pdo) {
     this.pdo = pdo;
   }
@@ -109,9 +114,9 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   public String toGenericString() {
     return  getClass().getName() +
             '[' +
-            pdo().getId() +
+            me().getId() +
             '/' +
-            pdo().getSerial() +
+            me().getSerial() +
             ']';
   }
 
@@ -132,7 +137,7 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   public String toString() {
     StringBuilder buf = new StringBuilder();
     try {
-      Object key = pdo().isRootEntity() ? getUniqueDomainKey() : getSingular();
+      Object key = me().isRootEntity() ? getUniqueDomainKey() : getSingular();
       if (key != null) {
         buf.append(key);
       }
@@ -197,16 +202,16 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
 
   @Override
   public String getSingular() {
-    String name = PdoUtilities.getInstance().getSingular(pdo().getEffectiveClass());
+    String name = PdoUtilities.getInstance().getSingular(me().getEffectiveClass());
     if (name == null) {
-      name = ReflectionHelper.getClassBaseName(pdo().getEffectiveClass());
+      name = ReflectionHelper.getClassBaseName(me().getEffectiveClass());
     }
     return name;
   }
 
   @Override
   public String getPlural() {
-    String name = PdoUtilities.getInstance().getPlural(pdo().getEffectiveClass());
+    String name = PdoUtilities.getInstance().getPlural(me().getEffectiveClass());
     if (name == null) {   // default to EN rule
       name = getSingular();
       name += name.endsWith("s") ? "es" : "s";
@@ -218,8 +223,8 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
    * Checks if the PDO is a root entity.
    */
   public void assertRootEntity() {
-    if (!pdo().getPersistenceDelegate().isRootEntity()) {
-      throw new DomainException(pdo(), "not a root-entity");
+    if (!me().getPersistenceDelegate().isRootEntity()) {
+      throw new DomainException(me(), "not a root-entity");
     }
   }
 

@@ -90,6 +90,11 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   }
 
   @Override
+  public T me() {
+    return operation;
+  }
+
+  @Override
   public T getOperation() {
     return operation;
   }

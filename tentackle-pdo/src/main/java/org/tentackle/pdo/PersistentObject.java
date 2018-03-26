@@ -53,6 +53,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Same as {@link PdoHolder#getPdo()} but shorter.
    *
    * @return the pdo
+   * @deprecated use me() instead
    */
   T pdo();
 

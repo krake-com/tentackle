@@ -59,6 +59,11 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
   }
 
   @Override
+  public T me() {
+    return operation;
+  }
+
+  @Override
   public T getOperation() {
     return operation;
   }

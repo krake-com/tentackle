@@ -172,6 +172,11 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
+  public T me() {
+    return operation;
+  }
+
+  @Override
   public void setOperation(T operation) {
     this.operation = operation;
   }

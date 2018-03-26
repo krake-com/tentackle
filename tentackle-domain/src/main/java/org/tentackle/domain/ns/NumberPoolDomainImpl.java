@@ -49,9 +49,9 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(pdo().getName());
-    if (pdo().getRealm() != null) {
-      buf.append(':').append(pdo().getRealm());
+    buf.append(me().getName());
+    if (me().getRealm() != null) {
+      buf.append(':').append(me().getRealm());
     }
     return buf.toString();
   }
@@ -59,7 +59,7 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
   @Override
   public NumberRange getCurrentRange() {
     NumberRange currentRange = null;
-    for (Iterator<NumberRange> iter =  pdo().getNumberRangeList().iterator(); iter.hasNext(); ) {
+    for (Iterator<NumberRange> iter =  me().getNumberRangeList().iterator(); iter.hasNext(); ) {
       NumberRange range = iter.next();
       if (range.isEmpty()) {
         iter.remove();

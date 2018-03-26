@@ -609,7 +609,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     if (!numberRangeListLoaded) {
       numberRangeList = isNew() ? new TrackedArrayList<>(false) : on(NumberRange.class).selectByNumberPoolId(getId());
       for (NumberRange obj: numberRangeList)  {
-        obj.setNumberPool(pdo());
+        obj.setNumberPool(me());
       }
       if (isImmutable()) {
         numberRangeList.setImmutable(true);
@@ -686,7 +686,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     if (numberRangeList != null) {
       getDomainContext().applyTo(numberRangeList);
       for (NumberRange obj: numberRangeList)  {
-        obj.setNumberPool(pdo());
+        obj.setNumberPool(me());
       }
       save(numberRangeList, true);
     }
