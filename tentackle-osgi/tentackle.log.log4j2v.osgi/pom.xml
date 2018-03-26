@@ -9,12 +9,12 @@
   </parent>
 
   <groupId>org.tentackle</groupId>
-  <artifactId>tentackle.log.util.osgi</artifactId>
+  <artifactId>tentackle.log.log4j2v.osgi</artifactId>
   <version>2.2-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
-  <name>Tentackle Logging JDK Util OSGi Bundle</name>
-  <description>OSGi Bundle for the Tentackle Logging JDK Util Module</description>
+  <name>Tentackle Logging Log4J2V OSGi Bundle</name>
+  <description>OSGi Bundle for the Tentackle Logging Log4J 2nd Version Module</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -23,13 +23,13 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-log-util</artifactId>
+      <artifactId>tentackle-log-log4j2v</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- activator in sub-module to avoid inclusion of org.tentackle.common -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-log-util-osgi-activator</artifactId>
+      <artifactId>tentackle-log-log4j2v-osgi-activator</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -42,12 +42,12 @@
         <configuration>
           <unpackBundle>true</unpackBundle>   <!-- necessary to include all packages for exports and imports -->
           <instructions>
-            <Bundle-Activator>org.tentackle.log.jdk.Activator</Bundle-Activator>
+            <Bundle-Activator>org.tentackle.log.log4j2v.Activator</Bundle-Activator>
             <Import-Package>*;resolution:=optional</Import-Package>
             <Embed-Transitive>false</Embed-Transitive>  <!-- don't bundle transient deps -->
             <Embed-Dependency>*;inline=true;scope=compile|runtime</Embed-Dependency>  <!-- don't bundle test deps -->
             <!-- create OSGI-OPT/src/... -->
-            <_sourcepath>../tentackle-osgi-activators/tentackle-log-util-osgi-activator/src/main/java,../../tentackle-log-util/src/main/java</_sourcepath>
+            <_sourcepath>../tentackle-osgi-activators/tentackle-log-log4j2v-osgi-activator/src/main/java,../../tentackle-log-log4j2v/src/main/java</_sourcepath>
             <_sources>true</_sources>
           </instructions>
         </configuration>

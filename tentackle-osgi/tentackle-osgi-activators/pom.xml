@@ -28,8 +28,8 @@
     <module>tentackle-pdo-osgi-activator</module>
     <module>tentackle-domain-osgi-activator</module>
     <module>tentackle-persistence-osgi-activator</module>
-    <module>tentackle-log-util-osgi-activator</module>
     <module>tentackle-log-log4j-osgi-activator</module>
+    <module>tentackle-log-log4j2v-osgi-activator</module>
     <module>tentackle-log-slf4j-osgi-activator</module>
     <module>tentackle-i18n-osgi-activator</module>
     <module>tentackle-script-groovy-osgi-activator</module>

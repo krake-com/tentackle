@@ -32,8 +32,8 @@
     <module>tentackle.pdo.osgi</module>
     <module>tentackle.domain.osgi</module>
     <module>tentackle.persistence.osgi</module>
-    <module>tentackle.log.util.osgi</module>
     <module>tentackle.log.log4j.osgi</module>
+    <module>tentackle.log.log4j2v.osgi</module>
     <module>tentackle.log.slf4j.osgi</module>
     <module>tentackle.i18n.osgi</module>
     <module>tentackle.script.groovy.osgi</module>

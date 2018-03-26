@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.log.jdk;
+package org.tentackle.log.log4j2v;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
