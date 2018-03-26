@@ -170,13 +170,13 @@ public class ResourceManager {
    *
    * @param name the file;s name
    * @return true if exists
-   * @throws IOException
+   * @throws IOException if read failed
    */
   public boolean exists(String name) throws IOException {
     return getResource(name).exists();
   }
 
-  
+
   /**
    * Closes all resources.
    *

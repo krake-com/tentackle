@@ -85,6 +85,7 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

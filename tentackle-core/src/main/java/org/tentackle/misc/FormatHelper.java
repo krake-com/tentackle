@@ -480,67 +480,73 @@ public class FormatHelper {
 
   /**
    * Parses a timestamp.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
-   * @throws ParseException if parsing failed
    */
-  public static LocalDateTime parseLocalDateTime(String str) throws ParseException {
+  public static LocalDateTime parseLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().localDateTimeFormat);
   }
 
   /**
    * Parses a short timestamp.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the timestamp
-   * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDateTime parseShortLocalDateTime(String str) throws ParseException {
+  public static LocalDateTime parseShortLocalDateTime(String str) {
     return LocalDateTime.parse(str, getFormatting().shortLocalDateTimeFormat);
   }
 
   /**
    * Parses a date.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the date
-   * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDate parseLocalDate(String str) throws ParseException {
+  public static LocalDate parseLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().localDateFormat);
   }
 
   /**
    * Parses a short date.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the date
-   * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalDate parseShortLocalDate(String str) throws ParseException {
+  public static LocalDate parseShortLocalDate(String str) {
     return LocalDate.parse(str, getFormatting().shortLocalDateFormat);
   }
 
   /**
    * Parses a time.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
-   * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalTime parseLocalTime(String str) throws ParseException {
+  public static LocalTime parseLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().localTimeFormat);
   }
 
   /**
    * Parses a short time.
+   * <p>
+   * Throws java.time.format.DateTimeParseException if parsing failed
    *
    * @param str the string to parse
    * @return the time
-   * @throws java.time.format.DateTimeParseException if parsing failed
    */
-  public static LocalTime parseShortLocalTime(String str) throws ParseException {
+  public static LocalTime parseShortLocalTime(String str) {
     return LocalTime.parse(str, getFormatting().shortLocalTimeFormat);
   }
 

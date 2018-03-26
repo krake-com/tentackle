@@ -54,6 +54,7 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

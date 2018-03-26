@@ -164,6 +164,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

@@ -201,6 +201,7 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

@@ -107,6 +107,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T pdo() {
     return pdo;
   }

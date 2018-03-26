@@ -40,8 +40,6 @@ public class InvocationLocals {
    * Creates and retrieves the current settings.
    *
    * @param delegate the remote delegate
-   * @param mdc the mapped diagnostic context
-   * @param mdcKey the MDC key
    */
   public InvocationLocals(RemoteDelegateImpl<?> delegate) {
     this.delegate = delegate;

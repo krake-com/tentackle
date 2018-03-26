@@ -269,6 +269,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T pdo() {
     return pdo;
   }

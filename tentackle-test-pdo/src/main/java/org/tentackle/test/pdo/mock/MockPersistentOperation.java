@@ -167,6 +167,7 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }
