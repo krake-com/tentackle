@@ -17,13 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.script.groovy.service;
+package org.tentackle.domain.service;
 
-import org.tentackle.common.ServiceTrojan;
+import org.tentackle.common.ModuleHook;
 
 /**
- * Service trojan for the groovy module.
+ * Hook for the domain module.
  *
  * @author harald
  */
-public class Trojan implements ServiceTrojan {}
+public class Hook implements ModuleHook {}

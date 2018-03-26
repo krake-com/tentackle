@@ -17,13 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.web.app.service;
+package org.tentackle.common.service;
 
-import org.tentackle.common.ServiceTrojan;
+import org.tentackle.common.ModuleHook;
 
 /**
- * Service trojan for the web module.
+ * Hook for the common module.
  *
  * @author harald
  */
-public class Trojan implements ServiceTrojan {}
+public class Hook implements ModuleHook {}

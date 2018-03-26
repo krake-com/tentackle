@@ -28,5 +28,5 @@ module org.tentackle.model {
 
   requires java.sql;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.model.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.model.service.Hook;
 }

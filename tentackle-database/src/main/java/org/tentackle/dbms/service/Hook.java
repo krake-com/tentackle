@@ -19,11 +19,11 @@
 
 package org.tentackle.dbms.service;
 
-import org.tentackle.common.ServiceTrojan;
+import org.tentackle.common.ModuleHook;
 
 /**
- * Service trojan for the dbms package.
+ * Hook for the database module.
  *
  * @author harald
  */
-public class Trojan implements ServiceTrojan {}
+public class Hook implements ModuleHook {}

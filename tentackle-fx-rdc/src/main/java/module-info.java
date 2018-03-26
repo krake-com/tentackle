@@ -45,5 +45,5 @@ open module org.tentackle.fx.rdc {
   requires javafx.controls;
   requires javafx.fxml;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.fx.rdc.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
 }

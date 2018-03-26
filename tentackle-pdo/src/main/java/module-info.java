@@ -31,5 +31,5 @@ module org.tentackle.pdo {
 
   requires java.compiler;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.pdo.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.pdo.service.Hook;
 }

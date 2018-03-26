@@ -26,5 +26,5 @@ open module org.tentackle.domain {
   requires org.tentackle.core;
   requires org.tentackle.common;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.domain.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.domain.service.Hook;
 }

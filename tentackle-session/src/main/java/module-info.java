@@ -25,5 +25,5 @@ module org.tentackle.session {
   requires java.sql;
   requires java.rmi;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.session.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.session.service.Hook;
 }

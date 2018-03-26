@@ -32,5 +32,5 @@ module org.tentackle.database {
   requires java.prefs;
   requires java.management;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.dbms.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.dbms.service.Hook;
 }

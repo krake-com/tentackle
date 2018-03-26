@@ -36,5 +36,5 @@ module org.tentackle.persistence {
   requires java.sql;
   requires java.naming;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.persist.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.persist.service.Hook;
 }

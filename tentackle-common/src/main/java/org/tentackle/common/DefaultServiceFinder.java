@@ -170,7 +170,7 @@ public class DefaultServiceFinder implements ServiceFinder {
       Map<String,URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
       if (moduleSorter == null) {
         moduleSorter = new ModuleSorter();
-        ServiceLoader.load(ServiceTrojan.class).stream().map(Provider::get).forEach(trojan -> {
+        ServiceLoader.load(ModuleHook.class).stream().map(Provider::get).forEach(trojan -> {
           moduleSorter.add(trojan.getClass().getModule());
         });
       }

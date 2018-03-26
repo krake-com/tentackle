@@ -1,5 +1,6 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - a framework for java desktop applications
+ * http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+package org.tentackle.sql.service;
+
+import org.tentackle.common.ModuleHook;
+
 /**
- * JDK default logging provider.
+ * Hook for the SQL module.
+ *
+ * @author harald
  */
-package org.tentackle.log.jdk;
+public class Hook implements ModuleHook {}

@@ -26,5 +26,5 @@ module org.tentackle.web {
   requires org.tentackle.database;
   requires org.tentackle.common;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.web.app.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.web.app.service.Hook;
 }

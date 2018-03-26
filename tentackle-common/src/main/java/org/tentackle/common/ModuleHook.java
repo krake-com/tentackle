@@ -1,5 +1,6 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - a framework for java desktop applications
+ * http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +17,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-module org.tentackle.log.jdk {
-  exports org.tentackle.log.jdk;
+package org.tentackle.common;
 
-  requires org.tentackle.core;
-  requires org.tentackle.common;
+/**
+ * Interface to determine the module hierarchy.<br>
+ * Provides a hook to access resources from within a module.
+ * <p>
+ * Each module must include exactly one such an implementation and provide it via module-info.
+ *
+ * @author harald
+ */
+public interface ModuleHook {
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.log.jdk.service.Trojan;
 }

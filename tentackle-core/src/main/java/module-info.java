@@ -44,5 +44,5 @@ open module org.tentackle.core {
   exports org.tentackle.validate.scope;
   exports org.tentackle.validate.validator;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.apt.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.service.Hook;
 }

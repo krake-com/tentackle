@@ -23,5 +23,5 @@ module org.tentackle.log.slf4j {
   requires org.tentackle.common;
   requires org.slf4j;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.log.slf4j.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.log.slf4j.service.Hook;
 }

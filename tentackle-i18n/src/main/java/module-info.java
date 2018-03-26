@@ -32,5 +32,5 @@ module org.tentackle.i18n {
 
   requires java.rmi;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.i18n.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.i18n.service.Hook;
 }

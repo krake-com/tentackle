@@ -44,11 +44,6 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-log-util</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-log-log4j</artifactId>
         <version>${project.version}</version>
       </dependency>

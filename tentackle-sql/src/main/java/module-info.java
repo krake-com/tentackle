@@ -25,5 +25,5 @@ module org.tentackle.sql {
   requires java.sql;
   requires java.naming;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.sql.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.sql.service.Hook;
 }

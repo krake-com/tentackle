@@ -17,15 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.common;
+package org.tentackle.pdo.service;
+
+import org.tentackle.common.ModuleHook;
 
 /**
- * Service class to determine the module hierarchy and provide a hook to access resources from within a specific module.
- * <p>
- * Each module must include exactly one such an implementation and provide it via module-info.
+ * Hook for the PDO module.
  *
  * @author harald
  */
-public interface ServiceTrojan {
-
-}
+public class Hook implements ModuleHook {}

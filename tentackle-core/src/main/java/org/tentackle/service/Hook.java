@@ -1,5 +1,6 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - a framework for java desktop applications
+ * http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,28 +17,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+package org.tentackle.service;
 
-package org.tentackle.log.jdk;
-
-import org.tentackle.common.Service;
-import org.tentackle.log.DefaultLogger;
-import org.tentackle.log.Logger;
+import org.tentackle.common.ModuleHook;
 
 /**
- * Pluggable logger using the standard java logging using <tt>java.util.logging</tt>.
+ * Hook for the core module.
  *
  * @author harald
  */
-@Service(Logger.class)
-public class UtilLogger extends DefaultLogger {
-
-  /**
-   * Creates a logger.
-   *
-   * @param name the name of the logger
-   */
-  public UtilLogger(String name) {
-    super(name);
-  }
-
-}
+public class Hook implements ModuleHook {}

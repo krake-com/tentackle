@@ -22,5 +22,5 @@ module org.tentackle.script.groovy {
   requires org.tentackle.common;
   requires org.objectweb.asm;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.script.groovy.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.script.groovy.service.Hook;
 }

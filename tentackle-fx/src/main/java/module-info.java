@@ -47,5 +47,5 @@ open module org.tentackle.fx {
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
 
-  provides org.tentackle.common.ServiceTrojan with org.tentackle.fx.service.Trojan;
+  provides org.tentackle.common.ModuleHook with org.tentackle.fx.service.Hook;
 }
