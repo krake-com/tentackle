@@ -38,10 +38,23 @@ import java.util.logging.Logger;
 /**
  * Factory for services based on {@link ServiceFinder}.
  * <p>
+ * A replacement for {@link ServiceLoader} providing the following additional features:
+ * <ul>
+ * <li>Not limited to load classes. Can load any kind of configuration.</li>
+ * <li>Supports different service types. Each type gets its own directory in META-INF.</li>
+ * <li>Works for modular and non-modular applications.</li>
+ * <li>As opposed to {@link ServiceLoader}, {@link ServiceFinder}s retain the module dependency order for service URLs. The first
+ * URL is guaranteed to belong to the topmost relevant module. Unnamed, i.e. classpath comes last.</li>
+ * </ul>
+ * Application modules must include an implementation of {@link ModuleHook} and a provides-clause
+ * in module-info. Example:
+ * <pre>
+ *  provides org.tentackle.common.ModuleHook with com.myapp.somepackage.Hook;
+ * </pre>
+ * <p>
  * The factory itself is loaded via the standard JDK {@link ServiceLoader} and can
- * be replaced via META-INF/services. If no such configuration is found, for whatever reason,
- * an instance of {@link ServiceFactory} is used.
- * As a consequence, the fallback and default implementation <em>is</em> {@link ServiceFactory} itself.
+ * be replaced via META-INF/services. If no such configuration is found, an instance of {@link ServiceFactory} is used,
+ * i.e. the fallback and default implementation <em>is</em> {@link ServiceFactory} itself.
  * However, applications can replace it, if necessary.
  *
  * @author harald

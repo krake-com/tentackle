@@ -31,8 +31,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.ServiceLoader.Provider;
 import java.util.Set;
 
 
@@ -41,7 +39,6 @@ import java.util.Set;
  *
  * @author harald
  */
-@Service(ServiceFinder.class)
 public class DefaultServiceFinder implements ServiceFinder {
   /**
    * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
@@ -53,7 +50,6 @@ public class DefaultServiceFinder implements ServiceFinder {
   private final String servicePath;                         // optional service path, null = SERVICE_PATH
   private final Map<String,Map<String,URL>> serviceMap;     // cached configs
   private final Map<String,Collection<Class<?>>> classMap;  // cached classes
-  private ModuleSorter moduleSorter;                        // module sorter, null if not initialized yet
 
 
   /**
@@ -142,14 +138,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   public Collection<URL> findServiceURLs(String serviceName) {
     try {
       Enumeration<URL> resources = getClassLoader(serviceName).getResources(servicePath + serviceName);
-      if (moduleSorter != null) {
-        return moduleSorter.sort(resources);
-      }
-      Collection<URL> mappedUrls = new ArrayList<>();
-      while (resources.hasMoreElements()) {
-        mappedUrls.add(resources.nextElement());
-      }
-      return mappedUrls;
+      return ModuleSorter.INSTANCE.sort(resources);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
@@ -168,12 +157,6 @@ public class DefaultServiceFinder implements ServiceFinder {
   public synchronized Map<String,URL> findServiceConfigurations(String serviceName) {
     return serviceMap.computeIfAbsent(serviceName, sn -> {
       Map<String,URL> services = new LinkedHashMap<>();   // linked hashmap to preserve order
-      if (moduleSorter == null) {
-        moduleSorter = new ModuleSorter();
-        ServiceLoader.load(ModuleHook.class).stream().map(Provider::get).forEach(trojan -> {
-          moduleSorter.add(trojan.getClass().getModule());
-        });
-      }
       parseURLs(findServiceURLs(sn), sn, services);
       return services;
     });

@@ -22,86 +22,166 @@ package org.tentackle.common;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * A sorter for jigsaw modules.
+ * A dependency sorter for jigsaw modules.
  *
  * @author harald
  */
-public class ModuleSorter {
-
-  private final Map<String, ModuleInfo> modules;
+public final class ModuleSorter {
 
   /**
-   * Creates a module sorter.
+   * The singleton.
+   */
+  public static final ModuleSorter INSTANCE = new ModuleSorter();
+
+
+  private final Map<String, ModuleInfo> modules;        // name:info
+  private final List<ModuleInfo> sortedModules;         // modules sorted by dependency
+
+  /**
+   * Creates a module sorter and loads the module hierarchy.
+   * <p>
+   * Finds all named modules providing a {@link ModuleHook} via module-info and sorts them
+   * according to their dependencies.
    */
   public ModuleSorter() {
     this.modules = new HashMap<>();
-  }
+    ServiceLoader.load(ModuleHook.class).stream().map(ServiceLoader.Provider::get).forEach(hook -> {
+      ModuleInfo info = new ModuleInfo(hook);
+      modules.put(info.getModule().getName(), info);
+    });
 
-
-  /**
-   * Adds a jpms module.
-   *
-   * @param module the module
-   */
-  public void add(Module module) {
-    ModuleInfo info = new ModuleInfo(module);
-    modules.put(info.getName(), info);
+    // depth-first sort (possible because jigsaw does not allow cyclic dependencies)
+    sortedModules = new ArrayList<>();
+    for (ModuleInfo info: modules.values()) {
+      if (info.getOrdinal() == 0) {
+        visit(info, sortedModules);
+      }
+      // else: module already sorted
+    }
   }
 
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    for (ModuleInfo mod: getModules()) {
-      buf.append(mod).append('\n');
+    for (ModuleInfo info: sortedModules) {
+      buf.append(info).append('\n');
     }
     return buf.toString();
   }
 
   /**
-   * Gets the modules ordered by dependency.<br>
-   * Independent modules come first, the highest dependency last.
+   * Gets the modules infos ordered by dependency.<br>
+   * Modules at the top of the dependency hierarchy come last,
+   * modules without further dependencies come first.
    *
    * @return the module infos
    */
-  public List<ModuleInfo> getModules() {
-    List<ModuleInfo> list = new ArrayList<>();
-    for (ModuleInfo module: modules.values()) {
-      module.getAllRequiredModuleNames(modules);
-      list.add(module);
-    }
-    Collections.sort(list);
-    return list;
+  public List<ModuleInfo> getModuleInfos() {
+    return sortedModules;
+  }
+
+  /**
+   * Gets the module info for a module name.
+   *
+   * @param name the module name
+   * @return the module info, null if no such (application) module or module has no {@link ModuleHook}.
+   */
+  public ModuleInfo getModuleInfo(String name) {
+    return modules.get(name);
   }
 
 
-  private static class IndexedModuleInfo {
-    final ModuleInfo module;
-    final int sequence;
+  /**
+   * Sorts an enumeration of urls according to the module hierarchy.<br>
+   * The top of the hierarchy comes first.
+   *
+   * @param urls the urls, usually from ClassLoader.getResources
+   * @return the sorted urls
+   */
+  public Collection<URL> sort(Enumeration<URL> urls) {
+    Set<SortKey> urlSet = new TreeSet<>();
+    List<URL> unsortedUrls = new ArrayList<>();
+    while (urls.hasMoreElements()) {
+      URL url = urls.nextElement();
+      if ("jrt".equals(url.getProtocol())) {
+        String name = url.getPath();
+        if (name.startsWith("/")) {
+          name = name.substring(1);
+        }
+        int ndx = name.indexOf('/');
+        if (ndx >= 0) {
+          name = name.substring(0, ndx);
+        }
+        ModuleInfo info = modules.get(name);
+        if (info != null) {
+          urlSet.add(new SortKey(info.getOrdinal(), url));
+          continue;
+        }
+      }
+      // no named module or not providing a ModuleHook or from unnamed module or application not modularized at all
+      unsortedUrls.add(url);
+    }
 
-    public IndexedModuleInfo(ModuleInfo module, int sequence) {
-      this.module = module;
-      this.sequence = sequence;
+    // add URLs of named modules sorted by dependency first
+    List<URL> sortedUrls = urlSet.stream().map(SortKey::getUrl).collect(Collectors.toList());
+    // add URLs of the unnamed module next
+    sortedUrls.addAll(unsortedUrls);
+    return sortedUrls;
+  }
+
+
+  /**
+   * Depth-first search visitor.
+   *
+   * @param info the module info
+   * @param sortedList the sorted list to add modules to
+   */
+  private void visit(ModuleInfo info, List<ModuleInfo> sortedList) {
+    if (info.getOrdinal() == 0) {   // not sorted yet
+      if (info.isVisited()) {
+        // cannot happen in jigsaw but one never knows...
+        throw new TentackleRuntimeException("unsortable module hierarchy (cyclic dependency?)");
+      }
+      info.setVisited(true);
+      for (Iterator<String> iter = info.getRequiredModuleNames().iterator(); iter.hasNext(); ) {
+        String name = iter.next();
+        ModuleInfo subInfo = modules.get(name);
+        if (subInfo != null) {
+          visit(subInfo, sortedList);
+        }
+        else {    // not an application module
+          iter.remove();
+        }
+      }
+      info.setOrdinal(sortedList.size() + 1);
+      sortedList.add(info);
     }
   }
 
+
+  /**
+   * Key to sort URLs according to the module dependency hierarchy.
+   */
   private static class SortKey implements Comparable<SortKey> {
-    final int sequence;
+
+    final int ordinal;
     final String name;
     final URL url;
 
-    public SortKey(int sequence, URL url) {
-      this.sequence = sequence;
+    public SortKey(int ordinal, URL url) {
+      this.ordinal = ordinal;
       this.url = url;
       this.name = url.toExternalForm();
     }
@@ -134,54 +214,12 @@ public class ModuleSorter {
 
     @Override
     public int compareTo(SortKey o) {
-      int rv = sequence - o.sequence;
+      int rv = o.ordinal - ordinal;   // higher sequence comes first
       if (rv == 0) {
         rv = name.compareTo(o.name);
       }
       return rv;
     }
-  }
-
-  /**
-   * Sorts an enumeration of urls according to the module hierarchy.<br>
-   * The top of the hierarchy comes first.
-   *
-   * @param urls the urls, usually from ClassLoader.getResources
-   * @return the sorted urls
-   */
-  public Collection<URL> sort(Enumeration<URL> urls) {
-    List<ModuleInfo> infos = getModules();
-    int sequence = infos.size();    
-    Map<String, IndexedModuleInfo> moduleMap = new HashMap<>();   // module-name:indexed-info
-    for (ModuleInfo module: infos) {
-      moduleMap.put(module.getName(), new IndexedModuleInfo(module, sequence--));   // reverse order!
-    }
-
-    Set<SortKey> urlSet = new TreeSet<>();
-    List<URL> unsortedUrls = new ArrayList<>();
-    while (urls.hasMoreElements()) {
-      URL url = urls.nextElement();
-      if ("jrt".equals(url.getProtocol())) {
-        String name = url.getPath();
-        if (name.startsWith("/")) {
-          name = name.substring(1);
-        }
-        int ndx = name.indexOf('/');
-        if (ndx >= 0) {
-          name = name.substring(0, ndx);
-        }
-        IndexedModuleInfo indexedInfo = moduleMap.get(name);
-        if (indexedInfo != null) {
-          urlSet.add(new SortKey(indexedInfo.sequence, url));
-          continue;
-        }
-      }
-      unsortedUrls.add(url);
-    }
-
-    List<URL> sortedUrls = urlSet.stream().map(SortKey::getUrl).collect(Collectors.toList());
-    sortedUrls.addAll(unsortedUrls);
-    return sortedUrls;
   }
 
 }

@@ -21,31 +21,33 @@ package org.tentackle.common;
 
 import java.lang.module.ModuleDescriptor;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
- * Holds aligned dependency information about a module.
- * <p>
- * This class has a natural ordering that is inconsistent with equals!
+ * Holds information about a module.
  *
  * @author harald
  */
-public class ModuleInfo implements Comparable<ModuleInfo> {
+public final class ModuleInfo {
 
-  private final String name;
-  private final Set<String> requiredModuleNames;
-  private Set<String> allRequiredModuleNames;
+  private final ModuleHook hook;                      // the module hook implementation
+  private final Module module;                        // the module name
+  private final Set<String> requiredModuleNames;      // the required module names
+
+  private int ordinal;                                // the ordinal, >0 if sorted
+  private boolean visited;                            // true if visited by sorter
 
   /**
    * Creates a module info.
    *
-   * @param module the jpms module
+   * @param hook the module hook
    */
-  public ModuleInfo(Module module) {
-    name = module.getName();
+  public ModuleInfo(ModuleHook hook) {
+    this.hook = hook;
+    this.module = hook.getClass().getModule();
+    if (module == null || !module.isNamed()) {
+      throw new TentackleRuntimeException(hook.getClass() + " does not belong to a named module");
+    }
     requiredModuleNames = new HashSet<>();
     for (ModuleDescriptor.Requires req : module.getDescriptor().requires()) {
       requiredModuleNames.add(req.name());
@@ -53,12 +55,21 @@ public class ModuleInfo implements Comparable<ModuleInfo> {
   }
 
   /**
-   * Gets the module name.
+   * Gets the module hook.
    *
-   * @return the name
+   * @return the hook
    */
-  public String getName() {
-    return name;
+  public ModuleHook getHook() {
+    return hook;
+  }
+
+  /**
+   * Gets the module.
+   *
+   * @return the module
+   */
+  public Module getModule() {
+    return module;
   }
 
   /**
@@ -71,33 +82,49 @@ public class ModuleInfo implements Comparable<ModuleInfo> {
   }
 
   /**
-   * Gets all required module names.
+   * Gets the module ordinal.<br>
+   * Higher values come first in module order.
    *
-   * @param allModules all known modules
-   * @return the direct and transitive required modules
+   * @return the ordinal
    */
-  public Set<String> getAllRequiredModuleNames(Map<String, ModuleInfo> allModules) {
-    if (allRequiredModuleNames == null) {
-      allRequiredModuleNames = new HashSet<>();
-      for (Iterator<String> iter = requiredModuleNames.iterator(); iter.hasNext();) {
-        String subName = iter.next();
-        ModuleInfo subModule = allModules.get(subName);
-        if (subModule != null) {
-          allRequiredModuleNames.add(subName);
-          allRequiredModuleNames.addAll(subModule.getAllRequiredModuleNames(allModules));
-        }
-        else {
-          iter.remove();
-        }
-      }
-    }
-    return allRequiredModuleNames;
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  /**
+   * Sets the ordinal.<br>
+   * Higher values come first in module order.
+   *
+   * @param ordinal the ordinal
+   */
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
+
+  /**
+   * Marks the node as visited.<br>
+   * Package scope. For dependency sorting.
+   *
+   * @param visited true if visited
+   */
+  void setVisited(boolean visited) {
+    this.visited = visited;
+  }
+
+  /**
+   * Returns whether node has been visited.<br>
+   * Package scope. For dependency sorting.
+   *
+   * @return true if visited
+   */
+  boolean isVisited() {
+    return visited;
   }
 
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    buf.append(name).append(" [");
+    buf.append(module.getName()).append(" [");
     boolean needComma = false;
     for (String subName : requiredModuleNames) {
       if (needComma) {
@@ -110,41 +137,6 @@ public class ModuleInfo implements Comparable<ModuleInfo> {
     }
     buf.append(']');
     return buf.toString();
-  }
-
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    hash = 79 * hash + Objects.hashCode(this.name);
-    return hash;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final ModuleInfo other = (ModuleInfo) obj;
-    return Objects.equals(this.name, other.name);
-  }
-
-  @Override
-  public int compareTo(ModuleInfo o) {
-    if (allRequiredModuleNames != null) {
-      if (allRequiredModuleNames.contains(o.name)) {
-        return 1;
-      }
-      if (o.allRequiredModuleNames.contains(name)) {
-        return -1;
-      }
-    }
-    return 0;
   }
 
 }
