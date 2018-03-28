@@ -25,6 +25,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.tentackle.common.Analyze;
 import org.tentackle.common.MappedService;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -38,6 +39,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@Analyze("org.tentackle.buildsupport.BundleHandler")
 @MappedService(GuiProvider.class)
 public @interface GuiProviderService {
 

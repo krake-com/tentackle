@@ -30,7 +30,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.ResourceBundleControlProvider;
 
 /**
- * Default implementation of a bundle factory.<br>
+ * Default implementation of a bundle factory.
+ * <p>
+ * Works for modular and non-modular applications.
  *
  * @author harald
  */
@@ -93,12 +95,12 @@ public class DefaultBundleFactory implements BundleFactory {
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale) {
     baseName = normalizeBasename(baseName);
+    ResourceBundle.Control control = getControl(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      return support.getModuleInfo().getHook().getBundle(baseName, locale);
+      return getBundle(support, locale);
     }
     else {
-      ResourceBundle.Control control = getControl(baseName);
       if (classLoader == null) {
         return control == null ?
                   ResourceBundle.getBundle(baseName, locale) :
@@ -115,8 +117,8 @@ public class DefaultBundleFactory implements BundleFactory {
     baseName = normalizeBasename(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      // must use the module, not the classloader
-      return support.getModuleInfo().getHook().getBundle(baseName, locale);
+      // classloader doesnt work for named modules --> fallback to bundle support
+      return getBundle(support, locale);
     }
     else {
       ResourceBundle.Control control = getControl(baseName);
@@ -124,6 +126,20 @@ public class DefaultBundleFactory implements BundleFactory {
                 ResourceBundle.getBundle(baseName, locale, loader) :
                 ResourceBundle.getBundle(baseName, locale, loader, control);
     }
+  }
+
+
+  /**
+   * Gets the bundle from the corresponding module according to the bundle support.
+   *
+   * @param support the bundle support
+   * @param locale the locale
+   * @return the bundle
+   */
+  protected ResourceBundle getBundle(BundleSupport support, Locale locale) {
+    // @todo:
+    // check if we should use the stored bundles instead
+    return support.getModuleInfo().getHook().getBundle(support.getBundleName(), locale);
   }
 
 
