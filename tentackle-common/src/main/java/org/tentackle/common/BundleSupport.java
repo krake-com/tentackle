@@ -48,7 +48,7 @@ public class BundleSupport {
    * Finds all bundle services.
    *
    * @param classLoader the classloader, null if default
-   * @return
+   * @return the list of bundle supports
    */
   public static List<BundleSupport> getBundles(ClassLoader classLoader) {
     if (classLoader == null) {
@@ -96,7 +96,7 @@ public class BundleSupport {
   /**
    * Creates a bundle support object.
    *
-   * @param module the optional jigsaw module info,  null if none
+   * @param info the optional jigsaw module info,  null if none
    * @param className the name of the annotated class
    * @param bundleName the name of the resource bundle
    */
