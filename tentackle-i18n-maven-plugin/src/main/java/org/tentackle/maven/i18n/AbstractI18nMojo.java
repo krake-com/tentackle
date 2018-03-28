@@ -30,7 +30,7 @@ import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.tentackle.buildsupport.BundleHandler;
+import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
@@ -167,40 +167,25 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
 
       // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-      for (Map.Entry<String, URL> providerEntry :
-              ServiceFactory.getServiceFinder(classLoader, Constants.DEFAULT_SERVICE_PATH).
-                findServiceConfigurations(BundleHandler.BUNDLE_HANDLER_SERVICE).entrySet()) {
-        String serviceName = providerEntry.getKey();
-
-        // for all bundles annotated with such an annotation
-        for (Map.Entry<String, URL> entry :
-                ServiceFactory.getServiceFinder(classLoader, Constants.BUNDLE_SERVICE_PATH).
-                  findServiceConfigurations(serviceName).entrySet()) {
-
-          String configuration = entry.getKey();
-          List<String> parts = StringHelper.split(configuration, ":= ");
-          // process this bundle name
-          String bundleName = parts.get(0);
-          // translate to resource name
-          bundleName = bundleName.replace('.', '/');
-          String suffix = null;
-          String resourceName = bundleName;
-          Iterator<String> iter = localeSuffixes.iterator();
-          for (;;) {
-            if (suffix != null) {
-              resourceName = bundleName + "_" + suffix;
-            }
-            resourceName += BundleHandler.PROPS_EXTENSION;
-            if (verbosityLevel.isDebug()) {
-              getLog().debug("processing " + resourceName);
-            }
-            processBundle(classLoader, bundleName, suffix, resourceName);
-            if (iter.hasNext()) {
-              suffix = iter.next();
-            }
-            else {
-              break;
-            }
+      for (BundleSupport bundleSupport: BundleSupport.getBundles(classLoader)) {
+        String bundleName = bundleSupport.getBundleName();
+        String suffix = null;
+        String resourceName = bundleName;
+        Iterator<String> iter = localeSuffixes.iterator();
+        for (;;) {
+          if (suffix != null) {
+            resourceName = bundleName + "_" + suffix;
+          }
+          resourceName += Constants.PROPS_EXTENSION;
+          if (verbosityLevel.isDebug()) {
+            getLog().debug("processing " + resourceName);
+          }
+          processBundle(classLoader, bundleName, suffix, resourceName);
+          if (iter.hasNext()) {
+            suffix = iter.next();
+          }
+          else {
+            break;
           }
         }
       }

@@ -42,7 +42,8 @@ import java.util.logging.Logger;
  * <ul>
  * <li>Not limited to load classes. Can load any kind of configuration.</li>
  * <li>Supports different service types. Each type gets its own directory in META-INF.</li>
- * <li>Works for modular and non-modular applications.</li>
+ * <li>Each service (type + name) may have its own classloader. Useful for OSGi.</li>
+ * <li>Works for modular (jigsaw) and non-modular applications.</li>
  * <li>As opposed to {@link ServiceLoader}, {@link ServiceFinder}s retain the module dependency order for service URLs. The first
  * URL is guaranteed to belong to the topmost relevant module. Unnamed, i.e. classpath comes last.</li>
  * </ul>

@@ -102,6 +102,28 @@ public final class ModuleSorter {
     return modules.get(name);
   }
 
+  /**
+   * Gets the module info for a given URL.
+   *
+   * @param url the resource url
+   * @return the module info, null if application not modularized, not from a module or
+   *         module does not provide a {@link ModuleHook}.
+   */
+  public ModuleInfo getModuleInfo(URL url) {
+    ModuleInfo info = null;
+    if ("jrt".equals(url.getProtocol())) {
+      String name = url.getPath();
+      if (name.startsWith("/")) {
+        name = name.substring(1);
+      }
+      int ndx = name.indexOf('/');
+      if (ndx >= 0) {
+        name = name.substring(0, ndx);
+      }
+      info = modules.get(name);
+    }
+    return info;
+  }
 
   /**
    * Sorts an enumeration of urls according to the module hierarchy.<br>
@@ -113,25 +135,16 @@ public final class ModuleSorter {
   public Collection<URL> sort(Enumeration<URL> urls) {
     Set<SortKey> urlSet = new TreeSet<>();
     List<URL> unsortedUrls = new ArrayList<>();
+    
     while (urls.hasMoreElements()) {
       URL url = urls.nextElement();
-      if ("jrt".equals(url.getProtocol())) {
-        String name = url.getPath();
-        if (name.startsWith("/")) {
-          name = name.substring(1);
-        }
-        int ndx = name.indexOf('/');
-        if (ndx >= 0) {
-          name = name.substring(0, ndx);
-        }
-        ModuleInfo info = modules.get(name);
-        if (info != null) {
-          urlSet.add(new SortKey(info.getOrdinal(), url));
-          continue;
-        }
+      ModuleInfo info = getModuleInfo(url);
+      if (info != null) {
+        urlSet.add(new SortKey(info.getOrdinal(), url));
       }
-      // no named module or not providing a ModuleHook or from unnamed module or application not modularized at all
-      unsortedUrls.add(url);
+      else {
+        unsortedUrls.add(url);
+      }
     }
 
     // add URLs of named modules sorted by dependency first

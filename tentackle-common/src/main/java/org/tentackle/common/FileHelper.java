@@ -78,7 +78,7 @@ public class FileHelper {
     Properties dbProps = new Properties();
     if (name != null) {
       if (name.indexOf('.') < 0) {
-        name += ".properties";
+        name += Constants.PROPS_EXTENSION;
       }
       if (!name.startsWith("/")) {
         name = "/" + name;

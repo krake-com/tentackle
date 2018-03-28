@@ -44,6 +44,8 @@ public class Constants {
   /** unknown name. */
   public static final String NAME_UNKNOWN = "<unknown>";
 
+  /** extension for property files. */
+  public static final String PROPS_EXTENSION = ".properties";
 
   /** name of property file holding the backend properties. */
   public static final String BACKEND_PROPS = "backend";

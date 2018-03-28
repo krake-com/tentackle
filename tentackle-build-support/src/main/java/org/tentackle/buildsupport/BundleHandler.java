@@ -40,14 +40,6 @@ import org.tentackle.common.Constants;
  */
 public class BundleHandler extends AbstractAnalyzeHandler {
 
-  /**
-   * The service name to find all annotations using this handler or subclasses of it.
-   */
-  public static final String BUNDLE_HANDLER_SERVICE = BundleHandler.class.getName();
-
-  /** extension for property files. */
-  public static final String PROPS_EXTENSION = ".properties";
-
   private AnalyzeProcessor processor;     // the annotation processor
 
   @Override
@@ -149,9 +141,9 @@ public class BundleHandler extends AbstractAnalyzeHandler {
         // strip quotes
         bundleName = bundleName.substring(1, bundleName.length() - 1);
       }
-      if (bundleName.endsWith(PROPS_EXTENSION)) {
+      if (bundleName.endsWith(Constants.PROPS_EXTENSION)) {
         // cut trailing ".properties"
-        bundleName = bundleName.substring(0, bundleName.length() - PROPS_EXTENSION.length());
+        bundleName = bundleName.substring(0, bundleName.length() - Constants.PROPS_EXTENSION.length());
       }
       if (bundleName.charAt(0) == '/') {
         bundleName = bundleName.substring(1);   // cut leading slash

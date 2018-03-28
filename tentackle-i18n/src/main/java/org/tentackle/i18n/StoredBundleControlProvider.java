@@ -24,6 +24,8 @@ import org.tentackle.common.Service;
 
 /**
  * Bundle control provider to use stored bundles.
+ * <p>
+ * Only used for non-modular applications! Not supported by jigsaw.
  *
  * @author harald
  */

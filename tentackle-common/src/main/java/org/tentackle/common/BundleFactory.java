@@ -34,19 +34,32 @@ interface BundleFactory$Singleton {
  * The resource bundle factory.
  * <p>
  * Tentackle applications should use {@code BundleFactory.getBundle(...)} instead of
- * {@code ResourceBundle.getBundle(...)} because the use cases of {@link java.util.spi.ResourceBundleControlProvider}
+ * {@code ResourceBundle.getBundle(...)} for 3 reasons:
+ * <ol>
+ * <li>for modular applications:<br>
+ * In Jigsaw, ResourceBundles are only visible from their own module by default. Furthermore, ResourceBundleControlProvider
+ * is unavailable, i.e. disabled and throws an exception if used. Loading a bundle from another module, as it is the
+ * case for a factory located in a framework module, would not work at all. Since Java 9, a workaround is provided
+ * via a service provider interface and corresponding uses/provides entries in module-info. Alternatively, the modules
+ * can be declared as "open". Either approach is rather cumbersome and may lead to runtime errors or loss of encapsulation.<br>
+ * Thanks to Tentackle's {@link ServiceFactory}, the BundleFactory knows to which module a resource belongs and loads
+ * it from its module.
+ * </li>
+ * <li>for non-modular applications:<br>
+ * because the use cases of {@link java.util.spi.ResourceBundleControlProvider}
  * are still very limited in Java 8. The major restriction is that the providers
  * are loaded from <em>installed</em> extensions only. This requires either a copy the tentackle-jars in
  * the extensions directory of the JRE installation (which is a bad habit in general, because it applies to all applications)
  * or to set the runtime option -Djava.ext.dirs=... to a directory path containing the jars.
  * The latter may be a workaround for applications started from the shell, but is not feasable for webstart
- * applications or applications running within a container.
- * <p>
+ * applications or applications running within a container.<br>
  * Tentackle's bundle factory uses the same interface {@link java.util.spi.ResourceBundleControlProvider} and semantics
  * to lookup and install providers as the standard JRE, but scans the application classpath instead
- * of the system classpath.
- * <p>
+ * of the system classpath.<br>
  * See {@code org.tentackle.locale.StoredBundleControlProvider} in tentackle-i18n for an example.
+ * </li>
+ * </ol>
+ *
  *
  * @author harald
  */

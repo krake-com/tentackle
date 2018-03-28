@@ -20,16 +20,10 @@ package org.tentackle.i18n;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
 import org.tentackle.i18n.pdo.StoredBundle;
-import org.tentackle.i18n.pdo.StoredBundleKey;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
@@ -38,6 +32,8 @@ import org.tentackle.session.Session;
 
 /**
  * Bundle control to use stored bundles.
+ * <p>
+ * Only used for non-modular applications! Not supported by jigsaw.
  *
  * @author harald
  */
@@ -53,14 +49,14 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   private static final List<String> FORMATS = Arrays.asList("");
 
+
   private DomainContext context;    // session local domain context
 
   @Override
   public DomainContext getDomainContext() {
     return context;
   }
-
-
+  
 
   @Override
   public List<String> getFormats(String baseName) {
@@ -119,97 +115,6 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       return rb;
     }
     return null;
-  }
-
-
-  /**
-   * ResourceBundle implements a wrapper for the bundle keys.
-   */
-  private static class StoredResourceBundle extends ResourceBundle {
-
-    private final Properties props;
-    private final String name;
-
-    private StoredResourceBundle(StoredBundle bundle) {
-      props = new Properties();
-      name = bundle.toString();
-      for (StoredBundleKey bundleKey : bundle.getKeys()) {
-        props.setProperty(bundleKey.getKey(), bundleKey.getValue());
-      }
-    }
-
-    @Override
-    protected Object handleGetObject(String key) {
-      if (key == null) {
-        throw new NullPointerException("key is null");
-      }
-      return props.get(key);
-    }
-
-    @Override
-    public Enumeration<String> getKeys() {
-      ResourceBundle p = this.parent;
-      return new BundleEnumeration(props.stringPropertyNames(), (p != null) ? p.getKeys() : null);
-    }
-
-    @Override
-    public String toString() {
-      return name;
-    }
-  }
-
-
-  /**
-   * Enumeration to provide the keys.
-   */
-  private static class BundleEnumeration implements Enumeration<String> {
-
-    private final Set<String> keys;
-    private final Iterator<String> iterator;
-    private final Enumeration<String> parentEnumeration;
-    private String next = null;
-
-    /**
-     * Creates a bundle enumeration.
-     *
-     * @param keys the bundle keys
-     * @param parentEnumeration the parent key enumeration, null if no parent
-     */
-    public BundleEnumeration(Set<String> keys, Enumeration<String> parentEnumeration) {
-      this.keys = keys;
-      this.iterator = keys.iterator();
-      this.parentEnumeration = parentEnumeration;
-    }
-
-    @Override
-    public boolean hasMoreElements() {
-      if (next == null) {
-        if (iterator.hasNext()) {
-          next = iterator.next();
-        }
-        else if (parentEnumeration != null) {
-          while (next == null && parentEnumeration.hasMoreElements()) {
-            next = parentEnumeration.nextElement();
-            if (keys.contains(next)) {
-              next = null;
-            }
-          }
-        }
-      }
-      return next != null;
-    }
-
-    @Override
-    public String nextElement() {
-      if (hasMoreElements()) {
-        String result = next;
-        next = null;
-        return result;
-      }
-      else {
-        throw new NoSuchElementException();
-      }
-    }
   }
 
 }

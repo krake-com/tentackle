@@ -19,10 +19,8 @@
 
 package org.tentackle.maven.check;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -33,11 +31,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.tentackle.buildsupport.BundleHandler;
-import org.tentackle.common.Constants;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.common.BundleSupport;
 
 
 /**
@@ -91,43 +85,21 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
       usedBundleNames.add(key.getBundleName());
     }
 
-
     // load referenced bundles in given locales
     Map<NameKey, ResourceBundle> bundleMap = new HashMap<>();    // <class containing the bundle reference> : <bundle>
 
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-    for (Map.Entry<String, URL> providerEntry :
-            ServiceFactory.getServiceFinder(getProcessingClassloader(), Constants.DEFAULT_SERVICE_PATH).
-              findServiceConfigurations(BundleHandler.BUNDLE_HANDLER_SERVICE).entrySet()) {
-      String serviceName = providerEntry.getKey();
-
-      // for all bundles annotated with such an annotation
-      for (Map.Entry<String, URL> entry :
-              ServiceFactory.getServiceFinder(getProcessingClassloader(), Constants.BUNDLE_SERVICE_PATH).
-                findServiceConfigurations(serviceName).entrySet()) {
-
-        String configuration = entry.getKey();
-        List<String> parts = StringHelper.split(configuration, ":= ");
-        String bundleName = parts.get(0);
-        if (usedBundleNames.contains(bundleName)) {
-          for (Locale bundleLocale: bundleLocales) {
-            try {
-              ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
-              switch (parts.size()) {
-                case 1:
-                  bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
-                  break;
-                case 2:
-                  bundleMap.putIfAbsent(new NameKey(bundleLocale, parts.get(1)), bundle);
-                  break;
-                default:
-                  throw new TentackleRuntimeException("invalid bundle configuration '" + configuration + "' in " + entry.
-                          getValue());
-              }
-            }
-            catch (RuntimeException rex) {
-              getLog().error("could not load bundle " + bundleName);
-            }
+    for (BundleSupport bundleSupport: BundleSupport.getBundles(getProcessingClassloader())) {
+      String className = bundleSupport.getClassName();
+      String bundleName = bundleSupport.getBundleName();
+      if (usedBundleNames.contains(className)) {
+        for (Locale bundleLocale: bundleLocales) {
+          try {
+            ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
+            bundleMap.putIfAbsent(new NameKey(bundleLocale, className), bundle);
+          }
+          catch (RuntimeException rex) {
+            getLog().error("could not load bundle " + bundleName + ": " + rex.getMessage());
           }
         }
       }
