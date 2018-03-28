@@ -19,6 +19,8 @@
 
 package org.tentackle.persist.service;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
 import org.tentackle.common.ModuleHook;
 
 /**
@@ -26,4 +28,11 @@ import org.tentackle.common.ModuleHook;
  *
  * @author harald
  */
-public class Hook implements ModuleHook {}
+public class Hook implements ModuleHook {
+
+  @Override
+  public ResourceBundle getBundle(String baseName, Locale locale) {
+    return ResourceBundle.getBundle(baseName, locale);
+  }
+
+}

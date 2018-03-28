@@ -21,6 +21,7 @@ package org.tentackle.common;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,6 +39,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
+  private final Map<String, BundleSupport> moduleBundlesMap;      // map of basenames to annotated bundles in modules
   private ClassLoader classLoader;                                // another classloader, null if default
 
   /**
@@ -46,6 +48,13 @@ public class DefaultBundleFactory implements BundleFactory {
   public DefaultBundleFactory() {
     providers = createProviders();
     controlMap = new ConcurrentHashMap<>();
+    moduleBundlesMap = new HashMap<>();
+    for (BundleSupport support : BundleSupport.getBundles(getClass().getClassLoader())) {
+      if (support.getModuleInfo() != null) {
+        moduleBundlesMap.put(support.getBundleName(), support);
+        moduleBundlesMap.put(support.getClassName(), support);
+      }
+    }
   }
 
   @Override
@@ -82,37 +91,39 @@ public class DefaultBundleFactory implements BundleFactory {
   }
 
   @Override
-  public ResourceBundle findBundle(String baseName) {
-    ResourceBundle.Control control = getControl(baseName);
-    if (classLoader == null) {
-      return control == null ?
-                ResourceBundle.getBundle(baseName) :
-                ResourceBundle.getBundle(baseName, control);
-    }
-    return control == null ?
-                ResourceBundle.getBundle(baseName, Locale.getDefault(), classLoader) :
-                ResourceBundle.getBundle(baseName, Locale.getDefault(), classLoader, control);
-  }
-
-  @Override
   public ResourceBundle findBundle(String baseName, Locale locale) {
-    ResourceBundle.Control control = getControl(baseName);
-    if (classLoader == null) {
-      return control == null ?
-                ResourceBundle.getBundle(baseName, locale) :
-                ResourceBundle.getBundle(baseName, locale, control);
+    baseName = normalizeBasename(baseName);
+    BundleSupport support = moduleBundlesMap.get(baseName);
+    if (support != null) {
+      return support.getModuleInfo().getHook().getBundle(baseName, locale);
     }
-    return control == null ?
-                ResourceBundle.getBundle(baseName, locale, classLoader) :
-                ResourceBundle.getBundle(baseName, locale, classLoader, control);
+    else {
+      ResourceBundle.Control control = getControl(baseName);
+      if (classLoader == null) {
+        return control == null ?
+                  ResourceBundle.getBundle(baseName, locale) :
+                  ResourceBundle.getBundle(baseName, locale, control);
+      }
+      return control == null ?
+                  ResourceBundle.getBundle(baseName, locale, classLoader) :
+                  ResourceBundle.getBundle(baseName, locale, classLoader, control);
+    }
   }
 
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale, ClassLoader loader) {
-    ResourceBundle.Control control = getControl(baseName);
-    return control == null ?
-              ResourceBundle.getBundle(baseName, locale, loader) :
-              ResourceBundle.getBundle(baseName, locale, loader, control);
+    baseName = normalizeBasename(baseName);
+    BundleSupport support = moduleBundlesMap.get(baseName);
+    if (support != null) {
+      // must use the module, not the classloader
+      return support.getModuleInfo().getHook().getBundle(baseName, locale);
+    }
+    else {
+      ResourceBundle.Control control = getControl(baseName);
+      return control == null ?
+                ResourceBundle.getBundle(baseName, locale, loader) :
+                ResourceBundle.getBundle(baseName, locale, loader, control);
+    }
   }
 
 
@@ -137,6 +148,20 @@ public class DefaultBundleFactory implements BundleFactory {
       throw new TentackleRuntimeException("cannot load bundle control providers", ex);
     }
     return providerList;
+  }
+
+  /**
+   * Normalizes the basename.<br>
+   * The name is usually a dotted classname or a slashed resourcename without a leading slash.
+   *
+   * @param baseName the name
+   * @return the normalized name
+   */
+  protected String normalizeBasename(String baseName) {
+    while (baseName.startsWith("/")) {
+      baseName = baseName.substring(1);
+    }
+    return baseName;
   }
 
 }

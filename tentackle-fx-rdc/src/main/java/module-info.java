@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-open module org.tentackle.fx.rdc {
+module org.tentackle.fx.rdc {
   exports org.tentackle.fx.rdc;
   exports org.tentackle.fx.rdc.admin;
   exports org.tentackle.fx.rdc.app;
@@ -31,6 +31,13 @@ open module org.tentackle.fx.rdc {
   exports org.tentackle.fx.rdc.security;
   exports org.tentackle.fx.rdc.table;
   exports org.tentackle.fx.rdc.translate;
+
+  opens org.tentackle.fx.rdc.admin;
+  opens org.tentackle.fx.rdc.crud;
+  opens org.tentackle.fx.rdc.login;
+  opens org.tentackle.fx.rdc.search;
+  opens org.tentackle.fx.rdc.security;
+  opens org.tentackle.fx.rdc.table;
 
   requires org.tentackle.fx;
   requires org.tentackle.core;

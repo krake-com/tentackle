@@ -24,12 +24,12 @@ import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
 
 /**
- * Bundle for pdo-package in tentackle-core.
+ * Bundle for the session module.
  *
  * @author harald
  */
 @Bundle
-public class SessionCoreBundle {
+public class SessionBundle {
 
   /**
    * Gets the bundle.
@@ -37,7 +37,7 @@ public class SessionCoreBundle {
    * @return the resource bundle
    */
   public static ResourceBundle getBundle() {
-    return BundleFactory.getBundle(SessionCoreBundle.class.getName(), LocaleProvider.getInstance().getLocale());
+    return BundleFactory.getBundle(SessionBundle.class.getName(), LocaleProvider.getInstance().getLocale());
   }
 
   /**
@@ -50,7 +50,7 @@ public class SessionCoreBundle {
     return getBundle().getString(key);
   }
 
-  private SessionCoreBundle() {
+  private SessionBundle() {
   }
 
 }

@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-open module org.tentackle.fx {
+module org.tentackle.fx {
   requires org.tentackle.core;
   requires org.tentackle.common;
 

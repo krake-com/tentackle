@@ -19,14 +19,30 @@
 
 package org.tentackle.common;
 
+import java.util.spi.ResourceBundleProvider;
+
 /**
  * Interface to determine the module hierarchy.<br>
  * Provides a hook to access resources from within a module.
  * <p>
  * Each module must include exactly one such an implementation and provide it via module-info.
+ * <p>
+ * Since ModuleHook extends {@link ResourceBundleProvider}, all classes must implement the following
+ * method as follows:
+ *
+ * <pre>
+ *    @Override
+ *    public ResourceBundle getBundle(String baseName, Locale locale) {
+ *      return ResourceBundle.getBundle(baseName, locale);
+ *    }
+ * </pre>
+ *
+ * Notice: it must be implemented in the hook and not an abstract super class because
+ * it is used by the BundleFactory to access the bundles from within the framework
+ * and ResourceBundle uses the callerclass to determine the caller module.
  *
  * @author harald
  */
-public interface ModuleHook {
+public interface ModuleHook extends ResourceBundleProvider {
 
 }

@@ -42,8 +42,8 @@ interface BundleFactory$Singleton {
  * case for a factory located in a framework module, would not work at all. Since Java 9, a workaround is provided
  * via a service provider interface and corresponding uses/provides entries in module-info. Alternatively, the modules
  * can be declared as "open". Either approach is rather cumbersome and may lead to runtime errors or loss of encapsulation.<br>
- * Thanks to Tentackle's {@link ServiceFactory}, the BundleFactory knows to which module a resource belongs and loads
- * it from its module.
+ * Thanks to Tentackle's {@link ServiceFactory} and {@link ModuleSorter}, the BundleFactory knows to which
+ * module a resource belongs and loads it from the enclosing module.
  * </li>
  * <li>for non-modular applications:<br>
  * because the use cases of {@link java.util.spi.ResourceBundleControlProvider}
@@ -83,7 +83,7 @@ public interface BundleFactory {
    * @return a resource bundle for the given base name and the default locale
    */
   static ResourceBundle getBundle(String baseName) {
-    return getInstance().findBundle(baseName);
+    return getInstance().findBundle(baseName, Locale.getDefault());
   }
 
   /**
@@ -146,14 +146,6 @@ public interface BundleFactory {
    * @return the control, null if delegate to ResourceBundle's default
    */
   ResourceBundle.Control getControl(String baseName);
-
-  /**
-   * Finds a resource bundle using the specified base name, the default locale, and the caller's class loader.<br>
-   *
-   * @param baseName the base name of the resource bundle, a fully qualified class name
-   * @return a resource bundle for the given base name and the default locale
-   */
-  ResourceBundle findBundle(String baseName);
 
   /**
    * Finds a resource bundle using the specified base name and locale, and the caller's class loader.<br>

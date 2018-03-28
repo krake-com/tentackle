@@ -66,7 +66,6 @@ public class BundleSupport {
               ServiceFactory.getServiceFinder(classLoader, Constants.BUNDLE_SERVICE_PATH).
                 findServiceConfigurations(serviceName).entrySet()) {
         ModuleInfo info = ModuleSorter.INSTANCE.getModuleInfo(entry.getValue());
-        Module module = info == null ? null : info.getModule();
         List<String> parts = StringHelper.split(entry.getKey(), ":= ");
         // figure out the bundle name
         String className = parts.get(0);
@@ -82,7 +81,7 @@ public class BundleSupport {
             throw new TentackleRuntimeException("invalid bundle configuration '" + entry.getKey() + "' in " + entry.
                     getValue());
         }
-        bundles.add(new BundleSupport(module, className, bundleName));
+        bundles.add(new BundleSupport(info, className, bundleName));
       }
     }
     return bundles;
@@ -90,30 +89,30 @@ public class BundleSupport {
 
 
 
-  private final Module module;
+  private final ModuleInfo info;
   private final String className;
   private final String bundleName;
 
   /**
    * Creates a bundle support object.
    *
-   * @param module the optional jigsaw module, null if none
+   * @param module the optional jigsaw module info,  null if none
    * @param className the name of the annotated class
    * @param bundleName the name of the resource bundle
    */
-  public BundleSupport(Module module, String className, String bundleName) {
-    this.module = module;
+  public BundleSupport(ModuleInfo info, String className, String bundleName) {
+    this.info = info;
     this.className = className;
     this.bundleName = bundleName;
   }
 
   /**
-   * Gets the module.
+   * Gets the module info.
    *
-   * @return the optional jigsaw module, null if none
+   * @return the optional module info, null if none
    */
-  public Module getModule() {
-    return module;
+  public ModuleInfo getModuleInfo() {
+    return info;
   }
 
   /**

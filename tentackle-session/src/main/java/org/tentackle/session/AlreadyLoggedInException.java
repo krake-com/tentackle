@@ -64,7 +64,7 @@ public class AlreadyLoggedInException extends LoginFailedException {
    */
   @Override
   public String getMessage() {
-    return MessageFormat.format(SessionCoreBundle.getString("YOU ARE ALREADY LOGGED IN AT {0} SINCE {1}"),
+    return MessageFormat.format(SessionBundle.getString("YOU ARE ALREADY LOGGED IN AT {0} SINCE {1}"),
                                 loginInfo.getHostInfo(),
                                 FormatHelper.formatShortTimestamp(new Date(loginInfo.getSince())));
   }
