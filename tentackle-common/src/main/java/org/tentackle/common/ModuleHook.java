@@ -31,7 +31,7 @@ import java.util.spi.ResourceBundleProvider;
  * method as follows:
  *
  * <pre>
- *    @Override
+ *    &#64;Override
  *    public ResourceBundle getBundle(String baseName, Locale locale) {
  *      return ResourceBundle.getBundle(baseName, locale);
  *    }
