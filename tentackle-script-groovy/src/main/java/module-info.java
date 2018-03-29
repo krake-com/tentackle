@@ -20,7 +20,7 @@ module org.tentackle.script.groovy {
 
   requires org.tentackle.core;
   requires org.tentackle.common;
-  requires org.objectweb.asm;
+  requires org.codehaus.groovy;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.script.groovy.service.Hook;
 }

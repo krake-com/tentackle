@@ -47,5 +47,7 @@ module org.tentackle.fx {
   exports org.tentackle.fx.table.type;
   exports org.tentackle.fx.translate;
 
+  opens org.tentackle.fx;   // to access tentackle.css from StyleManager
+
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.service.Hook;
 }
