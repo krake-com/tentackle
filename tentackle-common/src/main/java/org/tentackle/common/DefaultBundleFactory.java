@@ -36,8 +36,12 @@ import java.util.spi.ResourceBundleControlProvider;
  *
  * @author harald
  */
-@Service(BundleFactory.class)   // doesn't work in tt-common, for documentation only
 public class DefaultBundleFactory implements BundleFactory {
+  /**
+   * Notice: @Service annotation cannot be used because tentackle-maven-plugin depends
+   * on tentackle-common, i.e. this cannot be analyzed.
+   * META-INF/services must be edited manually!
+   */
 
   private final List<ResourceBundleControlProvider> providers;    // the control providers, null if none
   private final Map<String, ResourceBundle.Control> controlMap;   // map of basenames to controls
@@ -137,8 +141,6 @@ public class DefaultBundleFactory implements BundleFactory {
    * @return the bundle
    */
   protected ResourceBundle getBundle(BundleSupport support, Locale locale) {
-    // @todo:
-    // check if we should use the stored bundles instead
     return support.getModuleInfo().getHook().getBundle(support.getBundleName(), locale);
   }
 

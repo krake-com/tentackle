@@ -46,7 +46,8 @@ public final class ModuleSorter {
   public static final ModuleSorter INSTANCE = new ModuleSorter();
 
 
-  private final Map<String, ModuleInfo> modules;        // name:info
+  private final Map<String, ModuleInfo> nameToModules;  // name:info
+  private final Map<String, ModuleInfo> urlToModules;   // urlPath:info
   private final List<ModuleInfo> sortedModules;         // modules sorted by dependency
 
   /**
@@ -56,15 +57,17 @@ public final class ModuleSorter {
    * according to their dependencies.
    */
   public ModuleSorter() {
-    this.modules = new HashMap<>();
+    nameToModules = new HashMap<>();
+    urlToModules = new HashMap<>();
     ServiceLoader.load(ModuleHook.class).stream().map(ServiceLoader.Provider::get).forEach(hook -> {
       ModuleInfo info = new ModuleInfo(hook);
-      modules.put(info.getModule().getName(), info);
+      nameToModules.put(info.getModule().getName(), info);
+      urlToModules.put(info.getUrlPath(), info);
     });
 
     // depth-first sort (possible because jigsaw does not allow cyclic dependencies)
     sortedModules = new ArrayList<>();
-    for (ModuleInfo info: modules.values()) {
+    for (ModuleInfo info: nameToModules.values()) {
       if (info.getOrdinal() == 0) {
         visit(info, sortedModules);
       }
@@ -99,7 +102,7 @@ public final class ModuleSorter {
    * @return the module info, null if no such (application) module or module has no {@link ModuleHook}.
    */
   public ModuleInfo getModuleInfo(String name) {
-    return modules.get(name);
+    return nameToModules.get(name);
   }
 
   /**
@@ -111,16 +114,41 @@ public final class ModuleSorter {
    */
   public ModuleInfo getModuleInfo(URL url) {
     ModuleInfo info = null;
-    if ("jrt".equals(url.getProtocol())) {
-      String name = url.getPath();
-      if (name.startsWith("/")) {
-        name = name.substring(1);
-      }
-      int ndx = name.indexOf('/');
-      if (ndx >= 0) {
-        name = name.substring(0, ndx);
-      }
-      info = modules.get(name);
+    String path = url.getPath();
+    switch(url.getProtocol()) {
+      case "jrt":
+        String name = url.getPath();
+        if (name.startsWith("/")) {
+          name = name.substring(1);
+        }
+        int ndx = name.indexOf('/');
+        if (ndx >= 0) {
+          name = name.substring(0, ndx);
+        }
+        info = nameToModules.get(name);
+        break;
+
+      case "jar":
+        int lndx = path.lastIndexOf('!');
+        if (lndx > 7) {
+          String urlPath = path.substring(7, lndx);        // skip "file://"
+          info = urlToModules.get(urlPath);
+          break;
+        }
+        else {
+          throw new TentackleRuntimeException("malformed jar url: " + url);
+        }
+
+      case "file":
+        int fndx = path.indexOf("/META-INF/");
+        if (fndx > 0) {
+          String urlPath = path.substring(0, fndx + 1);
+          info = urlToModules.get(urlPath);
+          break;
+        }
+        else {
+          throw new TentackleRuntimeException("malformed file url: " + url);
+        }
     }
     return info;
   }
@@ -135,7 +163,7 @@ public final class ModuleSorter {
   public Collection<URL> sort(Enumeration<URL> urls) {
     Set<SortKey> urlSet = new TreeSet<>();
     List<URL> unsortedUrls = new ArrayList<>();
-    
+
     while (urls.hasMoreElements()) {
       URL url = urls.nextElement();
       ModuleInfo info = getModuleInfo(url);
@@ -170,7 +198,7 @@ public final class ModuleSorter {
       info.setVisited(true);
       for (Iterator<String> iter = info.getRequiredModuleNames().iterator(); iter.hasNext(); ) {
         String name = iter.next();
-        ModuleInfo subInfo = modules.get(name);
+        ModuleInfo subInfo = nameToModules.get(name);
         if (subInfo != null) {
           visit(subInfo, sortedList);
         }

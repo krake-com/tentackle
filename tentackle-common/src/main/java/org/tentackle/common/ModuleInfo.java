@@ -31,6 +31,7 @@ import java.util.Set;
 public final class ModuleInfo {
 
   private final ModuleHook hook;                      // the module hook implementation
+  private final String urlPath;                       // the path of the source URL
   private final Module module;                        // the module name
   private final Set<String> requiredModuleNames;      // the required module names
 
@@ -44,6 +45,7 @@ public final class ModuleInfo {
    */
   public ModuleInfo(ModuleHook hook) {
     this.hook = hook;
+    this.urlPath = hook.getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
     this.module = hook.getClass().getModule();
     if (module == null || !module.isNamed()) {
       throw new TentackleRuntimeException(hook.getClass() + " does not belong to a named module");
@@ -61,6 +63,15 @@ public final class ModuleInfo {
    */
   public ModuleHook getHook() {
     return hook;
+  }
+
+  /**
+   * Gets the URL path of the hook's module.
+   *
+   * @return the url path
+   */
+  public String getUrlPath() {
+    return urlPath;
   }
 
   /**
