@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -23,10 +23,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import org.tentackle.common.ModuleInfo;
+import org.tentackle.common.ModuleSorter;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.CommandLine;
@@ -483,6 +486,20 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       if (locale != null) {
         Locale.setDefault(locale);
       }
+    }
+
+    // log module order
+    List<ModuleInfo> infos = ModuleSorter.INSTANCE.getModuleInfos();
+    if (infos.isEmpty()) {
+      LOGGER.info("no module hooks found");
+    }
+    else {
+      StringBuilder buf = new StringBuilder();
+      buf.append(infos.size()).append(" module hooks found:");
+      for (ModuleInfo info: infos) {
+        buf.append('\n').append(info);
+      }
+      LOGGER.info(buf.toString());
     }
   }
 
