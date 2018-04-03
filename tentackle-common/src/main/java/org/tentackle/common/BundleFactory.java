@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -43,7 +43,7 @@ interface BundleFactory$Singleton {
  * via a service provider interface and corresponding uses/provides entries in module-info. Alternatively, the modules
  * can be declared as "open". Either approach is rather cumbersome and may lead to runtime errors or loss of encapsulation.<br>
  * Thanks to Tentackle's {@link ServiceFactory} and {@link ModuleSorter}, the BundleFactory knows to which
- * module a resource belongs and loads it from the enclosing module.
+ * module a resource belongs to and loads it from the enclosing module.
  * </li>
  * <li>for non-modular applications:<br>
  * because the use cases of {@link java.util.spi.ResourceBundleControlProvider}
@@ -57,6 +57,13 @@ interface BundleFactory$Singleton {
  * to lookup and install providers as the standard JRE, but scans the application classpath instead
  * of the system classpath.<br>
  * See {@code org.tentackle.locale.StoredBundleControlProvider} in tentackle-i18n for an example.
+ * </li>
+ * <li>
+ * The classes providing bundles can be annotated with &#64;{@link Bundle} and will automatically
+ * become registered resources via META-INF by means of the tentackle:analyze plugin.
+ * Same applies to some framework-related annotations auch as &#64;FxControllerService or
+ * &#64;GuiProviderService. The tentackle-i18n plugin can then check during the test phase whether
+ * the keys used in the java source are really defined in a resource bundle.
  * </li>
  * </ol>
  *
@@ -168,4 +175,8 @@ public interface BundleFactory {
    */
   ResourceBundle findBundle(String baseName, Locale locale, ClassLoader loader);
 
+  /**
+   * Clears the bundle cache.
+   */
+  void clearCache();
 }

@@ -152,11 +152,11 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   public void login(Parent view, SessionInfo sessionInfo) {
 
     // run the startup from a service-thread to allow updating the FX view
-    Service<Void> loginSvc = new Service<Void>() {
+    Service<Void> loginSvc = new Service<>() {
 
       @Override
       protected Task<Void> createTask() {
-        return new Task<Void>() {
+        return new Task<>() {
 
           @Override
           protected Void call() throws Exception {
@@ -334,7 +334,14 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (t, e) -> {
       LOGGER.severe("unhandled exception detected", e);
-      Platform.runLater(() -> Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e));
+      Platform.runLater(() -> {
+        try {
+          Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e);
+        }
+        catch (RuntimeException rx) {
+          LOGGER.severe("cannot show error dialog", rx);
+        }
+      });
     };
   }
 

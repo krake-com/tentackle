@@ -23,11 +23,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import org.tentackle.common.BundleFactory;
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoListener;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 
 /**
@@ -73,21 +77,42 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
           throws IllegalAccessException, InstantiationException, IOException {
 
+    ResourceBundle bundle;
+
     if (Session.getCurrentSession() == null) {
-      return super.newBundle(baseName, locale, format, loader, reload);
+      bundle = super.newBundle(baseName, locale, format, loader, reload);
+    }
+    else {
+      if (baseName == null || locale == null || format == null || loader == null) {
+        throw new IllegalArgumentException("baseName, locale, format and loader must not be null");
+      }
+      StoredBundle.StoredBundleUDK key = createUDK(baseName, locale);
+      bundle = loadStoredBundle(key);
+      if (bundle == null && fallbackToPropertyFile) {
+        if (format.isEmpty()) {
+          format = "java.properties";
+        }
+        bundle = super.newBundle(baseName, locale, format, loader, reload);
+        if (bundle != null) {
+          LOGGER.info("no stored bundle for {0} -> resource bundle loaded instead", key.name);
+        }
+      }
     }
 
-    if (context == null) {
-      context = Pdo.createDomainContext();
-    }
+    return bundle;
+  }
 
-    if (baseName == null || locale == null || format == null || loader == null) {
-      throw new IllegalArgumentException("baseName, locale, format and loader must not be null");
-    }
 
+  /**
+   * Creates the unique domain key to load a stored bundle.
+   *
+   * @param baseName the base bundle name of the resource bundle
+   * @param locale the locale
+   * @return the unique domain key
+   */
+  protected StoredBundle.StoredBundleUDK createUDK(String baseName, Locale locale) {
     String bundleName = toBundleName(baseName, locale);
-    String resourceName = toResourceName(bundleName, format);
-
+    String resourceName = toResourceName(bundleName, "");
     String name = resourceName.substring(0, resourceName.length() - 1);    // cut trailing dot
     String loc  = null;
     int ndx = name.indexOf('_');
@@ -95,24 +120,42 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       loc = name.substring(ndx + 1);
       name = name.substring(0, ndx);
     }
-
     String locText = loc == null ? "" : loc;   // avoid null in logging below
-    StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(new StoredBundle.StoredBundleUDK(name, loc));
-    if (bundle != null) {
-      LOGGER.info("stored bundle {0}[{1}] loaded", name, locText);
-      return new StoredResourceBundle(bundle);
-    }
+    return new StoredBundle.StoredBundleUDK(name, loc);
+  }
 
-    if (fallbackToPropertyFile) {
-      LOGGER.fine("no stored bundle {0}[{1}] -> trying property file ...", name, locText);
-      if (format.isEmpty()) {
-        format = "java.properties";
+  /**
+   * Loads the bundle from storage.
+   *
+   * @param key the unique domain key
+   * @return the stored resource bundle or null if no such bundle in database
+   */
+  protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
+    if (context == null) {
+      synchronized (this) {
+        if (context == null) {
+          Session session = Session.getCurrentSession();
+          if (session == null) {
+            return null;    // fallback to Resource Bundle
+          }
+          context = Pdo.createDomainContext(session);
+
+          // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
+          // application start
+          ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
+            @Override
+            public void dataChanged(ModificationEvent ev) {
+              BundleFactory.getInstance().clearCache();
+              // the PdoCache in StoredBundlePersistenceImpl is cleared as well by the tracker
+            }
+          });
+        }
       }
-      ResourceBundle rb = super.newBundle(baseName, locale, format, loader, reload);
-      if (rb != null) {
-        LOGGER.info("property bundle {0}[{1}] loaded", name, locText);
-      }
-      return rb;
+    }
+    StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
+    if (bundle != null) {
+      LOGGER.info("stored bundle {0} loaded", bundle);
+      return new StoredResourceBundle(bundle);
     }
     return null;
   }

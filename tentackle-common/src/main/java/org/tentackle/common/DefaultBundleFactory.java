@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -61,6 +61,11 @@ public class DefaultBundleFactory implements BundleFactory {
         moduleBundlesMap.put(support.getClassName(), support);
       }
     }
+  }
+
+  @Override
+  public void clearCache() {
+    ResourceBundle.clearCache(getClassLoader());
   }
 
   @Override

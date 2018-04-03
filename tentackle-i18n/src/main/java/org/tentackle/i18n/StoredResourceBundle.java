@@ -47,6 +47,15 @@ public class StoredResourceBundle extends ResourceBundle {
     }
   }
 
+  /**
+   * Sets the parent stored bundle.
+   *
+   * @param parent the parent bundle
+   */
+  void setParent(StoredResourceBundle parent) {
+    super.setParent(parent);
+  }
+
   @Override
   protected Object handleGetObject(String key) {
     if (key == null) {

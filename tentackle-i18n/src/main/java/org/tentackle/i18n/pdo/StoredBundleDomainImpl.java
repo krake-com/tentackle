@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -16,11 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.i18n.pdo;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import org.tentackle.i18n.pdo.StoredBundle.StoredBundleUDK;
 import org.tentackle.domain.AbstractDomainObject;
@@ -62,7 +62,13 @@ public class StoredBundleDomainImpl extends AbstractDomainObject<StoredBundle, S
 
   @Override
   public String toString() {
-    return me().getName() + "[" + me().getLocale() + "]";
+    StringBuilder buf = new StringBuilder();
+    buf.append(me().getName());
+    String locale = me().getLocale();
+    if (locale != null) {
+      buf.append('_').append(locale);
+    }
+    return buf.toString();
   }
 
   @Override
