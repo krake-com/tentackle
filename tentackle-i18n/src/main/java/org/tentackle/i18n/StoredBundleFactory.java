@@ -27,10 +27,6 @@ import org.tentackle.common.BundleSupport;
 import org.tentackle.common.DefaultBundleFactory;
 import org.tentackle.common.Service;
 import org.tentackle.i18n.pdo.StoredBundle;
-import org.tentackle.pdo.PdoListener;
-import org.tentackle.persist.PdoModificationTracker;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationTracker;
 
 /**
  * Factory for stored bundles.<br>
