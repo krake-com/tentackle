@@ -25,6 +25,8 @@ package org.tentackle.misc;
  * Allows lambdas to throw a checked exception.<br>
  * For an example, see Session#transaction.
  *
+ * @param <T> the result type
+ * @param <E> the exception type
  * @author harald
  */
 @FunctionalInterface
