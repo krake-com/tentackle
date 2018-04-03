@@ -65,7 +65,7 @@ public class DefaultBundleFactory implements BundleFactory {
 
   @Override
   public void clearCache() {
-    ResourceBundle.clearCache(getClassLoader());
+    ResourceBundle.clearCache(getClass().getClassLoader());
   }
 
   @Override
