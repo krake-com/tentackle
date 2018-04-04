@@ -35,9 +35,8 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 
 /**
- * Bundle control to use stored bundles.
- * <p>
- * Only used for non-modular applications! Not supported by jigsaw.
+ * Bundle control to use stored bundles.<br>
+ * Used by {@link StoredBundleFactory} in modular apps as well as by {@link ResourceBundle} in non-modular apps.
  *
  * @author harald
  */
@@ -146,7 +145,8 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
             @Override
             public void dataChanged(ModificationEvent ev) {
               BundleFactory.getInstance().clearCache();
-              // the PdoCache in StoredBundlePersistenceImpl is cleared as well by the tracker
+              // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
+              // only the changed or added bundles are effectively reloaded from the database.
             }
           });
         }
