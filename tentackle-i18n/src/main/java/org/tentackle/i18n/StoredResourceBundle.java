@@ -67,7 +67,7 @@ public class StoredResourceBundle extends ResourceBundle {
   @Override
   public Enumeration<String> getKeys() {
     ResourceBundle p = this.parent;
-    return new BundleEnumeration(props.stringPropertyNames(), (p != null) ? p.getKeys() : null);
+    return new BundleEnumeration(props.stringPropertyNames(), p != null ? p.getKeys() : null);
   }
 
   @Override

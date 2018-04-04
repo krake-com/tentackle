@@ -19,7 +19,7 @@
 package org.tentackle.i18n;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -50,7 +50,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   private static final Logger LOGGER = Logger.get(StoredBundleControl.class);
 
-  private static final List<String> FORMATS = Arrays.asList("");
+  private static final List<String> FORMATS = Collections.singletonList("");
 
 
   private DomainContext context;    // session local domain context
@@ -130,26 +130,24 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    * @return the stored resource bundle or null if no such bundle in database
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
-    if (context == null) {
-      synchronized (this) {
-        if (context == null) {
-          Session session = Session.getCurrentSession();
-          if (session == null) {
-            return null;    // fallback to Resource Bundle
-          }
-          context = Pdo.createDomainContext(session);
-
-          // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
-          // application start
-          ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
-            @Override
-            public void dataChanged(ModificationEvent ev) {
-              BundleFactory.getInstance().clearCache();
-              // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
-              // only the changed or added bundles are effectively reloaded from the database.
-            }
-          });
+    synchronized (this) {
+      if (context == null) {
+        Session session = Session.getCurrentSession();
+        if (session == null) {
+          return null;    // fallback to Resource Bundle
         }
+        context = Pdo.createDomainContext(session);
+
+        // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
+        // application start
+        ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
+          @Override
+          public void dataChanged(ModificationEvent ev) {
+            BundleFactory.getInstance().clearCache();
+            // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
+            // only the changed or added bundles are effectively reloaded from the database.
+          }
+        });
       }
     }
     StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
