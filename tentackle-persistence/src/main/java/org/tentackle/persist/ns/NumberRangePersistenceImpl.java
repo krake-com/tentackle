@@ -355,13 +355,10 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
    */
   protected void revertAttributesToSnapshot(NumberRangePersistenceImpl snapshot) {
     super.revertAttributesToSnapshot(snapshot);
-    // ID of the number pool
     numberPoolId = snapshot.numberPoolId;
     numberPoolIdPersisted = snapshot.numberPoolIdPersisted;
-    // begin of range
     begin = snapshot.begin;
     beginPersisted = snapshot.beginPersisted;
-    // end of range
     end = snapshot.end;
     endPersisted = snapshot.endPersisted;
   }
@@ -424,7 +421,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   @Override
   public TrackedList<NumberRange> selectByNumberPoolId(long numberPoolId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<NumberRange> list = getRemoteDelegate().selectByNumberPoolId(getDomainContext(), numberPoolId);
         configureRemoteObjects(getDomainContext(), list);
@@ -434,7 +430,6 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NUMBER_POOL_ID_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();

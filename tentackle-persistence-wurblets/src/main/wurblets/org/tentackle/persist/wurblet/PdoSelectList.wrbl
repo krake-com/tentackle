@@ -152,7 +152,6 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getRemoteStream();
 ]@
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
 @[
       if (cursor != null) {
@@ -205,7 +204,6 @@ For more options, see {\@link DbModelWurblet}.
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
 @[
     } // end if remote
 

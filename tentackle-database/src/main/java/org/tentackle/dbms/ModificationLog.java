@@ -590,7 +590,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     this.user = user;
   }
 
-  /**
+  /*
    * no accessor methods for message.
    * optional informational or error message
    */
@@ -899,7 +899,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectFirstUnprocessed() {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         ModificationLog obj = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectFirstUnprocessed();
@@ -910,7 +909,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -987,7 +985,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectFirstUnprocessedGreater(long id) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         ModificationLog obj = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectFirstUnprocessedGreater(id);
@@ -998,7 +995,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_FIRST_UNPROCESSED_GREATER_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1081,7 +1077,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectGreaterId(long id) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         ModificationLog obj = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectGreaterId(id);
@@ -1092,7 +1087,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_GREATER_ID_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1171,7 +1165,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public ModificationLog selectLastProcessed() {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         ModificationLog obj = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectLastProcessed();
@@ -1182,7 +1175,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_LAST_PROCESSED_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1226,7 +1218,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectByObject(int objectClassId, long objectId) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         List<ModificationLog> list = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectByObject(objectClassId, objectId);
@@ -1237,7 +1228,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(db, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1291,7 +1281,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectByUserAndType(String user, char modType) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         List<ModificationLog> list = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectByUserAndType(user, modType);
@@ -1302,7 +1291,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(db, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_USER_AND_TYPE_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1352,7 +1340,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public boolean isReferencingUser(String user) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         return ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                   isReferencingUser(user);
@@ -1361,7 +1348,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(getSession(), e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_USER_STMT,
       () -> {
         StringBuilder sql = createSelectIdInnerSql();
@@ -1403,7 +1389,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   public boolean isReferencingObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         return ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                   isReferencingObject(objectClassId, objectId);
@@ -1412,7 +1397,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(getSession(), e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(IS_REFERENCING_OBJECT_STMT,
       () -> {
         StringBuilder sql = createSelectIdInnerSql();
@@ -1586,7 +1570,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<? extends ModificationLog> selectByTxId(long txId) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         List<? extends ModificationLog> list = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectByTxId(txId);
@@ -1597,7 +1580,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(db, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_TX_ID_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1785,7 +1767,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public List<ModificationLog> selectUpTo(Timestamp processed) {
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
         List<ModificationLog> list = ((ModificationLogRemoteDelegate) getRemoteDelegate()).
                 selectUpTo(processed);
@@ -1796,7 +1777,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         throw PersistenceException.createFromRemoteException(db, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_UP_TO_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();

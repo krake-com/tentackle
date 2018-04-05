@@ -78,10 +78,10 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
                     "bndl",
                     null,
                     Arrays.asList(
-                      new Join<StoredBundle,StoredBundleKey>(JoinType.LEFT, "bndl.id", "e_1.bundle_id", StoredBundleKey.class, "e_1",
+                      new Join<>(JoinType.LEFT, "bndl.id", "e_1.bundle_id", StoredBundleKey.class, "e_1",
                         (bndl, bkey) -> {
-                        ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
-                        ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
+                          ((StoredBundlePersistenceImpl) bndl.getPersistenceDelegate()).getKeysBlunt().addBlunt(bkey);
+                          ((StoredBundleKeyPersistenceImpl) bkey.getPersistenceDelegate()).setBundleBlunt(bndl);
                         }
                       )
                     )
@@ -288,9 +288,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   protected void revertAttributesToSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.revertAttributesToSnapshot(snapshot);
-    // the resource bundle name
     name = snapshot.name;
-    // the locale, null if default
     locale = snapshot.locale;
   }
 
@@ -307,7 +305,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public StoredBundle selectByUniqueDomainKey(String name, String locale) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         StoredBundle obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name, locale);
         configureRemoteObject(getDomainContext(), obj);
@@ -317,7 +314,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_UNIQUE_DOMAIN_KEY_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -657,7 +653,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public TrackedList<StoredBundle> findByName(String name) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<StoredBundle> list = getRemoteDelegate().findByName(getDomainContext(), name);
         configureRemoteObjects(getDomainContext(), list);
@@ -667,7 +662,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",
@@ -706,7 +700,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   @Override
   public StoredBundle findByNameAndLocale(String name, String locale) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         StoredBundle obj = getRemoteDelegate().findByNameAndLocale(getDomainContext(), name, locale);
         configureRemoteObject(getDomainContext(), obj);
@@ -716,7 +709,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     JoinedSelect<StoredBundle> js = new JoinedSelect<StoredBundle>()
       .addJoin(
         new Join<>(JoinType.LEFT, getColumnName(CN_ID), "j_1.bundle_id", StoredBundleKey.class, "j_1",

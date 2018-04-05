@@ -150,7 +150,6 @@ For more options, see {\@link DbModelWurblet}.
 
 ]@
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
 @[
 
@@ -364,7 +363,6 @@ For more options, see {\@link DbModelWurblet}.
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
 @[
     }
     else  {

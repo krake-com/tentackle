@@ -109,7 +109,6 @@ For more options, see {\@link DbModelWurblet}.
       PrintStream remoteOut = genInc.getRemoteStream();
 ]@
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
 @{to remoteOut}@
   @(returnType)@ @(methodName)@(@(pcs(params, "DomainContext context"))@) throws RemoteException;
@@ -133,7 +132,6 @@ For more options, see {\@link DbModelWurblet}.
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
 @[
     } // end if remote
 

@@ -88,7 +88,6 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     Db db = getSession();
     if (db.isRemote())  {
-      // invoke remote method
       try {
 @{to remoteOut}@
   @(rmiReturnType)@ @(methodName)@(@(params)@) throws RemoteException;
@@ -113,7 +112,6 @@ For more options, see {\@link DbModelWurblet}.
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
 @[
     } // end if remote
 ]@

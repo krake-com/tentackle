@@ -517,25 +517,18 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void revertAttributesToSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.revertAttributesToSnapshot(snapshot);
-    // the number pool name
     name = snapshot.name;
     namePersisted = snapshot.namePersisted;
-    // pool realm, optional
     realm = snapshot.realm;
     realmPersisted = snapshot.realmPersisted;
-    // short description
     description = snapshot.description;
     descriptionPersisted = snapshot.descriptionPersisted;
-    // true if online, else offline
     online = snapshot.online;
     onlinePersisted = snapshot.onlinePersisted;
-    // minimum number count before request to fill up from uplink, 0 if disable
     lowWaterMark = snapshot.lowWaterMark;
     lowWaterMarkPersisted = snapshot.lowWaterMarkPersisted;
-    // number count to request from uplink, 0 if disable
     requestSize = snapshot.requestSize;
     requestSizePersisted = snapshot.requestSizePersisted;
-    // uplink configuration (optional)
     uplink = snapshot.uplink;
     uplinkPersisted = snapshot.uplinkPersisted;
   }
@@ -553,7 +546,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public NumberPool selectByUniqueDomainKey(String name) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         NumberPool obj = getRemoteDelegate().selectByUniqueDomainKey(getDomainContext(), name);
         configureRemoteObject(getDomainContext(), obj);
@@ -563,7 +555,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_UNIQUE_DOMAIN_KEY_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -790,7 +781,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   @Override
   public NumberPool selectByNameRealm(String name, String realm) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         NumberPool obj = getRemoteDelegate().selectByNameRealm(getDomainContext(), name, realm);
         configureRemoteObject(getDomainContext(), obj);
@@ -800,7 +790,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_NAME_REALM_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();

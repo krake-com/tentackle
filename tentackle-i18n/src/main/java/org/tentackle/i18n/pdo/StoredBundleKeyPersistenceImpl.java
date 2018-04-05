@@ -287,11 +287,8 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
    */
   protected void revertAttributesToSnapshot(StoredBundleKeyPersistenceImpl snapshot) {
     super.revertAttributesToSnapshot(snapshot);
-    // the bundle id
     bundleId = snapshot.bundleId;
-    // the resource bundle key
     key = snapshot.key;
-    // the localized string
     value = snapshot.value;
   }
 
@@ -372,7 +369,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
   @Override
   public TrackedList<StoredBundleKey> selectByBundleId(long bundleId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<StoredBundleKey> list = getRemoteDelegate().selectByBundleId(getDomainContext(), bundleId);
         configureRemoteObjects(getDomainContext(), list);
@@ -382,7 +378,6 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_BUNDLE_ID_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();

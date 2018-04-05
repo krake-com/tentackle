@@ -716,7 +716,7 @@ For more options, see {\@link DbModelWurblet}.
         if (!attr.getOptions().isFromSuper()) {
 ]@
 
-  /**
+  /*
    * no accessor methods for @(attr)@.
    * @(attr.getOptions().getComment())@
    */
@@ -966,7 +966,6 @@ For more options, see {\@link DbModelWurblet}.
         if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
           String name = attr.getName();
 ]@
-    // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
 @[
           if (attr.getDataType().isDateOrTime() && attr.getDataType().isMutable()) {

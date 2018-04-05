@@ -427,7 +427,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public List<Security> selectByGrantee(int granteeClassId, long granteeId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         List<Security> list = getRemoteDelegate().selectByGrantee(getDomainContext(), granteeClassId, granteeId);
         configureRemoteObjects(getDomainContext(), list);
@@ -437,7 +436,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_GRANTEE_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -474,7 +472,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByObject(int objectClassId, long objectId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<Security> list = getRemoteDelegate().selectByObject(getDomainContext(), objectClassId, objectId);
         configureRemoteObjects(getDomainContext(), list);
@@ -484,7 +481,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -521,7 +517,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByObjectClass(String objectClassName) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<Security> list = getRemoteDelegate().selectByObjectClass(getDomainContext(), objectClassName);
         configureRemoteObjects(getDomainContext(), list);
@@ -531,7 +526,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_OBJECT_CLASS_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -564,7 +558,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   @Override
   public TrackedList<Security> selectByDomainContext(int domainContextClassId, long domainContextId) {
     if (getSession().isRemote())  {
-      // invoke remote method
       try {
         TrackedList<Security> list = getRemoteDelegate().selectByDomainContext(getDomainContext(), domainContextClassId, domainContextId);
         configureRemoteObjects(getDomainContext(), list);
@@ -574,7 +567,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-    // else: local mode
     PreparedStatementWrapper st = getPreparedStatement(SELECT_BY_DOMAIN_CONTEXT_STMT,
       () -> {
         StringBuilder sql = createSelectAllInnerSql();
@@ -1081,27 +1073,16 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
    */
   protected void revertAttributesToSnapshot(SecurityPersistenceImpl snapshot) {
     super.revertAttributesToSnapshot(snapshot);
-    // the protected classname, null if an entity
     objectClassName = snapshot.objectClassName;
-    // the protected object's class id, 0 if not an entity
     objectClassId = snapshot.objectClassId;
-    // the id of the protected object, 0 if all instances or not an entity
     objectId = snapshot.objectId;
-    // the class id of the DomainContext's context entity, 0 if all contexts
     domainContextClassId = snapshot.domainContextClassId;
-    // the id of DomainContext's context object, 0 if all instances
     domainContextId = snapshot.domainContextId;
-    // the class id of the entity the permissions are granted to, null if all classes
     granteeClassId = snapshot.granteeClassId;
-    // the id of the entity the permissions are granted to, 0 if all grantees
     granteeId = snapshot.granteeId;
-    // the priority or evaluation order, 0 is highest or first
     priority = snapshot.priority;
-    // the permissions as a comma-separated list
     permissions = snapshot.permissions;
-    // the false if denied, true if allowed
     allowed = snapshot.allowed;
-    // the user message
     message = snapshot.message;
   }
 
