@@ -195,7 +195,7 @@ public class ModelWurblet extends AbstractWurblet {
       // may be an abstract class (if inheritance is used)
       pdoClassName = getContainer().getProperty(Wurbler.PROPSPACE_WURBLET, JavaSourceType.DEFINITION);
       if (pdoClassName != null) {
-        /**
+        /*
          * If something of:
          * extends AbstractPersistentObject<Adresse, AdressePersistenceImpl> implements AdressePersistence
          * or
@@ -690,9 +690,7 @@ public class ModelWurblet extends AbstractWurblet {
       remote = false;
     }
 
-    /**
-     * Throw delayed wurbel execption if the real cause is related to this entity
-     */
+    // Throw delayed wurbel execption if the real cause is related to this entity
     if (model instanceof TentackleWurbletsModel && entity != null) {
       WurbelException wex = ((TentackleWurbletsModel) model).getLoadingException();
       if (wex != null && wex.getCause() instanceof ModelException) {

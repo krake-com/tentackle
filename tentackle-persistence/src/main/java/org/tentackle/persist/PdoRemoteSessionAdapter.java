@@ -59,7 +59,7 @@ public class PdoRemoteSessionAdapter extends RemoteSessionAdapter implements Pdo
     }
     T adapter = ServiceFactory.createService(extIf);
     try {
-      /**
+      /*
        * The adapter must implement DomainContextDependable and thus provides the method:
        * void setDomainContext(DomainContext context)
        */

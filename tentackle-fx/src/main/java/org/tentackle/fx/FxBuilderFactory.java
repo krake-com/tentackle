@@ -73,7 +73,7 @@ public class FxBuilderFactory implements BuilderFactory {
     Class<?> builderClass = builderMap.get(type);
     if (builderClass != null) {
       try {
-        /**
+        /*
          * We always return a new builder instance, which is used only once
          * and not cached by FXMLLoader in any way.
          * This allows the builder to extend BeanAdapter and wrap a single node.

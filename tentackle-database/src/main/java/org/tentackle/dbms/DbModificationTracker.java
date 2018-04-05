@@ -346,7 +346,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   public DbModificationTracker(String name) {
     super(name);
 
-    /**
+    /*
      * This is not a daemon thread!
      * As long as this thread is running the JVM will not terminate.
      */

@@ -673,7 +673,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
             }
             catch (RuntimeException rex) {
               LOGGER.severe("killing " + daemon.supervisedDaemon + " failed", rex);
-              /**
+              /*
                * If kill() sets isKilled first and then fails, kill will be tried only once.
                * If kill fails before setting isKilled killing will be retried over and over.
                * In both cases cleanup() will be invoked on the next round.

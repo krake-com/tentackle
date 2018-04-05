@@ -78,12 +78,12 @@ public class PdoTableContextMenuItemServiceAnnotationProcessor extends AbstractS
   }
 
 
-  private final TypeVisitor<Boolean, Void> pdoVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> pdoVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 1 &&
-             acceptTypeVisitor(typeList.get(0), PdoTableCell.class);
+              acceptTypeVisitor(typeList.get(0), PdoTableCell.class);
     }
   };
 

@@ -751,7 +751,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     for (;;) {    // repeat if key doesn't match
 
       if (usingMutexLocking) {
-        /**
+        /*
          * We don't need a 'synchronized(this)' here because
          * if there is already a lock only the same thread can lock it again.
          * If it is not the same thread the lock() below will block.
@@ -760,7 +760,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           assertAlive();
           assertNotKilled();
           try {
-            /**
+            /*
              * We don't use lock() here because the operation should be interruptable
              * (which is currently the case for termination or when a task has been added).
              * Interrupts will force to check whether the dispatcher is still alive,
@@ -882,7 +882,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     int lockingLevel;
 
     if (usingMutexLocking) {
-      /**
+      /*
        * We don't need a 'synchronized(this)' here because we can assume
        * that the same thread that locked the dispatcher will also unlock it.
        * If it is not the same thread or there is no lock at all

@@ -342,7 +342,7 @@ public class DateStringTranslator extends ValueStringTranslator<Date> {
             (str.indexOf('-') == 0 || str.indexOf('+') == 0 ||
              (slen <= 2 && StringHelper.isAllDigits(str)) ||
              "sSmMhHdDwWyY".indexOf(str.charAt(slen-1)) >= 0)) {
-          /**
+          /*
            * current +/-Nt expression, i.e. current time plus or minus
            * some seconds, minutes, hours, days, weeks, months or years.
            * E.g.: +1d

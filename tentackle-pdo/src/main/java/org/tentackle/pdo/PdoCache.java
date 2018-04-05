@@ -115,7 +115,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     LOGGER.fine("creating cache for {0}", clazz);
 
     // createPdo default index by object-ID.
-    idIndex = new PdoCacheIndex<T,Long>(ReflectionHelper.getClassBaseName(clazz) + ":ID") {
+    idIndex = new PdoCacheIndex<>(ReflectionHelper.getClassBaseName(clazz) + ":ID") {
 
       @Override
       public Long extract(T pdo) {
@@ -123,11 +123,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       }
 
       @Override
-      public T select(DomainContext context, Long id)  {
+      public T select(DomainContext context, Long id) {
         try {
           return Pdo.create(clazz, context).selectForCache(id);
         }
-        catch (RuntimeException ex)  {
+        catch (RuntimeException ex) {
           // what can we do??
           throw new PdoCacheException("creating cache object failed for " + clazz + ", ID=" + id, ex);
         }
@@ -334,9 +334,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    */
   public synchronized void expireByExpirationInfo(List<IdSerialTuple> expireSet, long curSerial)  {
 
-    /**
-     * Build a set of IDs and check for gaps in tableSerial
-     */
+    // Build a set of IDs and check for gaps in tableSerial
     boolean gapFound = false;
     long prevSerial  = -1;
     Set<Long> idSet  = new HashSet<>();
@@ -359,7 +357,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
 
 
     if (curSerial > 0 && curSerial - prevSerial > 1) {
-      /**
+      /*
        * if curSerial given:
        * no expirations at all (prevSerial == -1) or
        * a gap indicates that some objects have been deleted
@@ -368,7 +366,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     }
 
     if (gapFound) {
-      /**
+      /*
        * A gap was found, i.e. some objects have been deleted, or no modified objects
        * found at all or the current serial does not match the last tableserial of
        * modified objects:
@@ -391,9 +389,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       return;
     }
 
-    /**
-     * expire objects in cache and count how many such objects found
-     */
+    // expire objects in cache and count how many such objects found
     Set<Long> foundSet = new HashSet<>();     // holds the IDs that were found in cache
     List<T> objList = getObjects();           // check all objects in cache
     for (T object: objList) {
@@ -443,7 +439,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       }
     }
     else  {
-      /**
+      /*
        * _ALL_ objects in idSet were in cache and are now marked expired
        * because there is not a single uncached and all lists are the same size.
        * Thus we can keep all lists.
@@ -812,7 +808,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     if (isPreloading()) {
       DomainContext effectiveContext = processContext(context);
       if (!preloadedContexts.contains(effectiveContext)) {
-        /**
+        /*
          * if not already done for this context,
          * load all objects in context for all indexes
          */
@@ -955,7 +951,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * @return true if added, false if object already in cache
    */
   public boolean add(T pdo)  {
-    /**
+    /*
      * (notice: no initializeMinTableSerial() because we cannot guarantee that
      * the table hasn't been updated between fetching the object and invokation
      * of this method)
@@ -1216,7 +1212,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       }
       else {
         synchronized (this) {
-          /**
+          /*
            * list is cached. We cannot verify that there was no keychange in the
            * list. However, if the list is marked to be checked for expired
            * objects, we must scan the list for expired objects.
@@ -1264,9 +1260,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           }
         }
       }
-      /**
-       * wrap list to allow operations like sorting without affecting the cached lists.
-       */
+      // wrap list to allow operations like sorting without affecting the cached lists.
       all = new CopyOnWriteList<>(list);
     }
     else {

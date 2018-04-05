@@ -254,7 +254,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    */
   protected void presetSearchCriteria(T proxy, Class<?> udkClass, String v) {
     try {
-      /**
+      /*
        * Check if there is a factory method:
        *
        * <UdkClass>.lenientValueOf(String)

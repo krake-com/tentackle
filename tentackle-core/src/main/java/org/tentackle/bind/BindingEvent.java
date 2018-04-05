@@ -34,8 +34,6 @@ public class BindingEvent extends EventObject {
 
     /**
      * from model via getter to view.
-     *//**
-     * from model via getter to view.
      */
     TO_VIEW_VIA_GETTER,
 

@@ -99,36 +99,26 @@ public class BackendInfo {
 
       if (cndx < 6) {
         // database type not given: open temporary connection to get the URL
-        Connection tempCon = null;
-        try {
-          tempCon = jndiDataSource.getConnection();
+        try (Connection tempCon = jndiDataSource.getConnection()) {
           DatabaseMetaData metaData = tempCon.getMetaData();
           if (metaData == null) {
             throw new BackendException(
                     "Metadata of JNDI-connection cannot be determined. Please add the backend type: " +
-                    url + ":<backend-type>");
+                            url + ":<backend-type>");
           }
           String jndiURL = metaData.getURL();
           if (jndiURL == null) {
             throw new BackendException(
                     "URL of JNDI-connection cannot be determined. Please add the backend type: " +
-                    url + ":<backend-type>");
+                            url + ":<backend-type>");
           }
           backend = BackendFactory.getInstance().getBackendByUrl(jndiURL);
         }
-        catch(SQLException sqx) {
+        catch (SQLException sqx) {
           throw new BackendException("cannot retrieve metadata of JNDI source " + jndiName, sqx);
         }
-        finally {
-          if (tempCon != null) {
-            try {
-              tempCon.close();    // return to pool. The connections are managed by the ConnectionManager
-            }
-            catch (SQLException sqx) {
-              // ignore closing exception
-            }
-          }
-        }
+        // return to pool. The connections are managed by the ConnectionManager
+        // ignore closing exception
       }
       else  {
         backend = BackendFactory.getInstance().getBackendByUrl(url);

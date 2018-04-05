@@ -293,9 +293,7 @@ public class TableMigrator {
       columnsToDrop.put(column.getColumnName(), column);
     }
 
-    /**
-     * First guess by column name.
-     */
+    // first guess by column name.
     for (Attribute attribute: entity.getTableAttributes()) {
       if (!attribute.getOptions().isDerived()) {
         Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
@@ -317,7 +315,7 @@ public class TableMigrator {
       }
     }
 
-    /**
+    /*
      * attributesToAdd and columnsToDrop may contain columns that just need to be renamed.
      * rule: if a column is to drop and there is _one_ _exact_ type match in attributes to add,
      * this column is probably just renamed. Generate the rename statement, but keep the drop/add-
@@ -411,7 +409,7 @@ public class TableMigrator {
       }
     }
 
-    /**
+    /*
      * for all columns to drop and add:
      * some may be just renamed.
      * Check all permutations whether a hint applies.

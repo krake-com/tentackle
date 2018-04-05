@@ -121,7 +121,7 @@ public class ColumnMigrator {
     if (attribute != null) {
       DataType dataType = attribute.getEffectiveType();
 
-      /**
+      /*
        * round 1: only add missing columns and migrate only those with exact name match
        * round 2: migrate the rest
        */

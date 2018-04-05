@@ -769,7 +769,7 @@ public abstract class AbstractBackend implements Backend {
       if (joinFromNdx < 0) {
         throw new BackendException("missing FROM in '" + joinSelect + "'");
       }
-      buf.append(joinSelect.substring(0, joinFromNdx)).
+      buf.append(joinSelect, 0, joinFromNdx).
           append(",").append(joinSelectIdAlias).append(joinSelect.substring(joinFromNdx));
     }
     else  {

@@ -265,7 +265,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       if (con.isDead()) {
         // remove connection if dead and check to reopen
         cleanupDeadConnection(con);
-        /**
+        /*
          * Client crashed due to a dead server connection. This is a strong indicator that the database is facing some
          * severe problems. Because we don't know how many unattached connections are down we will probe them here. This
          * is a little time consuming but better than waiting for other clients to crash.
@@ -321,13 +321,13 @@ public class MpxConnectionManager extends DefaultConnectionManager {
             throw new PersistenceException(session,
                     "connection " + con + " has wrong index " + con.getIndex() + ", expected " + conIndex);
           }
-          /**
+          /*
            * If connection is detached for a long time (minMinutes/2), verify the connection first.
            * This is mainly for databases like MySQL that close connections after a certain time
            * of inactivity. For those databases it is recommended to set the idle-timeout to minTime.
            */
           if (System.currentTimeMillis() - con.getDetachedSince() > minMinutes * 30000L) {
-            /**
+            /*
              * Although this will block all threads from attaching/detaching a connection,
              * this is the preferred solution compared to an extra "verification thread",
              * because that thread would need some synchronisation on the connection object
@@ -350,7 +350,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         }
       }
 
-      /**
+      /*
        * continue unsyncd (allow other threads to use the connection manager).
        * In order not to stop all clients for the duration of establishing new connections
        * this is done in the connecThread. We will just trigger the thread and wait.
@@ -437,7 +437,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         }
         else {
           if (!con.getAutoCommit()) {
-            /**
+            /*
              * The connection has been detached even though a transaction is still running!
              * This is bad and indicates some MT problem or that some thread keeps on using
              * a Db even if there has been an exception causing a rollback.
@@ -668,7 +668,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           }
 
           if (mgr.conRequestCount > 0) {
-            /**
+            /*
              * Bring up connections. This will probably throw exceptions that we catch here and log.
              * There's not much more we can do.
              */

@@ -164,7 +164,7 @@ public class DbUtilities {
    * @return the policy
    */
   public ReconnectionPolicy<Db> createReconnectionPolicy(Db session, boolean blocking, long millis) {
-    return new ReconnectionPolicy<Db>() {
+    return new ReconnectionPolicy<>() {
 
       @Override
       public String toString() {

@@ -594,7 +594,7 @@ public class Db implements Session, Cloneable {
           rcon = (RemoteDbConnection) Naming.lookup(backendInfo.getUrl());
         }
 
-        /**
+        /*
          * Check that server matches expected version. The server checks the client's version in rcon.login() below. So,
          * we have a double check.
          */
@@ -2147,7 +2147,7 @@ public class Db implements Session, Cloneable {
             connectionInTransaction = true;
           }
           if (connectionInTransaction) {
-            /**
+            /*
              * If the physical connection is still running a transaction,
              * we need a low-level rollback and mark the connection dead
              * to avoid further use by the application.

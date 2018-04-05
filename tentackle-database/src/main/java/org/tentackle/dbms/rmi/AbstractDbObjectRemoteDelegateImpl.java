@@ -58,7 +58,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
 
   @Override
   public void initialize() {
-    /**
+    /*
      * instantiate a singe object and connect to db.
      * This object is used for all methods not returning a new object and thus
      * minimizes object construction.

@@ -363,7 +363,7 @@ public class DefaultDomainContext implements DomainContext {
       return this;
     }
 
-    /**
+    /*
      * Important:
      * we cannot invoke methods on rootEntity if we're in PDO creation because the delegate
      * being created is not yet available by the proxy's mixin.

@@ -92,7 +92,7 @@ public class ObjectId extends AbstractIdSource {
           () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_FROM + getName()
         );
 
-        /**
+        /*
          * Note: this will get the write-lock on objectid. Further nextId() will only increment the id without any
          * db-operation until the transaction gets closed and the final update is done.
          */

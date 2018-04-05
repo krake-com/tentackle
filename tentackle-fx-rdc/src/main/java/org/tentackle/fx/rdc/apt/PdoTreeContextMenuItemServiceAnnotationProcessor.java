@@ -78,12 +78,12 @@ public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractSe
   }
 
 
-  private final TypeVisitor<Boolean, Void> pdoVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> pdoVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 1 &&
-             acceptTypeVisitor(typeList.get(0), PdoTreeCell.class);
+              acceptTypeVisitor(typeList.get(0), PdoTreeCell.class);
     }
   };
 

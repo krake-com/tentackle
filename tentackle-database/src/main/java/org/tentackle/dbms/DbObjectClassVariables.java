@@ -79,7 +79,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
         @SuppressWarnings("unchecked")
         DbObjectClassVariables<P> classVar = (DbObjectClassVariables<P>) CLASSMAP.get(variables.tableName);
         if (classVar != null) {
-          /**
+          /*
            * Using an extended class with the same tablename is okay.
            * This is because the class hierarchy will register along the extension path.
            * In all other cases the tablename must be unique.

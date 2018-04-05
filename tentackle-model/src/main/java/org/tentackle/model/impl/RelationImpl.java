@@ -278,7 +278,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
         case DEFAULT:
           break;    // do nothing, just white noise (looks better ;))
 
-        /** property relation = ... */
+        // property relation = ...
         case RELATION:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
@@ -335,7 +335,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property select = ... */
+        // property select = ...
         case SELECT:
           boolean pipeFound = false;
           while (stok.hasMoreTokens()) {
@@ -374,7 +374,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property delete = ... */
+        // property delete = ...
         case DELETE:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
@@ -389,7 +389,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property link = ... */
+        // property link = ...
         case LINK:
           while (stok.hasMoreTokens()) {
             String token = stok.nextToken();
@@ -405,7 +405,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property args = ... */
+        // property args = ...
         case ARGS:
           OptionParser op = new OptionParser(entry.getValue(), false);
           String nextArg;
@@ -417,12 +417,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property method = ... */
+        // property method = ...
         case METHOD:
           setMethodName(entry.getValue());
           break;
 
-        /** property nm = ... */
+        // property nm = ...
         case NM:
           setNmName(stok.nextToken());
           if (stok.hasMoreTokens()) {
@@ -430,12 +430,12 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property name = ... */
+        // property name = ...
         case NAME:
           setName(entry.getValue());
           break;
 
-        /** property scope = ... */
+        // property scope = ... *
         case SCOPE:
           try {
             setAccessScope(AccessScope.valueOf(entry.getValue().toUpperCase()));
@@ -445,7 +445,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           }
           break;
 
-        /** property count = ... */
+        // property count = ...
         case COUNT:
           Attribute ca = entity.getAttributeByJavaName(entry.getValue(), false);
           if (ca == null) {
@@ -461,7 +461,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
           setCountAttribute(ca);
           break;
 
-        /** property comment = ... */
+        // property comment = ...
         case COMMENT:
           setComment(entry.getValue());
           break;

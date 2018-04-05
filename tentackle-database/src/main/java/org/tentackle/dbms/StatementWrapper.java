@@ -309,7 +309,7 @@ public class StatementWrapper implements AutoCloseable {
         throw new ConstraintException(db, this.toString(), e);
       }
       else  {
-        /**
+        /*
          * due to the fact that sqlstates for "access violation" are mixed with syntax-error codes
          * we cannot detect such violations. Even worse, each DBMS got its own set of codes.
          * Postgres, for example, startswith 42. Others return 37, 2A or alike.

@@ -399,7 +399,7 @@ public class DbTransaction {
    */
   public void invokeCommitTxRunnables() {
     if (commitTxRunnables != null) {
-      /**
+      /*
        * execute pending runnables.
        * Notice: the runnables should throw DbRuntimeException on failure!
        */
@@ -416,7 +416,7 @@ public class DbTransaction {
    */
   public void invokeRollbackTxRunnables() {
     if (rollbackTxRunnables != null) {
-      /**
+      /*
        * execute pending runnables.
        * Notice: the runnables should throw DbRuntimeException on failure!
        */

@@ -239,7 +239,7 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   public int compareTo(StatementStatistics o) {
     int rv = Compare.compare(sql, o.sql);
     if (rv == 0) {
-      /**
+      /*
        * Because statistics are only created for unequal parameters
        * it is sufficient to compare the instanceNumber
        */

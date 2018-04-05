@@ -67,7 +67,7 @@ public class DefaultDbPool implements SessionPool {
      * Creates a pooled db.
      */
     private PooledSession() {
-      /**
+      /*
        * Important: userInfo must be cloned because otherwise changes
        * to the userinfo would affect all instances simultaneously.
        */

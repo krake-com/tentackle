@@ -277,7 +277,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
     objectId = object.getId();
 
-    /**
+    /*
      * The modlog's serial should reflect the serial of the object.
      * The modlog is inserted _after_ the object has been modified in the db.
      * Because the modlog's serial will be incremented during save(), we need to subtract 1

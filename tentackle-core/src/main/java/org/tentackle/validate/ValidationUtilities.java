@@ -603,7 +603,7 @@ public class ValidationUtilities {
     if (mappers != null) {
       // translate validation path to binding path and optionally switch to other binders
       for (;;) {
-        /**
+        /*
          * The bindingpath from the results is always longer than the bindingpath of the validation mapper, hence
          * lowerEntry.
          */
@@ -859,7 +859,7 @@ public class ValidationUtilities {
         Class<? extends Annotation> repeatedAnnoClazz = ((RepeatableValidation) anno).value();
         Annotation[] repeatedAnnotations = element.getAnnotationsByType(repeatedAnnoClazz);   // this returns proxies!
         int validationIndex = 0;
-        /**
+        /*
          * We need to analyze the annotations of repeatedAnnotations again, because the
          * returned proxies are not instanceof Validation. (is this a bug in Java8?)
          */

@@ -231,7 +231,7 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public DatabaseMetaData[] getMetaData(BackendInfo backendInfo) throws SQLException {
     if (backendInfo.getSchemas() != null) {
-      /**
+      /*
        * MySQL interprets schemas as databases.
        * We need a connection for each schema!
        */

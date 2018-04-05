@@ -219,9 +219,7 @@ public class Query {
     // apply parameters to statement
     apply(db, st);
 
-    /**
-     * set fetchsize and maxrows if != 0
-     */
+    // set fetchsize and maxrows if != 0
     if (fetchSize != 0) {
       st.setFetchSize(fetchSize);
     }
@@ -229,7 +227,7 @@ public class Query {
       st.setMaxRows(maxRows);
     }
 
-    /**
+    /*
      * for postgres: run the query in an extra tx. Otherwise postgres will ignore fetchsize
      * and load everything into memory.
      */

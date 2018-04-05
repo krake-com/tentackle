@@ -79,7 +79,7 @@ public abstract class AbstractBuilder<T> extends BeanAdapter implements Builder<
 
   @Override
   public Object get(Object key) {
-    /**
+    /*
      * FXML-Loader treats inner elements as readonly and does not allow null-values.
      * This hack allows a builder to be used in such cases.
      */

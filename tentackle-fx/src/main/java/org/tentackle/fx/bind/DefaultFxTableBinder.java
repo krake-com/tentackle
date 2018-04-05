@@ -153,7 +153,7 @@ public class DefaultFxTableBinder<S> extends AbstractBinder implements FxTableBi
   @Override
   protected int doBind(BindingMember[] parents, String parentMemberPath, Class<?> parentClass, boolean declaredOnly) {
 
-    /**
+    /*
      * To detect recursion loops:
      * we don't need to recursively walk down the binding path more
      * than the max binding path length of all components in the container.

@@ -95,7 +95,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
 
     List<KeyEvent> mappedEvents = new ArrayList<>();
 
-    control.addEventFilter(KeyEvent.ANY, new EventHandler<KeyEvent>() {
+    control.addEventFilter(KeyEvent.ANY, new EventHandler<>() {
       @Override
       public void handle(KeyEvent event) {
         if (mappedEvents.remove(event)) {

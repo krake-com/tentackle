@@ -492,7 +492,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
   @Override
   public void setLong (int p, long l) {
     if (getAttachedSession().getBackend().needSetLongWorkaround()) {
-      /**
+      /*
        * long is translated to varchar in update statements by the Ingres JDBC-driver for some obscure reason.
        * Insert statements, however, work with long.
        * So, we simply translate it here to int (which is not ok, but there's no other workaround so far)

@@ -75,8 +75,8 @@ public class PdoFactoryTest {
 
     Assert.assertTrue(invoice instanceof Invoice);
     Assert.assertTrue(SingleInvoice.class.isAssignableFrom(invoice.getClass()));
-    Assert.assertFalse(SingleInvoice.class.equals(invoice.getClass()));
-    Assert.assertTrue(SingleInvoice.class.equals(invoice.getEffectiveClass()));
+    Assert.assertNotEquals(SingleInvoice.class, invoice.getClass());
+    Assert.assertEquals(SingleInvoice.class, invoice.getEffectiveClass());
     invoice.setInvoiceNo("HarrHarr");
     Assert.assertEquals("1234.00", invoice.getSumAsString());
     Assert.assertEquals("1234.00", LogItInterceptor.lastResult);

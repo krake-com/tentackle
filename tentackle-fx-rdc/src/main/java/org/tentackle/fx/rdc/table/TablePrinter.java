@@ -175,7 +175,7 @@ public class TablePrinter extends AbstractFxController {
       TableColumnConfiguration<S, T> columnConfig = fxColumn.getConfiguration();
       if (totalsRowCount > 0 && columnConfig != null) {
         // replace by cell aware of totals
-        cell = new FxTableCell<S, T>(columnConfig) {
+        cell = new FxTableCell<>(columnConfig) {
           @Override
           protected void updateItem(T item, boolean empty) {
             int index = rowOffset + getIndex();

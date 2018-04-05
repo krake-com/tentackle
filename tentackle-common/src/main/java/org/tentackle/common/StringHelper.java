@@ -816,7 +816,7 @@ public final class StringHelper {
     if (str != null)  {
       len = str.length();
       if (len > length) {
-        buf.append(str.substring(0, length));
+        buf.append(str, 0, length);
         len = length;
       }
       else  {
@@ -858,7 +858,7 @@ public final class StringHelper {
     if (str != null)  {
       len = str.length();
       if (len > length) {
-        buf.append(str.substring(0, length));
+        buf.append(str, 0, length);
         len = length;
       }
       else  {

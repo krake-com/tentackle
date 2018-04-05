@@ -91,7 +91,7 @@ public class CompressedSocket extends Socket {
       in.close();
       in = null;
     }
-    /**
+    /*
      * notice that super.close() may invoke out.close() and in.close() again
      * depending on the implementation of SocketImpl in Socket.
      * However, the CompressedIn/OutputStream can deal with that.

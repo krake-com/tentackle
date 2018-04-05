@@ -101,23 +101,23 @@ public class PersistentOperationServiceAnnotationProcessor extends AbstractServi
 
 
 
-  private final TypeVisitor<Boolean, Void> opContextVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> opContextVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 2 &&
-             acceptTypeVisitor(typeList.get(0), Operation.class) &&
-             acceptTypeVisitor(typeList.get(1), DomainContext.class);
+              acceptTypeVisitor(typeList.get(0), Operation.class) &&
+              acceptTypeVisitor(typeList.get(1), DomainContext.class);
     }
   };
 
-  private final TypeVisitor<Boolean, Void> opSessionVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> opSessionVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 2 &&
-             acceptTypeVisitor(typeList.get(0), Operation.class) &&
-             acceptTypeVisitor(typeList.get(1), Session.class);
+              acceptTypeVisitor(typeList.get(0), Operation.class) &&
+              acceptTypeVisitor(typeList.get(1), Session.class);
     }
   };
 }

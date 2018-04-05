@@ -124,7 +124,7 @@ public class Binary<T> implements Serializable, Cloneable {
     if (stream == null) {
       return null;
     }
-    try {
+    try (stream) {
       Binary<?> b = new Binary<>();
       if (bufSize <= 0) {
         bufSize = Binary.INITIAL_SIZE;
@@ -141,9 +141,6 @@ public class Binary<T> implements Serializable, Cloneable {
         }
       }
       return b.length == 0 ? null : b;
-    }
-    finally {
-      stream.close();
     }
   }
 

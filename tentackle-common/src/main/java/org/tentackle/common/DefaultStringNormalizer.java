@@ -105,7 +105,7 @@ public class DefaultStringNormalizer implements Function<String,String> {
           c = WORD_SEPARATOR;    // keep space to separate words and inhibit reduction below
         }
 
-        /**
+        /*
          * convert certain character sequences.
          * This should work with all western languages sufficiently.
          */
@@ -136,7 +136,7 @@ public class DefaultStringNormalizer implements Function<String,String> {
           }
         }
 
-        /**
+        /*
          * Map certain characters phonetically.
          * This should work with all western languages sufficiently.
          */

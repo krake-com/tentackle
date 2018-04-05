@@ -1354,7 +1354,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         }
       }
       else  {
-        /**
+        /*
          * else local.
          *
          * Notice that some dbms don't provide a select for update. In this case,

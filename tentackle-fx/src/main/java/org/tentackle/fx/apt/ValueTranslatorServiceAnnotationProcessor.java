@@ -80,23 +80,23 @@ public class ValueTranslatorServiceAnnotationProcessor extends AbstractServiceAn
   }
 
 
-  private final TypeVisitor<Boolean, Void> componentVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> componentVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 1 &&
-             acceptTypeVisitor(typeList.get(0), FxComponent.class);
+              acceptTypeVisitor(typeList.get(0), FxComponent.class);
     }
   };
 
-  private final TypeVisitor<Boolean, Void> componentClassVisitor = new SimpleTypeVisitor8<Boolean, Void>() {
+  private final TypeVisitor<Boolean, Void> componentClassVisitor = new SimpleTypeVisitor8<>() {
     @Override
     public Boolean visitExecutable(ExecutableType t, Void v) {
       List<? extends TypeMirror> typeList = t.getParameterTypes();
       return typeList.size() == 2 &&
-             acceptTypeVisitor(typeList.get(0), FxComponent.class) &&
-             // m.accept does not work with Class.class
-             typeUtils.erasure(typeList.get(1)).toString().equals("java.lang.Class");
+              acceptTypeVisitor(typeList.get(0), FxComponent.class) &&
+              // m.accept does not work with Class.class
+              typeUtils.erasure(typeList.get(1)).toString().equals("java.lang.Class");
     }
   };
 

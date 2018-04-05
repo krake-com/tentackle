@@ -267,7 +267,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
     synchronized(this) {
       int id = addDb(session);
-      /**
+      /*
        * because we add the connections in the same order as the db (1:1 mapping), the
        * index returned after adding the conncetion must be the same as for the db.
        */
@@ -317,7 +317,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 
   @Override
   public void attach(Db session) {
-    /**
+    /*
      * The happy path is synchronized only once.
      * Only in case of a dead or expired connection, we need a second synchronized block.
      * However, the lengthy close and reopen are not synchronized and therefore will not block other

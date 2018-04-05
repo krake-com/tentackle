@@ -552,7 +552,7 @@ public class ModelImpl implements Model {
     // determine deep references and set rootid,rootclassid options
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
-      /**
+      /*
        * The entity should provide a root class id if it is a composite of more than one root entities
        * and holds exactly one root attribute column (2 means N:M relation, for example).
        */
@@ -755,9 +755,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    /**
-     * generate the table aliases.
-     */
+    // generate the table aliases.
     Map<String,Entity> aliasMap = new HashMap<>();
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();

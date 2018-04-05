@@ -367,15 +367,15 @@ public class DefaultFxFactory implements FxFactory {
         preloadClasses.add(clazz);
       }
     }
-    javafx.concurrent.Service<Void> preloadSvc = new javafx.concurrent.Service<Void>() {
+    javafx.concurrent.Service<Void> preloadSvc = new javafx.concurrent.Service<>() {
 
       @Override
       protected Task<Void> createTask() {
-        return new Task<Void>() {
+        return new Task<>() {
 
           @Override
           protected Void call() throws Exception {
-            for (Class<FxController> clazz: preloadClasses) {
+            for (Class<FxController> clazz : preloadClasses) {
               createController(clazz, null, null, null);
             }
             return null;

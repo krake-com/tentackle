@@ -205,7 +205,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
     try {
       if (cause instanceof RemoteException) {
-        /**
+        /*
          * log the exception on the server as well.
          * We use the info level because this exception
          * is meant for the client.
@@ -402,7 +402,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
     RemoteDbSessionImpl serverSession = delegate.getServerSession();
 
-    /**
+    /*
      * Because RMI requests may be executed by different threads (from the RMI's threadpool)
      * we must make sure that successive invocations using the same session (mapped 1:1 to the Db instances)
      * see each other's modifications. Hence, we synchronize on the session.

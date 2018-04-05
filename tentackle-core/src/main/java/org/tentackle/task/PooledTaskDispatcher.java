@@ -341,7 +341,7 @@ public class PooledTaskDispatcher extends AbstractPooledTaskDispatcher {
    * @return the dispatcher to use
    */
   private TaskDispatcher getDispatcherForKey(Object key) {
-    /**
+    /*
      * Key null is always assigned to dispatcher 0.
      * The rest is assigned modulo poolsize.
      */

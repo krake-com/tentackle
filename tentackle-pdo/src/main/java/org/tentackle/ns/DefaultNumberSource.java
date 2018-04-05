@@ -105,7 +105,7 @@ public class DefaultNumberSource implements NumberSource {
 
   @Override
   public synchronized long popNumber() {
-    /**
+    /*
      * As this is by far the most often used method, it is
      * implemented to be as fast as possible.
      * The happy path is:

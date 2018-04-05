@@ -302,7 +302,7 @@ public class ResultSetCursor<T extends PersistentDomainObject<T>> implements Scr
       noNext = true;
     }
 
-    /**
+    /*
      * some drivers don't allow positioning in resultsets that are not TYPE_FORWARD_ONLY. However, first() is a
      * convenient way to test whether the result set contains some data at all. If the cursor is at the beginning or no
      * access made at all, we will do nothing or perform a next() instead.

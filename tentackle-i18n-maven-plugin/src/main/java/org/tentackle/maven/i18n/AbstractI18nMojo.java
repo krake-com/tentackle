@@ -19,12 +19,10 @@
 package org.tentackle.maven.i18n;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -32,8 +30,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.i18n.StoredBundleControlProvider;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;

@@ -1024,7 +1024,7 @@ public class DbModelWurblet extends ModelWurblet {
     if (relation.getForeignEntity().isAbstract() &&
         relation.getRelationType() == RelationType.OBJECT &&
         relation.getMethodName() == null) {
-      /**
+      /*
        * we need a cast for object relations of type T and methods "select" or "selectCached" (i.e. from framework).
        * Ex.:
        *

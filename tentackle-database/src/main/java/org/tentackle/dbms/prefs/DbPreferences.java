@@ -639,6 +639,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    */
   protected void exportImpl(OutputStream os, boolean subtree) {
     try {
+      // @todo: doesnt work with jigsaw, needs --add-opens
       Method exportMethod = Class.forName("java.util.prefs.XmlSupport").
               getDeclaredMethod("export", OutputStream.class, Preferences.class, Boolean.TYPE);
       exportMethod.setAccessible(true);               // it's package scope!

@@ -675,7 +675,7 @@ public class RemoteMethodInfo {
     Matcher matcher = FQCN_PATTERN.matcher(type);
     int lastNdx = 0;
     while (matcher.find()) {
-      buf.append(type.substring(lastNdx, matcher.start()));
+      buf.append(type, lastNdx, matcher.start());
       String name = type.substring(matcher.start(), matcher.end());
       int dotNdx = name.lastIndexOf('.');   // at least one dot!
       buf.append(name.substring(dotNdx + 1));

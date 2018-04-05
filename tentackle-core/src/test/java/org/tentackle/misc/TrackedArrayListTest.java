@@ -41,7 +41,7 @@ public class TrackedArrayListTest {
     TrackedArrayList<Integer> addedList = new TrackedArrayList<>();
     TrackedArrayList<Integer> removedList = new TrackedArrayList<>();
 
-    TrackedListListener<Integer> listener = new TrackedListListener<Integer>() {
+    TrackedListListener<Integer> listener = new TrackedListListener<>() {
 
       @Override
       public void added(Integer element) {
@@ -56,7 +56,7 @@ public class TrackedArrayListTest {
 
     list.addListener(listener);
 
-    addedList.addListener(new TrackedListListener<Integer>() {
+    addedList.addListener(new TrackedListListener<>() {
 
       @Override
       public void added(Integer element) {
@@ -71,7 +71,7 @@ public class TrackedArrayListTest {
       }
     });
 
-    removedList.addListener(new TrackedListListener<Integer>() {
+    removedList.addListener(new TrackedListListener<>() {
 
       @Override
       public void added(Integer element) {

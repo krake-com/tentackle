@@ -74,7 +74,7 @@ public class InterceptionUtilities {
         clazz.isAssignableFrom(declaringClass)) {  // extending a given interface (e.g. Interceptable)
 
       for (Annotation annotation : method.getAnnotations()) {
-        /**
+        /*
          * in dynamic proxies the returned annotations are proxies as well.
          * Therefore we must load the real annotation by annotationType() and not getClass()!
          */
@@ -92,7 +92,7 @@ public class InterceptionUtilities {
         clazz.isAssignableFrom(implMethod.getDeclaringClass())) {  // extending a given interface (e.g. Interceptable)
 
       for (Annotation annotation : implMethod.getAnnotations()) {
-        /**
+        /*
          * in dynamic proxies the returned annotations are proxies as well.
          * Therefore we must load the real annotation by annotationType() and not getClass()!
          */

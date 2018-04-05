@@ -125,7 +125,7 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
    * @param session the persistence session to release
    */
   public void putSession(Session session) {
-    /**
+    /*
      * dereference user info (possible target for the GC).
      * If (due to tight memory or timeout) the userinfo gets garbage
      * collected the user must login again.

@@ -78,7 +78,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   @Override
   @SuppressWarnings("unchecked")
   public void initialize() {
-    /**
+    /*
      * Try to set a default context.
      * This will fail in apps that extend the domain context, but is useful for other apps.
      * We ignore any thrown exception safely.
@@ -87,7 +87,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       pdo = newInstance(Pdo.createDomainContext(getSession()));
     }
     catch (RuntimeException e) {
-      /**
+      /*
        * Application requires extended contextdb.
        * Leave the dbObject as it is for simple methods.
        * In all other cases, the application must pass the context via the remote method

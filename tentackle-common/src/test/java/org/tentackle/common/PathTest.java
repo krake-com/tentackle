@@ -126,7 +126,7 @@ public class PathTest {
             new StringPath("a1", "b2", "cX", "dX"),
             new StringPath("a1", "b2"));
 
-    /**
+    /*
      * expected result:
      *
      * a1 -- b1 -- c1 -- d1 -- eX

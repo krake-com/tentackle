@@ -473,9 +473,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       }
     }
     else {
-      if (getNode().getStyleClass().contains(MANDATORY_STYLE)) {
-        getNode().getStyleClass().remove(MANDATORY_STYLE);
-      }
+      getNode().getStyleClass().remove(MANDATORY_STYLE);
     }
   }
 

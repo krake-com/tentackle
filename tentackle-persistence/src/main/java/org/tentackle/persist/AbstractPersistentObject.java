@@ -2708,7 +2708,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   protected boolean isUpdateNecessary() {
-    /**
+    /*
      * if editedBy or renewTokenLock is set, the token lock must be updated
      * even if the attributes were not changed.
      */
@@ -2748,7 +2748,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void newId() {
     super.newId();
     if (!isRootEntity()) {
-      /**
+      /*
        * Is a component.
        * Retrieve the root-entity and classid if configured
        */
@@ -2830,7 +2830,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   protected void assertRootContext() {
     if (!getDomainContext().isRootContext()) {
-      /**
+      /*
        * This will also prevent components from being saved alone,
        * i.e. not from within their root entity.
        * (possible only in servers)
@@ -3131,7 +3131,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       clearOnRemoteSave();
       prepareSave();
 
-      /**
+      /*
        * We cannot invoke super.persistObject because we cannot
        * change the reference to the persistent object in the PDO proxy object.
        * Hence, we must transfer the whole PDO proxy and update the context/session on return.

@@ -118,7 +118,7 @@ public class FxButton extends Button implements InfoPopupSupported {
   @Override
   public void fire() {
     if (!isFocusTraversable() && !isCancelButton()) {
-      /**
+      /*
        * If the button is not focus traversable, it will not receive the focus when clicked.
        * As a consequence, an opposite FxComponent will not lose its focus which in turn
        * means, that the model is not updated. If the action handler of this button
