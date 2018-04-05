@@ -117,11 +117,6 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
 
 
   /**
-   * StoredBundle is referenced by:
-   * StoredBundle bundle via bundleId (Bundle)
-   */
-
-  /**
    * Gets composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys).
    *
    * @return keys Keys
