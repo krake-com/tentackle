@@ -9,21 +9,6 @@ For more options, see {\@link ModelWurblet}.
 }@
 @[
   private void wurbel() throws ModelException {
-    // create comment for referencing relations
-    List<Relation> referencingRelations = getEntity().getReferencingRelationsIncludingSubEntities();
-]@
-
-  /**
-   * @(getEntity())@ @(referencingRelations.isEmpty() ? "is not referenced by any other entity!" : "is referenced by:")@
-@[
-    for (Relation rel: referencingRelations) {
-]@
-   * @(rel)@
-@[
-    }
-]@
-   */
-@[
 
     for (Relation rel: getEntity().getRelations()) {
 

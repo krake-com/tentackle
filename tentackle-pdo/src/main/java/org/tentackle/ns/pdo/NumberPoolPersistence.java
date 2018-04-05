@@ -304,11 +304,6 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
 
 
   /**
-   * NumberPool is referenced by:
-   * NumberPool numberPool via numberPoolId (NumberPool)
-   */
-
-  /**
    * Gets composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange).
    *
    * @return numberRangeList NumberRange

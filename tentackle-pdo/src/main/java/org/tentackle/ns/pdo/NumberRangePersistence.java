@@ -150,11 +150,6 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
 
 
   /**
-   * NumberRange is referenced by:
-   * composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
-   */
-
-  /**
    * Gets NumberPool numberPool via numberPoolId (NumberPool).
    *
    * @return numberPool NumberPool
