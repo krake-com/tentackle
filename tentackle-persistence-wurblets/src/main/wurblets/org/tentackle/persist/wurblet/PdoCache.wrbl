@@ -384,7 +384,7 @@ For more options, see {\@link DbModelWurblet}.
         }
 ]@
 
-      @(name)@Index = new PdoCacheIndex<@(pdoName)@, @(type)@>("@(pdoName)@:@(name)@") {
+      @(name)@Index = new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
 
           \@Override
           public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
@@ -402,7 +402,7 @@ For more options, see {\@link DbModelWurblet}.
       if (genudk) {
 ]@
 
-      udkIndex = new PdoCacheIndex<@(pdoName)@, @(udkType)@>("@(pdoName)@:UDK") {
+      udkIndex = new PdoCacheIndex<>("@(pdoName)@:UDK") {
 
           \@Override
           public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
