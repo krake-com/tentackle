@@ -151,12 +151,6 @@
       </dependency>
 
       <dependency>
-        <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
-        <version>2.5</version>
-      </dependency>
-
-      <dependency>
         <groupId>log4j</groupId>
         <artifactId>log4j</artifactId>
         <version>1.2.17</version>
@@ -165,14 +159,14 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.10.0</version>
+        <version>2.11.0</version>
       </dependency>
       <!-- still not modularized -->
-<!--      <dependency>
+      <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
         <version>2.11.0</version>
-      </dependency>-->
+      </dependency>
 
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -413,8 +407,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[${javac.version.require},)</version>
-                  <message>[ERROR] The currently supported version of Java is ${javac.version.require} or higher</message>
+                  <version>[${javac.version.src},)</version>
+                  <message>[ERROR] The currently supported version of Java is ${javac.version.src} or higher</message>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>[${maven.version},)</version>
