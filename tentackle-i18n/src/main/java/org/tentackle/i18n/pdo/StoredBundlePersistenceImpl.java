@@ -539,7 +539,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     if (cache == null) {
       cache = Pdo.createPdoCache(StoredBundle.class, false, true, false);
 
-      udkIndex = new PdoCacheIndex<StoredBundle, StoredBundle.StoredBundleUDK>("StoredBundle:UDK") {
+      udkIndex = new PdoCacheIndex<>("StoredBundle:UDK") {
 
           @Override
           public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
