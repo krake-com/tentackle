@@ -472,7 +472,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (nmRel != null) {
 ]@
-      @(var)@.addListener(new TrackedListListener<@(rel.getClassName())@>() {
+      @(var)@.addListener(new TrackedListListener<>() {
 
         \@Override
         public void added(@(rel.getClassName())@ element) {
@@ -537,7 +537,7 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public TrackedList<@(nmType)@> get@(nmName)@() {
     if (@(nmVar)@ == null) {
-      @(nmVar)@ = new TrackedArrayList<@(nmType)@>() {
+      @(nmVar)@ = new TrackedArrayList<>() {
 
         \@Override
         public boolean isModified() {
@@ -549,7 +549,7 @@ For more options, see {\@link DbModelWurblet}.
         @(nmVar)@.add(obj.@(nmRel.getGetterName())@());
       }
 
-      @(nmVar)@.addListener(new TrackedListListener<@(nmType)@>() {
+      @(nmVar)@.addListener(new TrackedListListener<>() {
 
         \@Override
         public void added(@(nmType)@ element) {
