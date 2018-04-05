@@ -152,22 +152,6 @@ For more options, see {\@link DbModelWurblet}.
       generateDeleteComponents = generateIsComposite && (!useDatabaseRefInt || getEntity().isRootEntity());
     }
 
-
-    // dump what we read from source
-]@
-  /**
-   * # Relations for @(pdoName)@:
-   *
-@[
-    for (Relation rel: getEntity().getRelations()) {
-]@
-   * @(rel)@
-@[
-    }
-]@
-   */
-@[
-
     if (generateDeclarations) {
       // declarations
       for (Relation rel: getEntity().getRelations()) {
