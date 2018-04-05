@@ -17,25 +17,21 @@ For more options, see {\@link ModelWurblet}.
     }
     if (superUdk != null && !udk.isEmpty() && udk.equals(superUdk)) {
 ]@
-
   // @(getEntity())@ inherits from @(getEntity().getSuperEntity())@
 @[
     }
     else if (!getEntity().isRootEntity()) {
 ]@
-
   // @(getEntity())@ is not a root entity
 @[
     }
     else if (udk.isEmpty()) {
 ]@
-
   // no unique domain key defined for @(getEntity())@
 @[
     }
     else if (udk.size() == 1) {
 ]@
-
   // unique domain key for @(getEntity())@ is @(udk.get(0))@
 @[
     }
@@ -43,7 +39,6 @@ For more options, see {\@link ModelWurblet}.
       // public static is noise if within an interface
       String modifiers = isInterface() ? "" : "public static ";
 ]@
-
   /**
    * The unique domain key for @(getEntity())@.
    */
@@ -69,7 +64,6 @@ For more options, see {\@link ModelWurblet}.
     /** @(attr.getOptions().getComment())@. */
     public final @(attr.getJavaType())@ @(attr.getName())@;
 @[
-
       }
 ]@
 
