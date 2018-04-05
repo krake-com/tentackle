@@ -242,11 +242,7 @@ public class RemoteIncludes {
           }
           s.println(
                 "\n" +
-                "  /**\n" +
-                "   * Include wurblet-generated method declarations.\n" +
-                "   *\n" +
-                "   * @wurblet inclrmi Include --missingok .$classname/methods\n" +
-                "   */\n" +
+                "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
                 "}"
           );
         }
@@ -305,11 +301,7 @@ public class RemoteIncludes {
           }
           s.println(
                 "\n" +
-                "  /**\n" +
-                "   * Include wurblet-generated method declarations.\n" +
-                "   *\n" +
-                "   * @wurblet inclrmi Include --missingok .$classname/methods\n" +
-                "   */\n" +
+                "  // @wurblet inclrmi Include --missingok .$classname/methods\n" +
                 "}"
           );
         }
