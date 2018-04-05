@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -161,7 +161,7 @@ public class RemoteIncludes {
         // create it
         try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
-                "/**\n" +
+                "/*\n" +
                 " * " + fileName + " (generated " + new Date() + ")\n" +
                 " */\n\n" +
                 "package " + packageName + ".rmi;\n\n" +
@@ -258,9 +258,8 @@ public class RemoteIncludes {
         // primitive AbstractDbObjects
         try (PrintStream s = new PrintStream(file)) { // this is ok unbuffered for one time
           s.println(
-                "/**\n" +
-                " * " + fileName + "\n" +
-                " *\n" +
+                "/*\n" +
+                " * " + fileName + " (generated " + new Date() + ")\n" +
                 " */\n\n" +
                 "package " + packageName + ".rmi;\n\n" +
                 "import " + packageName + "." + className + ";\n" +

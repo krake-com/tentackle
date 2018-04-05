@@ -1,4 +1,4 @@
-/**
+/*
  * StoredBundleKeyRemoteDelegateImpl.java (generated Mon Apr 18 11:49:57 CEST 2016)
  */
 

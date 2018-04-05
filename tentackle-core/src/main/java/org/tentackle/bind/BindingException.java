@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  * Copyright (C) 2001-2008 Harald Krake, harald@krake.de, +49 7722 9508-0
  *

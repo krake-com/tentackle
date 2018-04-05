@@ -1,4 +1,4 @@
-/**
+/*
  * StoredBundleRemoteDelegate.java (generated Mon Apr 18 11:45:04 CEST 2016)
  */
 
