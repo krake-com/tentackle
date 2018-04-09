@@ -97,6 +97,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private int skippedEntites;
 
+  /**
+   * Migration hints per jdbc-Url.
+   */
+  private Map<String, MigrationHints> migrationHints;
+
 
   @Override
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
@@ -169,8 +174,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     }
   }
 
+  @Override
+  protected void validate() throws MojoExecutionException {
+    migrationHints = new HashMap<>();
+    super.validate();
+  }
 
-
+  @Override
+  protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
+    migrationHints.put(backendInfo.getUrl(),
+            backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs));
+  }
 
   @Override
   protected String getSqlFileName() {
