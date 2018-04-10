@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -182,11 +182,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected Map<String, BackendInfo> connectableBackendInfos;
 
   /**
-   * Migration hints per jdbc-Url.
-   */
-  protected Map<String, MigrationHints> migrationHints;
-
-  /**
    * The created SQL file.
    */
   protected File sqlFile;
@@ -366,7 +361,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
     findResourceDirs();
     backendInfos = new HashMap<>();
     connectableBackendInfos = new HashMap<>();
-    migrationHints = new HashMap<>();
 
     if (backendNames != null) {
       if ("all".equalsIgnoreCase(backendNames)) {
@@ -431,11 +425,22 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
         if (backendInfo.isConnectable()) {
           connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
-          migrationHints.put(backendInfo.getUrl(),
-                             backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs));
+          processBackend(backendParameter, backendInfo);
         }
       }
     }
+  }
+
+  /**
+   * Processes the backend.<br>
+   * Provided to be overridden in {@link MigrateSqlMojo}.
+   *
+   * @param backendParameter the backend parameter
+   * @param backendInfo the backend info
+   * @throws MojoExecutionException if failed
+   */
+  protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
+    // overridden in MigrateSqlMojo
   }
 
 
@@ -455,7 +460,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       openResources(backendInfo);
       try {
         // process files
-        if (filesets != null && filesets.size() > 0) {
+        if (filesets != null && !filesets.isEmpty()) {
           // explicit filesets given instead of model dir
           for (FileSet fileSet : filesets) {
             processFileSet(backendInfo, fileSet);

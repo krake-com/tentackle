@@ -97,6 +97,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    */
   private int skippedEntites;
 
+  /**
+   * Migration hints per jdbc-Url.
+   */
+  private Map<String, MigrationHints> migrationHints;
+
 
   @Override
   protected void openResources(BackendInfo backendInfo) throws MojoExecutionException {
@@ -169,8 +174,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     }
   }
 
+  @Override
+  protected void validate() throws MojoExecutionException {
+    migrationHints = new HashMap<>();
+    super.validate();
+  }
 
-
+  @Override
+  protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
+    migrationHints.put(backendInfo.getUrl(),
+            backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs));
+  }
 
   @Override
   protected String getSqlFileName() {
@@ -321,11 +335,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               // check if migration needs to be delayed
               boolean migrate = true;
               Collection<String> dependencies = backendMigrationHints.getDependencies(tableName);
-              if (dependencies != null && !dependencies.isEmpty()) {
-                if (isMigrationPending(dependencies, migratedTablenames)) {
-                  migrate = false;
-                  pendingMigrations.put(tableName, tableSql.toString());
-                }
+              if (dependencies != null && !dependencies.isEmpty() &&
+                  isMigrationPending(dependencies, migratedTablenames)) {
+                migrate = false;
+                pendingMigrations.put(tableName, tableSql.toString());
               }
 
               if (migrate) {  // no dependencies
@@ -356,7 +369,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       // process any still pending migration just one after the other.
       // obviously the dependencies are misordered, incomplete or whatever
       StringBuilder depErrors = new StringBuilder();
-      for (String pendingTablename: pendingMigrations.keySet()) {
+      for (Map.Entry<String,String> entry: pendingMigrations.entrySet()) {
+        String pendingTablename = entry.getKey();
         if (isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
           String msg = "dependency loop detected for " + pendingTablename + "! migration order may be not as expected!";
           getLog().error(msg);
@@ -365,7 +379,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           depErrors.append('\n');
           errorCount++;
         }
-        sqlCode.append(pendingMigrations.get(pendingTablename));
+        sqlCode.append(entry.getValue());
       }
 
       if (foreignKeySql.length() > 0) {
