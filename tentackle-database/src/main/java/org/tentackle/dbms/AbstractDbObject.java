@@ -361,10 +361,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("rawtypes")
   protected void revertAttributesToSnapshot(AbstractDbObject snapshot) {
-    // Important: no snapshot<P> cause of inheritance problems
-    id = snapshot.id;
-    serial = snapshot.serial;
-    tableSerial = snapshot.tableSerial;
+    // id, serial, tableSerial are not reverted because they can only be changed by a persistence operation
     modified = snapshot.modified;
     immutable = snapshot.immutable;
     session = snapshot.session;

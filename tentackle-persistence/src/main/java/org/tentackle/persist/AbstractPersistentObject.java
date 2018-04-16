@@ -47,6 +47,7 @@ import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
@@ -110,13 +111,12 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
  * @author harald
  */
 public abstract class AbstractPersistentObject<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
-       extends AbstractDbObject<P> implements PersistentObject<T>, EffectiveClassProvider<T> {
+       extends AbstractDbObject<P> implements PersistentObject<T>, EffectiveClassProvider<T>, Cloneable {
 
   private static final long serialVersionUID = 1921941642168910515L;
 
   private transient boolean contextImmutable;     // true if domain context cannot be changed anymore
   private T pdo;                                  // the pdo instance this is a delegate for
-  private transient T copiedObject;               // != null if this object is a "copy" of copiedObject
   private boolean persistable = true;             // true if persistable (default)
 
   @Persistent("userId of token lock holder")
@@ -160,9 +160,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   // snapshot
   private transient List<T> snapshots;            // taken snapshots, null if none
-  private transient Timestamp editedSinceSnapshot;
-  private transient Timestamp editedExpirySnapshot;
-  protected transient boolean objectIsSnapshot;   // true if this is a snapshot
+  private transient boolean objectIsCopy;         // true if this is a deep copy
+  private transient boolean objectIsSnapshot;     // true if this is a snapshot
 
 
   /** name of the editedBy column. */
@@ -314,6 +313,26 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     throw new NoSuchMethodException(methodName);
   }
 
+
+  /**
+   * Clones this persistent object.<br>
+   * The method is final to prevent applications from overriding it and
+   * spoiling the contract with {@link #createSnapshot()}.
+   *
+   * @return the cloned persistent object
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  protected final P clone() {
+    try {
+      return (P) super.clone();
+    }
+    catch (CloneNotSupportedException cnx) {
+      // shouldn't happen, but one never knows...
+      throw new UnsupportedOperationException(cnx.getMessage(), cnx);
+    }
+  }
+
   /**
    * Creates a snapshot of this object.
    * <p>
@@ -324,7 +343,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public T createSnapshot() {
-    T snapshot = on();
+    if (isCopy()) {
+      throw new PersistenceException("cannot create a snapshot from a copy");
+    }
+    if (isSnapshot()) {
+      throw new PersistenceException("cannot create a snapshot from a snapshot");
+    }
+    T snapshot = PdoFactory.getInstance().create(getPdoClass(), clone());
+    snapshot.setDomainContext(getDomainContext());
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
     // find implementing method (not the create...InSnapshot below!)
     Class<?> persistentClass = persistentSnapshot.getClass();
@@ -363,15 +389,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @SuppressWarnings("rawtypes")
   protected void createAttributesInSnapshot(AbstractPersistentObject snapshot) {
-    // Important: no snapshot<T,P> cause of inheritance problems
     super.createAttributesInSnapshot(snapshot);
     snapshot.objectIsSnapshot = true;
-    if (editedSince != null) {
-      snapshot.editedSinceSnapshot = (Timestamp) editedSince.clone();
-    }
-    if (editedExpiry != null) {
-      snapshot.editedExpirySnapshot = (Timestamp) editedExpiry.clone();
-    }
   }
 
   /**
@@ -382,7 +401,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @SuppressWarnings("rawtypes")
   protected void createComponentsInSnapshot(AbstractPersistentObject snapshot) {
-    // Important: no snapshot<T,P> cause of inheritance problems
     // default implementation does nothing
   }
 
@@ -399,31 +417,52 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public void revertToSnapshot(T snapshot) {
     if (snapshot != null) {
       assertValidSnapshot(snapshot);
-      PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
-      // find implementing method (not the create...InSnapshot below!)
-      Class<?> persistentClass = persistentSnapshot.getClass();
-      try {
-        Method revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", persistentClass);
-        try {
-          revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-        }
-        catch (IllegalAccessException ex) {
-          revertAttributesToSnapshotMethod.setAccessible(true);
-          revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-        }
+      applySnapshot(snapshot);
+    }
+  }
 
-        Method revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", persistentClass);
-        try {
-          revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
-        }
-        catch (IllegalAccessException ex) {
-          revertComponentsToSnapshotMethod.setAccessible(true);
-          revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
-        }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public T copy() {
+    T copiedPdo = on();
+    AbstractPersistentObject copiedPo = (P) copiedPdo.getPersistenceDelegate();
+    copiedPo.objectIsCopy = true;
+    copiedPo.applySnapshot(pdo.createSnapshot());
+    return copiedPdo;
+  }
+
+
+  /**
+   * Applies given snapshot.
+   *
+   * @param snapshot the snapshot to apply
+   */
+  private void applySnapshot(T snapshot) {
+    PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
+    // find implementing method (not the create...InSnapshot below!)
+    Class<?> persistentClass = persistentSnapshot.getClass();
+    try {
+      Method revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", persistentClass);
+      try {
+        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
       }
-      catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-        throw new PersistenceException(this, "reverting snapshot incorrectly implemented", ex);
+      catch (IllegalAccessException ex) {
+        revertAttributesToSnapshotMethod.setAccessible(true);
+        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
       }
+
+      Method revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", persistentClass);
+      try {
+        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+      catch (IllegalAccessException ex) {
+        revertComponentsToSnapshotMethod.setAccessible(true);
+        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+      }
+    }
+    catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+      throw new PersistenceException(this, "reverting snapshot incorrectly implemented", ex);
     }
   }
 
@@ -439,17 +478,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     super.revertAttributesToSnapshot(snapshot);
 
     contextImmutable = snapshot.contextImmutable;
-    copiedObject = (T) snapshot.copiedObject;
-    editedBy = snapshot.editedBy;
-    editedSince = snapshot.editedSince;
-    if (editedSince != null) {
-      editedSince.setTime(snapshot.editedSinceSnapshot.getTime());
-    }
-    editedExpiry = snapshot.editedExpiry;
-    if (editedExpiry != null) {
-      editedExpiry.setTime(snapshot.editedExpirySnapshot.getTime());
-    }
-    renewTokenLock = snapshot.renewTokenLock;
+    // the tokenlock fields edited... are not restored because they are only changed
+    // via a persistence operation
     cacheAccessCount = snapshot.cacheAccessCount;
     cacheAccessTime = snapshot.cacheAccessTime;
     expired = snapshot.expired;
@@ -472,21 +502,25 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
-  /**
-   * Returns whether this is a snapshot.
-   *
-   * @return true if this is a snapshot
-   */
   @Override
   public boolean isSnapshot() {
     return objectIsSnapshot;
   }
 
-  /**
-   * Gets all snapshots.
-   *
-   * @return the list of snapshots for this object, null if none taken so far
-   */
+  @Override
+  public boolean isCopy() {
+    return objectIsCopy;
+  }
+
+  @Override
+  public void setCopy(boolean copy) {
+    objectIsCopy = copy;
+    if (copy) {
+      snapshots = null;
+      objectIsSnapshot = false;
+    }
+  }
+
   @Override
   public List<T> getSnapshots() {
     return snapshots;
@@ -520,15 +554,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (!snapshot.isSnapshot()) {
       throw new PersistenceException(this, "not a snapshot");
     }
-    if (snapshots != null) {
-      for (T sh : snapshots) {
-        // we cannot use contains() because all snaphots have the same object ID
-        if (sh == snapshot) {
-          return;
+    if (!isCopy()) {
+      if (snapshots != null) {
+        for (T sh : snapshots) {
+          // we cannot use contains() because all snaphots have the same object ID
+          if (sh == snapshot) {
+            return;
+          }
         }
       }
+      throw new PersistenceException(this, "not my snapshot");
     }
-    throw new PersistenceException(this, "invalid snapshot");
   }
 
 
@@ -971,17 +1007,15 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Loads all components.<br>
-   *
-   * The method is used to transfer a copy of an object between tiers including all
-   * composite object relations recursively.
-   * Furthermore, it can be used to get a map of all components.
+   * {@inheritDoc}
+   * <p>
    * By default the method throws a PersistenceException telling that it is not implemented
    * if isComposite() returns true.
    *
    * @param onlyLoaded true if return only already loaded components (lazy composite relations)
    * @return the map of all components, including this object.
    */
+  @Override
   public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
     if (isComposite()) {
       throw new PersistenceException("method not implemented");
@@ -2987,12 +3021,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of delete bypassing the invocation handler.
    */
   protected void deleteImpl() {
+    snapshots = null;     // cannot be used after delete, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
       try {
         prepareDelete();
         getRemoteDelegate().deleteImpl(pdo);    // this will do delete() in server, i.e. all checks
-        setPersistable(false);    // pdo cannot be used anymore
+        setPersistable(false);                  // pdo cannot be used anymore
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -3017,6 +3052,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Implementation of save bypassing the invocation handler.
    */
   protected void saveImpl() {
+    snapshots = null;     // cannot be used after save, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
 
@@ -3124,6 +3160,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the persisted PDO
    */
   protected T persistImpl() {
+    snapshots = null;     // cannot be used after persist, clear to save bandwidth if remote
     if (getSession().isRemote())  {
       assertPersistable();
 

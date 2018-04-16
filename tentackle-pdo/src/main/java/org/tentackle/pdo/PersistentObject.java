@@ -24,6 +24,7 @@ import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Identifiable;
+import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.Modifiable;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.misc.SerialNumbered;
@@ -970,5 +971,16 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the cursor
    */
   ScrollableResource<T> selectByNormTextAsCursor(String normText);
+
+  /**
+   * Loads all components.<br>
+   * The method is used to transfer a copy of an object between tiers including all
+   * composite object relations recursively.
+   * Furthermore, it can be used to get a map of all components.
+   *
+   * @param onlyLoaded true if return only already loaded components (lazy composite relations)
+   * @return the map of all components, including this object.
+   */
+  IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded);
 
 }

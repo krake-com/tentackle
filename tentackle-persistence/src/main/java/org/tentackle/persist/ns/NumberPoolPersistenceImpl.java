@@ -759,6 +759,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     super.revertComponentsToSnapshot(snapshot);
     numberRangeList = snapshot.numberRangeList;
     if (numberRangeList != null) {
+      numberRangeList.setCopy(isCopy());
       numberRangeList.revertToSnapshot(snapshot.numberRangeListSnapshot);
     }
     numberRangeListLoaded = snapshot.numberRangeListLoaded;

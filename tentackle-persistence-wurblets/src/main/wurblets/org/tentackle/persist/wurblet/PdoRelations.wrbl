@@ -1503,18 +1503,10 @@ For more options, see {\@link DbModelWurblet}.
 ]@
     @(var)@ = snapshot.@(var)@;
 @[
-          if (rel.getRelationType() == RelationType.LIST) {
-            if (rel.isTracked()) {
+          if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
 ]@
     if (@(var)@ != null) {
-      @(var)@.revertToSnapshot(snapshot.@(var)@Snapshot);
-    }
-@[
-            }
-          }
-          else  {
-]@
-    if (@(var)@ != null) {
+      @(var)@.setCopy(isCopy());
       @(var)@.revertToSnapshot(snapshot.@(var)@Snapshot);
     }
 @[

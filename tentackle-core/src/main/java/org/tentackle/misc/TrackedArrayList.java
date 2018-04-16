@@ -50,6 +50,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private transient List<TrackedArrayList<E>> snapshots; // snapshots of this list
   private transient List<E> elementSnapshots;       // snapshots for the elements of this list (if this is a snapshot)
+  private transient boolean copied;                 // true if this list is a copy
 
   private transient List<TrackedListListener<E>> listeners;   // the listeners
 
@@ -107,31 +108,33 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @SuppressWarnings("unchecked")
   public TrackedArrayList<E> clone() {
     TrackedArrayList<E> nlist = (TrackedArrayList<E>) super.clone();
-    nlist.removedObjects = null;
-    nlist.snapshots = null;
-    nlist.elementSnapshots = null;
-    nlist.modified = false;
-    nlist.removed = false;
-    nlist.removedObjectsFiltered = false;
-    nlist.added = false;
-    nlist.immutable = false;
+    nlist.init();
+    nlist.copied = false;
     return nlist;
   }
 
 
   /**
    * Creates a new snapshot.<br>
-   * The snapshot is a copy of the list. It is not a snapshot
-   * for the objects and/or its referenced objects in the list!
+   * The snapshot is a copy of the list. If the objects maintained by the list
+   * are {@link Snapshotable}, they will be snaphotted as well. If not, their reference
+   * will be copied.<br>
    * Creating a snapshot is useful, for example, to temporarily add an object
    * and return to the state before the addition without changing the
-   * modification state of the list.
+   * modification state of the list.<br>
+   * Notice that snaphots cannot be taken from copies or snapshots!
    *
    * @return the new snapshot
    */
   @Override
   @SuppressWarnings("unchecked")
   public TrackedArrayList<E> createSnapshot() {
+    if (isCopy()) {
+      throw new TentackleRuntimeException("cannot create a snapshot from a copy");
+    }
+    if (isSnapshot()) {
+      throw new TentackleRuntimeException("cannot create a snapshot from a snapshot");
+    }
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
@@ -165,10 +168,12 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   /**
-   * Reverts to the given snapshot.
+   * Reverts to the given snapshot.<br>
+   * If this is a copy, the copies of the objects in the snapshot will be stored in this list.
+   * Otherwise the state of the list will be reverted to the snapshot's state.
    *
    * @param snapshot the snapshot created by {@link #createSnapshot()}, null if noop
-   * @throws TentackleRuntimeException if no such snapshot
+   * @throws TentackleRuntimeException if not a snapshot or not my snapshot and this is not a copy
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -177,42 +182,102 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       if (!snapshot.isSnapshot()) {
         throw new TentackleRuntimeException("not a snapshot");
       }
-      if (isMySnapshot(snapshot)) {
-        TrackedArrayList<E> mySnapshot = (TrackedArrayList<E>) snapshot;
+      if (isCopy()) {
+        // reverting a snapshot to a copy just creates copies from the objects in the snapshot
         super.clear();
-        // restore objects from snapshot.
-        // if object is a Snapshotable restore from elementsnapshots.
-        int i = 0;
-        for (E obj: snapshot) {
+        for (E obj: ((TrackedArrayList<E>) snapshot).elementSnapshots) {
           if (obj instanceof Snapshotable) {
             if (LOGGER.isFineLoggable()) {
-              LOGGER.fine("reverting to snapshot for " +
-                          (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+              LOGGER.fine("reverting to copy for " +
+                      (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
-            ((Snapshotable<E>) obj).revertToSnapshot(mySnapshot.elementSnapshots.get(i));
+            super.add(((Snapshotable<E>) obj).copy());
           }
-          else  {
+          else {
             if (LOGGER.isFineLoggable()) {
-              LOGGER.fine("caution: not a snapshotCapable! reverting to reference for " +
-                          (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+              LOGGER.fine("caution: not a Snapshotable! reverting to reference for " +
+                      (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
+            super.add(obj);
           }
-          super.add(obj);
-          ++i;
         }
-        removedObjects = mySnapshot.removedObjects;
-        removedObjectsFiltered = mySnapshot.removedObjectsFiltered;
-        modified = mySnapshot.modified;
-        removed = mySnapshot.removed;
-        added = mySnapshot.added;
-        immutable = mySnapshot.immutable;
-        snapshots = mySnapshot.snapshots;
-        simpleEqualsAndHashCode = mySnapshot.simpleEqualsAndHashCode;
+        init();
       }
-      else  {
-        throw new TentackleRuntimeException("no such snapshot");
+      else {
+        if (isMySnapshot(snapshot)) {
+          TrackedArrayList<E> mySnapshot = (TrackedArrayList<E>) snapshot;
+          super.clear();
+          // restore objects from snapshot.
+          // if object is a Snapshotable restore from elementsnapshots.
+          int i = 0;
+          for (E obj : snapshot) {
+            if (obj instanceof Snapshotable) {
+              if (LOGGER.isFineLoggable()) {
+                LOGGER.fine("reverting to snapshot for " +
+                        (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+              }
+              ((Snapshotable<E>) obj).revertToSnapshot(mySnapshot.elementSnapshots.get(i));
+            }
+            else if (LOGGER.isFineLoggable()) {
+              LOGGER.fine("caution: not a Snapshotable! reverting to reference for " +
+                      (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+            }
+            super.add(obj);
+            ++i;
+          }
+          removedObjects = mySnapshot.removedObjects;
+          removedObjectsFiltered = mySnapshot.removedObjectsFiltered;
+          modified = mySnapshot.modified;
+          removed = mySnapshot.removed;
+          added = mySnapshot.added;
+          immutable = mySnapshot.immutable;
+          snapshots = mySnapshot.snapshots;
+          simpleEqualsAndHashCode = mySnapshot.simpleEqualsAndHashCode;
+        }
+        else {
+          throw new TentackleRuntimeException("not my snapshot");
+        }
       }
     }
+  }
+
+
+  @Override
+  public boolean isCopy() {
+    return copied;
+  }
+
+
+  @Override
+  public void setCopy(boolean copy) {
+    copied = copy;
+    if (copy) {
+      init();
+    }
+  }
+
+
+  @Override
+  public TrackedList<E> copy() {
+    TrackedArrayList<E> list = new TrackedArrayList<>(size(), false);
+    for (E obj: this) {
+      if (obj instanceof Snapshotable) {
+        if (LOGGER.isFineLoggable()) {
+          LOGGER.fine("creating deep copy for " +
+                  (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+        }
+        list.add(((Snapshotable<E>) obj).copy());
+      }
+      else {
+        if (LOGGER.isFineLoggable()) {
+          LOGGER.fine("caution: not a Snapshotable! copying reference for " +
+                  (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
+        }
+        list.add(obj);
+      }
+    }
+    list.setCopy(true);
+    return list;
   }
 
 
@@ -717,6 +782,21 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       }
     }
     return listenerRemoved;
+  }
+
+
+  /**
+   * Initializes the state.
+   */
+  private void init() {
+    removedObjects = null;
+    snapshots = null;
+    elementSnapshots = null;
+    modified = false;
+    removed = false;
+    removedObjectsFiltered = false;
+    added = false;
+    immutable = false;
   }
 
 

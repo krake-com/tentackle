@@ -22,6 +22,7 @@ package org.tentackle.test.pdo.mock;
 import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
@@ -587,6 +588,26 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   @Override
   public ScrollableResource<T> selectByNormTextAsCursor(String normText) {
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public IdentifiableMap<? extends PersistentDomainObject<?>> loadComponents(boolean onlyLoaded) {
+    return new IdentifiableMap<>();
+  }
+
+  @Override
+  public T copy() {
+    return null;
+  }
+
+  @Override
+  public boolean isCopy() {
+    return false;
+  }
+
+  @Override
+  public void setCopy(boolean copy) {
+
   }
 
   @Override

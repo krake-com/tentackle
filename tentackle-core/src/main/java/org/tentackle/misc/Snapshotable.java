@@ -26,6 +26,10 @@ import java.util.List;
  * The number of snapshots is not limited. Objects may be reverted
  * to the state of a snapshot. If reverted, the snapshot itself
  * and all later snapshots are discarded.
+ * <p>
+ * Important: snapshots cannot be used as copies of an object at a given time. They just
+ * contain the information to revert to the object's state when the snapshot was taken!<br>
+ * However, Snapshotables can be copied using the copy() method.
  *
  * @param <T> the type
  * @author harald
@@ -61,5 +65,26 @@ public interface Snapshotable<T> {
    * @return the list of snapshots for this object, null if none taken so far
    */
   List<? extends T> getSnapshots();
+
+  /**
+   * Creates a deep copy of this object.
+   *
+   * @return the copied object
+   */
+  T copy();
+
+  /**
+   * Returns whether this is a deep copy.
+   *
+   * @return true if object is a copy
+   */
+  boolean isCopy();
+
+  /**
+   * Marks this object as a copy.
+   *
+   * @param copy true if change to a copy, else change to non-copied object
+   */
+  void setCopy(boolean copy);
 
 }

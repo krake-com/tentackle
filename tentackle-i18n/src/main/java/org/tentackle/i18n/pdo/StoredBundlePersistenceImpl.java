@@ -507,6 +507,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     super.revertComponentsToSnapshot(snapshot);
     keys = snapshot.keys;
     if (keys != null) {
+      keys.setCopy(isCopy());
       keys.revertToSnapshot(snapshot.keysSnapshot);
     }
     keysLoaded = snapshot.keysLoaded;
