@@ -58,11 +58,4 @@ public interface PersistentDomainObject<T extends PersistentDomainObject<T>>
   @Override
   PersistentObject<T> getPersistenceDelegate();
 
-  /**
-   * Creates a clone of this PDO.
-   *
-   * @return the cloned PDO
-   */
-  T clonePdo();
-
 }

@@ -76,19 +76,19 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
 
   static {
     try {
-      HASHCODE_METHOD = Object.class.getMethod("hashCode");
-      EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
-      TOSTRING_METHOD = Object.class.getMethod("toString");
-      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
-      CLONE_METHOD = PersistentDomainObject.class.getMethod("clonePdo");
-      GETDOMAINOBJECT_METHOD = PersistentDomainObject.class.getMethod("getDomainDelegate");
-      GETPERSISTENTOBJECT_METHOD = PersistentDomainObject.class.getMethod("getPersistenceDelegate");
-      TOGENERICSTRING_METHOD = Identifiable.class.getMethod("toGenericString");
-      GETPDO_METHOD = PdoHolder.class.getMethod("getPdo");
-      SETPDO_METHOD = PdoHolder.class.getMethod("setPdo", PersistentDomainObject.class);
-      ON_METHOD = PdoHolder.class.getMethod("on");
-      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveClass");
-      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveSuperClasses");
+      HASHCODE_METHOD = Object.class.getDeclaredMethod("hashCode");
+      EQUALS_METHOD = Object.class.getDeclaredMethod("equals", Object.class);
+      TOSTRING_METHOD = Object.class.getDeclaredMethod("toString");
+      CLONE_METHOD = Object.class.getDeclaredMethod("clone");
+      COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
+      GETDOMAINOBJECT_METHOD = PersistentDomainObject.class.getDeclaredMethod("getDomainDelegate");
+      GETPERSISTENTOBJECT_METHOD = PersistentDomainObject.class.getDeclaredMethod("getPersistenceDelegate");
+      TOGENERICSTRING_METHOD = Identifiable.class.getDeclaredMethod("toGenericString");
+      GETPDO_METHOD = PdoHolder.class.getDeclaredMethod("getPdo");
+      SETPDO_METHOD = PdoHolder.class.getDeclaredMethod("setPdo", PersistentDomainObject.class);
+      ON_METHOD = PdoHolder.class.getDeclaredMethod("on");
+      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
+      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
     catch (NoSuchMethodException e) {
       throw new NoSuchMethodError(e.getMessage());

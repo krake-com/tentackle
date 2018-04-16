@@ -71,18 +71,18 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
   static {
     try {
-      HASHCODE_METHOD = Object.class.getMethod("hashCode");
-      EQUALS_METHOD = Object.class.getMethod("equals", Object.class);
-      TOSTRING_METHOD = Object.class.getMethod("toString");
-      COMPARETO_METHOD = Comparable.class.getMethod("compareTo", Object.class);
-      CLONE_METHOD = Operation.class.getMethod("clone");
-      GETDOMAINDELEGATE_METHOD = Operation.class.getMethod("getDomainDelegate");
-      GETPERSISTENTDELEGATE_METHOD = Operation.class.getMethod("getPersistenceDelegate");
-      GETOPERATION_METHOD = OperationHolder.class.getMethod("getOperation");
-      SETOPERATION_METHOD = OperationHolder.class.getMethod("setOperation", Operation.class);
-      OP_METHOD = OperationHolder.class.getMethod("op");
-      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveClass");
-      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveSuperClasses");
+      HASHCODE_METHOD = Object.class.getDeclaredMethod("hashCode");
+      EQUALS_METHOD = Object.class.getDeclaredMethod("equals", Object.class);
+      TOSTRING_METHOD = Object.class.getDeclaredMethod("toString");
+      CLONE_METHOD = Object.class.getDeclaredMethod("clone");
+      COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
+      GETDOMAINDELEGATE_METHOD = Operation.class.getDeclaredMethod("getDomainDelegate");
+      GETPERSISTENTDELEGATE_METHOD = Operation.class.getDeclaredMethod("getPersistenceDelegate");
+      GETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("getOperation");
+      SETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("setOperation", Operation.class);
+      OP_METHOD = OperationHolder.class.getDeclaredMethod("op");
+      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
+      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
     catch (NoSuchMethodException e) {
       throw new NoSuchMethodError(e.getMessage());

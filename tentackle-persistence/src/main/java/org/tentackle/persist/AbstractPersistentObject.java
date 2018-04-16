@@ -324,7 +324,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public T createSnapshot() {
-    T snapshot = getPdo().clonePdo();
+    T snapshot = on();
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
     // find implementing method (not the create...InSnapshot below!)
     Class<?> persistentClass = persistentSnapshot.getClass();

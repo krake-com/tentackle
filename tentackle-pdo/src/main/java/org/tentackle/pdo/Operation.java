@@ -63,11 +63,4 @@ public interface Operation<T extends Operation<T>>
   @Override
   PersistentOperation<T> getPersistenceDelegate();
 
-  /**
-   * Creates a clone of a Pdo.
-   *
-   * @return the cloned Pdo
-   */
-  T clone();
-
 }
