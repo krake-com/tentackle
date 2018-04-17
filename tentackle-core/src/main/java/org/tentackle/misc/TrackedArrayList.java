@@ -129,12 +129,6 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @Override
   @SuppressWarnings("unchecked")
   public TrackedArrayList<E> createSnapshot() {
-    if (isCopy()) {
-      throw new TentackleRuntimeException("cannot create a snapshot from a copy");
-    }
-    if (isSnapshot()) {
-      throw new TentackleRuntimeException("cannot create a snapshot from a snapshot");
-    }
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
@@ -163,6 +157,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
         snapshot.elementSnapshots.add(obj);
       }
     }
+    snapshot.copied = false;
     return snapshot;
   }
 
@@ -277,6 +272,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       }
     }
     list.setCopy(true);
+    list.setModified(true);
     return list;
   }
 

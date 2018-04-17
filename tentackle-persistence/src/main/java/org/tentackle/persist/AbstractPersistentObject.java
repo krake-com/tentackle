@@ -343,15 +343,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public T createSnapshot() {
-    if (isCopy()) {
-      throw new PersistenceException("cannot create a snapshot from a copy");
-    }
-    if (isSnapshot()) {
-      throw new PersistenceException("cannot create a snapshot from a snapshot");
-    }
     T snapshot = PdoFactory.getInstance().create(getPdoClass(), clone());
-    snapshot.setDomainContext(getDomainContext());
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
+    persistentSnapshot.setDomainContext(getDomainContext());
     // find implementing method (not the create...InSnapshot below!)
     Class<?> persistentClass = persistentSnapshot.getClass();
     try {
@@ -374,6 +368,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
 
       addSnapshot(snapshot);
+      snapshot.setCopy(false);
       return snapshot;
     }
     catch (IllegalAccessException | IllegalArgumentException | NoSuchMethodException | InvocationTargetException ex) {
@@ -427,8 +422,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public T copy() {
     T copiedPdo = on();
     AbstractPersistentObject copiedPo = (P) copiedPdo.getPersistenceDelegate();
-    copiedPo.objectIsCopy = true;
+    DomainContext ctx = copiedPo.getDomainContext();    // may be another root-context
+    copiedPo.objectIsCopy = true;                       // controls how snapshot is applied!
     copiedPo.applySnapshot(pdo.createSnapshot());
+    copiedPo.setModified(true);
+    copiedPo.setDomainContext(ctx);                     // restore root context, if reverted from snapshot
     return copiedPdo;
   }
 

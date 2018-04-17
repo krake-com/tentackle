@@ -1467,13 +1467,19 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite() &&
-            (rel.getRelationType() == RelationType.OBJECT || rel.isTracked())) {
+        if (rel.isComposite() && !rel.isShallow()) {
+          if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.isTracked()) {
 ]@
-    if (@(var)@ != null) {
-      snapshot.@(var)@Snapshot = @(var)@.createSnapshot();
-    }
+    snapshot.@(var)@Snapshot = TrackedList.createSnapshot(@(var)@);
 @[
+            }
+          }
+          else {
+]@
+    snapshot.@(var)@Snapshot = Pdo.createSnapshot(@(var)@);
+@[
+          }
         }
       }
 ]@
@@ -1489,7 +1495,7 @@ For more options, see {\@link DbModelWurblet}.
 @[
       for (Relation rel: getEntity().getRelations()) {
         String var = rel.getVariableName();
-        if (rel.isComposite()) {
+        if (rel.isComposite() && !rel.isShallow()) {
           Relation nmRel = rel.getNmRelation();
           String nmVar = null;
           if (nmRel != null) {
@@ -1500,17 +1506,19 @@ For more options, see {\@link DbModelWurblet}.
               nmVar = StringHelper.firstToLower(rel.getNmName()) + "List";
             }
           }
+          if (rel.getRelationType() == RelationType.LIST) {
+            if (rel.isTracked()) {
 ]@
-    @(var)@ = snapshot.@(var)@;
+    @(var)@ = TrackedList.revertToSnapshot(@(var)@, snapshot.@(var)@Snapshot);
 @[
-          if (rel.getRelationType() == RelationType.OBJECT || rel.isTracked()) {
+            }
+          }
+          else {
 ]@
-    if (@(var)@ != null) {
-      @(var)@.setCopy(isCopy());
-      @(var)@.revertToSnapshot(snapshot.@(var)@Snapshot);
-    }
+    @(var)@ = Pdo.revertToSnapshot(@(var)@, snapshot.@(var)@Snapshot);
 @[
           }
+
           if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
 ]@
     @(var)@Loaded = snapshot.@(var)@Loaded;

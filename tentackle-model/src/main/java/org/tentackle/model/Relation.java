@@ -183,6 +183,13 @@ public interface Relation extends ModelElement {
   boolean isReversed();
 
   /**
+   * Returns whether the relation should be skipped in snapshot and copy operations.
+   *
+   * @return true if skip this relation, false to include (default)
+   */
+  boolean isShallow();
+
+  /**
    * Returns the attribute that holds the number of elements of a 1:N relation.<br>
    * Applies only to composite non-reversed list relations.<br>
    * If set, this column gets the number of elements in the list when the PDO is persisted.

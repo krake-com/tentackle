@@ -47,6 +47,38 @@ import java.util.List;
 public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapshotable<TrackedList<E>> {
 
   /**
+   * Creates a snapshot from a list.
+   *
+   * @param list the list
+   * @param <E> the element type
+   * @return the snapshot, null if list is null
+   */
+  public static <E> TrackedList<E> createSnapshot(TrackedList<E> list) {
+    return list == null ? null : list.createSnapshot();
+  }
+
+  /**
+   * Reverts a list to a snapshotted state of the list.<br>
+   * If the original list is null, a new list is created as a copy of the snapshot.
+   *
+   * @param list the original list to be reverted, null if copy
+   * @param snapshot the snapshot
+   * @param <E> the element type
+   * @return the reverted list, null if snapshot was null
+   */
+  public static <E> TrackedList<E> revertToSnapshot(TrackedList<E> list, TrackedList<E> snapshot) {
+    TrackedList<E> revertedList = null;
+    if (snapshot != null) {
+      boolean asCopy = list == null;
+      revertedList = asCopy ? new TrackedArrayList<>() : list;
+      revertedList.setCopy(asCopy);
+      revertedList.revertToSnapshot(snapshot);
+    }
+    return revertedList;
+  }
+
+
+  /**
    * Sets the modified state.
    *
    * @param modified is true to set modified to true,

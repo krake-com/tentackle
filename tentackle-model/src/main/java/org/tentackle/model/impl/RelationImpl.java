@@ -114,6 +114,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** map list relation to reversed 1:1 object relation. */
   public static final String REVERSED = "reversed";
 
+  /** skip relation in snapshots or copies. */
+  public static final String SHALLOW = "shallow";
+
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
@@ -141,6 +144,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean serialized;
   private boolean clearOnRemoteSave;
   private boolean reversed;
+  private boolean shallow;
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
@@ -322,6 +326,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
               case REVERSED:
                 setReversed(true);
+                break;
+
+              case SHALLOW:
+                setShallow(true);
                 break;
 
               default:
@@ -826,6 +834,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public boolean isReversed() {
     return reversed;
+  }
+
+  @Override
+  public boolean isShallow() {
+    return shallow;
+  }
+
+  public void setShallow(boolean shallow) {
+    this.shallow = shallow;
   }
 
   @Override

@@ -493,9 +493,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   protected void createComponentsInSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    if (keys != null) {
-      snapshot.keysSnapshot = keys.createSnapshot();
-    }
+    snapshot.keysSnapshot = TrackedList.createSnapshot(keys);
   }
 
   /**
@@ -505,11 +503,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
    */
   protected void revertComponentsToSnapshot(StoredBundlePersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    keys = snapshot.keys;
-    if (keys != null) {
-      keys.setCopy(isCopy());
-      keys.revertToSnapshot(snapshot.keysSnapshot);
-    }
+    keys = TrackedList.revertToSnapshot(keys, snapshot.keysSnapshot);
     keysLoaded = snapshot.keysLoaded;
   }
 

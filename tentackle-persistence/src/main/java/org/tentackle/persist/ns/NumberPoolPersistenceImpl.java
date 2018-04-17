@@ -745,9 +745,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void createComponentsInSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.createComponentsInSnapshot(snapshot);
-    if (numberRangeList != null) {
-      snapshot.numberRangeListSnapshot = numberRangeList.createSnapshot();
-    }
+    snapshot.numberRangeListSnapshot = TrackedList.createSnapshot(numberRangeList);
   }
 
   /**
@@ -757,11 +755,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
    */
   protected void revertComponentsToSnapshot(NumberPoolPersistenceImpl snapshot) {
     super.revertComponentsToSnapshot(snapshot);
-    numberRangeList = snapshot.numberRangeList;
-    if (numberRangeList != null) {
-      numberRangeList.setCopy(isCopy());
-      numberRangeList.revertToSnapshot(snapshot.numberRangeListSnapshot);
-    }
+    numberRangeList = TrackedList.revertToSnapshot(numberRangeList, snapshot.numberRangeListSnapshot);
     numberRangeListLoaded = snapshot.numberRangeListLoaded;
   }
 

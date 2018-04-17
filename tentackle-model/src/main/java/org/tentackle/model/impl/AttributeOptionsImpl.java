@@ -49,6 +49,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /** hidden attribute (no interface definition). */
   public static final String OPTION_HIDDEN = "HIDDEN";
 
+  /** shallow attribute (ignored in snapshots and copies). */
+  public static final String OPTION_SHALLOW = "SHALLOW";
+
 
 
   private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
@@ -61,6 +64,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean withTimezone;
   private boolean unsigned;
   private boolean hidden;
+  private boolean shallow;
 
 
   /**
@@ -152,6 +156,10 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         setHidden(true);
         applied = true;
       }
+      else if (uco.equals(OPTION_SHALLOW)) {
+        setShallow(true);
+        applied = true;
+      }
       else if (uco.equals(Constants.BIND_UTC)) {
         setUTC(on);
         processBindOption(uco, on);
@@ -239,6 +247,14 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     this.hidden = hidden;
   }
 
+  @Override
+  public boolean isShallow() {
+    return shallow;
+  }
+
+  public void setShallow(boolean shallow) {
+    this.shallow = shallow;
+  }
 
   @Override
   public ModelException createModelException(String message) {

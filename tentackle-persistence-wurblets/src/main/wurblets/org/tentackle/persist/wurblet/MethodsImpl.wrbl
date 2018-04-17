@@ -939,7 +939,7 @@ For more options, see {\@link DbModelWurblet}.
     super.createAttributesInSnapshot(snapshot);
 @[
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet() && !attr.getOptions().isShallow())  {
           String name = attr.getName();
           if (attr.getDataType().isMutable()) {
             String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
@@ -963,7 +963,7 @@ For more options, see {\@link DbModelWurblet}.
     super.revertAttributesToSnapshot(snapshot);
 @[
       for (Attribute attr: getEntity().getAttributes()) {
-        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
+        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet() && !attr.getOptions().isShallow())    {
           String name = attr.getName();
 ]@
     @(name)@ = snapshot.@(name)@;

@@ -42,6 +42,38 @@ public class Pdo {
 
 
   /**
+   * Creates a snapshot from a pdo.
+   *
+   * @param pdo the pdo
+   * @param <T> the PDO type
+   * @return the snapshot, null if pdo is null
+   */
+  public static <T extends PersistentDomainObject<T>> T createSnapShot(T pdo) {
+    return pdo == null ? null : pdo.getPersistenceDelegate().createSnapshot();
+  }
+
+  /**
+   * Reverts a PDO to a given snapshot.<br>
+   * If the original pdo is null, a copy of the snapshot will be created.
+   *
+   * @param pdo the original PDO to be reverted, null if copy
+   * @param snapshot the snapshot
+   * @param <T> the PDO type
+   * @return the reverted PDO, null if snapshot was null
+   */
+  public static <T extends PersistentDomainObject<T>> T revertToSnapshot(T pdo, T snapshot) {
+    T revertedPdo = null;
+    if (snapshot != null) {
+      boolean asCopy = pdo == null;
+      revertedPdo = asCopy ? snapshot.on() : pdo;
+      revertedPdo.getPersistenceDelegate().setCopy(asCopy);
+      revertedPdo.getPersistenceDelegate().revertToSnapshot(snapshot);
+    }
+    return revertedPdo;
+  }
+
+
+  /**
    * Creates a PDO.
    *
    * @param <T> the PDO type

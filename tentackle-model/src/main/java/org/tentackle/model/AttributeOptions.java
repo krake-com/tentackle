@@ -97,4 +97,11 @@ public interface AttributeOptions extends CommonOptions {
    */
   boolean isHidden();
 
+  /**
+   * Returns whether the attribute should be skipped in snapshot and copy operations.
+   *
+   * @return true if skip this attribute, false to include (default)
+   */
+  boolean isShallow();
+
 }
