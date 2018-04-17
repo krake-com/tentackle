@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 
 /**
@@ -1434,110 +1433,6 @@ public final class StringHelper {
     return null;
   }
 
-
-  /**
-   * Converts a string to a string that can be used as a parameter
-   * for a LIKE-clause.
-   * The following rules apply to the source-string:
-   * <ul>
-   * <li>"bla"  -&gt; "%bla%"</li>
-   * <li>"=bla" -&gt; "bla%"</li>
-   * <li>"bla=" -&gt; "%bla"</li>
-   * <li>"="    -&gt; "%=%" (pathological case)</li>
-   * </ul>
-   *
-   * @param pattern the search pattern
-   * @return the LIKE string
-   */
-  public static String toLikeString(String pattern) {
-
-    String sqlPattern;    // returned LIKE-string
-
-    if (pattern == null || pattern.length() == 0)  {
-      sqlPattern = "%";
-    }
-    else  {
-      if (pattern.compareTo("=") == 0)  {
-        // pathological case!
-        sqlPattern = "%=%";
-      }
-      else  {
-        sqlPattern = pattern;
-      }
-    }
-
-    char c = sqlPattern.charAt(0);
-    if (c == '=') {
-      // cut off leading '=' as it is not SQL-syntax
-      sqlPattern = sqlPattern.substring(1);
-    }
-    else if (c != '%') {
-      // prepend LIKE '%' if not '=' given
-      sqlPattern = "%" + sqlPattern;
-    }
-    c = sqlPattern.charAt(sqlPattern.length()-1);
-    if (c == '=') {
-      // cut off trailing '=' as it is not SQL-syntax
-      sqlPattern = sqlPattern.substring(0, sqlPattern.length()-1);
-    }
-    else if (c != '%') {
-      // append LIKE '%' if not '=' given
-      sqlPattern += '%';
-    }
-
-    return sqlPattern;
-  }
-
-
-  /**
-   * Converts a string to a string that can be used as a parameter
-   * for a LIKE-clause, nullpointer safe.
-   *
-   * @param pattern the search pattern
-   * @return the LIKE string
-   *
-   * @see #toLikeString(java.lang.String)
-   */
-  public static String toLikeStringWithNull(String pattern) {
-    if (pattern != null && pattern.trim().length() > 0) {
-      return toLikeString(pattern);
-    }
-    return null;
-  }
-
-
-  /**
-   * Converts an SQL-like-String to a regular expression.
-   * <pre>
-   * Example: "%blah_foo" -&gt; ".*blah.foo"
-   * </pre>
-   *
-   * @param likeString the LIKE-string
-   * @return the regex
-   */
-  public static Pattern likeStringToPattern(String likeString)  {
-    StringBuilder regex = new StringBuilder();
-    if (likeString != null) {
-      int len = likeString.length();
-      for (int i=0; i < len; i++) {
-        char c = likeString.charAt(i);
-        switch (c) {
-          case '%':
-            regex.append(".*");
-            break;
-
-          case '_':
-            regex.append(".");
-            break;
-
-          default:
-            regex.append(c);
-            break;
-        }
-      }
-    }
-    return Pattern.compile(regex.toString());
-  }
 
 
   /**

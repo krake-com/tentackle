@@ -35,6 +35,7 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
+import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.ImmutableException;
@@ -87,6 +88,7 @@ import static org.tentackle.sql.Backend.SQL_ISNULL;
 import static org.tentackle.sql.Backend.SQL_LEFT_PARENTHESIS;
 import static org.tentackle.sql.Backend.SQL_LESS_PAR;
 import static org.tentackle.sql.Backend.SQL_LIKE_PAR;
+import static org.tentackle.sql.Backend.SQL_NOTLIKE_PAR;
 import static org.tentackle.sql.Backend.SQL_OR;
 import static org.tentackle.sql.Backend.SQL_ORDERBY;
 import static org.tentackle.sql.Backend.SQL_PLUS_ONE;
@@ -1860,9 +1862,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Creates the SQL code for select by normtext.
    *
+   * @param not true if find all not matching the normtext
    * @return the sql code
    */
-  public String createSelectByNormTextSql() {
+  public String createSelectByNormTextSql(boolean not) {
     StringBuilder sql = new StringBuilder(SQL_SELECT);
     sql.append(createSelectAllInnerSql());
     String condition = getSqlClassIdCondition();
@@ -1874,8 +1877,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       sql.append(condition);
     }
     sql.append(SQL_AND)
-       .append(getTopSuperTableAlias()).append('.').append(CN_NORMTEXT)
-       .append(SQL_LIKE_PAR);
+       .append(getTopSuperTableAlias()).append('.').append(CN_NORMTEXT);
+    if (not) {
+      sql.append(SQL_NOTLIKE_PAR);
+    }
+    else {
+      sql.append(SQL_LIKE_PAR);
+    }
     String orderSuffix = orderBy();
     if (orderSuffix != null)  {
       sql.append(SQL_ORDERBY).append(orderSuffix);
@@ -1981,7 +1989,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Gets the result set for the normtext query (where normtext like ?)
    * for use in lists.<br>
    * If the given normtext is null or just "%" the method falls back
-   * to {@link #resultAll}.
+   * to {@link #resultAll}.<br>
+   * If the normtext starts with "!", it is interpreted as "NOT LIKE".
    *
    * @param normText the normtext to search for
    * @param js the optional join config, null if no joins
@@ -1990,7 +1999,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public ResultSetWrapper resultByNormText(String normText, JoinedSelect<T> js) {
 
-    if (normText == null || "%".equals(normText)) {
+    NormText nt = new NormText(normText);
+    if (nt.isMatchingAll()) {
       return resultAll(js);
     }
 
@@ -1999,9 +2009,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     getSession().assertNotRemote();
 
-    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectByNormTextStatementId,
+    StatementId stmtId = nt.isInverted() ?
+            getClassVariables().selectByInvertedNormTextStatementId : getClassVariables().selectByNormTextStatementId;
+
+    PreparedStatementWrapper st = getPreparedStatement(stmtId,
             () -> {
-              StringBuilder sql = new StringBuilder(createSelectByNormTextSql());
+              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(nt.isInverted()));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
               }
@@ -2041,7 +2054,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public ResultSetWrapper resultByNormTextCursor(String normText, JoinedSelect<T> js) {
 
-    if (normText == null || "%".equals(normText)) {    // NOI18N
+    NormText nt = new NormText(normText);
+    if (nt.isMatchingAll()) {
       return resultAllCursor(js);
     }
 
@@ -2050,10 +2064,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     getSession().assertNotRemote();
 
-    PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectByNormTextCursorStatementId,
+    StatementId stmtId = nt.isInverted() ?
+            getClassVariables().selectByInvertedNormTextCursorStatementId : getClassVariables().selectByNormTextCursorStatementId;
+
+    PreparedStatementWrapper st = getPreparedStatement(stmtId,
             ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY,
             () -> {
-              StringBuilder sql = new StringBuilder(createSelectByNormTextSql());
+              StringBuilder sql = new StringBuilder(createSelectByNormTextSql(nt.isInverted()));
               if (js != null) {
                 js.createJoinedSql(pdo, sql);
                 sql.append(SQL_ORDERBY).append(getColumnName(CN_ID));
