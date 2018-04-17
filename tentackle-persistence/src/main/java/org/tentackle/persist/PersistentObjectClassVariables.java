@@ -94,14 +94,24 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
   public final StatementId selectByNormTextStatementId = new StatementId();
 
   /**
-   * prepared statement ID for {@link AbstractPersistentObject#selectAll}.
+   * prepared statement ID for {@link AbstractPersistentObject#selectByNormText}.
    */
-  public final StatementId selectAllStatementId = new StatementId();
+  public final StatementId selectByInvertedNormTextStatementId = new StatementId();
 
   /**
    * prepared statement ID for {@link AbstractPersistentObject#selectByNormTextAsCursor}.
    */
   public final StatementId selectByNormTextCursorStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectByNormTextAsCursor}.
+   */
+  public final StatementId selectByInvertedNormTextCursorStatementId = new StatementId();
+
+  /**
+   * prepared statement ID for {@link AbstractPersistentObject#selectAll}.
+   */
+  public final StatementId selectAllStatementId = new StatementId();
 
   /**
    * prepared statement ID for {@link AbstractPersistentObject#selectAllWithExpiredTableSerials}.

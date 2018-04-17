@@ -31,7 +31,6 @@ import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoFinder;
-import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -54,8 +53,7 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
   @Override
   public ObservableList<T> runSearch() {
     if (pdo != null && pdo.isNormTextProvided()) {
-      String pattern = StringHelper.toLikeString(StringHelper.normalize(patternField.getText()));
-      return FXCollections.observableArrayList(getPdo().selectByNormText(pattern));
+      return FXCollections.observableArrayList(getPdo().selectByNormText(patternField.getText()));
     }
     return FXCollections.observableArrayList(getPdo().selectAllCached());
   }

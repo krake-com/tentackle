@@ -21,7 +21,6 @@ package org.tentackle.swing.rdc;
 import java.text.MessageFormat;
 import java.util.List;
 import org.tentackle.misc.ScrollableResource;
-import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.swing.FormInfo;
@@ -143,7 +142,7 @@ public class DefaultSearch<T extends PersistentDomainObject<T>> extends Abstract
   @Override
   public ScrollableResource<T> findByCriteria(T proxy) {
     // default goes by normtext, if provided
-    return proxy.selectByNormTextAsCursor(StringHelper.toLikeString(StringHelper.normalize(pattern)));
+    return proxy.selectByNormTextAsCursor(pattern);
   }
 
   @Override
