@@ -1986,20 +1986,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Gets the result set for the normtext query (where normtext like ?)
-   * for use in lists.<br>
-   * If the given normtext is null or just "%" the method falls back
-   * to {@link #resultAll}.<br>
-   * If the normtext starts with "!", it is interpreted as "NOT LIKE".
+   * Gets the result set for the normtext query.
    *
-   * @param normText the normtext to search for
+   * @param text the text to search for
    * @param js the optional join config, null if no joins
    * @return the result set
+   * @see NormText
    * @see #resultByNormTextCursor
    */
-  public ResultSetWrapper resultByNormText(String normText, JoinedSelect<T> js) {
+  public ResultSetWrapper resultByNormText(String text, JoinedSelect<T> js) {
 
-    NormText nt = new NormText(normText);
+    NormText nt = new NormText(text);
     if (nt.isMatchingAll()) {
       return resultAll(js);
     }
@@ -2033,28 +2030,24 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx, normText);
+    st.setString(ndx, text);
 
     return st.executeQuery();
   }
 
 
   /**
-   * Gets the result set for the normtext query (where normtext like ?)
-   * for use in cursors.<br>
-   * Cursors differ from lists because they need {@link ResultSet#TYPE_SCROLL_INSENSITIVE}
-   * set.
-   * If the given normtext is null or just "%" the method falls back
-   * to {@link #resultAll}.
+   * Gets the result set for the normtext query as a cursor.
    *
-   * @param normText the normtext to search for
+   * @param text the text to search for
    * @param js the optional join config, null if no joins
    * @return the result set
+   * @see NormText
    * @see #resultByNormText
    */
-  public ResultSetWrapper resultByNormTextCursor(String normText, JoinedSelect<T> js) {
+  public ResultSetWrapper resultByNormTextCursor(String text, JoinedSelect<T> js) {
 
-    NormText nt = new NormText(normText);
+    NormText nt = new NormText(text);
     if (nt.isMatchingAll()) {
       return resultAllCursor(js);
     }
@@ -2090,7 +2083,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx, normText);
+    st.setString(ndx, text);
 
     return st.executeQuery();
   }
@@ -2100,17 +2093,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Selects all objects with a given normtext as a list.
    *
-   * @param normText the normtext
+   * @param text the text to search for
    * @return the list of objects, never null
    * @see #resultByNormText
    */
   @Override
   @SuppressWarnings("unchecked")
-  public List<T> selectByNormText(String normText) {
+  public List<T> selectByNormText(String text) {
     if (getSession().isRemote())  {
       try {
         DomainContext context = getDomainContext();
-        List<T> list = getRemoteDelegate().selectByNormText(context, normText);
+        List<T> list = getRemoteDelegate().selectByNormText(context, text);
         configureRemoteObjects(context, list);
         return list;
       }
@@ -2121,7 +2114,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     JoinedSelect<T> js = getEagerJoinedSelect();
     List<T> list = new ArrayList<>();
-    try (ResultSetWrapper rs = resultByNormText(normText, js)) {
+    try (ResultSetWrapper rs = resultByNormText(text, js)) {
       executeQueryToList(rs, js, list);
       return list;
     }
@@ -2131,16 +2124,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /**
    * Selects all objects with a given normtext as a cursor.
    *
-   * @param normText the normtext
+   * @param text the text to search for
    * @return the cursor
    * @see #resultByNormTextCursor
    */
   @Override
-  public ScrollableResource<T> selectByNormTextAsCursor(String normText) {
+  public ScrollableResource<T> selectByNormTextAsCursor(String text) {
     if (getSession().isRemote()) {
       try {
         DomainContext context = getDomainContext();
-        RemoteResultSetCursor<T> remoteCursor = getRemoteDelegate().selectByNormTextAsCursor(context, normText);
+        RemoteResultSetCursor<T> remoteCursor = getRemoteDelegate().selectByNormTextAsCursor(context, text);
         return new ResultSetCursor<>(context, remoteCursor);
       }
       catch (RemoteException e) {
@@ -2148,7 +2141,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
     JoinedSelect<T> js = getEagerJoinedSelect();
-    return new ResultSetCursor<>(pdo, resultByNormTextCursor(normText, js), js);
+    return new ResultSetCursor<>(pdo, resultByNormTextCursor(text, js), js);
   }
 
 

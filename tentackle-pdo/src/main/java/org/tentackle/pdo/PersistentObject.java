@@ -957,20 +957,23 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   String getNormText();
 
   /**
-   * Selects all objects with a given normtext as a list.
+   * Selects all objects containing a normalized text.<br>
+   * The given text will be normalized via {@link org.tentackle.common.StringHelper#normalize(String)}
+   * and selected via an sql LIKE expression.
+   * If the text begins with an exclamation mark or a minus-sign (! or -), NOT LIKE will be used.
    *
-   * @param normText the normtext
+   * @param text the text to search for
    * @return the list of objects, never null
    */
-  List<T> selectByNormText(String normText);
+  List<T> selectByNormText(String text);
 
   /**
-   * Selects all objects with a given normtext as a cursor.
+   * Same as {@link #selectByNormText(String)} but returns a cursor.
    *
-   * @param normText the normtext
+   * @param text the text to search for
    * @return the cursor
    */
-  ScrollableResource<T> selectByNormTextAsCursor(String normText);
+  ScrollableResource<T> selectByNormTextAsCursor(String text);
 
   /**
    * Loads all components.<br>
