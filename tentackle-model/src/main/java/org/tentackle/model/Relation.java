@@ -190,6 +190,13 @@ public interface Relation extends ModelElement {
   boolean isShallow();
 
   /**
+   * Returns whether the relation should be set to immutable after loading.
+   *
+   * @return true if immutable
+   */
+  boolean isImmutable();
+
+  /**
    * Returns the attribute that holds the number of elements of a 1:N relation.<br>
    * Applies only to composite non-reversed list relations.<br>
    * If set, this column gets the number of elements in the list when the PDO is persisted.

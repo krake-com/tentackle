@@ -117,6 +117,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** skip relation in snapshots or copies. */
   public static final String SHALLOW = "shallow";
 
+  /** sets the relation to immutable after loading. */
+  public static final String IMMUTABLE = "immutable";
+
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
@@ -145,6 +148,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean clearOnRemoteSave;
   private boolean reversed;
   private boolean shallow;
+  private boolean immutable;
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
@@ -330,6 +334,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
               case SHALLOW:
                 setShallow(true);
+                break;
+
+              case IMMUTABLE:
+                setImmutable(true);
                 break;
 
               default:
@@ -619,6 +627,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
       throw createModelException("composite relations must be eager or lazy");
     }
 
+    if (immutable) {
+      if (!composite) {
+        throw createModelException("immutable relations must be composite");
+      }
+      if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+        throw createModelException("immutable relations must be eager or lazy");
+      }
+    }
+
     if (reversed && (composite || relationType != RelationType.LIST)) {
       throw createModelException("reversed 1:1 mapping only allowed for non-composite list relations");
     }
@@ -843,6 +860,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setShallow(boolean shallow) {
     this.shallow = shallow;
+  }
+
+  @Override
+  public boolean isImmutable() {
+    return immutable;
+  }
+
+  public void setImmutable(boolean immutable) {
+    this.immutable = immutable;
   }
 
   @Override

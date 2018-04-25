@@ -398,26 +398,42 @@ For more options, see {\@link DbModelWurblet}.
 @[
               }
             }
+
+            if (rel.isProcessed()) {
+]@
+      @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
+@[
+            }
+
             if (rel.getRelationType() == RelationType.LIST) {
               if (rel.isTracked()) {
+                if (rel.isImmutable()) {
+]@
+      @(var)@.setImmutable(true);
+@[
+                }
+                else {
 ]@
       if (isImmutable()) {
         @(var)@.setImmutable(true);
       }
 @[
+                }
               }
             }
             else  {
+              if (rel.isImmutable()) {
+]@
+      @(var)@.setImmutable(true, true);
+@[
+              }
+              else {
 ]@
       if (isImmutable() && @(var)@ != null) {
         @(var)@.setImmutable(true);
       }
 @[
-            }
-            if (rel.isProcessed()) {
-]@
-      @(var)@ = process@(rel.getMethodNameSuffix())@(@(var)@);
-@[
+              }
             }
           }
           else  {
