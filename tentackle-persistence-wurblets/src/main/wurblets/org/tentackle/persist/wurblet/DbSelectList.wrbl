@@ -29,7 +29,6 @@ For more options, see {\@link DbModelWurblet}.
 
     String className = getClassName();
     String methodName = getMethodName();
-    String delegateCast = "(" + className + "RemoteDelegate)";
 
     String  scope       = "public";
     String  classVar    = null;
@@ -126,8 +125,7 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-        @(listType)@ list = (@(delegateCast)@ getRemoteDelegate()).
-                @(methodName)@(@(iparms)@);
+        @(listType)@ list = getRemoteDelegate().@(methodName)@(@(iparms)@);
         db.applyTo(list);
         return list;
       }

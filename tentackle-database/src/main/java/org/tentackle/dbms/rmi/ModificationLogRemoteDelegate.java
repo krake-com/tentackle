@@ -57,6 +57,7 @@ public interface ModificationLogRemoteDelegate extends AbstractDbObjectRemoteDel
   int deleteByTxId(long txId) throws RemoteException;
   int deleteProcessed(Timestamp processed) throws RemoteException;
   List<ModificationLog> selectUpTo(Timestamp processed) throws RemoteException;
+  List<Long> selectTxIds(long fromId, long upToId) throws RemoteException;
 
   // </editor-fold>//GEN-END:inclrmi
 

@@ -41,9 +41,9 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
-    if (isRemote() && isPdo) {
+    if (isRemote()) {
       new RemoteIncludes(this);   // create RMI-files if they don't exist yet
-      String delegateType = pdoClass + "RemoteDelegate";
+      String delegateType = (isPdo() ? pdoClass : mainClass) + "RemoteDelegate";
       if (getEntity().isAbstract()) {
         delegateType += "<T,P>";
       }

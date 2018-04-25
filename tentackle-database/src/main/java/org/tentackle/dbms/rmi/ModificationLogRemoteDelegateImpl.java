@@ -219,6 +219,16 @@ public class ModificationLogRemoteDelegateImpl
     }
   }
 
+  @Override
+  public List<Long> selectTxIds(long fromId, long upToId) throws RemoteException {
+    try {
+      return dbObject.selectTxIds(fromId, upToId);
+    }
+    catch (Exception e) {
+      throw createException(e);
+    }
+  }
+
   // </editor-fold>//GEN-END:inclrmi
 
 }

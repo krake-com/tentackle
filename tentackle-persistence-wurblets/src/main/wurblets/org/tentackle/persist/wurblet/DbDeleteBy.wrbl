@@ -19,7 +19,6 @@ For more options, see {\@link DbModelWurblet}.
 
     String className = getClassName();
     String methodName = getMethodName();
-    String delegateCast = "(" + className + "RemoteDelegate)";
 
     String  classVar    = null;
     String  append      = null;
@@ -75,8 +74,7 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-        return (@(delegateCast)@ getRemoteDelegate()).
-                  @(methodName)@(@(iparms)@);
+        return getRemoteDelegate().@(methodName)@(@(iparms)@);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(getSession(), e);
