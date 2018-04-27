@@ -18,13 +18,13 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.misc.Provider;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
-
-import org.tentackle.misc.Provider;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 /**
  * Tests for transaction envelope.
@@ -62,7 +62,7 @@ public class TransactionEnvelopeTest {
       // with checked exceptions
       try {
         session.transaction(() -> {
-          if (1 < 2) {
+          if (System.currentTimeMillis() > 1000) {    // always true (to avoid compiler optimization)
             throw new MyException("test");
           }
           else {
@@ -75,6 +75,26 @@ public class TransactionEnvelopeTest {
       }
       catch (MyException ex2) {
         assertEquals(ex2.getMessage(), "test");
+      }
+      catch (Throwable t) {
+        fail("exception not retained", t);
+      }
+
+      try {
+        session.transaction(() -> {
+          if (System.currentTimeMillis() < 1000) {    // always false (to avoid compiler optimization)
+            throw new MyException("test");
+          }
+          else {
+            throw new OtherException("blah");
+          }
+        });
+      }
+      catch (OtherException ex1) {
+        assertEquals(ex1.getMessage(), "blah");
+      }
+      catch (MyException ex2) {
+        fail("should not be thrown", ex2);
       }
       catch (Throwable t) {
         fail("exception not retained", t);
