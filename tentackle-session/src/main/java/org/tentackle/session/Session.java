@@ -21,6 +21,7 @@ package org.tentackle.session;
 
 import java.io.Serializable;
 import java.util.Collection;
+import org.tentackle.misc.Provider;
 import org.tentackle.misc.TrackedList;
 
 
@@ -269,23 +270,58 @@ public interface Session extends Comparable<Session> {
   String getTxName();
 
   /**
-   * Runs a transaction provided by a transaction envelope.
+   * Runs code within a transaction.
+   * <p>
+   * Provided as an alternative to the {@code @Transaction}-interceptor, if the class holding the implementation of the
+   * transaction is not an {@link org.tentackle.reflect.Interceptable}.
+   * <p>
+   * Usage:
+   * <pre>
+   * return session.transaction(() -&gt; {
+   *    ..do something..
+   *    return whatever;
+   * });
+   * </pre>
+   * <code>whatever</code> is returned by <code>session.transaction()</code>. The type is determined
+   * by type inference automatically. If there is nothing to return, <code>null</code> must be returned by the envelope:
+   * <pre>
+   * session.transaction(() -&gt; {
+   *    ..do something..
+   *    return null;
+   * });
+   * </pre>
+   * The exception is optional. If given, it can be caught as if there was no lambda.
+   * <pre>
+   * try {
+   *   session.transaction(() -&gt; {
+   *     throw new MyException("blah");
+   *   });
+   * }
+   * catch (MyException ex) {
+   *   ...
+   * }
+   * </pre>
    *
    * @param <T> the return type
-   * @param txName the transaction name, null if none
-   * @param txe the transaction envelope
-   * @return the return value of the envelope
+   * @param <E> the exception type
+   * @param txName the transaction name, null will derive it from enclosing method
+   * @param txe the transaction supplier
+   * @return the return value of the transaction supplier
+   * @throws E the exception type
    */
-  <T> T transaction(String txName, TransactionEnvelope<T> txe);
+  <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E;
 
   /**
-   * Runs a transaction provided by a transaction envelope.
+   * Runs code within a transaction.<br>
+   * The transaction name is derived from the enclosing method.
    *
    * @param <T> the return type
-   * @param txe the transaction envelope
-   * @return the return value of the envelope
+   * @param <E> the exception type
+   * @param txe the transaction supplier
+   * @return the return value of the supplier
+   * @throws E the exception type
    */
-  <T> T transaction(TransactionEnvelope<T> txe);
+  <T, E extends Exception> T transaction(Provider<T, E> txe) throws E;
 
   /**
    * Creates an unnamed savepoint in the current transaction.

@@ -61,6 +61,7 @@ import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.Provider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
@@ -74,7 +75,6 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionTaskDispatcher;
 import org.tentackle.session.SessionUtilities;
-import org.tentackle.session.TransactionEnvelope;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
@@ -1337,16 +1337,18 @@ public class Db implements Session, Cloneable {
 
 
   @Override
-  public <T> T transaction(String txName, TransactionEnvelope<T> txe) {
+  public <T, E extends Exception> T transaction(String txName, Provider<T, E> txe) throws E {
     if (txName == null) {
-      Method method = txe.getClass().getEnclosingMethod();
-      if (method != null) {
-        // inner class
-        txName = ReflectionHelper.getClassBaseName(method.getDeclaringClass()) + "#" + method.getName();
+      // lambdas don't provide an enclosing method, because they are not inner classes.
+      String clsName = getClass().getName();
+      for (StackTraceElement se: new Exception().getStackTrace()) {
+        if (!clsName.equals(se.getClassName())) {
+          txName = ReflectionHelper.getClassBaseName(se.getClassName()) + "#" + se.getMethodName();
+          break;
+        }
       }
-      else {
-        // lambdas don't provide an enclosing method, because they are not inner classes.
-        // can't figure out method name -> just use the classname (better than nothing...)
+      if (txName == null) {
+        // can't figure out method name??? -> just use the classname (better than nothing...)
         txName = ReflectionHelper.getClassBaseName(txe.getClass());
         int ndx = txName.indexOf('$');    // cut useless info $$Lambda$0/123456789
         if (ndx > 0) {
@@ -1354,9 +1356,10 @@ public class Db implements Session, Cloneable {
         }
       }
     }
+
     long txVoucher = begin(txName);
     try {
-      T rv = txe.run();
+      T rv = txe.get();
       commit(txVoucher);
       return rv;
     }
@@ -1378,7 +1381,7 @@ public class Db implements Session, Cloneable {
   }
 
   @Override
-  public <T> T transaction(TransactionEnvelope<T> txe) {
+  public <T, E extends Exception> T transaction(Provider<T, E> txe) throws E {
     return transaction(null, txe);
   }
 

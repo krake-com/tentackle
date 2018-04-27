@@ -21,10 +21,9 @@ package org.tentackle.dbms;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionFactory;
 import org.tentackle.session.SessionInfoFactory;
-import org.tentackle.session.TransactionEnvelope;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
 /**
  * Tests for transaction envelope.
@@ -33,26 +32,83 @@ import static org.testng.Assert.assertEquals;
  */
 public class TransactionEnvelopeTest {
 
+  @SuppressWarnings("serial")
+  private class MyException extends Exception {
+    public MyException(String message) {
+      super(message);
+    }
+  }
+
+  @SuppressWarnings("serial")
+  private class OtherException extends Exception {
+    public OtherException(String message) {
+      super(message);
+    }
+  }
+
+
   @Test
   public void testEnvelope() {
     Session session = SessionFactory.getInstance().create(SessionInfoFactory.getInstance().create());
     session.open();
     try {
       int rv = session.transaction(() -> {
-        assertEquals(session.getTxName(), "TransactionEnvelopeTest");
+        assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
         return 5;
       });
       assertEquals(rv, 5);
 
-      // same without lambda
-      rv = session.transaction(new TransactionEnvelope<Integer>() {
-        @Override
-        public Integer run() {
-          assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
-          return 10;
-        }
-      });
-      assertEquals(rv, 10);
+      // with checked exceptions
+      try {
+        session.transaction(() -> {
+          if (System.currentTimeMillis() > 1000) {    // always true (to avoid compiler optimization)
+            throw new MyException("test");
+          }
+          else {
+            throw new OtherException("blah");
+          }
+        });
+      }
+      catch (OtherException ex1) {
+        fail("should not be thrown", ex1);
+      }
+      catch (MyException ex2) {
+        assertEquals(ex2.getMessage(), "test");
+      }
+      catch (Throwable t) {
+        fail("exception not retained", t);
+      }
+
+      try {
+        session.transaction(() -> {
+          if (System.currentTimeMillis() < 1000) {    // always false (to avoid compiler optimization)
+            throw new MyException("test");
+          }
+          else {
+            throw new OtherException("blah");
+          }
+        });
+      }
+      catch (OtherException ex1) {
+        assertEquals(ex1.getMessage(), "blah");
+      }
+      catch (MyException ex2) {
+        fail("should not be thrown", ex2);
+      }
+      catch (Throwable t) {
+        fail("exception not retained", t);
+      }
+
+      // with inner class
+      // doesnt work with Java 8, needs at least 9
+//    rv = session.transaction(new Provider<>() {
+//      @Override
+//      public Integer get() {
+//        assertEquals(session.getTxName(), "TransactionEnvelopeTest#testEnvelope");
+//        return 10;
+//      }
+//    });
+//    assertEquals(rv, 10);
     }
     finally {
       session.close();
