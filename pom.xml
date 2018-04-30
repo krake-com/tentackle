@@ -12,10 +12,10 @@
 
   <name>Tentackle Parent</name>
   <description>Parent pom.xml for the Tentackle modules.</description>
-  <url>http://www.tentackle.org</url>
+  <url>http://www.tentackle.org/</url>
   <organization>
     <name>Krake Softwaretechnik</name>
-    <url>http://www.krake.de</url>
+    <url>http://www.krake.de/</url>
   </organization>
 
   <licenses>
@@ -114,7 +114,7 @@
   <distributionManagement>
     <site>
       <id>${site.id}</id>
-      <url>scp:${site.url}/tentackle/${project.version}</url>
+      <url>scp:${site.url}/tentackle/${project.version}/</url>
     </site>
     <repository>
       <id>${repo.id}</id>
@@ -172,13 +172,13 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.8.0-beta1</version>
+        <version>1.8.0-beta2</version>
       </dependency>
 
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.1.15.0</version>
+        <version>9.1.16.0</version>
       </dependency>
 
       <dependency>
@@ -227,7 +227,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.5.2</version>
+        <version>3.5.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -274,7 +274,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
-          <version>2.2</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -366,11 +366,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
           <version>3.0.2</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.8</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -466,7 +461,9 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.0.0</version>
         <configuration>
+          <failOnError>false</failOnError>
           <sourceFileExcludes>
+            <exclude>module-info.java</exclude>
             <exclude>**/rmi/*.java</exclude>
           </sourceFileExcludes>
           <tags>
@@ -477,7 +474,9 @@
             </tag>
           </tags>
           <!-- don't complain about wurblet args -->
-          <additionalparam>-Xdoclint:none</additionalparam>
+          <additionalOptions>
+            <additionalOption>-Xdoclint:none</additionalOption>
+          </additionalOptions>
           <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
           <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
         </configuration>
