@@ -68,7 +68,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <compilerArgs>
-            <arg>-Xlint:unchecked</arg>
+            <arg>-Xlint:${javac.lint}</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED</arg>
           </compilerArgs>
         </configuration>

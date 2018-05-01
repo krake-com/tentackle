@@ -22,15 +22,8 @@ module org.tentackle.database {
   exports org.tentackle.dbms.prefs.rmi;
   exports org.tentackle.dbms.rmi;
 
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.sql;
-  requires org.tentackle.common;
-
-  requires java.sql;
-  requires java.rmi;
-  requires java.prefs;
-  requires java.management;
+  requires transitive org.tentackle.session;
+  requires transitive org.tentackle.sql;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.dbms.service.Hook;
 }

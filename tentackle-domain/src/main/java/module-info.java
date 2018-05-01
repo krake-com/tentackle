@@ -21,10 +21,7 @@ module org.tentackle.domain {
   exports org.tentackle.domain.ns;
   exports org.tentackle.domain.security;
 
-  requires org.tentackle.pdo;
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.common;
+  requires transitive org.tentackle.pdo;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.domain.service.Hook;
 }

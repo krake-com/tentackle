@@ -73,6 +73,7 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
+    <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
     <javac.version.src>9</javac.version.src>
     <javac.version.target>9</javac.version.target>
     <java.version>9.0.4</java.version>
@@ -317,7 +318,7 @@
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
-              <arg>-Xlint:unchecked</arg>
+              <arg>-Xlint:${javac.lint}</arg>
             </compilerArgs>
           </configuration>
         </plugin>

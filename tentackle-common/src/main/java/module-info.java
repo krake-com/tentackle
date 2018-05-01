@@ -18,8 +18,8 @@
 
 module org.tentackle.common {
 
-  requires java.sql;
-  requires java.compiler;
+  requires transitive java.sql;
+  requires transitive java.compiler;
   requires java.logging;
 
   exports org.tentackle.common;

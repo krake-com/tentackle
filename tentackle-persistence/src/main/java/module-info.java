@@ -25,16 +25,8 @@ module org.tentackle.persistence {
   exports org.tentackle.persist.security;
   exports org.tentackle.persist.security.rmi;
 
-  requires org.tentackle.pdo;
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.database;
-  requires org.tentackle.sql;
-  requires org.tentackle.common;
-
-  requires java.rmi;
-  requires java.sql;
-  requires java.naming;
+  requires transitive org.tentackle.pdo;
+  requires transitive org.tentackle.database;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.persist.service.Hook;
 }

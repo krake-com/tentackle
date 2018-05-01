@@ -31,6 +31,6 @@ import org.tentackle.dbms.AbstractDbOperation;
  * @param <P> the db operation class
  * @author harald
  */
-public interface AbstractDbOperationRemoteDelegate<P extends AbstractDbOperation> extends RemoteDelegate {
+public interface AbstractDbOperationRemoteDelegate<P extends AbstractDbOperation<P>> extends RemoteDelegate {
 
 }

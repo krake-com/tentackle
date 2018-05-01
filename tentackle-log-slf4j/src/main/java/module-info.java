@@ -19,9 +19,8 @@
 module org.tentackle.log.slf4j {
   exports org.tentackle.log.slf4j;
 
-  requires org.tentackle.core;
-  requires org.tentackle.common;
-  requires org.slf4j;
+  requires transitive org.tentackle.core;
+  requires transitive org.slf4j;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.log.slf4j.service.Hook;
 }

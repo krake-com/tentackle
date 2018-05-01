@@ -19,9 +19,8 @@
 module org.tentackle.log.log4j2v {
   exports org.tentackle.log.log4j2v;
 
-  requires org.tentackle.core;
-  requires org.tentackle.common;
-  requires org.apache.logging.log4j;
+  requires transitive org.tentackle.core;
+  requires transitive org.apache.logging.log4j;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.log.log4j2v.service.Hook;
 }

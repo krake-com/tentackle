@@ -33,7 +33,7 @@ import org.tentackle.session.PersistenceException;
  * @param <P> the database operation class
  * @author harald
  */
-public class AbstractDbOperationRemoteDelegateImpl<P extends AbstractDbOperation<?>>
+public class AbstractDbOperationRemoteDelegateImpl<P extends AbstractDbOperation<P>>
        extends RemoteDelegateImpl<P>
        implements AbstractDbOperationRemoteDelegate<P> {
 

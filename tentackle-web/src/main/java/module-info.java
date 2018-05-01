@@ -19,12 +19,7 @@
 module org.tentackle.web {
   exports org.tentackle.web.app;
 
-  requires org.tentackle.persistence;
-  requires org.tentackle.pdo;
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.database;
-  requires org.tentackle.common;
+  requires transitive org.tentackle.persistence;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.web.app.service.Hook;
 }

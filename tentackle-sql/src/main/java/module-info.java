@@ -20,10 +20,8 @@ module org.tentackle.sql {
   exports org.tentackle.sql;
   exports org.tentackle.sql.metadata;
 
-  requires org.tentackle.common;
-
-  requires java.sql;
-  requires java.naming;
+  requires transitive org.tentackle.common;
+  requires transitive java.naming;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.sql.service.Hook;
 }

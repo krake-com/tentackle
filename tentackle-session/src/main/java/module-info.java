@@ -19,11 +19,7 @@
 module org.tentackle.session {
   exports org.tentackle.session;
 
-  requires org.tentackle.core;
-  requires org.tentackle.common;
-
-  requires java.sql;
-  requires java.rmi;
+  requires transitive org.tentackle.core;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.session.service.Hook;
 }

@@ -23,10 +23,7 @@ module org.tentackle.model {
   exports org.tentackle.model.parse;
   exports org.tentackle.model.print;
 
-  requires org.tentackle.sql;
-  requires org.tentackle.common;
-
-  requires java.sql;
+  requires transitive org.tentackle.sql;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.model.service.Hook;
 }

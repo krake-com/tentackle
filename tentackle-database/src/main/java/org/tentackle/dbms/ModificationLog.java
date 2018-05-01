@@ -1852,7 +1852,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     if (getSession().isRemote()) {
       // invoke remote method
       try {
-        ((ModificationLogRemoteDelegate) getRemoteDelegate()).updateProcessed(processed, this);
+        getRemoteDelegate().updateProcessed(processed, this);
         this.processed = processed;
         return;
       }
@@ -1897,7 +1897,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     if (getSession().isRemote()) {
       // invoke remote method
       try {
-        ((ModificationLogRemoteDelegate) getRemoteDelegate()).updateDiagnostics(processed, comment, this);
+        getRemoteDelegate().updateDiagnostics(processed, comment, this);
         this.processed = processed;
         this.message = parStr;
         return;

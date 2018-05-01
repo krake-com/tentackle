@@ -51,36 +51,8 @@
           <verbosity>info</verbosity>
           <showCompileOutput>true</showCompileOutput>
           <index>META-INF/RESOURCE-INDEX.LIST</index>
-          <compilerArgs>
-            <arg>--add-exports=org.objectweb.asm/groovy.lang=org.tentackle.script.groovy</arg>
-            <arg>--add-exports=org.objectweb.asm/org.codehaus.groovy.control=org.tentackle.script.groovy</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Xlint:unchecked</arg>
-            <arg>--add-exports=org.objectweb.asm/groovy.lang=org.tentackle.script.groovy</arg>
-            <arg>--add-exports=org.objectweb.asm/org.codehaus.groovy.control=org.tentackle.script.groovy</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <additionalJOptions>
-            <additionalJOption>--add-exports=org.objectweb.asm/groovy.lang=org.tentackle.script.groovy</additionalJOption>
-            <additionalJOption>--add-exports=org.objectweb.asm/org.codehaus.groovy.control=org.tentackle.script.groovy</additionalJOption>
-          </additionalJOptions>
-        </configuration>
-      </plugin>
-
     </plugins>
   </build>
 

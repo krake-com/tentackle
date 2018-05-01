@@ -21,16 +21,8 @@ module org.tentackle.i18n {
   exports org.tentackle.i18n.pdo;
   exports org.tentackle.i18n.pdo.rmi;
 
-  requires org.tentackle.persistence;
-  requires org.tentackle.pdo;
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.database;
-  requires org.tentackle.sql;
-  requires org.tentackle.common;
-  requires org.tentackle.domain;
-
-  requires java.rmi;
+  requires transitive org.tentackle.persistence;
+  requires transitive org.tentackle.domain;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.i18n.service.Hook;
 }

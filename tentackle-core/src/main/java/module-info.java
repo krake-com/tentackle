@@ -18,15 +18,13 @@
 
 module org.tentackle.core {
 
-  requires org.tentackle.common;
+  requires transitive org.tentackle.common;
 
-  requires java.prefs;
-  requires java.sql;
-  requires java.management;
-  requires java.compiler;
-  requires java.rmi;
-  requires java.scripting;
-  requires java.desktop;
+  requires transitive java.prefs;
+  requires transitive java.management;
+  requires transitive java.rmi;
+  requires transitive java.scripting;
+  requires transitive java.desktop;
 
   exports org.tentackle.apt;
   exports org.tentackle.apt.visitor;

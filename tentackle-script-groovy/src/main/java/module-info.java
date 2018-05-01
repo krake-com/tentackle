@@ -18,8 +18,7 @@
 module org.tentackle.script.groovy {
   exports org.tentackle.script.groovy;
 
-  requires org.tentackle.core;
-  requires org.tentackle.common;
+  requires transitive org.tentackle.core;
   requires org.codehaus.groovy;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.script.groovy.service.Hook;

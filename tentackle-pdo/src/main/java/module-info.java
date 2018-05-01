@@ -25,11 +25,7 @@ module org.tentackle.pdo {
   exports org.tentackle.security.pdo;
   exports org.tentackle.security.permissions;
 
-  requires org.tentackle.session;
-  requires org.tentackle.core;
-  requires org.tentackle.common;
-
-  requires java.compiler;
+  requires transitive org.tentackle.session;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.pdo.service.Hook;
 }

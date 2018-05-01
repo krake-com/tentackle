@@ -39,18 +39,8 @@ module org.tentackle.fx.rdc {
   opens org.tentackle.fx.rdc.security;
   opens org.tentackle.fx.rdc.table;
 
-  requires org.tentackle.fx;
-  requires org.tentackle.core;
-  requires org.tentackle.common;
-  requires org.tentackle.pdo;
-  requires org.tentackle.session;
-
-  requires java.compiler;
-  requires java.desktop;
-  requires java.prefs;
-  requires javafx.graphics;
-  requires javafx.controls;
-  requires javafx.fxml;
+  requires transitive org.tentackle.fx;
+  requires transitive org.tentackle.pdo;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
 }
