@@ -19,11 +19,16 @@
 module org.tentackle.fx {
   requires transitive org.tentackle.core;
 
-  requires transitive javafx.base;
-  requires transitive javafx.controls;
-  requires transitive javafx.fxml;
-  requires transitive javafx.graphics;
-  requires transitive javafx.web;
+  requires javafx.base;
+  requires javafx.controls;
+  requires javafx.fxml;
+  requires javafx.graphics;
+  requires javafx.web;
+
+  requires java.sql;
+  requires java.desktop;
+  requires java.prefs;
+  requires java.compiler;
 
   exports org.tentackle.fx;
   exports org.tentackle.fx.apt;

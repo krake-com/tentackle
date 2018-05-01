@@ -21,5 +21,8 @@ module org.tentackle.session {
 
   requires transitive org.tentackle.core;
 
+  requires java.rmi;
+  requires java.sql;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.session.service.Hook;
 }

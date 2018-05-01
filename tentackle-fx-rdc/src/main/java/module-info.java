@@ -42,5 +42,14 @@ module org.tentackle.fx.rdc {
   requires transitive org.tentackle.fx;
   requires transitive org.tentackle.pdo;
 
+  requires javafx.base;
+  requires javafx.fxml;
+  requires javafx.controls;
+  requires javafx.graphics;
+
+  requires java.compiler;
+  requires java.desktop;
+  requires java.prefs;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.fx.rdc.service.Hook;
 }

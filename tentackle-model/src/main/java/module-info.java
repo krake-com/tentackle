@@ -25,5 +25,7 @@ module org.tentackle.model {
 
   requires transitive org.tentackle.sql;
 
+  requires java.sql;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.model.service.Hook;
 }

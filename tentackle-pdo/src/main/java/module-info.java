@@ -27,5 +27,7 @@ module org.tentackle.pdo {
 
   requires transitive org.tentackle.session;
 
+  requires java.compiler;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.pdo.service.Hook;
 }

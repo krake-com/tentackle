@@ -24,5 +24,7 @@ module org.tentackle.i18n {
   requires transitive org.tentackle.persistence;
   requires transitive org.tentackle.domain;
 
+  requires java.rmi;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.i18n.service.Hook;
 }

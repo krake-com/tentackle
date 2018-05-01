@@ -28,5 +28,9 @@ module org.tentackle.persistence {
   requires transitive org.tentackle.pdo;
   requires transitive org.tentackle.database;
 
+  requires java.rmi;
+  requires java.sql;
+  requires java.naming;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.persist.service.Hook;
 }

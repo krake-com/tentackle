@@ -25,5 +25,10 @@ module org.tentackle.database {
   requires transitive org.tentackle.session;
   requires transitive org.tentackle.sql;
 
+  requires java.prefs;
+  requires java.sql;
+  requires java.rmi;
+  requires java.management;
+
   provides org.tentackle.common.ModuleHook with org.tentackle.dbms.service.Hook;
 }
