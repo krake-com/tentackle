@@ -46,7 +46,6 @@ public class SecurityGuiProvider extends DefaultGuiProvider<Security> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public SecurityEditor createEditor() {
     return Fx.load(SecurityEditor.class);
   }

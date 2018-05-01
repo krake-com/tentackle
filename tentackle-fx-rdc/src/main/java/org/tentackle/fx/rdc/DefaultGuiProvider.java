@@ -96,7 +96,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <C extends PdoEditor<T>> C createEditor() {
+  public PdoEditor<T> createEditor() {
     throw new FxRuntimeException("no controller for " + pdo.toGenericString());
   }
 
@@ -106,7 +106,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
-  public <C extends PdoFinder<T>> C createFinder() {
+  public PdoFinder<T> createFinder() {
     throw new FxRuntimeException("no finder for " + pdo.getEffectiveClass().getName());
   }
 

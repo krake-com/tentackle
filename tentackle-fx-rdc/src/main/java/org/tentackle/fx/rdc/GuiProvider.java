@@ -69,11 +69,10 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Creates a controller to edit or view this object.
    *
-   * @param <C> the controller type
    * @return the controller
    * @throws FxRuntimeException if {@link #editorExists()} == false
    */
-  <C extends PdoEditor<T>> C createEditor();
+  PdoEditor<T> createEditor();
 
   /**
    * Returns whether a finder exists to search for PDOs.
@@ -85,11 +84,10 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   /**
    * Creates a controller to search PDOs.
    *
-   * @param <C> the controller type
    * @return the controller
    * @throws FxRuntimeException if {@link #editorExists()} == false
    */
-  <C extends PdoFinder<T>> C createFinder();
+  PdoFinder<T> createFinder();
 
   /**
    * Creates the dragboard for the pdo.
