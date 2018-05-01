@@ -316,7 +316,9 @@
             <target>${javac.version.target}</target>
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
-            <compilerArgument>-Xlint:unchecked</compilerArgument>
+            <compilerArgs>
+              <arg>-Xlint:unchecked</arg>
+            </compilerArgs>
           </configuration>
         </plugin>
         <plugin>

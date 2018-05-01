@@ -84,9 +84,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
-          <compilerArgument>-proc:none</compilerArgument>
           <compilerArgs>
+            <arg>-Xlint:unchecked</arg>
             <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
             <arg>-proc:none</arg>
             <arg>--add-exports=javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx</arg>

@@ -109,6 +109,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <compilerArgs>
+            <arg>-Xlint:unchecked</arg>
             <!-- proc:none because of chicken-egg problem with annotation processors in same module -->
             <arg>-proc:none</arg>
             <arg>--add-exports=javafx.graphics/com.sun.javafx.css=org.tentackle.fx</arg>

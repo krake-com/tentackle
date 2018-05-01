@@ -253,6 +253,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
 
   @Override
+  @SuppressWarnings("unchecked")
   public TrackedList<E> copy() {
     TrackedArrayList<E> list = new TrackedArrayList<>(size(), false);
     for (E obj: this) {

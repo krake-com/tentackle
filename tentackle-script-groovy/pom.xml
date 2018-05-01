@@ -63,6 +63,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <compilerArgs>
+            <arg>-Xlint:unchecked</arg>
             <arg>--add-exports=org.objectweb.asm/groovy.lang=org.tentackle.script.groovy</arg>
             <arg>--add-exports=org.objectweb.asm/org.codehaus.groovy.control=org.tentackle.script.groovy</arg>
           </compilerArgs>
