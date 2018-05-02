@@ -19,9 +19,11 @@
 
 package org.tentackle.dbms.prefs;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -906,6 +908,115 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
     for (DbPreferences child: node.getChilds()) {
       addNodeToMaps(child, idNodeMap, pathNodeMap);
     }
+  }
+
+
+  /**
+   * Checks all preferences and tries to fix if possible.<br>
+   * The method is provided since {@link DbPreferencesNode} and {@link DbPreferencesKey} provide no referential integrity
+   * via database-enforced foreign keys, but only at application level.<br>
+   * Invoke this method, whenever the database has been modified manually via SQL.
+   *
+   * @param db the session (must be local)
+   */
+  public void checkAllPreferences(Db db) {
+    db.assertNotRemote();   // must be a direct JDBC link
+    db.transaction(() -> {
+      Map<Long, DbPreferencesNode> nodeMap = new HashMap<>();   // map ID:Node
+      Set<DbPreferencesNode> processedNodes = new HashSet<>();  // already processed nodes
+      Collection<DbPreferencesNode> allNodes = new DbPreferencesNode(db).selectAllObjects();
+      Collection<DbPreferencesKey> allKeys = new DbPreferencesKey(db).selectAllObjects();
+      LOGGER.info("processing {0} nodes and {1} keys", allNodes.size(), allKeys.size());
+      for (DbPreferencesNode node : allNodes) {
+        nodeMap.put(node.getId(), node);
+      }
+      processPreferences(processedNodes, nodeMap, allKeys);
+      allNodes.removeAll(processedNodes);
+      for (DbPreferencesNode node: allNodes) {
+        LOGGER.severe("orphan node found: {0}", node);
+      }
+      for (DbPreferencesKey key: allKeys) {
+        LOGGER.severe("oprhan key found: {0}", key);
+      }
+      return null;
+    });
+  }
+
+  private void processPreferences(Set<DbPreferencesNode> processedNodes, Map<Long, DbPreferencesNode> nodeMap,
+                                  Collection<DbPreferencesKey> allKeys) {
+    // check root nodes
+    for (DbPreferencesNode node : nodeMap.values()) {
+      if (node.getParentId() == 0 && node.getRootNodeId() != node.getId()) {
+        node.setRootNodeId(node.getId());
+        node.saveObject();
+        LOGGER.info("fixed rootNodeId of root-node {0} to {1}", node, node.getRootNodeId());
+      }
+    }
+
+    // process parent chain to root
+    for (DbPreferencesNode node: nodeMap.values()) {
+      if (node.getParentId() != 0) {
+        DbPreferencesNode root = findRoot(nodeMap, node);
+        if (root == null) {
+          LOGGER.severe("missing root for node {0}", node.getId());
+        }
+        else {
+          // go down all subnodes and keys and set the rootNodeId if missing
+          processNode(processedNodes, nodeMap.values(), allKeys, root);
+        }
+      }
+    }
+  }
+
+  private void processNode(Set<DbPreferencesNode> processedNodes, Collection<DbPreferencesNode> allNodes,
+                           Collection<DbPreferencesKey> allKeys, DbPreferencesNode node) {
+    if (!processedNodes.contains(node)) {
+      for (DbPreferencesKey key: findKeys(allKeys, node)) {
+        if (key.getRootNodeId() != node.getRootNodeId()) {
+          key.setRootNodeId(node.getRootNodeId());
+          key.saveObject();
+          LOGGER.info("fixed rootNodeId of key {0} to {1}", key, key.getRootNodeId());
+        }
+      }
+      for (DbPreferencesNode child: findChilds(allNodes, node)) {
+        if (child.getRootNodeId() != node.getRootNodeId()) {
+          child.setRootNodeId(node.getRootNodeId());
+          child.saveObject();
+          LOGGER.info("fixed rootNodeId of node {0} to {1}", child, child.getRootNodeId());
+        }
+        processNode(processedNodes, allNodes, allKeys, child);
+      }
+      processedNodes.add(node);
+    }
+  }
+
+  private DbPreferencesNode findRoot(Map<Long, DbPreferencesNode> nodeMap, DbPreferencesNode node) {
+    while (node != null && node.getParentId() != 0) {
+      node = nodeMap.get(node.getParentId());
+    }
+    return node;
+  }
+
+  private Collection<DbPreferencesNode> findChilds(Collection<DbPreferencesNode> allNodes, DbPreferencesNode node) {
+    Collection<DbPreferencesNode> childs = new ArrayList<>();
+    for (DbPreferencesNode child: allNodes) {
+      if (child.getParentId() == node.getId()) {
+        childs.add(child);
+      }
+    }
+    return childs;
+  }
+
+  private Collection<DbPreferencesKey> findKeys(Collection<DbPreferencesKey> allKeys, DbPreferencesNode node) {
+    Collection<DbPreferencesKey> keys = new ArrayList<>();
+    for (Iterator<DbPreferencesKey> iter = allKeys.iterator(); iter.hasNext(); ) {
+      DbPreferencesKey key = iter.next();
+      if (key.getNodeId() == node.getId()) {
+        keys.add(key);
+        iter.remove();
+      }
+    }
+    return keys;
   }
 
 }
