@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
@@ -607,6 +608,14 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       }
     }
     return someRemoved;
+  }
+
+
+  @Override
+  public boolean removeIf(Predicate<? super E> filter) {
+    // catch removed objects
+    stream().filter(filter).forEach(this::addRemovedObject);
+    return super.removeIf(filter);
   }
 
 

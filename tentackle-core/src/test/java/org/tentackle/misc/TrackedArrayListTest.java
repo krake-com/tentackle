@@ -186,6 +186,18 @@ public class TrackedArrayListTest {
       Assert.fail("must not throw ImmutableException");
     }
 
+    TrackedList<Integer> list2 = new TrackedArrayList<>();
+    for (int i = 9; i >= 0; i--) {
+      list2.add(i);
+    }
+    Assert.assertTrue(list2.removeIf(integer -> integer % 2 == 0));
+    Assert.assertEquals(list2.size(), 5);
+    Assert.assertEquals(list2.getRemovedObjects().size(), 5);
+    Assert.assertEquals(list2.get(0), Integer.valueOf(9));
+    Assert.assertEquals(list2.get(1), Integer.valueOf(7));
+    Assert.assertEquals(list2.get(2), Integer.valueOf(5));
+    Assert.assertEquals(list2.get(3), Integer.valueOf(3));
+    Assert.assertEquals(list2.get(4), Integer.valueOf(1));
   }
 
 
