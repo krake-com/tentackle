@@ -124,6 +124,20 @@ public interface TableConfiguration<S> {
   void loadPreferences(FxTableView<S> table, String suffix, boolean system, boolean noViewSize);
 
   /**
+   * Returns whether the preferences include the column sorting.
+   *
+   * @return true if included (default is false)
+   */
+  boolean isSortingIncluded();
+
+  /**
+   * Sets whether the preferences include the column sorting.
+   *
+   * @param sortingIncluded true if included (default is false)
+   */
+  void setSortingIncluded(boolean sortingIncluded);
+
+  /**
    * Gets the type of binding.
    *
    * @return the binding type

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxRuntimeException;
@@ -46,20 +48,20 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
   private static final Logger LOGGER = Logger.get(DefaultTableConfiguration.class);
 
-  /** preferences key for table width. */
-  private static final String PREF_TABLE_WIDTH = "width";
+  /** preferences key for table and column width. */
+  private static final String PREF_WIDTH = "width";
 
   /** preferences key for table height. */
   private static final String PREF_TABLE_HEIGHT = "height";
 
-  /** preferences key for column width. */
-  private static final String PREF_COLUMN_WIDTH = "w_";
-
   /** preferences key for column view index. */
-  private static final String PREF_COLUMN_INDEX = "i_";
+  private static final String PREF_COLUMN_INDEX = "index";
 
   /** preferences key for column visibility. */
-  private static final String PREF_COLUMN_VISIBILITY = "v_";
+  private static final String PREF_COLUMN_VISIBILITY = "visible";
+
+  /** preferences key for column sorting. */
+  private static final String PREF_COLUMN_SORTING = "sort";
 
 
 
@@ -87,6 +89,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * The binder.
    */
   private FxTableBinder<S> binder;
+
+  /**
+   * whether preferences include sorting configuration.
+   */
+  private boolean sortingIncluded;
 
 
   /**
@@ -195,6 +202,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public boolean isSortingIncluded() {
+    return sortingIncluded;
+  }
+
+  @Override
+  public void setSortingIncluded(boolean sortingIncluded) {
+    this.sortingIncluded = sortingIncluded;
+  }
+
+  @Override
   public void savePreferences(FxTableView<S> table, String suffix, boolean system) {
 
     StringBuilder prefName = new StringBuilder();
@@ -204,6 +221,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     }
     // always add the locale since header sizes etc... may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
+
+    ObservableList<TableColumn<S,?>> sortOrder = table.getSortOrder();
 
     try {
       PersistedPreferences prefs = system ?
@@ -216,8 +235,14 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
         if (columnConfig != null) {
           PersistedPreferences columnPrefs = prefs.node(columnConfig.getName());
           columnPrefs.putInt(PREF_COLUMN_VISIBILITY, column.isVisible() ? 1 : 0);
-          columnPrefs.putDouble(PREF_COLUMN_WIDTH, column.getWidth());
+          columnPrefs.putDouble(PREF_WIDTH, column.getWidth());
           columnPrefs.putInt(PREF_COLUMN_INDEX, viewIndex);
+          if (isSortingIncluded() && sortOrder.contains(column)) {
+            columnPrefs.putInt(PREF_COLUMN_SORTING, column.getSortType().ordinal());
+          }
+          else {
+            columnPrefs.remove(PREF_COLUMN_SORTING);
+          }
         }
         viewIndex++;
       }
@@ -229,7 +254,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
         height += table.getTotalsTableView().getHeight();
       }
       prefs.putDouble(PREF_TABLE_HEIGHT, height);
-      prefs.putDouble(PREF_TABLE_WIDTH, table.getWidth());
+      prefs.putDouble(PREF_WIDTH, table.getWidth());
       prefs.flush();
     }
     catch (BackingStoreException | RuntimeException ex) {
@@ -247,6 +272,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     }
     // always add the locale since header sizes etc... may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
+
+    ObservableList<TableColumn<S,?>> sortOrder = FXCollections.observableArrayList();
 
     try {
       // get the preferences
@@ -278,9 +305,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
             }
             int visibility = columnPref.getInt(PREF_COLUMN_VISIBILITY, -1);
             column.setVisible(visibility != 0);
-            double width = columnPref.getDouble(PREF_COLUMN_WIDTH, -1.0);
+            double width = columnPref.getDouble(PREF_WIDTH, -1.0);
             if (width >= 0.0) {
               table.resizeColumn(column, width - column.getWidth());
+            }
+            if (isSortingIncluded()) {
+              int sorting = columnPref.getInt(PREF_COLUMN_SORTING, -1);
+              if (sorting >= 0) {
+                column.setSortType(TableColumn.SortType.values()[sorting]);
+                sortOrder.add(column);
+              }
             }
           }
         }
@@ -288,11 +322,12 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
       table.getColumns().removeAll(columnMapByIndex.values());
       table.getColumns().addAll(columnMapByIndex.values());
+      table.getSortOrder().addAll(sortOrder);
 
       // read table dimensions
       if (!noViewSize) {
         double width = -1.0;
-        String key = PREF_TABLE_WIDTH;
+        String key = PREF_WIDTH;
         if (!system) {
           width = userPref.getDouble(key, width);
         }
