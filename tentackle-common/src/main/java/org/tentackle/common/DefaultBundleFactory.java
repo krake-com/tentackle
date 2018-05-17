@@ -104,12 +104,13 @@ public class DefaultBundleFactory implements BundleFactory {
   @Override
   public ResourceBundle findBundle(String baseName, Locale locale) {
     baseName = normalizeBasename(baseName);
-    ResourceBundle.Control control = getControl(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
+      // classloader doesnt work for named modules --> fallback to bundle support
       return getBundle(support, locale);
     }
     else {
+      ResourceBundle.Control control = getControl(baseName);
       if (classLoader == null) {
         return control == null ?
                   ResourceBundle.getBundle(baseName, locale) :
