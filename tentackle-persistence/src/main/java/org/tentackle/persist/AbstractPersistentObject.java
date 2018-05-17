@@ -3423,7 +3423,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public boolean isTokenLocked() {
-    return getEditedBy() != 0 && getEditedExpiry() != null && getEditedExpiry().getTime() > System.currentTimeMillis();
+    return getEditedBy() != 0 && DateHelper.toMillis(getEditedExpiry()) > System.currentTimeMillis();
   }
 
   /**

@@ -44,9 +44,20 @@ public final class DateHelper {
 
 
   /**
+   * Converts a date to the epochal time in millis with null-check.
+   *
+   * @param date the date, time or timestamp, may be null
+   * @return the epochal time in ms, 0 if date is null
+   */
+  public static long toMillis(java.util.Date date) {
+    return date == null ? 0 : date.getTime();
+  }
+
+  /**
    * Converts a <tt>java.util.Date</tt> into an <tt>org.tentackle.misc.Date</tt>.
+   *
    * @param date the util date
-   * @return the sql date
+   * @return the sql date, null if date was null
    */
   public static Date toDate(java.util.Date date)  {
     return date == null ? null : new Date(date.getTime());
@@ -54,8 +65,9 @@ public final class DateHelper {
 
   /**
    * Converts a Calendar into a org.tentackle.misc.Date.
+   *
    * @param cal the calendar
-   * @return the date
+   * @return the date, null if cal was null
    */
   public static Date toDate(Calendar cal)  {
     return cal == null ? null : new Date(cal.getTime().getTime());
@@ -66,7 +78,7 @@ public final class DateHelper {
    * Converts a java.util.Date into a org.tentackle.misc.Time.
    *
    * @param date the date
-   * @return the time of the day in date
+   * @return the time of the day in date, null if date was null
    */
   public static Time toTime(java.util.Date date)  {
     return date == null ? null : new Time(date.getTime());
@@ -75,8 +87,9 @@ public final class DateHelper {
 
   /**
    * Converts a Calendar into a org.tentackle.misc.Time.
+   *
    * @param cal the calendar
-   * @return the time of day
+   * @return the time of day, null if cal was null
    */
   public static Time toTime(Calendar cal)  {
     return cal == null ? null : new Time(cal.getTime().getTime());
@@ -85,8 +98,9 @@ public final class DateHelper {
 
   /**
    * Converts a java.util.Date into a org.tentackle.misc.Timestamp.
+   *
    * @param date the date
-   * @return the timestamp
+   * @return the timestamp, null if date was null
    */
   public static Timestamp toTimestamp(java.util.Date date)  {
     return date == null ? null : new Timestamp(date.getTime());
@@ -95,8 +109,9 @@ public final class DateHelper {
 
   /**
    * Converts a Calendar into a org.tentackle.misc.Timestamp.
+   *
    * @param cal the calendar
-   * @return the timestamp
+   * @return the timestamp, null if cal was null
    */
   public static Timestamp toTimestamp(Calendar cal)  {
     return cal == null ? null : new Timestamp(cal.getTime().getTime());
