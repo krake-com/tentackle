@@ -37,10 +37,10 @@ import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
+import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationEventDetail;
@@ -487,13 +487,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         List<IdSerialTuple> keyExpireSet = null;
         if (nodeMaxSerial > 0) {
           nodeExpireSet = new DbPreferencesNode(db).getExpiredTableSerials(nodeTableSerial, nodeMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(nodeExpireSet, nodeMaxSerial)) {
+          if (SessionUtilities.getInstance().isSomeRemoved(nodeTableSerial, nodeExpireSet, nodeMaxSerial)) {
             someRemoved = true;
           }
         }
         if (!someRemoved && keyMaxSerial > 0) {
           keyExpireSet = new DbPreferencesKey(db).getExpiredTableSerials(keyTableSerial, keyMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(keyExpireSet, keyMaxSerial)) {
+          if (SessionUtilities.getInstance().isSomeRemoved(keyTableSerial, keyExpireSet, keyMaxSerial)) {
             someRemoved = true;
           }
         }
@@ -610,7 +610,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
           else {
             node = new DbPreferences(parent, prefNode, null, null);
-            parent.putChild(node);
+            parent.addChild(node);
             idNodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
           }
@@ -651,14 +651,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       // remove keys
       Set<DbPreferencesKey> persistedKeys = new HashSet<>(prefKeys);
       for (DbPreferencesKey prefKey: idKeyMap.values()) {
-        if (!prefKey.isNew()) {   // if not created in this JVM
-          if (!persistedKeys.contains(prefKey)) {
-            DbPreferences node = idNodeMap.get(prefKey.getNodeId());
-            if (node != null) {
-              prefKey = node.removePersistentKey(prefKey.getKey());
-              if (prefKey != null) {
-                keyChanged(node, prefKey);
-              }
+        if (!prefKey.isNew() && !persistedKeys.contains(prefKey)) {
+          // if not created in this JVM
+          DbPreferences node = idNodeMap.get(prefKey.getNodeId());
+          if (node != null) {
+            prefKey = node.removePersistentKey(prefKey.getKey());
+            if (prefKey != null) {
+              keyChanged(node, prefKey);
             }
           }
         }
@@ -667,14 +666,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       // remove nodes
       Set<DbPreferencesNode> persistedNodes = new HashSet<>(prefNodes);
       for (DbPreferences node: idNodeMap.values()) {
-        if (!node.getPersistentNode().isNew()) {  // if not created in this JVM
-          if (!persistedNodes.contains(node.getPersistentNode())) {
-            DbPreferences parent = node.parent();
-            if (parent != null) {
-              node = parent.removeChild(node.name());
-              if (node != null) {
-                nodeChanged(node);
-              }
+        if (!node.getPersistentNode().isNew() && !persistedNodes.contains(node.getPersistentNode())) {
+          // if not created in this JVM
+          DbPreferences parent = node.parent();
+          if (parent != null) {
+            node = parent.removeChild(node.name());
+            if (node != null) {
+              nodeChanged(node);
             }
           }
         }
@@ -728,7 +726,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           DbPreferences parent = idNodeMap.get(prefNode.getParentId());  // must exist bec. nodes are sorted by id
           if (parent != null) {
             node = new DbPreferences(parent, prefNode, null, null);
-            parent.putChild(node);
+            parent.addChild(node);
             idNodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
           }

@@ -251,16 +251,16 @@ public class SessionUtilities {
   /**
    * Inspects an expiration set and determines whether at least one object has been removed.
    *
+   * @param lastSerial the last known tableserial, &le;0 if unknown
    * @param expireSet the expiration set
    * @param maxSerial the current tableserial
    * @return true if some object removed
    */
-  public boolean isSomeRemoved(List<IdSerialTuple> expireSet, long maxSerial) {
+  public boolean isSomeRemoved(long lastSerial, List<IdSerialTuple> expireSet, long maxSerial) {
     // determine whether some objects have been removed or not
     boolean someRemoved = false;
-    long lastSerial = -1;
     for (IdSerialTuple idSer: expireSet) {
-      if (lastSerial != -1 && idSer.getSerial() - lastSerial > 1) {
+      if (lastSerial > 0 && idSer.getSerial() - lastSerial > 1) {
         // gap in tableSerials: delete() invoked at least once
         someRemoved = true;
         break;
