@@ -218,10 +218,17 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    *
    * @return the pdo
    */
+  @SuppressWarnings("unchecked")
   protected T createPdo() {
-    @SuppressWarnings("unchecked")
-    Class<T> pdoClass = (Class<T>) getComponent().getType();
-    DomainContext context = getComponent().getBinding().getBinder().getBindingProperty(DomainContext.class);
+    FxTextComponent comp = getComponent();
+    Class<T> pdoClass = (Class<T>) comp.getType();
+    DomainContext context;
+    if (comp.getParentContainer() != null) {
+      context = comp.getBinding().getBinder().getBindingProperty(DomainContext.class);
+    }
+    else {
+      context = (DomainContext) ((Node) comp).getProperties().get(DomainContext.class);
+    }
     if (context == null) {
       throw new FxRuntimeException("missing binding property for DomainContext");
     }

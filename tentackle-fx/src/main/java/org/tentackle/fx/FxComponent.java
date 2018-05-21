@@ -22,6 +22,7 @@ package org.tentackle.fx;
 import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import org.tentackle.fx.bind.FxComponentBinding;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Interface all tentackle Fx components must implement.
@@ -137,6 +138,8 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    */
   BooleanProperty mandatoryProperty();
 
+
+
   // ------------------- binding -------------------------------------
 
   /**
@@ -199,5 +202,19 @@ public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSu
    * @return true if updateView could make sense
    */
   boolean isModelUpdated();
+
+  /**
+   * Sets the table cell if the component is used as a table cell editor.
+   *
+   * @param tableCell the cell, null to disconnect from table cell
+   */
+  void setTableCell(FxTableCell<?,?> tableCell);
+
+  /**
+   * Gets the table cell if the component is used as a table cell editor.
+   *
+   * @return the cell, null if not a cell editor
+   */
+  FxTableCell<?,?> getTableCell();
 
 }

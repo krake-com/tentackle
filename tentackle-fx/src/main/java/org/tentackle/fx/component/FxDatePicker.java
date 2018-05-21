@@ -27,13 +27,14 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.DatePicker;
 import org.tentackle.fx.CaseConversion;
-import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxDatePickerDelegate;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Extended DatePicker.<br>
@@ -524,6 +525,16 @@ public class FxDatePicker extends DatePicker implements FxTextComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

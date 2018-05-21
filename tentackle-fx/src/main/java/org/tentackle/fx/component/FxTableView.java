@@ -31,6 +31,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTableViewDelegate;
+import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TotalsTableView;
 
@@ -436,6 +437,16 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

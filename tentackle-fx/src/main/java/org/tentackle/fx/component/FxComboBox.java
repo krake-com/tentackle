@@ -33,6 +33,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Extended ComboBox.
@@ -539,6 +540,16 @@ public class FxComboBox<T> extends ComboBox<T> implements FxTextComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

@@ -19,6 +19,8 @@
 
 package org.tentackle.fx.table;
 
+import org.tentackle.fx.FxComponent;
+
 /**
  * A table cell type.<p>
  * Table cell types are singletons per java class.
@@ -36,5 +38,19 @@ public interface TableCellType<T> {
    * @param item the item for the cell, never null
    */
   void updateItem(FxTableCell<?,T> tableCell, T item);
+
+  /**
+   * Gets the editor component.
+   *
+   * @return the editor component, never null
+   */
+  FxComponent getEditor();
+
+  /**
+   * Gets the intrinsic type of the editor.
+   *
+   * @return the editor's type
+   */
+  Class<?> getEditorType();
 
 }

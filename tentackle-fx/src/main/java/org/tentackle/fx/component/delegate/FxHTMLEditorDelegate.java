@@ -7,11 +7,11 @@
 package org.tentackle.fx.component.delegate;
 
 import javafx.scene.Parent;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxHTMLEditor;
-import org.tentackle.common.StringHelper;
 
 /**
  * Delegate for FxHTMLEditor.

@@ -31,6 +31,7 @@ import javafx.scene.Parent;
 import javafx.stage.PopupWindow;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
+import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.log.Logger;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
@@ -136,6 +137,11 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
    * Will be cleared if view is updated again.
    */
   private boolean modelUpdated;
+
+  /**
+   * The table cell, if this is used as a cell editor.
+   */
+  private FxTableCell<?,?> tableCell;
 
 
 
@@ -409,7 +415,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
 
   @Override
   public void setType(Class<?> type) {
-    if (this.type != null) {
+    if (this.type != null && this.type != type) {
       throw new FxRuntimeException("type already set to " + this.type + " (requested " + type + ") for " + getComponent());
     }
     this.type = type;
@@ -508,4 +514,13 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
     return binding;
   }
 
+  @Override
+  public FxTableCell<?, ?> getTableCell() {
+    return tableCell;
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?, ?> tableCell) {
+    this.tableCell = tableCell;
+  }
 }

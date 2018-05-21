@@ -299,13 +299,13 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
 
   @Override
   public Object getViewValue() {
-    // @todo for editable tables
+    // not used, implemented in FxTableCell
     return null;
   }
 
   @Override
   protected void updateView(Object value) {
-    // @todo for editable tables
+    // not used, implemented in FxTableCell
   }
 
   @Override

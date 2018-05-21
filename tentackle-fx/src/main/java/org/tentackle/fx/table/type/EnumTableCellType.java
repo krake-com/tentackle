@@ -19,31 +19,39 @@
 
 package org.tentackle.fx.table.type;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
+import javafx.scene.control.ComboBox;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
-import org.tentackle.misc.FormatHelper;
 
 /**
- * LocalTime cell type.
+ * A boolean cell type.
  *
  * @author harald
  */
-@TableCellTypeService(LocalTime.class)
-public class LocalTimeCellType extends AbstractTableCellType<LocalTime> {
+@TableCellTypeService(Enum.class)
+public class EnumTableCellType extends AbstractTableCellType<Enum> {
 
   @Override
-  public void updateItem(FxTableCell<?, LocalTime> tableCell, LocalTime item) {
+  public void updateItem(FxTableCell<?, Enum> tableCell, Enum item) {
+    tableCell.setText(item.toString());
     tableCell.setGraphic(null);
-    DateTimeFormatter fmt = tableCell.getColumnConfiguration().getDateTimeFormatter();
-    if (fmt == null) {
-      fmt = FormatHelper.getLocalTimeFormatter();
-    }
-    String text = fmt.format(item);
-    tableCell.setText(text);
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public FxComponent getEditor() {
+    if (editor == null) {
+      editor = Fx.createNode(ComboBox.class);
+    }
+    return editor;
+  }
+
+  @Override
+  public Class<?> getEditorType() {
+    return Enum.class;
   }
 
 }

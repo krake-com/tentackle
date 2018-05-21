@@ -28,6 +28,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -35,6 +36,7 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
@@ -111,7 +113,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     childMap = new HashMap<>();
     if (childs != null) {
       for (DbPreferences child : childs) {
-        putChild(child);
+        addChild(child);
       }
     }
 
@@ -184,6 +186,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       prefKey.setKey(key);
       putPersistentKey(prefKey);
     }
+    else if (prefKey.isRemoved()) {
+      prefKey.setRemoved(false);
+      prefKey.setModified(true);    // in case value didn't change
+    }
     prefKey.setValue(value);
   }
 
@@ -195,7 +201,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public synchronized void remove(String key) {
-    removePersistentKey(key);
+    DbPreferencesKey prefKey = getPersistentKey(key);
+    if (prefKey != null) {
+      prefKey.setRemoved(true);
+    }
   }
 
   @Override
@@ -325,12 +334,16 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public synchronized String[] keys() throws BackingStoreException {
-    return keyMap.keySet().toArray(new String[keyMap.size()]);
+    List<String> keys = keyMap.values().stream().filter(k -> !k.isRemoved())
+                        .map(k -> k.getKey()).collect(Collectors.toList());
+    return keys.toArray(new String[keys.size()]);
   }
 
   @Override
   public synchronized String[] childrenNames() throws BackingStoreException {
-    return childMap.keySet().toArray(new String[childMap.size()]);
+    List<String> names = childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
+                         .map(c -> c.name()).collect(Collectors.toList());
+    return names.toArray(new String[names.size()]);
   }
 
   @Override
@@ -445,7 +458,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
         }
         childNode.setUser(currentPrefs.getUser());
         childPrefs = new DbPreferences(currentPrefs, childNode, null, null);
-        currentPrefs.putChild(childPrefs);
+        currentPrefs.addChild(childPrefs);
       }
       currentPrefs = childPrefs;
     }
@@ -492,6 +505,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
     this.prefNode.setTableSerial(prefNode.getTableSerial());
     this.prefNode.setRemoved(prefNode.isRemoved());
     this.prefNode.setModified(false);
+    this.prefNode.setParentId(prefNode.getParentId());
+    this.prefNode.setRootNodeId(prefNode.getRootNodeId());
     // the other attributes don't ever change in a node
     return notPersisted != prefNode.isNew();
   }
@@ -518,11 +533,10 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
    * Adds a child node.
    *
    * @param child the child node
-   * @return the replaced child, null if new
    */
-  public DbPreferences putChild(DbPreferences child) {
+  public void addChild(DbPreferences child) {
     child.getPersistentNode().setRemoved(false);
-    return childMap.put(child.name(), child);
+    childMap.put(child.name(), child);
   }
 
   /**
@@ -601,6 +615,8 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
       existingKey.setTableSerial(key.getTableSerial());
       existingKey.setValue(key.getValue());
       existingKey.setRemoved(key.isRemoved());
+      existingKey.setNodeId(key.getNodeId());
+      existingKey.setRootNodeId(key.getRootNodeId());
       existingKey.setModified(false);
     }
     else {

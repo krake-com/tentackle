@@ -152,6 +152,20 @@ public interface TableConfiguration<S> {
   FxTableBinder<S> getBinder();
 
   /**
+   * Returns whether all columns are editable by default.
+   *
+   * @return true if editable, the default is false
+   */
+  boolean isEditable();
+
+  /**
+   * Sets whether all columns are editable by default.
+   *
+   * @param editable true if editable
+   */
+  void setEditable(boolean editable);
+
+  /**
    * Configures the table.
    *
    * @param table the table view

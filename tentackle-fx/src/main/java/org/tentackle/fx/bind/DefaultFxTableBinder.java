@@ -29,9 +29,9 @@ import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
-import org.tentackle.common.StringHelper;
 
 
 /**

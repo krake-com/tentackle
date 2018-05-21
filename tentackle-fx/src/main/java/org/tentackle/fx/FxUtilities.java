@@ -64,8 +64,8 @@ import org.tentackle.bind.BindingMember;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.fx.component.Note;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.component.Note;
 
 interface FxUtilities$Singleton {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);

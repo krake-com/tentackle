@@ -483,13 +483,13 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         List<IdSerialTuple> keyExpireSet = null;
         if (nodeMaxSerial > 0) {
           nodeExpireSet = new DbPreferencesNode(db).getExpiredTableSerials(nodeTableSerial, nodeMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(nodeExpireSet, nodeMaxSerial)) {
+          if (SessionUtilities.getInstance().isSomeRemoved(nodeTableSerial, nodeExpireSet, nodeMaxSerial)) {
             someRemoved = true;
           }
         }
         if (!someRemoved && keyMaxSerial > 0) {
           keyExpireSet = new DbPreferencesKey(db).getExpiredTableSerials(keyTableSerial, keyMaxSerial);
-          if (SessionUtilities.getInstance().isSomeRemoved(keyExpireSet, keyMaxSerial)) {
+          if (SessionUtilities.getInstance().isSomeRemoved(keyTableSerial, keyExpireSet, keyMaxSerial)) {
             someRemoved = true;
           }
         }
@@ -606,7 +606,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           }
           else {
             node = new DbPreferences(parent, prefNode, null, null);
-            parent.putChild(node);
+            parent.addChild(node);
             idNodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
           }
@@ -722,7 +722,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
           DbPreferences parent = idNodeMap.get(prefNode.getParentId());  // must exist bec. nodes are sorted by id
           if (parent != null) {
             node = new DbPreferences(parent, prefNode, null, null);
-            parent.putChild(node);
+            parent.addChild(node);
             idNodeMap.put(prefNode.getId(), node);
             nodeChanged(node);
           }

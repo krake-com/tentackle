@@ -259,7 +259,7 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
         if (parentId != 0) {
           DbPreferences parent = childs.get(parentId);
           if (parent != null) {
-            parent.putChild(child);
+            parent.addChild(child);
           }
           else {
             LOGGER.warning("parent missing for child node {0}", child.getPersistentNode());
@@ -324,12 +324,14 @@ public class DbPreferencesOperation extends AbstractDbOperation<DbPreferencesOpe
     }
 
     for (DbPreferencesKey key: node.getKeys()) {
-      if (!key.isNew()) {
+      if (!key.isNew() && !key.isRemoved()) {
         prefKeys.add(key);
       }
     }
     for (DbPreferences child: node.getChilds()) {
-      addNodeToLists(child, prefNodes, prefKeys);
+      if (!child.getPersistentNode().isNew() && !child.getPersistentNode().isRemoved()) {
+        addNodeToLists(child, prefNodes, prefKeys);
+      }
     }
   }
 

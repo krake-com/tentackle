@@ -31,6 +31,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxColorPickerDelegate;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Extended ColorPicker.
@@ -353,6 +354,16 @@ public class FxColorPicker extends ColorPicker implements FxComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

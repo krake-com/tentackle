@@ -31,6 +31,7 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.util.Callback;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.misc.FormatHelper;
@@ -143,6 +144,16 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Summable or not.
    */
   private Boolean summable;
+
+  /**
+   * Editable or not.
+   */
+  private Boolean editable;
+
+  /**
+   * Optional editor.
+   */
+  private FxComponent editor;
 
 
 
@@ -349,6 +360,31 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   }
 
   @Override
+  public boolean isEditable() {
+    return Boolean.TRUE.equals(editable) || tableConfiguration != null && tableConfiguration.isEditable();
+  }
+
+  @Override
+  public Boolean getEditable() {
+    return editable;
+  }
+
+  @Override
+  public void setEditable(Boolean editable) {
+    this.editable = editable;
+  }
+
+  @Override
+  public FxComponent getEditor() {
+    return editor;
+  }
+
+  @Override
+  public void setEditor(FxComponent editor) {
+    this.editor = editor;
+  }
+
+  @Override
   public void setBinding(FxTableBinding<S, T> binding) {
     this.binding = binding;
   }
@@ -368,19 +404,39 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
 
 
   /**
+   * Creates the cell value for a given row object.
+   *
+   * @param cdf the cell data features
+   * @return the cell value to display
+   */
+  protected ObservableValue<T> createCellValue(CellDataFeatures<S, T> cdf) {
+    if (binding == null) {
+      throw new FxRuntimeException("missing binding for " + this);
+    }
+    binding.setBoundRootObject(cdf.getValue());
+    return new ReadOnlyObjectWrapper<>(binding.getModelValue());
+  }
+
+
+  /**
    * Creates the cell value factory.
    *
    * @return the value factory
    */
   @SuppressWarnings("unchecked")
   protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createCellValueFactory() {
-    return (CellDataFeatures<S, T> p) -> {
-      if (binding == null) {
-        throw new FxRuntimeException("missing binding for " + this);
-      }
-      binding.setBoundRootObject(p.getValue());
-      return new ReadOnlyObjectWrapper<>(binding.getModelValue());
-    };
+    return (CellDataFeatures<S, T> cdf) -> createCellValue(cdf);
+  }
+
+
+  /**
+   * Creates a table cell.
+   *
+   * @param column the table column
+   * @return the table cell
+   */
+  protected TableCell<S,T> createTableCell(TableColumn<S, T> column) {
+    return new FxTableCell<>(this);
   }
 
 
@@ -390,7 +446,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * @return the cell factory
    */
   protected Callback<TableColumn<S,T>, TableCell<S,T>> createCellFactory() {
-    return (TableColumn<S, T> param) -> new FxTableCell<>(this);
+    return (TableColumn<S, T> column) -> createTableCell(column);
   }
 
   /**

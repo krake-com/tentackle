@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -14,33 +14,28 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
  */
 
-package org.tentackle.fx.table.type;
+package org.tentackle.fx.translate;
 
-import java.sql.Time;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import org.tentackle.fx.table.FxTableCell;
-import org.tentackle.fx.table.TableCellTypeService;
-import org.tentackle.misc.FormatHelper;
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.ValueTranslatorService;
 
 /**
- * Time cell type.
+ * Identity enum translator.
  *
  * @author harald
  */
-@TableCellTypeService(Time.class)
-public class TimeCellType extends UtilDateCellType<Time> {
+@ValueTranslatorService(modelClass = Enum.class, viewClass = Enum.class)
+public class EnumEnumTranslator extends IdentityTranslator<Enum> {
 
-  @Override
-  public DateFormat getFormat(FxTableCell<?, Time> tableCell) {
-    DateFormat fmt = super.getFormat(tableCell);
-    if (fmt == null) {
-      fmt = new SimpleDateFormat(FormatHelper.getTimePattern());
-    }
-    return fmt;
+  /**
+   * Creates an enum translator.
+   *
+   * @param component the component
+   */
+  public EnumEnumTranslator(FxComponent component) {
+    super(component);
   }
 
 }

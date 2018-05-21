@@ -25,6 +25,7 @@ import java.text.DecimalFormat;
 import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableColumn;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
 
 /**
@@ -242,6 +243,41 @@ public interface TableColumnConfiguration<S,T> {
    * @return {@link Boolean#TRUE} if summable, {@link Boolean#FALSE} if not, NULL if numeric type
    */
   Boolean getSummable();
+
+  /**
+   * Returns whether the column is editable.
+   *
+   * @return {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   */
+  Boolean getEditable();
+
+  /**
+   * Sets whether the column is editable.
+   *
+   * @param editable {@link Boolean#TRUE} if editable, {@link Boolean#FALSE} if not, NULL if depends on table configuration
+   */
+  void setEditable(Boolean editable);
+
+  /**
+   * Returns whether column is editable.
+   *
+   * @return true if editable, the default is false
+   */
+  boolean isEditable();
+
+  /**
+   * Gets the editor component.
+   *
+   * @return the editor, null if use default from {@link TableCellType#getEditor()}
+   */
+  FxComponent getEditor();
+
+  /**
+   * Sets the editor component.
+   *
+   * @param editor the editor, null if use default from {@link TableCellType#getEditor()}
+   */
+  void setEditor(FxComponent editor);
 
   /**
    * Gets the binding for this column.

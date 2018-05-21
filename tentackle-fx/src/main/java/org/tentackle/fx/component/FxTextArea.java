@@ -33,6 +33,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxTextAreaDelegate;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Extended TextArea.
@@ -356,6 +357,16 @@ public class FxTextArea extends TextArea implements FxTextComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

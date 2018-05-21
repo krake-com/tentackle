@@ -30,6 +30,7 @@ import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
+import org.tentackle.fx.table.FxTableCell;
 
 /**
  * Extended ChoiceBox.
@@ -368,6 +369,16 @@ public class FxChoiceBox<T> extends ChoiceBox<T> implements FxComponent {
   @Override
   public boolean isModelUpdated() {
     return getDelegate().isModelUpdated();
+  }
+
+  @Override
+  public void setTableCell(FxTableCell<?,?> tableCell) {
+    getDelegate().setTableCell(tableCell);
+  }
+
+  @Override
+  public FxTableCell<?,?> getTableCell() {
+    return getDelegate().getTableCell();
   }
 
   // </editor-fold>//GEN-END:component

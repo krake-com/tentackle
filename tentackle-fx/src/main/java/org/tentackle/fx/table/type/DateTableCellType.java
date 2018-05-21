@@ -19,43 +19,28 @@
 
 package org.tentackle.fx.table.type;
 
+import java.sql.Date;
 import java.text.DateFormat;
-import java.util.Date;
-import javafx.geometry.Pos;
+import java.text.SimpleDateFormat;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+import org.tentackle.misc.FormatHelper;
 
 /**
- * Base date cell type.
+ * Date cell type.
  *
  * @author harald
  */
 @TableCellTypeService(Date.class)
-public class UtilDateCellType<T extends Date> extends AbstractTableCellType<T> {
+public class DateTableCellType extends UtilDateTableCellType<Date> {
 
   @Override
-  public void updateItem(FxTableCell<?, T> tableCell, T item) {
-    tableCell.setGraphic(null);
-    DateFormat fmt = getFormat(tableCell);
-    String text;
-    if (fmt != null) {
-      text = fmt.format(item);
+  public DateFormat getFormat(FxTableCell<?, Date> tableCell) {
+    DateFormat fmt = super.getFormat(tableCell);
+    if (fmt == null) {
+      fmt = new SimpleDateFormat(FormatHelper.getDatePattern());
     }
-    else {
-      text = item.toString();
-    }
-    tableCell.setText(text);
-    updateAlignment(tableCell, Pos.CENTER);
-  }
-
-  /**
-   * Gets the date format.
-   *
-   * @param tableCell the cell
-   * @return the format, null if default toString()
-   */
-  protected DateFormat getFormat(FxTableCell<?, T> tableCell) {
-    return tableCell.getColumnConfiguration().getDateFormat();
+    return fmt;
   }
 
 }

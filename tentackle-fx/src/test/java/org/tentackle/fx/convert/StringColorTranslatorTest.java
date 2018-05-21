@@ -23,7 +23,7 @@ import javafx.scene.paint.Color;
 import org.tentackle.fx.translate.StringColorTranslator;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  *

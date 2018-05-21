@@ -21,6 +21,11 @@ package org.tentackle.fx.table;
 
 import javafx.scene.Node;
 import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn.CellEditEvent;
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxFactory;
+import org.tentackle.fx.ValueTranslator;
+import org.tentackle.log.Logger;
 
 /**
  * Extended table cell.
@@ -30,6 +35,8 @@ import javafx.scene.control.TableCell;
  * @author harald
  */
 public class FxTableCell<S,T> extends TableCell<S,T> {
+
+  private static final Logger LOGGER = Logger.get(FxTableCell.class);
 
   /**
    * The column configuration.
@@ -43,6 +50,7 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
    */
   public FxTableCell(TableColumnConfiguration<S,T> columnConfiguration) {
     this.columnConfiguration = columnConfiguration;
+    setEditable(columnConfiguration.isEditable());
   }
 
 
@@ -64,12 +72,12 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     super.updateItem(item, empty);
 
     if (item == null) {
-      super.setText(null);
-      super.setGraphic(null);
+      setText(null);
+      setGraphic(null);
     }
     else if (item instanceof Node) {
-      super.setText(null);
-      super.setGraphic((Node) item);
+      setText(null);
+      setGraphic((Node) item);
     }
     else {
       getCellType().updateItem(this, item);
@@ -85,5 +93,69 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
   protected TableCellType<T> getCellType() {
     return columnConfiguration.getTableConfiguration().getCellType(columnConfiguration.getType());
   }
+
+
+  @Override
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  public void startEdit() {
+    if (isEditable() && getTableView().isEditable() && getTableColumn().isEditable()) {
+      super.startEdit();
+      if (isEditing()) {
+        TableCellType<T> cellType = getCellType();
+        FxComponent editor = getEditor(cellType);
+        editor.setType(columnConfiguration.getType());
+        ValueTranslator translator = FxFactory.getInstance().createValueTranslator(
+                editor.getType(), cellType.getEditorType(), editor);
+        editor.setViewObject(translator.toView(getItem()));
+
+        Node node = (Node) editor;
+        node.setOnKeyPressed(t -> {
+          switch (t.getCode()) {
+            case ESCAPE:
+              cancelEdit();
+              t.consume();
+//              getTableView().refresh();
+              break;
+
+            case TAB:
+            case ENTER:
+              T value = (T) translator.toModel(editor.getViewObject());
+              columnConfiguration.getBinding().setModelValue(value);
+              commitEdit(value);
+              break;
+          }
+        });
+
+        getTableColumn().setOnEditCancel((CellEditEvent<S,T> t) -> {
+          getTableView().refresh();
+        });
+
+        setText(null);
+        setGraphic((Node) editor);
+        node.requestFocus();
+      }
+    }
+  }
+
+
+  protected FxComponent getEditor(TableCellType<T> cellType) {
+    FxComponent editor = columnConfiguration.getEditor();
+    if (editor == null) {
+      editor = cellType.getEditor();
+    }
+    return editor;
+  }
+
+//  @Override
+//  public void commitEdit(T newValue) {
+//
+//    super.commitEdit(newValue);
+//  }
+//
+//  @Override
+//  public void cancelEdit() {
+//    super.cancelEdit();
+//
+//  }
 
 }

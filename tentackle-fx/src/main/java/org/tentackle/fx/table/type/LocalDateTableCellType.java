@@ -22,6 +22,9 @@ package org.tentackle.fx.table.type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
+import javafx.scene.control.DatePicker;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
@@ -32,7 +35,7 @@ import org.tentackle.misc.FormatHelper;
  * @author harald
  */
 @TableCellTypeService(LocalDate.class)
-public class LocalDateCellType extends AbstractTableCellType<LocalDate> {
+public class LocalDateTableCellType extends AbstractTableCellType<LocalDate> {
 
   @Override
   public void updateItem(FxTableCell<?, LocalDate> tableCell, LocalDate item) {
@@ -44,6 +47,14 @@ public class LocalDateCellType extends AbstractTableCellType<LocalDate> {
     String text = fmt.format(item);
     tableCell.setText(text);
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public FxComponent getEditor() {
+    if (editor == null) {
+      editor = Fx.createNode(DatePicker.class);
+    }
+    return editor;
   }
 
 }

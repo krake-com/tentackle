@@ -15,11 +15,11 @@ import javafx.scene.Parent;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxComboBox;
-import org.tentackle.common.StringHelper;
 
 
 /**

@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import org.tentackle.common.LocaleProvider;
@@ -60,8 +59,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /** preferences key for column visibility. */
   private static final String PREF_COLUMN_VISIBILITY = "visible";
 
-  /** preferences key for column sorting. */
-  private static final String PREF_COLUMN_SORTING = "sort";
+  /** preferences key for column sort type. */
+  private static final String PREF_COLUMN_SORT_TYPE = "sort_type";
+
+  /** preferences key for column sort order. */
+  private static final String PREF_COLUMN_SORT_INDEX = "sort_ndx";
 
 
 
@@ -94,6 +96,11 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
    * whether preferences include sorting configuration.
    */
   private boolean sortingIncluded;
+
+  /**
+   * True if all columns are editable by default.
+   */
+  private boolean editable;
 
 
   /**
@@ -237,11 +244,14 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
           columnPrefs.putInt(PREF_COLUMN_VISIBILITY, column.isVisible() ? 1 : 0);
           columnPrefs.putDouble(PREF_WIDTH, column.getWidth());
           columnPrefs.putInt(PREF_COLUMN_INDEX, viewIndex);
-          if (isSortingIncluded() && sortOrder.contains(column)) {
-            columnPrefs.putInt(PREF_COLUMN_SORTING, column.getSortType().ordinal());
+          int sortIndex = sortOrder.indexOf(column);
+          if (isSortingIncluded() && sortIndex >= 0) {
+            columnPrefs.putInt(PREF_COLUMN_SORT_TYPE, column.getSortType().ordinal());
+            columnPrefs.putInt(PREF_COLUMN_SORT_INDEX, sortIndex);
           }
           else {
-            columnPrefs.remove(PREF_COLUMN_SORTING);
+            columnPrefs.remove(PREF_COLUMN_SORT_TYPE);
+            columnPrefs.remove(PREF_COLUMN_SORT_INDEX);
           }
         }
         viewIndex++;
@@ -273,7 +283,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     // always add the locale since header sizes etc... may vary
     prefName.append('_').append(LocaleProvider.getInstance().getEffectiveLocale());
 
-    ObservableList<TableColumn<S,?>> sortOrder = FXCollections.observableArrayList();
+    Map<Integer, TableColumn<S,?>> sortOrder = new TreeMap<>();   // sorted by sort index
 
     try {
       // get the preferences
@@ -299,21 +309,25 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
           TableColumn<S, ?> column = columnConfig.getTableColumn();
           if (column != null) {
             PersistedPreferences columnPref = entry.getValue();
-            int index = columnPref.getInt(PREF_COLUMN_INDEX, -1);
-            if (index >= 0) {
-              columnMapByIndex.put(index, column);
-            }
             int visibility = columnPref.getInt(PREF_COLUMN_VISIBILITY, -1);
             column.setVisible(visibility != 0);
             double width = columnPref.getDouble(PREF_WIDTH, -1.0);
             if (width >= 0.0) {
               table.resizeColumn(column, width - column.getWidth());
             }
-            if (isSortingIncluded()) {
-              int sorting = columnPref.getInt(PREF_COLUMN_SORTING, -1);
-              if (sorting >= 0) {
-                column.setSortType(TableColumn.SortType.values()[sorting]);
-                sortOrder.add(column);
+            int index = columnPref.getInt(PREF_COLUMN_INDEX, -1);
+            if (index >= 0) {
+              columnMapByIndex.put(index, column);
+              if (isSortingIncluded()) {
+                int sorting = columnPref.getInt(PREF_COLUMN_SORT_TYPE, -1);
+                if (sorting >= 0) {
+                  column.setSortType(TableColumn.SortType.values()[sorting]);
+                  int sortIndex = columnPref.getInt(PREF_COLUMN_SORT_INDEX, -1);
+                  if (sortIndex == -1) {
+                    sortIndex = Integer.MAX_VALUE - sortOrder.size();
+                  }
+                  sortOrder.put(sortIndex, column);
+                }
               }
             }
           }
@@ -322,7 +336,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
 
       table.getColumns().removeAll(columnMapByIndex.values());
       table.getColumns().addAll(columnMapByIndex.values());
-      table.getSortOrder().addAll(sortOrder);
+      table.getSortOrder().addAll(sortOrder.values());
 
       // read table dimensions
       if (!noViewSize) {
@@ -358,12 +372,33 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
+  public boolean isEditable() {
+    return editable;
+  }
+
+  @Override
+  public void setEditable(boolean editable) {
+    this.editable = editable;
+  }
+
+  @Override
   public void configure(FxTableView<S> table) {
     table.getColumns().clear();
+    boolean tableEditable = false;
     for (TableColumnConfiguration<S,?> config: columnConfigurations) {
-      table.getColumns().add(config.getTableColumn());
+      boolean columnEditable = config.isEditable();
+      tableEditable |= columnEditable;
+      TableColumn<S,?> column = config.getTableColumn();
+      if (columnEditable) {
+        column.setEditable(true);
+      }
+      table.getColumns().add(column);
     }
     table.setConfiguration(this);
+    if (tableEditable) {
+      table.setEditable(true);
+      table.getSelectionModel().cellSelectionEnabledProperty().set(true);
+    }
   }
 
   @Override

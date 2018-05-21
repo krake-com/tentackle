@@ -20,6 +20,9 @@
 package org.tentackle.fx.table.type;
 
 import javafx.geometry.Pos;
+import javafx.scene.control.TextField;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellType;
 
@@ -30,6 +33,8 @@ import org.tentackle.fx.table.TableCellType;
  * @author harald
  */
 public abstract class AbstractTableCellType<T> implements TableCellType<T> {
+
+  protected FxComponent editor;
 
   /**
    * Updates the alignment of the table cell's contents.
@@ -43,6 +48,19 @@ public abstract class AbstractTableCellType<T> implements TableCellType<T> {
       alignment = configAlignment;
     }
     tableCell.setAlignment(alignment);
+  }
+
+  @Override
+  public FxComponent getEditor() {
+    if (editor == null) {
+      editor = Fx.createNode(TextField.class);
+    }
+    return editor;
+  }
+
+  @Override
+  public Class<?> getEditorType() {
+    return String.class;
   }
 
 }

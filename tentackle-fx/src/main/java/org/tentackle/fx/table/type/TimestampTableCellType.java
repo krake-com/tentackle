@@ -32,7 +32,7 @@ import org.tentackle.misc.FormatHelper;
  * @author harald
  */
 @TableCellTypeService(Timestamp.class)
-public class TimestampCellType extends UtilDateCellType<Timestamp> {
+public class TimestampTableCellType extends UtilDateTableCellType<Timestamp> {
 
   @Override
   public DateFormat getFormat(FxTableCell<?, Timestamp> tableCell) {

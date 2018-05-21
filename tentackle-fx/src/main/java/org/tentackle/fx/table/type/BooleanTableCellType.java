@@ -20,7 +20,9 @@
 package org.tentackle.fx.table.type;
 
 import javafx.geometry.Pos;
+import javafx.scene.control.CheckBox;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
@@ -42,6 +44,19 @@ public class BooleanTableCellType extends AbstractTableCellType<Boolean> {
       tableCell.setGraphic(Fx.createImageView("cancel_mini"));
     }
     updateAlignment(tableCell, Pos.CENTER);
+  }
+
+  @Override
+  public FxComponent getEditor() {
+    if (editor == null) {
+      editor = Fx.createNode(CheckBox.class);
+    }
+    return editor;
+  }
+
+  @Override
+  public Class<?> getEditorType() {
+    return Boolean.class;
   }
 
 }

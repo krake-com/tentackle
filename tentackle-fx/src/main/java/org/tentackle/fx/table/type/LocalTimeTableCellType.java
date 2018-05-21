@@ -19,28 +19,31 @@
 
 package org.tentackle.fx.table.type;
 
-import java.sql.Date;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import javafx.geometry.Pos;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
 
 /**
- * Date cell type.
+ * LocalTime cell type.
  *
  * @author harald
  */
-@TableCellTypeService(Date.class)
-public class DateCellType extends UtilDateCellType<Date> {
+@TableCellTypeService(LocalTime.class)
+public class LocalTimeTableCellType extends AbstractTableCellType<LocalTime> {
 
   @Override
-  public DateFormat getFormat(FxTableCell<?, Date> tableCell) {
-    DateFormat fmt = super.getFormat(tableCell);
+  public void updateItem(FxTableCell<?, LocalTime> tableCell, LocalTime item) {
+    tableCell.setGraphic(null);
+    DateTimeFormatter fmt = tableCell.getColumnConfiguration().getDateTimeFormatter();
     if (fmt == null) {
-      fmt = new SimpleDateFormat(FormatHelper.getDatePattern());
+      fmt = FormatHelper.getLocalTimeFormatter();
     }
-    return fmt;
+    String text = fmt.format(item);
+    tableCell.setText(text);
+    updateAlignment(tableCell, Pos.CENTER);
   }
 
 }
