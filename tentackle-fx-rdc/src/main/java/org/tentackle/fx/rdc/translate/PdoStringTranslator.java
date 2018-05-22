@@ -226,6 +226,9 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     if (comp.getParentContainer() != null) {
       context = comp.getBinding().getBinder().getBindingProperty(DomainContext.class);
     }
+    else if (comp.getTableCell() != null) {
+      context = comp.getTableCell().getColumnConfiguration().getTableConfiguration().getBinder().getBindingProperty(DomainContext.class);
+    }
     else {
       context = (DomainContext) ((Node) comp).getProperties().get(DomainContext.class);
     }

@@ -22,9 +22,6 @@ package org.tentackle.fx.table.type;
 import java.text.DateFormat;
 import java.util.Date;
 import javafx.geometry.Pos;
-import javafx.scene.control.DatePicker;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 
@@ -59,14 +56,6 @@ public class UtilDateTableCellType<T extends Date> extends AbstractTableCellType
    */
   protected DateFormat getFormat(FxTableCell<?, T> tableCell) {
     return tableCell.getColumnConfiguration().getDateFormat();
-  }
-
-  @Override
-  public FxComponent getEditor() {
-    if (editor == null) {
-      editor = Fx.createNode(DatePicker.class);
-    }
-    return editor;
   }
 
 }

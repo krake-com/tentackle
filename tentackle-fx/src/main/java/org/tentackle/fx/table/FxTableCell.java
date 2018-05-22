@@ -43,6 +43,9 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
    */
   private final TableColumnConfiguration<S,T> columnConfiguration;
 
+  private boolean toNext;
+  private boolean toPrevious;
+
   /**
    * Creates a table cell.
    *
@@ -101,8 +104,11 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     if (isEditable() && getTableView().isEditable() && getTableColumn().isEditable()) {
       super.startEdit();
       if (isEditing()) {
+        toNext = false;
+        toPrevious = false;
         TableCellType<T> cellType = getCellType();
         FxComponent editor = getEditor(cellType);
+        editor.setTableCell(this);
         editor.setType(columnConfiguration.getType());
         ValueTranslator translator = FxFactory.getInstance().createValueTranslator(
                 editor.getType(), cellType.getEditorType(), editor);
@@ -114,7 +120,6 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
             case ESCAPE:
               cancelEdit();
               t.consume();
-//              getTableView().refresh();
               break;
 
             case TAB:
@@ -138,6 +143,12 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
   }
 
 
+  /**
+   * Gets the editor for this table cell.
+   *
+   * @param cellType the table cell type
+   * @return the editor
+   */
   protected FxComponent getEditor(TableCellType<T> cellType) {
     FxComponent editor = columnConfiguration.getEditor();
     if (editor == null) {
@@ -146,16 +157,25 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     return editor;
   }
 
-//  @Override
-//  public void commitEdit(T newValue) {
-//
-//    super.commitEdit(newValue);
-//  }
-//
-//  @Override
-//  public void cancelEdit() {
-//    super.cancelEdit();
-//
-//  }
+  public void focusNext() {
+    toNext = true;
+  }
+
+  public void focusPrevious() {
+    toPrevious = true;
+  }
+
+  @Override
+  public void commitEdit(T newValue) {
+    super.commitEdit(newValue);
+    // doesnt work :(
+//    if (toNext) {
+//      getTableView().getFocusModel().focusNext();
+//    }
+//    else if (toPrevious) {
+//      getTableView().getFocusModel().focusPrevious();
+//    }
+  }
+
 
 }

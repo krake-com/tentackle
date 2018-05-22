@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.NodeHelper;
-import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.PasswordField;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
@@ -45,10 +43,10 @@ public class PasswordFieldConfigurator<T extends PasswordField> extends TextInpu
           if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
                   event.getEventType() == KeyEvent.KEY_PRESSED) {
             if (event.isShiftDown()) {
-              NodeHelper.traverse(control, Direction.PREVIOUS);
+              focusPrevious(control);
             }
             else {
-              NodeHelper.traverse(control, Direction.NEXT);
+              focusNext(control);
             }
           }
           break;

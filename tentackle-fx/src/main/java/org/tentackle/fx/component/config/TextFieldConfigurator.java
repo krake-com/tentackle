@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.NodeHelper;
-import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
@@ -42,12 +40,12 @@ public class TextFieldConfigurator<T extends TextField> extends TextInputControl
       switch (event.getCode()) {
         case ENTER:
           if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
-                  event.getEventType() == KeyEvent.KEY_PRESSED) {
+              event.getEventType() == KeyEvent.KEY_PRESSED) {
             if (event.isShiftDown()) {
-              NodeHelper.traverse(control, Direction.PREVIOUS);
+              focusPrevious(control);
             }
             else {
-              NodeHelper.traverse(control, Direction.NEXT);
+              focusNext(control);
             }
           }
           break;

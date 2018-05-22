@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.NodeHelper;
-import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
@@ -53,10 +51,10 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
               }
               else {
                 if (event.isShiftDown()) {
-                  NodeHelper.traverse(control, Direction.PREVIOUS);
+                  focusPrevious(control);
                 }
                 else {
-                  NodeHelper.traverse(control, Direction.NEXT);
+                  focusNext(control);
                 }
               }
             }
@@ -73,7 +71,7 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
                 control.insertText(control.getCaretPosition(), "\n");
               }
               else {
-                NodeHelper.traverse(control, Direction.NEXT);
+                focusNext(control);
               }
             }
             event.consume();
