@@ -261,14 +261,14 @@ public class SessionUtilities {
     boolean someRemoved = false;
     for (IdSerialTuple idSer: expireSet) {
       if (lastSerial > 0 && idSer.getSerial() - lastSerial > 1) {
-        // gap in tableSerials: delete() invoked at least once
+        // gap in tableSerials or gap at start: delete() invoked at least once
         someRemoved = true;
         break;
       }
       lastSerial = idSer.getSerial();
     }
-    if (maxSerial - lastSerial > 1) {
-      someRemoved = true;  // lastserial == -1 (no expired pdos found) or gap at end
+    if (maxSerial > lastSerial) {
+      someRemoved = true;  // no expired pdos found or gap at end
     }
     return someRemoved;
   }
