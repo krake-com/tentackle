@@ -263,18 +263,22 @@ public class ValidationUtilities {
    * @param method the (getter-)method, null if none
    * @param scope optional validation scope, null = all
    */
-  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
+  protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method,
+                                         ValidationScope scope) {
+    
+    boolean fineLoggable = LOGGER.isFineLoggable();
     if (field != null) {
       for (Validator validator: getElementValidators(field, scope)) {
-        LOGGER.fine("field validator @{0} found for {1}:{2}",
-                    validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
+        if (fineLoggable) {
+          LOGGER.fine("field validator @{0} found for {1}:{2}",
+                      validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
+        }
         validatorMap.put(new ValidatorKey(validator), validator);
       }
     }
-
     if (method != null && ReflectionHelper.isGetter(method)) {
       for (Validator validator: getElementValidators(method, scope)) {
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("method validator @{0} found for {1}:{2}",
                       validator.getClass().getName(), method.getDeclaringClass().getName(), method.getName());
         }

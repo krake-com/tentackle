@@ -146,17 +146,18 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     // there is a 1:1 relation between the snapshot list and the element snapshots
     // and this relation must not be modified anymore! Hence, snapshots are immutable.
     snapshot.elementSnapshots = new ArrayList<>(size());
+    boolean fineLoggable = LOGGER.isFineLoggable();
     for (E obj: snapshot) {
       if (obj instanceof Snapshotable) {
         E elementsnapshot = ((Snapshotable<E>) obj).createSnapshot();
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("creating snapshot for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
         snapshot.elementSnapshots.add(elementsnapshot);
       }
       else {
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("caution: not a Snapshotable! using reference for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
@@ -186,16 +187,17 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
         // restore objects from snapshot.
         // if object is a Snapshotable restore from elementsnapshots.
         int i = 0;
+        boolean fineLoggable = LOGGER.isFineLoggable();
         for (E obj: snapshot) {
           if (obj instanceof Snapshotable) {
-            if (LOGGER.isFineLoggable()) {
+            if (fineLoggable) {
               LOGGER.fine("reverting to snapshot for " +
                           (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
             ((Snapshotable<E>) obj).revertToSnapshot(mySnapshot.elementSnapshots.get(i));
           }
           else  {
-            if (LOGGER.isFineLoggable()) {
+            if (fineLoggable) {
               LOGGER.fine("caution: not a snapshotCapable! reverting to reference for " +
                           (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }

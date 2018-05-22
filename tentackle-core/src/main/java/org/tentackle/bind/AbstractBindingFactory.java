@@ -122,10 +122,7 @@ public class AbstractBindingFactory implements BindingFactory {
       // if all else fails: createBinding a default binding
       element = new DefaultBindableElement(camelName);
     }
-
-    if (LOGGER.isFineLoggable()) {
-      LOGGER.fine("created binding {0}", element);
-    }
+    LOGGER.fine("created binding {0}", element);
     return element;
   }
 
