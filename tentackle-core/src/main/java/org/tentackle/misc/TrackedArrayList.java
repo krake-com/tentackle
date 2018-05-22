@@ -141,17 +141,18 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     // there is a 1:1 relation between the snapshot list and the element snapshots
     // and this relation must not be modified anymore! Hence, snapshots are immutable.
     snapshot.elementSnapshots = new ArrayList<>(size());
+    boolean fineLoggable = LOGGER.isFineLoggable();
     for (E obj: snapshot) {
       if (obj instanceof Snapshotable) {
         E elementsnapshot = ((Snapshotable<E>) obj).createSnapshot();
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("creating snapshot for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
         snapshot.elementSnapshots.add(elementsnapshot);
       }
       else {
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("caution: not a Snapshotable! using reference for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
@@ -178,19 +179,20 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       if (!snapshot.isSnapshot()) {
         throw new TentackleRuntimeException("not a snapshot");
       }
+      boolean fineLoggable = LOGGER.isFineLoggable();
       if (isCopy()) {
         // reverting a snapshot to a copy just creates copies from the objects in the snapshot
         super.clear();
         for (E obj: ((TrackedArrayList<E>) snapshot).elementSnapshots) {
           if (obj instanceof Snapshotable) {
-            if (LOGGER.isFineLoggable()) {
+            if (fineLoggable) {
               LOGGER.fine("reverting to copy for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
             super.add(((Snapshotable<E>) obj).copy());
           }
           else {
-            if (LOGGER.isFineLoggable()) {
+            if (fineLoggable) {
               LOGGER.fine("caution: not a Snapshotable! reverting to reference for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
@@ -208,13 +210,13 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
           int i = 0;
           for (E obj : snapshot) {
             if (obj instanceof Snapshotable) {
-              if (LOGGER.isFineLoggable()) {
+              if (fineLoggable) {
                 LOGGER.fine("reverting to snapshot for " +
                         (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
               }
               ((Snapshotable<E>) obj).revertToSnapshot(mySnapshot.elementSnapshots.get(i));
             }
-            else if (LOGGER.isFineLoggable()) {
+            else if (fineLoggable) {
               LOGGER.fine("caution: not a Snapshotable! reverting to reference for " +
                       (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
             }
@@ -257,16 +259,17 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @SuppressWarnings("unchecked")
   public TrackedList<E> copy() {
     TrackedArrayList<E> list = new TrackedArrayList<>(size(), false);
+    boolean fineLoggable = LOGGER.isFineLoggable();
     for (E obj: this) {
       if (obj instanceof Snapshotable) {
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("creating deep copy for " +
                   (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
         list.add(((Snapshotable<E>) obj).copy());
       }
       else {
-        if (LOGGER.isFineLoggable()) {
+        if (fineLoggable) {
           LOGGER.fine("caution: not a Snapshotable! copying reference for " +
                   (obj instanceof Identifiable ? ((Identifiable) obj).toGenericString() : obj.toString()));
         }
