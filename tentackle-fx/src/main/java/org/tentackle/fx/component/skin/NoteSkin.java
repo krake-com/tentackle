@@ -112,8 +112,6 @@ public class NoteSkin implements Skin<Note> {
     Window ownerWindow = linkedNode.getScene().getWindow();
     ownerWindow.xProperty().addListener(new WeakInvalidationListener(o -> updateLocation()));
     ownerWindow.yProperty().addListener(new WeakInvalidationListener(o -> updateLocation()));
-//    ownerWindow.widthProperty().addListener(new WeakInvalidationListener(o -> note.hide()));
-//    ownerWindow.heightProperty().addListener(new WeakInvalidationListener(o -> note.hide()));
     note.setOnShown(e -> updateLocation());
   }
 
@@ -140,25 +138,27 @@ public class NoteSkin implements Skin<Note> {
   protected void updateLocation() {
     Bounds linkedNodeBounds = linkedNode.localToScreen(linkedNode.getBoundsInLocal());
     Point2D linkedNodeLocation = linkedNode.localToScreen(0.0, 0.0);
-    switch(note.getPosition()) {
-      case BOTTOM:
-        note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
-        note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() - CIRCLE_RADIUS);
-        break;
+    if (linkedNodeBounds != null && linkedNodeLocation != null) {
+      switch(note.getPosition()) {
+        case BOTTOM:
+          note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
+          note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() - CIRCLE_RADIUS);
+          break;
 
-      case TOP:
-        note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
-        note.setAnchorY(linkedNodeLocation.getY() - note.getHeight() + CIRCLE_RADIUS);
-        break;
+        case TOP:
+          note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() / 2 - note.getWidth() / 2);
+          note.setAnchorY(linkedNodeLocation.getY() - note.getHeight() + CIRCLE_RADIUS);
+          break;
 
-      case LEFT:
-        note.setAnchorX(linkedNodeLocation.getX() - note.getWidth() + CIRCLE_RADIUS);
-        note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
-        break;
+        case LEFT:
+          note.setAnchorX(linkedNodeLocation.getX() - note.getWidth() + CIRCLE_RADIUS);
+          note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
+          break;
 
-      default:  // RIGHT
-        note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() - CIRCLE_RADIUS);
-        note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
+        default:  // RIGHT
+          note.setAnchorX(linkedNodeLocation.getX() + linkedNodeBounds.getWidth() - CIRCLE_RADIUS);
+          note.setAnchorY(linkedNodeLocation.getY() + linkedNodeBounds.getHeight() / 2 - note.getHeight() / 2);
+      }
     }
   }
 
