@@ -39,13 +39,10 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
 
   private static final Logger LOGGER = Logger.get(FxTableCell.class);
 
-  /**
-   * The column configuration.
-   */
-  private final TableColumnConfiguration<S,T> columnConfiguration;
+  private final TableColumnConfiguration<S,T> columnConfiguration;      // column configuration
 
-  private boolean toNext;
-  private boolean toPrevious;
+  private boolean toNext;                           // true if editor was committed with ENTER or TAB
+  private boolean toPrevious;                       // true if editor was committed with Shift ENTER/TAB
 
   /**
    * Creates a table cell.
@@ -115,8 +112,14 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
                 editor.getType(), cellType.getEditorType(), editor);
         editor.setViewObject(translator.toView(getItem()));
 
-        Node node = editor.getDelegate().getNode();
+        getTableColumn().setOnEditCancel((CellEditEvent<S,T> t) -> {
+          getTableView().refresh();
+        });
 
+        setText(null);
+        setGraphic((Node) editor);
+
+        Node node = editor.getDelegate().getNode();   // effective node getting the keyboard events
         node.setOnKeyPressed(t -> {
           switch (t.getCode()) {
             case ESCAPE:
@@ -129,16 +132,25 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
               T value = (T) translator.toModel(editor.getViewObject());
               columnConfiguration.getBinding().setModelValue(value);
               commitEdit(value);
+              t.consume();
               break;
           }
         });
 
-        getTableColumn().setOnEditCancel((CellEditEvent<S,T> t) -> {
-          getTableView().refresh();
-        });
+        if (editor != node) {
+          // for whatever reason, ESC is sometimes not forwarded to the inner component.
+          // In such a case, catch the keystroke on the outer one (for ex. DatePicker).
+          // @todo: check if still necessary in newer releases then Java 9
+          ((Node) editor).setOnKeyPressed(t -> {
+            switch (t.getCode()) {
+              case ESCAPE:
+                cancelEdit();
+                t.consume();
+                break;
+            }
+          });
+        }
 
-        setText(null);
-        setGraphic((Node) editor);
         Platform.runLater(() -> node.requestFocus());
       }
     }
@@ -159,11 +171,17 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     return editor;
   }
 
-  public void focusNext() {
+  /**
+   * Sets a flag to focus next cell after commit.
+   */
+  public void focusNextOnCommit() {
     toNext = true;
   }
 
-  public void focusPrevious() {
+  /**
+   * Sets a flag to focus previous cell after commit.
+   */
+  public void focusPreviousOnCommit() {
     toPrevious = true;
   }
 

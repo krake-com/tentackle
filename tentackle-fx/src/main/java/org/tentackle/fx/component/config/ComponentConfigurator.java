@@ -60,7 +60,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    */
   protected void focusNext(T control) {
     if (control instanceof FxComponent && ((FxComponent) control).getTableCell() != null) {
-      ((FxComponent) control).getTableCell().focusNext();
+      ((FxComponent) control).getTableCell().focusNextOnCommit();
     }
     else {
       NodeHelper.traverse(control, Direction.NEXT);
@@ -74,7 +74,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    */
   protected void focusPrevious(T control) {
     if (control instanceof FxComponent && ((FxComponent) control).getTableCell() != null) {
-      ((FxComponent) control).getTableCell().focusPrevious();
+      ((FxComponent) control).getTableCell().focusPreviousOnCommit();
     }
     else {
       NodeHelper.traverse(control, Direction.PREVIOUS);
