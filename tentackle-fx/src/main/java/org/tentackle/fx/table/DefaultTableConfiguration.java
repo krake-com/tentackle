@@ -105,7 +105,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   /**
    * The edit mode.
    */
-  private EDITMODE editMode;
+  private EDITMODE editMode = EDITMODE.NO;
 
 
   /**
