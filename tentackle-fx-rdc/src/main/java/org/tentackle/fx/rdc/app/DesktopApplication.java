@@ -343,7 +343,15 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
     return (t, e) -> {
       LOGGER.severe("unhandled exception detected", e);
-      Platform.runLater(() -> Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e));
+      Platform.runLater(() -> {
+        try {
+          Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e);
+        }
+        catch (Throwable x) {
+          LOGGER.severe("cannot show error dialog", x);
+          System.exit(99);    // there is something severe wrong -> terminate application immediately
+        }
+      });
     };
   }
 
