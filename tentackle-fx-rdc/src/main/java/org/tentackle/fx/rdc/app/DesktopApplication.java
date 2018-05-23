@@ -338,8 +338,9 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
         try {
           Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e);
         }
-        catch (RuntimeException rx) {
-          LOGGER.severe("cannot show error dialog", rx);
+        catch (Throwable x) {
+          LOGGER.severe("cannot show error dialog", x);
+          System.exit(99);    // there is something severe wrong -> terminate application immediately
         }
       });
     };
