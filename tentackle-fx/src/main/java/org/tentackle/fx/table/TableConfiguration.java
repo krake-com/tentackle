@@ -51,6 +51,24 @@ public interface TableConfiguration<S> {
 
 
   /**
+   * Edit mode.
+   */
+  enum EDITMODE {
+    /** not editable. */
+    NO,
+
+    /** edit current cell only. */
+    SIMPLE,
+
+    /** edit next/previous cell after commit. */
+    ROW,
+
+    /** edit cell above/below after commit. */
+    COLUMN
+  }
+
+
+  /**
    * Gets the row object class.
    *
    * @return the row object class
@@ -152,18 +170,18 @@ public interface TableConfiguration<S> {
   FxTableBinder<S> getBinder();
 
   /**
-   * Returns whether all columns are editable by default.
+   * Returns the edit mode.
    *
-   * @return true if editable, the default is false
+   * @return the edit mode, never null, default is NO
    */
-  boolean isEditable();
+  EDITMODE getEditMode();
 
   /**
-   * Sets whether all columns are editable by default.
+   * Sets the edit mode.
    *
-   * @param editable true if editable
+   * @param editMode the edit mode, null is equivalent to NO
    */
-  void setEditable(boolean editable);
+  void setEditMode(EDITMODE editMode);
 
   /**
    * Configures the table.

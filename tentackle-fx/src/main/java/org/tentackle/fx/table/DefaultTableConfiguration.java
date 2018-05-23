@@ -103,9 +103,9 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private boolean sortingIncluded;
 
   /**
-   * True if all columns are editable by default.
+   * The edit mode.
    */
-  private boolean editable;
+  private EDITMODE editMode;
 
 
   /**
@@ -358,13 +358,13 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
   @Override
-  public boolean isEditable() {
-    return editable;
+  public EDITMODE getEditMode() {
+    return editMode;
   }
 
   @Override
-  public void setEditable(boolean editable) {
-    this.editable = editable;
+  public void setEditMode(EDITMODE editMode) {
+    this.editMode = editMode == null ? EDITMODE.NO : editMode;
   }
 
   @Override

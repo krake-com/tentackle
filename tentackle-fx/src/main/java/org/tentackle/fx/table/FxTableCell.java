@@ -20,9 +20,11 @@
 package org.tentackle.fx.table;
 
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn.CellEditEvent;
+import javafx.scene.control.TablePosition;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
@@ -189,15 +191,41 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
   public void commitEdit(T newValue) {
     super.commitEdit(newValue);
     Platform.runLater(() -> {
+      switch(columnConfiguration.getTableConfiguration().getEditMode()) {
+        case ROW:
+          if (toNext) {
+            getTableView().getSelectionModel().selectNext();
+            editCell();
+          }
+          else if (toPrevious) {
+            getTableView().getSelectionModel().selectPrevious();
+            editCell();
+          }
+          break;
+
+        case COLUMN:
+          if (toNext) {
+            getTableView().getSelectionModel().selectBelowCell();
+            editCell();
+          }
+          else if (toPrevious) {
+            getTableView().getSelectionModel().selectAboveCell();
+            editCell();
+          }
+          break;
+      }
       getTableView().requestFocus();
-//      if (toNext) {
-//        getTableView().getFocusModel().focusNext();
-//      }
-//      else if (toPrevious) {
-//        getTableView().getFocusModel().focusPrevious();
-//      }
     });
   }
 
+
+  @SuppressWarnings("unchecked")
+  protected void editCell() {
+    ObservableList<TablePosition> cells = getTableView().getSelectionModel().getSelectedCells();
+    if (!cells.isEmpty()) {
+      TablePosition pos = cells.get(0);
+      Platform.runLater(() -> getTableView().edit(pos.getRow(), pos.getTableColumn()));
+    }
+  }
 
 }
