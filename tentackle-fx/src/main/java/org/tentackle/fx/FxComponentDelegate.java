@@ -144,6 +144,10 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private FxTableCell<?,?> tableCell;
 
 
+  @Override
+  public FxComponentDelegate getDelegate() {
+    return this;
+  }
 
   /**
    * Gets the component of this delegate.

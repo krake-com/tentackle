@@ -31,6 +31,9 @@ import org.tentackle.fx.table.FxTableCell;
  */
 public interface FxComponent extends FxControl, ErrorPopupSupported, InfoPopupSupported {
 
+  @Override
+  FxComponentDelegate getDelegate();
+
   /**
    * Sets the type for this component.
    * <p>

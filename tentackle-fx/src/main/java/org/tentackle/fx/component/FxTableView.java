@@ -26,6 +26,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
+import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ModelToViewListener;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.ViewToModelListener;
@@ -80,6 +81,17 @@ public class FxTableView<S> extends TableView<S> implements FxComponent {
    */
   public void setConfiguration(TableConfiguration<S> configuration) {
     this.configuration = configuration;
+  }
+
+  /**
+   * Configures or re-configures the table.<br>
+   * Requires a valid table configuration.
+   */
+  public void configure() {
+    if (configuration == null) {
+      throw new FxRuntimeException("missing table configuration");
+    }
+    configuration.configure(this);
   }
 
 

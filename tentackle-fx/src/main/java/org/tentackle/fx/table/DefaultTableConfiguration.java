@@ -19,9 +19,9 @@
 
 package org.tentackle.fx.table;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
@@ -78,14 +78,19 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private final String name;
 
   /**
-   * the row object's class.
+   * The row object's class.
    */
   private final Class<S> objectClass;
 
   /**
-   * the column configs.
+   * The column configs mapped by column name.
    */
-  private final List<TableColumnConfiguration<S, ?>> columnConfigurations;
+  private final Map<String, TableColumnConfiguration<S, ?>> nameColumnConfigMap;
+
+  /**
+   * The column configs mapped by table column.
+   */
+  private final Map<TableColumn<S, ?>, TableColumnConfiguration<S, ?>> columnColumnConfigMap;
 
   /**
    * The binder.
@@ -93,7 +98,7 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   private FxTableBinder<S> binder;
 
   /**
-   * whether preferences include sorting configuration.
+   * Whether preferences include sorting configuration.
    */
   private boolean sortingIncluded;
 
@@ -114,7 +119,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.template = template;
     this.objectClass = (Class<S>) EffectiveClassProvider.getEffectiveClass(template);
     this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
-    this.columnConfigurations = new ArrayList<>();
+    this.nameColumnConfigMap = new LinkedHashMap<>();
+    this.columnColumnConfigMap = new LinkedHashMap<>();
   }
 
   /**
@@ -128,7 +134,8 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     this.template = null;
     this.objectClass = objectClass;
     this.name = name == null ? ReflectionHelper.getClassBaseName(objectClass) : name;
-    this.columnConfigurations = new ArrayList<>();
+    this.nameColumnConfigMap = new LinkedHashMap<>();
+    this.columnColumnConfigMap = new LinkedHashMap<>();
   }
 
   /**
@@ -161,47 +168,26 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
     return columnConfiguration;
   }
 
-  /**
-   * Adds a column configuration.
-   *
-   * @param columnConfiguration the config
-   */
   @Override
   public void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration) {
-    columnConfigurations.add(columnConfiguration);
+    nameColumnConfigMap.put(columnConfiguration.getName(), columnConfiguration);
+    columnColumnConfigMap.put(columnConfiguration.getTableColumn(), columnConfiguration);
   }
 
-
   @Override
-  public List<TableColumnConfiguration<S, ?>> getColumnConfigurations() {
-    return columnConfigurations;
+  public Collection<TableColumnConfiguration<S, ?>> getColumnConfigurations() {
+    return nameColumnConfigMap.values();
   }
 
   @Override
   public TableColumnConfiguration<S, ?> getColumnConfiguration(String name) {
-    if (name != null) {
-      for (TableColumnConfiguration<S, ?> config: columnConfigurations) {
-        if (name.equals(config.getName())) {
-          return config;
-        }
-      }
-    }
-    return null;
+    return name == null ? null : nameColumnConfigMap.get(name);
   }
 
   @Override
   public TableColumnConfiguration<S, ?> getColumnConfiguration(TableColumn<S, ?> column) {
-    if (name != null) {
-      for (TableColumnConfiguration<S, ?> config: columnConfigurations) {
-        if (column == config.getTableColumn()) {
-          return config;
-        }
-      }
-    }
-    return null;
+    return column == null ? null : columnColumnConfigMap.get(column);
   }
-
-
 
   @Override
   public String getName() {
@@ -385,20 +371,16 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public void configure(FxTableView<S> table) {
     table.getColumns().clear();
     boolean tableEditable = false;
-    for (TableColumnConfiguration<S,?> config: columnConfigurations) {
+    for (TableColumnConfiguration<S,?> config: nameColumnConfigMap.values()) {
       boolean columnEditable = config.isEditable();
       tableEditable |= columnEditable;
       TableColumn<S,?> column = config.getTableColumn();
-      if (columnEditable) {
-        column.setEditable(true);
-      }
+      column.setEditable(columnEditable);
       table.getColumns().add(column);
     }
+    table.setEditable(tableEditable);
+    table.getSelectionModel().cellSelectionEnabledProperty().set(tableEditable);
     table.setConfiguration(this);
-    if (tableEditable) {
-      table.setEditable(true);
-      table.getSelectionModel().cellSelectionEnabledProperty().set(true);
-    }
   }
 
   @Override

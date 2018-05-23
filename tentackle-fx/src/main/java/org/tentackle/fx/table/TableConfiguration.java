@@ -19,7 +19,7 @@
 
 package org.tentackle.fx.table;
 
-import java.util.List;
+import java.util.Collection;
 import javafx.scene.control.TableColumn;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
@@ -62,7 +62,7 @@ public interface TableConfiguration<S> {
    *
    * @return the column configurations
    */
-  List<TableColumnConfiguration<S,?>> getColumnConfigurations();
+  Collection<TableColumnConfiguration<S,?>> getColumnConfigurations();
 
   /**
    * Gets a column configuration by its name.

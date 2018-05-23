@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.table;
 
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn.CellEditEvent;
@@ -114,7 +115,8 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
                 editor.getType(), cellType.getEditorType(), editor);
         editor.setViewObject(translator.toView(getItem()));
 
-        Node node = (Node) editor;
+        Node node = editor.getDelegate().getNode();
+
         node.setOnKeyPressed(t -> {
           switch (t.getCode()) {
             case ESCAPE:
@@ -137,7 +139,7 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
 
         setText(null);
         setGraphic((Node) editor);
-        node.requestFocus();
+        Platform.runLater(() -> node.requestFocus());
       }
     }
   }
@@ -168,13 +170,15 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
   @Override
   public void commitEdit(T newValue) {
     super.commitEdit(newValue);
-    // doesnt work :(
-//    if (toNext) {
-//      getTableView().getFocusModel().focusNext();
-//    }
-//    else if (toPrevious) {
-//      getTableView().getFocusModel().focusPrevious();
-//    }
+    Platform.runLater(() -> {
+      getTableView().requestFocus();
+//      if (toNext) {
+//        getTableView().getFocusModel().focusNext();
+//      }
+//      else if (toPrevious) {
+//        getTableView().getFocusModel().focusPrevious();
+//      }
+    });
   }
 
 
