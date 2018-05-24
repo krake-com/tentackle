@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.component.config;
 
-import com.sun.javafx.scene.NodeHelper;
-import com.sun.javafx.scene.traversal.Direction;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.event.Event;
@@ -50,35 +48,6 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
     remapKeys(control);
     filterKeys(control);
     setupFocusHandling(control);
-  }
-
-
-  /**
-   * Moves the focus logically forward.
-   *
-   * @param control the control
-   */
-  protected void focusNext(T control) {
-    if (control instanceof FxComponent && ((FxComponent) control).getTableCell() != null) {
-      ((FxComponent) control).getTableCell().focusNextOnCommit();
-    }
-    else {
-      NodeHelper.traverse(control, Direction.NEXT);
-    }
-  }
-
-  /**
-   * Moves the focus logically back.
-   *
-   * @param control the control
-   */
-  protected void focusPrevious(T control) {
-    if (control instanceof FxComponent && ((FxComponent) control).getTableCell() != null) {
-      ((FxComponent) control).getTableCell().focusPreviousOnCommit();
-    }
-    else {
-      NodeHelper.traverse(control, Direction.PREVIOUS);
-    }
   }
 
 

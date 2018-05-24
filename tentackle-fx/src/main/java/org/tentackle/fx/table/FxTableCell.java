@@ -21,14 +21,14 @@ package org.tentackle.fx.table;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.scene.Node;
 import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn.CellEditEvent;
 import javafx.scene.control.TablePosition;
+import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
-import org.tentackle.log.Logger;
 
 /**
  * Extended table cell.
@@ -38,8 +38,6 @@ import org.tentackle.log.Logger;
  * @author harald
  */
 public class FxTableCell<S,T> extends TableCell<S,T> {
-
-  private static final Logger LOGGER = Logger.get(FxTableCell.class);
 
   private final TableColumnConfiguration<S,T> columnConfiguration;      // column configuration
 
@@ -114,46 +112,47 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
                 editor.getType(), cellType.getEditorType(), editor);
         editor.setViewObject(translator.toView(getItem()));
 
-        getTableColumn().setOnEditCancel((CellEditEvent<S,T> t) -> {
-          getTableView().refresh();
-        });
-
         setText(null);
         setGraphic((Node) editor);
 
         Node node = editor.getDelegate().getNode();   // effective node getting the keyboard events
-        node.setOnKeyPressed(t -> {
-          switch (t.getCode()) {
+
+        EventHandler<KeyEvent> handler = event -> {
+          switch (event.getCode()) {
             case ESCAPE:
               cancelEdit();
-              t.consume();
+              getTableView().refresh();
+              event.consume();
               break;
 
             case TAB:
             case ENTER:
+              if (event.isShiftDown()) {
+                toPrevious = true;
+              }
+              else {
+                toNext = true;
+              }
               T value = (T) translator.toModel(editor.getViewObject());
               columnConfiguration.getBinding().setModelValue(value);
               commitEdit(value);
-              t.consume();
+              getTableView().refresh();
+              event.consume();
               break;
           }
-        });
+        };
+
+        node.setOnKeyPressed(handler);
 
         if (editor != node) {
           // for whatever reason, ESC is sometimes not forwarded to the inner component.
           // In such a case, catch the keystroke on the outer one (for ex. DatePicker).
           // @todo: check if still necessary in newer releases then Java 9
-          ((Node) editor).setOnKeyPressed(t -> {
-            switch (t.getCode()) {
-              case ESCAPE:
-                cancelEdit();
-                t.consume();
-                break;
-            }
-          });
+          ((Node) editor).setOnKeyPressed(handler);
         }
 
-        Platform.runLater(() -> node.requestFocus());
+        // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isnt always :(
+        Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(() -> node.requestFocus())));
       }
     }
   }
@@ -173,18 +172,10 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
     return editor;
   }
 
-  /**
-   * Sets a flag to focus next cell after commit.
-   */
-  public void focusNextOnCommit() {
-    toNext = true;
-  }
 
-  /**
-   * Sets a flag to focus previous cell after commit.
-   */
-  public void focusPreviousOnCommit() {
-    toPrevious = true;
+  @Override
+  public void cancelEdit() {
+    super.cancelEdit();
   }
 
   @Override
@@ -194,11 +185,21 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
       switch(columnConfiguration.getTableConfiguration().getEditMode()) {
         case ROW:
           if (toNext) {
-            getTableView().getSelectionModel().selectNext();
+            TablePosition<S, T> pos;
+            do {
+              getTableView().getSelectionModel().selectNext();
+              pos = getPosition();
+            }
+            while (pos != null && !pos.getTableColumn().isEditable());
             editCell();
           }
           else if (toPrevious) {
-            getTableView().getSelectionModel().selectPrevious();
+            TablePosition<S, T> pos;
+            do {
+              getTableView().getSelectionModel().selectPrevious();
+              pos = getPosition();
+            }
+            while (pos != null && !pos.getTableColumn().isEditable());
             editCell();
           }
           break;
@@ -219,11 +220,23 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
   }
 
 
+  /**
+   * Gets the table position of the currently selected cell.
+   *
+   * @return the position, null if none selected
+   */
   @SuppressWarnings("unchecked")
-  protected void editCell() {
+  protected TablePosition<S, T> getPosition() {
     ObservableList<TablePosition> cells = getTableView().getSelectionModel().getSelectedCells();
-    if (!cells.isEmpty()) {
-      TablePosition pos = cells.get(0);
+    return cells.isEmpty() ? null : cells.get(0);
+  }
+
+  /**
+   * Edits the currently selected cell.
+   */
+  protected void editCell() {
+    TablePosition<S, T> pos = getPosition();
+    if (pos != null) {
       Platform.runLater(() -> getTableView().edit(pos.getRow(), pos.getTableColumn()));
     }
   }

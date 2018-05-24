@@ -19,6 +19,8 @@
 
 package org.tentackle.fx.component.config;
 
+import com.sun.javafx.scene.NodeHelper;
+import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -50,6 +52,29 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
         event.consume();
       }
     });
+  }
+
+
+  /**
+   * Moves the focus logically forward if not a table cell editor.
+   *
+   * @param control the control
+   */
+  protected void focusNext(T control) {
+    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+      NodeHelper.traverse(control, Direction.NEXT);
+    }
+  }
+
+  /**
+   * Moves the focus logically back if not a table cell editor.
+   *
+   * @param control the control
+   */
+  protected void focusPrevious(T control) {
+    if (!(control instanceof FxComponent) || ((FxComponent) control).getTableCell() == null) {
+      NodeHelper.traverse(control, Direction.PREVIOUS);
+    }
   }
 
 }

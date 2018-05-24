@@ -163,7 +163,12 @@ public interface TableConfiguration<S> {
   BINDING getBindingType();
 
   /**
-   * Gets the table binder.
+   * Gets the table binder.<br>
+   * Don't mix up the table's binder with the FxController's binder!
+   * The table binder is responsible to bind the cells to the model, whereas the
+   * controller binder binds the data list to the table.<br>
+   * As a consequence, binding properties such as the DomainContext, if necessary for cell editors,
+   * must be applied to the table binder!
    *
    * @return the binder
    */
