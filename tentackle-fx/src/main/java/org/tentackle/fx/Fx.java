@@ -22,39 +22,19 @@ package org.tentackle.fx;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executor;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import org.tentackle.misc.ConcurrencyHelper;
 
 /**
- * Collected factory and helper methods for FX-related stuff.
+ * Often used factory and helper methods for FX-related stuff.
  *
  * @author harald
  */
 public class Fx {
-
-  private static final Executor BLOCKING_FX_EXECUTOR = ConcurrencyHelper.createBlockingExecutor(Platform::runLater);
-
-  /**
-   * Runs a command on the FX application thread and waits for its execution to finish.
-   *
-   * @param runnable the Runnable whose run method will be executed on the FX application thread
-   * @throws FxRuntimeException if the calling thread is the FX application thread
-   * @see Platform#runLater(java.lang.Runnable)
-   */
-  public static void runAndWait(Runnable runnable) {
-    if (Platform.isFxApplicationThread()) {
-      throw new FxRuntimeException("calling thread is the FX application thread");
-    }
-    BLOCKING_FX_EXECUTOR.execute(runnable);
-  }
-
 
   /**
    * Loads an object hierarchy from a FXML document.<br>

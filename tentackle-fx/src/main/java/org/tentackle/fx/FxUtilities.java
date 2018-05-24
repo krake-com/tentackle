@@ -28,6 +28,7 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.concurrent.Executor;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -66,6 +67,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.component.Note;
+import org.tentackle.misc.ConcurrencyHelper;
 
 interface FxUtilities$Singleton {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
@@ -89,6 +91,10 @@ public class FxUtilities {
   }
 
 
+  /**
+   * Executor for {@link #runAndWait(Runnable)} below.
+   */
+  private final Executor BLOCKING_FX_EXECUTOR = ConcurrencyHelper.createBlockingExecutor(Platform::runLater);
 
   /**
    * The help url.
@@ -216,6 +222,21 @@ public class FxUtilities {
     }
     buf.append("<<<");
     return buf.toString();
+  }
+
+
+  /**
+   * Runs a command on the FX application thread and waits for its execution to finish.
+   *
+   * @param runnable the Runnable whose run method will be executed on the FX application thread
+   * @throws FxRuntimeException if the calling thread is the FX application thread
+   * @see Platform#runLater(java.lang.Runnable)
+   */
+  public void runAndWait(Runnable runnable) {
+    if (Platform.isFxApplicationThread()) {
+      throw new FxRuntimeException("calling thread is the FX application thread");
+    }
+    BLOCKING_FX_EXECUTOR.execute(runnable);
   }
 
 

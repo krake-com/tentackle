@@ -43,6 +43,7 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.container.FxHBox;
@@ -370,12 +371,12 @@ public class TablePrinter extends AbstractFxController {
       int size  = items.size();
       rowOffset = 0;
       while (rowOffset < size && !terminationRequested) {
-        Fx.runAndWait(() -> {
+        FxUtilities.getInstance().runAndWait(() -> {
           // apply remaining items (works with varying row heights)
           tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
           getView().layout();   // this does the trick to make getVisibleRowCount below work!
         });
-        Fx.runAndWait(() -> setPrintableRows(getVisibleRowCount()));
+        FxUtilities.getInstance().runAndWait(() -> setPrintableRows(getVisibleRowCount()));
         if (printableRows <= 0) {
           // no space to print (may be renedering problem, whatsoever....)
           Platform.runLater(() -> {
@@ -399,7 +400,7 @@ public class TablePrinter extends AbstractFxController {
       else {
         // print the pages
         pageCount = pages.size();
-        Fx.runAndWait(() -> {
+        FxUtilities.getInstance().runAndWait(() -> {
           if (pageCount == 0) {
             Fx.info(resources.getString("no pages to print"));
             job.cancelJob();
