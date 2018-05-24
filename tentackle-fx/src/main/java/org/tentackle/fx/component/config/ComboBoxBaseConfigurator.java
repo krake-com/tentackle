@@ -20,6 +20,8 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ComboBoxBase;
+import javafx.scene.input.KeyEvent;
+import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxControl;
 
 /**
@@ -47,6 +49,29 @@ public class ComboBoxBaseConfigurator<T extends ComboBoxBase<?>> extends Compone
   protected void updateModelAndView(FxControl control) {
     control.updateModel();
     control.updateView();
+  }
+
+  @Override
+  protected void filterKeys(T control) {
+    super.filterKeys(control);
+
+    if (control instanceof FxComponent) {
+      control.addEventFilter(KeyEvent.ANY, event -> {
+        if (!control.isEditable() && ((FxComponent) control).getTableCell() != null) {
+          // don't allow to navigate within the cells of a table if combobox is used as an editor
+          // @todo: verify if still necessary in newer versions than java 9
+          switch (event.getCode()) {
+            case PAGE_DOWN:
+            case PAGE_UP:
+            case HOME:
+            case END:
+            case LEFT:
+            case RIGHT:
+              event.consume();
+          }
+        }
+      });
+    }
   }
 
 }
