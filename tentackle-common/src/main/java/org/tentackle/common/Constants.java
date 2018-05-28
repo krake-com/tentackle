@@ -48,8 +48,11 @@ public class Constants {
   /** name of property file holding the backend properties. */
   public static final String BACKEND_PROPS = "backend";
 
-  /** property key for the jdbc URL. */
+  /** property key for the backend URL. */
   public static final String BACKEND_URL = "url";
+
+  /** explicit driver name and url to load it from &lt;name:url&gt;. */
+  public static final String BACKEND_DRIVER = "driver";
 
   /** property key for the optional schemas. */
   public static final String BACKEND_SCHEMAS = "schemas";

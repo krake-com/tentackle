@@ -66,7 +66,7 @@ import org.tentackle.sql.BackendInfo;
  */
 public class BackendInfoParameter {
 
-  /** the jdbc url. */
+  /** the backend url. */
   public String url;
 
   /** the username. */

@@ -37,7 +37,7 @@ public class BackendInfo {
 
   private final Backend backend;                // the configured backend, null if remote
   private final DataSource jndiDataSource;      // != null if JNDI DataSource
-  private final String url;                     // the url
+  private final String url;                     // the backend url
   private final String user;                    // the username
   private final char[] password;                // the password
   private final String[] schemas;               // schemas (only for migration)
@@ -69,10 +69,10 @@ public class BackendInfo {
   }
 
   /**
-   * Creates a backend info from a url.<br>
+   * Creates a backend info.<br>
    * The info is able to create a connection.
    *
-   * @param url the url
+   * @param url the backend url
    * @param user the username
    * @param password the password
    * @param schemas the optional schemas, null if no schema check
@@ -156,6 +156,10 @@ public class BackendInfo {
          backendProperties.getProperty(Constants.BACKEND_USER),
          parsePassword(backendProperties.getProperty(Constants.BACKEND_PASSWORD)),
          parseSchemas(backendProperties.getProperty(Constants.BACKEND_SCHEMAS)));
+    String driver = backendProperties.getProperty(Constants.BACKEND_DRIVER);
+    if (driver != null) {
+      DynamicDriver.load(driver);
+    }
   }
 
   /**
