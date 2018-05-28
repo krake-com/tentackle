@@ -117,11 +117,9 @@ import org.tentackle.misc.Provider;
  * For local sessions via JDBC the file contains at least the following properties:
  *
  * <pre>
- * driver=jdbc-driver
  * url=jdbc-url
  *
  * Example:
- * driver=org.postgresql.Driver
  * url=jdbc:postgresql://gonzo.krake.local/erp
  * </pre>
  *
@@ -151,6 +149,10 @@ import org.tentackle.misc.Provider;
  * <p>
  * For local connections via JDBC:
  * <ul>
+ *  <li>
+ *  dynamically loaded JDBC driver
+ *  <pre>driver=org.postgresql.Driver:jar:file:/usr/share/java/postgresql.jar!/</pre>
+ *  </li>
  *  <li>
  *  A predefined user and password
  *  <pre>
