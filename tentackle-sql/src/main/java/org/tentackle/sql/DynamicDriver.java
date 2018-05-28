@@ -45,6 +45,7 @@ public class DynamicDriver implements Driver {
    * <pre>org.postgresql.Driver:jar:file:/usr/share/java/postgresql.jar!/</pre>
    *
    * @param name the driver classname and loading url
+   * @return the loaded driver, never null
    */
   public static Driver load(String name) {
     int ndx = name.indexOf(':');
