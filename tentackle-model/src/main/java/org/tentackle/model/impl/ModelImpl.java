@@ -636,9 +636,6 @@ public class ModelImpl implements Model {
             ((EntityOptionsImpl) entity.getOptions()).setRemote(defaults.getRemote());
           }
         }
-        if (entity.getOptions().isTokenLockProvided() && !entity.isRootEntity()) {
-          errors.add(new ModelError(entity, "only root entities can be token-locked"));
-        }
       }
     }
 
