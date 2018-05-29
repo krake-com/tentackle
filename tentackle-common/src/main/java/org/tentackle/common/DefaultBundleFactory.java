@@ -106,7 +106,7 @@ public class DefaultBundleFactory implements BundleFactory {
     baseName = normalizeBasename(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      // classloader doesnt work for named modules --> fallback to bundle support
+      // classloaders and bundle controls dont work for named modules --> fallback to bundle support
       return getBundle(support, locale);
     }
     else {
@@ -127,7 +127,7 @@ public class DefaultBundleFactory implements BundleFactory {
     baseName = normalizeBasename(baseName);
     BundleSupport support = moduleBundlesMap.get(baseName);
     if (support != null) {
-      // classloader doesnt work for named modules --> fallback to bundle support
+      // classloaders and bundle controls dont work for named modules --> fallback to bundle support
       return getBundle(support, locale);
     }
     else {
