@@ -135,7 +135,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * Start with 8 connections.
    * Add 2 connections at a time if all connections are in use.
    * Don't drop below 4 connections.
-   * Maximum of 100 connections, i.e. concurrent db operations (i.e. info above 25, warning above 50)
+   * Maximum of 40 connections, i.e. concurrent db operations (i.e. info above 10, warning above 20)
    * Within 12 to 36h (approx. once a day), close and reopen connections
    * (allows updates of the database servers's QEPs, prepared statements cache, etc...).
    *
@@ -143,7 +143,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
    * @param idOffset the offset for connection ids (&gt; 0)
    */
   public MpxConnectionManager(BackendInfo backendInfo, int idOffset) {
-    this("mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 100, 720, 2160);
+    this("mpx-mgr", backendInfo, 1000, idOffset, 8, 2, 4, 40, 720, 2160);
   }
 
 
