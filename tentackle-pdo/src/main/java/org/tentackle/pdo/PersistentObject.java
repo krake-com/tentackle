@@ -713,7 +713,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @param id is the object id
    *
    * @return object if loaded, null if no such object
-   * @deprecated use {@link #selectForUpdate(long) instead
+   * @deprecated use {@link #selectForUpdate(long)} instead
    */
   @Deprecated
   T selectLocked(long id);
