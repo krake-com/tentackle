@@ -282,7 +282,7 @@ public class DefaultNumberSource implements NumberSource {
    * Locks the pool.
    */
   private void lockPool() {
-    NumberPool lockedPool = pool.reloadLocked();
+    NumberPool lockedPool = pool.reloadForUpdate();
     if (lockedPool == null) {
       throw new NumberSourceException("pool " + pool + " vanished");
     }
