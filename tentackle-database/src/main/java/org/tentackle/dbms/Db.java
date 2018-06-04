@@ -2789,7 +2789,7 @@ public class Db implements Session, Cloneable {
    * @param clazz is the AbstractDbObject-class
    * @return the handle
    */
-  public synchronized static int prepareRemoteDelegate (Class<?> clazz) {
+  public static synchronized int prepareRemoteDelegate (Class<?> clazz) {
     if (remoteClasses == null)  {
       remoteClasses = new Class<?>[16];    // start with a reasonable size
     }

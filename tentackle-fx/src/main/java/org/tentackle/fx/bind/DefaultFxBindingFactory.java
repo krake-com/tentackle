@@ -50,17 +50,10 @@ public class DefaultFxBindingFactory extends AbstractBindingFactory implements F
    */
   private final Map<Class<? extends FxComponent>, Class<? extends FxComponentBinding>> componentClassMap = new ConcurrentHashMap<>();
 
-  // same but with evaluated inheritance
+  /**
+   * Same as {@link #componentClassMap}, but with evaluated inheritance.
+   */
   private final Map<Class<? extends FxComponent>, Class<? extends FxComponentBinding>> allComponentClassMap = new ConcurrentHashMap<>();
-
-//  /**
-//   * Map of component classes to binding classes
-//   */
-//  private final Map<Class<?>, Class<? extends FxTableBinding>> tableClassMap = new ConcurrentHashMap<>();
-//
-//  // same but with evaluated inheritance
-//  private final Map<Class<?>, Class<? extends FxTableBinding>> allTableClassMap = new ConcurrentHashMap<>();
-
 
 
   /**

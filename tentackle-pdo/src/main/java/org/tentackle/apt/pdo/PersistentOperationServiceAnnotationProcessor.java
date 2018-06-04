@@ -79,22 +79,22 @@ public class PersistentOperationServiceAnnotationProcessor extends AbstractServi
     if (!verifyConstructor(element, noArgsVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs a no-args constructor", element);
+          element + " needs a no-args constructor", element);
     }
     if (!verifyConstructor(element, classArgVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (Operation)", element);
+          element + " needs constructor (Operation)", element);
     }
     if (!verifyConstructor(element, opContextVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (Operation, DomainContext)", element);
+          element + " needs constructor (Operation, DomainContext)", element);
     }
     if (!verifyConstructor(element, opSessionVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (Operation, Session)", element);
+          element + " needs constructor (Operation, Session)", element);
     }
     verifyImplements(element, "org.tentackle.pdo.PersistentOperation");
   }

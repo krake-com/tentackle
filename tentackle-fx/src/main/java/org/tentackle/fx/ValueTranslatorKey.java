@@ -29,8 +29,8 @@ import java.util.Objects;
  */
 public class ValueTranslatorKey<M,V> {
 
-  private final Class<?> modelClass;
-  private final Class<?> viewClass;
+  private final Class<M> modelClass;
+  private final Class<V> viewClass;
 
   /**
    * Creates a translator key.
@@ -38,7 +38,7 @@ public class ValueTranslatorKey<M,V> {
    * @param modelClass the model's type
    * @param viewClass the view's type
    */
-  public ValueTranslatorKey(Class<?> modelClass, Class<?> viewClass) {
+  public ValueTranslatorKey(Class<M> modelClass, Class<V> viewClass) {
     this.modelClass = modelClass;
     this.viewClass = viewClass;
   }
@@ -48,7 +48,7 @@ public class ValueTranslatorKey<M,V> {
    *
    * @return the class
    */
-  public Class<?> getModelClass() {
+  public Class<M> getModelClass() {
     return modelClass;
   }
 
@@ -57,7 +57,7 @@ public class ValueTranslatorKey<M,V> {
    *
    * @return the class
    */
-  public Class<?> getViewClass() {
+  public Class<V> getViewClass() {
     return viewClass;
   }
 

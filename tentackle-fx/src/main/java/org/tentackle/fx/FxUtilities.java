@@ -94,7 +94,7 @@ public class FxUtilities {
   /**
    * Executor for {@link #runAndWait(Runnable)} below.
    */
-  private final Executor BLOCKING_FX_EXECUTOR = ConcurrencyHelper.createBlockingExecutor(Platform::runLater);
+  private final Executor blockingFxExecutor = ConcurrencyHelper.createBlockingExecutor(Platform::runLater);
 
   /**
    * The help url.
@@ -236,7 +236,7 @@ public class FxUtilities {
     if (Platform.isFxApplicationThread()) {
       throw new FxRuntimeException("calling thread is the FX application thread");
     }
-    BLOCKING_FX_EXECUTOR.execute(runnable);
+    blockingFxExecutor.execute(runnable);
   }
 
 
@@ -308,7 +308,7 @@ public class FxUtilities {
       GridPane.setHgrow(textArea, Priority.ALWAYS);
       alert.getDialogPane().setExpandableContent(expContent);
       // because of resize bug in FX8 (@todo: remove in later versions if fixed)
-      alert.getDialogPane().expandedProperty().addListener((l) -> Platform.runLater(() -> {
+      alert.getDialogPane().expandedProperty().addListener(l -> Platform.runLater(() -> {
         alert.getDialogPane().requestLayout();
         Window w = alert.getDialogPane().getScene().getWindow();
         w.sizeToScene();

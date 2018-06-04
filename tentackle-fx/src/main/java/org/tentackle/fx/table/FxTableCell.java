@@ -174,11 +174,6 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
 
 
   @Override
-  public void cancelEdit() {
-    super.cancelEdit();
-  }
-
-  @Override
   public void commitEdit(T newValue) {
     super.commitEdit(newValue);
     Platform.runLater(() -> {

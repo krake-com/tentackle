@@ -228,7 +228,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     compileErrorLog = new StringBuilder();
 
     // wurbel
-    if (filesets != null && filesets.size() > 0) {
+    if (filesets != null && !filesets.isEmpty()) {
       // explicit filesets given instead of source dir
       for (FileSet fileSet: filesets) {
         processFileSet(fileSet);

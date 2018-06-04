@@ -254,7 +254,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
         if (binding != null) {
           binding.setModelValue(binding.getViewValue());
           List<ValidationResult> results = binding.validate();
-          if (results != null && !results.isEmpty()) {
+          if (!results.isEmpty()) {
             throw new ValidationFailedException(results);
           }
         }
@@ -282,7 +282,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
           if (node != getNode() &&
               (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
             // only if other component currently holding the focus has no error (would loop otherwise)
-            Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+            Platform.runLater(((Node) getComponent())::requestFocus);
           }
         }
       }

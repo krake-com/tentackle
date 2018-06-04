@@ -223,7 +223,7 @@ public interface Binding {
    * <p>
    * Returns null if there are no validators for this binding.
    *
-   * @return the validation result
+   * @return the validation results, never null
    */
   List<ValidationResult> validate();
 

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
@@ -147,11 +146,6 @@ public class CheckValidationsProcessor extends AbstractTentackleProcessor {
    */
   public void setProcessingClassLoader(ClassLoader processingClassLoader) {
     this.processingClassLoader = processingClassLoader;
-  }
-
-  @Override
-  public synchronized void init(ProcessingEnvironment processingEnvironment) {
-    super.init(processingEnvironment);
   }
 
   @Override

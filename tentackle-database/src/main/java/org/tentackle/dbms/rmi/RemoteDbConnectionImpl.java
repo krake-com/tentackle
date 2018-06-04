@@ -32,7 +32,6 @@ import org.tentackle.io.ServerSocketConfiguratorHolder;
 import org.tentackle.log.Logger;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.tentackle.session.VersionInfoIncompatibleException;
 
 
 
@@ -149,11 +148,12 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
    * <p>
    * The default implementation does nothing.
    * It is invoked only for remote connections.
+   * <p>
+   * Throws {@link org.tentackle.session.VersionInfoIncompatibleException} if versions are not compatible.
    *
    * @param clientVersionInfo the rmiServer's version info from {@link org.tentackle.dbms.rmi.RemoteDbConnection}.
-   * @throws VersionInfoIncompatibleException if versions are not compatible
    */
-  public void checkClientVersionInfo(Serializable clientVersionInfo) throws VersionInfoIncompatibleException {
+  public void checkClientVersionInfo(Serializable clientVersionInfo) {
     // default is ok
   }
 

@@ -20,6 +20,7 @@
 package org.tentackle.bind;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.log.Logger;
 import org.tentackle.common.StringHelper;
@@ -301,7 +302,7 @@ public abstract class AbstractBinding implements Binding {
       binder.fireValidated(this, results);
       return results;
     }
-    return null;
+    return Collections.emptyList();
   }
 
 

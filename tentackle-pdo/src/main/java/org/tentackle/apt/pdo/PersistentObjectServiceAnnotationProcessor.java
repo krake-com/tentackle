@@ -79,22 +79,22 @@ public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceA
     if (!verifyConstructor(element, noArgsVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs a no-args constructor", element);
+          element + " needs a no-args constructor", element);
     }
     if (!verifyConstructor(element, pdoVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject)", element);
+          element + " needs constructor (PersistentDomainObject)", element);
     }
     if (!verifyConstructor(element, pdoContextVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject, DomainContext)", element);
+          element + " needs constructor (PersistentDomainObject, DomainContext)", element);
     }
     if (!verifyConstructor(element, pdoSessionVisitor)) {
       processingEnv.getMessager().printMessage(
           Diagnostic.Kind.ERROR,
-          "class " + element + " needs constructor (PersistentDomainObject, Session)", element);
+          element + " needs constructor (PersistentDomainObject, Session)", element);
     }
     verifyImplements(element, "org.tentackle.pdo.PersistentObject");
   }

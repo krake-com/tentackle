@@ -198,6 +198,7 @@ public class RmiServer {
 
 
   private static final Logger LOGGER = Logger.get(RmiServer.class);
+  private static final String SYSTEM_DEFAULT = "<system default>";
 
   private final SessionInfo sessionInfo;                  // server session info
   private String service;                                 // name of the RMI service
@@ -592,13 +593,13 @@ public class RmiServer {
 
       // log
       LOGGER.info("\nTentackle RMI-server " + getClass().getName() +
-                  "\ndefault client socket factory = " + (csf == null ? "<system default>" : csf.getClass().getName()) +
-                  "\ndefault server socket factory = " + (ssf == null ? "<system default>" : ssf.getClass().getName()) +
+                  "\ndefault client socket factory = " + (csf == null ? SYSTEM_DEFAULT : csf.getClass().getName()) +
+                  "\ndefault server socket factory = " + (ssf == null ? SYSTEM_DEFAULT : ssf.getClass().getName()) +
                   "\nservice = " + service + (createRegistry ? (", registry created on port " + registryPort) +
-                    "\nlogin client socket factory = " + (loginCsf == null ? "<system default>" : loginCsf.getClass().getName()) +
-                    "\nlogin server socket factory = " + (loginSsf == null ? "<system default>" : loginSsf.getClass().getName())
+                    "\nlogin client socket factory = " + (loginCsf == null ? SYSTEM_DEFAULT : loginCsf.getClass().getName()) +
+                    "\nlogin server socket factory = " + (loginSsf == null ? SYSTEM_DEFAULT : loginSsf.getClass().getName())
                     : "") +
-                  "\nlogin port = " + (port == 0 ? "<system default>" : port) +
+                  "\nlogin port = " + (port == 0 ? SYSTEM_DEFAULT : port) +
                   ", session timeout = " + sessionTimeout + "*" + sessionTimeoutCheckInterval + "ms");
 
       // bind to service

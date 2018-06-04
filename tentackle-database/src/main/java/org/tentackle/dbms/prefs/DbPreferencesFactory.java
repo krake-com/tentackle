@@ -147,7 +147,7 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
       countUpdate();
     }
 
-    private void countUpdate() {
+    private synchronized void countUpdate() {
       serial = ++lastSerial;
     }
   }

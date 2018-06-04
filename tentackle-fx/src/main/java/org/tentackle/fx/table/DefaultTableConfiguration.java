@@ -32,7 +32,6 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
-import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
@@ -44,8 +43,6 @@ import org.tentackle.reflect.ReflectionHelper;
  * @author harald
  */
 public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
-
-  private static final Logger LOGGER = Logger.get(DefaultTableConfiguration.class);
 
   /** preferences key for table and column width. */
   private static final String PREF_WIDTH = "width";
