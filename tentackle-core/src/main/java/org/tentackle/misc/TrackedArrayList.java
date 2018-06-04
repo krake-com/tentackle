@@ -380,15 +380,10 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
 
-  /**
-   * Gets the removed objects in the order of their removal.
-   *
-   * @return the list of removed objects, null if no object has been removed so far.
-   */
   @Override
   public Collection<E> getRemovedObjects() {
     filterRemovedObjects();
-    return removedObjects;
+    return removedObjects();
   }
 
 
@@ -404,10 +399,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   protected void addRemovedObject(E object) {
     if (object != null) {
       assertMutable();
-      if (removedObjects == null) {
-        removedObjects = new LinkedHashSet<>();
-      }
-      if (removedObjects.add(object)) {
+      if (removedObjects().add(object)) {
         fireRemoved(object);
       }
       removed = true;
@@ -881,5 +873,17 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       }
     }
     return false;
+  }
+
+  /**
+   * Gets the removed object set.
+   *
+   * @return the set, never null
+   */
+  private Set<E> removedObjects() {
+    if (removedObjects == null) {
+      removedObjects = new LinkedHashSet<>();
+    }
+    return removedObjects;
   }
 }

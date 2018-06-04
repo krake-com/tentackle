@@ -97,7 +97,7 @@ public class TrackedArrayListTest {
 
     Collections.sort(list);
     Assert.assertEquals(list.size(), 10);
-    Assert.assertTrue(list.getRemovedObjects() == null || list.getRemovedObjects().isEmpty());
+    Assert.assertTrue(list.getRemovedObjects().isEmpty());
     list.setModified(false);
     for (int i = 0; i < 4; i++) {
       list.remove(Integer.valueOf(i));

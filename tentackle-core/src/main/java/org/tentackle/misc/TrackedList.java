@@ -122,7 +122,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
   /**
    * Gets the removed objects in the order of their removal.
    *
-   * @return the list of removed objects, null if no object has been removed so far.
+   * @return the list of removed objects, never null
    */
   Collection<E> getRemovedObjects();
 

@@ -134,12 +134,8 @@ public interface Session extends Comparable<Session>, AutoCloseable {
         applyTo(obj);
       }
       if (list instanceof TrackedList) {
-        @SuppressWarnings("unchecked")
-        Collection<SessionDependable> removedObjects = ((TrackedList<SessionDependable>) list).getRemovedObjects();
-        if (removedObjects != null) {
-          for (SessionDependable obj: removedObjects) {
-            applyTo(obj);
-          }
+        for (SessionDependable obj: ((TrackedList<SessionDependable>) list).getRemovedObjects()) {
+          applyTo(obj);
         }
       }
     }
