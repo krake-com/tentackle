@@ -35,6 +35,8 @@ import org.tentackle.session.Session;
 public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOperation<T,D>>
        implements DomainOperation<T> {
 
+  private static final String UNSUPPORTED = "not implemented";
+
   private T operation;   // the operation instance this is a delegate for
 
 
@@ -80,7 +82,7 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
 
   @Override
   public PersistenceDelegate<T> getPersistenceDelegate() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
 }

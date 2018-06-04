@@ -35,6 +35,7 @@ import org.tentackle.session.Session;
 public class MockPersistentOperation<T extends Operation<T>>
        implements PersistentOperation<T> {
 
+  private static final String UNSUPPORTED = "not implemented";
 
   private DomainContext context;                  // application database context
   private T operation;                            // the operation instance this is a delegate for
@@ -123,32 +124,32 @@ public class MockPersistentOperation<T extends Operation<T>>
 
   @Override
   public void determineContextId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getContextId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public DomainContext getBaseContext() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public DomainContext createValidContext() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isDomainContextImmutable() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setDomainContextImmutable(boolean contextImmutable) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -168,7 +169,7 @@ public class MockPersistentOperation<T extends Operation<T>>
 
   @Override
   public DomainDelegate<T> getDomainDelegate() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
 }

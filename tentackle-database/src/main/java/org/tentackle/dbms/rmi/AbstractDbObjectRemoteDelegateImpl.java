@@ -119,9 +119,9 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
 
   @SuppressWarnings("unchecked")
   @Override
-  public P selectLockedObject(long id) throws RemoteException {
+  public P selectObjectForUpdate(long id) throws RemoteException {
     try {
-      return newInstance().selectLockedObject(id);
+      return newInstance().selectObjectForUpdate(id);
     }
     catch (RuntimeException e) {
       throw createException(e);

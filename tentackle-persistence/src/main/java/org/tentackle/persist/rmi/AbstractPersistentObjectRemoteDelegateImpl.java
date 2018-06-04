@@ -140,7 +140,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public P selectLockedObject(long id) throws RemoteException {
+  public P selectObjectForUpdate(long id) throws RemoteException {
     throw new RemoteException(ILLEGAL_METHOD_TEXT);
   }
 

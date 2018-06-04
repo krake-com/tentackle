@@ -46,6 +46,8 @@ import org.tentackle.validate.ValidationScope;
 public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends MockPersistentObject<T,P>>
        implements PersistentObject<T> {
 
+  private static final String UNSUPPORTED = "not implemented";
+
 
   private DomainContext context;                  // application database context
   private T pdo;                                  // the pdo instance this is a delegate for
@@ -173,293 +175,288 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public String getTableName() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public String getClassBaseName() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public int getClassId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public SecurityResult getSecurityResult(Permission permission) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isPermissionAccepted(Permission permission) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isNew() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void reserveId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isDeleted() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isVirgin() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setModified(boolean modified) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isTracked() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isModified() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean attributesModified() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean differsPersisted() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isPersistable() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isReferenced() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setExpired(boolean expired) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isExpired() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<IdSerialTuple> getExpiredTableSerials(long oldSerial, long maxSerial) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<IdSerialTuple> selectExpiredTableSerials(long oldSerial) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<IdSerialTuple> selectExpiredTableSerials(long oldSerial, long maxSerial) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public PdoCache<T> getCache() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getCacheAccessTime() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getCacheAccessCount() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void markCacheAccess() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isCached() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isCacheable() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isRemovable() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  @Override
-  public void prepareDelete() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void delete() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean containsPattern(String pattern) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T findDuplicate() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getTokenLockTimeout() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
 
   @Override
   public T select(long id) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
-  public T selectLocked(long id) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public T selectForUpdate(long id) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T reload() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
-  public T reloadLocked() {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public T reloadForUpdate() {
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<T> selectAll() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T selectCached(long id) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<T> selectAllCached() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void save() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T persist() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public Object getTransientData() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setTransientData(Object data) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getEditedBy() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setEditedBy(long editedBy) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isTokenLocked() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isTokenLockedBy(long userId) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isTokenLockedByMe() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public Timestamp getEditedSince() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setEditedSince(Timestamp editedSince) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public Timestamp getEditedExpiry() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setEditedExpiry(Timestamp editedExpiry) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public <U extends PersistentDomainObject<U>> U getTokenLockObject() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public String toGenericString() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public Class<? extends ValidationScope>[] getDefaultScopes() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -474,22 +471,22 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public void determineContextId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getContextId() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public DomainContext getBaseContext() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public DomainContext createValidContext() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -517,27 +514,27 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public boolean isComposite() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isDomainContextImmutable() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setDomainContextImmutable(boolean contextImmutable) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T createSnapshot() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void revertToSnapshot(T snapshot) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -552,27 +549,27 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public void setNormText(String normText) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public String getNormText() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public ScrollableResource<T> selectAllAsCursor() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public List<T> selectByNormText(String normText) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long getModificationCount() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -582,12 +579,12 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public T selectCachedOnly(long id) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public ScrollableResource<T> selectByNormTextAsCursor(String normText) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -612,27 +609,27 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public List<IdSerialTuple> selectAllIdSerial() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long selectSerial(long id) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long selectMaxId() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public long selectMaxTableSerial() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public boolean isAbstract() {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -702,12 +699,12 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public T persistTokenLocked() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public DomainDelegate<T> getDomainDelegate() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -717,7 +714,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public T transferTokenLock(long userId) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -742,7 +739,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public List<T> selectAllWithExpiredTableSerials(long oldSerial) {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
 }

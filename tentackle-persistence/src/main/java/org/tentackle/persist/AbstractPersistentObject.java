@@ -1572,17 +1572,17 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Loads a PDO from the database by its unique ID.<br>
    *
    * @param id is the object id
-   * @param locked true if select FOR UPDATE
+   * @param forUpdate true if select FOR UPDATE
    *
    * @return object if loaded, null if no such object
    */
-  public T select(long id, boolean locked) {
+  public T select(long id, boolean forUpdate) {
     T obj = null;
     if (id > 0) {
       if (getSession().isRemote())  {
         try {
           DomainContext context = getDomainContext();
-          obj = getRemoteDelegate().select(context, id, locked);
+          obj = getRemoteDelegate().select(context, id, forUpdate);
           configureRemoteObject(context, obj);
         }
         catch (RemoteException e) {
@@ -1590,10 +1590,18 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         }
       }
       else {
+        StatementId stmtId;
+        if (forUpdate) {
+          getSession().assertTxRunning();
+          stmtId = getClassVariables().selectForUpdateStatementId;
+        }
+        else {
+          stmtId = getClassVariables().selectObjectStatementId;
+        }
         JoinedSelect<T> js = getEagerJoinedSelect();
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectObjectStatementId,
+        PreparedStatementWrapper st = getPreparedStatement(stmtId,
                 () -> {
-                  StringBuilder sql = new StringBuilder(createSelectSql(locked));
+                  StringBuilder sql = new StringBuilder(createSelectSql(forUpdate));
                   if (js != null) {
                     js.createJoinedSql(pdo, sql);
                   }
@@ -1669,14 +1677,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Reloads the object with a write lock.
-   * Note: to make sure that any lazy inits are cleared,
-   * the returned object is always a new object.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   @Override
-  public T reloadLocked() {
-    return Pdo.create(getPdo()).selectLocked(getId());
+  public T reloadForUpdate() {
+    return Pdo.create(getPdo()).selectForUpdate(getId());
   }
 
 
@@ -1689,7 +1695,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return object if loaded, null if no such object
    */
   @Override
-  public T selectLocked(long id) {
+  public T selectForUpdate(long id) {
     return select(id, true);
   }
 

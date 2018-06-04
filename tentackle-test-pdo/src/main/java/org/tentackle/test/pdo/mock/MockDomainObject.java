@@ -35,6 +35,9 @@ import org.tentackle.session.Session;
 public class MockDomainObject<T extends PersistentDomainObject<T>, D extends MockDomainObject<T,D>>
        implements DomainObject<T> {
 
+  private static final String UNSUPPORTED = "not implemented";
+  
+
   private T pdo;   // the pdo instance this is a delegate for
 
 
@@ -82,22 +85,22 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
 
   @Override
   public Class<?> getUniqueDomainKeyType() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public Object getUniqueDomainKey() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public void setUniqueDomainKey(Object domainKey) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public T findByUniqueDomainKey(Object domainKey) {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
@@ -107,17 +110,17 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
 
   @Override
   public String getSingular() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public String getPlural() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override
   public PersistenceDelegate<T> getPersistenceDelegate() {
-    throw new UnsupportedOperationException("Not supported yet.");
+    throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
   @Override

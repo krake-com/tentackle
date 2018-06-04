@@ -537,32 +537,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
 
   /**
-   * Prepares this object for delete.<br>
-   * The method is invoked at the client-side only, i.e. 3-tier or
-   * 2-tier, but never at the server-side in 3-tier mode.
-   * The default implementation clears a non-transient flag that tells
-   * the server that prepareDelete() already has been invoked on the client side.
-   * Applications may override the method to perform any modifications to the
-   * object before it is sent to the server.
-   * <p>
-   * Example:
-   * <pre>
-   * void prepareDelete() {
-   *   // do something
-   *   ...
-   *   super.prepareDelete();   // IMPORTANT!!!
-   * }
-   * </pre>
-   * Notice that the method is invoked outside of the transaction and that it
-   * is not invoked if the object is new or not saveable.
-   *
-   * @see #delete
-   * @see #isNew()
-   * @see #isPersistable()
-   */
-  void prepareDelete();
-
-  /**
    * Removes this object from the database.
    */
   void delete();
@@ -692,12 +666,13 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
 
   /**
    * Loads and write-locks a PDO from the database by its unique ID.<br>
+   * Requires that a transaction is running.
    *
    * @param id is the object id
    *
    * @return object if loaded, null if no such object
    */
-  T selectLocked(long id);
+  T selectForUpdate(long id);
 
   /**
    * Reloads the object.<p>
@@ -709,13 +684,12 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T reload();
 
   /**
-   * Reloads the object with a write lock.
-   * Note: to make sure that any lazy inits are cleared,
-   * the returned object is always a new object.
+   * Reloads the object with a write lock.<br>
+   * Requires that a transaction is running.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
-  T reloadLocked();
+  T reloadForUpdate();
 
 
   /**

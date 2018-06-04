@@ -1327,7 +1327,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Load the object from the database with exclusive lock (aka write lock).
+   * Load the object from the database with exclusive lock (aka write lock).<br>
    * This is implemented via "SELECT FOR UPDATE".
    *
    * @param id is the object id
@@ -1335,13 +1335,13 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return object if loaded, null if no such object
    */
   @SuppressWarnings("unchecked")
-  public P selectLockedObject (long id) {
+  public P selectObjectForUpdate(long id) {
     P obj = null;
     if (id > 0) {
       Db db = getSession();
       if (db.isRemote())  {
         try {
-          obj = getRemoteDelegate().selectLockedObject(id);
+          obj = getRemoteDelegate().selectObjectForUpdate(id);
           if (obj != null) {
             obj.setSession(db);
           }
@@ -1371,7 +1371,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          * of the transaction, the db-connection hangs!
          * @todo: verify whether that's still the case with newer versions of oracle
          */
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectLockedStatementId,
+        getSession().assertTxRunning();
+        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectForUpdateStatementId,
                                                            () -> createSelectSql(true));
         st.setLong(1, id);
         try (ResultSetWrapper rs = st.executeQuery()) {
@@ -1399,13 +1400,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Reloads the object with a write lock.
-   * Note: to make sure that any lazy inits are cleared,
-   * the returned object is always a new object.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   public P reloadLockedObject() {
-    return newInstance().selectLockedObject(id);
+    return newInstance().selectObjectForUpdate(id);
   }
 
 
@@ -1836,7 +1835,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Performs a dummy update.<br>
-   * The method is provided as an alternative to {@link #reloadLockedObject} or {@link #selectLockedObject}
+   * The method is provided as an alternative to {@link #reloadLockedObject} or {@link #selectObjectForUpdate}
    * to lock the object during a transaction by updating the ID without changing it.
    */
   @SuppressWarnings("unchecked")
@@ -2343,11 +2342,26 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   /**
    * Prepares this object for delete.<br>
    * The method is invoked at the client-side only, i.e. 3-tier or
-   * 2-tier, but never at the server-side in 3-tier mode.<br>
+   * 2-tier, but never at the server-side in 3-tier mode.
+   * The default implementation clears a non-transient flag that tells
+   * the server that prepareDelete() already has been invoked on the client side.
    * Applications may override the method to perform any modifications to the
    * object before it is sent to the server.
    * <p>
-   * Notice that the method is invoked outside of the delete-transaction.
+   * Example:
+   * <pre>
+   * void prepareDelete() {
+   *   // do something
+   *   ...
+   *   super.prepareDelete();   // IMPORTANT!!!
+   * }
+   * </pre>
+   * Notice that the method is invoked outside of the transaction and that it
+   * is not invoked if the object is new or not saveable.
+   *
+   * @see #deleteObject()
+   * @see #isNew()
+   * @see #isPersistable()
    */
   public void prepareDelete() {
   }
