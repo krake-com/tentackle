@@ -32,6 +32,7 @@ import org.tentackle.session.Session;
  * @param <T> the pdo type
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public class MockPersistentOperation<T extends Operation<T>>
        implements PersistentOperation<T> {
 
@@ -167,7 +168,6 @@ public class MockPersistentOperation<T extends Operation<T>>
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

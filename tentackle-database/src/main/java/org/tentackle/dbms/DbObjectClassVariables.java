@@ -210,9 +210,9 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public final StatementId selectAllIdSerialStatementId = new StatementId();
 
   /**
-   * prepared statement ID for selectLocked().
+   * prepared statement ID for selectForUpdate().
    */
-  public final StatementId selectLockedStatementId = new StatementId();
+  public final StatementId selectForUpdateStatementId = new StatementId();
 
   /**
    * prepared statement ID for selectSerial().

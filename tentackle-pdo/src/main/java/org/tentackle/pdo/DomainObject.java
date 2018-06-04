@@ -38,6 +38,7 @@ public interface DomainObject<T extends PersistentDomainObject<T>>
    * @return the pdo
    * @deprecated use me() instead
    */
+  @Deprecated
   T pdo();
 
   /**

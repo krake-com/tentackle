@@ -35,6 +35,7 @@ import org.tentackle.session.Session;
  * @param <T> the operation type
  * @param <D> the domain implementation type
  */
+@SuppressWarnings("deprecation")
 public abstract class AbstractDomainOperation<T extends Operation<T>, D extends AbstractDomainOperation<T,D>>
        implements DomainOperation<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
 
@@ -85,7 +86,6 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

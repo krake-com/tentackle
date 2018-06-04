@@ -38,6 +38,7 @@ public interface DomainOperation<T extends Operation<T>>
    * @return the operation
    * @deprecated use me() instead
    */
+  @Deprecated
   T operation();
 
   /**

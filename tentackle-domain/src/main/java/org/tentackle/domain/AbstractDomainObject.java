@@ -38,6 +38,7 @@ import org.tentackle.session.Session;
  * @param <D> the domain object class
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, D extends AbstractDomainObject<T,D>>
        implements DomainObject<T>, EffectiveClassProvider<T>, Cloneable, Serializable {
 
@@ -76,7 +77,6 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T pdo() {
     return pdo;
   }

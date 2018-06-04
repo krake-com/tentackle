@@ -32,6 +32,7 @@ import org.tentackle.session.Session;
  * @param <D> the domain object class
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOperation<T,D>>
        implements DomainOperation<T> {
 
@@ -54,7 +55,6 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

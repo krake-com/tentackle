@@ -42,6 +42,7 @@ import org.tentackle.session.Session;
  * @param <P> the operation implementation class
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public abstract class AbstractPersistentOperation<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
        extends AbstractDbOperation<P> implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T> {
 
@@ -201,7 +202,6 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

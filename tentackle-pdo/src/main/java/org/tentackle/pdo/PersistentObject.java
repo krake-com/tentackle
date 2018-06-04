@@ -55,6 +55,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the pdo
    * @deprecated use me() instead
    */
+  @Deprecated
   T pdo();
 
   /**
@@ -712,8 +713,20 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @param id is the object id
    *
    * @return object if loaded, null if no such object
+   * @deprecated use {@link #selectForUpdate(long) instead
    */
+  @Deprecated
   T selectLocked(long id);
+
+  /**
+   * Loads and write-locks a PDO from the database by its unique ID.<br>
+   * Requires that a transaction is currently running.
+   *
+   * @param id is the object id
+   *
+   * @return object if loaded, null if no such object
+   */
+  T selectForUpdate(long id);
 
   /**
    * Reloads the object.<p>
@@ -725,14 +738,21 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T reload();
 
   /**
-   * Reloads the object with a write lock.
-   * Note: to make sure that any lazy inits are cleared,
-   * the returned object is always a new object.
+   * Reloads the object with a write lock.<br>
+   *
+   * @return the object if reloaded, else null (never <em>this</em>)
+   * @deprecated use {@link #reloadForUpdate()} instead
+   */
+  @Deprecated
+  T reloadLocked();
+
+  /**
+   * Reloads the object with a database write lock.<br>
+   * Requires that a transaction is running.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
-  T reloadLocked();
-
+  T reloadForUpdate();
 
   /**
    * Selects all objects of this class as a {@link java.util.List}.

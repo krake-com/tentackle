@@ -40,6 +40,7 @@ public interface PersistentOperation<T extends Operation<T>>
    * @return the operation
    * @deprecated use me() instead
    */
+  @Deprecated
   T operation();
 
   /**

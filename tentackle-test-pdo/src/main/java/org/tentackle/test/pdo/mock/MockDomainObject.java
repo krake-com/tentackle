@@ -32,6 +32,7 @@ import org.tentackle.session.Session;
  * @param <D> the domain object class
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public class MockDomainObject<T extends PersistentDomainObject<T>, D extends MockDomainObject<T,D>>
        implements DomainObject<T> {
 
@@ -61,7 +62,6 @@ public class MockDomainObject<T extends PersistentDomainObject<T>, D extends Moc
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T pdo() {
     return pdo;
   }

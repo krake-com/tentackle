@@ -30,6 +30,7 @@ import org.tentackle.session.Session;
  * @author harald
  * @param <T> the operation type
  */
+@SuppressWarnings("deprecation")
 public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, Cloneable, Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -164,7 +165,6 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   }
 
   @Override
-  @SuppressWarnings("deprecation")
   public T operation() {
     return operation;
   }

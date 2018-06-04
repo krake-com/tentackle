@@ -1374,21 +1374,22 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Load the object from the database with exclusive lock (aka write lock).
-   * This is implemented via "SELECT FOR UPDATE".
+   * Load the object from the database with exclusive lock (aka write lock).<br>
+   * This is implemented via "SELECT FOR UPDATE".<br>
+   * Requires that a transaction is running.
    *
    * @param id is the object id
    *
    * @return object if loaded, null if no such object
    */
   @SuppressWarnings("unchecked")
-  public P selectLockedObject (long id) {
+  public P selectObjectForUpdate (long id) {
     P obj = null;
     if (id > 0) {
       Db db = getSession();
       if (db.isRemote())  {
         try {
-          obj = getRemoteDelegate().selectLockedObject(id);
+          obj = getRemoteDelegate().selectObjectForUpdate(id);
           if (obj != null) {
             obj.setSession(db);
           }
@@ -1418,7 +1419,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
          * of the transaction, the db-connection hangs!
          * @todo: verify whether that's still the case with newer versions of oracle
          */
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectLockedStatementId,
+        getSession().assertTxRunning();
+        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().selectForUpdateStatementId,
                                                            () -> createSelectSql(true));
         st.setLong(1, id);
         try (ResultSetWrapper rs = st.executeQuery()) {
@@ -1452,7 +1454,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   public P reloadLockedObject() {
-    return newInstance().selectLockedObject(id);
+    return newInstance().selectObjectForUpdate(id);
   }
 
 
@@ -1882,7 +1884,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Performs a dummy update.<br>
-   * The method is provided as an alternative to {@link #reloadLockedObject} or {@link #selectLockedObject}
+   * The method is provided as an alternative to {@link #reloadLockedObject} or {@link #selectObjectForUpdate}
    * to lock the object during a transaction by updating the ID without changing it.
    */
   @SuppressWarnings("unchecked")
