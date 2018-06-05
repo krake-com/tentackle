@@ -111,11 +111,10 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
       if (obj instanceof FxContainer) {
         ((FxContainer) obj).updateViewNonFocused();
       }
-      else if (obj instanceof FxControl) {
-        if (!(obj instanceof Node) || !((Node) obj).isFocused()) {
-          // only if not focused (user might currently be typing...)
-          ((FxControl) obj).updateView();
-        }
+      else if (obj instanceof FxControl &&
+               (!(obj instanceof Node) || !((Node) obj).isFocused())) {
+        // only if not focused (user might currently be typing...)
+        ((FxControl) obj).updateView();
       }
     }
   }
@@ -142,11 +141,10 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
   public void triggerViewModified() {
     boolean modified = false;
     for (Object component: getComponents()) {
-      if (component instanceof FxControl) {
-        if (((FxControl) component).isViewModified()) {
-          modified = true;
-          break;
-        }
+      if (component instanceof FxControl &&
+          (((FxControl) component).isViewModified())) {
+        modified = true;
+        break;
       }
     }
     setViewModified(modified);

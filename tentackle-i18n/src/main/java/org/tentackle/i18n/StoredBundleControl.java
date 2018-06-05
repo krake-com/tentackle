@@ -119,7 +119,6 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
       loc = name.substring(ndx + 1);
       name = name.substring(0, ndx);
     }
-    String locText = loc == null ? "" : loc;   // avoid null in logging below
     return new StoredBundle.StoredBundleUDK(name, loc);
   }
 
