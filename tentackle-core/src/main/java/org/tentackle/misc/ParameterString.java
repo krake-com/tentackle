@@ -99,7 +99,7 @@ public class ParameterString implements Serializable {
    * @return the parameter names
    */
   public String[] getParameterNames() {
-    return parameters.keySet().toArray(new String[parameters.size()]);
+    return parameters.keySet().toArray(new String[0]);
   }
 
 

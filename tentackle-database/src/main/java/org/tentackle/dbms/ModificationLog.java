@@ -25,6 +25,7 @@ import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
@@ -41,7 +42,7 @@ import org.tentackle.sql.Backend;
 
 
 
-/**
+/*
  * @> $mapfile
  *
  * # modification table for async coupling
@@ -812,12 +813,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public String toString()  {
     StringBuilder buf = new StringBuilder();
     buf.append('<').append(getId()).append('/').append(modType).append(':');
-    if (user == null) {
-      buf.append("no-user");
-    }
-    else  {
-      buf.append(user);
-    }
+    buf.append(Objects.requireNonNullElse(user, "no-user"));
     if (txId != 0) {
       buf.append(',').append(txId);
       if (txName != null) {

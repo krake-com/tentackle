@@ -53,7 +53,7 @@ public final class AnnotationProcessingHelper {
         // unknown modifier: ignore
       }
     }
-    return modList.toArray(new Modifier[modList.size()]);
+    return modList.toArray(new Modifier[0]);
   }
 
 

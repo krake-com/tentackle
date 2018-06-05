@@ -79,7 +79,7 @@ public class ColumnMigrator {
     this.entity = entity;
     this.attribute = attribute;
     this.backend = backend;
-    this.columns = columns == null || columns.isEmpty() ? null : columns.toArray(new ColumnMetaData[columns.size()]);
+    this.columns = columns == null || columns.isEmpty() ? null : columns.toArray(new ColumnMetaData[0]);
   }
 
   /**
@@ -179,7 +179,7 @@ public class ColumnMigrator {
    * Adds the current column.
    *
    * @return the sql code
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   private String addColumn() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -211,7 +211,7 @@ public class ColumnMigrator {
    * Migrates the current column.
    *
    * @return the sql code
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   private String migrateColumn() throws ModelException {
     StringBuilder buf = new StringBuilder();
@@ -282,7 +282,7 @@ public class ColumnMigrator {
    * Alters the null constraint only.
    *
    * @return sql code
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   private String alterNull() throws ModelException {
     return toNonNullString(backend.sqlAlterColumnNullConstraint(

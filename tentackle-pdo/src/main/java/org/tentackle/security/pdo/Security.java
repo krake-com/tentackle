@@ -27,7 +27,7 @@ import org.tentackle.session.TableName;
 import org.tentackle.security.DefaultSecurityManager;
 
 
-/**
+/*
  * @> $mapping
  *
  * # security ACLs

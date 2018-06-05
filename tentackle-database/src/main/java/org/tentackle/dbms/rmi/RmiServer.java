@@ -19,6 +19,7 @@
 
 package org.tentackle.dbms.rmi;
 
+import java.util.Objects;
 import org.tentackle.io.SocketFactoryFactory;
 import org.tentackle.io.SocketFactoryType;
 import java.lang.reflect.Constructor;
@@ -249,13 +250,8 @@ public class RmiServer {
     }
 
     val = props.getProperty(RMI_SERVICE);
-    if (val != null) {
-      service = val;
-    }
-    else  {
-      service = "rmi://localhost:" + Registry.REGISTRY_PORT + "/" +
-                ReflectionHelper.getClassBaseName(this.getClass());
-    }
+    service = Objects.requireNonNullElseGet(val, () -> "rmi://localhost:" + Registry.REGISTRY_PORT + "/" +
+                                                       ReflectionHelper.getClassBaseName(this.getClass()));
 
     // set the default ports, if not the REGISTRY_PORT.
     try {

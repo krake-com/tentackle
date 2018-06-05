@@ -27,7 +27,7 @@ import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
 
 
-/**
+/*
  * @> $mapfile
  *
  * # modification tracking table

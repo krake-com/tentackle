@@ -1111,11 +1111,9 @@ public class DbModelWurblet extends ModelWurblet {
    * @return the java code
    */
   public String createRelationDeleteCode(Relation relation) {
-    StringBuilder text = new StringBuilder();
-    text.append("on(").append(relation.getClassName()).append(".class).")
-        .append(createListRelationDeleteMethodName(relation))
-        .append(createRelationArgString(relation));
-    return text.toString();
+    return "on(" + relation.getClassName() + ".class)." +
+           createListRelationDeleteMethodName(relation) +
+           createRelationArgString(relation);
   }
 
 

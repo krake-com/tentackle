@@ -115,7 +115,7 @@ public class BackendInfoParameter {
     char[] passwd = password == null ? null : password.toCharArray();
     String[] schemaArray = null;
     if (schemas != null && !schemas.isEmpty()) {
-      schemaArray = schemas.toArray(new String[schemas.size()]);
+      schemaArray = schemas.toArray(new String[0]);
     }
     return new BackendInfo(url, user, passwd, schemaArray);
   }

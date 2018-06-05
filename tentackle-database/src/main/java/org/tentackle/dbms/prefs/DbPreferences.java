@@ -28,7 +28,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -36,7 +35,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
-import java.util.stream.Collectors;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
@@ -334,16 +332,14 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
 
   @Override
   public synchronized String[] keys() throws BackingStoreException {
-    List<String> keys = keyMap.values().stream().filter(k -> !k.isRemoved())
-                        .map(DbPreferencesKey::getKey).collect(Collectors.toList());
-    return keys.toArray(new String[keys.size()]);
+    return keyMap.values().stream().filter(k -> !k.isRemoved())
+           .map(DbPreferencesKey::getKey).toArray(String[]::new);
   }
 
   @Override
   public synchronized String[] childrenNames() throws BackingStoreException {
-    List<String> names = childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
-                         .map(DbPreferences::name).collect(Collectors.toList());
-    return names.toArray(new String[names.size()]);
+    return childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
+           .map(DbPreferences::name).toArray(String[]::new);
   }
 
   @Override

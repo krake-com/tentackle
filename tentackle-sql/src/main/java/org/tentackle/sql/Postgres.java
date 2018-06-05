@@ -336,7 +336,7 @@ public class Postgres extends AbstractSql92Backend {
       strategies.add(MigrationStrategy.COMMENT);
     }
 
-    return strategies.toArray(new MigrationStrategy[strategies.size()]);
+    return strategies.toArray(new MigrationStrategy[0]);
   }
 
   @Override

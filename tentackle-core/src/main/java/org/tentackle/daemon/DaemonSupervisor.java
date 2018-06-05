@@ -561,7 +561,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         runningThreads.add(thread);
       }
     }
-    return runningThreads.toArray(new Thread[runningThreads.size()]);
+    return runningThreads.toArray(new Thread[0]);
   }
 
   /**

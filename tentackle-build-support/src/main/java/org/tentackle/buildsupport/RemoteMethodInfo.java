@@ -277,7 +277,7 @@ public class RemoteMethodInfo {
     }
 
     Set<Modifier> methodElementModifiers = methodElement.getModifiers();
-    setModifiers(methodElementModifiers.toArray(new Modifier[methodElementModifiers.size()]));
+    setModifiers(methodElementModifiers.toArray(new Modifier[0]));
     varArgsMethod = methodElement.isVarArgs();
     List<? extends VariableElement> varList = methodElement.getParameters();
     for (int i=0; i < varList.size(); i++) {
@@ -452,7 +452,7 @@ public class RemoteMethodInfo {
    * @return the array of parameters
    */
   public RemoteMethodInfoParameter[] getParameters() {
-    return parameterList == null ? null : parameterList.toArray(new RemoteMethodInfoParameter[parameterList.size()]);
+    return parameterList == null ? null : parameterList.toArray(new RemoteMethodInfoParameter[0]);
   }
 
   /**

@@ -278,7 +278,7 @@ public class TableMigrator {
    * @param hints the migration hints
    * @param columnMigrations explicit column migrations
    * @return the sql
-   * @throws ModelException
+   * @throws ModelException if failed
    */
   private String migrateColumns(Collection<Pattern> hints, Collection<ColumnMigration> columnMigrations) throws ModelException {
 

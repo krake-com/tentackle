@@ -143,7 +143,7 @@ public class SecurityDomainImpl extends AbstractDomainObject<Security, SecurityD
           }
           perms.add(permission);
         }
-        permissions = perms.toArray(new Class[perms.size()]);
+        permissions = perms.toArray(new Class[0]);
       }
     }
     return permissions;

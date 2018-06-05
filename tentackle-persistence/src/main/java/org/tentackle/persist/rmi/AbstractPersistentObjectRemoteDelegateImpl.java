@@ -414,7 +414,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
    *
    * @param cursor the local cursor
    * @return the remote cursor delegate
-   * @throws RemoteException
+   * @throws RemoteException if failed
    */
   public RemoteResultSetCursor<T> createRemoteResultSetCursorDelegate(ScrollableResource<T> cursor) throws RemoteException {
     try {
@@ -424,7 +424,7 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
       getServerSession().exportRemoteDelegate(cursorDelegate);
       return cursorDelegate;
     }
-    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
+    catch (RuntimeException | IllegalAccessException | InstantiationException | NoSuchMethodException |
            InvocationTargetException | RemoteException ex) {
       throw createException(ex);
     }

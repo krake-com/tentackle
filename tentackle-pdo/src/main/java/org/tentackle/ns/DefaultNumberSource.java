@@ -146,7 +146,7 @@ public class DefaultNumberSource implements NumberSource {
         }
       }
       pool = pool.persist();
-      return ranges.toArray(new Range[ranges.size()]);
+      return ranges.toArray(new Range[0]);
     });
   }
 
@@ -194,7 +194,7 @@ public class DefaultNumberSource implements NumberSource {
       // add splitted ranges to pool
       pool.getNumberRangeList().addAll(splitRanges);
       pool = pool.persist();
-      return ranges.toArray(new Range[ranges.size()]);
+      return ranges.toArray(new Range[0]);
     });
   }
 

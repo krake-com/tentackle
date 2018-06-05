@@ -30,7 +30,6 @@ public class SecurityRemoteDelegateImpl
    * @param session the RMI session
    * @param persistenceClass the persistence implementation class
    * @param pdoClass the pdo interface class
-   * @throws java.rmi.RemoteException
    */
   public SecurityRemoteDelegateImpl(RemoteDbSessionImpl session, Class<SecurityPersistenceImpl> persistenceClass,
                                     Class<Security> pdoClass) {

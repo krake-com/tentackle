@@ -26,7 +26,7 @@ import org.tentackle.pdo.Singular;
 import org.tentackle.session.TableName;
 
 
-/**
+/*
  * @> $mapping
  *
  * # number pool

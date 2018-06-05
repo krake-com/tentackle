@@ -152,7 +152,7 @@ public class FxTableCell<S,T> extends TableCell<S,T> {
         }
 
         // same sh*t as in Swing... hoping 3 loops in eventQ is sufficient, one isnt always :(
-        Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(() -> node.requestFocus())));
+        Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(node::requestFocus)));
       }
     }
   }

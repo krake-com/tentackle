@@ -192,7 +192,7 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
       }
     }
 
-    return filteredNames.toArray(new String[filteredNames.size()]);
+    return filteredNames.toArray(new String[0]);
   }
 
   @Override

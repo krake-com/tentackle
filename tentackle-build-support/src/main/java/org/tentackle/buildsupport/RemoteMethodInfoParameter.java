@@ -57,7 +57,7 @@ public class RemoteMethodInfoParameter {
     name = var.toString();
     type = tm.toString();
     Set<Modifier> varModifiers = var.getModifiers();
-    modifiers = varModifiers.toArray(new Modifier[varModifiers.size()]);
+    modifiers = varModifiers.toArray(new Modifier[0]);
     // determine special types
     instanceOfSession = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameSession());
     instanceOfContext = AnnotationProcessingHelper.isTypeInstanceoOf(processingEnv, tm, info.getNameContext());

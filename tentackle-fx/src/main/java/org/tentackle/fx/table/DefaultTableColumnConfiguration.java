@@ -426,7 +426,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    */
   @SuppressWarnings("unchecked")
   protected Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>> createCellValueFactory() {
-    return (CellDataFeatures<S, T> cdf) -> createCellValue(cdf);
+    return this::createCellValue;
   }
 
 
@@ -447,7 +447,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * @return the cell factory
    */
   protected Callback<TableColumn<S,T>, TableCell<S,T>> createCellFactory() {
-    return (TableColumn<S, T> column) -> createTableCell(column);
+    return this::createTableCell;
   }
 
   /**

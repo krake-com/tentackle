@@ -53,7 +53,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
    * @param <E> the element type
    * @return the snapshot, null if list is null
    */
-  public static <E> TrackedList<E> createSnapshot(TrackedList<E> list) {
+  static <E> TrackedList<E> createSnapshot(TrackedList<E> list) {
     return list == null ? null : list.createSnapshot();
   }
 
@@ -66,7 +66,7 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
    * @param <E> the element type
    * @return the reverted list, null if snapshot was null
    */
-  public static <E> TrackedList<E> revertToSnapshot(TrackedList<E> list, TrackedList<E> snapshot) {
+  static <E> TrackedList<E> revertToSnapshot(TrackedList<E> list, TrackedList<E> snapshot) {
     TrackedList<E> revertedList = null;
     if (snapshot != null) {
       boolean asCopy = list == null;

@@ -90,7 +90,7 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
    * The default implementation does nothing.
    *
    * @param object the persistent object
-   * @throws java.rmi.RemoteException
+   * @throws java.rmi.RemoteException if validation failed
    */
   protected void validate(P object) throws RemoteException {
     //

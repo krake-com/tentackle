@@ -338,7 +338,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    * Process all files in a fileset.
    *
    * @param fileSet the set of files
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if failed
    */
   private void processFileSet(FileSet fileSet) throws MojoFailureException, MojoExecutionException {
 

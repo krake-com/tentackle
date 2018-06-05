@@ -33,7 +33,7 @@ import org.tentackle.sql.Backend;
 
 
 
-/**
+/*
  * @> $mapfile
  *
  * # a preferences node
