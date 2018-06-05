@@ -88,7 +88,7 @@ public class RemoteIncludes {
           break;
 
         case "AbstractDbObject":
-          remotePrefix = "org.tentackle.persist.rmi." + superClassName;
+          remotePrefix = "org.tentackle.dbms.rmi." + superClassName;
           importSuperDelegate = true;
           break;
 

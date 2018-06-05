@@ -89,12 +89,12 @@ public class ColumnMetaData {
     defaultValue = resultSet.getString("COLUMN_DEF");
 
     // optional features
-    if (isSupported(SUPPORTS_GENERATED)) {
+    if (isSupported(SUPPORTS_AUTOINCREMENT)) {
       try {
         autoIncrement = Objects.equals("YES", resultSet.getString("IS_AUTOINCREMENT"));
       }
       catch (SQLException sqx) {
-        setSupported(SUPPORTS_GENERATED, false);
+        setSupported(SUPPORTS_AUTOINCREMENT, false);
       }
     }
     if (isSupported(SUPPORTS_GENERATED)) {
