@@ -36,7 +36,7 @@ import org.tentackle.common.StringHelper;
  *
  * @author harald
  */
-public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable {
+public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   static final long serialVersionUID = 6002689783347165834L;
 

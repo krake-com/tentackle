@@ -31,16 +31,15 @@ public abstract class AbstractTask implements Task {
 
   private static final long serialVersionUID = 6759258472780726126L;
 
-  private Throwable cause;            // an exception thrown in a runnable
-  private Serializable result;        // the result (return value) of the task
-  private long started;               // timestamp when started
-  private long completed;             // timestamp when completed
-  private long scheduled;             // time scheduled for next execution
-  private long repeat;                // repeat interval
-  private long id;                    // the (unique) task id
-  private TaskDispatcher dispatcher;  // the dispatcher
-
-  private transient List<TaskListener> listeners;    // listeners
+  private Throwable cause;                            // an exception thrown in a runnable
+  private Serializable result;                        // the result (return value) of the task
+  private long started;                               // timestamp when started
+  private long completed;                             // timestamp when completed
+  private long scheduled;                             // time scheduled for next execution
+  private long repeat;                                // repeat interval
+  private long id;                                    // the (unique) task id
+  private transient TaskDispatcher dispatcher;        // the dispatcher
+  private transient List<TaskListener> listeners;     // task listeners
 
 
   /**

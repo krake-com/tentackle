@@ -46,8 +46,8 @@ public class SessionKeepAliveTask extends AbstractTask {
   private final long timeOut;                               // execution timeout in milliseconds
   private final transient Callable<Boolean> aliveCallable;  // the worker to setAlive
 
-  private Future<Boolean> future;                 // pending future, null = finished
-  private int failCount;                          // number of failures in setAlive()
+  private transient Future<Boolean> future;                 // pending future, null = finished
+  private transient int failCount;                          // number of failures in setAlive()
 
   /**
    * Creates a keep alive task.

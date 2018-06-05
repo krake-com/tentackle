@@ -30,7 +30,7 @@ import org.tentackle.misc.Immutable;
  *
  * @author harald
  */
-public interface SessionInfo extends Immutable {
+public interface SessionInfo extends Immutable, Serializable {
 
   /**
    * Gets the user id.
