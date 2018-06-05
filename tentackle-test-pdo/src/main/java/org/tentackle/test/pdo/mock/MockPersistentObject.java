@@ -19,6 +19,7 @@
 
 package org.tentackle.test.pdo.mock;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
@@ -544,7 +545,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public List<T> getSnapshots() {
-    return null;
+    return Collections.emptyList();
   }
 
   @Override

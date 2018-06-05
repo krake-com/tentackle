@@ -116,7 +116,8 @@ public interface ValidationResult extends Serializable {
 
   /**
    * Gets all {@link CollectionIndex}es for this validation result.
-   *
+   * <p>
+   * Throws ValidationRuntimeException if the decoding the path failed.
    * <p>
    * Example:
    * <pre>
@@ -128,8 +129,7 @@ public interface ValidationResult extends Serializable {
    *   { 0, "invoice.invoiceLineList[3].referenceList", "text" }
    * </pre>
    * @return the indexes, empty array if validationpath without indexes
-   * @throws ValidationRuntimeException if the decoding the path failed
    */
-  CollectionIndex[] getValidationCollectionIndexes() throws ValidationRuntimeException;
+  CollectionIndex[] getValidationCollectionIndexes();
 
 }

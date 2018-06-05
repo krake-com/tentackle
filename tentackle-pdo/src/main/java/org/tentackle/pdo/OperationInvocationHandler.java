@@ -147,12 +147,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, DomainContext context)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
                                     new Object[] { operation, context });
@@ -172,12 +170,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, Session session)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
                                     new Object[] { operation, session });
@@ -197,12 +193,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceDelegate.setOperation(operation);
     persistenceMixin.setDelegate(persistenceDelegate);
@@ -221,12 +215,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, DomainContext context, DomainOperation<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
                                     new Object[] { operation, context });
@@ -245,12 +237,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation, Session session, DomainOperation<T> domainDelegate)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
                                     new Object[] { operation, session });
@@ -282,12 +272,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T operation)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+         throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class },
                                     new Object[] { operation });

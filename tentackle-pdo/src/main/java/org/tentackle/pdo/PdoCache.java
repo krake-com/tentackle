@@ -577,10 +577,10 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   /**
    * initialize minTableSerial if not yet done.
    */
-  private void initializeMinTableSerial(Session session)  {
+  private void initializeMinTableSerial()  {
     if (minTableSerial < 0) {
       // initialize just before the first physical db-access.
-      minTableSerial = selectCurrentTableSerial(session);
+      minTableSerial = selectCurrentTableSerial();
     }
   }
 
@@ -588,7 +588,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   /**
    * update minTableSerial.
    */
-  private long selectCurrentTableSerial(Session session) {
+  private long selectCurrentTableSerial() {
     return ModificationTracker.getInstance().getSerial(clazz);
   }
 
@@ -796,7 +796,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
   private synchronized <C extends Comparable<? super C>> T
           select(PdoCacheIndex<T,C> index, DomainContext context, C key, boolean loadIfMissing, int nestingLevel)  {
 
-    initializeMinTableSerial(context.getSession());   // preset minTableSerial if not yet done
+    initializeMinTableSerial();                       // preset minTableSerial if not yet done
     addIndexIfNotAssigned(index);                     // make sure index is setup and belongs to this cache
     expireObjects(context.getSession());              // check for delayed expiration
 
@@ -1091,7 +1091,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Furthermore, expired objects will NOT be reloaded from storage and
    * expired objects will be returned in list with isExpired() == true.
    * Thus, reasonably works only if preloading is enabled or a
- selectAllPdo has been invoked before.
+   * selectAll has been invoked before.
    *
    * @param <C> the Comparable class
    * @param index the cache index to use

@@ -115,12 +115,11 @@ public class DTOWurblet extends AbstractWurblet {
   public void run() throws WurbelException {
     super.run();
 
-    for (String arg: getContainer().getArgs())  {
-      filename = arg;
-      break;
+    String[] args = getContainer().getArgs();
+    if (args.length > 0) {
+      filename = args[0];
     }
-
-    if (filename == null) {
+    else {
       throw new WurbelException("usage: @wurblet <guardname> DTO <filename>");
     }
 

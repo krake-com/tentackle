@@ -34,10 +34,11 @@ public interface ImageProvider {
    * Gets an image.<br>
    * There is only one image instance per name.<br>
    * The name is a plain name, not a path and no type extension.
+   * <p>
+   * Throws IllegalArgumentException if image not found.
    *
    * @param name the image's name
    * @return the image
-   * @throws IllegalArgumentException if image not found
    */
   Image getImage(String name);
 

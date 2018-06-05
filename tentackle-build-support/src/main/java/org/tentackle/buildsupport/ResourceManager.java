@@ -55,7 +55,7 @@ public class ResourceManager {
       this.name = name;
     }
 
-    private File getFile() throws IOException {
+    private File getFile() {
       if (file == null) {
         StringTokenizer stok = new StringTokenizer(name, "/");
         File dir = null;
@@ -101,7 +101,7 @@ public class ResourceManager {
       }
     }
 
-    private boolean exists() throws IOException {
+    private boolean exists() {
       return getFile().exists();
     }
   }
@@ -170,9 +170,8 @@ public class ResourceManager {
    *
    * @param name the file;s name
    * @return true if exists
-   * @throws IOException if file status could not be determined
    */
-  public boolean exists(String name) throws IOException {
+  public boolean exists(String name) {
     return getResource(name).exists();
   }
 

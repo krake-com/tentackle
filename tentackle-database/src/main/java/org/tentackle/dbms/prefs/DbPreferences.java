@@ -335,14 +335,14 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
   @Override
   public synchronized String[] keys() throws BackingStoreException {
     List<String> keys = keyMap.values().stream().filter(k -> !k.isRemoved())
-                        .map(k -> k.getKey()).collect(Collectors.toList());
+                        .map(DbPreferencesKey::getKey).collect(Collectors.toList());
     return keys.toArray(new String[keys.size()]);
   }
 
   @Override
   public synchronized String[] childrenNames() throws BackingStoreException {
     List<String> names = childMap.values().stream().filter(c -> !c.getPersistentNode().isRemoved())
-                         .map(c -> c.name()).collect(Collectors.toList());
+                         .map(DbPreferences::name).collect(Collectors.toList());
     return names.toArray(new String[names.size()]);
   }
 

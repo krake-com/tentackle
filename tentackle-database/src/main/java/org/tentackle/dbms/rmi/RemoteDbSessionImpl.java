@@ -404,9 +404,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * Verifies and updates the client's session info.<br>
    * Needs to be implemented by the application.<br>
    * Checks login credentials and sets the user id.
+   * <p>
+   * Throws LoginFailedException if login is not allowed for whatever reason.
    *
    * @param sessionInfo the session info
-   * @throws LoginFailedException if login is not allowed for whatever reason
    */
   public abstract void verifySessionInfo(SessionInfo sessionInfo);
 

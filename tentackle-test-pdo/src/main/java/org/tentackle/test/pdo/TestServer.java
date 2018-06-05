@@ -22,15 +22,14 @@ package org.tentackle.test.pdo;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
-import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.app.ServerApplication;
-import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 
 /**
@@ -70,7 +69,7 @@ public class TestServer extends ServerApplication {
     }
 
     @Override
-    public void verifySessionInfo(SessionInfo sessionInfo) throws LoginFailedException {
+    public void verifySessionInfo(SessionInfo sessionInfo) {
     }
   }
 

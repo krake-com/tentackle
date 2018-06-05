@@ -122,12 +122,12 @@ public interface FxFactory {
 
 
   /**
-   * Gets the given image.
+   * Gets the given image.<br>
+   * Throws IllegalArgumentException if no such image and/or realm.
    *
    * @param realm the realm, null of empty if tentackle images
    * @param name the image name
    * @return the image
-   * @throws IllegalArgumentException if no such image and/or realm
    */
   Image getImage(String realm, String name);
 

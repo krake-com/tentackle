@@ -67,10 +67,10 @@ public class FailedValidationResult extends AbstractValidationResult {
 
   /**
    * Checks the arguments.
-   *
-   * @throws IllegalArgumentException if message is empty
+   * <p>
+   * Throws IllegalArgumentException if message is empty.
    */
-  protected void checkArgs() throws IllegalArgumentException {
+  protected void checkArgs() {
     String message = getMessage();
     if (message == null || message.length() == 0) {
       throw new IllegalArgumentException("message must not be empty for a failed validation result");

@@ -128,7 +128,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context)
@@ -152,7 +151,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session)
@@ -176,7 +174,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate)
@@ -199,7 +196,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, DomainContext context, DomainObject<T> domainDelegate)
@@ -222,7 +218,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo, Session session, DomainObject<T> domainDelegate)
@@ -258,7 +253,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @throws NoSuchMethodException if no matching delegate constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   public void setupDelegates(T pdo)

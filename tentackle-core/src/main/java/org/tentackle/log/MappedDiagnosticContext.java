@@ -37,10 +37,11 @@ public interface MappedDiagnosticContext {
    * can be null only if the underlying implementation supports it.
    * <p>
    * This method delegates all work to the MDC of the underlying logging system.
+   * <p>
+   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
    * @param val the value
-   * @throws IllegalArgumentException in case the "key" parameter is null
    */
   void put(String key, String val);
 
@@ -48,12 +49,13 @@ public interface MappedDiagnosticContext {
   /**
    * Get the context identified by the <code>key</code> parameter. The
    * <code>key</code> parameter cannot be null.
-   *
-   * <p>This method delegates all work to the MDC of the underlying logging system.
+   * <p>
+   * This method delegates all work to the MDC of the underlying logging system.
+   * <p>
+   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
    * @return the string value identified by the <code>key</code> parameter.
-   * @throws IllegalArgumentException in case the "key" parameter is null
    */
   String get(String key);
 
@@ -63,9 +65,10 @@ public interface MappedDiagnosticContext {
    * the underlying system's MDC implementation. The  <code>key</code> parameter
    * cannot be null. This method does nothing if there is no previous value
    * associated with <code>key</code>.
+   * <p>
+   * Throws IllegalArgumentException in case the "key" parameter is null.
    *
    * @param key the key
-   * @throws IllegalArgumentException in case the "key" parameter is null
    */
   void remove(String key);
 

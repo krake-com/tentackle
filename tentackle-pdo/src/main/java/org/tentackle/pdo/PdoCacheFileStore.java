@@ -93,11 +93,11 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
   /**
    * Writes the cache to persistent storage.<br>
+   * Throws PdoRuntimeException if writing failed.
    *
    * @return true if cache has been persited, false if cache isn't persistable (application is not a client)
-   * @throws PdoRuntimeException if writing failed
    */
-  public synchronized boolean writeToFile() throws PdoRuntimeException {
+  public synchronized boolean writeToFile() {
 
     if (isPersistable()) {
 
@@ -123,13 +123,13 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
   /**
    * Loads a cache from persistent storage.<br>
+   * Throws PdoRuntimeException if reading failed.
    *
    * @param session the session
    * @return true if loaded from persistent storage or data was missing,
    *         false if cache isn't persistable (application is not a client)
-   * @throws PdoRuntimeException if reading failed
    */
-  public synchronized boolean readFromFile(Session session) throws PdoRuntimeException {
+  public synchronized boolean readFromFile(Session session) {
 
     if (isPersistable()) {
       File file = getFile();
@@ -189,10 +189,8 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
   /**
    * Verifies the cache data after being read from storage.
-   *
-   * @throws PdoRuntimeException
    */
-  private void verifyAfterRead() throws PdoRuntimeException {
+  private void verifyAfterRead() {
     String expectedApplicationName = null;
     String expectedBackendName = null;
     AbstractApplication application = AbstractApplication.getRunningApplication();

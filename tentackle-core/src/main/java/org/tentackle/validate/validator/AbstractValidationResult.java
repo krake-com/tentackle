@@ -159,7 +159,7 @@ public abstract class AbstractValidationResult implements ValidationResult {
 
 
   @Override
-  public CollectionIndex[] getValidationCollectionIndexes() throws ValidationRuntimeException {
+  public CollectionIndex[] getValidationCollectionIndexes() {
 
     int count = StringHelper.countOccurrences(validationPath, '[');
 

@@ -20,6 +20,7 @@
 package org.tentackle.pdo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -301,9 +302,8 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
         toCk = new CacheKey<>(context, toKey);
       }
       catch (PdoCacheException e) {
-        // log and stacktrace to error in application source
         logInvalidKey(e);
-        return null;
+        return Collections.emptyList();
       }
 
       Set<Map.Entry<CacheKey<C>, T>> entries = ((TreeMap<CacheKey<C>, T>) cacheMap).subMap(fromCk, toCk).entrySet();
