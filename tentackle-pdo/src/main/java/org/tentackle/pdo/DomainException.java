@@ -54,7 +54,7 @@ public class DomainException extends TentackleRuntimeException {
 
 
   private transient Session session;        // the db connection this exception belongs to
-  private Identifiable identifiable;   // the db object this execption belongs to
+  private Identifiable identifiable;        // the db object this execption belongs to
 
 
   /**

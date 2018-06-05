@@ -19,6 +19,7 @@
 
 package org.tentackle.reflect;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <T> the interceptable type
  * @author harald
  */
-public class InterceptableInvocationHandler<T extends Interceptable> implements InvocationHandler {
+public class InterceptableInvocationHandler<T extends Interceptable & Serializable> implements InvocationHandler {
 
   /**
    * The method cache.

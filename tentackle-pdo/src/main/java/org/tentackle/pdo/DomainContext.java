@@ -21,7 +21,6 @@
 
 package org.tentackle.pdo;
 
-import java.io.Serializable;
 import java.util.Collection;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.PersistenceException;
@@ -63,7 +62,7 @@ import org.tentackle.session.SessionHolder;
  *
  * @author harald
  */
-public interface DomainContext extends SessionHolder, Comparable<DomainContext>, Serializable, Cloneable {
+public interface DomainContext extends SessionHolder, Comparable<DomainContext>, Cloneable {
 
   /**
    * Clones this context.

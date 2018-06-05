@@ -19,7 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.Serializable;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.SerialNumbered;
 import org.tentackle.session.SessionDependable;
@@ -29,7 +28,7 @@ import org.tentackle.session.SessionDependable;
  *
  * @author harald
  */
-public interface ModificationLoggable extends Identifiable, SerialNumbered, SessionDependable, Serializable {
+public interface ModificationLoggable extends Identifiable, SerialNumbered, SessionDependable {
 
   /**
    * Creates a {@link ModificationLog}.

@@ -78,7 +78,7 @@ public class SocketFactoryFactory {
    * @return the factory, null if system default
    */
   public RMIClientSocketFactory createClientSocketFactory(RMIClientSocketFactory defaultFactory, SocketFactoryType factoryType) {
-    RMIClientSocketFactory factory = null;
+    RMIClientSocketFactory factory;
 
     switch (factoryType) {
       case DEFAULT:
@@ -101,7 +101,8 @@ public class SocketFactoryFactory {
         factory = new CompressedSslClientSocketFactory();
         break;
 
-      // default: null = SYSTEM
+      default:
+        factory = null;   // null = SYSTEM
     }
 
     return factory;
@@ -116,7 +117,7 @@ public class SocketFactoryFactory {
    * @return the factory, null if system default
    */
   public RMIServerSocketFactory createServerSocketFactory(RMIServerSocketFactory defaultFactory, SocketFactoryType factoryType) {
-    RMIServerSocketFactory factory = null;
+    RMIServerSocketFactory factory;
 
     switch (factoryType) {
       case DEFAULT:
@@ -139,7 +140,8 @@ public class SocketFactoryFactory {
         factory = new CompressedSslServerSocketFactory(enabledCipherSuites, enabledProtocols, needClientAuth);
         break;
 
-      // default: null = SYSTEM
+      default:
+        factory = null;   // null = SYSTEM
     }
 
     return factory;

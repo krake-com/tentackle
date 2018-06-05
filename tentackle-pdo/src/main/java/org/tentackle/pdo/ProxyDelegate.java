@@ -19,6 +19,7 @@
 
 package org.tentackle.pdo;
 
+import java.io.Serializable;
 import org.tentackle.reflect.Interceptable;
 
 /**
@@ -27,7 +28,7 @@ import org.tentackle.reflect.Interceptable;
  * @author harald
  * @param <T> the PDO or Operation type
  */
-public interface ProxyDelegate<T> extends Interceptable {
+public interface ProxyDelegate<T> extends Interceptable, Serializable {
 
   /**
    * Gets the proxy instance.

@@ -19,12 +19,14 @@
 
 package org.tentackle.misc;
 
+import java.io.Serializable;
+
 /**
  * Objects that can be identified by an ID.
  *
  * @author harald
  */
-public interface Identifiable {
+public interface Identifiable extends Serializable {
 
 
   /**

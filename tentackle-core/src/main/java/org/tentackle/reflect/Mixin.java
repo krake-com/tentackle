@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <M> the type of the mixin
  * @author harald
  */
-public class Mixin<T,M> implements Serializable {
+public class Mixin<T, M extends Serializable> implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

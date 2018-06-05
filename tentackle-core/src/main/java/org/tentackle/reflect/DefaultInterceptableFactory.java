@@ -18,6 +18,7 @@
 
 package org.tentackle.reflect;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import org.tentackle.common.Service;
@@ -41,7 +42,7 @@ public class DefaultInterceptableFactory implements InterceptableFactory {
   }
 
   @Override
-  public <T extends Interceptable> T createInterceptable(Class<T> clazz) {
+  public <T extends Interceptable & Serializable> T createInterceptable(Class<T> clazz) {
     try {
       InterceptableInvocationHandler<T> handler = new InterceptableInvocationHandler<>(classMapper, clazz);
       @SuppressWarnings("unchecked")

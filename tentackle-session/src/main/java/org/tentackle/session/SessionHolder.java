@@ -18,12 +18,14 @@
 
 package org.tentackle.session;
 
+import java.io.Serializable;
+
 /**
  * Holder for a session.
  *
  * @author harald
  */
-public interface SessionHolder {
+public interface SessionHolder extends Serializable {
 
   /**
    * Gets the session.<br>

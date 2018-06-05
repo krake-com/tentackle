@@ -23,7 +23,7 @@ import java.net.SocketException;
 import java.util.Objects;
 
 /**
- * The default implementation of a {@link SocketConfigurator}.
+ * The default implementation of a {@link ServerSocketConfigurator}.
  *
  * @author harald
  */

@@ -18,6 +18,7 @@
 
 package org.tentackle.reflect.interceptabletest;
 
+import java.io.Serializable;
 import org.tentackle.reflect.Interceptable;
 
 /**
@@ -25,7 +26,7 @@ import org.tentackle.reflect.Interceptable;
  *
  * @author harald
  */
-public interface Calculator extends Interceptable {
+public interface Calculator extends Interceptable, Serializable {
 
   /**
    * Adds two integers.

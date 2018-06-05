@@ -28,6 +28,8 @@ import org.tentackle.reflect.InterceptionService;
 @InterceptionService(Calculator.class)
 public class CalculatorImpl implements Calculator {
 
+  private static final long serialVersionUID = 328147818793269691L;
+
   public CalculatorImpl(Calculator calc) {
   }
 

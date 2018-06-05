@@ -18,6 +18,7 @@
 
 package org.tentackle.reflect;
 
+import java.io.Serializable;
 import org.tentackle.common.ServiceFactory;
 
 
@@ -50,6 +51,6 @@ public interface InterceptableFactory {
    * @param clazz the class of the interceptable, usually an interface
    * @return the created object
    */
-  <T extends Interceptable> T createInterceptable(Class<T> clazz);
+  <T extends Interceptable & Serializable> T createInterceptable(Class<T> clazz);
 
 }

@@ -31,6 +31,8 @@ import org.tentackle.session.Session;
  */
 public abstract class AbstractPdoFactory implements PdoFactory {
 
+  private static final String CANNOT_CREATE_PDO_FOR = "cannot create PDO for ";
+
 
   /**
    * Gets the persistence class mapper associated to this factory.<br>
@@ -79,7 +81,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " in context '" + context + "'", e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " in context '" + context + "'", e);
     }
   }
 
@@ -94,7 +96,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " for session " + session, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for session " + session, e);
     }
   }
 
@@ -109,7 +111,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " for persistence delegate " + persistenceDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for persistence delegate " + persistenceDelegate, e);
     }
   }
 
@@ -124,7 +126,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
 
@@ -139,7 +141,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for domain delegate " + domainDelegate, e);
     }
   }
 
@@ -153,7 +155,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return instance;
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz + " for delegates " + persistenceDelegate + " : " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz + " for delegates " + persistenceDelegate + " : " + domainDelegate, e);
     }
   }
 
@@ -168,7 +170,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
     }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + clazz, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + clazz, e);
     }
   }
 
@@ -195,7 +197,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>)Class.forName(className), context);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " in context " + context, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " in context " + context, e);
     }
   }
 
@@ -206,7 +208,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), session);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " for session " + session, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for session " + session, e);
     }
   }
 
@@ -217,7 +219,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), persistenceDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " for persistence delegate " + persistenceDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for persistence delegate " + persistenceDelegate, e);
     }
   }
 
@@ -228,7 +230,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), context, domainDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
     }
   }
 
@@ -239,7 +241,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), session, domainDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
     }
   }
 
@@ -250,7 +252,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className), persistenceDelegate, domainDelegate);
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className + " for domain delegate " + domainDelegate, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className + " for domain delegate " + domainDelegate, e);
     }
   }
 
@@ -261,7 +263,7 @@ public abstract class AbstractPdoFactory implements PdoFactory {
       return createPdo((Class<T>) Class.forName(className));
     }
     catch (ClassNotFoundException e) {
-      throw new PdoRuntimeException("cannot create PDO for " + className, e);
+      throw new PdoRuntimeException(CANNOT_CREATE_PDO_FOR + className, e);
     }
   }
 

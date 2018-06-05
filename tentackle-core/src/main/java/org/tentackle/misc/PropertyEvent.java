@@ -33,8 +33,8 @@ public class PropertyEvent extends EventObject {
   private static final long serialVersionUID = 1L;
 
   private final String propertyName;    // name of the property
-  private final Object newValue;             // the new value
-  private final Object oldValue;             // the old value
+  private final Object newValue;        // the new value
+  private final Object oldValue;        // the old value
 
   /**
    * Constructs a new {@code PropertyModificationEvent}.
