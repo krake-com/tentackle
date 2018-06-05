@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * @author harald
  */
-public class DefaultSocketConfigurator extends AbstractSocketConfigurator implements SocketConfigurator {
+public class DefaultSocketConfigurator extends SocketConfiguratorBase implements SocketConfigurator {
 
   private static final long serialVersionUID = 1L;
 
@@ -210,7 +210,7 @@ public class DefaultSocketConfigurator extends AbstractSocketConfigurator implem
       return false;
     }
     if (obj == null) {
-      return true;    // see AbstractSocketConfigurator.equals()
+      return true;    // see SocketConfiguratorBase.equals()
     }
     final DefaultSocketConfigurator other = (DefaultSocketConfigurator) obj;
     if (!Objects.equals(keepAlive, other.keepAlive)) {

@@ -18,6 +18,7 @@
 
 package org.tentackle.io;
 
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.SocketException;
 
@@ -27,7 +28,7 @@ import java.net.SocketException;
  *
  * @author harald
  */
-public interface ServerSocketConfigurator {
+public interface ServerSocketConfigurator extends Serializable {
 
   /**
    * Compares two socket configurators.

@@ -28,15 +28,17 @@ import org.tentackle.misc.ParameterString;
 
 
 /**
- * Common implementation for {@link SocketConfigurator} and {@link ServerSocketConfigurator}.
+ * Common methods for {@link SocketConfigurator} and {@link ServerSocketConfigurator}.
  * <p>
  * The implementation allows to parse the configuration for both client- and server-sockets.
  * However, equals() and hashcode() check only those parameters that really apply to the concrete configurator.
  * Same for getters/setters.
+ * <p>
+ * Notice that this class does not implement {@link SocketConfigurator} or {@link ServerSocketConfigurator}!
  *
  * @author harald
  */
-public abstract class AbstractSocketConfigurator implements Serializable {
+public abstract class SocketConfiguratorBase implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -288,7 +290,7 @@ public abstract class AbstractSocketConfigurator implements Serializable {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final AbstractSocketConfigurator other = (AbstractSocketConfigurator) obj;
+    final SocketConfiguratorBase other = (SocketConfiguratorBase) obj;
     if (!Objects.equals(reuseAddress, other.reuseAddress)) {
       return false;
     }
