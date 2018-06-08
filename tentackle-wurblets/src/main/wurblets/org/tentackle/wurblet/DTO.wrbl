@@ -197,11 +197,9 @@ Example:
 
 @[
       for (Property property: properties) {
-        if (!property.isInherited()) {
 ]@
     private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
 @[
-        }
       }
 ]@
 
