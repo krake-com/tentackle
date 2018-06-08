@@ -10,10 +10,11 @@
 <strong>({\@code \@wurblet})</strong> DTO creates code for a data transfer object.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; DTO &lt;filename&gt;
+&#064;wurblet &lt;tag&gt; DTO [--builder] &lt;filename&gt;
 <p>
 arguments:
 <ul>
+<li><em>--builder:</em> option to generate code according to the builder pattern.</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -57,23 +58,27 @@ Example:
     }
 
     // create constructor
-    if (needConstructor) {
+    if (needConstructor || withBuilder) {
 ]@
 
+@[
+      if (!withBuilder) {
+]@
   /**
    * Creates a @(getClassName())@.
    *
 @[
-      for (Property property: properties) {
-        if (!property.isMutable()) {
+        for (Property property: properties) {
+          if (!property.isMutable()) {
 ]@
    * \@param @(property.getName())@ @(property.getComment())@
 @[
+          }
         }
-      }
 ]@
    */
 @[
+      }
       StringBuilder args = new StringBuilder();
       StringBuilder superArgs = new StringBuilder();
       for (Property property: properties) {
@@ -82,32 +87,60 @@ Example:
             if (superArgs.length() > 0) {
               superArgs.append(", ");
             }
+            if (withBuilder) {
+              superArgs.append("builder.");
+            }
             superArgs.append(property.getName());
           }
           if (args.length() > 0) {
             args.append(", ");
           }
-          args.append(property.getType()).append(' ').append(property.getName());
+          if (!withBuilder) {
+            args.append(property.getType()).append(' ').append(property.getName());
+          }
         }
       }
+
+      if (withBuilder) {
 ]@
-  public @(getClassName())@(@(args.toString())@) {
+  private @(getClassName())@(Builder builder) {
 @[
-      if (superArgs.length() > 0) {
+        if (superArgs.length() > 0) {
 ]@
     super(@(superArgs)@);
 @[
-      }
-      for (Property property: properties) {
-        if (!property.isInherited() && !property.isMutable()) {
-]@
-    this.@(property.getName())@ = @(property.getName())@;
-@[
         }
-      }
+        for (Property property: properties) {
+          if (!property.isInherited() && !property.isMutable()) {
+]@
+    this.@(property.getName())@ = builder.@(property.getName())@;
+@[
+          }
+        }
 ]@
   }
 @[
+      }
+      else {
+]@
+  public @(getClassName())@(@(args.toString())@) {
+@[
+        if (superArgs.length() > 0) {
+]@
+    super(@(superArgs)@);
+@[
+        }
+        for (Property property: properties) {
+          if (!property.isInherited() && !property.isMutable()) {
+]@
+    this.@(property.getName())@ = @(property.getName())@;
+@[
+          }
+        }
+]@
+  }
+@[
+      }
     }
 
     // create getter
@@ -142,6 +175,67 @@ Example:
   }
 @[
       }
+    }
+
+    if (withBuilder) {
+]@
+
+
+  /**
+   * Creates a @(getClassName())@ builder.
+   *
+   * \@return the builder
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * The @(getClassName())@ builder.
+   */
+  public static class Builder {
+
+@[
+      for (Property property: properties) {
+        if (!property.isInherited()) {
+]@
+    private @(property.getType())@ @(property.getName())@;  // @(property.getComment())@
+@[
+        }
+      }
+]@
+
+    private Builder() {}
+
+
+    /**
+     * Builds a @(getClassName())@.
+     *
+     * \@return the @(getClassName())@
+     */
+    public @(getClassName())@ build() {
+      return new @(getClassName())@(this);
+    }
+
+@[
+      for (Property property: properties) {
+]@
+
+  /**
+   * Sets @(property.getComment())@.
+   *
+   * \@param @(property.getName())@ @(property.getComment())@
+   */
+  public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
+    this.@(property.getName())@ = @(property.getName())@;
+    return this;
+  }
+@[
+      }
+]@
+
+  }
+@[
     }
   }
 ]@
