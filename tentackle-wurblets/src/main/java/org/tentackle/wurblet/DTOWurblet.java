@@ -1,4 +1,4 @@
-/*
+/**
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@ import org.wurbelizer.wurblet.AbstractWurblet;
 /**
  * Base class for the {@code @DTO}-wurblet.
  * <p>
- * Parses the simple model.
+ * Parses wurblet args and the simple model.
  *
  * @author harald
  */
@@ -105,6 +105,7 @@ public class DTOWurblet extends AbstractWurblet {
   protected String filename;            // filename of the here-doc holding the model (usually given as "$> .$filename")
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
+  protected boolean withBuilder;        // use the builder pattern
 
 
   public DTOWurblet() {
@@ -115,12 +116,17 @@ public class DTOWurblet extends AbstractWurblet {
   public void run() throws WurbelException {
     super.run();
 
-    String[] args = getContainer().getArgs();
-    if (args.length > 0) {
-      filename = args[0];
+    for (String arg: getContainer().getArgs()) {
+      if ("--builder".equals(arg)) {
+        withBuilder = true;
+      }
+      else if (filename == null && !arg.startsWith("--")) {
+        filename = arg;
+      }
     }
-    else {
-      throw new WurbelException("usage: @wurblet <guardname> DTO <filename>");
+
+    if (filename == null) {
+      throw new WurbelException("usage: @wurblet <guardname> DTO [--builder] <filename>");
     }
 
     properties = new ArrayList<>();
