@@ -219,15 +219,15 @@ Example:
       for (Property property: properties) {
 ]@
 
-  /**
-   * Sets @(property.getComment())@.
-   *
-   * \@param @(property.getName())@ @(property.getComment())@
-   */
-  public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
-    this.@(property.getName())@ = @(property.getName())@;
-    return this;
-  }
+    /**
+     * Sets @(property.getComment())@.
+     *
+     * \@param @(property.getName())@ @(property.getComment())@
+     */
+    public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
+      this.@(property.getName())@ = @(property.getName())@;
+      return this;
+    }
 @[
       }
 ]@
