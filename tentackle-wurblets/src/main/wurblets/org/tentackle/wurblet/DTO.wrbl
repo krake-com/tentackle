@@ -28,6 +28,7 @@ String  name    the object's name
 int     count   the counter
 </pre>
 If the line is prefixed with "^", the property is passed to the super entity within the constructor.<br>
+This option is ignored in builder pattern mode.<br>
 Example:
 <pre>
 ^String name   the name
@@ -37,6 +38,9 @@ Example:
 <pre>
 =String name   the name
 </pre>
+<p>
+If the builder pattern is used and the class extends a superclass, the builder is created as an extension
+of the superclass'es builder.
 }@
 @[
   private void wurbel() throws WurbelException {
@@ -103,11 +107,11 @@ Example:
 
       if (withBuilder) {
 ]@
-  private @(getClassName())@(Builder builder) {
+  protected @(getClassName())@(Builder builder) {
 @[
-        if (superArgs.length() > 0) {
+        if (extendsWithBuilder != null) {
 ]@
-    super(@(superArgs)@);
+    super(builder);
 @[
         }
         for (Property property: properties) {
@@ -178,6 +182,10 @@ Example:
     }
 
     if (withBuilder) {
+      String extendsStr = "";
+      if (extendsWithBuilder != null) {
+        extendsStr = "extends " + extendsWithBuilder + ".Builder ";
+      }
 ]@
 
 
@@ -193,7 +201,7 @@ Example:
   /**
    * The @(getClassName())@ builder.
    */
-  public static class Builder {
+  public static class Builder @(extendsStr)@{
 
 @[
       for (Property property: properties) {
@@ -203,7 +211,7 @@ Example:
       }
 ]@
 
-    private Builder() {}
+    protected Builder() {}
 
 
     /**
@@ -211,6 +219,13 @@ Example:
      *
      * \@return the @(getClassName())@
      */
+@[
+      if (extendsWithBuilder != null) {
+]@
+    \@Override
+@[
+      }
+]@
     public @(getClassName())@ build() {
       return new @(getClassName())@(this);
     }

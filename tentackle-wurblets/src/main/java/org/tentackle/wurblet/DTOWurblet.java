@@ -106,6 +106,7 @@ public class DTOWurblet extends AbstractWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
+  protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
 
 
   public DTOWurblet() {
@@ -127,6 +128,15 @@ public class DTOWurblet extends AbstractWurblet {
 
     if (filename == null) {
       throw new WurbelException("usage: @wurblet <guardname> DTO [--builder] <filename>");
+    }
+
+    if (withBuilder) {
+      try {
+        extendsWithBuilder = getSuperClassName();
+      }
+      catch (WurbelException wx) {
+        // ok: no superclass
+      }
     }
 
     properties = new ArrayList<>();
