@@ -43,10 +43,14 @@ import org.tentackle.session.Session;
 public class StoredBundleControl extends ResourceBundle.Control implements DomainContextProvider {
 
   /**
-   * Controls whether property file should be tried if no stored bundle found.<br>
-   * Default is to fallback to
+   * Controls whether loading bundles from backend is enabled at all.
    */
-  public static boolean fallbackToPropertyFile = true;
+  public static boolean enabled = true;
+
+  /**
+   * Controls whether properties should be tried if no stored bundle found.
+   */
+  public static boolean fallbackToProperties = true;
 
   private static final Logger LOGGER = Logger.get(StoredBundleControl.class);
 
@@ -76,25 +80,29 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
           throws IllegalAccessException, InstantiationException, IOException {
 
-    ResourceBundle bundle;
-
-    if (Session.getCurrentSession() == null) {
-      bundle = super.newBundle(baseName, locale, format, loader, reload);
+    if (baseName == null || locale == null) {
+      throw new IllegalArgumentException("baseName and locale must not be null");
     }
-    else {
-      if (baseName == null || locale == null || format == null || loader == null) {
-        throw new IllegalArgumentException("baseName, locale, format and loader must not be null");
-      }
-      StoredBundle.StoredBundleUDK key = createUDK(baseName, locale);
+
+    ResourceBundle bundle = null;
+    StoredBundle.StoredBundleUDK key = null;
+
+    if (enabled && Session.getCurrentSession() != null) {
+      // if loading from backend possible
+      key = createUDK(baseName, locale);
       bundle = loadStoredBundle(key);
-      if (bundle == null && fallbackToPropertyFile) {
-        if (format.isEmpty()) {
-          format = "java.properties";
-        }
-        bundle = super.newBundle(baseName, locale, format, loader, reload);
-        if (bundle != null) {
-          LOGGER.info("no stored bundle for {0} -> resource bundle loaded instead", key.name);
-        }
+    }
+
+    if (bundle == null && (!enabled || fallbackToProperties)) {
+      if (format == null || loader == null) {
+        throw new IllegalArgumentException("format and loader must not be null");
+      }
+      if (format.isEmpty()) {
+        format = "java.properties";
+      }
+      bundle = super.newBundle(baseName, locale, format, loader, reload);
+      if (bundle != null && key != null) {
+        LOGGER.info("no stored bundle for {0} -> resource bundle from properties loaded instead", key.name);
       }
     }
 

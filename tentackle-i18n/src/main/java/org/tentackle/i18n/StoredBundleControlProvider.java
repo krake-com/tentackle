@@ -32,18 +32,12 @@ import org.tentackle.common.Service;
 @Service(ResourceBundleControlProvider.class)
 public class StoredBundleControlProvider implements ResourceBundleControlProvider {
 
-  /**
-   * Flag to disable the control provider.<br>
-   * By default, the provider is enabled.
-   */
-  public static boolean enabled = true;
-
   /** the control instance. */
   private static final ResourceBundle.Control CONTROL = new StoredBundleControl();
 
   @Override
   public ResourceBundle.Control getControl(String baseName) {
-    return enabled ? CONTROL : null;
+    return CONTROL;
   }
 
 }
