@@ -21,7 +21,9 @@ package org.tentackle.fx;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.List;
+import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -172,6 +174,11 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
       binder = createBinder();
     }
     return binder;
+  }
+
+  @Override
+  public void initialize(URL location, ResourceBundle resources) {
+    // the default does nothing
   }
 
   @Override
