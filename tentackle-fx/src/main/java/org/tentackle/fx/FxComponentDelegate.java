@@ -267,7 +267,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
             }
           }
           else {
-            msg = vx.resultsToMessage();
+            msg = vx.resultsAsMessage();
           }
           // some conversion/mapping failed (usually parse-exception):
           // -> show error popup and stay in component
