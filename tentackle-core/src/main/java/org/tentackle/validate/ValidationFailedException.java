@@ -35,6 +35,7 @@ public class ValidationFailedException extends RuntimeException implements Logga
   private static final long serialVersionUID = 922168908361481367L;
 
   private final List<ValidationResult> results;   // the validation results
+  private transient String resultsMessage;        // cached results message
 
 
   /**
@@ -115,27 +116,16 @@ public class ValidationFailedException extends RuntimeException implements Logga
    *
    * @return the results as string, never null
    */
-  public String resultsToMessage() {
-    return ValidationUtilities.getInstance().resultsToMessage(results);
+  public String resultsAsMessage() {
+    if (resultsMessage == null) {
+      resultsMessage = ValidationUtilities.getInstance().resultsToMessage(results);
+    }
+    return resultsMessage;
   }
 
   @Override
   public boolean withStacktrace() {
     return false;   // log only the message
-  }
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Also contains the validation results.
-   */
-  @Override
-  public String toString() {
-    if (results != null && !results.isEmpty()) {
-      return super.toString() + "\n" +
-             ValidationUtilities.getInstance().resultsToString(results);
-    }
-    return super.toString();
   }
 
 }

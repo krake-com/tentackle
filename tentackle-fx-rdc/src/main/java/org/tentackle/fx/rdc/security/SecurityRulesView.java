@@ -456,7 +456,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
       });
     }
     catch (ValidationFailedException vx) {
-      Fx.info(vx.resultsToMessage());
+      Fx.info(vx.resultsAsMessage());
       if (trackedClassRulesSnapshot != null) {
         trackedClassRules.revertToSnapshot(trackedClassRulesSnapshot);
         classRules.setAll(trackedClassRules);
