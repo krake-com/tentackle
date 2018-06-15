@@ -37,6 +37,11 @@ public class PersistenceException extends TentackleRuntimeException {
 
   private static final long serialVersionUID = -5355906838551059053L;
 
+  /** Tag starting extra identifiable/session info in message. */
+  public static final String START_INFO = "[_ ";
+
+  /** Tag ending extra identifiable/session info in message. */
+  public static final String END_INFO = " _]";
 
 
   /**
@@ -341,38 +346,54 @@ public class PersistenceException extends TentackleRuntimeException {
   }
 
 
-  /**
-   * {@inheritDoc}
-   * <p>
-   * This the classname plus optional message plus the
-   * optional object with the optional db connection
-   * in brackets.
-   * <p>
-   * Example:
-   * <pre>
-   *   "org.tentackle.pdo.DbRuntimeException: no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
-   * </pre>
-   * @return the message
-   */
   @Override
   public String getMessage() {
     if (lazyMessage == null) {
       StringBuilder buf = new StringBuilder();
-      buf.append(super.getMessage());
-      if (session != null || identifiable != null) {
-        buf.append(" {");
-        if (identifiable != null) {
-          buf.append(identifiable.toGenericString());    // toString may fail!
-          if (session != null) {
-            buf.append(" at ");
-          }
-        }
-        if (session != null) {
-          buf.append(session.toString());
-        }
-        buf.append('}');
+      String msg = super.getMessage();
+      if (msg == null) {
+        msg = "";
       }
-      if (getCause() instanceof SQLException) {
+      boolean sqlEx = getCause() instanceof SQLException;
+      boolean multiline = msg.length() > 80 || sqlEx || msg.contains("\n");
+      buf.append(msg);
+
+      // append optional extra identifiable and/or session info
+      String identStr = null;
+      if (identifiable != null) {
+        identStr = identifiable.toGenericString();    // toString may fail!
+        if (msg.contains(identStr)) {
+          identStr = null;
+        }
+      }
+      String sessionStr = null;
+      if (session != null) {
+        sessionStr = session.toString();
+        if (msg.contains(sessionStr)) {
+          sessionStr = null;
+        }
+      }
+      if (identStr != null || sessionStr != null) {
+        if (multiline) {
+          buf.append('\n');
+        }
+        else {
+          buf.append(' ');
+        }
+        buf.append(START_INFO);
+        if (identStr != null) {
+          buf.append(identStr);
+        }
+        if (sessionStr != null) {
+          if (identStr != null) {
+            buf.append(" -- ");
+          }
+          buf.append(sessionStr);
+        }
+        buf.append(END_INFO);
+      }
+
+      if (sqlEx) {
         SQLException sx = (SQLException) getCause();
         buf.append("\nSQL-Message: ").append(sx.getMessage())
            .append("\nSQL-Code:    ").append(sx.getErrorCode())

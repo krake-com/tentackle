@@ -2646,7 +2646,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden due to security check.
    */
   @Override
-  public void initModification(char modType) {
+  protected void initModification(char modType) {
     super.initModification(modType);
     clearTokenLock();
   }
@@ -2658,7 +2658,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Overridden to clear the renewTokenLock flag.
    */
   @Override
-  public void finishModification(char modType) {
+  protected void finishModification(char modType) {
     super.finishModification(modType);
     setRenewTokenLockRequested(false);
   }
@@ -2670,7 +2670,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Ovewritten to get the token lock removed, if any.
    */
   @Override
-  public void finishNotUpdated(char modType) {
+  protected void finishNotUpdated(char modType) {
     if (getTokenLockTimeout() > 0) {
       if (isRenewTokenLockRequested()) {
         // renew token (keep old editedSince)

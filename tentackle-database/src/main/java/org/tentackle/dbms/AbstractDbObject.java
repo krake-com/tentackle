@@ -1975,7 +1975,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param modType is the modification type: DELETE, INSERT or UPDATE
    */
-  public void initModification(char modType) {
+  protected void initModification(char modType) {
     if (isCountingModification(modType))  {
       setTableSerial(countModification());
       // will never return on failure -> errorHandler
@@ -1988,7 +1988,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param modType is the modification type: DELETE, INSERT or UPDATE
    */
-  public void finishModification(char modType) {
+  protected void finishModification(char modType) {
     if (isLoggingModification(modType))  {
       logModification(modType);
     }
@@ -2002,7 +2002,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param modType is the modification type: DELETE, INSERT or UPDATE
    */
-  public void finishNotUpdated(char modType) {
+  protected void finishNotUpdated(char modType) {
   }
 
 
@@ -2025,6 +2025,26 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   }
 
 
+  /**
+   * Prepares the attributes concerning composite relations.<br>
+   * Overridden, for example, to update list counts.
+   */
+  protected void alignComponents() {
+    // default does nothing
+  }
+
+
+  /**
+   * Returns whether update of this object is necessary.
+   *
+   * @return true if update necessary
+   */
+  protected boolean isUpdateNecessary() {
+    alignComponents();
+    return !isTracked() || attributesModified() || isNew();
+  }
+
+
 
 
   /**
@@ -2035,7 +2055,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public void insertObject()  {
 
     assertPersistable();
-    prepareSetFields();
 
     Db db = getSession();
     if (db.isRemote())  {
@@ -2053,6 +2072,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
 
     else  {
+
+      prepareSetFields();
+      alignComponents();
 
       if (db.isPersistenceOperationAllowed(this, ModificationLog.INSERT)) {
 
@@ -2098,16 +2120,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Returns whether update of this object is necessary.
-   *
-   * @return true if update necessary
-   */
-  protected boolean isUpdateNecessary() {
-    return !isTracked() || attributesModified() || isNew();
-  }
-
-
-  /**
    * Updates this object to the database.<br>
    * The modified attribute gets cleared if insert was successful.
    * Note: this method should be used by the application with great care!
@@ -2116,7 +2128,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   public void updateObject()  {
 
     assertPersistable();
-    prepareSetFields();
 
     Db db = getSession();
     if (db.isRemote())  {
@@ -2134,6 +2145,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
 
     else  {
+
+      prepareSetFields();
 
       if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
 
@@ -2220,9 +2233,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * but never at the server-side in 3-tier mode.<br>
    * Applications may override the method to perform any modifications to the object
    * before it is sent to the server (instead of {@link #prepareSetFields()} which is
-   * invoked at the server-side only).
+   * invoked at the JDBC-side only).
    * <p>
    * Notice that the method is invoked outside of the save-transaction.
+   *
+   * @see #prepareSetFields()
    */
   public void prepareSave() {
   }
@@ -2699,6 +2714,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * Prepares the object's attributes before the object is saved to the database.<br>
    * The default implementation does nothing.
    * Used to setup, check and align values.
+   * <p>
+   * Notice that this method is invoked at the JDBC-side only, i.e. local sessions,
+   * not in remote clients.
+   *
+   * @see #prepareSave()
    */
   public void prepareSetFields()  {
   }

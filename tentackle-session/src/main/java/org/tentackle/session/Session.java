@@ -128,6 +128,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    *
    * @param list the collection of session dependables
    */
+  @SuppressWarnings("unchecked")
   default void applyTo(Collection<? extends SessionDependable> list) {
     if (list != null) {
       for (SessionDependable obj: list)  {
