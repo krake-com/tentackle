@@ -58,7 +58,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateSetImmutable                    = false;
     boolean generateSnapshot                        = false;
     boolean generateClearOnRemoteSave               = false;
-    boolean generateIsUpdateNecessary               = false;
+    boolean generateAlignComponents                 = false;
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
@@ -129,7 +129,7 @@ For more options, see {\@link DbModelWurblet}.
           if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
             generateLazyDeleteReferencingRelations = true;
             if (rel.getCountAttribute() != null) {
-              generateIsUpdateNecessary = true;
+              generateAlignComponents = true;
             }
           }
         }
@@ -1212,11 +1212,12 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
-    if (generateIsUpdateNecessary) {
+    if (generateAlignComponents) {
 ]@
 
   \@Override
-  protected boolean isUpdateNecessary()  {
+  protected void alignComponents()  {
+    super.alignComponents();
 @[
       for (Relation rel: getEntity().getRelations()) {
         Attribute countAttribute = rel.getCountAttribute();
@@ -1229,7 +1230,6 @@ For more options, see {\@link DbModelWurblet}.
         }
       }
 ]@
-    return super.isUpdateNecessary();
   }
 @[
     }
