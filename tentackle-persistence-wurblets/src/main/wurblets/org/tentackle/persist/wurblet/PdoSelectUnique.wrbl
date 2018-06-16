@@ -77,7 +77,7 @@ For more options, see {\@link DbModelWurblet}.
     if (methodName == null) {
       throw new WurbelException("can't determine <methodname>");
     }
-    if (getExpressionArguments().isEmpty() && !sort && append == null && getContextAttribute() == null) {
+    if (getExpressionArguments().isEmpty() && !sort && !isWithSorting() && append == null && getContextAttribute() == null) {
       throw new WurbelException("no keys given");
     }
 
