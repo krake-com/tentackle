@@ -138,6 +138,11 @@ For more options, see {\@link DbModelWurblet}.
     if (isWithJoins()) {
       out.print(createJoins());
     }
+    if (lock) {
+]@
+    getSession().assertTxRunning();
+@[
+    }
 ]@
     PreparedStatementWrapper st = getPreparedStatement(@(statementId)@,
       () -> {
