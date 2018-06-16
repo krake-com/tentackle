@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
 import org.tentackle.common.Constants;
@@ -114,19 +115,20 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
   }
 
 
+  /**
+   * Session infos are equal if their login credentials are equal.<br>
+   *
+   * @param obj the other object
+   * @return true if obj is a SessionInfo and belongs to the same 'user'
+   */
   @Override
   public boolean equals(Object obj) {
-    if (obj == null) {
-      return false;
+    if (obj instanceof SessionInfo) {
+      return Objects.equals(userName, ((SessionInfo) obj).getUserName());
     }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final SessionInfo other = (SessionInfo) obj;
-    return !((this.getUserName() == null) ?
-                (other.getUserName() != null) :
-                !this.getUserName().equals(other.getUserName()));
+    return false;
   }
+
 
   @Override
   public int hashCode() {
