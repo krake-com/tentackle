@@ -134,8 +134,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   protected void updateMDC() {
     MappedDiagnosticContext mdc = LOGGER.getMappedDiagnosticContext();
-    RemoteDbSessionImpl session = delegate.getServerSession();
-    mdc.put(MDC_SESSION_KEY, session.getSessionNumber() + ":" + session.getClientSessionInfo().getUserName());
+    mdc.put(MDC_SESSION_KEY, delegate.getServerSession().getMdcInfo());
   }
 
   /**

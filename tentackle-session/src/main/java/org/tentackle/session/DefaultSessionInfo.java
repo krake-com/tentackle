@@ -350,20 +350,27 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     buf.append(userId);
     buf.append("]/");
     buf.append(password == null ? "<no_passwd>" : "<passwd>");
-    if (applicationName != null || applicationId != 0) {
+    if (applicationName != null) {
       buf.append('/');
       buf.append(applicationName);
+    }
+    if (applicationId != 0) {
       buf.append('[');
       buf.append(applicationId);
       buf.append(']');
+    }
+    if (cloned) {
+      buf.append('*');
     }
     return buf.toString();
   }
 
 
   /**
-   * Clones a userinfo.
-   * The password will be copied if not null.
+   * Clones a userinfo.<br>
+   * The password is copied, if not null.<br>
+   * The properties are cloned as well.<br>
+   * Cloned session infos are mutable by default.
    */
   @Override
   public DefaultSessionInfo clone() {
