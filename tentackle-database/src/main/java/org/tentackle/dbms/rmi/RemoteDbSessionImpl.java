@@ -204,6 +204,7 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private int timeoutCount;                           // consecutive timeouts
   private Db db;                                      // the local Db-connection
   private long closedSince;                           // session closed since, 0 if still open
+  private String mdcInfo;                             // the cached MDC info
   private final MethodStatistics methodStats;         // statistics for method invocations
                                                       // (managed by invocation handler, null if no stats)
   private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
@@ -643,10 +644,39 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       buf.append(port);
     }
     buf.append(", timeout=").append(timeout)
-       .append(", user=").append(clientInfo)
+       .append(", client=").append(clientInfo)
        .append(", host=").append(clientHost);
 
     return buf.toString();
+  }
+
+
+  /**
+   * Gets a string useful for mapped diagnostic context info.
+   *
+   * @return the MDC info
+   */
+  public String getMdcInfo() {
+    if (mdcInfo == null) {
+      StringBuilder buf = new StringBuilder();
+      buf.append(sessionNumber).append(':');
+      String userName = clientInfo.getUserName();
+      if (userName != null && !userName.isEmpty()) {
+        buf.append(userName);
+      }
+      String applicationName = clientInfo.getApplicationName();
+      if (applicationName != null && !applicationName.isEmpty()) {
+        buf.append('@').append(applicationName);
+      }
+      if (clientInfo.getApplicationId() != 0) {
+        buf.append('#').append(clientInfo.getApplicationId());
+      }
+      if (clientInfo.isCloned()) {
+        buf.append('*');
+      }
+      mdcInfo = buf.toString();
+    }
+    return mdcInfo;
   }
 
 
