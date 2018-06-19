@@ -617,6 +617,13 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isTokenLockedByMe();
 
   /**
+   * Checks whether requesting a token lock for the current user is possible.
+   *
+   * @return true if object is not locked at all or locked by the current user
+   */
+  boolean isTokenLockableByMe();
+
+  /**
    * Gets the object associated to the id of the editedBy-attribute.<br>
    * This is usually the id of an PDO implementing the concept
    * of a user, group, role or whatever.

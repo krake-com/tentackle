@@ -416,6 +416,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public boolean isTokenLockableByMe() {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
   public Timestamp getEditedSince() {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }

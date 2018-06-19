@@ -2671,20 +2671,16 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   protected void finishNotUpdated(char modType) {
-    if (getTokenLockTimeout() > 0) {
-      if (isRenewTokenLockRequested()) {
-        // renew token (keep old editedSince)
-        if (getEditedSince() == null) {
-          setEditedSince(DateHelper.now());
-        }
+    if (isTokenLockProvided()) {
+      if (clearTokenLock()) {
         updateTokenLock(DateHelper.now(getTokenLockTimeout()), getContextUserId(), getEditedSince());
       }
-      else  {
+      else {
         // release token
         updateTokenLock(null);
       }
+      setRenewTokenLockRequested(false);
     }
-    setRenewTokenLockRequested(false);
   }
 
 
@@ -2707,28 +2703,31 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
 
-
   /**
    * Clears or renews the token lock.
    * <p>
    * If {@link #isRenewTokenLockRequested()} is true, the token will be renewed (prolonged
    * if existing) or created (if not existing).
    * The operation is only done in memory, not in persistent storage.
+   *
+   * @return true if token lock set or updated, false if token lock cleared or PDO does not provide a token lock
    */
-  public void clearTokenLock() {
-    if (isRenewTokenLockRequested() && getTokenLockTimeout() > 0) {
-      setEditedBy(getContextUserId());
-      setEditedExpiry(DateHelper.now(getTokenLockTimeout()));
-      if (getEditedSince() == null) {
-        setEditedSince(DateHelper.now());
+  public boolean clearTokenLock() {
+    if (isTokenLockProvided()) {
+      if (isRenewTokenLockRequested()) {
+        long userId = getContextUserId();
+        setEditedExpiry(DateHelper.now(getTokenLockTimeout()));
+        if (getEditedSince() == null || userId != getEditedBy() || getEditedExpiry() == null) {
+          setEditedSince(DateHelper.now());
+        }
+        setEditedBy(userId);
+        return true;
       }
-    }
-    else  {
       setEditedBy(0);
       setEditedExpiry(null);
     }
+    return false;
   }
-
 
 
   /**
@@ -2742,6 +2741,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param renewTokenLock true to renew the token (once)
    */
   public void setRenewTokenLockRequested(boolean renewTokenLock) {
+    if (renewTokenLock && !isTokenLockableByMe()) {
+      throw new LockException(getSession(), new TokenLock(getEditedBy(), getEditedSince(), getEditedExpiry()));
+    }
     this.renewTokenLock = renewTokenLock;
   }
 
@@ -3429,6 +3431,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public boolean isTokenLocked() {
+    assertTokenLockProvided();
     return getEditedBy() != 0 && DateHelper.toMillis(getEditedExpiry()) > System.currentTimeMillis();
   }
 
@@ -3450,7 +3453,12 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public boolean isTokenLockedByMe() {
-    return isTokenLockedBy(getDomainContext().getSessionInfo().getUserId());
+    return isTokenLockedBy(getContextUserId());
+  }
+
+  @Override
+  public boolean isTokenLockableByMe() {
+    return !isTokenLocked() || getEditedBy() == getContextUserId();
   }
 
   /**
@@ -3579,6 +3587,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     else  {
 
+      assertTokenLockProvided();
       assertNotCached();
       assertPersistable();
       assertRootEntity();
@@ -3613,7 +3622,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               setEditedBy(rs.getLong(CN_EDITEDBY));
               setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
               setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
-              throw new LockException(db, new TokenLock(editedBy, editedSince, editedExpiry));
+              throw new LockException(db, new TokenLock(getEditedBy(), getEditedSince(), getEditedExpiry()));
             }
             else {
               throw new NotFoundException(this, "could not retrieve token lock", -1);
