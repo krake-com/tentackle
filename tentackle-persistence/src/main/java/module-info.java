@@ -19,6 +19,7 @@
 module org.tentackle.persistence {
   exports org.tentackle.persist;
   exports org.tentackle.persist.app;
+  exports org.tentackle.persist.lock;
   exports org.tentackle.persist.ns;
   exports org.tentackle.persist.ns.rmi;
   exports org.tentackle.persist.rmi;

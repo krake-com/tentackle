@@ -23,6 +23,7 @@ import org.tentackle.log.Logger;
 import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.persist.LockManager;
 
 
 /**
@@ -95,6 +96,7 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
   @Override
   protected void finishStartup() {
+    LockManager.getInstance().cleanupAllTokens(getSession());
     super.finishStartup();
     rmiServer = createRmiServer(connectionClass);
   }

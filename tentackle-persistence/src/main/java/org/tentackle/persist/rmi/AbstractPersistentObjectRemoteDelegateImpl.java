@@ -28,12 +28,11 @@ import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.ScrollableResource;
+import org.tentackle.pdo.TokenLockInfo;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.TokenLock;
-
 
 
 /**
@@ -372,11 +371,11 @@ public class AbstractPersistentObjectRemoteDelegateImpl<T extends PersistentDoma
   }
 
   @Override
-  public TokenLock updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException  {
+  public TokenLockInfo updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException  {
     try {
       dbObject.setId(id);
       dbObject.updateTokenLock(tokenExpiry, userId, curTime);
-      return new TokenLock(dbObject);
+      return new TokenLockInfo(dbObject);
     }
     catch (RuntimeException e) {
       throw createException(e);

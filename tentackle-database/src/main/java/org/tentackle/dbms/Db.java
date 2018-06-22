@@ -2657,8 +2657,6 @@ public class Db implements Session, Cloneable {
    * <p>
    * Connections may be cloned, which results in a new session using
    * the cloned userinfo of the original session.
-   * If the old session is already open, the new session will be opened as well.
-   * If the old session is closed, the cloned session will be closed.
    *
    * @return the cloned Db
    */

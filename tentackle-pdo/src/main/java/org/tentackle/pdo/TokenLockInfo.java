@@ -24,10 +24,10 @@ import org.tentackle.common.Timestamp;
 
 
 /**
- * The edited-by token lock.<br>
+ * The edited-by token lock info.<br>
  * Holds the columns editedBy, editedSince and editedExpiry in one DTO.
  */
-public class TokenLock implements Serializable {
+public class TokenLockInfo implements Serializable {
 
   private static final long serialVersionUID = 438202973417850958L;
 
@@ -44,13 +44,13 @@ public class TokenLock implements Serializable {
 
 
   /**
-   * Creates an edited-token.
+   * Creates a token lock info.
    *
    * @param editedBy the object ID of the user holding the token
    * @param editedSince the timestamp when editing started
    * @param editedExpiry the timestamp when token will expire
    */
-  public TokenLock(long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
+  public TokenLockInfo(long editedBy, Timestamp editedSince, Timestamp editedExpiry) {
     this.editedBy = editedBy;
     this.editedSince = editedSince;
     this.editedExpiry = editedExpiry;
@@ -61,7 +61,7 @@ public class TokenLock implements Serializable {
    *
    * @param pdo the object that holds the token data
    */
-  public TokenLock(PersistentObject<?> pdo) {
+  public TokenLockInfo(PersistentObject<?> pdo) {
     this(pdo.getEditedBy(), pdo.getEditedSince(), pdo.getEditedExpiry());
   }
 

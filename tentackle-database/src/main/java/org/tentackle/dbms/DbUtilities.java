@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
@@ -191,6 +192,16 @@ public class DbUtilities {
         return Db::reOpen;
       }
     };
+  }
+
+
+  /**
+   * Performs any clean up when a remote user session is closed.
+   *
+   * @param remoteSession the remote session
+   */
+  public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
+    // the default does nothing
   }
 
 }

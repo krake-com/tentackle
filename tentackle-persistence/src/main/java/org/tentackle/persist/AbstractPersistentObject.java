@@ -52,7 +52,7 @@ import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
-import org.tentackle.pdo.TokenLock;
+import org.tentackle.pdo.TokenLockInfo;
 import org.tentackle.persist.rmi.AbstractPersistentObjectRemoteDelegate;
 import org.tentackle.persist.rmi.RemoteResultSetCursor;
 import org.tentackle.reflect.EffectiveClassProvider;
@@ -2742,7 +2742,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   public void setRenewTokenLockRequested(boolean renewTokenLock) {
     if (renewTokenLock && !isTokenLockableByMe()) {
-      throw new LockException(getSession(), new TokenLock(getEditedBy(), getEditedSince(), getEditedExpiry()));
+      throw new LockException(getSession(), new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
     }
     this.renewTokenLock = renewTokenLock;
   }
@@ -2765,33 +2765,33 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return super.isUpdateNecessary() || getEditedBy() != 0 || isRenewTokenLockRequested();
   }
 
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overridden to clear the token lock if remote session.
-   */
+
   @Override
   public void updateObject() {
+    // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
     super.updateObject();
-    if (getSession().isRemote()) {
-      clearTokenLock();
+    if (isTokenLockProvided()) {
+      LockManager.getInstance().update(pdo);
     }
   }
 
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overridden to clear the token lock if remote session.
-   */
   @Override
   public void insertObject() {
+    // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
     super.insertObject();
-    if (getSession().isRemote()) {
-      clearTokenLock();
+    if (isTokenLockProvided()) {
+      LockManager.getInstance().update(pdo);
     }
   }
 
+  @Override
+  public void deleteObject() {
+    // always local session since remoting is not allowed for this method, see AbstractPORemoteDI
+    super.deleteObject();
+    if (isTokenLockProvided()) {
+      LockManager.getInstance().update(pdo);
+    }
+  }
 
 
   @Override
@@ -3411,7 +3411,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public void requestTokenLock() {
-    updateTokenLock(DateHelper.now(getTokenLockTimeout()));
+    getSession().transaction("lock", () -> {      // tx necessary for LockManager
+      updateTokenLock(DateHelper.now(getTokenLockTimeout()));
+      return null;
+    });
   }
 
   /**
@@ -3420,7 +3423,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   @Override
   public void releaseTokenLock() {
-    updateTokenLock(null);
+    getSession().transaction("unlock", () -> {      // tx necessary for LockManager
+      updateTokenLock(null);
+      return null;
+    });
   }
 
   /**
@@ -3432,7 +3438,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public boolean isTokenLocked() {
     assertTokenLockProvided();
-    return getEditedBy() != 0 && DateHelper.toMillis(getEditedExpiry()) > System.currentTimeMillis();
+    return !isNew() && getEditedBy() != 0 && DateHelper.toMillis(getEditedExpiry()) > System.currentTimeMillis();
   }
 
   /**
@@ -3569,14 +3575,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        TokenLock token = getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime);
+        TokenLockInfo token = getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime);
         token.applyTo(this);
       }
       catch (RemoteException e) {
         RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
         if (rex instanceof LockException) {
           LockException lx = (LockException) rex;
-          TokenLock token = lx.getTokenLock();
+          TokenLockInfo token = lx.getTokenLockInfo();
           if (token != null) {
             token.applyTo(this);
           }
@@ -3612,6 +3618,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           setEditedBy(newUser);
           setEditedSince(curTime);
           setEditedExpiry(tokenExpiry);
+          LockManager.getInstance().update(pdo);
         }
         else {
           // no success: another user is currently holding the token
@@ -3622,7 +3629,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
               setEditedBy(rs.getLong(CN_EDITEDBY));
               setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
               setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
-              throw new LockException(db, new TokenLock(getEditedBy(), getEditedSince(), getEditedExpiry()));
+              throw new LockException(db, new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
             }
             else {
               throw new NotFoundException(this, "could not retrieve token lock", -1);
@@ -3698,6 +3705,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         st.setTimestamp(3, getEditedExpiry());
         st.setLong(4, getId());
         assertThisRowAffected(st.executeUpdate());
+        LockManager.getInstance().update(pdo);
       }
     }
   }
@@ -3749,6 +3757,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             // set/refresh the expiry
             updateTokenLock(DateHelper.now(getTokenLockTimeout()), userId, DateHelper.now());
           }
+          LockManager.getInstance().update(pdo);
           db.commit(txVoucher);
         }
         catch (PersistenceException px) {

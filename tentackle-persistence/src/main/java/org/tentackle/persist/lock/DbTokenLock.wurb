@@ -1,0 +1,3 @@
+tablename=tokenlock
+classid=10
+mapfile=$model/$tablename.map

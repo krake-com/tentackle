@@ -34,7 +34,7 @@ public class LockException extends PersistenceException implements Loggable {
 
   private static final long serialVersionUID = -5355906838551059054L;
 
-  private final TokenLock tokenLock;
+  private final TokenLockInfo tokenLockInfo;
 
   /**
    * Constructs a new locking exception for a given session
@@ -43,11 +43,11 @@ public class LockException extends PersistenceException implements Loggable {
    * initialized by a call to {@link #initCause}.
    *
    * @param session the session
-   * @param tokenLock the token lock information
+   * @param tokenLockInfo the token lock information
    */
-  public LockException(Session session, TokenLock tokenLock) {
+  public LockException(Session session, TokenLockInfo tokenLockInfo) {
     super(session);
-    this.tokenLock = tokenLock;
+    this.tokenLockInfo = tokenLockInfo;
   }
 
   /**
@@ -61,7 +61,7 @@ public class LockException extends PersistenceException implements Loggable {
    */
   public LockException(Session session, String message) {
     super(session, message);
-    this.tokenLock = null;
+    this.tokenLockInfo = null;
   }
 
   /**
@@ -69,16 +69,16 @@ public class LockException extends PersistenceException implements Loggable {
    *
    * @return the token lock
    */
-  public TokenLock getTokenLock() {
-    return tokenLock;
+  public TokenLockInfo getTokenLockInfo() {
+    return tokenLockInfo;
   }
 
   @Override
   public String getMessage() {
-    if (tokenLock == null) {
+    if (tokenLockInfo == null) {
       return super.getMessage();
     }
-    return tokenLock.toString();
+    return tokenLockInfo.toString();
   }
 
   @Override

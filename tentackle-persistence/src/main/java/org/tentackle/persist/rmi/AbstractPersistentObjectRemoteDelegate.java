@@ -26,7 +26,7 @@ import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.TokenLock;
+import org.tentackle.pdo.TokenLockInfo;
 
 
 
@@ -64,7 +64,7 @@ public interface AbstractPersistentObjectRemoteDelegate<T extends PersistentDoma
 
   boolean isReferenced(DomainContext cb, long id) throws RemoteException;
 
-  TokenLock updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
+  TokenLockInfo updateTokenLock(long id, Timestamp tokenExpiry, long userId, Timestamp curTime) throws RemoteException;
 
   T transferTokenLock(T pdo, long userId) throws RemoteException;
 

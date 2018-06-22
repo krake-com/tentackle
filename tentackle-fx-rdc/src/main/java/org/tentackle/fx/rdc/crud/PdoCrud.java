@@ -266,7 +266,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         editing.set(false);
         editor.setChangeable(false);
         deleteButton.setDisable(true);
-        if (lx.getTokenLock() != null) {
+        if (lx.getTokenLockInfo() != null) {
           Fx.info(MessageFormat.format(RdcFxRdcBundle.getString("{0} {1} is being locked by {2} since {3}"),
                   pdo.getSingular(), pdo.toString(),
                   AbstractApplication.getRunningApplication().getUser(pdo.getDomainContext(), pdo.getEditedBy()),
