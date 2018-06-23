@@ -37,6 +37,9 @@ import java.io.Serializable;
  * It uses the XXXBinaryStream-methods to read and write the data avoiding
  * the transactional limits of blobs, because blobs usually are only valid within a transaction.
  * {@code Binary} instead provides a blob-like interface while remaining valid outside transactions.
+ * <p>
+ * Furthermore, binaries can be freezed, i.e. made immutable. This is used,
+ * for example, when the value is fetched from the database and stored in a PDO.
  *
  * @param <T> the java class handled by this Binary
  */
@@ -53,7 +56,7 @@ public class Binary<T> implements Serializable, Cloneable {
 
   private byte[] data;                   // byte array of arbitrary data or serialized object
   private int length;                    // length of data/object
-
+  private boolean freezed;               // true if timestamp cannot be modified anymore
   private transient T object;            // cached object
 
 
@@ -86,7 +89,17 @@ public class Binary<T> implements Serializable, Cloneable {
 
 
   /**
-   * Clones the binary
+   * Freeze the state.<br>
+   * Any attempt to modify the state results in a {@link TentackleRuntimeException}.
+   */
+  public void freeze() {
+    freezed = true;
+  }
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Cloned binaries are always not freezed.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -103,6 +116,7 @@ public class Binary<T> implements Serializable, Cloneable {
       binary.data = new byte[length];
       System.arraycopy(data, 0, binary.data, 0, length);
     }
+    binary.freezed = false;
     return binary;
   }
 
@@ -116,11 +130,12 @@ public class Binary<T> implements Serializable, Cloneable {
    *
    * @param stream the InputStream (associated to the database) to read from, may be null
    * @param bufSize the initial buffer size, 0 = default size (bufSize)
+   * @param freezed true if binary is freezed
    *
    * @return the new Binary or null if stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
    */
-  public static Binary<?> createBinary(InputStream stream, int bufSize) throws IOException {
+  public static Binary<?> createBinary(InputStream stream, int bufSize, boolean freezed) throws IOException {
     if (stream == null) {
       return null;
     }
@@ -139,6 +154,9 @@ public class Binary<T> implements Serializable, Cloneable {
           b.data = new byte[bufSize];
           System.arraycopy(oldData, 0, b.data, 0, b.length);
         }
+      }
+      if (freezed) {
+        b.freeze();
       }
       return b.length == 0 ? null : b;
     }
@@ -226,6 +244,7 @@ public class Binary<T> implements Serializable, Cloneable {
    * @param data the byte[]-array data.
    */
   public void setData(byte[] data) {
+    assertNotFreezed();
     this.data = data;
     object = null;
     if (data == null) {
@@ -233,6 +252,13 @@ public class Binary<T> implements Serializable, Cloneable {
     }
     else  {
       length = data.length;
+    }
+  }
+
+
+  private void assertNotFreezed() {
+    if (freezed) {
+      throw new TentackleRuntimeException("binary is freezed");
     }
   }
 

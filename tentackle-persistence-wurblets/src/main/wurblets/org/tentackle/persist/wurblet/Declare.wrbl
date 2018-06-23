@@ -73,13 +73,6 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
         }
-
-        if (!attr.getOptions().isSetGet() && attr.getDataType().isMutable()) {
-]@
-  /** the snapshot of @(attr)@. */
-  private transient @(attr.getJavaType())@ @(attr.getName())@Snapshot;
-@[
-        }
       }
     }
   }

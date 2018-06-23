@@ -34,14 +34,32 @@ import java.util.Calendar;
  * to a different time when deserialized in another timezone. In {@link Time}
  * the effective date is serialized as HHMMSSmmm to provide the same semantics
  * as databases do.
+ * <p>
+ * Furthermore, tentackle times can be freezed, i.e. made immutable. This is used,
+ * for example, when the value is fetched from the database and stored in a PDO.
  *
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public class Time extends java.sql.Time {
 
   private static final long serialVersionUID = 8397324403548013688L;
 
+  private boolean freezed;              // true if time cannot be modified anymore
   private transient Calendar cal;       // lazy calendar
+
+
+  /**
+   * Creates a freezed time.
+   *
+   * @param epoch epochal milliseconds since January 1, 1970, 00:00:00 GMT
+   * @return the freezed time
+   */
+  public static Time createFreezed(long epoch) {
+    Time time = new Time(epoch);
+    time.freeze();
+    return time;
+  }
 
 
   /**
@@ -65,6 +83,17 @@ public class Time extends java.sql.Time {
   }
 
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Cloned times are always not freezed.
+   */
+  @Override
+  public Time clone() {
+    Time time = (Time) super.clone();
+    time.freezed = false;
+    return time;
+  }
 
   /**
    * Gets the calendar for this date.
@@ -81,16 +110,66 @@ public class Time extends java.sql.Time {
 
 
   /**
+   * Freeze the state.<br>
+   * Any attempt to modify the state results in a {@link TentackleRuntimeException}.
+   */
+  public void freeze() {
+    freezed = true;
+  }
+
+  /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar.
+   * Overridden to clear the lazy calendar and check for freezed.
    */
   @Override
   public void setTime(long time) {
+    assertNotFreezed();
     super.setTime(time);
     cal = null;
   }
 
+  @Override
+  public void setYear(int year) {
+    assertNotFreezed();
+    super.setYear(year);
+  }
+
+  @Override
+  public void setMonth(int month) {
+    assertNotFreezed();
+    super.setMonth(month);
+  }
+
+  @Override
+  public void setDate(int date) {
+    assertNotFreezed();
+    super.setDate(date);
+  }
+
+  @Override
+  public void setHours(int hours) {
+    assertNotFreezed();
+    super.setHours(hours);
+  }
+
+  @Override
+  public void setMinutes(int minutes) {
+    assertNotFreezed();
+    super.setMinutes(minutes);
+  }
+
+  @Override
+  public void setSeconds(int seconds) {
+    assertNotFreezed();
+    super.setSeconds(seconds);
+  }
+
+  private void assertNotFreezed() {
+    if (freezed) {
+      throw new TentackleRuntimeException("time is freezed");
+    }
+  }
 
   /**
    * Save the state of this object to a stream.
@@ -106,6 +185,7 @@ public class Time extends java.sql.Time {
     s.writeByte(getCalendar().get(Calendar.MINUTE));
     s.writeByte(getCalendar().get(Calendar.SECOND));
     s.writeShort(getCalendar().get(Calendar.MILLISECOND));
+    s.writeBoolean(freezed);
   }
 
 
@@ -126,6 +206,7 @@ public class Time extends java.sql.Time {
     cal.set(1970, 0, 1, hours, minutes, seconds);
     cal.set(Calendar.MILLISECOND, millis);
     super.setTime(cal.getTimeInMillis());
+    freezed = s.readBoolean();
   }
 
 }

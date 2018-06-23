@@ -127,13 +127,9 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
 
   /** time since token lock given to user. */
   private Timestamp lockedSince;
-  /** the snapshot of lockedSince. */
-  private transient Timestamp lockedSinceSnapshot;
 
   /** time when token lock expires. */
   private Timestamp lockExpiry;
-  /** the snapshot of lockExpiry. */
-  private transient Timestamp lockExpirySnapshot;
 
   // </editor-fold>//GEN-END:declare
 

@@ -34,14 +34,31 @@ import java.util.Calendar;
  * to a different date when deserialized in another timezone. In {@link Date}
  * the effective date is serialized as YYYYMMDD to provide the same semantics
  * as databases do.
+ * <p>
+ * Furthermore, tentackle dates can be freezed, i.e. made immutable. This is used,
+ * for example, when the value is fetched from the database and stored in a PDO.
  *
  * @author harald
  */
+@SuppressWarnings("deprecation")
 public class Date extends java.sql.Date {
 
   private static final long serialVersionUID = 1511598038487230101L;
 
+  /**
+   * Creates a freezed date.
+   *
+   * @param epoch epochal milliseconds since January 1, 1970, 00:00:00 GMT
+   * @return the freezed date
+   */
+  public static Date createFreezed(long epoch) {
+    Date date = new Date(epoch);
+    date.freeze();
+    return date;
+  }
 
+
+  private boolean freezed;              // true if date cannot be modified anymore
   private transient Calendar cal;       // lazy calendar
 
 
@@ -68,6 +85,20 @@ public class Date extends java.sql.Date {
     this(System.currentTimeMillis());
   }
 
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Cloned dates are always not freezed.
+   */
+  @Override
+  public Date clone() {
+    Date date = (Date) super.clone();
+    date.freezed = false;
+    return date;
+  }
+
+
   /**
    * Gets the calendar for this date.
    *
@@ -83,14 +114,65 @@ public class Date extends java.sql.Date {
 
 
   /**
+   * Freeze the state.<br>
+   * Any attempt to modify the state results in a {@link TentackleRuntimeException}.
+   */
+  public void freeze() {
+    freezed = true;
+  }
+
+  /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar.
+   * Overridden to clear the lazy calendar and to check for freezed.
    */
   @Override
   public void setTime(long date) {
+    assertNotFreezed();
     super.setTime(date);
     cal = null;
+  }
+
+  @Override
+  public void setYear(int year) {
+    assertNotFreezed();
+    super.setYear(year);
+  }
+
+  @Override
+  public void setMonth(int month) {
+    assertNotFreezed();
+    super.setMonth(month);
+  }
+
+  @Override
+  public void setDate(int date) {
+    assertNotFreezed();
+    super.setDate(date);
+  }
+
+  @Override
+  public void setHours(int hours) {
+    assertNotFreezed();
+    super.setHours(hours);
+  }
+
+  @Override
+  public void setMinutes(int minutes) {
+    assertNotFreezed();
+    super.setMinutes(minutes);
+  }
+
+  @Override
+  public void setSeconds(int seconds) {
+    assertNotFreezed();
+    super.setSeconds(seconds);
+  }
+
+  private void assertNotFreezed() {
+    if (freezed) {
+      throw new TentackleRuntimeException("date is freezed");
+    }
   }
 
 
@@ -106,6 +188,7 @@ public class Date extends java.sql.Date {
     s.writeShort(getCalendar().get(Calendar.YEAR));
     s.writeByte(getCalendar().get(Calendar.MONTH));
     s.writeByte(getCalendar().get(Calendar.DAY_OF_MONTH));
+    s.writeBoolean(freezed);
   }
 
 
@@ -124,6 +207,7 @@ public class Date extends java.sql.Date {
     cal.set(year, month, day, 0, 0, 0);
     cal.set(Calendar.MILLISECOND, 0);
     super.setTime(cal.getTimeInMillis());
+    freezed = s.readBoolean();
   }
 
 }

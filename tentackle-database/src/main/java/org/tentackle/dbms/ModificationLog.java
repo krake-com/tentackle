@@ -219,8 +219,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /** time of event. */
   private Timestamp when;
-  /** the snapshot of when. */
-  private transient Timestamp whenSnapshot;
 
   /** name of user. */
   private String user;
@@ -230,8 +228,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /** processing time. */
   private Timestamp processed;
-  /** the snapshot of processed. */
-  private transient Timestamp processedSnapshot;
 
   // </editor-fold>//GEN-END:declare
 
