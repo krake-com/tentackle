@@ -2841,34 +2841,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return super.isUpdateNecessary() || getEditedBy() != 0 || isRenewTokenLockRequested();
   }
 
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overridden to clear the token lock if remote session.
-   */
-  @Override
-  public void updateObject() {
-    super.updateObject();
-    if (getSession().isRemote()) {
-      clearTokenLock();
-    }
-  }
-
-
-  /**
-   * {@inheritDoc}
-   * <p>
-   * Overridden to clear the token lock if remote session.
-   */
-  @Override
-  public void insertObject() {
-    super.insertObject();
-    if (getSession().isRemote()) {
-      clearTokenLock();
-    }
-  }
-
-
 
   @Override
   public void newId() {
@@ -2887,6 +2859,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
   }
+  
 
   /**
    * Updates the root context.<br>
