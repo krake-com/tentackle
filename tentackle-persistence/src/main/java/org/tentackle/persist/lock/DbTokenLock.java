@@ -51,7 +51,6 @@ import org.tentackle.sql.Backend;
  *
  * ## indexes
  * unique index pdo := id, pdoclassid
- * index user := lockedby
  *
  * @<
  */

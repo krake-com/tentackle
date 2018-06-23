@@ -40,9 +40,10 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
 
 /**
- * Default implementation of the lock manager.
+ * Default implementation of {@link LockManager}.
  * <p>
- * The token locks are persisted in an extra table in parallel to the editedBy-tokens of the PDOs.
+ * The token locks are persisted in an extra table of {@link DbTokenLock}s in parallel to the editedBy-tokens
+ * of the PDOs.
  */
 @Service(LockManager.class)
 public class DefaultLockManager implements LockManager {
