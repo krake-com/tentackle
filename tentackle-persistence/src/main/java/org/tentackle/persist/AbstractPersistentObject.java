@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
+import org.tentackle.common.Freezable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
@@ -163,8 +164,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   // snapshot
   private transient List<T> snapshots;            // taken snapshots, null if none
-  private transient Timestamp editedSinceSnapshot;
-  private transient Timestamp editedExpirySnapshot;
   protected transient boolean objectIsSnapshot;   // true if this is a snapshot
 
 
@@ -379,12 +378,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     // Important: no snapshot<T,P> cause of inheritance problems
     super.createAttributesInSnapshot(snapshot);
     snapshot.objectIsSnapshot = true;
-    if (editedSince != null) {
-      snapshot.editedSinceSnapshot = (Timestamp) editedSince.clone();
-    }
-    if (editedExpiry != null) {
-      snapshot.editedExpirySnapshot = (Timestamp) editedExpiry.clone();
-    }
   }
 
   /**
@@ -440,15 +433,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
     contextImmutable = snapshot.contextImmutable;
     copiedObject = (T) snapshot.copiedObject;
-    editedBy = snapshot.editedBy;
-    editedSince = snapshot.editedSince;
-    if (editedSince != null) {
-      editedSince.setTime(snapshot.editedSinceSnapshot.getTime());
-    }
-    editedExpiry = snapshot.editedExpiry;
-    if (editedExpiry != null) {
-      editedExpiry.setTime(snapshot.editedExpirySnapshot.getTime());
-    }
+    // the tokenlock fields edited... are not restored because they are only changed
+    // via a persistence operation
     renewTokenLock = snapshot.renewTokenLock;
     cacheAccessCount = snapshot.cacheAccessCount;
     cacheAccessTime = snapshot.cacheAccessTime;
@@ -2859,7 +2845,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       }
     }
   }
-  
+
 
   /**
    * Updates the root context.<br>
@@ -3151,7 +3137,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param modifiedOnly true if only modified objects are saved
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  protected <X extends PersistentDomainObject<X>> void save(Collection<X> pdos, boolean modifiedOnly) {
+  public static <X extends PersistentDomainObject<X>> void save(Collection<X> pdos, boolean modifiedOnly) {
     if (pdos != null) {
       Session session = null;
       for (X pDo: pdos) {
@@ -3194,9 +3180,21 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param pdo the pdo to save
    */
-  protected void save(PersistentDomainObject<?> pdo) {
+  public static void save(PersistentDomainObject<?> pdo) {
     if (pdo != null) {
       ((AbstractPersistentObject) pdo.getPersistenceDelegate()).saveImpl();
+    }
+  }
+
+  /**
+   * Freezes a value object.<br>
+   * Method provided to reduce generated code.
+   *
+   * @param freezable the value object to freeze
+   */
+  public static void freeze(Freezable freezable) {
+    if (freezable != null) {
+      freezable.freeze();
     }
   }
 

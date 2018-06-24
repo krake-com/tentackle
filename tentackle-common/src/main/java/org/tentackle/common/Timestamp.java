@@ -34,15 +34,34 @@ import java.util.Calendar;
  * should not be converted, i.e. regarded as <em>fixed</em> and related to some
  * timezone by convention, for example UTC. This is what the UTC-attribute
  * and the tentackle model's [UTC]-option is provided for.
+ * <p>
+ * Furthermore, tentackle timestamps can be frozen, i.e. made immutable.
  *
  * @author harald
  */
-public class Timestamp extends java.sql.Timestamp {
+@SuppressWarnings("deprecation")
+public class Timestamp extends java.sql.Timestamp implements Freezable {
 
   private static final long serialVersionUID = 2745179027874758503L;
 
-  private boolean utc;                  // true if timestamp is always UTC
 
+  /**
+   * Creates a frozen timestamp.
+   *
+   * @param epoch epochal milliseconds since January 1, 1970, 00:00:00 GMT
+   * @param nanos the new fractional seconds component
+   * @return the frozen timestamp
+   */
+  public static Timestamp createFrozen(long epoch, int nanos) {
+    Timestamp timestamp = new Timestamp(epoch);
+    timestamp.setNanos(nanos);
+    timestamp.freeze();
+    return timestamp;
+  }
+
+
+  private boolean utc;                  // true if timestamp is always UTC
+  private boolean frozen;               // true if timestamp cannot be modified anymore
   private transient Calendar cal;       // lazy calendar
 
   /**
@@ -68,6 +87,17 @@ public class Timestamp extends java.sql.Timestamp {
     this(System.currentTimeMillis());
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * Cloned timestamps are always not frozen.
+   */
+  @Override
+  public Timestamp clone() {
+    Timestamp timestamp = (Timestamp) super.clone();
+    timestamp.frozen = false;
+    return timestamp;
+  }
 
   /**
    * Sets the UTC flag.
@@ -104,15 +134,70 @@ public class Timestamp extends java.sql.Timestamp {
   }
 
 
+  @Override
+  public void freeze() {
+    frozen = true;
+  }
+
+
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar.
+   * Overridden to clear the lazy calendar and to check for frozen.
    */
   @Override
   public void setTime(long timestamp) {
+    assertNotfrozen();
     super.setTime(timestamp);
     cal = null;
+  }
+
+  @Override
+  public void setNanos(int n) {
+    assertNotfrozen();
+    super.setNanos(n);
+  }
+
+  @Override
+  public void setYear(int year) {
+    assertNotfrozen();
+    super.setYear(year);
+  }
+
+  @Override
+  public void setMonth(int month) {
+    assertNotfrozen();
+    super.setMonth(month);
+  }
+
+  @Override
+  public void setDate(int date) {
+    assertNotfrozen();
+    super.setDate(date);
+  }
+
+  @Override
+  public void setHours(int hours) {
+    assertNotfrozen();
+    super.setHours(hours);
+  }
+
+  @Override
+  public void setMinutes(int minutes) {
+    assertNotfrozen();
+    super.setMinutes(minutes);
+  }
+
+  @Override
+  public void setSeconds(int seconds) {
+    assertNotfrozen();
+    super.setSeconds(seconds);
+  }
+
+  private void assertNotfrozen() {
+    if (frozen) {
+      throw new TentackleRuntimeException("timestamp is frozen");
+    }
   }
 
 
@@ -141,6 +226,7 @@ public class Timestamp extends java.sql.Timestamp {
       s.writeLong(getTime());
       s.writeInt(getNanos());
     }
+    s.writeBoolean(frozen);
   }
 
 
@@ -171,6 +257,7 @@ public class Timestamp extends java.sql.Timestamp {
       super.setTime(s.readLong());
       setNanos(s.readInt());
     }
+    frozen = s.readBoolean();
   }
 
 }

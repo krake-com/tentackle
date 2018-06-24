@@ -1,4 +1,4 @@
-/**
+/*
  * Tentackle - http://www.tentackle.org
  *
  * This library is free software; you can redistribute it and/or
@@ -37,24 +37,26 @@ import java.io.Serializable;
  * It uses the XXXBinaryStream-methods to read and write the data avoiding
  * the transactional limits of blobs, because blobs usually are only valid within a transaction.
  * {@code Binary} instead provides a blob-like interface while remaining valid outside transactions.
+ * <p>
+ * Furthermore, binaries can be frozen, i.e. made immutable.
  *
  * @param <T> the java class handled by this Binary
  */
 
-public class Binary<T> implements Serializable, Cloneable {
+public class Binary<T> implements Serializable, Cloneable, Freezable {
 
   private static final long serialVersionUID = 5853122168291704220L;
 
   /**
    * initial default buffersize when reading from the database.
    */
-  public static int bufSize = 1024;
+  private static final int INITIAL_SIZE = 1024;
 
 
-  private byte[] data;                   // byte array of arbitrary data or serialized object
-  private int length;                    // length of data/object
-
-  private transient T object;            // cached object
+  private byte[] data;                  // byte array of arbitrary data or serialized object
+  private int length;                   // length of data/object
+  private boolean frozen;               // true if timestamp cannot be modified anymore
+  private transient T object;           // cached object
 
 
   /**
@@ -85,8 +87,16 @@ public class Binary<T> implements Serializable, Cloneable {
   }
 
 
+  @Override
+  public void freeze() {
+    frozen = true;
+  }
+
+
   /**
-   * Clones the binary
+   * {@inheritDoc}
+   * <p>
+   * Cloned binaries are always not frozen.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -103,6 +113,7 @@ public class Binary<T> implements Serializable, Cloneable {
       binary.data = new byte[length];
       System.arraycopy(data, 0, binary.data, 0, length);
     }
+    binary.frozen = false;
     return binary;
   }
 
@@ -116,31 +127,36 @@ public class Binary<T> implements Serializable, Cloneable {
    *
    * @param stream the InputStream (associated to the database) to read from, may be null
    * @param bufSize the initial buffer size, 0 = default size (bufSize)
+   * @param frozen true if binary is frozen
    *
    * @return the new Binary or null if stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
    */
-  public static Binary<?> createBinary(InputStream stream, int bufSize) throws IOException {
+  public static Binary<?> createBinary(InputStream stream, int bufSize, boolean frozen) throws IOException {
     if (stream == null) {
       return null;
     }
-    Binary<?> b = new Binary<>();
-    if (bufSize <= 0) {
-      bufSize = Binary.bufSize;
-    }
-    b.data = new byte[bufSize];
-    int count;
-    while ((count = stream.read(b.data, b.length, bufSize - b.length)) >= 0) {
-      b.length += count;
-      if (b.length == bufSize) {
-        byte[] oldData = b.data;
-        bufSize <<= 1;    // double the buffer size
-        b.data = new byte[bufSize];
-        System.arraycopy(oldData, 0, b.data, 0, b.length);
+    try (InputStream s = stream) {
+      Binary<?> b = new Binary<>();
+      if (bufSize <= 0) {
+        bufSize = Binary.INITIAL_SIZE;
       }
+      b.data = new byte[bufSize];
+      int count;
+      while ((count = s.read(b.data, b.length, bufSize - b.length)) >= 0) {
+        b.length += count;
+        if (b.length == bufSize) {
+          byte[] oldData = b.data;
+          bufSize <<= 1;    // double the buffer size
+          b.data = new byte[bufSize];
+          System.arraycopy(oldData, 0, b.data, 0, b.length);
+        }
+      }
+      if (frozen) {
+        b.freeze();
+      }
+      return b.length == 0 ? null : b;
     }
-    stream.close();
-    return b.length == 0 ? null : b;
   }
 
 
@@ -198,19 +214,12 @@ public class Binary<T> implements Serializable, Cloneable {
       length = 0;
     }
     else  {
-      ObjectOutputStream os = null;
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      try {
-        os = new ObjectOutputStream(bos);
+      try (ObjectOutputStream os = new ObjectOutputStream(bos)) {
         os.writeObject(object);
         os.flush();
         data   = bos.toByteArray();
         length = bos.size();
-      }
-      finally {
-        if (os != null) {
-          os.close();
-        }
       }
     }
   }
@@ -232,6 +241,7 @@ public class Binary<T> implements Serializable, Cloneable {
    * @param data the byte[]-array data.
    */
   public void setData(byte[] data) {
+    assertNotfrozen();
     this.data = data;
     object = null;
     if (data == null) {
@@ -239,6 +249,13 @@ public class Binary<T> implements Serializable, Cloneable {
     }
     else  {
       length = data.length;
+    }
+  }
+
+
+  private void assertNotfrozen() {
+    if (frozen) {
+      throw new TentackleRuntimeException("binary is frozen");
     }
   }
 

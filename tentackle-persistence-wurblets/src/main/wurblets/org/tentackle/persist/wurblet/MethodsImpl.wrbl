@@ -942,11 +942,8 @@ For more options, see {\@link DbModelWurblet}.
         if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
           String name = attr.getName();
           if (attr.getDataType().isMutable()) {
-            String castStr = attr.getDataType().isDateOrTime() ? ("(" + attr.getJavaType() + ") ") : "";
 ]@
-    if (@(name)@ != null) {
-      snapshot.@(name)@Snapshot = @(castStr)@@(name)@.clone();
-    }
+    freeze(@(name)@);
 @[
           }
         }
@@ -969,20 +966,6 @@ For more options, see {\@link DbModelWurblet}.
     // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
 @[
-          if (attr.getDataType().isDateOrTime() && attr.getDataType().isMutable()) {
-]@
-    if (@(name)@ != null) {
-      @(name)@.setTime(snapshot.@(name)@Snapshot.getTime());
-    }
-@[
-          }
-          else if (attr.getDataType() == DataType.BINARY) {
-]@
-    if (@(name)@ != null) {
-      @(name)@.setData(snapshot.@(name)@Snapshot.getData());
-    }
-@[
-          }
           if (isAttracked()) {
             if (isFullTracked()) {
 ]@
