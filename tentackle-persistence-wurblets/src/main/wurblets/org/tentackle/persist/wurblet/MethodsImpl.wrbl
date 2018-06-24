@@ -943,9 +943,7 @@ For more options, see {\@link DbModelWurblet}.
           String name = attr.getName();
           if (attr.getDataType().isMutable()) {
 ]@
-    if (@(name)@ != null) {
-      @(name)@.freeze();
-    }
+    freeze(@(name)@);
 @[
           }
         }

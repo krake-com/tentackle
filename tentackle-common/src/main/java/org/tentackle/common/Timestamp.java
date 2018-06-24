@@ -35,25 +35,24 @@ import java.util.Calendar;
  * timezone by convention, for example UTC. This is what the UTC-attribute
  * and the tentackle model's [UTC]-option is provided for.
  * <p>
- * Furthermore, tentackle timestamps can be freezed, i.e. made immutable. This is used,
- * for example, when the value is fetched from the database and stored in a PDO.
+ * Furthermore, tentackle timestamps can be frozen, i.e. made immutable.
  *
  * @author harald
  */
 @SuppressWarnings("deprecation")
-public class Timestamp extends java.sql.Timestamp {
+public class Timestamp extends java.sql.Timestamp implements Freezable {
 
   private static final long serialVersionUID = 2745179027874758503L;
 
 
   /**
-   * Creates a freezed timestamp.
+   * Creates a frozen timestamp.
    *
    * @param epoch epochal milliseconds since January 1, 1970, 00:00:00 GMT
    * @param nanos the new fractional seconds component
-   * @return the freezed timestamp
+   * @return the frozen timestamp
    */
-  public static Timestamp createFreezed(long epoch, int nanos) {
+  public static Timestamp createFrozen(long epoch, int nanos) {
     Timestamp timestamp = new Timestamp(epoch);
     timestamp.setNanos(nanos);
     timestamp.freeze();
@@ -62,7 +61,7 @@ public class Timestamp extends java.sql.Timestamp {
 
 
   private boolean utc;                  // true if timestamp is always UTC
-  private boolean freezed;              // true if timestamp cannot be modified anymore
+  private boolean frozen;               // true if timestamp cannot be modified anymore
   private transient Calendar cal;       // lazy calendar
 
   /**
@@ -91,12 +90,12 @@ public class Timestamp extends java.sql.Timestamp {
   /**
    * {@inheritDoc}
    * <p>
-   * Cloned timestamps are always not freezed.
+   * Cloned timestamps are always not frozen.
    */
   @Override
   public Timestamp clone() {
     Timestamp timestamp = (Timestamp) super.clone();
-    timestamp.freezed = false;
+    timestamp.frozen = false;
     return timestamp;
   }
 
@@ -135,71 +134,69 @@ public class Timestamp extends java.sql.Timestamp {
   }
 
 
-  /**
-   * Freeze the state.<br>
-   * Any attempt to modify the state results in a {@link TentackleRuntimeException}.
-   */
+  @Override
   public void freeze() {
-    freezed = true;
+    frozen = true;
   }
+
 
   /**
    * {@inheritDoc}
    * <p>
-   * Overridden to clear the lazy calendar and to check for freezed.
+   * Overridden to clear the lazy calendar and to check for frozen.
    */
   @Override
   public void setTime(long timestamp) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setTime(timestamp);
     cal = null;
   }
 
   @Override
   public void setNanos(int n) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setNanos(n);
   }
 
   @Override
   public void setYear(int year) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setYear(year);
   }
 
   @Override
   public void setMonth(int month) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setMonth(month);
   }
 
   @Override
   public void setDate(int date) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setDate(date);
   }
 
   @Override
   public void setHours(int hours) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setHours(hours);
   }
 
   @Override
   public void setMinutes(int minutes) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setMinutes(minutes);
   }
 
   @Override
   public void setSeconds(int seconds) {
-    assertNotFreezed();
+    assertNotfrozen();
     super.setSeconds(seconds);
   }
 
-  private void assertNotFreezed() {
-    if (freezed) {
-      throw new TentackleRuntimeException("timestamp is freezed");
+  private void assertNotfrozen() {
+    if (frozen) {
+      throw new TentackleRuntimeException("timestamp is frozen");
     }
   }
 
@@ -229,7 +226,7 @@ public class Timestamp extends java.sql.Timestamp {
       s.writeLong(getTime());
       s.writeInt(getNanos());
     }
-    s.writeBoolean(freezed);
+    s.writeBoolean(frozen);
   }
 
 
@@ -260,7 +257,7 @@ public class Timestamp extends java.sql.Timestamp {
       super.setTime(s.readLong());
       setNanos(s.readInt());
     }
-    freezed = s.readBoolean();
+    frozen = s.readBoolean();
   }
 
 }

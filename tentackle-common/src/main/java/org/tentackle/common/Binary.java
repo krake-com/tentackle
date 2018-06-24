@@ -38,13 +38,12 @@ import java.io.Serializable;
  * the transactional limits of blobs, because blobs usually are only valid within a transaction.
  * {@code Binary} instead provides a blob-like interface while remaining valid outside transactions.
  * <p>
- * Furthermore, binaries can be freezed, i.e. made immutable. This is used,
- * for example, when the value is fetched from the database and stored in a PDO.
+ * Furthermore, binaries can be frozen, i.e. made immutable.
  *
  * @param <T> the java class handled by this Binary
  */
 
-public class Binary<T> implements Serializable, Cloneable {
+public class Binary<T> implements Serializable, Cloneable, Freezable {
 
   private static final long serialVersionUID = 5853122168291704220L;
 
@@ -54,10 +53,10 @@ public class Binary<T> implements Serializable, Cloneable {
   private static final int INITIAL_SIZE = 1024;
 
 
-  private byte[] data;                   // byte array of arbitrary data or serialized object
-  private int length;                    // length of data/object
-  private boolean freezed;               // true if timestamp cannot be modified anymore
-  private transient T object;            // cached object
+  private byte[] data;                  // byte array of arbitrary data or serialized object
+  private int length;                   // length of data/object
+  private boolean frozen;               // true if timestamp cannot be modified anymore
+  private transient T object;           // cached object
 
 
   /**
@@ -88,18 +87,16 @@ public class Binary<T> implements Serializable, Cloneable {
   }
 
 
-  /**
-   * Freeze the state.<br>
-   * Any attempt to modify the state results in a {@link TentackleRuntimeException}.
-   */
+  @Override
   public void freeze() {
-    freezed = true;
+    frozen = true;
   }
+
 
   /**
    * {@inheritDoc}
    * <p>
-   * Cloned binaries are always not freezed.
+   * Cloned binaries are always not frozen.
    */
   @Override
   @SuppressWarnings("unchecked")
@@ -116,7 +113,7 @@ public class Binary<T> implements Serializable, Cloneable {
       binary.data = new byte[length];
       System.arraycopy(data, 0, binary.data, 0, length);
     }
-    binary.freezed = false;
+    binary.frozen = false;
     return binary;
   }
 
@@ -130,12 +127,12 @@ public class Binary<T> implements Serializable, Cloneable {
    *
    * @param stream the InputStream (associated to the database) to read from, may be null
    * @param bufSize the initial buffer size, 0 = default size (bufSize)
-   * @param freezed true if binary is freezed
+   * @param frozen true if binary is frozen
    *
    * @return the new Binary or null if stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
    */
-  public static Binary<?> createBinary(InputStream stream, int bufSize, boolean freezed) throws IOException {
+  public static Binary<?> createBinary(InputStream stream, int bufSize, boolean frozen) throws IOException {
     if (stream == null) {
       return null;
     }
@@ -155,7 +152,7 @@ public class Binary<T> implements Serializable, Cloneable {
           System.arraycopy(oldData, 0, b.data, 0, b.length);
         }
       }
-      if (freezed) {
+      if (frozen) {
         b.freeze();
       }
       return b.length == 0 ? null : b;
@@ -244,7 +241,7 @@ public class Binary<T> implements Serializable, Cloneable {
    * @param data the byte[]-array data.
    */
   public void setData(byte[] data) {
-    assertNotFreezed();
+    assertNotfrozen();
     this.data = data;
     object = null;
     if (data == null) {
@@ -256,9 +253,9 @@ public class Binary<T> implements Serializable, Cloneable {
   }
 
 
-  private void assertNotFreezed() {
-    if (freezed) {
-      throw new TentackleRuntimeException("binary is freezed");
+  private void assertNotfrozen() {
+    if (frozen) {
+      throw new TentackleRuntimeException("binary is frozen");
     }
   }
 

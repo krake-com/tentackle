@@ -22,6 +22,14 @@ import org.tentackle.log.Logger.Level;
 
 /**
  * Objects implementing this interface may be mutable or immutable.
+ * <p>
+ * If an object is immutable, none of its properties/attributes can be changed
+ * and any attempt to do so will result in an {@link ImmutableException}.
+ * <p>
+ * An immutable object can be made mutable again and vice versa. The (im)mutable property
+ * applies to all components as well (provided they implement {@link Immutable}).
+ * <p>
+ * Notice the semantic differences between {@link Immutable} and {@link org.tentackle.common.Freezable}.
  *
  * @author harald
  */

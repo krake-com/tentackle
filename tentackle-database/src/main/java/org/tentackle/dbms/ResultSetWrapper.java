@@ -1382,7 +1382,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mindate is translated back to null
         return null;
       }
-      return Date.createFreezed(date.getTime());
+      return Date.createFrozen(date.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -1516,7 +1516,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mintimestamp is translated back to null
         return null;
       }
-      return Timestamp.createFreezed(ts.getTime(), ts.getNanos());
+      return Timestamp.createFrozen(ts.getTime(), ts.getNanos());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -1644,7 +1644,7 @@ public class ResultSetWrapper implements AutoCloseable {
       // no minTime (makes no sense, see PreparedStatementWrapper)
       java.sql.Time time = timezone == null ?
               resources.rs.getTime(name) : resources.rs.getTime(name, timezone);
-      return time == null ? null : Time.createFreezed(time.getTime());
+      return time == null ? null : Time.createFrozen(time.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2160,7 +2160,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mindate is translated back to null
         return null;
       }
-      return Date.createFreezed(date.getTime());
+      return Date.createFrozen(date.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2285,7 +2285,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mindate is translated back to null
         return null;
       }
-      return Timestamp.createFreezed(ts.getTime(), ts.getNanos());
+      return Timestamp.createFrozen(ts.getTime(), ts.getNanos());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2405,7 +2405,7 @@ public class ResultSetWrapper implements AutoCloseable {
       // no mapNull possible
       java.sql.Time time = timezone == null ?
               resources.rs.getTime(pos + columnOffset) : resources.rs.getTime(pos + columnOffset, timezone);
-      return time == null ? null : Time.createFreezed(time.getTime());
+      return time == null ? null : Time.createFrozen(time.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2874,7 +2874,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mindate is translated back to null
         return null;
       }
-      return Date.createFreezed(date.getTime());
+      return Date.createFrozen(date.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -2992,7 +2992,7 @@ public class ResultSetWrapper implements AutoCloseable {
         // mindate is translated back to null
         return null;
       }
-      return Timestamp.createFreezed(ts.getTime(), ts.getNanos());
+      return Timestamp.createFrozen(ts.getTime(), ts.getNanos());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
@@ -3106,7 +3106,7 @@ public class ResultSetWrapper implements AutoCloseable {
       int pos = nextConfiguredIndex();
       java.sql.Time time = timezone == null ?
               resources.rs.getTime(pos + columnOffset) : resources.rs.getTime(pos + columnOffset, timezone);
-      return time == null ? null : Time.createFreezed(time.getTime());
+      return time == null ? null : Time.createFrozen(time.getTime());
     }
     catch (SQLException e)  {
       throw new PersistenceException(resources.db, e);
