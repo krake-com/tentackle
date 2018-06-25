@@ -352,13 +352,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public T createSnapshot() {
     T snapshot = getPdo().clonePdo();
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
-    // find implementing method (not the create...InSnapshot below!)
-    Class<?> persistentClass = persistentSnapshot.getClass();
     try {
-      Method createAttributesInSnapshotMethod = findSnapshotMethod("createAttributesInSnapshot", persistentClass);
-      Method createComponentsInSnapshotMethod = findSnapshotMethod("createComponentsInSnapshot", persistentClass);
-      createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
-      createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
+      getClassVariables().getCreateAttributesInSnapshotMethod().invoke(this, persistentSnapshot);
+      getClassVariables().getCreateComponentsInSnapshotMethod().invoke(this, persistentSnapshot);
       addSnapshot(snapshot);
       return snapshot;
     }
@@ -406,13 +402,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (snapshot != null) {
       assertValidSnapshot(snapshot);
       PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
-      // find implementing method (not the create...InSnapshot below!)
-      Class<?> persistentClass = persistentSnapshot.getClass();
       try {
-        Method revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", persistentClass);
-        Method revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", persistentClass);
-        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
+        getClassVariables().getRevertAttributesToSnapshotMethod().invoke(this, persistentSnapshot);
+        getClassVariables().getRevertComponentsToSnapshotMethod().invoke(this, persistentSnapshot);
       }
       catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
         throw new PersistenceException(this, "reverting snapshot incorrectly implemented", ex);

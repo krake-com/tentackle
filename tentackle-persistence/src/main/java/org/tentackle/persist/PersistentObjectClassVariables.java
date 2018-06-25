@@ -19,6 +19,7 @@
 
 package org.tentackle.persist;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
@@ -163,6 +164,12 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    */
   private boolean securityEnabled;
   private boolean securityEnabledInitialized;
+
+  // cached snapshot methods (determined only once per persistence class)
+  private Method createAttributesInSnapshotMethod;
+  private Method revertAttributesToSnapshotMethod;
+  private Method createComponentsInSnapshotMethod;
+  private Method revertComponentsToSnapshotMethod;
 
 
 
@@ -466,6 +473,86 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
             object.isPermissionAccepted(SecurityFactory.getInstance().getEditPermission()));
   }
 
+
+  /**
+   * Gets the method createAttributesInSnapshot of the persistence object.
+   *
+   * @return the method
+   * @throws NoSuchMethodException if not found
+   */
+  public Method getCreateAttributesInSnapshotMethod() throws NoSuchMethodException {
+    if (createAttributesInSnapshotMethod == null) {
+      createAttributesInSnapshotMethod = findSnapshotMethod("createAttributesInSnapshot", clazz);
+    }
+    return createAttributesInSnapshotMethod;
+  }
+
+  /**
+   * Gets the method revertAttributesToSnapshot of the persistence object.
+   *
+   * @return the method
+   * @throws NoSuchMethodException if not found
+   */
+  public Method getRevertAttributesToSnapshotMethod() throws NoSuchMethodException {
+    if (revertAttributesToSnapshotMethod == null) {
+      revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", clazz);
+    }
+    return revertAttributesToSnapshotMethod;
+  }
+
+  /**
+   * Gets the method createComponentsInSnapshot of the persistence object.
+   *
+   * @return the method
+   * @throws NoSuchMethodException if not found
+   */
+  public Method getCreateComponentsInSnapshotMethod() throws NoSuchMethodException {
+    if (createComponentsInSnapshotMethod == null) {
+      createComponentsInSnapshotMethod = findSnapshotMethod("createComponentsInSnapshot", clazz);
+    }
+    return createComponentsInSnapshotMethod;
+  }
+
+  /**
+   * Gets the method revertComponentsToSnapshot of the persistence object.
+   *
+   * @return the method
+   * @throws NoSuchMethodException if not found
+   */
+  public Method getRevertComponentsToSnapshotMethod() throws NoSuchMethodException {
+    if (revertComponentsToSnapshotMethod == null) {
+      revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", clazz);
+    }
+    return revertComponentsToSnapshotMethod;
+  }
+
+
+  /**
+   * Finds a snapshot method.<br>
+   * Snapshot methods ({@link AbstractPersistentObject#createAttributesInSnapshot}, {@link AbstractPersistentObject#createComponentsInSnapshot},
+   * {@link AbstractPersistentObject#revertAttributesToSnapshot} and {@link AbstractPersistentObject#revertComponentsToSnapshot}) take the snapshot
+   * object with the correct implementation type and are implemented at some implementation class.
+   * This method finds the most specific snapshot-method along the inheritance hierarchy.
+   *
+   * @param methodName the snapshot method name
+   * @param clazz the implementation class
+   * @return the method
+   * @throws NoSuchMethodException if no such method found
+   */
+  protected Method findSnapshotMethod(String methodName, Class<?> clazz) throws NoSuchMethodException {
+    while (clazz != null) {
+      try {
+        Method method = clazz.getDeclaredMethod(methodName, clazz);
+        method.setAccessible(true);
+        return method;
+      }
+      catch (NoSuchMethodException ex) {
+        clazz = clazz.getSuperclass();
+      }
+    }
+    throw new NoSuchMethodException(methodName);
+  }
+  
 
   /**
    * {@inheritDoc}

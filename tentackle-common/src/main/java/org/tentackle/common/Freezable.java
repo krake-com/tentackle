@@ -34,4 +34,17 @@ public interface Freezable {
    * Makes this object immutable.
    */
   void freeze();
+
+
+  /**
+   * Freezes a value object null-safe.<br>
+   * Method provided to reduce generated code.
+   *
+   * @param freezable the value object to freeze, may be null
+   */
+  static void freeze(Freezable freezable) {
+    if (freezable != null) {
+      freezable.freeze();
+    }
+  }
 }

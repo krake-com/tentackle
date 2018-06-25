@@ -508,16 +508,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
   }
 
   /**
-   * Updates the attributes in snapshot object.<br>
-   * The snapshot object is assumed to be a clone of this object.
-   *
-   * @param snapshot the snapshot
-   */
-  protected void createAttributesInSnapshot(NumberPoolPersistenceImpl snapshot) {
-    super.createAttributesInSnapshot(snapshot);
-  }
-
-  /**
    * Copies all attributes from a snapshot back to this object.
    *
    * @param snapshot the snapshot object

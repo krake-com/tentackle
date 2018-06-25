@@ -849,9 +849,12 @@ For more options, see {\@link DbModelWurblet}.
 @[
           if (type.equals("Timestamp")) {
 ]@
-    if (@(attr.getName())@ != null) {
-      @(attr.getName())@.setUTC(@(attr.getOptions().isUTC() ? "true" : "false")@);
-    }
+    Timestamp.setUTC(@(attr.getName())@, @(attr.getOptions().isUTC() ? "true" : "false")@);
+@[
+          }
+          if (attr.getDataType().isMutable()) {
+]@
+    Freezable.freeze(@(attr.getName())@);
 @[
           }
 ]@
@@ -927,29 +930,19 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     if (isPdo && generateSnapshot) {
-]@
 
-  /**
-   * Updates the attributes in snapshot object.<br>
-   * The snapshot object is assumed to be a clone of this object.
-   *
-   * \@param snapshot the snapshot
-   */
-  protected void createAttributesInSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
-    super.createAttributesInSnapshot(snapshot);
-@[
+      // createAttributesInSnapshot isnt necessary anymore since 2.2.x
+
+      boolean needRevertAttributes = false;
       for (Attribute attr: getEntity().getAttributes())  {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet())  {
-          String name = attr.getName();
-          if (attr.getDataType().isMutable()) {
-]@
-    freeze(@(name)@);
-@[
-          }
+        if (!attr.getOptions().isDerived() && !attr.getOptions().isSetGet()) {
+          needRevertAttributes = true;
+          break;
         }
       }
+
+      if (needRevertAttributes) {
 ]@
-  }
 
   /**
    * Copies all attributes from a snapshot back to this object.
@@ -959,30 +952,31 @@ For more options, see {\@link DbModelWurblet}.
   protected void revertAttributesToSnapshot(@(mainClass)@@(getEntity().isAbstract() ? "<T,?>" : "")@ snapshot) {
     super.revertAttributesToSnapshot(snapshot);
 @[
-      for (Attribute attr: getEntity().getAttributes()) {
-        if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
-          String name = attr.getName();
+        for (Attribute attr: getEntity().getAttributes()) {
+          if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isSetGet())    {
+            String name = attr.getName();
 ]@
     // @(attr.getOptions().getComment())@
     @(name)@ = snapshot.@(name)@;
 @[
-          if (isAttracked()) {
-            if (isFullTracked()) {
+            if (isAttracked()) {
+              if (isFullTracked()) {
 ]@
     @(name)@Persisted = snapshot.@(name)@Persisted;
 @[
-            }
-            else {
+              }
+              else {
 ]@
     @(name)@Modified = snapshot.@(name)@Modified;
 @[
+              }
             }
           }
         }
-      }
 ]@
   }
 @[
+      }
     }
 
     if (generateSelectByUDK) {
