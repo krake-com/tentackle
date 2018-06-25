@@ -59,6 +59,19 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
     return timestamp;
   }
 
+  /**
+   * Sets the UTC flag null-safe.<br>
+   * Method provided to reduce generated code.
+   *
+   * @param timestamp the timestamp, may be null
+   * @param utc the UTC flag
+   */
+  public static void setUTC(Timestamp timestamp, boolean utc) {
+    if (timestamp != null) {
+      timestamp.setUTC(utc);
+    }
+  }
+
 
   private boolean utc;                  // true if timestamp is always UTC
   private boolean frozen;               // true if timestamp cannot be modified anymore

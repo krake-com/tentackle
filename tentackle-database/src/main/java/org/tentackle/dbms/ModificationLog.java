@@ -26,6 +26,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
@@ -569,9 +570,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public void setWhen(Timestamp when) {
     assertMutable();
     this.when = when;
-    if (when != null) {
-      when.setUTC(false);
-    }
+    Timestamp.setUTC(when, false);
+    Freezable.freeze(when);
   }
 
   /**
@@ -615,9 +615,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public void setProcessed(Timestamp processed) {
     assertMutable();
     this.processed = processed;
-    if (processed != null) {
-      processed.setUTC(false);
-    }
+    Timestamp.setUTC(processed, false);
+    Freezable.freeze(processed);
   }
 
   // </editor-fold>//GEN-END:methods

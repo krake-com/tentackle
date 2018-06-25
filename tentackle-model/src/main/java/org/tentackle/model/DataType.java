@@ -206,7 +206,7 @@ public enum DataType {
    *
    * @param javaType the java type
    * @param primitive true if java type is primitive
-   * @param mutable true if type is a mutable java object
+   * @param mutable true if type is a mutable java object (must implement {@link org.tentackle.common.Freezable}!)
    * @param numeric true if numeric type
    * @param dateOrTime true if data and/or time
    * @param sqlTypes the sql type(s)
@@ -239,9 +239,10 @@ public enum DataType {
 
   /**
    * Returns whether type is a mutable java object.<br>
-   * Mutable objects may change their state.
+   * Mutable objects may change their state and must
+   * implement {@link org.tentackle.common.Freezable}.
    *
-   * @return true if mutable
+   * @return true if mutable and freezable
    */
   public boolean isMutable() {
     return mutable;

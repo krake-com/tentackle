@@ -20,7 +20,6 @@
 package org.tentackle.persist;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.rmi.RemoteException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
-import org.tentackle.common.Freezable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
@@ -293,31 +291,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
 
   /**
-   * Finds a snapshot method.<br>
-   * Snapshot methods ({@link #createAttributesInSnapshot}, {@link #createComponentsInSnapshot},
-   * {@link #revertAttributesToSnapshot} and {@link #revertComponentsToSnapshot}) take the snapshot
-   * object with the correct implementation type and are implemented at some implementation class.
-   * This method finds the most specific snapshot-method along the inheritance hierarchy.
-   *
-   * @param methodName the snapshot method name
-   * @param clazz the implementation class
-   * @return the method
-   * @throws NoSuchMethodException if no such method found
-   */
-  protected Method findSnapshotMethod(String methodName, Class<?> clazz) throws NoSuchMethodException {
-    while(clazz != null) {
-      try {
-        return clazz.getDeclaredMethod(methodName, clazz);
-      }
-      catch (NoSuchMethodException ex) {
-        clazz = clazz.getSuperclass();
-      }
-    }
-    throw new NoSuchMethodException(methodName);
-  }
-
-
-  /**
    * Clones this persistent object.<br>
    * The method is final to prevent applications from overriding it and
    * spoiling the contract with {@link #createSnapshot()}.
@@ -349,27 +322,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     T snapshot = PdoFactory.getInstance().create(getPdoClass(), clone());
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
     persistentSnapshot.setDomainContext(getDomainContext());
-    // find implementing method (not the create...InSnapshot below!)
-    Class<?> persistentClass = persistentSnapshot.getClass();
     try {
-      Method createAttributesInSnapshotMethod = findSnapshotMethod("createAttributesInSnapshot", persistentClass);
-      try {
-        createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-      catch (IllegalAccessException ex) {
-        createAttributesInSnapshotMethod.setAccessible(true);
-        createAttributesInSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-
-      Method createComponentsInSnapshotMethod = findSnapshotMethod("createComponentsInSnapshot", persistentClass);
-      try {
-        createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-      catch (IllegalAccessException ex) {
-        createComponentsInSnapshotMethod.setAccessible(true);
-        createComponentsInSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-
+      getClassVariables().getCreateAttributesInSnapshotMethod().invoke(this, persistentSnapshot);
+      getClassVariables().getCreateComponentsInSnapshotMethod().invoke(this, persistentSnapshot);
       addSnapshot(snapshot);
       snapshot.setCopy(false);
       return snapshot;
@@ -441,26 +396,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    */
   private void applySnapshot(T snapshot) {
     PersistentObject<T> persistentSnapshot = snapshot.getPersistenceDelegate();
-    // find implementing method (not the create...InSnapshot below!)
-    Class<?> persistentClass = persistentSnapshot.getClass();
     try {
-      Method revertAttributesToSnapshotMethod = findSnapshotMethod("revertAttributesToSnapshot", persistentClass);
-      try {
-        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-      catch (IllegalAccessException ex) {
-        revertAttributesToSnapshotMethod.setAccessible(true);
-        revertAttributesToSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-
-      Method revertComponentsToSnapshotMethod = findSnapshotMethod("revertComponentsToSnapshot", persistentClass);
-      try {
-        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
-      }
-      catch (IllegalAccessException ex) {
-        revertComponentsToSnapshotMethod.setAccessible(true);
-        revertComponentsToSnapshotMethod.invoke(this, persistentSnapshot);
-      }
+      getClassVariables().getRevertAttributesToSnapshotMethod().invoke(this, persistentSnapshot);
+      getClassVariables().getRevertComponentsToSnapshotMethod().invoke(this, persistentSnapshot);
     }
     catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
       throw new PersistenceException(this, "reverting snapshot incorrectly implemented", ex);
@@ -3151,18 +3089,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   public static void save(PersistentDomainObject<?> pdo) {
     if (pdo != null) {
       ((AbstractPersistentObject) pdo.getPersistenceDelegate()).saveImpl();
-    }
-  }
-
-  /**
-   * Freezes a value object.<br>
-   * Method provided to reduce generated code.
-   *
-   * @param freezable the value object to freeze
-   */
-  public static void freeze(Freezable freezable) {
-    if (freezable != null) {
-      freezable.freeze();
     }
   }
 

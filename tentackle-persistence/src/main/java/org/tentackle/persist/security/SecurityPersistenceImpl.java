@@ -1057,16 +1057,6 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   }
 
   /**
-   * Updates the attributes in snapshot object.<br>
-   * The snapshot object is assumed to be a clone of this object.
-   *
-   * @param snapshot the snapshot
-   */
-  protected void createAttributesInSnapshot(SecurityPersistenceImpl snapshot) {
-    super.createAttributesInSnapshot(snapshot);
-  }
-
-  /**
    * Copies all attributes from a snapshot back to this object.
    *
    * @param snapshot the snapshot object

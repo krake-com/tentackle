@@ -20,6 +20,7 @@
 
 package org.tentackle.persist.lock;
 
+import org.tentackle.common.Freezable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
@@ -285,9 +286,8 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   public void setLockedSince(Timestamp lockedSince) {
     assertMutable();
     this.lockedSince = lockedSince;
-    if (lockedSince != null) {
-      lockedSince.setUTC(false);
-    }
+    Timestamp.setUTC(lockedSince, false);
+    Freezable.freeze(lockedSince);
   }
 
   /**
@@ -307,9 +307,8 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
   public void setLockExpiry(Timestamp lockExpiry) {
     assertMutable();
     this.lockExpiry = lockExpiry;
-    if (lockExpiry != null) {
-      lockExpiry.setUTC(false);
-    }
+    Timestamp.setUTC(lockExpiry, false);
+    Freezable.freeze(lockExpiry);
   }
 
   // </editor-fold>//GEN-END:methods
