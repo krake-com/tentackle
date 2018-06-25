@@ -160,54 +160,54 @@ public class Timestamp extends java.sql.Timestamp implements Freezable {
    */
   @Override
   public void setTime(long timestamp) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setTime(timestamp);
     cal = null;
   }
 
   @Override
   public void setNanos(int n) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setNanos(n);
   }
 
   @Override
   public void setYear(int year) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setYear(year);
   }
 
   @Override
   public void setMonth(int month) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setMonth(month);
   }
 
   @Override
   public void setDate(int date) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setDate(date);
   }
 
   @Override
   public void setHours(int hours) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setHours(hours);
   }
 
   @Override
   public void setMinutes(int minutes) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setMinutes(minutes);
   }
 
   @Override
   public void setSeconds(int seconds) {
-    assertNotfrozen();
+    assertNotFrozen();
     super.setSeconds(seconds);
   }
 
-  private void assertNotfrozen() {
+  private void assertNotFrozen() {
     if (frozen) {
       throw new TentackleRuntimeException("timestamp is frozen");
     }
