@@ -37,6 +37,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /** generate SQL DEFAULT. */
   public static final String OPTION_DEFAULT = "DEFAULT";
 
+  /** initial value. */
+  public static final String OPTION_INIT = "INIT";
+
   /** this is the object id holding the context. */
   public static final String OPTION_CONTEXT = "CONTEXT";
 
@@ -58,6 +61,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   private List<String> annotations;
   private Object defaultValue;
+  private String initialValue;
   private boolean contextId;
   private boolean domainKey;
   private boolean utc;
@@ -140,6 +144,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         }
         applied = true;
       }
+      else if (uco.startsWith(OPTION_INIT)) {
+        if (on) {
+          setInitialValue(option.substring(OPTION_INIT.length()).trim());
+        }
+        else {
+          setInitialValue(null);
+        }
+        applied = true;
+      }
       else if (uco.equals(OPTION_CONTEXT)) {
         setContextId(on);
         applied = true;
@@ -185,12 +198,21 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     return defaultValue;
   }
 
+  @Override
+  public String getInitialValue() {
+    return initialValue;
+  }
+
   public void setAnnotations(List<String> annotations) {
     this.annotations = annotations;
   }
 
   public void setDefaultValue(Object defaultValue) {
     this.defaultValue = defaultValue;
+  }
+
+  public void setInitialValue(String initialValue) {
+    this.initialValue = initialValue;
   }
 
   @Override
