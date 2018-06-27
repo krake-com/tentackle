@@ -23,6 +23,19 @@ import java.util.Map;
 
 /**
  * Counter per name.
+ * <p>
+ * Example:
+ * <pre>
+ *   private static final NamedCounter INSTANCE_COUNTER = new NamedCounter();   // thread instance counter
+ *
+ *   private static final String THREAD_NAME = "BlahThread";
+ *
+ *   ...
+ *
+ *      String name = THREAD_NAME + something;
+ *      return name + " (" + INSTANCE_COUNTER.next(name) + ")";
+ *
+ * </pre>
  *
  * @author harald
  */
