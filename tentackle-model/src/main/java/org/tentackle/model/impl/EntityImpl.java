@@ -1420,7 +1420,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
           buf.append(backend.sqlCreateColumn(
                   columnName, comment, sp.getSqlType(), size, scale,
                   attribute.isNullable(), defaultValue,
-                  attribute.getName().equals(Constants.AN_ID),
+                  attribute.getName().equals(Constants.AN_ID) && !getOptions().isNoPrimaryKey(),
                   attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
           multiColumnIndex++;
         }
