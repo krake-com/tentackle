@@ -56,9 +56,18 @@ For more options, see {\@link DbModelWurblet}.
   \@Persistent(@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
         }
+
+        if (attr.getOptions().getInitialValue() != null) {
+]@
+  @(protection)@ @(attr.getJavaType())@ @(attr.getName())@ = @(attr.getOptions().getInitialValue())@;
+@[
+
+        }
+        else {
 ]@
   @(protection)@ @(attr.getJavaType())@ @(attr.getName())@;
 @[
+        }
         if (isAttracked()) {
           if (isFullTracked()) {
 ]@

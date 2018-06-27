@@ -49,6 +49,13 @@ public interface AttributeOptions extends CommonOptions {
   Object getDefaultValue();
 
   /**
+   * Gets the initial value if [INIT value] given.<br>
+   *
+   * @return the string to initialize the declaration with
+   */
+  String getInitialValue();
+
+  /**
    * Returns whether this is the object id holding the context.
    *
    * @return true if context id

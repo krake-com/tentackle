@@ -108,6 +108,10 @@ public class AttributeOptionsPrinter {
       buf.append(',');
     }
 
+    if (options.getInitialValue() != null) {
+      buf.append(AttributeOptionsImpl.OPTION_INIT).append(' ').append(options.getInitialValue()).append(',');
+    }
+
     for (String anno: options.getAnnotations()) {
       if (configuration.isOptionAnnotation(anno)) {
         buf.append(new AnnotationPrinter(anno).print()).append(',');
