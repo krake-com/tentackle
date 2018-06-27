@@ -259,20 +259,40 @@ For more options, see {\@link DbModelWurblet}.
   \@Override
   public void getFields(ResultSetWrapper rs) {
     super.getFields(rs);
-    if (rs.configureSection(CLASSVARIABLES)) {
 @[
+      boolean needIfClause = false;
       for (Attribute attr: getEntity().getMappedAttributes())  {
         if (!attr.getOptions().isDerived())  {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getName().toUpperCase() + sp.getPostfix();
-]@
-      rs.configureColumn(CN_@(name)@);
-@[
+            needIfClause = true;
+            break;
           }
         }
       }
+      if (needIfClause) {
+]@
+    if (rs.configureSection(CLASSVARIABLES)) {
+@[
+        for (Attribute attr: getEntity().getMappedAttributes())  {
+          if (!attr.getOptions().isDerived())  {
+            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+              String name = attr.getName().toUpperCase() + sp.getPostfix();
+]@
+      rs.configureColumn(CN_@(name)@);
+@[
+            }
+          }
+        }
 ]@
     }
+@[
+      }
+      else {
+]@
+    rs.configureSection(CLASSVARIABLES);
+@[
+      }
+]@
     if (rs.getRow() <= 0) {
       throw new PersistenceException(getSession(), "no valid row");
     }
