@@ -440,20 +440,9 @@
       </plugin>
 
       <plugin>
-        <groupId>external.atlassian.jgitflow</groupId>
-        <artifactId>jgitflow-maven-plugin</artifactId>
-        <version>1.0-m5.1</version>
-        <configuration>
-          <enableSshAgent>true</enableSshAgent>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <pushFeatures>true</pushFeatures>
-          <pushReleases>true</pushReleases>
-          <pushHotfixes>true</pushHotfixes>
-          <noDeploy>true</noDeploy>
-          <flowInitContext>
-            <!-- defaults are ok -->
-          </flowInitContext>
-        </configuration>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.3</version>
       </plugin>
     </plugins>
 
@@ -489,7 +478,7 @@
           <!-- don't complain about wurblet args -->
           <additionalparam>-Xdoclint:none</additionalparam>
           <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
-          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
       </plugin>
       <plugin>
@@ -497,7 +486,7 @@
         <artifactId>maven-jxr-plugin</artifactId>
         <version>2.5</version>
         <configuration>
-          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
       </plugin>
       <plugin>
@@ -563,7 +552,7 @@
                 </goals>
                 <configuration>
                   <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
-                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
                   <quiet>true</quiet>
                   <archive>
                     <manifest>
