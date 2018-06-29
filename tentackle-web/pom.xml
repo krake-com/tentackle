@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1.5-SNAPSHOT</version>
+    <version>2.1.5</version>
   </parent>
 
   <artifactId>tentackle-web</artifactId>
-  <version>2.1.5-SNAPSHOT</version>
+  <version>2.1.5</version>
   <packaging>jar</packaging>
   <name>Tentackle Web</name>
   <description>Tentackle-2 Web Layer</description>
