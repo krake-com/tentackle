@@ -342,93 +342,96 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   @Override
-  protected void validate() throws MojoExecutionException {
+  protected boolean validate() throws MojoExecutionException {
     mavenProject = mvnProject;    // fix for mavenProject is null, for whatever reason???
-    super.validate();
-    if (modelDir == null) {
-      throw new MojoExecutionException("missing tentackle.modelDir");
-    }
-    if (modelDir.getPath().contains("${")) {
-      throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
-    }
-    if (sqlDir == null) {
-      throw new MojoExecutionException("missing tentackle.sqlDir");
-    }
-    if (sqlDir.getPath().contains("${")) {
-      throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
-    }
-
-    findResourceDirs();
-    backendInfos = new HashMap<>();
-    connectableBackendInfos = new HashMap<>();
-
-    if (backendNames != null) {
-      if ("all".equalsIgnoreCase(backendNames)) {
-        for (Backend backend: BackendFactory.getInstance().getAllBackends()) {
-          backendInfos.put(backend.getName(), new BackendInfo(backend));
-        }
+    if (super.validate()) {
+      if (modelDir == null) {
+        throw new MojoExecutionException("missing tentackle.modelDir");
       }
-      else  {
-        for (String backendName: backendNames.split(",")) {
-          BackendInfo backendInfo = new BackendInfo(backendName.trim());
-          backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
-        }
+      if (modelDir.getPath().contains("${")) {
+        throw new MojoExecutionException("undefined variable(s) in modelDir: " + modelDir.getPath());
       }
-    }
+      if (sqlDir == null) {
+        throw new MojoExecutionException("missing tentackle.sqlDir");
+      }
+      if (sqlDir.getPath().contains("${")) {
+        throw new MojoExecutionException("undefined variable(s) in sqlDir: " + sqlDir.getPath());
+      }
 
-    if (backendProperties != null) {
-      // determine URL from property file(s)
-      for (FileSet fileset: backendProperties) {
-        FileSetManager fileSetManager = new FileSetManager(getLog(), verbosityLevel.isDebug());
-        List<String> propertiesDirNames;
-        if (fileset.getDirectory() == null) {
-          propertiesDirNames = resourceDirs;  // try all resource directories
-          if (propertiesDirNames == null || propertiesDirNames.isEmpty()) {
-            throw new MojoExecutionException(
-                    "no <directory> given in <fileset> of <backendProperties> and no resource directories found");
+      findResourceDirs();
+      backendInfos = new HashMap<>();
+      connectableBackendInfos = new HashMap<>();
+
+      if (backendNames != null) {
+        if ("all".equalsIgnoreCase(backendNames)) {
+          for (Backend backend : BackendFactory.getInstance().getAllBackends()) {
+            backendInfos.put(backend.getName(), new BackendInfo(backend));
           }
         }
-        else  {
-          propertiesDirNames = new ArrayList<>();
-          propertiesDirNames.add(fileset.getDirectory());   // use given directory
+        else {
+          for (String backendName : backendNames.split(",")) {
+            BackendInfo backendInfo = new BackendInfo(backendName.trim());
+            backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
+          }
         }
-        for (String propertiesDirName: propertiesDirNames) {
-          fileset.setDirectory(propertiesDirName);
-          String[] fileNames = fileSetManager.getIncludedFiles(fileset);
-          if (fileNames.length > 0) {
-            for (String filename : fileNames) {
-              File propertiesFile = new File(new File(propertiesDirName), filename);
-              Properties props = new Properties();
-              try (InputStream is = new FileInputStream(propertiesFile)) {
-                getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
-                props.load(is);
-                BackendInfo backendInfo = new BackendInfo(props);
-                // props infos will replace those loaded by name only
-                backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
-                connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
-              }
-              catch (FileNotFoundException nfe) {
-                throw new MojoExecutionException("db properties file " + propertiesFile.getAbsolutePath() + " not found", nfe);
-              }
-              catch (IOException iox) {
-                throw new MojoExecutionException("reading " + propertiesFile.getPath() + " failed", iox);
+      }
+
+      if (backendProperties != null) {
+        // determine URL from property file(s)
+        for (FileSet fileset : backendProperties) {
+          FileSetManager fileSetManager = new FileSetManager(getLog(), verbosityLevel.isDebug());
+          List<String> propertiesDirNames;
+          if (fileset.getDirectory() == null) {
+            propertiesDirNames = resourceDirs;  // try all resource directories
+            if (propertiesDirNames == null || propertiesDirNames.isEmpty()) {
+              throw new MojoExecutionException(
+              "no <directory> given in <fileset> of <backendProperties> and no resource directories found");
+            }
+          }
+          else {
+            propertiesDirNames = new ArrayList<>();
+            propertiesDirNames.add(fileset.getDirectory());   // use given directory
+          }
+          for (String propertiesDirName : propertiesDirNames) {
+            fileset.setDirectory(propertiesDirName);
+            String[] fileNames = fileSetManager.getIncludedFiles(fileset);
+            if (fileNames.length > 0) {
+              for (String filename : fileNames) {
+                File propertiesFile = new File(new File(propertiesDirName), filename);
+                Properties props = new Properties();
+                try (InputStream is = new FileInputStream(propertiesFile)) {
+                  getLog().debug("loading property file " + propertiesFile.getAbsolutePath());
+                  props.load(is);
+                  BackendInfo backendInfo = new BackendInfo(props);
+                  // props infos will replace those loaded by name only
+                  backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
+                  connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
+                }
+                catch (FileNotFoundException nfe) {
+                  throw new MojoExecutionException("db properties file " + propertiesFile.getAbsolutePath() + " not found", nfe);
+                }
+                catch (IOException iox) {
+                  throw new MojoExecutionException("reading " + propertiesFile.getPath() + " failed", iox);
+                }
               }
             }
           }
         }
       }
-    }
 
-    if (backends != null && !backends.isEmpty()) {
-      for (BackendInfoParameter backendParameter: backends) {
-        BackendInfo backendInfo = backendParameter.createBackendInfo(getLog());
-        backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
-        if (backendInfo.isConnectable()) {
-          connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
-          processBackend(backendParameter, backendInfo);
+      if (backends != null && !backends.isEmpty()) {
+        for (BackendInfoParameter backendParameter : backends) {
+          BackendInfo backendInfo = backendParameter.createBackendInfo(getLog());
+          backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
+          if (backendInfo.isConnectable()) {
+            connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
+            processBackend(backendParameter, backendInfo);
+          }
         }
       }
+      return true;
     }
+    return false;
   }
 
   /**
@@ -445,74 +448,73 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
 
-
-
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
     // validate configuration
-    validate();
+    if (validate()) {
 
-    totalErrors = 0;
+      totalErrors = 0;
 
-    for (BackendInfo backendInfo: getBackendInfosToExecute()) {
-      getLog().debug("processing " + backendInfo);
-      openResources(backendInfo);
-      try {
-        // process files
-        if (filesets != null && !filesets.isEmpty()) {
-          // explicit filesets given instead of model dir
-          for (FileSet fileSet : filesets) {
-            processFileSet(backendInfo, fileSet);
-          }
-        }
-        else {
-          // all from model dir
-          String[] files = modelDir.isDirectory() ? modelDir.list() : null;
-          if (files != null && files.length > 0) {
-            final FileSet fs = new FileSet();
-            fs.setDirectory(modelDir.getPath());
-            processFileSet(backendInfo, fs);
+      for (BackendInfo backendInfo : getBackendInfosToExecute()) {
+        getLog().debug("processing " + backendInfo);
+        openResources(backendInfo);
+        try {
+          // process files
+          if (filesets != null && !filesets.isEmpty()) {
+            // explicit filesets given instead of model dir
+            for (FileSet fileSet : filesets) {
+              processFileSet(backendInfo, fileSet);
+            }
           }
           else {
-            getLog().warn("no or empty modelDir " + modelDir.getAbsolutePath());
+            // all from model dir
+            String[] files = modelDir.isDirectory() ? modelDir.list() : null;
+            if (files != null && files.length > 0) {
+              final FileSet fs = new FileSet();
+              fs.setDirectory(modelDir.getPath());
+              processFileSet(backendInfo, fs);
+            }
+            else {
+              getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+            }
           }
-        }
 
-        if (totalErrors > 0) {
-          throw new MojoFailureException(totalErrors + " model errors");
+          if (totalErrors > 0) {
+            throw new MojoFailureException(totalErrors + " model errors");
+          }
+        }
+        finally {
+          closeResources(backendInfo);
         }
       }
-      finally {
-        closeResources(backendInfo);
-      }
-    }
 
-    if (dumpDir != null) {
-      dumpDir.mkdirs();
-      try {
-        ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
-        List<String> optionAnnotations = new ArrayList<>();
-        if (dumpAnnotationsAsOptions != null) {
-          StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
-          while (stok.hasMoreTokens()) {
-            optionAnnotations.add(stok.nextToken());
+      if (dumpDir != null) {
+        dumpDir.mkdirs();
+        try {
+          ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
+          List<String> optionAnnotations = new ArrayList<>();
+          if (dumpAnnotationsAsOptions != null) {
+            StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
+            while (stok.hasMoreTokens()) {
+              optionAnnotations.add(stok.nextToken());
+            }
+          }
+          PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
+          optionAnnotations, dumpColumnGap);
+          for (Entity entity : Model.getInstance().getAllEntitites()) {
+            File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+            try (BufferedWriter writer =
+                 new BufferedWriter(
+                 new OutputStreamWriter(
+                 new FileOutputStream(dumpFile), Settings.encodingCharset))) {
+              writer.write(new EntityPrinter(entity, configuration).print());
+            }
           }
         }
-        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
-                                                                  optionAnnotations, dumpColumnGap);
-        for (Entity entity: Model.getInstance().getAllEntitites()) {
-          File dumpFile = new File(dumpDir, entity.getName() + ".txt");
-          try (BufferedWriter writer =
-                  new BufferedWriter(
-                    new OutputStreamWriter(
-                      new FileOutputStream(dumpFile), Settings.encodingCharset))) {
-            writer.write(new EntityPrinter(entity, configuration).print());
-          }
+        catch (IOException | ModelException ex) {
+          throw new MojoFailureException("creating model dump failed", ex);
         }
-      }
-      catch (IOException | ModelException ex) {
-        throw new MojoFailureException("creating model dump failed", ex);
       }
     }
   }

@@ -218,68 +218,72 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     prepareExecute();
 
     // validate configuration
-    validate();
+    if (validate()) {
 
-    // create any missing directories
-    createMissingDirs();
+      // create any missing directories
+      createMissingDirs();
 
-    totalErrors = 0;
-    totalCompileErrors = 0;
-    compileErrorLog = new StringBuilder();
+      totalErrors = 0;
+      totalCompileErrors = 0;
+      compileErrorLog = new StringBuilder();
 
-    // wurbel
-    if (filesets != null && !filesets.isEmpty()) {
-      // explicit filesets given instead of source dir
-      for (FileSet fileSet: filesets) {
-        processFileSet(fileSet);
-      }
-    }
-    else {
-      // all from source dir with default java-extension
-      if (sourceDir == null) {
-        getLog().warn("no sourceDir");
+      // wurbel
+      if (filesets != null && !filesets.isEmpty()) {
+        // explicit filesets given instead of source dir
+        for (FileSet fileSet : filesets) {
+          processFileSet(fileSet);
+        }
       }
       else {
-        String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
-        if (files != null && files.length > 0) {
-          final FileSet fs = new FileSet();
-          fs.setDirectory(sourceDir.getPath());
-          fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
-          processFileSet(fs);
+        // all from source dir with default java-extension
+        if (sourceDir == null) {
+          getLog().warn("no sourceDir configured");
         }
         else {
-          getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+          String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+          if (files != null && files.length > 0) {
+            final FileSet fs = new FileSet();
+            fs.setDirectory(sourceDir.getPath());
+            fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
+            processFileSet(fs);
+          }
+          else {
+            getLog().warn((sourceDir.exists() ? "empty sourceDir " : "no sourceDir ") + sourceDir.getAbsolutePath());
+          }
         }
       }
-    }
 
-    finishExecute();
+      finishExecute();
 
-    if (processors != null) {
-      for (AbstractTentackleProcessor processor: processors) {
-        try {
-          processor.cleanup();
-        }
-        catch (IOException ex) {
-          getLog().error("annotation processor cleanup failed", ex);
-          totalErrors++;
+      if (processors != null) {
+        for (AbstractTentackleProcessor processor : processors) {
+          try {
+            processor.cleanup();
+          }
+          catch (IOException ex) {
+            getLog().error("annotation processor cleanup failed", ex);
+            totalErrors++;
+          }
         }
       }
-    }
 
-    if (totalErrors > 0) {
-      throw new MojoFailureException(totalErrors + " wurbel errors");
+      if (totalErrors > 0) {
+        throw new MojoFailureException(totalErrors + " wurbel errors");
+      }
     }
   }
 
 
 
   @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-    if (sourceDir == null) {
-      throw new MojoExecutionException("missing tentackle.sourceDir");
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      if (sourceDir == null) {
+        throw new MojoExecutionException("missing tentackle.sourceDir");
+      }
+      return true;
     }
+    return false;
   }
 
 

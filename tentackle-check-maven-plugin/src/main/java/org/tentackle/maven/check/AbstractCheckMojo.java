@@ -85,7 +85,7 @@ public class AbstractCheckMojo extends AbstractTentackleAnnotationProcessingMojo
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     if (skipTests) {
-      getLog().info("Tests are skipped.");
+      getLog().info("tests are skipped");
     }
     else {
       super.execute();

@@ -95,20 +95,23 @@ public abstract class AbstractAnalyzeAnnotationProcessingMojo extends AbstractTe
 
 
   @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-    if (analyzeDir == null) {
-      throw new MojoExecutionException("missing tentackle.analyzeDir");
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      if (analyzeDir == null) {
+        throw new MojoExecutionException("missing tentackle.analyzeDir");
+      }
+      if (analyzeDir.getPath().contains("${")) {
+        throw new MojoExecutionException("undefined variable(s) in analyzeDir: " + analyzeDir.getPath());
+      }
+      if (servicesDir == null) {
+        throw new MojoExecutionException("missing tentackle.serviceDir");
+      }
+      if (servicesDir.getPath().contains("${")) {
+        throw new MojoExecutionException("undefined variable(s) in servicesDir: " + servicesDir.getPath());
+      }
+      return true;
     }
-    if (analyzeDir.getPath().contains("${")) {
-      throw new MojoExecutionException("undefined variable(s) in analyzeDir: " + analyzeDir.getPath());
-    }
-    if (servicesDir == null) {
-      throw new MojoExecutionException("missing tentackle.serviceDir");
-    }
-    if (servicesDir.getPath().contains("${")) {
-      throw new MojoExecutionException("undefined variable(s) in servicesDir: " + servicesDir.getPath());
-    }
+    return false;
   }
 
 

@@ -175,9 +175,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   }
 
   @Override
-  protected void validate() throws MojoExecutionException {
+  protected boolean validate() throws MojoExecutionException {
     migrationHints = new HashMap<>();
-    super.validate();
+    return super.validate();
   }
 
   @Override

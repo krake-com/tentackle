@@ -65,6 +65,13 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   protected String verbosity;
 
   /**
+   * Skips processing.<br>
+   * Defaults to true if packaging is "pom".
+   */
+  @Parameter
+  private Boolean skip;
+
+  /**
    * The encode used to read and write files.
    */
   @Parameter(defaultValue = "${project.build.sourceEncoding}")
@@ -200,9 +207,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Checks the configuration.<br>
    *
+   * @return true if continue with execution, false to skip
    * @throws MojoExecutionException if validation failed
    */
-  protected void validate() throws MojoExecutionException {
+  protected boolean validate() throws MojoExecutionException {
     determineEncoding();
     determineVerbosity();
     if (mavenProject == null) {
@@ -211,6 +219,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     if (mavenProject.getBasedir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
     }
+    if (skip == null && "pom".equals(mavenProject.getPackaging())) {
+      skip = true;    // nothing to do here
+    }
+    if (Boolean.TRUE.equals(skip)) {
+      getLog().info("skipped");
+      return false;
+    }
+    return true;
   }
 
 }

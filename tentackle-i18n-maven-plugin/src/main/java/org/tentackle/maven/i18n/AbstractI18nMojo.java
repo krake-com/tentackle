@@ -120,9 +120,12 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   }
 
   @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-    findResourceDirs();
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      findResourceDirs();
+      return true;
+    }
+    return false;
   }
 
 
@@ -133,73 +136,74 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
     StoredBundleControl.enabled = false;
 
     // validate configuration
-    validate();
+    if (validate()) {
 
-    // grab the extra locale suffixes
-    localeSuffixes = new ArrayList<>();
-    if (locales != null) {
-      StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
-      while (stok.hasMoreTokens()) {
-        String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
-        if (!localeName.isEmpty()) {
-          localeSuffixes.add(localeName);
-        }
-      }
-    }
-
-    // open connection to backend
-    Properties props = new Properties();
-    props.setProperty(Constants.BACKEND_URL, url);
-    props.setProperty(Constants.BACKEND_USER, user);
-    props.setProperty(Constants.BACKEND_PASSWORD, password);
-    SessionInfo sessionInfo = Pdo.createSessionInfo(props);
-
-    try (Session session = Pdo.createSession(sessionInfo)) {
-      context = Pdo.createDomainContext(session);
-
-      ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
-      pdoTracker.setSession(session);
-
-      ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
-
-      // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
-      for (BundleSupport bundleSupport: BundleSupport.getBundles(classLoader)) {
-        String bundleName = bundleSupport.getBundleName();
-        String suffix = null;
-        String resourceName = bundleName;
-        Iterator<String> iter = localeSuffixes.iterator();
-        for (;;) {
-          if (suffix != null) {
-            resourceName = bundleName + "_" + suffix;
-          }
-          resourceName += Constants.PROPS_EXTENSION;
-          if (verbosityLevel.isDebug()) {
-            getLog().debug("processing " + resourceName);
-          }
-          processBundle(classLoader, bundleName, suffix, resourceName);
-          if (iter.hasNext()) {
-            suffix = iter.next();
-          }
-          else {
-            break;
+      // grab the extra locale suffixes
+      localeSuffixes = new ArrayList<>();
+      if (locales != null) {
+        StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
+        while (stok.hasMoreTokens()) {
+          String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
+          if (!localeName.isEmpty()) {
+            localeSuffixes.add(localeName);
           }
         }
       }
-    }
-    catch (MalformedURLException mx) {
-      getLog().error("cannot create project classloader", mx);
-    }
-    catch (PersistenceException rex) {
-      throw new MojoExecutionException("processing the bundles failed", rex);
-    }
 
-    getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
-                  warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
-                  errors + " error" + (errors == 1 ? "" : "s") + ", " +
-                  updates + " update" + (updates == 1 ? "" : "s"));
+      // open connection to backend
+      Properties props = new Properties();
+      props.setProperty(Constants.BACKEND_URL, url);
+      props.setProperty(Constants.BACKEND_USER, user);
+      props.setProperty(Constants.BACKEND_PASSWORD, password);
+      SessionInfo sessionInfo = Pdo.createSessionInfo(props);
 
-    if (errors > 0) {
-      throw new MojoExecutionException("pushing to the database failed");
+      try (Session session = Pdo.createSession(sessionInfo)) {
+        context = Pdo.createDomainContext(session);
+
+        ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
+        pdoTracker.setSession(session);
+
+        ClassLoader classLoader = new ProjectClassLoader((URLClassLoader) getClass().getClassLoader(), classpathElements);
+
+        // for all annotations like @Bundle or @FxControllerService (need a META-INF/services file!)
+        for (BundleSupport bundleSupport : BundleSupport.getBundles(classLoader)) {
+          String bundleName = bundleSupport.getBundleName();
+          String suffix = null;
+          String resourceName = bundleName;
+          Iterator<String> iter = localeSuffixes.iterator();
+          for (; ; ) {
+            if (suffix != null) {
+              resourceName = bundleName + "_" + suffix;
+            }
+            resourceName += Constants.PROPS_EXTENSION;
+            if (verbosityLevel.isDebug()) {
+              getLog().debug("processing " + resourceName);
+            }
+            processBundle(classLoader, bundleName, suffix, resourceName);
+            if (iter.hasNext()) {
+              suffix = iter.next();
+            }
+            else {
+              break;
+            }
+          }
+        }
+      }
+      catch (MalformedURLException mx) {
+        getLog().error("cannot create project classloader", mx);
+      }
+      catch (PersistenceException rex) {
+        throw new MojoExecutionException("processing the bundles failed", rex);
+      }
+
+      getLog().info(bundleCount + " bundle" + (bundleCount == 1 ? "" : "s") + " processed, " +
+                    warnings + " warning" + (warnings == 1 ? "" : "s") + ", " +
+                    errors + " error" + (errors == 1 ? "" : "s") + ", " +
+                    updates + " update" + (updates == 1 ? "" : "s"));
+
+      if (errors > 0) {
+        throw new MojoExecutionException("pushing to the database failed");
+      }
     }
   }
 
