@@ -17,17 +17,13 @@
  */
 
 
-package org.tentackle.validate.validationtest;
+package org.tentackle.validate;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.validate.DefaultSeverity;
-import org.tentackle.validate.Validation;
-import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationSeverity;
 import org.tentackle.validate.scope.AllScope;
 
 /**

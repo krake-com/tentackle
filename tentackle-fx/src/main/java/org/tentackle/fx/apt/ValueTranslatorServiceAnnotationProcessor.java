@@ -35,7 +35,7 @@ import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.fx.FxComponent;
 
-import static javax.lang.model.SourceVersion.RELEASE_9;
+import static javax.lang.model.SourceVersion.RELEASE_10;
 
 /**
  * Annotation processor for the {@code @ValueTranslatorService} annotation.<br>
@@ -49,7 +49,7 @@ import static javax.lang.model.SourceVersion.RELEASE_9;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.ValueTranslatorService")
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 @AnnotationProcessor
 public class ValueTranslatorServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

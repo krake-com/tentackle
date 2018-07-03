@@ -32,6 +32,7 @@ module org.tentackle.persistence {
   requires java.rmi;
   requires java.sql;
   requires java.naming;
+  requires java.prefs;
 
   provides org.tentackle.common.ModuleHook with org.tentackle.persist.service.Hook;
 }

@@ -17,14 +17,9 @@
  */
 
 
-package org.tentackle.validate.validationtest;
+package org.tentackle.validate;
 
 import java.util.List;
-import org.tentackle.validate.ValidationContext;
-import org.tentackle.validate.ValidationResult;
-import org.tentackle.validate.ValidationRuntimeException;
-import org.tentackle.validate.ValidationScope;
-import org.tentackle.validate.ValidationSeverity;
 import org.tentackle.validate.validator.AbstractObjectValidator;
 
 /**

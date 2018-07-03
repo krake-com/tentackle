@@ -25,7 +25,6 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.InteractiveScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
-import org.tentackle.validate.validationtest.TestObject;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;

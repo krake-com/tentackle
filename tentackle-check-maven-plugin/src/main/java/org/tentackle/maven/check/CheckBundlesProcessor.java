@@ -36,7 +36,7 @@ import org.tentackle.buildsupport.AbstractTentackleProcessor;
  * 
  * @author harald
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_9)
+@SupportedSourceVersion(SourceVersion.RELEASE_10)
 @SupportedOptions("verbosity")
 @SupportedAnnotationTypes("*")
 public class CheckBundlesProcessor extends AbstractTentackleProcessor {

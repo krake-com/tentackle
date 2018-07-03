@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.validate.validationtest;
+package org.tentackle.validate;
 
 import org.tentackle.common.DMoney;
 import org.tentackle.validate.validator.Greater;

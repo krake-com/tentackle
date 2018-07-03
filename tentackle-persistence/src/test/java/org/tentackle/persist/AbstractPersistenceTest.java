@@ -167,7 +167,14 @@ public abstract class AbstractPersistenceTest {
     // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
-    String cmd = javaHome + "/bin/" + "java -classpath " + classPath + " " + testClass.getName();
+    String modulePath = System.getProperty("jdk.module.path");
+    if (modulePath != null) {
+      if (!classPath.endsWith(":")) {
+        classPath += ":";
+      }
+      classPath += modulePath;    // just append the module path to the classpath
+    }
+    String cmd = javaHome + "/bin/java -cp " + classPath + " " + testClass.getName();
     Reporter.log("running: " + cmd + "<br>");
     return Runtime.getRuntime().exec(cmd);
   }

@@ -284,8 +284,15 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
     // add node and key in other jvm
     String javaHome = System.getProperty("java.home");
     String classPath = System.getProperty("java.class.path");
+    String modulePath = System.getProperty("jdk.module.path");
+    if (modulePath != null) {
+      if (!classPath.endsWith(":")) {
+        classPath += ":";
+      }
+      classPath += modulePath;    // just append the module path to the classpath
+    }
     StringBuilder cmd = new StringBuilder();
-    cmd.append(javaHome).append("/bin/java -classpath ")
+    cmd.append(javaHome).append("/bin/java -cp ")
        .append(classPath).append(' ').append(testClass.getName());
     if (args != null) {
       for (String arg: args) {

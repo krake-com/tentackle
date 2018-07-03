@@ -178,7 +178,7 @@ public class RubyScript extends AbstractScript {
 
 
 
-
+  @SuppressWarnings("unchecked")
   private Object executeImpl(CompiledScript script, ScriptVariable... variables) {
     if (variables != null) {
       for (ScriptVariable variable: variables) {

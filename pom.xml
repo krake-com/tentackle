@@ -12,10 +12,10 @@
 
   <name>Tentackle Parent</name>
   <description>Parent pom.xml for the Tentackle modules.</description>
-  <url>http://www.tentackle.org/</url>
+  <url>https://tentackle.org/</url>
   <organization>
     <name>Krake Softwaretechnik</name>
-    <url>http://www.krake.de/</url>
+    <url>https://krake.de/</url>
   </organization>
 
   <licenses>
@@ -30,7 +30,7 @@
     <developer>
       <email>harald@krake.de</email>
       <name>Harald Krake</name>
-      <url>http://www.krake.de</url>
+      <url>https://krake.de</url>
       <id>hkr</id>
     </developer>
   </developers>
@@ -74,11 +74,11 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
-    <javac.version.src>9</javac.version.src>
-    <javac.version.target>9</javac.version.target>
-    <java.version>9.0.4</java.version>
-    <maven.version>3.5.2</maven.version>
-    <postgresql.version>42.2.1</postgresql.version>
+    <javac.version.src>10</javac.version.src>
+    <javac.version.target>10</javac.version.target>
+    <java.version>10.0.1</java.version>
+    <maven.version>3.5.3</maven.version>
+    <postgresql.version>42.2.2</postgresql.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
@@ -161,13 +161,13 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.11.0</version>
+        <version>2.10.0</version>
       </dependency>
       <!-- still not modularized -->
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
-        <version>2.11.0</version>
+        <version>2.10.0</version>
       </dependency>
 
       <dependency>
@@ -179,7 +179,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.1.16.0</version>
+        <version>9.2.0.0</version>
       </dependency>
 
       <dependency>
@@ -193,7 +193,7 @@
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>6.14.2</version>
+        <version>6.14.3</version>
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -228,7 +228,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.5.3</version>
+        <version>3.5.4</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -238,7 +238,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.5.1</version>
+        <version>3.5.2</version>
         <scope>provided</scope><!-- annotations are needed only to build the plugin -->
       </dependency>
 
@@ -270,17 +270,24 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.5.1</version>
+          <version>3.5.2</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>6.2</version> <!-- Use newer version of ASM -->
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -290,7 +297,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7</version>
+          <version>3.7.1</version>
           <configuration>
             <siteDirectory>${rootBasedir}/src/site</siteDirectory>
           </configuration>
@@ -298,7 +305,12 @@
             <dependency>
               <groupId>org.apache.maven.wagon</groupId>
               <artifactId>wagon-ssh</artifactId>
-              <version>3.0.0</version>
+              <version>3.1.0</version>
+            </dependency>
+            <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>6.2</version> <!-- Use newer version of ASM -->
             </dependency>
           </dependencies>
         </plugin>
@@ -321,11 +333,18 @@
               <arg>-Xlint:${javac.lint}</arg>
             </compilerArgs>
           </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>6.2</version> <!-- Use newer version of ASM -->
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.1.0</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <escapeString>\</escapeString>
@@ -334,7 +353,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.20.1</version>
+          <version>2.22.0</version>
           <configuration>
             <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
@@ -347,12 +366,19 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.0.1</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>6.2</version> <!-- Use newer version of ASM -->
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.1.0</version>
           <configuration>
             <archive>
               <manifest>
@@ -368,7 +394,42 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.0.2</version>
+          <version>3.1.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jxr-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>1.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>3.2.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.0.0-M2</version>
+        </plugin>
+        <plugin>
+          <groupId>external.atlassian.jgitflow</groupId>
+          <artifactId>jgitflow-maven-plugin</artifactId>
+          <version>1.0-m5.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -396,7 +457,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M1</version>
         <executions>
           <execution>
             <id>enforce-property</id>
@@ -430,7 +490,6 @@
       <plugin>
         <groupId>external.atlassian.jgitflow</groupId>
         <artifactId>jgitflow-maven-plugin</artifactId>
-        <version>1.0-m5.1</version>
         <configuration>
           <enableSshAgent>true</enableSshAgent>
           <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -452,17 +511,15 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.5.1</version>
         <configuration>
           <requirements>
-            <maven>3.0</maven>
+            <maven>${maven.version}</maven>
           </requirements>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.0.0</version>
         <configuration>
           <failOnError>false</failOnError>
           <sourceFileExcludes>
@@ -476,31 +533,29 @@
               <head>Wurblet:</head>
             </tag>
           </tags>
-          <!-- don't complain about wurblet args -->
           <additionalOptions>
+            <additionalOption>-html5</additionalOption>
+            <!-- don't complain about wurblet args -->
             <additionalOption>-Xdoclint:none</additionalOption>
           </additionalOptions>
           <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
-          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.5</version>
         <configuration>
-          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+          <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.9</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.5</version>
         <reportSets>
           <reportSet>
             <id>versions</id>
@@ -555,7 +610,7 @@
                 </goals>
                 <configuration>
                   <stylesheetfile>${rootBasedir}/src/site/resources/css/apidocs.css</stylesheetfile>
-                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - a domain driven enterprise framework]]></bottom>
+                  <bottom><![CDATA[<a href="${project.url}">Tentackle</a> - distributed, domain- and model-driven]]></bottom>
                   <quiet>true</quiet>
                   <archive>
                     <manifest>
@@ -566,6 +621,11 @@
                       <Implementation-Build-Date>${maven.build.timestamp}</Implementation-Build-Date>
                     </manifestEntries>
                   </archive>
+                  <additionalOptions>
+                    <additionalOption>-html5</additionalOption>
+                    <!-- don't complain about wurblet args -->
+                    <additionalOption>-Xdoclint:none</additionalOption>
+                  </additionalOptions>
                 </configuration>
               </execution>
             </executions>
@@ -581,7 +641,6 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -604,7 +663,6 @@
           <plugin>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
-            <version>3.1.1</version>
             <executions>
               <execution>
                 <goals>

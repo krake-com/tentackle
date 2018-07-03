@@ -38,7 +38,7 @@ import javax.tools.Diagnostic.Kind;
 import org.tentackle.common.Analyze;
 import org.tentackle.common.TentackleRuntimeException;
 
-import static javax.lang.model.SourceVersion.RELEASE_9;
+import static javax.lang.model.SourceVersion.RELEASE_10;
 
 
 /**
@@ -47,7 +47,7 @@ import static javax.lang.model.SourceVersion.RELEASE_9;
  * @author harald
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 @SupportedOptions("verbosity")
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 

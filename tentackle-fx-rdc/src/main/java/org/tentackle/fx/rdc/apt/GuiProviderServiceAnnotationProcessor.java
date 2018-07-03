@@ -35,7 +35,7 @@ import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import static javax.lang.model.SourceVersion.RELEASE_9;
+import static javax.lang.model.SourceVersion.RELEASE_10;
 
 /**
  * Annotation processor for the {@code @GuiProviderService} annotation.<br>
@@ -48,7 +48,7 @@ import static javax.lang.model.SourceVersion.RELEASE_9;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.rdc.GuiProviderService")
-@SupportedSourceVersion(RELEASE_9)
+@SupportedSourceVersion(RELEASE_10)
 @AnnotationProcessor
 public class GuiProviderServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

@@ -35,7 +35,7 @@ import org.tentackle.common.TentackleRuntimeException;
  * With iteratorModifying=true, iterator() will create a copy of the collection
  * to allow modifications by the iterator.
  * <p>
- * Not to be mixed up with the classes in {@link java.util.concurrent} which
+ * Not to be mixed up with the classes in {@code java.util.concurrent} which
  * are threadsafe and create a copy for each modification. {@link CopyOnWriteCollection}
  * is not threadsafe and creates a copy only once before the first modification
  * is performed.
