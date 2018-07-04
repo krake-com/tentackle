@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.prefs;
+package org.tentackle.test.prefs;
 
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
@@ -27,10 +27,10 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
 import org.tentackle.dbms.prefs.DbPreferencesNode;
-import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;

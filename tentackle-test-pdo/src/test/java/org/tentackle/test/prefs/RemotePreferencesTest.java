@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.persist.prefs;
+package org.tentackle.test.prefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,16 +27,19 @@ import java.util.prefs.PreferenceChangeListener;
 import org.tentackle.dbms.prefs.DbPreferences;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.persist.AbstractPersistenceTest;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+import org.tentackle.test.pdo.AbstractPdoTest;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 
 /**
@@ -85,7 +88,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
   @Test(priority = 999)   // must be the last test!
   public void writePreferences() throws Exception {
 
-    Process process = AbstractPersistenceTest.runClass(AddAndRemovePrefsInServer.class);
+    Process process = AbstractPdoTest.runClass(AddAndRemovePrefsInServer.class);
     Thread.sleep(1500);
 
     SessionInfo sessionInfo = Pdo.createSessionInfo("client");
@@ -133,7 +136,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(nodeEvents.size(), 1);
       NodeChangeEvent nodeEvent = nodeEvents.get(0);
       assertEquals(nodeEvent.getParent(), prefs);
-      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/test/prefs/other");
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
       assertEquals(prefs.childrenNames().length, 1);
@@ -144,7 +147,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
 
       assertEquals(keyEvents.size(), 1);
       PreferenceChangeEvent keyEvent = keyEvents.get(0);
-      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/test/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertEquals(keyEvent.getNewValue(), VALUE_4);
       assertEquals(otherPrefs.get(KEY_4, ""), VALUE_4);
@@ -156,13 +159,13 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
       assertEquals(nodeEvents.size(), 1);
       nodeEvent = nodeEvents.get(0);
       assertEquals(nodeEvent.getParent(), prefs);
-      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(nodeEvent.getChild().absolutePath(), "/org/tentackle/test/prefs/other");
       assertTrue(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isRemoved());
       assertFalse(((DbPreferences) nodeEvent.getChild()).getPersistentNode().isNew());    // and persisted!
 
       assertEquals(keyEvents.size(), 1);
       keyEvent = keyEvents.get(0);
-      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/persist/prefs/other");
+      assertEquals(keyEvent.getNode().absolutePath(), "/org/tentackle/test/prefs/other");
       assertEquals(keyEvent.getKey(), KEY_4);
       assertNull(keyEvent.getNewValue());
 
@@ -172,7 +175,7 @@ public class RemotePreferencesTest implements NodeChangeListener, PreferenceChan
     }
     finally {
       ModificationTracker.getInstance().terminate();
-      AbstractPersistenceTest.waitForProcess(process);
+      AbstractPdoTest.waitForProcess(process);
     }
   }
 
