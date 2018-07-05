@@ -71,16 +71,10 @@ public class InterceptionAnnotationProcessor extends AbstractProcessor {
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                 annoMirror.getElementValues().entrySet()) {
               String implName = entry.getKey().getSimpleName().toString();
-              if ("implementedBy".equals(implName) &&
-                  !ANNO_NAME.equals(entry.getValue().toString())) {
-                validCount++;
-              }
-              else if ("implementedByName".equals(implName) &&
-                  !entry.getValue().toString().isEmpty()) {
-                validCount++;
-              }
-              else if ("implementedByService".equals(implName) &&
-                  !entry.getValue().toString().isEmpty()) {
+              String implValue = entry.getValue().toString();
+              if ("implementedBy".equals(implName) && !ANNO_NAME.equals(implValue) ||
+                  "implementedByName".equals(implName) && !implValue.isEmpty() ||
+                  "implementedByService".equals(implName) && !implValue.isEmpty()) {
                 validCount++;
               }
             }
