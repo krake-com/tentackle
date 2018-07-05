@@ -97,6 +97,11 @@ public class InterceptableMethodCache {
   }
 
 
+  @Override
+  public String toString() {
+    return ReflectionHelper.getClassBaseName(getClass()) + "(" + name + ")";
+  }
+
   /**
    * Performs the method invocation.<br>
    * The methods are converted to an {@link InterceptableMethod} and cached.
@@ -254,7 +259,7 @@ public class InterceptableMethodCache {
    * @param clear true if clear statistics after dump
    */
   public void logStatistics(Logger.Level level, boolean clear) {
-    methodStats.logStatistics(level, "    >" + name + "-Stats: ", clear);
+    methodStats.logStatistics(toString(), level, "    >" + name + "-Stats: ", clear);
   }
 
 }

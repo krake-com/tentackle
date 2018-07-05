@@ -72,14 +72,19 @@ public class MethodStatistics {
   /**
    * Logs the statistics.
    *
+   * @param title the title, null if default
    * @param level the logging level
    * @param tag intro logging tag
    * @param clear true if clear statistics after dump
    */
-  public synchronized void logStatistics(Logger.Level level, String tag, boolean clear) {
+  public synchronized void logStatistics(String title, Logger.Level level, String tag, boolean clear) {
     if (LOGGER.isLoggable(level)) {
       try {
-        StringBuilder buf = new StringBuilder("Invocation statistics:");
+        StringBuilder buf = new StringBuilder();
+        if (title == null) {
+          title = "Invocation statistics:";
+        }
+        buf.append(title);
         for (Map.Entry<MethodStatisticsKey,StatisticsResult> entry: stats.entrySet()) {
           StatisticsResult result = entry.getValue();
           MethodStatisticsKey key = entry.getKey();

@@ -195,6 +195,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     private RemoteDbSessionImpl me;                   // != null if programmatic close
     private String name;                              // the session name
     private Db db;                                    // the local session
+    private String mdcInfo;                           // the cached MDC info
     private final RemoteDbConnectionImpl con;         // the connection object
     private final SessionInfo serverInfo;             // the server info for creating a new Db connection
     private final Collection<WeakReference<RemoteDelegate>> exportedDelegates;  // delegates to unexport on close
@@ -279,7 +280,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
 
     void doLogStatistics(Level level, boolean clear) {
-      methodStats.logStatistics(level, "    >RMI-Stats: ", clear);
+      methodStats.logStatistics(mdcInfo, level, "    >RMI-Stats: ", clear);
     }
   }
 
@@ -298,7 +299,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   private int timeoutCount;                           // consecutive timeouts
   private long closedSince;                           // session closed since, 0 if still open
-  private String mdcInfo;                             // the cached MDC info
 
 
   /**
@@ -729,7 +729,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @return the MDC info
    */
   public String getMdcInfo() {
-    if (mdcInfo == null) {
+    if (resources.mdcInfo == null) {
       StringBuilder buf = new StringBuilder();
       buf.append(sessionNumber).append(':');
       String userName = clientInfo.getUserName();
@@ -746,9 +746,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       if (clientInfo.isCloned()) {
         buf.append('*');
       }
-      mdcInfo = buf.toString();
+      resources.mdcInfo = buf.toString();
     }
-    return mdcInfo;
+    return resources.mdcInfo;
   }
 
 
