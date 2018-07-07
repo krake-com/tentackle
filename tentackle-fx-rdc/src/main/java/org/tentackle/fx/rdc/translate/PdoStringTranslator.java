@@ -28,7 +28,11 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Control;
+import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import org.tentackle.bind.Bindable;
@@ -38,6 +42,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.log.Logger;
@@ -58,6 +63,8 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends ValueStringTranslator<T> {
 
   private static final Logger LOGGER = Logger.get(PdoStringTranslator.class);
+
+  private static final String PDO_STYLE = "tt-pdo-style";
 
 
   private ValueStringTranslator<?> udkTranslator;
@@ -96,33 +103,66 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     // register function keys:
     // F2 = edit/view current PDO
     // F3 = invoke search
-    Node node = (Node) getComponent();
-    node.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+    Control control = (Control) getComponent();
+    control.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
               !event.isShiftDown() && !event.isShortcutDown()) {
         if (event.getCode() == KeyCode.F2) {
           event.consume();
-          if (pdo != null) {
-            ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
-            pdoList.add(pdo);
-            pdo = RdcUtilities.getInstance().displayCrudStage(
-                    pdo, pdoList, !pdo.isImmutable(),
-                    Modality.APPLICATION_MODAL, Fx.getStage(node), null);
-          }
+          edit();
         }
         else if (event.getCode() == KeyCode.F3) {
           event.consume();
-          inPdoSearch = true;
-          T found = searchPdo(createPdo());
-          inPdoSearch = false;
-          if (found != null) {
-            pdo = found;
-            component.setViewValue(pdo);
-            component.updateModel();
-          }
+          search();
         }
       }
     });
+
+    if (!control.getStyleClass().contains(PDO_STYLE)) {
+      control.getStyleClass().add(PDO_STYLE);
+      ContextMenu menu = new ContextMenu();
+      MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
+      editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+      editItem.setOnAction(event -> edit());
+      if (pdo == null) {
+        editItem.setDisable(true);
+      }
+      MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
+      searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+      searchItem.setOnAction(event -> search());
+      menu.getItems().addAll(editItem, searchItem);
+      // this replaces the default context menu, but that's ok.
+      // otherwise we would have to quirk TextFieldBehaviour which is still private API
+      control.setContextMenu(menu);
+    }
+  }
+
+
+  /**
+   * Edit or view current pdo.
+   */
+  protected void edit() {
+    if (pdo != null) {
+      ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+      pdoList.add(pdo);
+      pdo = RdcUtilities.getInstance().displayCrudStage(
+                    pdo, pdoList, !pdo.isImmutable(),
+                    Modality.APPLICATION_MODAL, Fx.getStage((Node) getComponent()),null);
+    }
+  }
+
+  /**
+   * Search for a PDO.
+   */
+  protected void search() {
+    inPdoSearch = true;
+    T found = searchPdo(createPdo());
+    inPdoSearch = false;
+    if (found != null && getComponent().isChangeable()) {
+      pdo = found;
+      getComponent().setViewValue(pdo);
+      getComponent().updateModel();
+    }
   }
 
   @Override

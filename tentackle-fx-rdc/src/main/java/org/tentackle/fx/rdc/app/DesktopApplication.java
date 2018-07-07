@@ -404,7 +404,17 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   @Override
   protected void finishStartup() {
     super.finishStartup();
-    FxUtilities.getInstance().addTentackleStyleSheet();
+    configureCSS();
+  }
+
+  /**
+   * Configures the application-wide CSS.
+   */
+  protected void configureCSS() {
+    // tentackle styles
+    FxUtilities.getInstance().addStyleSheet("/org/tentackle/fx/tentackle.css");
+    // PDO textfields
+    FxUtilities.getInstance().addStyleSheet("/org/tentackle/fx/rdc/translate/pdo-style.css");
   }
 
 }

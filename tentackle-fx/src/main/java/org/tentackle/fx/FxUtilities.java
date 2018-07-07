@@ -426,13 +426,14 @@ public class FxUtilities {
 
 
   /**
-   * Adds the tentackle-specific stylesheet for the whole application
+   * Adds a stylesheet for the whole application
+   *
+   * @param url The file URL, either relative or absolute, as a String
    */
-  public void addTentackleStyleSheet() {
+  public void addStyleSheet(String url) {
     // @todo StyleManager may become public in future releases
-    StyleManager.getInstance().addUserAgentStylesheet("/org/tentackle/fx/tentackle.css");
+    StyleManager.getInstance().addUserAgentStylesheet(url);
   }
-
 
 
   /**

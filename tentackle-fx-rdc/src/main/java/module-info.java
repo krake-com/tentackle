@@ -38,6 +38,7 @@ module org.tentackle.fx.rdc {
   opens org.tentackle.fx.rdc.search;
   opens org.tentackle.fx.rdc.security;
   opens org.tentackle.fx.rdc.table;
+  opens org.tentackle.fx.rdc.translate;
 
   requires transitive org.tentackle.fx;
   requires transitive org.tentackle.pdo;
