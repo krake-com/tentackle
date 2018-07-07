@@ -484,7 +484,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
 
     super.doFinishStartup();
 
-    FxUtilities.getInstance().addTentackleStyleSheet();
+    // tentackle styles and PDO textfields
+    FxUtilities.getInstance().addStyleSheets();
 
     // add a shutdown handler in case the modthread terminates unexpectedly
     ModificationTracker.getInstance().addShutdownRunnable(() -> {
