@@ -31,6 +31,7 @@ import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
@@ -120,20 +121,25 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
 
     if (!control.getStyleClass().contains(PDO_STYLE)) {
       control.getStyleClass().add(PDO_STYLE);
-      ContextMenu menu = new ContextMenu();
+      ContextMenu menu = control.getContextMenu();
+      if (menu == null) {
+        menu = new ContextMenu();
+        // this replaces the default context menu, but that's ok.
+        // otherwise we would have to quirk TextFieldBehaviour which is still private API
+        control.setContextMenu(menu);
+      }
+      else {
+        // append to existing menu
+        menu.getItems().add(new SeparatorMenuItem());
+      }
       MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
       editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
       editItem.setOnAction(event -> edit());
-      if (pdo == null) {
-        editItem.setDisable(true);
-      }
+      menu.setOnShowing(event -> editItem.setDisable(pdo == null));
       MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
       searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
       searchItem.setOnAction(event -> search());
       menu.getItems().addAll(editItem, searchItem);
-      // this replaces the default context menu, but that's ok.
-      // otherwise we would have to quirk TextFieldBehaviour which is still private API
-      control.setContextMenu(menu);
     }
   }
 
