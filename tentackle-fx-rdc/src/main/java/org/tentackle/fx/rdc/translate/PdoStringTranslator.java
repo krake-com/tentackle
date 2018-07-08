@@ -87,6 +87,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     try {
       T proxy = Pdo.create(pdoClass);
       Class<?> udkClass = proxy.getUniqueDomainKeyType();
+      // create translator for the unique domain key and configure the component (TextFormatter, for ex.)
       udkTranslator = (ValueStringTranslator<?>) FxFactory.getInstance().createValueTranslator(udkClass, String.class, component);
       // allow incomplete input to preset the search criteria in the finder if possible
       udkTranslator.setLenient(true);
