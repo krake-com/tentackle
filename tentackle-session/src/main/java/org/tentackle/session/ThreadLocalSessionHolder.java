@@ -41,7 +41,9 @@ public class ThreadLocalSessionHolder implements SessionHolder {
 
   @Override
   public void setSession(Session session) {
-    throw new UnsupportedOperationException("session is thread-local by definition and cannot be changed");
+    if (Session.getCurrentSession() != session) {
+      throw new UnsupportedOperationException("session is thread-local by definition and cannot be changed");
+    }
   }
 
   @Override
