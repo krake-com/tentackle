@@ -43,11 +43,6 @@ import org.tentackle.session.Session;
 public class StoredBundleControl extends ResourceBundle.Control implements DomainContextProvider {
 
   /**
-   * Controls whether loading bundles from backend is enabled at all.
-   */
-  public static boolean enabled = true;
-
-  /**
    * Controls whether properties should be tried if no stored bundle found.
    */
   public static boolean fallbackToProperties = true;
@@ -87,13 +82,13 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
     ResourceBundle bundle = null;
     StoredBundle.StoredBundleUDK key = null;
 
-    if (enabled && Session.getCurrentSession() != null) {
+    if (Session.getCurrentSession() != null) {
       // if loading from backend possible
       key = createUDK(baseName, locale);
       bundle = loadStoredBundle(key);
     }
 
-    if (bundle == null && (!enabled || fallbackToProperties)) {
+    if (bundle == null && fallbackToProperties) {
       if (format == null || loader == null) {
         throw new IllegalArgumentException("format and loader must not be null");
       }

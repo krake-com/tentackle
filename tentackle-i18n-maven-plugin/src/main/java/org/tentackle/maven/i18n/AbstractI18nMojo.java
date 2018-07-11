@@ -30,7 +30,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.tentackle.common.BundleSupport;
 import org.tentackle.common.Constants;
-import org.tentackle.i18n.StoredBundleControl;
+import org.tentackle.i18n.StoredBundleFactory;
 import org.tentackle.maven.AbstractTentackleMojo;
 import org.tentackle.maven.ProjectClassLoader;
 import org.tentackle.pdo.DomainContext;
@@ -133,7 +133,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   public void execute() throws MojoExecutionException, MojoFailureException {
 
     // disable provider because we need only the PDOs from tt-i18n, not the bundle control
-    StoredBundleControl.enabled = false;
+    StoredBundleFactory.enabled = false;
 
     // validate configuration
     if (validate()) {

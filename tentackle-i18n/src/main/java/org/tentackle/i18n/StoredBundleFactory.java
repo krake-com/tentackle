@@ -35,6 +35,11 @@ import org.tentackle.i18n.pdo.StoredBundle;
 @Service(BundleFactory.class)
 public class StoredBundleFactory extends DefaultBundleFactory {
 
+  /**
+   * Controls whether loading bundles from backend is enabled at all.
+   */
+  public static boolean enabled = true;
+
   private final Map<StoredBundle.StoredBundleUDK, ResourceBundle> bundleMap;      // bundlename_locale..._... : stored bundle
   private final StoredBundleControl control;                                      // bundle control used to load the stored bundle
 
@@ -54,30 +59,35 @@ public class StoredBundleFactory extends DefaultBundleFactory {
 
   @Override
   protected ResourceBundle getBundle(BundleSupport support, Locale locale) {
-    StoredBundle.StoredBundleUDK topKey = control.createUDK(support.getBundleName(), locale);
-    return bundleMap.computeIfAbsent(topKey, storedBundleUDK -> {
-      StoredBundle.StoredBundleUDK key = storedBundleUDK;
-      StoredResourceBundle bundle = control.loadStoredBundle(key);
-      while (bundle == null && (key = createParentKey(key)) != null) {
-        // try parent
-        bundle = control.loadStoredBundle(key);
-      }
-      if (bundle == null) {
-        // fallback to standard ResourceBundle
-        return super.getBundle(support, locale);
-      }
-      // set parents, if any
-      StoredResourceBundle currentBundle = bundle;
-      while((key = createParentKey(key)) != null) {
-        StoredResourceBundle parentBundle = control.loadStoredBundle(key);
-        if (parentBundle == null) {
-          break;
+    if (enabled) {
+      StoredBundle.StoredBundleUDK topKey = control.createUDK(support.getBundleName(), locale);
+      return bundleMap.computeIfAbsent(topKey, storedBundleUDK -> {
+        StoredBundle.StoredBundleUDK key = storedBundleUDK;
+        StoredResourceBundle bundle = control.loadStoredBundle(key);
+        while (bundle == null && (key = createParentKey(key)) != null) {
+          // try parent
+          bundle = control.loadStoredBundle(key);
         }
-        currentBundle.setParent(parentBundle);
-        currentBundle = parentBundle;
-      }
-      return bundle;
-    });
+        if (bundle == null) {
+          // fallback to standard ResourceBundle
+          return super.getBundle(support, locale);
+        }
+        // set parents, if any
+        StoredResourceBundle currentBundle = bundle;
+        while ((key = createParentKey(key)) != null) {
+          StoredResourceBundle parentBundle = control.loadStoredBundle(key);
+          if (parentBundle == null) {
+            break;
+          }
+          currentBundle.setParent(parentBundle);
+          currentBundle = parentBundle;
+        }
+        return bundle;
+      });
+    }
+    else {
+      return super.getBundle(support, locale);
+    }
   }
 
   /**
