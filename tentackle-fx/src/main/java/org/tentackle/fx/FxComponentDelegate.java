@@ -28,6 +28,7 @@ import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.stage.PopupWindow;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
@@ -278,11 +279,14 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
           // some conversion/mapping failed (usually parse-exception):
           // -> show error popup and stay in component
           setError(msg);
-          Node node = getNode().getScene().getFocusOwner();
-          if (node != getNode() &&
-              (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
-            // only if other component currently holding the focus has no error (would loop otherwise)
-            Platform.runLater(((Node) getComponent())::requestFocus);
+          Scene scene = getNode().getScene();
+          if (scene != null) {
+            Node node = scene.getFocusOwner();
+            if (node != getNode() &&
+                (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+              // only if other component currently holding the focus has no error (would loop otherwise)
+              Platform.runLater(((Node) getComponent())::requestFocus);
+            }
           }
         }
       }
