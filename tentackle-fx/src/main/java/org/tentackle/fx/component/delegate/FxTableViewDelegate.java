@@ -119,4 +119,9 @@ public class FxTableViewDelegate extends FxComponentDelegate {
     // the table view unclickable.
   }
 
+  @Override
+  public void setContainerChangeable(boolean containerChangeable) {
+    // dto.
+  }
+
 }
