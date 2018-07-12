@@ -158,6 +158,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
       SessionInfo sessionInfo = Pdo.createSessionInfo(props);
 
       try (Session session = Pdo.createSession(sessionInfo)) {
+        session.makeCurrent();
         context = Pdo.createDomainContext(session);
 
         ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
@@ -175,7 +176,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
             if (suffix != null) {
               resourceName = bundleName + "_" + suffix;
             }
-            resourceName += Constants.PROPS_EXTENSION;
+            resourceName = resourceName.replace('.','/' ) + Constants.PROPS_EXTENSION;
             if (verbosityLevel.isDebug()) {
               getLog().debug("processing " + resourceName);
             }

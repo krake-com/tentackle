@@ -72,7 +72,7 @@ public class BundleSupport {
         String bundleName;
         switch (parts.size()) {
           case 1:
-            bundleName = className.replace('.', '/');
+            bundleName = className;
             break;
           case 2:
             bundleName = parts.get(1);

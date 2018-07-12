@@ -68,7 +68,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
         String bundleName = getBundleName(element, annotationName);
         if (bundleName != null) {
 
-          String clsName = element.toString();
+          String clsName = xlateBundleName(element.toString());
           if (!bundleName.equals(clsName)) {
             // not the same as the classname: append original classname
             bundleName += " = " + clsName;
@@ -116,16 +116,22 @@ public class BundleHandler extends AbstractAnalyzeHandler {
       if (annoMirror.getAnnotationType().toString().equals(annotationName)) {
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                 annoMirror.getElementValues().entrySet()) {
-          if ("value".equals(entry.getKey().getSimpleName().toString())) {
-            bundleName = xlateBundleName(entry.getValue().toString());
-            break;
+          String arg = entry.getKey().getSimpleName().toString();
+          if ("value".equals(arg)) {
+            bundleName = entry.getValue().toString();
+          }
+          else if ("noBundle".equals(arg)) {    // see GuiProviderService
+            String value = entry.getValue().toString();
+            if ("true".equals(value)) {
+              bundleName = null;    // disable
+            }
           }
         }
         break;
       }
     }
 
-    return bundleName;
+    return xlateBundleName(bundleName);
   }
 
 
@@ -133,7 +139,7 @@ public class BundleHandler extends AbstractAnalyzeHandler {
    * Translates the bundle name to a standard format.
    *
    * @param bundleName the name
-   * @return the standardized name
+   * @return the standardized name in dot format (without .class)
    */
   protected String xlateBundleName(String bundleName) {
     if (bundleName != null && !bundleName.isEmpty()) {
@@ -150,6 +156,9 @@ public class BundleHandler extends AbstractAnalyzeHandler {
       }
       // transform to classname format
       bundleName = bundleName.replace('/', '.');
+      if (bundleName.endsWith(".class")) {
+        bundleName = bundleName.substring(0, bundleName.length() - 6);
+      }
     }
     return bundleName;
   }

@@ -52,5 +52,13 @@ public @interface GuiProviderService {
    */
   Class<? extends PersistentDomainObject> value();
 
+  /**
+   * Flag to disable entry in META-INF/bundles.<br>
+   * Avoids warnings in I18N maven goals.
+   *
+   * @return true if GuiProvider does not provide a bundle
+   */
+  boolean noBundle() default false;
+
 }
 

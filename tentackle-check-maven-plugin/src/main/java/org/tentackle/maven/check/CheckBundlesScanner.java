@@ -55,38 +55,33 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
         List<? extends ExpressionTree> methodArgs = mit.getArguments();
         if (methodArgs.size() == 1) {
           ExpressionTree stringExpr = methodArgs.get(0);
-          if (stringExpr.getKind() == Kind.STRING_LITERAL) {    // JCTree.JCLiteral
-            LiteralTree stringLit = (LiteralTree) stringExpr;
-            Object literal = stringLit.getValue();
-            if (literal instanceof String) {
-              // method getString(".....") called
-              ExpressionTree classExpr = fieldAccess.getExpression();
-              String className = classExpr.toString();
-              TreePath currentPath = getCurrentPath();
-              CompilationUnitTree compilationUnitTree = currentPath.getCompilationUnit();
-              ExpressionTree packageTree = compilationUnitTree.getPackageName();
-              String packageName = packageTree.toString();
+          String key = determineBundleKey(stringExpr);
+          if (key != null) {  // method getString(".....") called
+            ExpressionTree classExpr = fieldAccess.getExpression();
+            String className = classExpr.toString();
+            TreePath currentPath = getCurrentPath();
+            CompilationUnitTree compilationUnitTree = currentPath.getCompilationUnit();
+            ExpressionTree packageTree = compilationUnitTree.getPackageName();
+            String packageName = packageTree.toString();
 
-              // check if className is imported from another package
-              String bundleName = null;
-              String lastName = "." + className;
-              for (ImportTree impTree: compilationUnitTree.getImports()) {
-                Tree ident = impTree.getQualifiedIdentifier();
-                String identName = ident.toString();
-                if (identName.endsWith(lastName)) {
-                  bundleName = identName;
-                  break;    // found!
-                }
+            // check if className is imported from another package
+            String bundleName = null;
+            String lastName = "." + className;
+            for (ImportTree impTree : compilationUnitTree.getImports()) {
+              Tree ident = impTree.getQualifiedIdentifier();
+              String identName = ident.toString();
+              if (identName.endsWith(lastName)) {
+                bundleName = identName;
+                break;    // found!
               }
-              if (bundleName == null) {
-                // must be in the same package or is an internal reference such as "resources"
-                bundleName = packageName + lastName;
-              }
-
-              String key = (String) literal;
-              String usingClassName = buildUsingClassName(currentPath);
-              bundleKeys.add(new BundleKey(usingClassName, bundleName, key));
             }
+            if (bundleName == null) {
+              // must be in the same package or is an internal reference such as "resources"
+              bundleName = packageName + lastName;
+            }
+
+            String usingClassName = buildUsingClassName(currentPath);
+            bundleKeys.add(new BundleKey(usingClassName, bundleName, key));
           }
         }
       }
@@ -104,6 +99,36 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
     return bundleKeys;
   }
 
+
+  /**
+   * Extracts the bundle key from a string expression.
+   *
+   * @param stringExpr the expression getString(...)
+   * @return the bundle key string, null if could not be determined
+   */
+  private String determineBundleKey(ExpressionTree stringExpr) {
+    String key = null;
+    switch (stringExpr.getKind()) {
+      case STRING_LITERAL:    // JCTree.JCLiteral
+        LiteralTree stringLit = (LiteralTree) stringExpr;
+        Object literal = stringLit.getValue();
+        if (literal instanceof String) {
+          key = (String) literal;
+        }
+        break;
+
+      case MEMBER_SELECT:
+        // @TODO determine key from reference such as Site.AN_NAME
+//        MemberSelectTree memberLit = ((MemberSelectTree) stringExpr);
+//        if (memberLit.getExpression().getKind() == Kind.IDENTIFIER) {
+//          IdentifierTree ident = (IdentifierTree) memberLit.getExpression();
+//          System.out.println(ident);
+//        }
+        break;
+
+    }
+    return key;
+  }
 
   /**
    * Builds the classname that contains the method invocation.
