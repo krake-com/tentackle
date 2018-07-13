@@ -403,10 +403,9 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   @Override
   public void setSession(Session session) {
     super.setSession(session);
-    // fix session in counters
-    for (ModificationTally counter: countersById.values()) {
-      counter.getDbModification().setSession(session);
-    }
+    // clear counters
+    countersById.clear();
+    countersByName.clear();
     // check if modification table is initialized
     try {
       masterModification = new DbModification((Db) session);
@@ -526,12 +525,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @see #isLocalClientMode()
    */
   public void setLocalClientMode(boolean localClientMode) {
-    if (countersById.isEmpty()) {
+    if (this.localClientMode != localClientMode) {
       this.localClientMode = localClientMode;
+      countersByName.clear();
+      countersById.clear();
       LOGGER.info(getName() + " running in {0} mode", localClientMode ? "local-client" : "optimized");
-    }
-    else if (this.localClientMode != localClientMode) {
-      throw new PersistenceException(getSession(), "operating mode cannot be changed once counters are created");
     }
   }
 
