@@ -108,25 +108,15 @@ public class CheckBundlesScanner extends TreePathScanner<Object, Trees> {
    */
   private String determineBundleKey(ExpressionTree stringExpr) {
     String key = null;
-    switch (stringExpr.getKind()) {
-      case STRING_LITERAL:    // JCTree.JCLiteral
-        LiteralTree stringLit = (LiteralTree) stringExpr;
-        Object literal = stringLit.getValue();
-        if (literal instanceof String) {
-          key = (String) literal;
-        }
-        break;
-
-      case MEMBER_SELECT:
-        // @TODO determine key from reference such as Site.AN_NAME
-//        MemberSelectTree memberLit = ((MemberSelectTree) stringExpr);
-//        if (memberLit.getExpression().getKind() == Kind.IDENTIFIER) {
-//          IdentifierTree ident = (IdentifierTree) memberLit.getExpression();
-//          System.out.println(ident);
-//        }
-        break;
-
+    if (stringExpr.getKind() == Kind.STRING_LITERAL) {    // JCTree.JCLiteral
+      LiteralTree stringLit = (LiteralTree) stringExpr;
+      Object literal = stringLit.getValue();
+      if (literal instanceof String) {
+        key = (String) literal;
+      }
     }
+    // notice: there is no generic way to access the value behind a MEMBER_SELECT, for example.
+    // However, if such constants are used in table configs, they can be checked by unit tests.
     return key;
   }
 

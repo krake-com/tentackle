@@ -84,7 +84,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
     for (BundleKey key: bundleScanner.getBundleKeys()) {
       String bundleName = key.getBundleName();
       if (usedBundleNames.add(bundleName) && verbosityLevel.isDebug()) {
-        getLog().info("bundle " + bundleName + " referenced");
+        getLog().info("bundle " + bundleName + " is referenced");
       }
     }
 
@@ -93,15 +93,14 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
 
     // for all annotations like @Bundle or @FxControllerService (need a META-INF/bundles file!)
     for (BundleSupport bundleSupport: BundleSupport.getBundles(getProcessingClassloader())) {
-      String className = bundleSupport.getClassName();
       String bundleName = bundleSupport.getBundleName();
-      // TODO condition commented out until MEMBER_SELECT works in CheckBundleScanner
-//      if (usedBundleNames.contains(classNamePath) || usedBundleNames.contains(bundleNamePath)) {
+      if (usedBundleNames.contains(bundleName)) {
         for (Locale bundleLocale: bundleLocales) {
           try {
             ResourceBundle bundle = ResourceBundle.getBundle(bundleName, bundleLocale, getProcessingClassloader());
             if (verbosityLevel.isDebug()) {
-              getLog().info("loaded bundle " + bundleName + ", locale " + bundleLocale + ", annotated in class " + className);
+              getLog().info("loaded bundle " + bundleName + ", locale " + bundleLocale +
+                            ", annotated in class " + bundleSupport.getClassName());
             }
             bundleMap.putIfAbsent(new NameKey(bundleLocale, bundleName), bundle);
           }
@@ -109,7 +108,7 @@ public class CheckBundlesMojo extends AbstractCheckMojo {
             getLog().error("could not load bundle " + bundleName + ": " + rex.getMessage());
           }
         }
-//      }
+      }
     }
 
     int errors = 0;           // total errors
