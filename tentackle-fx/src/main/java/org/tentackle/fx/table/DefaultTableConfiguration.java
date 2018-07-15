@@ -19,12 +19,6 @@
 
 package org.tentackle.fx.table;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.prefs.BackingStoreException;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 import org.tentackle.common.LocaleProvider;
@@ -35,6 +29,13 @@ import org.tentackle.fx.component.FxTableView;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.prefs.BackingStoreException;
 
 /**
  * Default implementation of a table configuration.<br>
@@ -151,13 +152,6 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   }
 
 
-  /**
-   * Adds a column.
-   *
-   * @param name the column name
-   * @param displayedName the displayed column name
-   * @return the created configuration
-   */
   @Override
   public TableColumnConfiguration<S, ?> addColumn(String name, String displayedName) {
     TableColumnConfiguration<S, ?> columnConfiguration = new DefaultTableColumnConfiguration<>(this, name, displayedName);

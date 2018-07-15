@@ -19,10 +19,11 @@
 
 package org.tentackle.fx.table;
 
-import java.util.Collection;
 import javafx.scene.control.TableColumn;
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
+
+import java.util.Collection;
 
 /**
  * Configuration for a table view.<br>
@@ -107,9 +108,9 @@ public interface TableConfiguration<S> {
   String getName();
 
   /**
-   * Adds a column.
+   * Adds a column via binding path.
    *
-   * @param name the column name
+   * @param name the column's binding path
    * @param displayedName the displayed column name
    * @return the created configuration
    */

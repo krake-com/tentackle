@@ -5,9 +5,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.ResourceBundle;
 import javafx.scene.Node;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TreeCell;
@@ -18,7 +15,7 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import org.tentackle.common.BundleFactory;
-import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
@@ -28,8 +25,17 @@ import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.PersistentObject;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 /**
  * Default implementation of a {@link GuiProvider}.<br>
@@ -162,9 +168,39 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   @Override
   public TableConfiguration<T> createTableConfiguration() {
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
-    // the default just provides the id and serial
-    config.addColumn(Constants.CN_ID, Constants.AN_ID);
-    config.addColumn(Constants.CN_SERIAL, Constants.AN_SERIAL);
+
+    // the default just provides all columns, except the inherited from the framework and object-IDs
+    boolean localized;
+    try {
+      getBundle();
+      localized = true;   // bundle available -> localize display name
+    }
+    catch (MissingResourceException mx) {
+      localized = false;
+    }
+
+    Map<String, PdoMember> memberMap = new HashMap<>();
+
+    for (PdoMember member: PdoUtilities.getInstance().getMembers(config.getObjectClass())) {
+      memberMap.put(member.getName(), member);
+    }
+
+    for (PdoMember member: memberMap.values()) {
+      if (member.getType() == PdoMember.Type.ATTRIBUTE &&
+          member.getGetter().getDeclaringClass() != PersistentObject.class) {
+        if (member.getName().endsWith("Id")) {
+          // check if this ID belongs to a relation
+          String relatioName = member.getName().substring(0, member.getName().length() - 2);
+          PdoMember relation = memberMap.get(relatioName);
+          if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
+            continue;
+          }
+        }
+        String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
+        String displayName = localized ? getBundle().getString(columnName) : member.getName();
+        config.addColumn(columnName, displayName);
+      }
+    }
     return config;
   }
 

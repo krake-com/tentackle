@@ -19,14 +19,15 @@
 
 package org.tentackle.fx.table;
 
-import java.lang.reflect.Type;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
 import javafx.scene.control.TableColumn;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
+
+import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Configuration for a table column.<br>
@@ -47,7 +48,7 @@ public interface TableColumnConfiguration<S,T> {
 
   /**
    * Gets the column name.<br>
-   * This is usually the property- or attribute name.<br>
+   * This is usually the binding path.<br>
    * The name is also used as a key to the table preferences.
    *
    * @return the name of the column

@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.table;
 
-import java.lang.reflect.Type;
-import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
@@ -36,6 +31,12 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.reflect.ReflectionHelper;
+
+import java.lang.reflect.Type;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Default configuration for a table column.<br>
@@ -161,7 +162,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
    * Create a column config.
    *
    * @param tableConfiguration the table config
-   * @param name the column name
+   * @param name the column's binding path
    * @param displayedName the displayed column name
    */
   public DefaultTableColumnConfiguration(DefaultTableConfiguration<S> tableConfiguration, String name, String displayedName) {
