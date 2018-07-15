@@ -19,9 +19,6 @@
 
 package org.tentackle.fx;
 
-import java.net.URL;
-import java.util.Collection;
-import java.util.ResourceBundle;
 import javafx.scene.image.Image;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -29,6 +26,10 @@ import javafx.stage.StageStyle;
 import javafx.util.BuilderFactory;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.table.TableConfiguration;
+
+import java.net.URL;
+import java.util.Collection;
+import java.util.ResourceBundle;
 
 
 interface FxFactory$Singleton {
@@ -133,7 +134,7 @@ public interface FxFactory {
 
 
   /**
-   * Creates a configuration.
+   * Creates an empty configuration from a template object.
    *
    * @param <S> the type of the objects contained within the table's items list
    * @param template a template object
@@ -143,7 +144,7 @@ public interface FxFactory {
   <S> TableConfiguration<S> createTableConfiguration(S template, String name);
 
   /**
-   * Creates a configuration.
+   * Creates an empty configuration for a PDO class.
    *
    * @param <S> the type of the objects contained within the table's items list
    * @param objectClass the object class

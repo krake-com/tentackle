@@ -18,13 +18,6 @@
 
 package org.tentackle.pdo;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.ServiceFinder;
@@ -32,8 +25,19 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 interface PdoUtilities$Singleton {
@@ -511,6 +515,44 @@ public class PdoUtilities {
       }
     }
     throw new PersistenceException("not an id-string: '" + idString + "'");
+  }
+
+
+  /**
+   * Determines all members of a PDO class.
+   *
+   * @return the members
+   */
+  public <T extends PersistentDomainObject<T>> List<PdoMember> getMembers(Class<T> clazz) {
+    List<PdoMember> members = new ArrayList<>();
+    for (Method method: clazz.getMethods()) {
+      String name = method.getName();
+      if (!Modifier.isStatic(method.getModifiers()) && !method.getReturnType().equals(Void.class)) {
+        if (name.startsWith("is")) {
+          name = name.substring(2);
+        }
+        else if (name.startsWith("get")) {
+          name = name.substring(3);
+        }
+        else continue;    // not a getter
+      }
+      Persistent anno = method.getAnnotation(Persistent.class);
+      if (anno != null) {   // getter annotated with @Persistent
+        Method getter = method;
+        Method setter = null;
+        try {
+          setter = clazz.getMethod("set" + name, getter.getReturnType());
+        }
+        catch (NoSuchMethodException e) {
+          // no setter
+        }
+        PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
+                              PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
+                                PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
+        members.add(new PdoMember(type, name, getter, setter, anno.component(), anno.value()));
+      }
+    }
+    return members;
   }
 
 }

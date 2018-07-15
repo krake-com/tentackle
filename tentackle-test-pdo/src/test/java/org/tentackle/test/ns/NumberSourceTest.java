@@ -23,7 +23,10 @@ import org.tentackle.ns.NumberSource;
 import org.tentackle.ns.NumberSourceFactory;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
+import org.tentackle.pdo.PdoMember;
+import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.test.pdo.AbstractPdoTest;
+import org.testng.Reporter;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -39,6 +42,12 @@ public class NumberSourceTest extends AbstractPdoTest {
   private static final String POOL_NAME = "test";
   private static final String POOL_REALM = "00_01";
 
+  @Test
+  public void printMembers() {
+    for (PdoMember member: PdoUtilities.getInstance().getMembers(NumberPool.class)) {
+      Reporter.log(member + "<br>");
+    }
+  }
 
   @Test
   public void createAndRetrieveNumbers() {
