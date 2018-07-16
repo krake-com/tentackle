@@ -19,9 +19,6 @@
 
 package org.tentackle.fx.bind;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import org.tentackle.bind.AbstractBinding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
@@ -34,6 +31,10 @@ import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Common implemenation of a table binding.
@@ -205,8 +206,9 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
                                    option + "\") in " + getMember(), ex);
       }
     }
-    else if (Constants.BIND_COL.equals(option)) {
-      // COL= not applicable to table cells: just ignore
+    else if (option.startsWith(Constants.BIND_COL + "=") ||
+             option.startsWith(Constants.BIND_LINES + "=")) {
+      // COL= and LINES= not applicable to table cells: just ignore
       processed = true;
     }
 

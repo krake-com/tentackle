@@ -54,4 +54,12 @@ public @interface Persistent {
    */
   boolean component() default true;
 
+  /**
+   * Returns whether this is the relation to the parent PDO.<br>
+   * The parent PDO provides a composite relation to this PDO.
+   *
+   * @return true if this is a component and the annotated relation points to the composite parent.
+   */
+  boolean parent() default false;
+
 }

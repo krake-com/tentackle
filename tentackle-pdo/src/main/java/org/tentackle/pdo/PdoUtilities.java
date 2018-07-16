@@ -34,6 +34,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -521,6 +522,8 @@ public class PdoUtilities {
   /**
    * Determines all members of a PDO class.
    *
+   * @param clazz the PDO class
+   * @param <T> the PDO type
    * @return the members
    */
   public <T extends PersistentDomainObject<T>> List<PdoMember> getMembers(Class<T> clazz) {
@@ -549,10 +552,52 @@ public class PdoUtilities {
         PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
                               PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
                                 PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
-        members.add(new PdoMember(type, name, getter, setter, anno.component(), anno.value()));
+        members.add(new PdoMember(type, name, getter, setter, anno.component(), anno.parent(),
+                                  method.getAnnotation(DomainKey.class) != null,
+                                  anno.value()));
       }
     }
     return members;
+  }
+
+
+  /**
+   * Determines all member attributes of a PDO class.
+   *
+   * @param clazz the PDO class
+   * @param withRelations true if include non-component object relations
+   * @param <T> the PDO type
+   * @return the attributes
+   */
+  public <T extends PersistentDomainObject<T>> List<PdoMember> getAttributes(Class<T> clazz, boolean withRelations) {
+
+    // build a name map to check agains relations
+    Map<String, PdoMember> memberMap = new LinkedHashMap<>();
+    for (PdoMember member: getMembers(clazz)) {
+      memberMap.put(member.getName(), member);
+    }
+
+    List<PdoMember> attributes = new ArrayList<>();
+
+    for (PdoMember member: memberMap.values()) {
+      if (member.getType() == PdoMember.Type.ATTRIBUTE &&
+          member.getGetter().getDeclaringClass() != PersistentObject.class) {
+        if (member.getName().endsWith("Id")) {
+          // check if this ID belongs to a relation
+          String relatioName = member.getName().substring(0, member.getName().length() - 2);
+          PdoMember relation = memberMap.get(relatioName);
+          if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
+            if (withRelations && !relation.isComponent() && !relation.isParent()) {
+              attributes.add(member);   // non-component object relation instead of object id
+            }
+            continue;   // skip object IDs
+          }
+        }
+        attributes.add(member);
+      }
+    }
+
+    return attributes;
   }
 
 }

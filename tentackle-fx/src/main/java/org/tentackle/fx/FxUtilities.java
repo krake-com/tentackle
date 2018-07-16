@@ -20,15 +20,6 @@
 package org.tentackle.fx;
 
 import com.sun.javafx.css.StyleManager;
-import java.awt.Desktop;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.Optional;
-import java.util.StringTokenizer;
-import java.util.concurrent.Executor;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -66,8 +57,19 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.Note;
 import org.tentackle.misc.ConcurrencyHelper;
+
+import java.awt.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.Optional;
+import java.util.StringTokenizer;
+import java.util.concurrent.Executor;
 
 interface FxUtilities$Singleton {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
@@ -529,6 +531,19 @@ public class FxUtilities {
         throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
                                    option + "\") in " + member, ex);
       }
+    }
+    else if (option.startsWith(Constants.BIND_LINES + "=")) {
+      // the option is only interpreted by the view generator
+      if (comp instanceof FxTextArea) {
+        try {
+          ((FxTextArea) comp).setNumLines(Integer.parseInt(option.substring(Constants.BIND_LINES.length() + 1)));
+        }
+        catch (NumberFormatException ex) {
+          throw new BindingException("invalid " + Constants.BIND_LINES + " @Bindable option \"" +
+                                     option + "\") in " + member, ex);
+        }
+      }
+      processed = true;
     }
 
     return processed;

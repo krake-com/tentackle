@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc.table;
 
 import javafx.print.PrinterJob;
 import javafx.stage.Stage;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
@@ -50,9 +51,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 interface TableUtilities$Singleton {
@@ -97,30 +96,21 @@ public class TableUtilities {
    * @return the table configuration
    */
   public <T extends PersistentDomainObject<T>> TableConfiguration<T> createTableConfiguration(Class<T> pdoClass, ResourceBundle bundle) {
+
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);
 
-    Map<String, PdoMember> memberMap = new LinkedHashMap<>();
-
-    for (PdoMember member: PdoUtilities.getInstance().getMembers(config.getObjectClass())) {
-      memberMap.put(member.getName(), member);
+    for (PdoMember member: PdoUtilities.getInstance().getAttributes(config.getObjectClass(), true)) {
+      String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
+      String displayName = bundle != null ? bundle.getString(columnName) : member.getName();
+      config.addColumn(columnName, displayName);
     }
 
-    for (PdoMember member: memberMap.values()) {
-      if (member.getType() == PdoMember.Type.ATTRIBUTE &&
-          member.getGetter().getDeclaringClass() != PersistentObject.class) {
-        if (member.getName().endsWith("Id")) {
-          // check if this ID belongs to a relation
-          String relatioName = member.getName().substring(0, member.getName().length() - 2);
-          PdoMember relation = memberMap.get(relatioName);
-          if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
-            continue;
-          }
-        }
-        String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
-        String displayName = bundle != null ? bundle.getString(columnName) : member.getName();
-        config.addColumn(columnName, displayName);
-      }
+    if (config.getColumnConfigurations().isEmpty()) {
+      // no columns at all: fallback to the ID and SERIAL columns
+      config.addColumn(Constants.CN_ID, Constants.AN_ID);
+      config.addColumn(Constants.CN_SERIAL, Constants.AN_SERIAL);
     }
+
     return config;
   }
 

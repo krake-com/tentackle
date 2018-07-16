@@ -155,7 +155,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
    * @return numberPool NumberPool
    */
   @Bindable
-  @Persistent(value="NumberPool", component=false)
+  @Persistent(value="NumberPool", component=false, parent=true)
   NumberPool getNumberPool();
 
   /**

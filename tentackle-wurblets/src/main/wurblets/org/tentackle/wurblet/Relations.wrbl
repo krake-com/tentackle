@@ -46,6 +46,8 @@ For more options, see {\@link ModelWurblet}.
         }
       }
 
+      Relation oppRel = rel.getForeignRelation();
+
       // getter
 
       if (createGetter)  {
@@ -62,15 +64,22 @@ For more options, see {\@link ModelWurblet}.
    */
   \@Bindable
 @[
-        if (!rel.isComposite()) {
-]@
-  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
-@[
-        }
-        else {
+        if (rel.isComposite()) {
 ]@
   \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
+        }
+        else {
+          if (oppRel != null && oppRel.isComposite()) {
+]@
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false, parent=true)
+@[
+          }
+          else {
+]@
+  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
+@[
+          }
         }
         for (String annotation: rel.getAnnotations()) {
 ]@

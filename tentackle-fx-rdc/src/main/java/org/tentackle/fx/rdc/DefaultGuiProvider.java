@@ -110,6 +110,9 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public PdoEditor<T> createEditor() {
+    if (editorExists()) {
+      return new DefaultPdoEditor<>(getPdo().getEffectiveClass());
+    }
     throw new FxRuntimeException("no controller for " + pdo.toGenericString());
   }
 

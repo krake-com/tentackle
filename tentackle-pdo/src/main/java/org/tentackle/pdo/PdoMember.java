@@ -19,6 +19,7 @@
 package org.tentackle.pdo;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 /**
  * A member of a PDO.<br>
@@ -58,6 +59,8 @@ public class PdoMember {
   private final Method getter;
   private final Method setter;
   private final boolean component;
+  private final boolean parent;
+  private final boolean domainKey;
   private final String comment;
 
   /**
@@ -68,14 +71,18 @@ public class PdoMember {
    * @param getter the getter method
    * @param setter the optional setter method
    * @param component true if member is a component
+   * @param parent true if member is a parent relation
+   * @param domainKey true if member is domain key
    * @param comment the comment
    */
-  public PdoMember(Type type, String name, Method getter, Method setter, boolean component, String comment) {
+  public PdoMember(Type type, String name, Method getter, Method setter, boolean component, boolean parent, boolean domainKey, String comment) {
     this.type = type;
     this.name = name;
     this.getter = getter;
     this.setter = setter;
     this.component = component;
+    this.parent = parent;
+    this.domainKey = domainKey;
     this.comment = comment;
   }
 
@@ -126,6 +133,24 @@ public class PdoMember {
   }
 
   /**
+   * Returns whether this is a parent relation.
+   *
+   * @return true if parent relation
+   */
+  public boolean isParent() {
+    return parent;
+  }
+
+  /**
+   * Returns whether this is a domain key.
+   *
+   * @return true if domain key
+   */
+  public boolean isDomainKey() {
+    return domainKey;
+  }
+
+  /**
    * Gets the optional comment.
    *
    * @return the comment, null if none
@@ -134,11 +159,30 @@ public class PdoMember {
     return comment;
   }
 
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PdoMember member = (PdoMember) o;
+    return Objects.equals(name, member.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name);
+  }
+
   @Override
   public String toString() {
     StringBuilder buf = new StringBuilder();
-    if (component && type == Type.RELATION) {
-      buf.append("component ");
+    if (type == Type.RELATION) {
+      if (component) {
+        buf.append("component ");
+      }
+      if (parent) {
+        buf.append("parent ");
+      }
     }
     buf.append(type.text).append(' ').append(name);
     if (comment != null) {
