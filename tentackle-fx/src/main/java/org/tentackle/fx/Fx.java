@@ -19,15 +19,16 @@
 
 package org.tentackle.fx;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * Often used factory and helper methods for FX-related stuff.
@@ -112,7 +113,7 @@ public class Fx {
    * @return the node instance
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Node, R extends T> R createNode(Class<T> clazz) {
+  public static <T, R extends T> R createNode(Class<T> clazz) {
     return (R) FxFactory.getInstance().getBuilderFactory().getBuilder(clazz).build();
   }
 
