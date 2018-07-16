@@ -33,7 +33,7 @@ import javafx.stage.StageStyle;
 import org.tentackle.misc.ConcurrencyHelper;
 
 /**
- * Collected factory and helper methods for FX-related stuff.
+ * Often used factory and helper methods for FX-related stuff.
  *
  * @author harald
  */
@@ -90,6 +90,7 @@ public class Fx {
    * @param controllerClass the controller class
    * @return the controller
    */
+  @SuppressWarnings("unchecked")
   public static <T extends FxController> T load(Class<T> controllerClass) {
     return FxFactory.getInstance().createController(controllerClass);
   }
@@ -131,7 +132,7 @@ public class Fx {
    * @return the node instance
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Node, R extends T> R createNode(Class<T> clazz) {
+  public static <T, R extends T> R createNode(Class<T> clazz) {
     return (R) FxFactory.getInstance().getBuilderFactory().getBuilder(clazz).build();
   }
 
