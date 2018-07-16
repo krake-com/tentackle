@@ -154,6 +154,9 @@ public class Constants {
   /** bind timestamp with UTC option. */
   public static final String BIND_UTC = "UTC";
 
+  /** bind option LINES = ... */
+  public static final String BIND_LINES = "LINES";
+
 
   /** maximum number of significant digits for BMoney. */
   public static final int BMONEY_DIGITS = 15;

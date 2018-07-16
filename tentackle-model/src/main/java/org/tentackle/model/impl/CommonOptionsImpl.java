@@ -24,9 +24,7 @@ import org.tentackle.model.CommonOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 
-import static org.tentackle.common.Constants.BIND_COL;
-import static org.tentackle.common.Constants.BIND_MAXCOL;
-import static org.tentackle.common.Constants.BIND_SCALE;
+import static org.tentackle.common.Constants.*;
 
 /**
  * Implementation of common options.
@@ -222,6 +220,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
       case BIND_COL:
       case BIND_MAXCOL:
       case BIND_SCALE:
+      case BIND_LINES:
         processBindOption(fullopt, on);
         break;
 

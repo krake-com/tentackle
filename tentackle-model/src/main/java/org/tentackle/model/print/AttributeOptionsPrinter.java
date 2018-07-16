@@ -18,9 +18,6 @@
 
 package org.tentackle.model.print;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.StringTokenizer;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
@@ -28,6 +25,10 @@ import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.impl.AttributeOptionsImpl;
 import org.tentackle.model.impl.CommonOptionsImpl;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import static org.tentackle.common.Constants.BIND_MAXCOL;
 import static org.tentackle.common.Constants.BIND_SCALE;
@@ -97,6 +98,7 @@ public class AttributeOptionsPrinter {
     printBool(buf, AttributeOptionsImpl.OPTION_DOMAINKEY, options.isDomainKey());
     printBool(buf, AttributeOptionsImpl.OPTION_TZ, options.isWithTimezone());
     printBool(buf, AttributeOptionsImpl.OPTION_HIDDEN, options.isHidden());
+    printBool(buf, AttributeOptionsImpl.OPTION_SHALLOW, options.isHidden());
 
     if (options.getDefaultValue() != null) {
       buf.append(AttributeOptionsImpl.OPTION_DEFAULT).append(' ');
