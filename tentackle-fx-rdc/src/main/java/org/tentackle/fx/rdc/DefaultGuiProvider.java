@@ -32,7 +32,7 @@ import org.tentackle.pdo.PersistentObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -179,7 +179,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
       localized = false;
     }
 
-    Map<String, PdoMember> memberMap = new HashMap<>();
+    Map<String, PdoMember> memberMap = new LinkedHashMap<>();
 
     for (PdoMember member: PdoUtilities.getInstance().getMembers(config.getObjectClass())) {
       memberMap.put(member.getName(), member);
