@@ -24,12 +24,18 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxTableBinding;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.table.TableColumnConfiguration;
+import org.tentackle.fx.table.TableConfiguration;
+import org.tentackle.pdo.PdoMember;
+import org.tentackle.pdo.PdoUtilities;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.pdo.PersistentObject;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -44,7 +50,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 interface TableUtilities$Singleton {
   TableUtilities INSTANCE = ServiceFactory.createService(TableUtilities.class);
@@ -76,6 +85,44 @@ public class TableUtilities {
   private static final String LAST_XML_PREFIX = "/_lastXmlNames_";
   private static final String XML_KEY = "path";
 
+
+  /**
+   * Creates a default table configuration for a given PDO class.<br>
+   * Each attribute getter (annotated with {@link org.tentackle.session.Persistent}) gets its own column,
+   * except the default attributes from {@link PersistentObject} and object ids for object relations.
+   *
+   * @param pdoClass the PDO class
+   * @param bundle optional bundle to determine the displayed column names, null if name is attribute name
+   * @param <T> the PDO type
+   * @return the table configuration
+   */
+  public <T extends PersistentDomainObject<T>> TableConfiguration<T> createTableConfiguration(Class<T> pdoClass, ResourceBundle bundle) {
+    TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);
+
+    Map<String, PdoMember> memberMap = new LinkedHashMap<>();
+
+    for (PdoMember member: PdoUtilities.getInstance().getMembers(config.getObjectClass())) {
+      memberMap.put(member.getName(), member);
+    }
+
+    for (PdoMember member: memberMap.values()) {
+      if (member.getType() == PdoMember.Type.ATTRIBUTE &&
+          member.getGetter().getDeclaringClass() != PersistentObject.class) {
+        if (member.getName().endsWith("Id")) {
+          // check if this ID belongs to a relation
+          String relatioName = member.getName().substring(0, member.getName().length() - 2);
+          PdoMember relation = memberMap.get(relatioName);
+          if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
+            continue;
+          }
+        }
+        String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
+        String displayName = bundle != null ? bundle.getString(columnName) : member.getName();
+        config.addColumn(columnName, displayName);
+      }
+    }
+    return config;
+  }
 
 
   /**

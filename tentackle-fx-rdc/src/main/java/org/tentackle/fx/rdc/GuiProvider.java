@@ -19,8 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.Collection;
-import java.util.ResourceBundle;
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -34,6 +32,9 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.util.Collection;
+import java.util.ResourceBundle;
+
 
 /**
  * Provider of GUI-functionality for a pdo.
@@ -44,7 +45,16 @@ import org.tentackle.pdo.PersistentDomainObject;
 public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHolder<T>, DomainContextProvider {
 
   /**
+   * Returns whether a resource bundle is provided.
+   *
+   * @return true if provided, false if no bundle
+   */
+  boolean isBundleProvided();
+
+  /**
    * Gets the resource bundle for this provider.
+   * <p>
+   * Throws {@link java.util.MissingResourceException} if no bundle found.
    *
    * @return the resource bundle
    */

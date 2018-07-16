@@ -15,25 +15,20 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import org.tentackle.common.BundleFactory;
-import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.pdo.PersistentObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -45,8 +40,9 @@ import java.util.ResourceBundle;
  * @author harald
  */
 public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements GuiProvider<T> {
-
+  
   private T pdo;                    // the PDO
+  private Boolean bundleProvided;   // != null if determined according to GuiProviderService annotation or isBundleProvided
   private ResourceBundle bundle;    // optional resource bundle
 
   /**
@@ -56,6 +52,24 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    */
   public DefaultGuiProvider(T pdo) {
     setPdo(pdo);
+    GuiProviderService annotation = getClass().getAnnotation(GuiProviderService.class);
+    if (annotation != null) {
+      bundleProvided = !annotation.noBundle();
+    }
+  }
+
+  @Override
+  public boolean isBundleProvided() {
+    if (bundleProvided == null) {
+      try {
+        getBundle();
+        bundleProvided = true;
+      }
+      catch (MissingResourceException mx) {
+        bundleProvided = false;
+      }
+    }
+    return bundleProvided;
   }
 
   @Override
@@ -167,41 +181,8 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public TableConfiguration<T> createTableConfiguration() {
-    TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(getPdo(), null);
-
-    // the default just provides all columns, except the inherited from the framework and object-IDs
-    boolean localized;
-    try {
-      getBundle();
-      localized = true;   // bundle available -> localize display name
-    }
-    catch (MissingResourceException mx) {
-      localized = false;
-    }
-
-    Map<String, PdoMember> memberMap = new LinkedHashMap<>();
-
-    for (PdoMember member: PdoUtilities.getInstance().getMembers(config.getObjectClass())) {
-      memberMap.put(member.getName(), member);
-    }
-
-    for (PdoMember member: memberMap.values()) {
-      if (member.getType() == PdoMember.Type.ATTRIBUTE &&
-          member.getGetter().getDeclaringClass() != PersistentObject.class) {
-        if (member.getName().endsWith("Id")) {
-          // check if this ID belongs to a relation
-          String relatioName = member.getName().substring(0, member.getName().length() - 2);
-          PdoMember relation = memberMap.get(relatioName);
-          if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
-            continue;
-          }
-        }
-        String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
-        String displayName = localized ? getBundle().getString(columnName) : member.getName();
-        config.addColumn(columnName, displayName);
-      }
-    }
-    return config;
+    return TableUtilities.getInstance().createTableConfiguration(
+                  getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
   }
 
   @Override
