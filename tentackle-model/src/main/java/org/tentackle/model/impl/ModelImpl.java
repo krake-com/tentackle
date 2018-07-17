@@ -834,32 +834,34 @@ public class ModelImpl implements Model {
 
     // sets the ordinals of attributes, relations and indexes
     for (ModelEntity modelEntity: mapByEntityName.values()) {
-      Entity[] entities = new Entity[modelEntity.getEntity().getOrdinal() + 1];
       Entity entity = modelEntity.getEntity();
-      List<Entity> superEntities = entity.getSuperEntities();
-      // reverse the path in the array
-      int superNdx = superEntities.size() - 1;
-      for (int i=0; i < entities.length; i++) {
-        if (i < superEntities.size()) {
-          entities[i] = superEntities.get(superNdx--);
+      if (!entity.isAbstract()) {   // only leafs
+        Entity[] entities = new Entity[modelEntity.getEntity().getOrdinal() + 1];
+        List<Entity> superEntities = entity.getSuperEntities();
+        // reverse the path in the array
+        int superNdx = superEntities.size() - 1;
+        for (int i = 0; i < entities.length; i++) {
+          if (i < superEntities.size()) {
+            entities[i] = superEntities.get(superNdx--);
+          }
+          else {
+            entities[i] = entity;
+          }
         }
-        else {
-          entities[i] = entity;
-        }
-      }
 
-      int attributeOrdinal = 0;
-      int relationOrdinal = 0;
-      int indexOrdinal = 0;
-      for (Entity nextEntity: entities) {
-        for (Attribute attribute: nextEntity.getAttributes()) {
-          ((AttributeImpl) attribute).setOrdinal(attributeOrdinal++);
-        }
-        for (Relation relation: nextEntity.getRelations()) {
-          ((RelationImpl) relation).setOrdinal(relationOrdinal++);
-        }
-        for (Index index: nextEntity.getIndexes()) {
-          ((IndexImpl) index).setOrdinal(indexOrdinal++);
+        int attributeOrdinal = 0;
+        int relationOrdinal = 0;
+        int indexOrdinal = 0;
+        for (Entity nextEntity : entities) {
+          for (Attribute attribute : nextEntity.getAttributes()) {
+            ((AttributeImpl) attribute).setOrdinal(attributeOrdinal++);
+          }
+          for (Relation relation : nextEntity.getRelations()) {
+            ((RelationImpl) relation).setOrdinal(relationOrdinal++);
+          }
+          for (Index index : nextEntity.getIndexes()) {
+            ((IndexImpl) index).setOrdinal(indexOrdinal++);
+          }
         }
       }
     }
