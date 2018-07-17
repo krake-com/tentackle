@@ -64,7 +64,14 @@ import java.util.ResourceBundle;
  * @param <T> the PDO type
  */
 public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEditor<T> {
-  
+
+  /**
+   * Default column width for text areas.<br>
+   * Can be changed per attribute in model via COL= option.
+   */
+  public static int textAreaColumns = 30;
+
+
   private final Class<T> pdoClass;                      // the PDO class
   private final ResourceBundle bundle;                  // optional bundle
   private final Map<PdoMember, FxComponent> nodeMap;    // map of attributes to FX nodes
@@ -224,7 +231,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
       }
       else if (node instanceof FxTextArea) {
         FxTextArea textArea = (FxTextArea) node;
-        textArea.setColumns(30);
+        textArea.setColumns(textAreaColumns);
       }
     }
   }
@@ -261,6 +268,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     for (Map.Entry<PdoMember, FxComponent> entry: nodes.entrySet()) {
       Label label;
       if (bundle != null) {
+        // take the short member name for bundle keys (instead of comment below)
         label = new Label(bundle.getString(StringHelper.firstToLower(entry.getKey().getName())));
       }
       else {
