@@ -18,9 +18,10 @@
 
 package org.tentackle.model;
 
+import org.tentackle.sql.Backend;
+
 import java.util.List;
 import java.util.Set;
-import org.tentackle.sql.Backend;
 
 /**
  * The entity.
@@ -495,13 +496,6 @@ public interface Entity extends ModelElement {
    * @throws ModelException if subEntity does not inherit this entity
    */
   List<Entity> getInheritanceChain(Entity subEntity) throws ModelException;
-
-  /**
-   * Gets the inheritance level if this is a sub entity.
-   *
-   * @return the number of super entities, 0 if this is not a subclass
-   */
-  int getInheritanceLevel();
 
   /**
    * Gets the direct sub entities.

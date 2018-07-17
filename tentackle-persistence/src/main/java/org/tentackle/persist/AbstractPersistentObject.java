@@ -19,13 +19,6 @@
 
 package org.tentackle.persist;
 
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Timestamp;
@@ -61,7 +54,6 @@ import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.SecurityResult;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
@@ -74,29 +66,15 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
-import static org.tentackle.sql.Backend.SQL_ALLSTAR;
-import static org.tentackle.sql.Backend.SQL_AND;
-import static org.tentackle.sql.Backend.SQL_COMMA;
-import static org.tentackle.sql.Backend.SQL_EQUAL;
-import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
-import static org.tentackle.sql.Backend.SQL_EQUAL_PAR_COMMA;
-import static org.tentackle.sql.Backend.SQL_EQUAL_ZERO;
-import static org.tentackle.sql.Backend.SQL_FROM;
-import static org.tentackle.sql.Backend.SQL_GREATER_PAR;
-import static org.tentackle.sql.Backend.SQL_ISNULL;
-import static org.tentackle.sql.Backend.SQL_LEFT_PARENTHESIS;
-import static org.tentackle.sql.Backend.SQL_LESS_PAR;
-import static org.tentackle.sql.Backend.SQL_LIKE_PAR;
-import static org.tentackle.sql.Backend.SQL_NOTLIKE_PAR;
-import static org.tentackle.sql.Backend.SQL_OR;
-import static org.tentackle.sql.Backend.SQL_ORDERBY;
-import static org.tentackle.sql.Backend.SQL_PLUS_ONE;
-import static org.tentackle.sql.Backend.SQL_RIGHT_PARENTHESIS;
-import static org.tentackle.sql.Backend.SQL_SELECT;
-import static org.tentackle.sql.Backend.SQL_SET;
-import static org.tentackle.sql.Backend.SQL_UPDATE;
-import static org.tentackle.sql.Backend.SQL_WHERE;
-import static org.tentackle.sql.Backend.SQL_WHEREALL;
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
+import static org.tentackle.sql.Backend.*;
 
 
 /**
@@ -120,27 +98,20 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private T pdo;                                  // the pdo instance this is a delegate for
   private boolean persistable = true;             // true if persistable (default)
 
-  @Persistent("userId of token lock holder")
   private long editedBy;                          // if != 0 : holds the userId of token holder
-
-  @Persistent("time since token lock given to user")
   private Timestamp editedSince;                  // if editedBy!=0: time since token given to user, if 0: time since token released
-
-  @Persistent("time when token lock expires")
   private Timestamp editedExpiry;                 // time when token expires
 
   /**
    * all persistent objects have a "NormText", i.e. a phonetically normalized text which can be searched
    * made protected here, so all subclasses can directly access it.
    */
-  @Persistent("normalized text")
   private String normText;
 
   /**
    * Optional id of the root entity.<br>
    * Improves performance in selects in composite entities.
    */
-  @Persistent("root entity id")
   private long rootId;
 
   /**
@@ -148,7 +119,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Improves performance in selects in composite entities
    * if the components belong to different kinds of root entities.
    */
-  @Persistent("root entity class id")
   private int rootClassId;
 
   private transient boolean validated;            // true if validated (transient because we don't trust remote clients)

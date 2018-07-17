@@ -19,9 +19,6 @@
 
 package org.tentackle.persist.ns;
 
-import java.rmi.RemoteException;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -31,19 +28,22 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberPoolPersistence;
 import org.tentackle.ns.pdo.NumberRange;
-import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
+
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -112,43 +112,36 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
 
   /** the number pool name. */
-  @Persistent("the number pool name")
   private String name;
   /** the last persisted value of name. */
   private String namePersisted;
 
   /** pool realm, optional. */
-  @Persistent("pool realm, optional")
   private String realm;
   /** the last persisted value of realm. */
   private String realmPersisted;
 
   /** short description. */
-  @Persistent("short description")
   private String description;
   /** the last persisted value of description. */
   private String descriptionPersisted;
 
   /** true if online, else offline. */
-  @Persistent("true if online, else offline")
   private boolean online;
   /** the last persisted value of online. */
   private boolean onlinePersisted;
 
   /** minimum number count before request to fill up from uplink, 0 if disable. */
-  @Persistent("minimum number count before request to fill up from uplink, 0 if disable")
   private long lowWaterMark;
   /** the last persisted value of lowWaterMark. */
   private long lowWaterMarkPersisted;
 
   /** number count to request from uplink, 0 if disable. */
-  @Persistent("number count to request from uplink, 0 if disable")
   private long requestSize;
   /** the last persisted value of requestSize. */
   private long requestSizePersisted;
 
   /** uplink configuration (optional). */
-  @Persistent("uplink configuration (optional)")
   private String uplink;
   /** the last persisted value of uplink. */
   private String uplinkPersisted;
@@ -568,7 +561,6 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
 
   // composite list of NumberRange numberRangeList via NumberRange#numberPoolId (NumberRange)
-  @Persistent("NumberRange")
   private TrackedList<NumberRange> numberRangeList;
   private boolean numberRangeListLoaded;
   private transient TrackedList<NumberRange> numberRangeListSnapshot;

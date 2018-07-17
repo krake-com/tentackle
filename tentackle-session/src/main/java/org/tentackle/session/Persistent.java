@@ -43,7 +43,7 @@ public @interface Persistent {
    *
    * @return the comment
    */
-  String value() default "";
+  String comment() default "";
 
   /**
    * Returns whether this is a component of the PDO.<br>
@@ -61,5 +61,13 @@ public @interface Persistent {
    * @return true if this is a component and the annotated relation points to the composite parent.
    */
   boolean parent() default false;
+
+  /**
+   * Gets the ordinal according to the model.<br>
+   * Used to order the attributes and relations when analyzed via reflection.
+   *
+   * @return the ordinal, 0 if no ordinal available
+   */
+  int ordinal() default 0;
 
 }

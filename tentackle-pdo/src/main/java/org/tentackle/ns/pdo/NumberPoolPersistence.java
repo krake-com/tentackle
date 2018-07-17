@@ -87,7 +87,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return the number pool name
    */
-  @Persistent("the number pool name")
+  @Persistent(ordinal=0, comment="the number pool name")
   @NotNull
   @DomainKey
   String getName();
@@ -118,7 +118,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return pool realm, optional
    */
-  @Persistent("pool realm, optional")
+  @Persistent(ordinal=1, comment="pool realm, optional")
   String getRealm();
 
   /**
@@ -147,7 +147,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return short description
    */
-  @Persistent("short description")
+  @Persistent(ordinal=2, comment="short description")
   String getDescription();
 
   /**
@@ -176,7 +176,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return true if online, else offline
    */
-  @Persistent("true if online, else offline")
+  @Persistent(ordinal=3, comment="true if online, else offline")
   boolean isOnline();
 
   /**
@@ -205,7 +205,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return minimum number count before request to fill up from uplink, 0 if disable
    */
-  @Persistent("minimum number count before request to fill up from uplink, 0 if disable")
+  @Persistent(ordinal=4, comment="minimum number count before request to fill up from uplink, 0 if disable")
   long getLowWaterMark();
 
   /**
@@ -234,7 +234,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return number count to request from uplink, 0 if disable
    */
-  @Persistent("number count to request from uplink, 0 if disable")
+  @Persistent(ordinal=5, comment="number count to request from uplink, 0 if disable")
   long getRequestSize();
 
   /**
@@ -263,7 +263,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    *
    * @return uplink configuration (optional)
    */
-  @Persistent("uplink configuration (optional)")
+  @Persistent(ordinal=6, comment="uplink configuration (optional)")
   @NotNull(condition="{object.lowWaterMark > 0 && object.requestSize > 0}")
   String getUplink();
 
@@ -309,7 +309,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    * @return numberRangeList NumberRange
    */
   @Bindable
-  @Persistent("NumberRange")
+  @Persistent(ordinal=0, comment="NumberRange")
   TrackedList<NumberRange> getNumberRangeList();
 
   /**

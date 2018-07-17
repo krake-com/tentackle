@@ -20,12 +20,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.Serializable;
-import java.rmi.RemoteException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
 import org.tentackle.common.StringHelper;
@@ -40,6 +34,13 @@ import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -1927,7 +1928,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @return optional informational or error message
    */
-  @Persistent("optional informational or error message")
+  @Persistent(comment = "optional informational or error message")
   public String getMessage()    {
     return message;
   }
@@ -1939,7 +1940,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    *
    * @param message optional informational or error message
    */
-  @Persistent("optional informational or error message")
   public void setMessage(String message) {
     assertMutable();
     this.message = message;

@@ -68,7 +68,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
    *
    * @return the bundle id
    */
-  @Persistent("the bundle id")
+  @Persistent(ordinal=0, comment="the bundle id")
   long getBundleId();
 
   /**
@@ -76,7 +76,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
    *
    * @return the resource bundle key
    */
-  @Persistent("the resource bundle key")
+  @Persistent(ordinal=1, comment="the resource bundle key")
   @NotNull
   String getKey();
 
@@ -92,7 +92,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
    *
    * @return the localized string
    */
-  @Persistent("the localized string")
+  @Persistent(ordinal=2, comment="the localized string")
   @NotNull
   String getValue();
 
@@ -116,7 +116,7 @@ public interface StoredBundleKeyPersistence extends PersistentObject<StoredBundl
    * @return bundle Bundle
    */
   @Bindable
-  @Persistent(value="Bundle", component=false, parent=true)
+  @Persistent(ordinal=0, comment="Bundle", component=false, parent=true)
   StoredBundle getBundle();
 
   /**

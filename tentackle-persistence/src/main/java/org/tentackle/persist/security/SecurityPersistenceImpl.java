@@ -19,32 +19,32 @@
 
 package org.tentackle.persist.security;
 
-import java.rmi.RemoteException;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityPersistence;
-import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -127,47 +127,36 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
 
   /** the protected classname, null if an entity. */
-  @Persistent("the protected classname, null if an entity")
   private String objectClassName;
 
   /** the protected object's class id, 0 if not an entity. */
-  @Persistent("the protected object's class id, 0 if not an entity")
   private int objectClassId;
 
   /** the id of the protected object, 0 if all instances or not an entity. */
-  @Persistent("the id of the protected object, 0 if all instances or not an entity")
   private long objectId;
 
   /** the class id of the DomainContext's context entity, 0 if all contexts. */
-  @Persistent("the class id of the DomainContext's context entity, 0 if all contexts")
   private int domainContextClassId;
 
   /** the id of DomainContext's context object, 0 if all instances. */
-  @Persistent("the id of DomainContext's context object, 0 if all instances")
   private long domainContextId;
 
   /** the class id of the entity the permissions are granted to, null if all classes. */
-  @Persistent("the class id of the entity the permissions are granted to, null if all classes")
   private int granteeClassId;
 
   /** the id of the entity the permissions are granted to, 0 if all grantees. */
-  @Persistent("the id of the entity the permissions are granted to, 0 if all grantees")
   private long granteeId;
 
   /** the priority or evaluation order, 0 is highest or first. */
-  @Persistent("the priority or evaluation order, 0 is highest or first")
   private int priority;
 
   /** the permissions as a comma-separated list. */
-  @Persistent("the permissions as a comma-separated list")
   private String permissions;
 
   /** the false if denied, true if allowed. */
-  @Persistent("the false if denied, true if allowed")
   private boolean allowed;
 
   /** the user message. */
-  @Persistent("the user message")
   private String message;
 
   // </editor-fold>//GEN-END:declare

@@ -67,7 +67,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
    *
    * @return ID of the number pool
    */
-  @Persistent("ID of the number pool")
+  @Persistent(ordinal=0, comment="ID of the number pool")
   long getNumberPoolId();
 
   /**
@@ -89,7 +89,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
    *
    * @return begin of range
    */
-  @Persistent("begin of range")
+  @Persistent(ordinal=1, comment="begin of range")
   long getBegin();
 
   /**
@@ -118,7 +118,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
    *
    * @return end of range
    */
-  @Persistent("end of range")
+  @Persistent(ordinal=2, comment="end of range")
   long getEnd();
 
   /**
@@ -155,7 +155,7 @@ public interface NumberRangePersistence extends PersistentObject<NumberRange> {
    * @return numberPool NumberPool
    */
   @Bindable
-  @Persistent(value="NumberPool", component=false, parent=true)
+  @Persistent(ordinal=0, comment="NumberPool", component=false, parent=true)
   NumberPool getNumberPool();
 
   /**

@@ -161,13 +161,6 @@ For more options, see {\@link DbModelWurblet}.
 ]@
 
   // @(rel)@
-@[
-          if (rel.isComposite()) {
-]@
-  \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
-@[
-          }
-]@
   private @(transientModifier)@@(type)@ @(rel.getVariableName())@;
 @[
           if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER)  {

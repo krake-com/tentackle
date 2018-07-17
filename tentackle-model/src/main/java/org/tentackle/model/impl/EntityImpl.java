@@ -18,17 +18,9 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
@@ -42,6 +34,15 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The entity model implementation.
@@ -79,6 +80,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private final SourceInfo sourceInfo;                      // the source info
 
   private String name;                                      // the entities name
+  private int ordinal;                                      // the ordinal, 0 = top, 1 = first inherited, ...
   private int classId;                                      // the class id
   private String tableName;                                 // the table name
   private String schemaName;                                // the schema name
@@ -89,7 +91,6 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   private InheritanceType inheritanceType;                  // the inheritance type
   private String superEntityName;                           // the name of the extended super class
   private Entity superEntity;                               // the super entity
-  private int inheritanceLevel;                             // number of super entities
   private final List<Entity> subEntities;                   // the sub entities
   private final EntityOptionsImpl options;                  // options
   private final List<Attribute> attributes;                 // the attributes
@@ -257,6 +258,16 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     this.name = name;
   }
 
+
+  @Override
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
+
   @Override
   public int getClassId() {
     return classId;
@@ -404,11 +415,6 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   }
 
   @Override
-  public int getInheritanceLevel() {
-    return inheritanceLevel;
-  }
-
-  @Override
   public List<Entity> getSubEntities() {
     return subEntities;
   }
@@ -524,15 +530,6 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       throw new IllegalArgumentException("inheritance type cannot be set to null");
     }
     this.inheritanceType = inheritanceType;
-  }
-
-  /**
-   * Sets the inheritance level.
-   *
-   * @param inheritanceLevel the inheritance level
-   */
-  public void setInheritanceLevel(int inheritanceLevel) {
-    this.inheritanceLevel = inheritanceLevel;
   }
 
   /**

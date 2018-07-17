@@ -62,6 +62,7 @@ public class PdoMember {
   private final boolean parent;
   private final boolean domainKey;
   private final String comment;
+  private final int ordinal;
 
   /**
    * Creates a member.
@@ -74,8 +75,10 @@ public class PdoMember {
    * @param parent true if member is a parent relation
    * @param domainKey true if member is domain key
    * @param comment the comment
+   * @param ordinal the model ordinal
    */
-  public PdoMember(Type type, String name, Method getter, Method setter, boolean component, boolean parent, boolean domainKey, String comment) {
+  public PdoMember(Type type, String name, Method getter, Method setter,
+                   boolean component, boolean parent, boolean domainKey, String comment, int ordinal) {
     this.type = type;
     this.name = name;
     this.getter = getter;
@@ -84,6 +87,7 @@ public class PdoMember {
     this.parent = parent;
     this.domainKey = domainKey;
     this.comment = comment;
+    this.ordinal = ordinal;
   }
 
   /**
@@ -159,6 +163,14 @@ public class PdoMember {
     return comment;
   }
 
+  /**
+   * Gets the model ordinal for sorting.
+   *
+   * @return the ordinal
+   */
+  public int getOrdinal() {
+    return ordinal;
+  }
 
   @Override
   public boolean equals(Object o) {

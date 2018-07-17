@@ -19,13 +19,14 @@
 
 package org.tentackle.security.pdo;
 
-import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.session.Persistent;
 import org.tentackle.validate.validator.NotNull;
+
+import java.util.List;
 
 /**
  * Persistence interface for security rules.
@@ -97,7 +98,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the protected classname, null if an entity
    */
-  @Persistent("the protected classname, null if an entity")
+  @Persistent(ordinal=0, comment="the protected classname, null if an entity")
   @NotNull(condition="{object.objectClassId==0}", message="{ @('missing object classname') }")
   @Bindable
   String getObjectClassName();
@@ -115,7 +116,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the protected object's class id, 0 if not an entity
    */
-  @Persistent("the protected object's class id, 0 if not an entity")
+  @Persistent(ordinal=1, comment="the protected object's class id, 0 if not an entity")
   @NotNull(condition="{object.objectClassName==null}", message="{ @('missing object class-ID') }")
   @Bindable
   int getObjectClassId();
@@ -133,7 +134,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the id of the protected object, 0 if all instances or not an entity
    */
-  @Persistent("the id of the protected object, 0 if all instances or not an entity")
+  @Persistent(ordinal=2, comment="the id of the protected object, 0 if all instances or not an entity")
   @Bindable
   long getObjectId();
 
@@ -150,7 +151,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the class id of the DomainContext's context entity, 0 if all contexts
    */
-  @Persistent("the class id of the DomainContext's context entity, 0 if all contexts")
+  @Persistent(ordinal=3, comment="the class id of the DomainContext's context entity, 0 if all contexts")
   @Bindable
   int getDomainContextClassId();
 
@@ -167,7 +168,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the id of DomainContext's context object, 0 if all instances
    */
-  @Persistent("the id of DomainContext's context object, 0 if all instances")
+  @Persistent(ordinal=4, comment="the id of DomainContext's context object, 0 if all instances")
   @Bindable
   long getDomainContextId();
 
@@ -184,7 +185,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the class id of the entity the permissions are granted to, null if all classes
    */
-  @Persistent("the class id of the entity the permissions are granted to, null if all classes")
+  @Persistent(ordinal=5, comment="the class id of the entity the permissions are granted to, null if all classes")
   @Bindable
   int getGranteeClassId();
 
@@ -201,7 +202,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the id of the entity the permissions are granted to, 0 if all grantees
    */
-  @Persistent("the id of the entity the permissions are granted to, 0 if all grantees")
+  @Persistent(ordinal=6, comment="the id of the entity the permissions are granted to, 0 if all grantees")
   @Bindable
   long getGranteeId();
 
@@ -218,7 +219,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the priority or evaluation order, 0 is highest or first
    */
-  @Persistent("the priority or evaluation order, 0 is highest or first")
+  @Persistent(ordinal=7, comment="the priority or evaluation order, 0 is highest or first")
   @Bindable
   int getPriority();
 
@@ -235,7 +236,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the permissions as a comma-separated list
    */
-  @Persistent("the permissions as a comma-separated list")
+  @Persistent(ordinal=8, comment="the permissions as a comma-separated list")
   @NotNull(message="{ @('missing permissions') }")
   @Bindable
   String getPermissions();
@@ -253,7 +254,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the false if denied, true if allowed
    */
-  @Persistent("the false if denied, true if allowed")
+  @Persistent(ordinal=9, comment="the false if denied, true if allowed")
   @Bindable
   boolean isAllowed();
 
@@ -270,7 +271,7 @@ public interface SecurityPersistence extends PersistentObject<Security> {
    *
    * @return the user message
    */
-  @Persistent("the user message")
+  @Persistent(ordinal=10, comment="the user message")
   @Bindable
   String getMessage();
 

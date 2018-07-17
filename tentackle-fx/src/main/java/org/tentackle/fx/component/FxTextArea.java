@@ -43,8 +43,6 @@ import java.util.function.Function;
  */
 public class FxTextArea extends TextArea implements FxTextComponent {
 
-  private int numLines;         // binding option: number of lines visible (used for form generation at runtime)
-
   /**
    * Creates a {@code FxTextArea} with empty text content.
    */
@@ -59,25 +57,6 @@ public class FxTextArea extends TextArea implements FxTextComponent {
    */
   public FxTextArea(String text) {
     super(text);
-  }
-
-  /**
-   * Gets the number of lines visible in this text area.<br>
-   * This is just a hint for the forms generator.
-   *
-   * @return the number of lines
-   */
-  public int getNumLines() {
-    return numLines;
-  }
-
-  /**
-   * Sets the number of lines visible in this text area.
-   *
-   * @param numLines the number of lines
-   */
-  public void setNumLines(int numLines) {
-    this.numLines = numLines;
   }
 
 

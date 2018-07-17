@@ -66,18 +66,18 @@ For more options, see {\@link ModelWurblet}.
 @[
         if (rel.isComposite()) {
 ]@
-  \@Persistent(@(StringHelper.toDoubleQuotes(rel.getComment()))@)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@)
 @[
         }
         else {
           if (oppRel != null && oppRel.isComposite()) {
 ]@
-  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false, parent=true)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false, parent=true)
 @[
           }
           else {
 ]@
-  \@Persistent(value=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(rel.getComment()))@, component=false)
 @[
           }
         }
@@ -98,7 +98,7 @@ For more options, see {\@link ModelWurblet}.
    * \@return list of @(nmRel.getVariableName())@
    */
   \@Bindable
-  \@Persistent(value=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
+  \@Persistent(ordinal=@(rel.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(nmVar))@, component=false)
   TrackedList<@(nmRel.getDeclaredJavaType(false))@> get@(nmName)@();
 @[
         }

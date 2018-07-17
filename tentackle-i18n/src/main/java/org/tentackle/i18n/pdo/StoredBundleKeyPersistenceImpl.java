@@ -19,21 +19,21 @@
 
 package org.tentackle.i18n.pdo;
 
-import java.rmi.RemoteException;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.misc.TrackedList;
 import org.tentackle.i18n.pdo.rmi.StoredBundleKeyRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.Objects;
 
 
 
@@ -90,15 +90,12 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
 
   /** the bundle id. */
-  @Persistent("the bundle id")
   private long bundleId;
 
   /** the resource bundle key. */
-  @Persistent("the resource bundle key")
   private String key;
 
   /** the localized string. */
-  @Persistent("the localized string")
   private String value;
 
   // </editor-fold>//GEN-END:declare

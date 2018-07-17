@@ -57,11 +57,10 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
-import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.Note;
 import org.tentackle.misc.ConcurrencyHelper;
 
-import java.awt.*;
+import java.awt.Desktop;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -533,17 +532,20 @@ public class FxUtilities {
       }
     }
     else if (option.startsWith(Constants.BIND_LINES + "=")) {
-      // the option is only interpreted by the view generator
-      if (comp instanceof FxTextArea) {
+      if (comp instanceof TextArea) {
         try {
-          ((FxTextArea) comp).setNumLines(Integer.parseInt(option.substring(Constants.BIND_LINES.length() + 1)));
+          ((TextArea) comp).setPrefRowCount(Integer.parseInt(option.substring(Constants.BIND_LINES.length() + 1)));
+          processed = true;
         }
         catch (NumberFormatException ex) {
           throw new BindingException("invalid " + Constants.BIND_LINES + " @Bindable option \"" +
                                      option + "\") in " + member, ex);
         }
       }
-      processed = true;
+      else {
+        throw new BindingException(Constants.BIND_LINES + " @Bindable option \"" +
+                                   option + "\") in " + member + " not applicable to " + comp.getClass().getName());
+      }
     }
 
     return processed;

@@ -18,10 +18,9 @@
 
 package org.tentackle.model.impl;
 
-import java.util.Objects;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
@@ -32,6 +31,8 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
+
+import java.util.Objects;
 
 /**
  * Attribute implementation.
@@ -47,6 +48,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   private final boolean implicit;
 
   private AttributeLine sourceLine;
+  private int ordinal;
   private String javaName;
   private String columnName;
   private DataType dataType;
@@ -134,6 +136,15 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
   @Override
   public Entity getEntity() {
     return entity;
+  }
+
+  @Override
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
   }
 
   /**

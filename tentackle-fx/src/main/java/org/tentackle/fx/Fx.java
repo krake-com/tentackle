@@ -113,7 +113,7 @@ public class Fx {
    * @return the node instance
    */
   @SuppressWarnings("unchecked")
-  public static <T extends Node, R extends T> R createNode(Class<T> clazz) {
+  public static <T, R extends T> R createNode(Class<T> clazz) {
     return (R) FxFactory.getInstance().getBuilderFactory().getBuilder(clazz).build();
   }
 

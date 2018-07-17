@@ -48,7 +48,7 @@ For more options, see {\@link ModelWurblet}.
    *
    * \@return @(attr.getOptions().getComment())@
    */
-  \@Persistent(@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
+  \@Persistent(ordinal=@(attr.getOrdinal())@, comment=@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
 @[
           for (String annotation: attr.getOptions().getAnnotations()) {
 ]@

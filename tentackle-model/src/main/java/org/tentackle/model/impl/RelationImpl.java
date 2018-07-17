@@ -18,14 +18,9 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.StringTokenizer;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
@@ -39,6 +34,12 @@ import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
 import org.tentackle.model.parse.OptionParser;
 import org.tentackle.model.parse.RelationLine;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.StringTokenizer;
 
 /**
  * Relation implementation.
@@ -131,6 +132,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private final Entity entity;
   private final SourceInfo sourceInfo;
 
+  private int ordinal;
   private List<String> annotations;
   private RelationLine sourceLine;
   private String name;
@@ -201,6 +203,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public ModelElement getParent() {
     return getEntity();
+  }
+
+  @Override
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
   }
 
 

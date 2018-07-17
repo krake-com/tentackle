@@ -72,7 +72,7 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    *
    * @return the resource bundle name
    */
-  @Persistent("the resource bundle name")
+  @Persistent(ordinal=1, comment="the resource bundle name")
   @NotNull
   @DomainKey
   String getName();
@@ -89,7 +89,7 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    *
    * @return the locale, null if default
    */
-  @Persistent("the locale, null if default")
+  @Persistent(ordinal=2, comment="the locale, null if default")
   @DomainKey
   String getLocale();
 
@@ -122,7 +122,7 @@ public interface StoredBundlePersistence extends PersistentObject<StoredBundle> 
    * @return keys Keys
    */
   @Bindable
-  @Persistent("Keys")
+  @Persistent(ordinal=0, comment="Keys")
   TrackedList<StoredBundleKey> getKeys();
 
   /**

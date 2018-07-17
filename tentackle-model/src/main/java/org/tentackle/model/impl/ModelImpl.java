@@ -18,22 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import org.tentackle.model.ModelError;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
@@ -49,12 +33,29 @@ import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelError;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
 import org.tentackle.sql.Backend;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Model implementation.
@@ -819,7 +820,7 @@ public class ModelImpl implements Model {
       }
     }
 
-    // sets the inheritance level
+    // sets the inheritance level (ordinal)
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
       int level = 0;
@@ -828,7 +829,39 @@ public class ModelImpl implements Model {
         level++;
         superEntity = superEntity.getSuperEntity();
       }
-      ((EntityImpl) entity).setInheritanceLevel(level);
+      ((EntityImpl) entity).setOrdinal(level);
+    }
+
+    // sets the ordinals of attributes, relations and indexes
+    for (ModelEntity modelEntity: mapByEntityName.values()) {
+      Entity[] entities = new Entity[modelEntity.getEntity().getOrdinal() + 1];
+      Entity entity = modelEntity.getEntity();
+      List<Entity> superEntities = entity.getSuperEntities();
+      // reverse the path in the array
+      int superNdx = superEntities.size() - 1;
+      for (int i=0; i < entities.length; i++) {
+        if (i < superEntities.size()) {
+          entities[i] = superEntities.get(superNdx--);
+        }
+        else {
+          entities[i] = entity;
+        }
+      }
+
+      int attributeOrdinal = 0;
+      int relationOrdinal = 0;
+      int indexOrdinal = 0;
+      for (Entity nextEntity: entities) {
+        for (Attribute attribute: nextEntity.getAttributes()) {
+          ((AttributeImpl) attribute).setOrdinal(attributeOrdinal++);
+        }
+        for (Relation relation: nextEntity.getRelations()) {
+          ((RelationImpl) relation).setOrdinal(relationOrdinal++);
+        }
+        for (Index index: nextEntity.getIndexes()) {
+          ((IndexImpl) index).setOrdinal(indexOrdinal++);
+        }
+      }
     }
 
     // check hierarchies

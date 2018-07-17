@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -524,7 +525,7 @@ public class PdoUtilities {
    *
    * @param clazz the PDO class
    * @param <T> the PDO type
-   * @return the members
+   * @return the members sorted by the model's ordinal
    */
   public <T extends PersistentDomainObject<T>> List<PdoMember> getMembers(Class<T> clazz) {
     List<PdoMember> members = new ArrayList<>();
@@ -554,9 +555,10 @@ public class PdoUtilities {
                                 PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
         members.add(new PdoMember(type, name, getter, setter, anno.component(), anno.parent(),
                                   method.getAnnotation(DomainKey.class) != null,
-                                  anno.value()));
+                                  anno.comment(), anno.ordinal()));
       }
     }
+    members.sort(Comparator.comparingInt(PdoMember::getOrdinal));
     return members;
   }
 
@@ -567,7 +569,7 @@ public class PdoUtilities {
    * @param clazz the PDO class
    * @param withRelations true if include non-component object relations
    * @param <T> the PDO type
-   * @return the attributes
+   * @return the attributes sorted by the model's ordinal
    */
   public <T extends PersistentDomainObject<T>> List<PdoMember> getAttributes(Class<T> clazz, boolean withRelations) {
 
@@ -584,8 +586,8 @@ public class PdoUtilities {
           member.getGetter().getDeclaringClass() != PersistentObject.class) {
         if (member.getName().endsWith("Id")) {
           // check if this ID belongs to a relation
-          String relatioName = member.getName().substring(0, member.getName().length() - 2);
-          PdoMember relation = memberMap.get(relatioName);
+          String relationName = member.getName().substring(0, member.getName().length() - 2);
+          PdoMember relation = memberMap.get(relationName);
           if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
             if (withRelations && !relation.isComponent() && !relation.isParent()) {
               attributes.add(member);   // non-component object relation instead of object id

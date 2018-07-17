@@ -19,8 +19,6 @@
 
 package org.tentackle.persist.ns;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -28,20 +26,22 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.ns.pdo.NumberRangePersistence;
-import org.tentackle.persist.ns.rmi.NumberRangeRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoListener;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.ns.rmi.NumberRangeRemoteDelegate;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 
@@ -98,19 +98,16 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
 
   /** ID of the number pool. */
-  @Persistent("ID of the number pool")
   private long numberPoolId;
   /** the last persisted value of numberPoolId. */
   private long numberPoolIdPersisted;
 
   /** begin of range. */
-  @Persistent("begin of range")
   private long begin;
   /** the last persisted value of begin. */
   private long beginPersisted;
 
   /** end of range. */
-  @Persistent("end of range")
   private long end;
   /** the last persisted value of end. */
   private long endPersisted;

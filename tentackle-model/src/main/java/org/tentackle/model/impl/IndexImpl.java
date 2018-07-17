@@ -18,9 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
@@ -31,6 +28,10 @@ import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Index descriptor.
@@ -44,6 +45,7 @@ public class IndexImpl implements Index {
   private final SourceInfo sourceInfo;
   private final List<IndexAttribute> attributes;
   private ConfigurationLine sourceLine;
+  private int ordinal;
   private String name;
   private String comment;
   private boolean unique;
@@ -80,6 +82,14 @@ public class IndexImpl implements Index {
     return getEntity();
   }
 
+  @Override
+  public int getOrdinal() {
+    return ordinal;
+  }
+
+  public void setOrdinal(int ordinal) {
+    this.ordinal = ordinal;
+  }
 
   /**
    * Parses a configuration line.

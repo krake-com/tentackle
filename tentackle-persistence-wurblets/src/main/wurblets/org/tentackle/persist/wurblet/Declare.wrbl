@@ -17,15 +17,6 @@ For more options, see {\@link DbModelWurblet}.
 
     String[] args = getContainer().getArgs();   // cmd line args
 
-    boolean isPdo;
-    try {
-      getPdoClassName();
-      isPdo = true;
-    }
-    catch (WurbelException we) {
-      isPdo = false;
-    }
-
     String protection = "private";
     boolean generateAnnotations = false;
 
@@ -50,11 +41,6 @@ For more options, see {\@link DbModelWurblet}.
   @(annotation)@
 @[
           }
-        }
-        if (isPdo) {
-]@
-  \@Persistent(@(StringHelper.toDoubleQuotes(attr.getOptions().getComment()))@)
-@[
         }
 
         if (attr.getOptions().getInitialValue() != null) {

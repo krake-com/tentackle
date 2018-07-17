@@ -33,6 +33,13 @@ public interface ModelElement {
   String getName();
 
   /**
+   * Gets the ordinal along the inheritance path.
+   *
+   * @return the ordinal, starting at 0
+   */
+  int getOrdinal();
+
+  /**
    * Gets the information about the source where this element is defined.
    *
    * @return the source info

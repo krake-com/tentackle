@@ -19,38 +19,38 @@
 
 package org.tentackle.i18n.pdo;
 
-import java.rmi.RemoteException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
+import org.tentackle.i18n.pdo.rmi.StoredBundleRemoteDelegate;
 import org.tentackle.misc.IdentifiableMap;
 import org.tentackle.misc.TrackedArrayList;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.i18n.pdo.rmi.StoredBundleRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.persist.Join;
-import org.tentackle.persist.JoinedSelect;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoCacheIndex;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.Join;
+import org.tentackle.persist.JoinedSelect;
+import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.JoinType;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
+
+import java.rmi.RemoteException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -113,11 +113,9 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
 
   /** the resource bundle name. */
-  @Persistent("the resource bundle name")
   private String name;
 
   /** the locale, null if default. */
-  @Persistent("the locale, null if default")
   private String locale;
 
   // </editor-fold>//GEN-END:declare
@@ -331,7 +329,6 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
 
 
   // composite list of StoredBundleKey keys via StoredBundleKey#bundleId (Keys)
-  @Persistent("Keys")
   private TrackedList<StoredBundleKey> keys;
   private boolean keysLoaded;
   private transient TrackedList<StoredBundleKey> keysSnapshot;

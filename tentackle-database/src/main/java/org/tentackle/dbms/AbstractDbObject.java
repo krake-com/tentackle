@@ -19,11 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.log.Logger;
@@ -36,24 +31,17 @@ import org.tentackle.misc.PropertySupport;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
 
-import static org.tentackle.sql.Backend.SQL_ALLSTAR;
-import static org.tentackle.sql.Backend.SQL_AND;
-import static org.tentackle.sql.Backend.SQL_COMMA;
-import static org.tentackle.sql.Backend.SQL_DELETE;
-import static org.tentackle.sql.Backend.SQL_EQUAL;
-import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
-import static org.tentackle.sql.Backend.SQL_FROM;
-import static org.tentackle.sql.Backend.SQL_ORDERBY;
-import static org.tentackle.sql.Backend.SQL_SELECT;
-import static org.tentackle.sql.Backend.SQL_SET;
-import static org.tentackle.sql.Backend.SQL_UPDATE;
-import static org.tentackle.sql.Backend.SQL_WHERE;
-import static org.tentackle.sql.Backend.SQL_WHEREALL;
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+
+import static org.tentackle.sql.Backend.*;
 
 
 /**
@@ -191,16 +179,9 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   // data object attributes are always private
-  @Persistent("object id")
   private long id;                   // unique Object ID
-
-  @Persistent("object version")
   private long serial;               // serial-nummer (version to detect simultaneous updates)
-
-  @Persistent("class id")
   private int classId;               // the class id (overrides classvariables classid)
-
-  @Persistent("table version")
   private long tableSerial;          // last table serial from countModification (only if isTableSerialProvided() == true)
 
   // not persistable (but not transient due to RMI)

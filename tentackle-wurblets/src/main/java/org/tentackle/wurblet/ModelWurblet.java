@@ -19,15 +19,6 @@
 
 package org.tentackle.wurblet;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
@@ -46,6 +37,16 @@ import org.wurbelizer.wurbel.WurbelException;
 import org.wurbelizer.wurbel.WurbelTerminationException;
 import org.wurbelizer.wurbel.Wurbler;
 import org.wurbelizer.wurblet.AbstractWurblet;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 
@@ -385,7 +386,7 @@ public class ModelWurblet extends AbstractWurblet {
    * @return the sorted entities (same reference as argument)
    */
   public List<Entity> orderByInheritanceLevelAndClassId(List<Entity> entities) {
-    entities.sort(Comparator.comparingInt(Entity::getInheritanceLevel).thenComparingInt(Entity::getClassId));
+    entities.sort(Comparator.comparingInt(Entity::getOrdinal).thenComparingInt(Entity::getClassId));
     return entities;
   }
 

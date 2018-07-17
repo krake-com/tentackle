@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo;
 
-import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
@@ -38,6 +37,8 @@ import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationFailedException;
 
+import java.util.List;
+
 /**
  * Interface for the persistent part of a PDO.
  *
@@ -53,7 +54,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the ID
    */
-  @Persistent("object id")
+  @Persistent(comment = "object id")
   @Override
   @Bindable
   long getId();
@@ -63,7 +64,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param id the ID
    */
-  @Persistent("object id")
   @Override
   void setId(long id);
 
@@ -73,7 +73,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param serial the serial number
    */
-  @Persistent("object version")
   @Override
   void setSerial(long serial);
 
@@ -82,7 +81,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the serial number.
    */
-  @Persistent("object version")
+  @Persistent(comment = "object version")
   @Override
   @Bindable
   long getSerial();
@@ -101,7 +100,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param tableSerial the new table serial
    */
-  @Persistent("table version")
   void setTableSerial(long tableSerial);
 
   /**
@@ -109,7 +107,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the table serial
    */
-  @Persistent("table version")
+  @Persistent(comment = "table version")
   @Bindable
   long getTableSerial();
 
@@ -175,7 +173,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the root id
    */
-  @Persistent("root id")
+  @Persistent(comment = "root id")
   @Bindable
   long getRootId();
 
@@ -184,7 +182,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param rootId the root id
    */
-  @Persistent("root id")
   void setRootId(long rootId);
 
   /**
@@ -199,7 +196,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the root class id
    */
-  @Persistent("root class id")
+  @Persistent(comment = "root class id")
   @Bindable
   int getRootClassId();
 
@@ -208,7 +205,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param rootClassId the root class id
    */
-  @Persistent("root class id")
   void setRootClassId(int rootClassId);
 
   /**
@@ -234,7 +230,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the class id
    */
-  @Persistent("class id")
+  @Persistent(comment = "class id")
   @Bindable
   int getClassId();
 
@@ -853,7 +849,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the id or 0 if not being edited currently.
    */
-  @Persistent("userId of token holder")
+  @Persistent(comment = "userId of token holder")
   @Bindable
   long getEditedBy();
 
@@ -864,7 +860,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @param editedBy the id of the user, 0 to clear.
    *
    */
-  @Persistent("userId of token holder")
   void setEditedBy(long editedBy);
 
 
@@ -873,7 +868,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the time, null if not being edited.
    */
-  @Persistent("time since token given to user")
+  @Persistent(comment = "time since token given to user")
   @Bindable
   Timestamp getEditedSince();
 
@@ -883,7 +878,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param editedSince the time, null to clear.
    */
-  @Persistent("time since token given to user")
   void setEditedSince(Timestamp editedSince);
 
 
@@ -892,7 +886,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the time, null if not being edited.
    */
-  @Persistent("time when token expires")
+  @Persistent(comment = "time when token expires")
   @Bindable
   Timestamp getEditedExpiry();
 
@@ -902,7 +896,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @param editedExpiry the expiration time, null to clear.
    */
-  @Persistent("time when token expires")
   void setEditedExpiry(Timestamp editedExpiry);
 
 
@@ -926,7 +919,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Sets the normtext.
    * @param normText the normtext
    */
-  @Persistent("normalized text")
   void setNormText(String normText);
 
   /**
@@ -934,7 +926,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    *
    * @return the normtext
    */
-  @Persistent("normalized text")
+  @Persistent(comment = "normalized text")
   String getNormText();
 
   /**

@@ -22,22 +22,34 @@ package org.tentackle.fx.rdc;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import org.tentackle.bind.Bindable;
+import org.tentackle.bind.BindableElement;
+import org.tentackle.bind.BindingMember;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
-import org.tentackle.fx.component.FxCheckBox;
-import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxBindingFactory;
+import org.tentackle.fx.bind.FxComponentBinder;
+import org.tentackle.fx.bind.FxComponentBinding;
+import org.tentackle.fx.component.FxTextArea;
+import org.tentackle.fx.component.FxTextField;
+import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -49,10 +61,14 @@ import java.util.Map;
  * @param <T> the PDO type
  */
 public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEditor<T> {
+  
+  private final Class<T> pdoClass;                      // the PDO class
+  private final Map<PdoMember, FxComponent> nodeMap;    // map of attributes to FX nodes
+  private final FxComponentBinder binder;               // the binder
+  private final BindingMember pdoMember;                // the pdo parent binding member
+  private final BindingMember[] parents;
 
-  private T pdo;                                  // the PDO being edited
-  private final Map<PdoMember, Node> nodeMap;     // map of attributes to FX nodes
-
+  private T pdo;                                        // the PDO being edited
 
   /**
    * Creates the default editor from a pdo class.
@@ -60,6 +76,19 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @param pdoClass the PDO class
    */
   public DefaultPdoEditor(Class<T> pdoClass) {
+    this.pdoClass = pdoClass;
+    binder = getBinder();
+    BindableElement pdoElement = FxBindingFactory.getInstance().createBindableElement(pdoClass, "pdo");
+    try {
+      Field field = getClass().getDeclaredField("pdo");
+      field.setAccessible(true);
+      pdoElement.setField(field);
+    }
+    catch (NoSuchFieldException e) {
+      throw new FxRuntimeException("cannot determine parent field", e);
+    }
+    pdoMember = FxBindingFactory.getInstance().createBindingMember(DefaultPdoEditor.class, null, "pdo", "pdo", pdoElement);
+    parents = new BindingMember[] {pdoMember};
     nodeMap = createNodeMap(pdoClass);
     setView(createView(nodeMap));
   }
@@ -67,9 +96,9 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
   @Override
   public void requestInitialFocus() {
-    Node node = getFirstFocusableNode(nodeMap);
-    if (node != null) {
-      Platform.runLater(node::requestFocus);
+    FxComponent node = getFirstFocusableNode(nodeMap);
+    if (node instanceof Node) {
+      Platform.runLater(((Node) node)::requestFocus);
     }
   }
 
@@ -81,6 +110,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
   @Override
   public void setPdo(T pdo) {
     this.pdo = pdo;
+    binder.putBindingProperty(DomainContext.class, pdo.getDomainContext());
   }
 
 
@@ -90,20 +120,20 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @param nodes the nodes map
    * @return the node, null if none
    */
-  protected Node getFirstFocusableNode(Map<PdoMember, Node> nodes) {
-    Node node = null;
-    // focus domain key
-    for (Map.Entry<PdoMember, Node> entry: nodes.entrySet()) {
-      if (entry.getKey().isDomainKey()) {
+  protected FxComponent getFirstFocusableNode(Map<PdoMember, FxComponent> nodes) {
+    FxComponent node = null;
+    // focus changeable domain key
+    for (Map.Entry<PdoMember, FxComponent> entry: nodes.entrySet()) {
+      if (entry.getKey().isDomainKey() && entry.getValue().isChangeable()) {
         node = entry.getValue();
         break;
       }
     }
     if (node == null) {
-      // no domain key? take first editable node
-      for (Node n : nodes.values()) {
-        if (n instanceof FxComponent && ((FxComponent) n).isChangeable()) {
-          node = n;
+      // no changeable domain key? take first changeable node
+      for (FxComponent comp : nodes.values()) {
+        if (comp.isChangeable()) {
+          node = comp;
           break;
         }
       }
@@ -111,43 +141,97 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     return node;
   }
 
+
+  /**
+   * Creates an FX node for a given PDO attribute.
+   *
+   * @param attribute the PDO attribute
+   * @return the node
+   */
+  @SuppressWarnings("unchecked")
+  protected FxComponent createNode(PdoMember attribute) {
+    Bindable bindable = attribute.getGetter().getAnnotation(Bindable.class);
+    String bindingOptions = bindable == null ? "" : bindable.options();
+    Class<?> type = attribute.getGetter().getReturnType();
+    FxComponent node;
+    if (PersistentDomainObject.class.isAssignableFrom(type)) {
+      // non-component link to object relation: check cache to decide which type of node we should use
+      PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) type);
+      PdoCache cache = pdo.getCache();
+      if (cache != null && cache.isPreloading()) {
+        node = Fx.createNode(ComboBox.class);
+      }
+      else {
+        node = Fx.createNode(TextField.class);
+      }
+    }
+    else {
+      if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
+        node = Fx.createNode(CheckBox.class);
+      }
+      else if (Enum.class.isAssignableFrom(type)) {
+        node = Fx.createNode(ChoiceBox.class);
+      }
+      else {
+        int ndx = bindingOptions.indexOf(Constants.BIND_LINES + "=");
+        node = ndx >= 0 ? Fx.createNode(TextArea.class) : Fx.createNode(TextField.class);
+      }
+    }
+
+    bind(binder, pdoClass, pdoMember, attribute, node, bindingOptions);
+
+    return node;
+  }
+
+  /**
+   * Binds the node to the PDO member.
+   *
+   * @param binder the component binder
+   * @param pdoClass the PDO class
+   * @param parent the PDO parent binding member
+   * @param attribute the PDO attribute
+   * @param node the FX node
+   * @param bindingOptions the binding options
+   */
+  protected void bind(FxComponentBinder binder, Class<T> pdoClass, BindingMember parent,
+                      PdoMember attribute, FxComponent node, String bindingOptions) {
+
+    String memberName = StringHelper.firstToLower(attribute.getName());
+    BindableElement element = FxBindingFactory.getInstance().createBindableElement(attribute.getGetter().getReturnType(), "pdo" + attribute.getName());
+    element.setGetter(attribute.getGetter());
+    element.setSetter(attribute.getSetter());
+    BindingMember member = FxBindingFactory.getInstance().createBindingMember(pdoClass, parent, memberName, "pdo." + memberName, element);
+    FxComponentBinding binding = FxBindingFactory.getInstance().createComponentBinding(binder, parents, member, node, bindingOptions);
+    binder.addBinding(binding);
+
+    node.setBindingPath(member.getMemberPath());
+    node.setComponentPath(getClass().getName() + "." + memberName + "Node");
+
+    // @todo only if COL= not defined in the model
+    if (node instanceof FxTextField) {
+      FxTextField textField = (FxTextField) node;
+      if (textField.getMaxColumns() > 0) {
+        textField.setColumns(textField.getMaxColumns());
+      }
+    }
+    else if (node instanceof FxTextArea) {
+      ((FxTextArea) node).setColumns(30);
+    }
+  }
+
+
   /**
    * Creates a map of attributes to nodes.
    *
    * @param pdoClass the PDO class
    * @return the node map
    */
-  protected Map<PdoMember, Node> createNodeMap(Class<T> pdoClass) {
-    Map<PdoMember, Node> map = new LinkedHashMap<>();
-    for (PdoMember attribute: PdoUtilities.getInstance().getAttributes(pdoClass, true)) {
-      Bindable bindable = attribute.getGetter().getAnnotation(Bindable.class);
-      String bindingOptions = bindable == null ? "" : bindable.options();
-      Class<?> type = attribute.getGetter().getReturnType();
-      Node node;
-      if (attribute.getType() == PdoMember.Type.RELATION) {
-        // non-component link to object relation: check cache to decide which type of node we should use
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) type);
-        PdoCache cache = pdo.getCache();
-        if (cache != null && cache.isPreloading()) {
-          node = Fx.createNode(ComboBox.class);
-        }
-        else {
-          node = Fx.createNode(TextField.class);
-        }
-      }
-      else {
-        if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
-          node = Fx.createNode(FxCheckBox.class);
-        }
-        else if (Enum.class.isAssignableFrom(type)) {
-          node = Fx.createNode(FxChoiceBox.class);
-        }
-        else {
-          int ndx = bindingOptions.indexOf(Constants.BIND_LINES + "=");
-          node = ndx >= 0 ? Fx.createNode(TextArea.class) : Fx.createNode(TextField.class);
-        }
-      }
-      map.put(attribute, node);
+  protected Map<PdoMember, FxComponent> createNodeMap(Class<T> pdoClass) {
+    Map<PdoMember, FxComponent> map = new LinkedHashMap<>();
+    PdoUtilities.getInstance().getAttributes(pdoClass, true)
+                              .forEach(a -> map.put(a, createNode(a)));
+    if (map.isEmpty()) {
+      throw new FxRuntimeException("no visible attributes found for " + pdoClass.getName());
     }
     return map;
   }
@@ -158,12 +242,17 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * @param nodes the nodes map
    * @return the view
    */
-  protected Parent createView(Map<PdoMember, Node> nodes) {
+  protected Parent createView(Map<PdoMember, FxComponent> nodes) {
     GridPane grid = Fx.createNode(GridPane.class);
     grid.setVgap(5.0);
     grid.setHgap(5.0);
 
-
+    int row = 0;
+    for (Map.Entry<PdoMember, FxComponent> entry: nodes.entrySet()) {
+      grid.add(new Label(entry.getKey().getComment()), 0, row);
+      grid.add((Node) entry.getValue(), 1, row);
+      ++row;
+    }
 
     return grid;
   }
