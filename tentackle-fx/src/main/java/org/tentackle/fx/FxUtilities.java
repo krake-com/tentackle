@@ -458,6 +458,27 @@ public class FxUtilities {
 
 
   /**
+   * Gets a binding option from an options string.
+   *
+   * @param options the binding options string
+   * @param key the option key
+   * @return the option, null if no such option
+   */
+  public String getBindingOption(String options, String key) {
+    String option = null;
+    StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
+    while (stok.hasMoreTokens()) {
+      String token = stok.nextToken().trim();
+      if (token.startsWith(key)) {
+        option = token;
+        break;
+      }
+    }
+    return option;
+  }
+
+
+  /**
    * Applies a single binding option to a text component.
    *
    * @param comp the component

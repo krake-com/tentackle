@@ -20,6 +20,7 @@ package org.tentackle.fx.rdc;
 
 
 import javafx.application.Platform;
+import javafx.geometry.HPos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.CheckBox;
@@ -37,6 +38,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxComponentBinder;
 import org.tentackle.fx.bind.FxComponentBinding;
@@ -52,6 +54,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 
 /**
@@ -63,6 +66,7 @@ import java.util.Map;
 public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEditor<T> {
   
   private final Class<T> pdoClass;                      // the PDO class
+  private final ResourceBundle bundle;                  // optional bundle
   private final Map<PdoMember, FxComponent> nodeMap;    // map of attributes to FX nodes
   private final FxComponentBinder binder;               // the binder
   private final BindingMember pdoMember;                // the pdo parent binding member
@@ -74,9 +78,12 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * Creates the default editor from a pdo class.
    *
    * @param pdoClass the PDO class
+   * @param bundle the optional resource bundle
    */
-  public DefaultPdoEditor(Class<T> pdoClass) {
+  public DefaultPdoEditor(Class<T> pdoClass, ResourceBundle bundle) {
     this.pdoClass = pdoClass;
+    this.bundle = bundle;
+
     binder = getBinder();
     BindableElement pdoElement = FxBindingFactory.getInstance().createBindableElement(pdoClass, "pdo");
     try {
@@ -207,15 +214,18 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     node.setBindingPath(member.getMemberPath());
     node.setComponentPath(getClass().getName() + "." + memberName + "Node");
 
-    // @todo only if COL= not defined in the model
-    if (node instanceof FxTextField) {
-      FxTextField textField = (FxTextField) node;
-      if (textField.getMaxColumns() > 0) {
-        textField.setColumns(textField.getMaxColumns());
+    if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COL) == null) {
+      // if not already set via COL= in model options
+      if (node instanceof FxTextField) {
+        FxTextField textField = (FxTextField) node;
+        if (textField.getMaxColumns() > 0) {
+          textField.setColumns(textField.getMaxColumns());
+        }
       }
-    }
-    else if (node instanceof FxTextArea) {
-      ((FxTextArea) node).setColumns(30);
+      else if (node instanceof FxTextArea) {
+        FxTextArea textArea = (FxTextArea) node;
+        textArea.setColumns(30);
+      }
     }
   }
 
@@ -249,8 +259,22 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
     int row = 0;
     for (Map.Entry<PdoMember, FxComponent> entry: nodes.entrySet()) {
-      grid.add(new Label(entry.getKey().getComment()), 0, row);
-      grid.add((Node) entry.getValue(), 1, row);
+      Label label;
+      if (bundle != null) {
+        label = new Label(bundle.getString(StringHelper.firstToLower(entry.getKey().getName())));
+      }
+      else {
+        label = new Label(entry.getKey().getComment());
+      }
+
+      grid.add(label, 0, row);
+      GridPane.setHalignment(label, HPos.RIGHT);
+
+      Node node = (Node) entry.getValue();
+      grid.add(node, 1, row);
+      GridPane.setHalignment(node, HPos.LEFT);
+      GridPane.setFillWidth(node, false);
+
       ++row;
     }
 
