@@ -538,10 +538,10 @@ public class PdoUtilities {
       String name = method.getName();
       if (!Modifier.isStatic(method.getModifiers()) && !method.getReturnType().equals(Void.class)) {
         if (name.startsWith("is")) {
-          name = name.substring(2);
+          name = StringHelper.firstToLower(name.substring(2));
         }
         else if (name.startsWith("get")) {
-          name = name.substring(3);
+          name = StringHelper.firstToLower(name.substring(3));
         }
         else continue;    // not a getter
       }

@@ -100,9 +100,9 @@ public class TableUtilities {
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);
 
     for (PdoMember member: PdoUtilities.getInstance().getAttributes(config.getObjectClass(), true)) {
-      String columnName = StringHelper.firstToLower(member.getName());    // corresponds to the binding path
-      String displayName = bundle != null ? bundle.getString(columnName) : member.getName();
-      config.addColumn(columnName, displayName);
+      // columnname corresponds to the binding path
+      String displayName = bundle != null ? bundle.getString(member.getName()) : StringHelper.firstToUpper(member.getName());
+      config.addColumn(member.getName(), displayName);
     }
 
     if (config.getColumnConfigurations().isEmpty()) {

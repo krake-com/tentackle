@@ -94,7 +94,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
     BindableElement pdoElement = FxBindingFactory.getInstance().createBindableElement(pdoClass, PDO);
     try {
-      Field field = getClass().getDeclaredField(PDO);
+      Field field = DefaultPdoEditor.class.getDeclaredField(PDO);   // fixed class, in case overridden
       field.setAccessible(true);
       pdoElement.setField(field);
     }
@@ -226,16 +226,22 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    */
   protected void bind(BindingMember parent, PdoMember attribute, FxComponent node, String bindingOptions) {
 
-    String memberName = StringHelper.firstToLower(attribute.getName());
-    BindableElement element = FxBindingFactory.getInstance().createBindableElement(attribute.getGetter().getReturnType(), PDO + attribute.getName());
+    BindableElement element = FxBindingFactory.getInstance().createBindableElement(
+        attribute.getGetter().getReturnType(), PDO + StringHelper.firstToUpper(attribute.getName()));
+
     element.setGetter(attribute.getGetter());
     element.setSetter(attribute.getSetter());
-    BindingMember member = FxBindingFactory.getInstance().createBindingMember(pdoClass, parent, memberName, PDO + "." + memberName, element);
-    FxComponentBinding binding = FxBindingFactory.getInstance().createComponentBinding(getBinder(), parents, member, node, bindingOptions);
+
+    BindingMember member = FxBindingFactory.getInstance().createBindingMember(
+        pdoClass, parent, attribute.getName(), PDO + "." + attribute.getName(), element);
+
+    FxComponentBinding binding = FxBindingFactory.getInstance().createComponentBinding(
+        getBinder(), parents, member, node, bindingOptions);
+
     getBinder().addBinding(binding);
 
     node.setBindingPath(member.getMemberPath());
-    node.setComponentPath(getClass().getName() + "." + memberName + "Node");
+    node.setComponentPath(getClass().getName() + "." + attribute.getName() + "Node");
 
     if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COLS) == null) {
       // if not already set via COLS= in model options
@@ -313,7 +319,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     String text;
     if (getBundle() != null) {
       // take the short member name for bundle keys (shared with table column header)
-      text = getBundle().getString(StringHelper.firstToLower(attribute.getName()));
+      text = getBundle().getString(attribute.getName());
     }
     else {
       text = attribute.getComment();
