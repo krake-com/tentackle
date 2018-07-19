@@ -48,12 +48,16 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.Relation;
 import org.tentackle.model.print.EntityPrinter;
 import org.tentackle.model.print.PrintConfiguration;
 import org.tentackle.sql.Backend;
@@ -160,6 +164,14 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter
   protected String dumpAnnotationsAsOptions;
+
+  /**
+   * Optional directory where to create bundle property files.<br>
+   * Contains all attribute- and relation names with their comments.<br>
+   * Useful to copy and paste into the project for auto table config or default editors.
+   */
+  @Parameter
+  protected File bundleDir;
 
 
   /**
@@ -509,6 +521,33 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
                  new OutputStreamWriter(
                  new FileOutputStream(dumpFile), Settings.encodingCharset))) {
               writer.write(new EntityPrinter(entity, configuration).print());
+            }
+          }
+        }
+        catch (IOException | ModelException ex) {
+          throw new MojoFailureException("creating model dump failed", ex);
+        }
+      }
+
+      if (bundleDir != null) {
+        bundleDir.mkdirs();
+        try {
+          for (Entity entity : Model.getInstance().getAllEntitites()) {
+            File dumpFile = new File(bundleDir, entity.getName() + ".properties");
+            try (BufferedWriter writer =
+                     new BufferedWriter(
+                         new OutputStreamWriter(
+                             new FileOutputStream(dumpFile), Settings.encodingCharset))) {
+              writer.write("# attributes\n");
+              for (Attribute attribute: entity.getAttributesIncludingInherited()) {
+                if (!attribute.isImplicit()) {
+                  writer.write(attribute.getName() + "=" + attribute.getOptions().getComment() + "\n");
+                }
+              }
+              writer.write("# relations\n");
+              for (Relation relation: entity.getRelationsIncludingInherited()) {
+                writer.write(StringHelper.firstToLower(relation.getName()) + "=" + relation.getComment() + "\n");
+              }
             }
           }
         }
