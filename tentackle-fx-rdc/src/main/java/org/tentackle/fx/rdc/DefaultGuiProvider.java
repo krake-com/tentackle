@@ -179,7 +179,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * @param pdoToDrop the PDO to drop
    */
   public void dropPdo(PersistentDomainObject<?> pdoToDrop) {
-    throw new FxRuntimeException("dropPdo is not implemented " + pdo.getEffectiveClass().getName());
+    throw new FxRuntimeException("dropPdo is not implemented for " + pdo.getEffectiveClass().getName());
   }
 
   @Override
