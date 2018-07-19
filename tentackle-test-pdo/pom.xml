@@ -56,8 +56,12 @@
 
   <build>
 
-    <!-- generated SQL -->
     <resources>
+      <!-- fixed SQL -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- generated SQL -->
       <resource>
         <directory>target/generated-resources</directory>
       </resource>
