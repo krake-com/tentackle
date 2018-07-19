@@ -53,6 +53,11 @@ interface PdoUtilities$Singleton {
  */
 @Service(PdoUtilities.class)      // defaults to self
 public class PdoUtilities {
+  
+  private static final String NULL_SESSION = "session in PDO is null";
+  private static final String UNEXPECTED_SESSION = "unexpected session: ";
+  private static final String EXPECTED_SESSION = ", expected: ";
+
 
   /**
    * The singleton.
@@ -271,13 +276,13 @@ public class PdoUtilities {
             if (session == null) {
               session = obj.getSession();
               if (session == null) {
-                throw new PdoRuntimeException(obj, "session is null");
+                throw new PdoRuntimeException(obj, NULL_SESSION);
               }
               txVoucher = session.begin("delete collection");
             }
             else if (obj.getSession() != session) {
               // must be the same instance of Db!
-              throw new PdoRuntimeException(obj, "unexpected session: " + obj.getSession() + ", expected: " + session);
+              throw new PdoRuntimeException(obj, UNEXPECTED_SESSION + obj.getSession() + EXPECTED_SESSION + session);
             }
             obj.delete();
             deleted++;
@@ -322,13 +327,13 @@ public class PdoUtilities {
             if (session == null) {
               session = obj.getSession();
               if (session == null) {
-                throw new PersistenceException(obj, "session is null");
+                throw new PersistenceException(obj, NULL_SESSION);
               }
               txVoucher = session.begin("delete missing in collection");
             }
             else if(obj.getSession() != session) {
               // must be the same instance of Db!
-              throw new PersistenceException(obj, "unexpected session: " + obj.getSession() + ", expected: " + session);
+              throw new PersistenceException(obj, UNEXPECTED_SESSION + obj.getSession() + EXPECTED_SESSION + session);
             }
             obj.delete();
             deleted++;
@@ -406,13 +411,13 @@ public class PdoUtilities {
             if (session == null) {
               session = obj.getSession();
               if (session == null) {
-                throw new PdoRuntimeException(obj, "session is null");
+                throw new PdoRuntimeException(obj, NULL_SESSION);
               }
               txVoucher = session.begin("save collection");
             }
             else if (obj.getSession() != session) {
               // must be the same instance of Db!
-              throw new PdoRuntimeException(obj, "unexpected db connection: " + obj.getSession() + ", expected: " + session);
+              throw new PdoRuntimeException(obj, UNEXPECTED_SESSION + obj.getSession() + EXPECTED_SESSION + session);
             }
             if (obj.isPersistable()) {
               if (!modifiedOnly || obj.isModified())  {
@@ -590,9 +595,13 @@ public class PdoUtilities {
           PdoMember relation = memberMap.get(relationName);
           if (relation != null && relation.getType() == PdoMember.Type.RELATION) {
             if (withRelations && !relation.isComponent() && !relation.isParent()) {
-              attributes.add(member);   // non-component object relation instead of object id
+              // non-component object relation instead of object id
+              member = new PdoMember(relation.getType(), relation.getName(), relation.getGetter(), relation.getSetter(),
+                                     false, false, member.isDomainKey(), relation.getComment(), member.getOrdinal());
             }
-            continue;   // skip object IDs
+            else {
+              continue;   // skip component or parent relations
+            }
           }
         }
         attributes.add(member);

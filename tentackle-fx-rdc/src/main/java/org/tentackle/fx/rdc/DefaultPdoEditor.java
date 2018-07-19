@@ -266,15 +266,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
     int row = 0;
     for (Map.Entry<PdoMember, FxComponent> entry: nodes.entrySet()) {
-      Label label;
-      if (bundle != null) {
-        // take the short member name for bundle keys (instead of comment below)
-        label = new Label(bundle.getString(StringHelper.firstToLower(entry.getKey().getName())));
-      }
-      else {
-        label = new Label(entry.getKey().getComment());
-      }
 
+      Label label = createLabel(entry.getKey(), bundle);
       grid.add(label, 0, row);
       GridPane.setHalignment(label, HPos.RIGHT);
 
@@ -287,5 +280,29 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     }
 
     return grid;
+  }
+
+  /**
+   * Creates the label.
+   *
+   * @param attribute the pdo member
+   * @param bundle optional bundle
+   * @return the label node
+   */
+  protected Label createLabel(PdoMember attribute, ResourceBundle bundle) {
+    String text;
+    if (bundle != null) {
+      // take the short member name for bundle keys (shared with table column header)
+      text = bundle.getString(StringHelper.firstToLower(attribute.getName()));
+    }
+    else {
+      text = attribute.getComment();
+    }
+    if (!text.endsWith(":")) {
+      text += ":";
+    }
+    Label label = Fx.createNode(Label.class);
+    label.setText(text);
+    return label;
   }
 }
