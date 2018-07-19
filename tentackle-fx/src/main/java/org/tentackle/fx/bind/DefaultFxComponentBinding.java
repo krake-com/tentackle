@@ -61,12 +61,17 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
    *        <ul>
    *          <li>UC: convert to uppercase</li>
    *          <li>LC: convert to lowercase</li>
-   *          <li>COL=n: set columns.</li>
-   *          <li>MAXCOL=n: set maxcolumns.</li>
+   *          <li>COLS=n: width in columns</li>
+   *          <li>MAXCOLS=n: limit input to max. columns</li>
+   *          <li>LINESS=n: number of lines in textareas</li>
    *          <li>[-]AUTOSELECT: turn autoselect on/off</li>
+   *          <li>UTC: utc timestamps</li>
+   *          <li>SCALE=n: numeric scale</li>
+   *          <li>UNSIGNED: unsigned numeric value.</li>
    *        </ul>
    * @param parents the members building the declaration chain to this member, null if this binding's member is in controller
    * @param member the member field to bind
+   * @see org.tentackle.common.Constants
    */
   public DefaultFxComponentBinding(FxComponentBinder binder, BindingMember[] parents, BindingMember member,
                                    FxComponent component, String componentOptions) {

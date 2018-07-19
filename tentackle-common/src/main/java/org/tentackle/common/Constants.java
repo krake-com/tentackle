@@ -130,11 +130,11 @@ public class Constants {
   public static final String AN_NORMTEXT = "normText";
 
 
-  /** bind option MAXCOL = ... */
-  public static final String BIND_MAXCOL = "MAXCOL";
+  /** bind option MAXCOLS = ... */
+  public static final String BIND_MAXCOLS = "MAXCOLS";
 
-  /** bind option COL = ... */
-  public static final String BIND_COL = "COL";
+  /** bind option COLS = ... */
+  public static final String BIND_COLS = "COLS";
 
   /** bind option SCALE = ... */
   public static final String BIND_SCALE = "SCALE";

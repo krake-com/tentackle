@@ -42,7 +42,7 @@ public @interface Bindable {
   /**
    * GUI Binding options.
    * <p>
-   * Example: <tt>@Bindable(options="UC,LC,MAXCOL,COL,[-]AUTOSELECT")</tt>
+   * Example: <tt>@Bindable(options="UC,MAXCOLS=5)</tt>
    *
    * @return the options, the empty string if none
    */

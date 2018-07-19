@@ -67,7 +67,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
   /**
    * Default column width for text areas.<br>
-   * Can be changed per attribute in model via COL= option.
+   * Can be changed per attribute in model via COLS= option.
    */
   public static int textAreaColumns = 30;
 
@@ -170,8 +170,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     FxComponent node;
     if (PersistentDomainObject.class.isAssignableFrom(type)) {
       // non-component link to object relation: check cache to decide which type of node we should use
-      PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) type);
-      PdoCache cache = pdo.getCache();
+      PersistentDomainObject object = Pdo.create((Class<PersistentDomainObject>) type);
+      PdoCache cache = object.getCache();
       if (cache != null && cache.isPreloading()) {
         node = Fx.createNode(ComboBox.class);
       }
@@ -221,8 +221,8 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     node.setBindingPath(member.getMemberPath());
     node.setComponentPath(getClass().getName() + "." + memberName + "Node");
 
-    if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COL) == null) {
-      // if not already set via COL= in model options
+    if (FxUtilities.getInstance().getBindingOption(bindingOptions, Constants.BIND_COLS) == null) {
+      // if not already set via COLS= in model options
       if (node instanceof FxTextField) {
         FxTextField textField = (FxTextField) node;
         if (textField.getMaxColumns() > 0) {

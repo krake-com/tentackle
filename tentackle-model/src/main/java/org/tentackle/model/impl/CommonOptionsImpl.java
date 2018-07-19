@@ -138,7 +138,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
 
     String uco = option.toUpperCase();
     String fullopt = uco;
-    int ndx = uco.indexOf('=');   // option followed by '=', i.e. COL=5
+    int ndx = uco.indexOf('=');   // option followed by '=', ex. COLS=5
     if (ndx > 0) {
       uco = uco.substring(0, ndx);
     }
@@ -217,8 +217,8 @@ public abstract class CommonOptionsImpl implements CommonOptions {
         processBindOption(uco, on);
         break;
 
-      case BIND_COL:
-      case BIND_MAXCOL:
+      case BIND_COLS:
+      case BIND_MAXCOLS:
       case BIND_SCALE:
       case BIND_LINES:
         processBindOption(fullopt, on);

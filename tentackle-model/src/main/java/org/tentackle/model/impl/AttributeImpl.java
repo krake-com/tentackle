@@ -187,12 +187,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       }
     }
 
-    // replace SIZE by MAXCOL=size and/or SCALE=scale, if set
+    // replace SIZE by MAXCOLS=size and/or SCALE=scale, if set
     if (getOptions().getBindOptions().contains(CommonOptionsImpl.BIND_SIZE)) {
       getOptions().removeBindOption(CommonOptionsImpl.BIND_SIZE);
-      // size option set: replace by [MAXCOL=<size>][,SCALE=<scale] if not already defined in model
-      if (getSize() != null && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOL)) {
-        getOptions().addBindOption(Constants.BIND_MAXCOL + "=" + getSize());
+      // size option set: replace by [MAXCOLS=<size>][,SCALE=<scale] if not already defined in model
+      if (getSize() != null && !getOptions().getBindOptions().contains(Constants.BIND_MAXCOLS)) {
+        getOptions().addBindOption(Constants.BIND_MAXCOLS + "=" + getSize());
       }
       if (getScale() != null && !getOptions().getBindOptions().contains(Constants.BIND_SCALE)) {
         getOptions().addBindOption(Constants.BIND_SCALE + "=" + getScale());

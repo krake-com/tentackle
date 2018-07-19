@@ -186,13 +186,13 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
       columnConfiguration.setUnsigned(false);
       processed = true;
     }
-    else if (option.startsWith(Constants.BIND_MAXCOL + "=")) {
+    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
       try {
-        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOL.length() + 1)));
+        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
         processed = true;
       }
       catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_MAXCOL + " @Bindable option \"" +
+        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
                                    option + "\") in " + getMember(), ex);
       }
     }
@@ -206,9 +206,9 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
                                    option + "\") in " + getMember(), ex);
       }
     }
-    else if (option.startsWith(Constants.BIND_COL + "=") ||
+    else if (option.startsWith(Constants.BIND_COLS + "=") ||
              option.startsWith(Constants.BIND_LINES + "=")) {
-      // COL= and LINES= not applicable to table cells: just ignore
+      // COLS= and LINES= not applicable to table cells: just ignore
       processed = true;
     }
 

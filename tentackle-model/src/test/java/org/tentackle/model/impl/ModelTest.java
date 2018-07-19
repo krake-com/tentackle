@@ -115,7 +115,7 @@ public class ModelTest {
       assertEquals(attribute.getOptions().getComment(), "the unique invoice number");
       assertEquals(attribute.getSize(), Integer.valueOf(10));
       assertTrue(attribute.getOptions().isUpperCase());
-      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOL=10");
+      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOLS=10");
       assertEquals(attribute.getOptions().getAnnotations().size(), 1);
       assertEquals(attribute.getOptions().getAnnotations().get(0),
                    "@NotNull(message=\"{ @('please_enter_the_invoice-number') }\")");
@@ -131,7 +131,7 @@ public class ModelTest {
 
       attribute = entity.getAttributes().get(8);
       assertEquals(attribute.getDataType(), DataType.STRING);
-      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOL=200");
+      assertEquals(attribute.getOptions().getBindOptions(), "UC,MAXCOLS=200");
       assertEquals(attribute.getOptions().getDefaultValue(), "blah\nx ");
 
       attribute = entity.getAttributes().get(9);
@@ -145,7 +145,7 @@ public class ModelTest {
       assertEquals(attribute.getDataType(), DataType.DOUBLE);
       assertEquals(attribute.getSize(), Integer.valueOf(10));
       assertEquals(attribute.getScale(), Integer.valueOf(2));
-      assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,MAXCOL=10,SCALE=2");
+      assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,MAXCOLS=10,SCALE=2");
 
       attribute = entity.getAttributes().get(13);
       assertEquals(attribute.getDataType(), DataType.APPLICATION);

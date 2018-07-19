@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import static org.tentackle.common.Constants.BIND_MAXCOL;
+import static org.tentackle.common.Constants.BIND_MAXCOLS;
 import static org.tentackle.common.Constants.BIND_SCALE;
 
 /**
@@ -149,8 +149,8 @@ public class AttributeOptionsPrinter {
       StringTokenizer stok = new StringTokenizer(attributeOptions, ",");
       while (stok.hasMoreTokens()) {
         String option = stok.nextToken();
-        if (option.startsWith(BIND_MAXCOL)) {
-          int maxCol = Integer.parseInt(option.substring(BIND_MAXCOL.length() + 1));
+        if (option.startsWith(BIND_MAXCOLS)) {
+          int maxCol = Integer.parseInt(option.substring(BIND_MAXCOLS.length() + 1));
           if (attribute.getSize() != null && attribute.getSize() == maxCol) {
             continue;
           }
