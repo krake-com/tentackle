@@ -24,6 +24,7 @@ import java.text.ParseException;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
+import org.tentackle.misc.FormatHelper;
 
 /**
  * Abstract base class for number translators.
@@ -89,6 +90,7 @@ public abstract class NumberStringTranslator<M extends Number> extends ValueStri
     if (format == null || !pat.equals(pattern)) {
       pattern = pat;
       format = new DecimalFormat(pattern);
+      FormatHelper.setScale(format, getComponent().getScale());
     }
     return format;
   }

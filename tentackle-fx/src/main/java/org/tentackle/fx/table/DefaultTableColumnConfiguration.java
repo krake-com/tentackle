@@ -213,7 +213,7 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public DecimalFormat getNumberFormat() {
     if (numberFormat == null && (pattern != null || scale != null)) {
-      // scale given but no pattern
+      // scale or pattern given
       if (pattern == null) {
         pattern = FormatHelper.getIntegerPattern();
       }
