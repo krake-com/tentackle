@@ -43,23 +43,24 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
 
-      if (event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) {
-        if (!event.isAltDown() && !event.isMetaDown()) {
-          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-            if (event.isControlDown()) {
-              control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
+      if ((event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) &&
+          !event.isAltDown() && !event.isMetaDown()) {
+
+        if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+          if (event.isControlDown()) {
+            control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
+          }
+          else {
+            if (event.isShiftDown()) {
+              focusPrevious(control);
             }
             else {
-              if (event.isShiftDown()) {
-                focusPrevious(control);
-              }
-              else {
-                focusNext(control);
-              }
+              focusNext(control);
             }
           }
-          event.consume();
         }
+
+        event.consume();
       }
     });
   }
