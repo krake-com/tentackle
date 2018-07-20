@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import org.tentackle.fx.ConfiguratorService;
 
@@ -42,41 +43,23 @@ public class TextAreaConfigurator<T extends TextArea> extends TextInputControlCo
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
 
-      switch (event.getCode()) {
-        case TAB:
-          if (!event.isAltDown() && !event.isMetaDown()) {
-            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-              if (event.isControlDown()) {
-                control.insertText(control.getCaretPosition(), "\t");
-              }
-              else {
-                if (event.isShiftDown()) {
-                  focusPrevious(control);
-                }
-                else {
-                  focusNext(control);
-                }
-              }
+      if (event.getCode() == KeyCode.TAB || event.getCode() == KeyCode.ENTER) {
+        if (!event.isAltDown() && !event.isMetaDown()) {
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            if (event.isControlDown()) {
+              control.insertText(control.getCaretPosition(), event.getCode() == KeyCode.TAB ? "\t" : "\n");
             }
-            event.consume();
-          }
-          break;
-
-        case ENTER:
-          if (!event.isShiftDown() &&
-              !event.isAltDown() &&
-              !event.isMetaDown()) {
-            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-              if (event.isControlDown()) {
-                control.insertText(control.getCaretPosition(), "\n");
+            else {
+              if (event.isShiftDown()) {
+                focusPrevious(control);
               }
               else {
                 focusNext(control);
               }
             }
-            event.consume();
           }
-          break;
+          event.consume();
+        }
       }
     });
   }
