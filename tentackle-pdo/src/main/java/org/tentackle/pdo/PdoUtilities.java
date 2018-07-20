@@ -550,7 +550,7 @@ public class PdoUtilities {
         Method getter = method;
         Method setter = null;
         try {
-          setter = clazz.getMethod("set" + name, getter.getReturnType());
+          setter = clazz.getMethod("set" + StringHelper.firstToUpper(name), getter.getReturnType());
         }
         catch (NoSuchMethodException e) {
           // no setter

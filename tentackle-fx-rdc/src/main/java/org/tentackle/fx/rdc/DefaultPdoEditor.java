@@ -174,44 +174,45 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
 
 
   /**
-   * Creates an FX node for a given PDO attribute.
-   * <p>
-   * Override to skip attributes.
+   * Creates an FX node for a given PDO attribute.<br>
+   * Attributes must be bindable.
    *
    * @param attribute the PDO attribute
    * @return the node, null if skip attribute
+   * @see Bindable
    */
   @SuppressWarnings("unchecked")
   protected FxComponent createNode(PdoMember attribute) {
+    FxComponent node = null;
     Bindable bindable = attribute.getGetter().getAnnotation(Bindable.class);
-    String bindingOptions = bindable == null ? "" : bindable.options();
-    Class<?> type = attribute.getGetter().getReturnType();
-    FxComponent node;
-    if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      // non-component link to object relation: check cache to decide which type of node we should use
-      PersistentDomainObject object = Pdo.create((Class<PersistentDomainObject>) type);
-      PdoCache cache = object.getCache();
-      if (cache != null && cache.isPreloading()) {
-        node = Fx.createNode(ComboBox.class);
+    if (bindable != null) {
+      String bindingOptions = bindable.options();
+      Class<?> type = attribute.getGetter().getReturnType();
+      if (PersistentDomainObject.class.isAssignableFrom(type)) {
+        // non-component link to object relation: check cache to decide which type of node we should use
+        PersistentDomainObject object = Pdo.create((Class<PersistentDomainObject>) type);
+        PdoCache cache = object.getCache();
+        if (cache != null && cache.isPreloading()) {
+          node = Fx.createNode(ComboBox.class);
+        }
+        else {
+          node = Fx.createNode(TextField.class);
+        }
       }
       else {
-        node = Fx.createNode(TextField.class);
+        if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
+          node = Fx.createNode(CheckBox.class);
+        }
+        else if (Enum.class.isAssignableFrom(type)) {
+          node = Fx.createNode(ChoiceBox.class);
+        }
+        else {
+          int ndx = bindingOptions.indexOf(Constants.BIND_LINES + "=");
+          node = ndx >= 0 ? Fx.createNode(TextArea.class) : Fx.createNode(TextField.class);
+        }
       }
+      bind(pdoMember, attribute, node, bindingOptions);
     }
-    else {
-      if (Boolean.class.equals(type) || Boolean.TYPE.equals(type)) {
-        node = Fx.createNode(CheckBox.class);
-      }
-      else if (Enum.class.isAssignableFrom(type)) {
-        node = Fx.createNode(ChoiceBox.class);
-      }
-      else {
-        int ndx = bindingOptions.indexOf(Constants.BIND_LINES + "=");
-        node = ndx >= 0 ? Fx.createNode(TextArea.class) : Fx.createNode(TextField.class);
-      }
-    }
-
-    bind(pdoMember, attribute, node, bindingOptions);
 
     return node;
   }

@@ -41,7 +41,8 @@ public class PasswordFieldConfigurator<T extends PasswordField> extends TextInpu
       switch (event.getCode()) {
         case ENTER:
           if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
-                  event.getEventType() == KeyEvent.KEY_PRESSED) {
+              event.getEventType() == KeyEvent.KEY_PRESSED) {
+
             if (event.isShiftDown()) {
               focusPrevious(control);
             }

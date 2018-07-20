@@ -20,6 +20,8 @@ package org.tentackle.fx.rdc.table;
 
 import javafx.print.PrinterJob;
 import javafx.stage.Stage;
+
+import org.tentackle.bind.Bindable;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
@@ -100,9 +102,12 @@ public class TableUtilities {
     TableConfiguration<T> config = FxFactory.getInstance().createTableConfiguration(pdoClass, null);
 
     for (PdoMember member: PdoUtilities.getInstance().getAttributes(config.getObjectClass(), true)) {
-      // columnname corresponds to the binding path
-      String displayName = bundle != null ? bundle.getString(member.getName()) : StringHelper.firstToUpper(member.getName());
-      config.addColumn(member.getName(), displayName);
+      Bindable bindable = member.getGetter().getAnnotation(Bindable.class);
+      if (bindable != null) {   // skip non-bindables
+        // columnname corresponds to the binding path
+        String displayName = bundle != null ? bundle.getString(member.getName()) : StringHelper.firstToUpper(member.getName());
+        config.addColumn(member.getName(), displayName);
+      }
     }
 
     if (config.getColumnConfigurations().isEmpty()) {

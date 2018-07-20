@@ -284,8 +284,16 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       int diff = text.length() - t.getText().length();
       t.setText(text);
       if (diff != 0) {
-        t.setCaretPosition(t.getCaretPosition() + diff);
-        t.setAnchor(t.getAnchor() + diff);
+        int pos = t.getCaretPosition() + diff;
+        // align for sure
+        if (pos <= 0) {
+          pos = 1;
+        }
+        else if (pos > text.length()) {
+          pos = text.length();
+        }
+        t.setCaretPosition(pos);
+        t.setAnchor(pos);
       }
     }
     return t;
