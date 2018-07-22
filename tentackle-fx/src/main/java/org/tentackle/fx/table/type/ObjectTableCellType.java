@@ -20,6 +20,7 @@
 package org.tentackle.fx.table.type;
 
 import javafx.geometry.Pos;
+
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 

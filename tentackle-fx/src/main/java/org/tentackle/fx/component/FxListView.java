@@ -19,11 +19,11 @@
 
 package org.tentackle.fx.component;
 
-import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.ModelToViewListener;
@@ -32,6 +32,8 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxListViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
+
+import java.lang.reflect.Type;
 
 /**
  * Extended ListView.

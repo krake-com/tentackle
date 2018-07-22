@@ -24,6 +24,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.BuilderFactory;
+
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.table.TableConfiguration;
 

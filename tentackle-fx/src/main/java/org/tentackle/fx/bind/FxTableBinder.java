@@ -19,9 +19,10 @@
 
 package org.tentackle.fx.bind;
 
-import java.util.Collection;
 import org.tentackle.bind.Binder;
 import org.tentackle.fx.table.TableConfiguration;
+
+import java.util.Collection;
 
 
 

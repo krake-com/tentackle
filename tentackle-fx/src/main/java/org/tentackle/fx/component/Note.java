@@ -26,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PopupControl;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.StackPane;
+
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.component.skin.NoteSkin;
 

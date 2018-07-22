@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.bind;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import org.tentackle.bind.AbstractBinder;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
@@ -32,6 +27,12 @@ import org.tentackle.bind.BindingMember;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 /**

@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TreeTableView;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

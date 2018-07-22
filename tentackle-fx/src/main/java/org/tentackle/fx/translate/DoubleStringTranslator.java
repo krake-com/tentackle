@@ -18,10 +18,11 @@
 
 package org.tentackle.fx.translate;
 
-import java.util.function.Function;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.misc.FormatHelper;
+
+import java.util.function.Function;
 
 /**
  * Double translator.

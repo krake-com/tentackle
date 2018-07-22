@@ -18,12 +18,13 @@
 
 package org.tentackle.fx.table;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.common.Service;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.reflect.ReflectionHelper;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The default GUI provider factory.

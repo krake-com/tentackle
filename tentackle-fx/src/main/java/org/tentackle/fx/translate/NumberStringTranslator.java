@@ -18,13 +18,14 @@
 
 package org.tentackle.fx.translate;
 
-import java.text.DecimalFormat;
-import java.text.MessageFormat;
-import java.text.ParseException;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.misc.FormatHelper;
+
+import java.text.DecimalFormat;
+import java.text.MessageFormat;
+import java.text.ParseException;
 
 /**
  * Abstract base class for number translators.

@@ -24,6 +24,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
+
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.ModelToViewListener;

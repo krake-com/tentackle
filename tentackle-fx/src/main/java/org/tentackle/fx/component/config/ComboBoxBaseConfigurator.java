@@ -21,6 +21,7 @@ package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ComboBoxBase;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxControl;
 

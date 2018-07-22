@@ -19,16 +19,12 @@
 
 package org.tentackle.fx;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxComponentBinder;
 import org.tentackle.log.Logger;
@@ -37,6 +33,12 @@ import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * Base class for tentackle fx controllers.

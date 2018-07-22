@@ -18,16 +18,18 @@
 
 package org.tentackle.fx.translate;
 
-import java.util.List;
-import java.util.function.Function;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
+
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * List translator.<br>

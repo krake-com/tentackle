@@ -20,6 +20,7 @@
 package org.tentackle.fx.container.config;
 
 import javafx.scene.control.Accordion;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

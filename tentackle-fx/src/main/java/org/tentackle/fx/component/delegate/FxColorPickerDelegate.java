@@ -6,14 +6,16 @@
 
 package org.tentackle.fx.component.delegate;
 
-import java.util.Objects;
 import javafx.scene.Parent;
 import javafx.scene.paint.Color;
+
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxColorPicker;
+
+import java.util.Objects;
 
 /**
  * Delegate for FxColorPicker.

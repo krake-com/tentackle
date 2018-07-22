@@ -19,13 +19,15 @@
 
 package org.tentackle.fx;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.List;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
+
 import org.tentackle.fx.bind.FxComponentBinder;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * The controller interface all Tentackle FX-controllers must implement.

@@ -19,10 +19,12 @@
 
 package org.tentackle.fx;
 
-import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
+
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.table.FxTableCell;
+
+import java.lang.reflect.Type;
 
 /**
  * Interface all tentackle Fx components must implement.

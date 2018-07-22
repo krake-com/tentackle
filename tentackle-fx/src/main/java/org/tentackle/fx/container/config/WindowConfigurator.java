@@ -19,26 +19,24 @@
 
 package org.tentackle.fx.container.config;
 
-import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
 import javafx.stage.Window;
+
 import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxUtilities;
-import org.tentackle.log.Logger;
+
 
 /**
  * Configures a Window.
+ * <p>
+ * The implementation allows overriding the base methods for a single configurator
+ * or all configurators via {@link FxUtilities}.
  *
  * @author harald
  * @param <T> the window type
  */
 @ConfiguratorService(Window.class)
 public class WindowConfigurator<T extends Window> implements Configurator<T> {
-
-  private static final Logger LOGGER = Logger.get(WindowConfigurator.class);
-
 
   @Override
   public void configure(T window) {
@@ -52,19 +50,7 @@ public class WindowConfigurator<T extends Window> implements Configurator<T> {
    * @param window the window
    */
   protected void registerEventFilters(T window) {
-
-    window.addEventFilter(MouseEvent.ANY, event -> {
-       if (event.isShiftDown() && event.isControlDown() && !event.isMetaDown() && !event.isAltDown() &&
-           event.isPopupTrigger()) {
-        PickResult pickResult = event.getPickResult();
-        if (pickResult != null) {
-          Node node = pickResult.getIntersectedNode();
-          if (node != null) {
-            LOGGER.info("\n" + FxUtilities.getInstance().dumpComponentHierarchy(node));
-          }
-        }
-      }
-    });
+    FxUtilities.getInstance().registerWindowEventFilters(window);
   }
 
 }

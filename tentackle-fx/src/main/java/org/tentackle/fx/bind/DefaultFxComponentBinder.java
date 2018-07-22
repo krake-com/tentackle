@@ -19,17 +19,8 @@
 
 package org.tentackle.fx.bind;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
 import javafx.scene.Parent;
+
 import org.tentackle.bind.AbstractBinder;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.Binding;
@@ -48,6 +39,17 @@ import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 
 /**

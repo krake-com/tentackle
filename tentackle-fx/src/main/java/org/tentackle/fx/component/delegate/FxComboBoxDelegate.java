@@ -6,8 +6,6 @@
 
 package org.tentackle.fx.component.delegate;
 
-import java.util.Arrays;
-import java.util.Objects;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
@@ -15,11 +13,15 @@ import javafx.scene.Parent;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxComboBox;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 
 /**

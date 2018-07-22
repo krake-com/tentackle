@@ -25,6 +25,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.layout.FlowPane;
+
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.ModelToViewListener;

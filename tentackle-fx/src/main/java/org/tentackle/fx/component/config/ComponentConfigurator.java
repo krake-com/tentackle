@@ -19,19 +19,16 @@
 
 package org.tentackle.fx.component.config;
 
-import java.util.ArrayList;
-import java.util.List;
-import javafx.event.Event;
-import javafx.event.EventHandler;
 import javafx.scene.control.Control;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
+
 import org.tentackle.fx.Configurator;
-import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxUtilities;
 
 /**
  * Configures a component.
+ * <p>
+ * The implementation allows overriding the base methods for a single configurator
+ * or all configurators via {@link FxUtilities}.
  *
  * @author harald
  * @param <T> the control type
@@ -57,33 +54,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    * @param control the control
    */
   protected void setupFocusHandling(T control) {
-    if (control instanceof FxComponent) {
-      final FxComponent component = (FxComponent) control;
-      control.focusedProperty().addListener((observable, oldValue, newValue) -> {
-        if (newValue) {
-          FxUtilities.getInstance().focusGained(component);
-          component.showErrorPopup();
-        }
-        else {
-          FxUtilities.getInstance().focusLost(component);
-          component.hideErrorPopup();
-        }
-      });
-      control.hoverProperty().addListener((observable, oldValue, newValue) -> {
-        if (!control.isFocused()) {
-          if (newValue) {
-            if (component.getError() == null) {
-              component.showInfoPopup();
-            }
-            component.showErrorPopup();
-          }
-          else {
-            component.hideInfoPopup();
-            component.hideErrorPopup();
-          }
-        }
-      });
-    }
+    FxUtilities.getInstance().setupFocusHandling(control);
   }
 
 
@@ -93,38 +64,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    * @param control the control
    */
   protected void remapKeys(T control) {
-
-    List<KeyEvent> mappedEvents = new ArrayList<>();
-
-    control.addEventFilter(KeyEvent.ANY, new EventHandler<>() {
-      @Override
-      public void handle(KeyEvent event) {
-        if (mappedEvents.remove(event)) {
-          return;
-        }
-
-        if (KeyCode.ENTER == event.getCode()) {
-          KeyEvent newEvent = remap(event, KeyCode.TAB);
-          mappedEvents.add(newEvent);
-          event.consume();
-          Event.fireEvent(event.getTarget(), newEvent);
-        }
-      }
-
-      private KeyEvent remap(KeyEvent event, KeyCode code) {
-        KeyEvent newEvent = new KeyEvent(
-                event.getEventType(),
-                event.getCharacter(),
-                event.getText(),
-                code,
-                event.isShiftDown(),
-                event.isControlDown(),
-                event.isAltDown(),
-                event.isMetaDown());
-
-        return newEvent.copyFor(event.getSource(), event.getTarget());
-      }
-    });
+    FxUtilities.getInstance().remapKeys(control);
   }
 
 
@@ -134,21 +74,7 @@ public class ComponentConfigurator<T extends Control> implements Configurator<T>
    * @param control the control
    */
   protected void filterKeys(T control) {
-    if (control instanceof FxComponent) {
-      control.addEventFilter(KeyEvent.ANY, event -> {
-        if (event.getCode() == KeyCode.Z && event.isControlDown() &&
-            !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
-          FxComponent comp = (FxComponent) control;
-          if (comp.isViewModified()) {
-            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-              // Ctrl-Z pressed and old view value saved: restore it!
-              comp.setViewObject(comp.getSavedViewObject());
-            }
-            event.consume();
-          }
-        }
-      });
-    }
+    FxUtilities.getInstance().filterKeys(control);
   }
 
 }

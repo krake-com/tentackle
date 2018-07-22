@@ -26,6 +26,7 @@ import javafx.scene.Node;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TablePosition;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;

@@ -19,12 +19,11 @@
 
 package org.tentackle.fx.component;
 
-import java.lang.reflect.Type;
-import java.util.function.Function;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.web.HTMLEditor;
+
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -34,6 +33,9 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxHTMLEditorDelegate;
 import org.tentackle.fx.table.FxTableCell;
+
+import java.lang.reflect.Type;
+import java.util.function.Function;
 
 /**
  * Extended HTMLEditor.

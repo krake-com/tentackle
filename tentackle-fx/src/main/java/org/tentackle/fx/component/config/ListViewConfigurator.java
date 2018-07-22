@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.ListView;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

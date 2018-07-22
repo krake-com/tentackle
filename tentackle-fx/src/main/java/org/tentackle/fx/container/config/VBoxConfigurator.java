@@ -20,6 +20,7 @@
 package org.tentackle.fx.container.config;
 
 import javafx.scene.layout.VBox;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

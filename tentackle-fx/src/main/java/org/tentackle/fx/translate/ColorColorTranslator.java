@@ -20,6 +20,7 @@
 package org.tentackle.fx.translate;
 
 import javafx.scene.paint.Color;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 

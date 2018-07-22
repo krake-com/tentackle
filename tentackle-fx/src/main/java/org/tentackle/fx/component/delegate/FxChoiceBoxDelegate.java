@@ -6,14 +6,16 @@
 
 package org.tentackle.fx.component.delegate;
 
-import java.util.Arrays;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.component.FxChoiceBox;
+
+import java.util.Arrays;
 
 
 /**

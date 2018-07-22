@@ -24,6 +24,7 @@ import com.sun.javafx.scene.traversal.Direction;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.fx.FxComponent;
 
 /**

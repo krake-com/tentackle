@@ -20,6 +20,7 @@
 package org.tentackle.fx.container.config;
 
 import javafx.scene.layout.Pane;
+
 import org.tentackle.fx.Configurator;
 import org.tentackle.fx.ConfiguratorService;
 

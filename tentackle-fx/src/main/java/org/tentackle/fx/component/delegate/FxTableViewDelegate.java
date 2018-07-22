@@ -8,6 +8,7 @@ package org.tentackle.fx.component.delegate;
 
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
+
 import org.tentackle.fx.FxComponentDelegate;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxFactory;

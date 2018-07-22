@@ -21,6 +21,7 @@ package org.tentackle.fx.table;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.TableColumn;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxTableBinding;
 

@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.Button;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

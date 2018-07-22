@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TableView;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

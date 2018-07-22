@@ -19,9 +19,6 @@
 
 package org.tentackle.fx.bind;
 
-import java.awt.Component;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.bind.AbstractBinding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
@@ -36,6 +33,10 @@ import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.Validator;
+
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Common implemenation of a binding.

@@ -19,10 +19,12 @@
 
 package org.tentackle.fx.table.type;
 
-import java.text.DecimalFormat;
 import javafx.geometry.Pos;
+
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+
+import java.text.DecimalFormat;
 
 /**
  * A number cell type.<br>

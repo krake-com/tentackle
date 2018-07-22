@@ -19,8 +19,9 @@
 
 package org.tentackle.fx;
 
-import java.util.function.Function;
 import javafx.geometry.Pos;
+
+import java.util.function.Function;
 
 /**
  * A text component.

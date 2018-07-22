@@ -19,13 +19,15 @@
 
 package org.tentackle.fx;
 
+import javafx.scene.image.Image;
+
+import org.tentackle.log.Logger;
+import org.tentackle.reflect.ReflectionHelper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javafx.scene.image.Image;
-import org.tentackle.log.Logger;
-import org.tentackle.reflect.ReflectionHelper;
 
 /**
  * The default image provider for framework-related images.

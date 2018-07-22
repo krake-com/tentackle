@@ -23,6 +23,8 @@ import com.sun.javafx.css.StyleManager;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
 import javafx.print.PageLayout;
@@ -32,6 +34,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Control;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
@@ -40,6 +43,10 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.skin.TableViewSkin;
 import javafx.scene.control.skin.VirtualFlow;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.PickResult;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.text.Font;
@@ -50,6 +57,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Callback;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
@@ -58,6 +66,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.component.Note;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
 
 import java.awt.Desktop;
@@ -66,6 +75,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
@@ -90,6 +101,9 @@ public class FxUtilities {
   public static FxUtilities getInstance() {
     return FxUtilities$Singleton.INSTANCE;
   }
+  
+  
+  private static final Logger LOG = Logger.get(FxUtilities.class);
 
 
   /**
@@ -358,6 +372,42 @@ public class FxUtilities {
 
 
   /**
+   * Adds focus handling to sync with model.
+   *
+   * @param control the fx control
+   */
+  public void setupFocusHandling(Control control) {
+    if (control instanceof FxComponent) {
+      final FxComponent component = (FxComponent) control;
+      control.focusedProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue) {
+          FxUtilities.getInstance().focusGained(component);
+          component.showErrorPopup();
+        }
+        else {
+          FxUtilities.getInstance().focusLost(component);
+          component.hideErrorPopup();
+        }
+      });
+      control.hoverProperty().addListener((observable, oldValue, newValue) -> {
+        if (!control.isFocused()) {
+          if (newValue) {
+            if (component.getError() == null) {
+              component.showInfoPopup();
+            }
+            component.showErrorPopup();
+          }
+          else {
+            component.hideInfoPopup();
+            component.hideErrorPopup();
+          }
+        }
+      });
+    }
+  }
+
+
+  /**
    * Performs all necessary operations on an FxComponent when it gained the focus.
    *
    * @param component the fx component
@@ -393,6 +443,93 @@ public class FxUtilities {
         component.updateModel();
       }
     }
+  }
+
+
+  /**
+   * Remaps certain keys.
+   *
+   * @param control the fx control
+   */
+  public void remapKeys(Control control) {
+
+    List<KeyEvent> mappedEvents = new ArrayList<>();
+
+    control.addEventFilter(KeyEvent.ANY, new EventHandler<>() {
+      @Override
+      public void handle(KeyEvent event) {
+        if (mappedEvents.remove(event)) {
+          return;
+        }
+
+        if (KeyCode.ENTER == event.getCode()) {
+          KeyEvent newEvent = remap(event, KeyCode.TAB);
+          mappedEvents.add(newEvent);
+          event.consume();
+          Event.fireEvent(event.getTarget(), newEvent);
+        }
+      }
+
+      private KeyEvent remap(KeyEvent event, KeyCode code) {
+        KeyEvent newEvent = new KeyEvent(
+        event.getEventType(),
+        event.getCharacter(),
+        event.getText(),
+        code,
+        event.isShiftDown(),
+        event.isControlDown(),
+        event.isAltDown(),
+        event.isMetaDown());
+
+        return newEvent.copyFor(event.getSource(), event.getTarget());
+      }
+    });
+  }
+
+
+  /**
+   * Filters certain keys for special features.
+   *
+   * @param control the fx control
+   */
+  public void filterKeys(Control control) {
+    if (control instanceof FxComponent) {
+      control.addEventFilter(KeyEvent.ANY, event -> {
+        if (event.getCode() == KeyCode.Z && event.isControlDown() &&
+            !event.isAltDown() && !event.isMetaDown() && !event.isShiftDown()) {
+          FxComponent comp = (FxComponent) control;
+          if (comp.isViewModified()) {
+            if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+              // Ctrl-Z pressed and old view value saved: restore it!
+              comp.setViewObject(comp.getSavedViewObject());
+            }
+            event.consume();
+          }
+        }
+      });
+    }
+  }
+
+
+  /**
+   * Registers event filters for windows.
+   *
+   * @param window the window
+   */
+  public void registerWindowEventFilters(Window window) {
+
+    window.addEventFilter(MouseEvent.ANY, event -> {
+      if (event.isShiftDown() && event.isControlDown() && !event.isMetaDown() && !event.isAltDown() &&
+          event.isPopupTrigger()) {
+        PickResult pickResult = event.getPickResult();
+        if (pickResult != null) {
+          Node node = pickResult.getIntersectedNode();
+          if (node != null) {
+            LOG.info("\n" + dumpComponentHierarchy(node));
+          }
+        }
+      }
+    });
   }
 
 

@@ -20,8 +20,9 @@
 package org.tentackle.fx.convert;
 
 import javafx.scene.paint.Color;
-import org.tentackle.fx.translate.StringColorTranslator;
 import org.testng.annotations.Test;
+
+import org.tentackle.fx.translate.StringColorTranslator;
 
 import static org.testng.Assert.assertEquals;
 

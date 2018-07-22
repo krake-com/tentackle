@@ -19,11 +19,12 @@
 
 package org.tentackle.fx.table.type;
 
-import java.text.DecimalFormat;
 import org.tentackle.common.BMoney;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
+
+import java.text.DecimalFormat;
 
 /**
  * A money cell type.<br>

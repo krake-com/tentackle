@@ -19,14 +19,16 @@
 
 package org.tentackle.fx;
 
+import javafx.util.Builder;
+
+import org.tentackle.common.MappedService;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import javafx.util.Builder;
-import org.tentackle.common.MappedService;
 
 /**
  * Annotation to express that the annotated class

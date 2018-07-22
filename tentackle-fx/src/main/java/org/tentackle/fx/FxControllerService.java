@@ -19,15 +19,16 @@
 
 package org.tentackle.fx;
 
+import org.tentackle.common.Analyze;
+import org.tentackle.common.Constants;
+import org.tentackle.common.Service;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.tentackle.common.Analyze;
-import org.tentackle.common.Constants;
-import org.tentackle.common.Service;
 
 /**
  * Annotation for Tentackle FX-controllers.

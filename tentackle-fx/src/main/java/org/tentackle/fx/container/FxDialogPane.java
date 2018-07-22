@@ -23,6 +23,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.DialogPane;
+
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.ModelToViewListener;

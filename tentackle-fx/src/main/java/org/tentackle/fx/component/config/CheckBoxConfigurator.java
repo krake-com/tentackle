@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.CheckBox;
+
 import org.tentackle.fx.ConfiguratorService;
 import org.tentackle.fx.FxControl;
 

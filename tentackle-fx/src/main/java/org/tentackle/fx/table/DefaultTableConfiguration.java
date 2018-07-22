@@ -21,6 +21,7 @@ package org.tentackle.fx.table;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
+
 import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;

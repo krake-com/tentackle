@@ -19,9 +19,10 @@
 
 package org.tentackle.fx;
 
-import java.util.List;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+
+import java.util.List;
 
 /**
  * Delegate implementing FxContainer.

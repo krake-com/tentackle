@@ -19,12 +19,13 @@
 
 package org.tentackle.fx.bind;
 
-import java.util.Collection;
-import java.util.List;
 import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxController;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * The Binder that associates form components with object binding paths.

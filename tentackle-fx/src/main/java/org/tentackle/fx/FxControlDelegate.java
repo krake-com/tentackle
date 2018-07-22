@@ -19,12 +19,13 @@
 
 package org.tentackle.fx;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.SimpleBooleanProperty;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Base implementation for all fx delegates.

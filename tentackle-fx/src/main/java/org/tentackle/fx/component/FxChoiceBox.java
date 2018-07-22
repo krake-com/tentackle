@@ -19,10 +19,10 @@
 
 package org.tentackle.fx.component;
 
-import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.ChoiceBox;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.ModelToViewListener;
@@ -31,6 +31,8 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
 import org.tentackle.fx.table.FxTableCell;
+
+import java.lang.reflect.Type;
 
 /**
  * Extended ChoiceBox.

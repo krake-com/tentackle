@@ -19,11 +19,13 @@
 
 package org.tentackle.fx.table.type;
 
-import java.text.DateFormat;
-import java.util.Date;
 import javafx.geometry.Pos;
+
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
+
+import java.text.DateFormat;
+import java.util.Date;
 
 /**
  * Base date cell type.

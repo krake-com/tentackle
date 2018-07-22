@@ -20,6 +20,7 @@
 package org.tentackle.fx.table;
 
 import javafx.scene.control.TableColumn;
+
 import org.tentackle.fx.bind.FxTableBinder;
 import org.tentackle.fx.component.FxTableView;
 

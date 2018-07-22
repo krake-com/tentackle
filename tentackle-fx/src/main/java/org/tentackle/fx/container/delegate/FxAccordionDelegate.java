@@ -8,6 +8,7 @@ package org.tentackle.fx.container.delegate;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TitledPane;
+
 import org.tentackle.fx.FxContainerDelegate;
 import org.tentackle.fx.container.FxAccordion;
 

@@ -19,10 +19,12 @@
 
 package org.tentackle.fx.translate;
 
-import java.util.function.Function;
 import javafx.scene.paint.Color;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
+
+import java.util.function.Function;
 
 /**
  * A string/color translator.<br>

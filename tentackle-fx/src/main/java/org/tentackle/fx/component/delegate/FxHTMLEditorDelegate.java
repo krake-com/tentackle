@@ -7,6 +7,7 @@
 package org.tentackle.fx.component.delegate;
 
 import javafx.scene.Parent;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;

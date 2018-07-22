@@ -24,6 +24,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.stage.PopupWindow;
 import javafx.util.Duration;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.InfoPopupSupported;

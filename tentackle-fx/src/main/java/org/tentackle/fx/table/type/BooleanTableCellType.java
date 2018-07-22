@@ -21,6 +21,7 @@ package org.tentackle.fx.table.type;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
+
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.table.FxTableCell;

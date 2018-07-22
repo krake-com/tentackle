@@ -20,6 +20,7 @@
 package org.tentackle.fx.container.config;
 
 import javafx.scene.layout.GridPane;
+
 import org.tentackle.fx.ConfiguratorService;
 
 /**

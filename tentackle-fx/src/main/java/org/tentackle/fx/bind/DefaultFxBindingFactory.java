@@ -19,10 +19,6 @@
 
 package org.tentackle.fx.bind;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.tentackle.bind.AbstractBindingFactory;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
@@ -32,6 +28,11 @@ import org.tentackle.fx.FxController;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**

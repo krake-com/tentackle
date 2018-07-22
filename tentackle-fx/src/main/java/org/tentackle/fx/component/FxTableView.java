@@ -19,11 +19,11 @@
 
 package org.tentackle.fx.component;
 
-import java.lang.reflect.Type;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxRuntimeException;
@@ -35,6 +35,8 @@ import org.tentackle.fx.component.delegate.FxTableViewDelegate;
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.table.TotalsTableView;
+
+import java.lang.reflect.Type;
 
 /**
  * Extended TableView.

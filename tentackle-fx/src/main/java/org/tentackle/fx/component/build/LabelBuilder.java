@@ -20,6 +20,7 @@
 package org.tentackle.fx.component.build;
 
 import javafx.scene.control.Label;
+
 import org.tentackle.fx.AbstractBuilder;
 import org.tentackle.fx.BuilderService;
 import org.tentackle.fx.component.FxLabel;

@@ -19,8 +19,9 @@
 
 package org.tentackle.fx.translate;
 
-import java.util.function.Function;
 import org.tentackle.fx.FxComponent;
+
+import java.util.function.Function;
 
 /**
  * The identity translator base class.

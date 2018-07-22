@@ -20,11 +20,12 @@
 package org.tentackle.fx;
 
 import com.sun.javafx.fxml.BeanAdapter;
+import javafx.scene.control.Label;
+import javafx.util.Builder;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import javafx.scene.control.Label;
-import javafx.util.Builder;
 
 /**
  * Base implementation for a builder.

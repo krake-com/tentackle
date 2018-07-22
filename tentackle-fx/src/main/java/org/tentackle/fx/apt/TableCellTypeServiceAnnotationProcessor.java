@@ -19,15 +19,16 @@
 
 package org.tentackle.fx.apt;
 
-import java.util.Set;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
+import org.tentackle.common.AnnotationProcessor;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractServiceAnnotationProcessor;
-import org.tentackle.common.AnnotationProcessor;
+import java.util.Set;
 
 import static javax.lang.model.SourceVersion.RELEASE_10;
 

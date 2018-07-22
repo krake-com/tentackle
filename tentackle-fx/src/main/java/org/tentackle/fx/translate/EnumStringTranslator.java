@@ -18,9 +18,10 @@
 
 package org.tentackle.fx.translate;
 
-import java.util.function.Function;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.ValueTranslatorService;
+
+import java.util.function.Function;
 
 /**
  * Abstract base class for enum translators.

@@ -9,6 +9,7 @@ package org.tentackle.fx.component.delegate;
 import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.control.TextFormatter;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponentDelegate;

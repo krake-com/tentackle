@@ -18,10 +18,11 @@
 
 package org.tentackle.fx;
 
-import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
+
+import java.util.ResourceBundle;
 
 /**
  * Bundle for fx-package in tentackle-FX.

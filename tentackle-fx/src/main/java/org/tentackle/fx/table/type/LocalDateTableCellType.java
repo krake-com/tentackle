@@ -19,12 +19,14 @@
 
 package org.tentackle.fx.table.type;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import javafx.geometry.Pos;
+
 import org.tentackle.fx.table.FxTableCell;
 import org.tentackle.fx.table.TableCellTypeService;
 import org.tentackle.misc.FormatHelper;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  * LocalDate cell type.

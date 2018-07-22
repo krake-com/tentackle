@@ -18,14 +18,15 @@
 
 package org.tentackle.fx.component.config;
 
-import java.util.Collection;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javafx.event.EventHandler;
 import javafx.scene.control.Control;
 import javafx.scene.input.KeyEvent;
 import javafx.util.StringConverter;
+
+import java.util.Collection;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Select items according to a prefix.<br>
