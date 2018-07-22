@@ -22,6 +22,7 @@ For more options, see {\@link ModelWurblet}.
     }
 ]@
   /*
+   * -------------------------------------------------------------------------------------------------------------------
    *
 @[
     List<Relation> refRels = new ArrayList<>();   // referencing relations without backlinks from components
@@ -177,6 +178,7 @@ For more options, see {\@link ModelWurblet}.
     }
 ]@
    *
+   * -------------------------------------------------------------------------------------------------------------------
    */
 @[
   }
