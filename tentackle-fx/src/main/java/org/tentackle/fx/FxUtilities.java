@@ -103,7 +103,7 @@ public class FxUtilities {
   }
   
   
-  private static final Logger LOG = Logger.get(FxUtilities.class);
+  private static final Logger LOGGER = Logger.get(FxUtilities.class);
 
 
   /**
@@ -525,7 +525,7 @@ public class FxUtilities {
         if (pickResult != null) {
           Node node = pickResult.getIntersectedNode();
           if (node != null) {
-            LOG.info("\n" + dumpComponentHierarchy(node));
+            LOGGER.info("\n" + dumpComponentHierarchy(node));
           }
         }
       }
