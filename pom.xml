@@ -40,6 +40,7 @@
     <module>tentackle-build-support</module>
     <module>tentackle-sql</module>
     <module>tentackle-model</module>
+    <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-wurblets</module>
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>

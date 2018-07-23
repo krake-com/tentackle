@@ -1,0 +1,17 @@
+<!-- lifecycle mapping for eclipse -->
+<lifecycleMappingMetadata>
+  <pluginExecutions>
+    <pluginExecution>
+      <pluginExecutionFilter>
+        <goals>
+          <goal>pdo</goal>
+          <goal>operation</goal>
+        </goals>
+      </pluginExecutionFilter>
+      <action>
+        <ignore/>
+      </action>
+    </pluginExecution>
+  </pluginExecutions>
+</lifecycleMappingMetadata>
+
