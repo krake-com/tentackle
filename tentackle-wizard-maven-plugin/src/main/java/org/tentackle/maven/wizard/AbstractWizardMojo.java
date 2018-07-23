@@ -25,6 +25,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,6 +51,13 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    */
   @Parameter(required = true)
   private List<Profile> profiles;
+
+
+  /**
+   * The directory holding the templates.
+   */
+  @Parameter(defaultValue = "${project}/templates")
+  private File templateDir;
 
 
   /**
