@@ -4,6 +4,7 @@
     <pluginExecution>
       <pluginExecutionFilter>
         <goals>
+          <goal>init</goal>
           <goal>pdo</goal>
           <goal>operation</goal>
         </goals>
