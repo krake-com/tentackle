@@ -10,11 +10,12 @@
 <strong>({\@code \@wurblet})</strong> DTO creates code for a data transfer object.
 <p>
 usage:<br>
-&#064;wurblet &lt;tag&gt; DTO [--builder] &lt;filename&gt;
+&#064;wurblet &lt;tag&gt; DTO [--builder] [--bindable] &lt;filename&gt;
 <p>
 arguments:
 <ul>
 <li><em>--builder:</em> option to generate code according to the builder pattern.</li>
+<li><em>--bindable:</em> add &#64Bindable annotation to getter and setter (if not explicitly added via square brackets).</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -38,6 +39,10 @@ Example:
 <pre>
 =String name   the name
 </pre>
+The comment may contain optional annotations enclosed in square brackets.
+<pre>
+String name   the name [&#64Bindable(MAXCOL=20)] [&#64MyAnno]
+</pre
 <p>
 If the builder pattern is used and the class extends a superclass, the builder is created as an extension
 of the superclass'es builder.
@@ -157,6 +162,18 @@ of the superclass'es builder.
    *
    * \@return @(property.getComment())@
    */
+@[
+        if (withBindable && !property.isBindableAnnotationPresent()) {
+]@
+  \@Bindable
+@[
+        }
+        for (String anno: property.getAnnotations()) {
+]@
+  @(anno)@
+@[
+        }
+]@
   public @(property.getType())@ @(property.getGetterName())@() {
     return @(property.getName())@;
   }
@@ -174,6 +191,18 @@ of the superclass'es builder.
    *
    * \@param @(property.getName())@ @(property.getComment())@
    */
+@[
+        if (withBindable && !property.isBindableAnnotationPresent()) {
+]@
+  \@Bindable
+@[
+        }
+        for (String anno: property.getAnnotations()) {
+]@
+  @(anno)@
+@[
+        }
+]@
   public void @(property.getSetterName())@(@(property.getType())@ @(property.getName())@) {
     this.@(property.getName())@ = @(property.getName())@;
   }

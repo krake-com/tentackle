@@ -44,11 +44,12 @@ public class DTOWurblet extends AbstractWurblet {
    */
   protected static class Property {
 
-    private final String type;        // the java type
-    private final String name;        // the property name
-    private final String comment;     // the comment
-    private final boolean inherited;  // true if inherited
-    private final boolean mutable;    // true if with setter instead of final
+    private final String type;                // the java type
+    private final String name;                // the property name
+    private final String comment;             // the comment
+    private final boolean inherited;          // true if inherited
+    private final boolean mutable;            // true if with setter instead of final
+    private final String[] annotations;       // optional annotations for getters and setters
 
     public Property(String type, String name, String comment) {
       if (type.startsWith("^")) {
@@ -67,7 +68,9 @@ public class DTOWurblet extends AbstractWurblet {
         mutable = false;
       }
       this.name = name;
-      this.comment = comment == null || comment.isEmpty() ? "the " + name + " property" : comment;
+      StringBuilder buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
+      this.annotations = parseComment(buf);
+      this.comment = buf.toString().trim();
     }
 
     public boolean isInherited() {
@@ -98,6 +101,49 @@ public class DTOWurblet extends AbstractWurblet {
       return "set" + StringHelper.firstToUpper(name);
     }
 
+    public String[] getAnnotations() {
+      return annotations;
+    }
+
+    public boolean isBindableAnnotationPresent() {
+      for (String anno: annotations) {
+        if (anno.startsWith("@Bindable")) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private String[] parseComment(StringBuilder commentBuf) {
+      List<String> annos = new ArrayList<>();
+      String cmt = commentBuf.toString();
+      commentBuf.setLength(0);
+      StringBuilder anno = null;
+      for (int i=0; i < cmt.length(); i++) {
+        char c = cmt.charAt(i);
+        if (anno == null) {
+          if (c == '[') {
+            anno = new StringBuilder();
+          }
+          else {
+            commentBuf.append(c);
+          }
+        }
+        else {
+          if (c == ']') {
+            String an = anno.toString().trim();
+            if (!an.isEmpty()) {
+              annos.add(an);
+            }
+            anno = null;
+          }
+          else {
+            anno.append(c);
+          }
+        }
+      }
+      return annos.toArray(new String[0]);
+    }
   }
 
 
@@ -106,6 +152,7 @@ public class DTOWurblet extends AbstractWurblet {
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
+  protected boolean withBindable;       // add @Bindable annotation
   protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
 
 
@@ -120,6 +167,9 @@ public class DTOWurblet extends AbstractWurblet {
     for (String arg: getContainer().getArgs()) {
       if ("--builder".equals(arg)) {
         withBuilder = true;
+      }
+      else if ("--bindable".equals(arg)) {
+        withBindable = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
