@@ -18,7 +18,10 @@
 
 package org.tentackle.maven.wizard;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+
+import java.util.Map;
 
 /**
  * Base class for pdo- and operation profiles.
@@ -60,24 +63,28 @@ public class Profile {
    */
   @Parameter(required = true)
   private String domainPackage;
+  private PackageInfo domainPackageInfo;
 
   /**
    * The persistence interface package.
    */
   @Parameter(required = true)
   private String persistencePackage;
+  private PackageInfo persistencePackageInfo;
 
   /**
    * The domain implementation package.
    */
   @Parameter(required = true)
   private String domainImplPackage;
+  private PackageInfo domainImplPackageInfo;
 
   /**
    * The persistence implementation package.
    */
   @Parameter(required = true)
   private String persistenceImplPackage;
+  private PackageInfo persistenceImplPackageInfo;
 
 
   public String getName() {
@@ -115,6 +122,52 @@ public class Profile {
   public String getPersistenceImplPackage() {
     return persistenceImplPackage;
   }
+
+  public PackageInfo getDomainPackageInfo() {
+    return domainPackageInfo;
+  }
+
+  public PackageInfo getPersistencePackageInfo() {
+    return persistencePackageInfo;
+  }
+
+  public PackageInfo getDomainImplPackageInfo() {
+    return domainImplPackageInfo;
+  }
+
+  public PackageInfo getPersistenceImplPackageInfo() {
+    return persistenceImplPackageInfo;
+  }
+
+  /**
+   * Validates the profile.
+   *
+   * @param packageInfoMap the package infos
+   * @throws MojoExecutionException if some package not assigned to a module
+   */
+  public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
+    domainPackageInfo = getPackageInfo(packageInfoMap, domainPackage);
+    persistencePackageInfo = getPackageInfo(packageInfoMap, persistencePackage);
+    domainImplPackageInfo = getPackageInfo(packageInfoMap, domainImplPackage);
+    persistenceImplPackageInfo = getPackageInfo(packageInfoMap, persistenceImplPackage);
+  }
+
+  /**
+   * Determines the package info for a given package name.
+   *
+   * @param packageInfoMap the package info map
+   * @param packageName the package name
+   * @return the package info
+   * @throws MojoExecutionException if no such mapping
+   */
+  protected PackageInfo getPackageInfo(Map<String, PackageInfo> packageInfoMap, String packageName) throws MojoExecutionException {
+    PackageInfo info = packageInfoMap.get(packageName);
+    if (info == null) {
+      throw new MojoExecutionException("cannot determine module for package " + packageName);
+    }
+    return info;
+  }
+
 
   @Override
   public String toString() {

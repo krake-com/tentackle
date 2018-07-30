@@ -19,15 +19,19 @@
 
 package org.tentackle.maven.wizard;
 
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
+import javax.swing.ListModel;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -80,11 +84,6 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     validate();
-
-    // todo: remove me, just a test
-    for (Profile profile: profiles) {
-      getLog().info(profile.toString());
-    }
   }
 
   /**
@@ -98,6 +97,55 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
     }
     if (mavenProject.getBasedir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
+    }
+    if (mavenProject.getParent() != null) {
+      throw new MojoExecutionException("mojo must be invoked on parent module");
+    }
+  }
+
+
+  /**
+   * Creates a map of package names to package infos.
+   *
+   * @return the packages
+   * @throws MojoExecutionException if split package detected
+   */
+  protected Map<String, PackageInfo> createPackageMap() throws MojoExecutionException {
+    Map<String, PackageInfo> map = new HashMap<>();
+    for (MavenProject project : mavenProject.getCollectedProjects()) {
+      for (String path: project.getCompileSourceRoots()) {
+        for (PackageInfo info : getPackages(project, path)) {
+          PackageInfo splitPkg = map.put(info.getName(), info);
+          if (splitPkg != null) {
+            throw new MojoExecutionException("split package detected: " + info.getName() + " in " + project.getName() +
+                                           " and " + info.getProject().getName());
+          }
+        }
+      }
+    }
+    return map;
+  }
+
+  private List<PackageInfo> getPackages(MavenProject project, String compileSourceRoot) {
+    List<PackageInfo> packages = new ArrayList<>();
+    checkDir(project, new File(compileSourceRoot), packages, "");
+    return packages;
+  }
+
+  private void checkDir(MavenProject project, File dir, List<PackageInfo> packages, String packageName) {
+    if (dir.isDirectory()) {
+      boolean containsJavaFiles = false;
+      for (File file: dir.listFiles()) {
+        if (file.isDirectory()) {
+          checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
+        }
+        else if (file.getName().endsWith(".java")) {
+          containsJavaFiles = true;
+        }
+      }
+      if (containsJavaFiles && !packageName.isEmpty()) {
+        packages.add(new PackageInfo(packageName, project, dir));
+      }
     }
   }
 

@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Wizard to create operation files.
@@ -42,6 +43,10 @@ public class OperationMojo extends AbstractWizardMojo {
     operationProfiles = getProfiles(OperationProfile.class);
     if (operationProfiles.isEmpty()) {
       throw new MojoExecutionException("at least one OperationProfile must be configured");
+    }
+    Map<String, PackageInfo> packageInfoMap = createPackageMap();
+    for (OperationProfile profile: operationProfiles) {
+      profile.validate(packageInfoMap);
     }
   }
 }

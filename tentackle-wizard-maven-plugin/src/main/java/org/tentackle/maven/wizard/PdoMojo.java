@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Wizard to create PDO files.
@@ -30,7 +31,6 @@ import java.util.List;
 public class PdoMojo extends AbstractWizardMojo {
 
   private List<PdoProfile> pdoProfiles;
-
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
@@ -43,6 +43,10 @@ public class PdoMojo extends AbstractWizardMojo {
     pdoProfiles = getProfiles(PdoProfile.class);
     if (pdoProfiles.isEmpty()) {
       throw new MojoExecutionException("at least one PdoProfile must be configured");
+    }
+    Map<String, PackageInfo> packageInfoMap = createPackageMap();
+    for (PdoProfile profile: pdoProfiles) {
+      profile.validate(packageInfoMap);
     }
   }
 }

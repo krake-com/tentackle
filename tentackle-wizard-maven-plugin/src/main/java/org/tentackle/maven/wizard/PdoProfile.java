@@ -18,9 +18,12 @@
 
 package org.tentackle.maven.wizard;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import org.tentackle.maven.wizard.Profile;
+
+import java.util.Map;
 
 /**
  * Profile for PDOs.
@@ -38,13 +41,13 @@ public class PdoProfile extends Profile {
    */
   @Parameter(required = true)
   private String pdoPackage;
+  private PackageInfo pdoPackageInfo;
 
   /**
    * First class ID to use.
    */
   @Parameter(required = true)
   private int classId;
-
 
 
   public String getPdoInterface() {
@@ -57,6 +60,16 @@ public class PdoProfile extends Profile {
 
   public int getClassId() {
     return classId;
+  }
+
+  public PackageInfo getPdoPackageInfo() {
+    return pdoPackageInfo;
+  }
+
+  @Override
+  public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
+    super.validate(packageInfoMap);
+    pdoPackageInfo = getPackageInfo(packageInfoMap, pdoPackage);
   }
 
   @Override

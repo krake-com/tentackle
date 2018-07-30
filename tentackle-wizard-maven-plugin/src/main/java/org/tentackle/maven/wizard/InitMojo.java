@@ -32,6 +32,7 @@ public class InitMojo extends AbstractWizardMojo {
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     super.execute();
+    // @todo
   }
 
 }

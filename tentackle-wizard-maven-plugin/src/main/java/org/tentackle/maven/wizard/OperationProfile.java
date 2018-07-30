@@ -18,9 +18,12 @@
 
 package org.tentackle.maven.wizard;
 
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import org.tentackle.maven.wizard.Profile;
+
+import java.util.Map;
 
 /**
  * Profile for operations.
@@ -38,6 +41,7 @@ public class OperationProfile extends Profile {
    */
   @Parameter(required = true)
   private String operationPackage;
+  private PackageInfo operationPackageInfo;
 
   public String getOperationInterface() {
     return operationInterface;
@@ -45,6 +49,16 @@ public class OperationProfile extends Profile {
 
   public String getOperationPackage() {
     return operationPackage;
+  }
+
+  public PackageInfo getOperationPackageInfo() {
+    return operationPackageInfo;
+  }
+
+  @Override
+  public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
+    super.validate(packageInfoMap);
+    operationPackageInfo = getPackageInfo(packageInfoMap, operationPackage);
   }
 
   @Override
