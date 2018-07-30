@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Wizard to create operation files.
  */
-@Mojo(name = "operation")
+@Mojo(name = "operation", inheritByDefault = false, aggregator = true)
 public class OperationMojo extends AbstractWizardMojo {
 
   private List<OperationProfile> operationProfiles;

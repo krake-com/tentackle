@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Wizard to create PDO files.
  */
-@Mojo(name = "pdo")
+@Mojo(name = "pdo", inheritByDefault = false, aggregator = true)
 public class PdoMojo extends AbstractWizardMojo {
 
   private List<PdoProfile> pdoProfiles;
