@@ -19,27 +19,18 @@
 
 package org.tentackle.maven.wizard;
 
-import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
-import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
-import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
-import org.tentackle.model.ForeignKey;
-import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 
-import javax.lang.model.element.NestingKind;
-import javax.swing.ListModel;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,11 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,12 +109,16 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    *
    * @param clazz the concrete profile class
    * @return the list of profiles
+   * @throws MojoExecutionException if profile names are not unique
    */
   @SuppressWarnings("unchecked")
-  public <T extends Profile> List<T> getProfiles(Class<T> clazz) {
+  public <T extends Profile> List<T> getProfiles(Class<T> clazz) throws MojoExecutionException {
     List<T> list = new ArrayList<>();
     for (Profile profile : profiles) {
       if (clazz.isAssignableFrom(profile.getClass())) {
+        if (list.contains(profile)) {
+          throw new MojoExecutionException("profile " + profile.getName() + " configured more than once");
+        }
         list.add((T) profile);
       }
     }
@@ -190,6 +181,8 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
 
   /**
    * Loads the model.
+   * <p>
+   * Notice: the model is only needed by the {@link PdoMojo}, but we configure it for the whole plugin.
    *
    * @throws MojoFailureException if the model is inconsistent
    * @throws MojoExecutionException if loading failed due to some other error

@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Base class for pdo- and operation profiles.
@@ -29,7 +30,7 @@ import java.util.Map;
 public class Profile {
 
   /**
-   * The profile's name.
+   * The unique profile name.
    */
   @Parameter(required = true)
   private String name;
@@ -168,6 +169,18 @@ public class Profile {
     return info;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Profile profile = (Profile) o;
+    return Objects.equals(name, profile.name);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name);
+  }
 
   @Override
   public String toString() {

@@ -21,8 +21,6 @@ package org.tentackle.maven.wizard;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
-import org.tentackle.maven.wizard.Profile;
-
 import java.util.Map;
 
 /**
@@ -70,6 +68,18 @@ public class PdoProfile extends Profile {
   public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
     super.validate(packageInfoMap);
     pdoPackageInfo = getPackageInfo(packageInfoMap, pdoPackage);
+    if (classId < 100) {
+      throw new MojoExecutionException("class IDs < 100 are reserved for tentackle");
+    }
+  }
+
+  /**
+   * Updates the classid according to the model.
+   *
+   * @param classId the next class ID to use
+   */
+  public void setClassId(int classId) {
+    this.classId = classId;
   }
 
   @Override

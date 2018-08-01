@@ -21,8 +21,6 @@ package org.tentackle.maven.wizard;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 
-import org.tentackle.maven.wizard.Profile;
-
 import java.util.Map;
 
 /**
