@@ -82,7 +82,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   protected MavenProject mvnProject;
 
   /**
-   * Directory holding the model files to be processed.
+   * Directory holding the model files to be processed.<br>
+   * Ignored if fileset explicitly given.
    */
   @Parameter(defaultValue = "${project.build.directory}/wurbel/model",
              property = "tentackle.modelDir")

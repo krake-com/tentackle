@@ -25,9 +25,18 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
 import org.tentackle.common.FileHelper;
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
+import org.tentackle.model.ForeignKey;
+import org.tentackle.model.Index;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelException;
 
 import javax.lang.model.element.NestingKind;
 import javax.swing.ListModel;
@@ -41,6 +50,8 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +76,32 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   required = true)
   private MavenProject mavenProject;
 
+  /**
+   * Directory holding the model files to be processed.<br>
+   * Ignored if fileset explicitly given.
+   */
+  @Parameter(defaultValue = "${project.build.directory}/wurbel/model",
+  property = "tentackle.modelDir")
+  protected File modelDir;
+
+  /**
+   * The model defaults.
+   */
+  @Parameter(property = "tentackle.modelDefaults")
+  protected String modelDefaults;
+
+  /**
+   * The entity aliases.
+   */
+  @Parameter(property = "tentackle.entityAliases")
+  protected String entityAliases;
+
+  /**
+   * The list of file sets containing the model.<br>
+   * If set, the modelDir is ignored.
+   */
+  @Parameter
+  protected List<FileSet> filesets;
 
   /**
    * The profiles.
@@ -110,7 +147,116 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     validate();
+    loadModel();
   }
+
+
+  /**
+   * Gets the model defaults.
+   *
+   * @return the defaults, null if none
+   * @throws MojoExecutionException if parsing the model defaults failed
+   */
+  protected ModelDefaults getModelDefaults() throws MojoExecutionException {
+    if (modelDefaults == null) {
+      return null;
+    }
+    try {
+      return new ModelDefaults(modelDefaults);
+    }
+    catch (ModelException mex) {
+      throw new MojoExecutionException(mex.getMessage(), mex);
+    }
+  }
+
+
+  /**
+   * Gets the entity aliases.
+   *
+   * @return the aliases, null if none
+   * @throws MojoExecutionException if parsing the aliases failed
+   */
+  protected EntityAliases getEntityAliases() throws MojoExecutionException {
+    if (entityAliases == null) {
+      return null;
+    }
+    try {
+      return new EntityAliases(entityAliases);
+    }
+    catch (ModelException mex) {
+      throw new MojoExecutionException(mex.getMessage(), mex);
+    }
+  }
+
+  /**
+   * Loads the model.
+   *
+   * @throws MojoFailureException if the model is inconsistent
+   * @throws MojoExecutionException if loading failed due to some other error
+   */
+  protected void loadModel() throws MojoFailureException, MojoExecutionException {
+    int errors = 0;
+
+    if (filesets != null && !filesets.isEmpty()) {
+      // explicit filesets given instead of model dir
+      for (FileSet fileSet : filesets) {
+        errors += processFileSet(fileSet);
+      }
+    }
+    else {
+      // all from model dir
+      String[] files = modelDir.isDirectory() ? modelDir.list() : null;
+      if (files != null && files.length > 0) {
+        final FileSet fs = new FileSet();
+        fs.setDirectory(modelDir.getPath());
+        errors += processFileSet(fs);
+      }
+      else {
+        getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
+      }
+    }
+
+    if (errors > 0) {
+      throw new MojoFailureException(errors + " model errors");
+    }
+
+    try {
+      getLog().info(Model.getInstance().getAllEntitites().size() + " entities loaded");
+    }
+    catch (ModelException e) {
+      throw new MojoExecutionException("cannot determine entities", e);
+    }
+  }
+
+
+  /**
+   * Processes a fileset to load the model.
+   *
+   * @param fileSet the fileset containing the model
+   * @return the number of errors
+   */
+  protected int processFileSet(FileSet fileSet) throws MojoExecutionException {
+    int errors = 0;
+
+    if (fileSet.getDirectory() == null) {
+      // directory missing: use modelDir as default
+      fileSet.setDirectory(modelDir.getAbsolutePath());
+    }
+
+    File dir = new File(fileSet.getDirectory());
+    String modelDirName = dir.getPath();
+
+    try {
+      Model.getInstance().loadModel(modelDirName, getModelDefaults(), getEntityAliases());
+    }
+    catch (ModelException mex) {
+      getLog().error("parsing model failed in directory " + modelDirName + ":\n" + mex.getMessage());
+      errors++;
+    }
+
+    return errors;
+  }
+
 
   /**
    * Validates the configuration.
@@ -123,9 +269,6 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
     }
     if (mavenProject.getBasedir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
-    }
-    if (mavenProject.getParent() != null) {
-      throw new MojoExecutionException("mojo must be invoked on parent module");
     }
     if (templateDir.exists()) {
       if (!templateDir.isDirectory()) {

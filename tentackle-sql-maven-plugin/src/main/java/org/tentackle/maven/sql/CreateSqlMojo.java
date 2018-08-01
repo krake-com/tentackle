@@ -66,7 +66,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
     int errorCount = 0;
 
     if (fileSet.getDirectory() == null) {
-      // directory missing: use sourceDir as default
+      // directory missing: use modelDir as default
       fileSet.setDirectory(modelDir.getAbsolutePath());
     }
 
