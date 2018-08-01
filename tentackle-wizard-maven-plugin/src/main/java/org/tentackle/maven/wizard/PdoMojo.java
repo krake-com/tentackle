@@ -62,10 +62,10 @@ public class PdoMojo extends AbstractWizardMojo {
   private void updateClassIDs() throws MojoExecutionException {
 
     // profiles sorted by classid, highest first
-    Set<PdoProfile> sortedProfiles = new TreeSet<>(new Comparator<PdoProfile>() {
+    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>(new Comparator<PdoProfile>() {
       @Override
       public int compare(PdoProfile o1, PdoProfile o2) {
-        return o2.getClassId() - o1.getClassId();
+        return o2.getMinClassId() - o1.getMinClassId();
       }
     });
 
@@ -74,16 +74,38 @@ public class PdoMojo extends AbstractWizardMojo {
 
     for (PdoProfile profile: pdoProfiles) {
       sortedProfiles.add(profile);
-      inUseIds.put(profile, profile.getClassId());
+      inUseIds.put(profile, profile.getMinClassId());
     }
 
+    // update maxClassId
+    int maxClassId = 0;
+    int diff = 0;
+    for (PdoProfile profile: sortedProfiles) {
+      if (maxClassId > 0) {
+        diff = maxClassId - profile.getMinClassId();
+      }
+      if (profile.getMaxClassId() == 0) {
+        profile.setMaxClassId(maxClassId);
+      }
+      else if (profile.getMaxClassId() > maxClassId) {
+        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile.getName() + " maxClassId <= " + maxClassId);
+      }
+      maxClassId = profile.getMinClassId() - 1;
+    }
+
+    // set max ID in last profile according to the last difference guess
+    PdoProfile lastProfile = sortedProfiles.first();
+    if (lastProfile.getMaxClassId() == 0) {
+      lastProfile.setMaxClassId(lastProfile.getMinClassId() + diff);
+    }
+
+    // determine consumed class IDs
     try {
       for (Entity entity: Model.getInstance().getAllEntitites()) {
         int classId = entity.getClassId();
         if (classId > 0) {
-          classId++;    // next free
           for (PdoProfile profile: sortedProfiles) {
-            if (classId >= profile.getClassId()) {
+            if (classId >= profile.getMinClassId() && classId <= profile.getMaxClassId()) {
               if (inUseIds.get(profile) < classId) {    // must exist...
                 inUseIds.put(profile, classId);
               }
@@ -97,11 +119,18 @@ public class PdoMojo extends AbstractWizardMojo {
       throw new MojoExecutionException("cannot determine class IDs", e);
     }
 
+    // update next free class ID in profiles
     for (Map.Entry<PdoProfile,Integer> entry: inUseIds.entrySet()) {
       PdoProfile profile = entry.getKey();
-      int classId = entry.getValue();
-      profile.setClassId(classId);
-      getLog().info("next free class-ID for " + profile.getName() + " is " + classId);
+      int classId = entry.getValue() + 1;
+      profile.setMinClassId(classId);
+      if (classId > profile.getMaxClassId()) {
+        getLog().warn("no more free class-IDs for " + profile.getName());
+      }
+      else {
+        getLog().info("next free class-ID for " + profile.getName() +
+                      " is " + profile.getMinClassId() + ", max. " + profile.getMaxClassId());
+      }
     }
   }
 }

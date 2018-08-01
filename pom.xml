@@ -40,7 +40,6 @@
     <module>tentackle-build-support</module>
     <module>tentackle-sql</module>
     <module>tentackle-model</module>
-    <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-wurblets</module>
     <module>tentackle-maven-plugin</module>
     <module>tentackle-sql-maven-plugin</module>
@@ -60,6 +59,7 @@
     <module>tentackle-i18n</module>
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
+    <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-fx-rdc</module>
     <module>tentackle-fx-rdc-poi</module>
     <module>tentackle-web</module>

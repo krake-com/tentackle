@@ -45,7 +45,13 @@ public class PdoProfile extends Profile {
    * First class ID to use.
    */
   @Parameter(required = true)
-  private int classId;
+  private int minClassId;
+
+  /**
+   * Last class ID to use (optional).
+   */
+  @Parameter
+  private int maxClassId;
 
 
   public String getPdoInterface() {
@@ -56,8 +62,12 @@ public class PdoProfile extends Profile {
     return pdoPackage;
   }
 
-  public int getClassId() {
-    return classId;
+  public int getMinClassId() {
+    return minClassId;
+  }
+
+  public int getMaxClassId() {
+    return maxClassId;
   }
 
   public PackageInfo getPdoPackageInfo() {
@@ -68,7 +78,7 @@ public class PdoProfile extends Profile {
   public void validate(Map<String, PackageInfo> packageInfoMap) throws MojoExecutionException {
     super.validate(packageInfoMap);
     pdoPackageInfo = getPackageInfo(packageInfoMap, pdoPackage);
-    if (classId < 100) {
+    if (minClassId < 100) {
       throw new MojoExecutionException("class IDs < 100 are reserved for tentackle");
     }
   }
@@ -76,10 +86,19 @@ public class PdoProfile extends Profile {
   /**
    * Updates the classid according to the model.
    *
-   * @param classId the next class ID to use
+   * @param minClassId the next class ID to use
    */
-  public void setClassId(int classId) {
-    this.classId = classId;
+  public void setMinClassId(int minClassId) {
+    this.minClassId = minClassId;
+  }
+
+  /**
+   * Updates the max. classid according to the profiles.
+   *
+   * @param maxClassId the max class id
+   */
+  public void setMaxClassId(int maxClassId) {
+    this.maxClassId = maxClassId;
   }
 
   @Override
@@ -87,7 +106,7 @@ public class PdoProfile extends Profile {
     return "PdoProfile{" + super.toString() +
            ", pdoInterface='" + pdoInterface + '\'' +
            ", pdoPackage='" + pdoPackage + '\'' +
-           ", classId=" + classId +
+           ", minClassId=" + minClassId +
            '}';
   }
 }
