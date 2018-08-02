@@ -69,15 +69,14 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
     // since the translator may need to know the type
     super.setType(type);
 
-    // deselect by DELETE- or BACKSPACE-key
+    // deselect by DELETE- or BACKSPACE-key (with or without shift)
     component.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-          !event.isShiftDown() && !event.isShortcutDown()) {
-        if ((event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
-            !component.isEditable() && !component.isDisabled() && isDeselectAllowed()) {
-          event.consume();
-          component.getSelectionModel().clearSelection();
-        }
+      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
+          (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
+          !component.isEditable() && !component.isDisabled() && isDeselectAllowed()) {
+        
+        event.consume();
+        component.getSelectionModel().clearSelection();
       }
     });
 
