@@ -133,6 +133,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
         case SINGLE:
           necessary = superEntity == null;
+          break;
 
         case MULTI:
           necessary = true;
@@ -143,6 +144,12 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       tableName = null;
     }
     return necessary;
+  }
+
+  public boolean isInheritanceTypeValid() {
+    return InheritanceType.NONE == inheritanceType ||
+           superEntity == null ||
+           superEntity.getInheritanceType() == inheritanceType;
   }
 
 
@@ -171,7 +178,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
   @Bindable
   @True(value = "$isNewClassId", scope = InteractiveScope.class, message = "class ID already in use")
-  @Changeable("$isClassIdNecessary")
+  @Changeable(condition = "$isClassIdNecessary")
   @GreaterOrEqual(value = "100", condition = "$isClassIdNecessary",
                   message = "class IDs below 100 are reserved for tentackle", scope = InteractiveScope.class)
   @NotNull(condition = "$isClassIdNecessary", message = "missing class ID")
@@ -186,7 +193,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
   @Bindable
   @True(value = "$isNewTableName", scope = InteractiveScope.class, message = "table name already in use")
-  @Changeable("$isTableNameNecessary")
+  @Changeable(condition = "$isTableNameNecessary")
   @NotNull(condition = "$isTableNameNecessary", message = "missing table name")
   public String getTableName() {
     return tableName;
@@ -209,6 +216,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
   @Bindable
   @NotNull
+  @True(value = "$isInheritanceTypeValid", scope = InteractiveScope.class, message = "inheritance type does not match super entity")
   public InheritanceType getInheritanceType() {
     return inheritanceType;
   }

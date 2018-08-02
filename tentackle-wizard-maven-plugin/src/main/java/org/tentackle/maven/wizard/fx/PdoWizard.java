@@ -126,12 +126,22 @@ public class PdoWizard extends AbstractFxController {
 
     genProfile.setDeselectAllowed(false);
     genInheritanceType.setDeselectAllowed(false);
+    // changes in inheritance and superentity may also change the model -> update view
+    genInheritanceType.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
+    genSuperEntity.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
+
     cancel.setOnAction(e -> Fx.getStage(getView()).close());
+
     generate.setOnAction(e -> {
       List<ValidationResult> results = gen.generate();
       if (!results.isEmpty()) {
         Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
       }
     });
+  }
+
+  private void updateViewOfClassIdAndTableName() {
+    genClassId.updateView();
+    genTableName.updateView();
   }
 }
