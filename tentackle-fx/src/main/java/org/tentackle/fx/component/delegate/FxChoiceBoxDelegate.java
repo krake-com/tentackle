@@ -55,10 +55,9 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
     // choice box does not need a value translator because the items are already of model type
     // and choice-box is not editable
 
-    // deselect by DELETE- or BACKSPACE-key
+    // deselect by DELETE- or BACKSPACE-key (with or without shift)
     component.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-          !event.isShiftDown() && !event.isShortcutDown() &&
+      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() && !event.isShortcutDown() &&
           (event.getCode() == KeyCode.DELETE || event.getCode() == KeyCode.BACK_SPACE) &&
           !component.isDisabled() && isDeselectAllowed()) {
         
