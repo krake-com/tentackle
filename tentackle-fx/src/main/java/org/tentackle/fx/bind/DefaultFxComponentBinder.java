@@ -118,7 +118,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
-                  validator.isConditionValid(validationContext)) {
+                  ((MandatoryBindingEvaluator) validator).isMandatory(validationContext)) {
                 mandatory = true;
                 break;
               }
@@ -146,7 +146,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
               // we must check the scope, because it may change due to CompoundValues
               if (scope.appliesTo(validator.getConfiguredScopes(validationContext)) &&
                   // and the validator still applies:
-                  validator.isConditionValid(validationContext)) {
+                  ((ChangeableBindingEvaluator) validator).isChangeable(validationContext)) {
                 changeable = true;
                 break;
               }
