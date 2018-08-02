@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc.app;
 
-import java.text.MessageFormat;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
@@ -29,19 +28,22 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+
 import org.tentackle.app.AbstractClientApplication;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
-import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.text.MessageFormat;
 
 /**
  * Java FX tentackle desktop application.
@@ -404,17 +406,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   @Override
   protected void finishStartup() {
     super.finishStartup();
-    configureCSS();
-  }
-
-  /**
-   * Configures the application-wide CSS.
-   */
-  protected void configureCSS() {
-    // tentackle styles
-    FxUtilities.getInstance().addStyleSheet("/org/tentackle/fx/tentackle.css");
-    // PDO textfields
-    FxUtilities.getInstance().addStyleSheet("/org/tentackle/fx/rdc/translate/pdo-style.css");
+    // tentackle styles and PDO textfields
+    FxUtilities.getInstance().addStyleSheets();
   }
 
 }

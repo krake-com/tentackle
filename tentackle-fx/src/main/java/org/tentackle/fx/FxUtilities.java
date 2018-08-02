@@ -575,6 +575,15 @@ public class FxUtilities {
 
 
   /**
+   * Configures the application-wide CSS.
+   */
+  public void addStyleSheets() {
+    // tentackle styles
+   addStyleSheet("/org/tentackle/fx/tentackle.css");
+  }
+
+
+  /**
    * Applies the bindable options to a text component.
    *
    * @param comp the component
