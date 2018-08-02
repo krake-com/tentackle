@@ -127,7 +127,9 @@ public class PdoWizard extends AbstractFxController {
 
     genProfile.setDeselectAllowed(false);
     genInheritanceType.setDeselectAllowed(false);
-    // changes in inheritance and superentity may also change the model -> update view
+
+    // changes may also change the model -> update view
+    genProfile.addViewToModelListener(() -> genTableName.updateView());
     genInheritanceType.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
     genSuperEntity.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
 
@@ -150,9 +152,7 @@ public class PdoWizard extends AbstractFxController {
   }
 
   private void updateViewOfClassIdAndTableName() {
-    Platform.runLater(() -> {
-      genClassId.updateView();
-      genTableName.updateView();
-    });
+    genClassId.updateView();
+    genTableName.updateView();
   }
 }

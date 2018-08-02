@@ -149,6 +149,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     return necessary;
   }
 
+  public Boolean isTableNameValid() {
+    return tableName != null && (profile == null || profile.getTablePrefix() == null || !tableName.equals(profile.getTablePrefix())) ?
+           Boolean.TRUE : null;
+  }
+
   public boolean isInheritanceTypeValid() {
     return InheritanceType.NONE == inheritanceType ||
            superEntity == null ||
@@ -164,6 +169,26 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
   @Bindable
   public void setProfile(PdoProfile profile) {
+    if (isTableNameNecessary()) {
+      String oldPrefix = null;
+      if (this.profile != null) {
+        oldPrefix = this.profile.getTablePrefix();
+        if (oldPrefix != null && tableName != null && tableName.startsWith(oldPrefix)) {
+          tableName = tableName.substring(oldPrefix.length());
+          if (tableName.isEmpty()) {
+            tableName = null;
+          }
+        }
+      }
+      if (profile != null && profile.getTablePrefix() != null) {
+        if (tableName == null) {
+          tableName = profile.getTablePrefix();
+        }
+        else {
+          tableName = profile.getTablePrefix() + tableName;
+        }
+      }
+    }
     this.profile = profile;
   }
 
@@ -197,8 +222,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   @Bindable
   @True(value = "$isNewTableName", scope = InteractiveScope.class, message = "table name already in use")
   @Changeable(condition = "$isTableNameNecessary")
-  @NotNull(condition = "$isTableNameNecessary", message = "missing table name")
+  @NotNull(value = "$isTableNameValid", condition = "$isTableNameNecessary", message = "missing table name")
   public String getTableName() {
+    if (isTableNameNecessary() && tableName == null && profile != null && profile.getTablePrefix() != null) {
+      tableName = profile.getTablePrefix();
+    }
     return tableName;
   }
 

@@ -53,6 +53,12 @@ public class PdoProfile extends Profile {
   @Parameter
   private int maxClassId;
 
+  /**
+   * Optional table prefix.
+   */
+  @Parameter
+  private String tablePrefix;
+
 
   public String getPdoInterface() {
     return pdoInterface;
@@ -72,6 +78,10 @@ public class PdoProfile extends Profile {
 
   public PackageInfo getPdoPackageInfo() {
     return pdoPackageInfo;
+  }
+
+  public String getTablePrefix() {
+    return tablePrefix;
   }
 
   @Override
