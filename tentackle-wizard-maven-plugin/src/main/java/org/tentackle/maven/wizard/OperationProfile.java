@@ -59,11 +59,4 @@ public class OperationProfile extends Profile {
     operationPackageInfo = getPackageInfo(packageInfoMap, operationPackage);
   }
 
-  @Override
-  public String toString() {
-    return "OperationProfile{" + super.toString() +
-           ", operationInterface='" + operationInterface + '\'' +
-           ", operationPackage='" + operationPackage + '\'' +
-           '}';
-  }
 }

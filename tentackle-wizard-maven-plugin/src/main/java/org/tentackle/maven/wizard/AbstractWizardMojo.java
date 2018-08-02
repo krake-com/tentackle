@@ -117,7 +117,7 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
     for (Profile profile : profiles) {
       if (clazz.isAssignableFrom(profile.getClass())) {
         if (list.contains(profile)) {
-          throw new MojoExecutionException("profile " + profile.getName() + " configured more than once");
+          throw new MojoExecutionException("profile " + profile + " configured more than once");
         }
         list.add((T) profile);
       }

@@ -49,6 +49,31 @@
   </properties>
 
   <build>
+
+    <resources>
+      <!-- workaround:
+        SceneBuilder cannot locate the controller if the fxml file is not in the same
+        directory as the java file. Hence, we change the convention
+        as follows:
+        1. each controller and its related fxml, resource-properties and css files go into the same physical folder.
+        2. there is only one such folder/package per controller
+      -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>target/generated-resources/services</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.fxml</include>
+          <include>**/*.css</include>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

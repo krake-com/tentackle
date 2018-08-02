@@ -101,12 +101,4 @@ public class PdoProfile extends Profile {
     this.maxClassId = maxClassId;
   }
 
-  @Override
-  public String toString() {
-    return "PdoProfile{" + super.toString() +
-           ", pdoInterface='" + pdoInterface + '\'' +
-           ", pdoPackage='" + pdoPackage + '\'' +
-           ", minClassId=" + minClassId +
-           '}';
-  }
 }

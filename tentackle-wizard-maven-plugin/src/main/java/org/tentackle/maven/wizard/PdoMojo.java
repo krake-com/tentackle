@@ -17,10 +17,21 @@
  */
 package org.tentackle.maven.wizard;
 
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.InstantiationStrategy;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 
+import org.tentackle.common.ModuleInfo;
+import org.tentackle.common.ModuleSorter;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxUtilities;
+import org.tentackle.maven.wizard.fx.PdoWizard;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
@@ -29,8 +40,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Wizard to create PDO files.
@@ -44,6 +55,34 @@ public class PdoMojo extends AbstractWizardMojo {
   public void execute() throws MojoExecutionException, MojoFailureException {
     super.execute();
     updateClassIDs();
+
+    CountDownLatch latch = new CountDownLatch(1);
+
+    Platform.startup(() -> {
+      try {
+        PdoWizard wizard = Fx.load(PdoWizard.class);
+        wizard.setProfiles(pdoProfiles);
+        Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+        Scene scene = new Scene(wizard.getView());
+        stage.setScene(scene);
+        stage.setTitle("PDO Wizard");
+        wizard.getContainer().updateView();
+        stage.setOnHidden(event -> latch.countDown());
+        stage.show();
+        FxUtilities.getInstance().addStyleSheets();
+      }
+      catch (Throwable t) {
+        getLog().error(t);
+        latch.countDown();
+      }
+    });
+
+    try {
+      latch.await();
+    }
+    catch (InterruptedException e) {
+      getLog().error(e);
+    }
   }
 
   @Override
@@ -88,7 +127,7 @@ public class PdoMojo extends AbstractWizardMojo {
         profile.setMaxClassId(maxClassId);
       }
       else if (profile.getMaxClassId() > maxClassId) {
-        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile.getName() + " maxClassId <= " + maxClassId);
+        throw new MojoExecutionException("class-IDs of profiles must not overlap: " + profile + " maxClassId <= " + maxClassId);
       }
       maxClassId = profile.getMinClassId() - 1;
     }
@@ -125,10 +164,10 @@ public class PdoMojo extends AbstractWizardMojo {
       int classId = entry.getValue() + 1;
       profile.setMinClassId(classId);
       if (classId > profile.getMaxClassId()) {
-        getLog().warn("no more free class-IDs for " + profile.getName());
+        getLog().warn("no more free class-IDs for " + profile);
       }
       else {
-        getLog().info("next free class-ID for " + profile.getName() +
+        getLog().info("next free class-ID for " + profile +
                       " is " + profile.getMinClassId() + ", max. " + profile.getMaxClassId());
       }
     }

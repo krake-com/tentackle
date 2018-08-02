@@ -184,14 +184,6 @@ public class Profile {
 
   @Override
   public String toString() {
-    return "name='" + name + '\'' +
-           ", domainInterface='" + domainInterface + '\'' +
-           ", persistenceInterface='" + persistenceInterface + '\'' +
-           ", domainImplementation='" + domainImplementation + '\'' +
-           ", persistenceImplementation='" + persistenceImplementation + '\'' +
-           ", domainPackage='" + domainPackage + '\'' +
-           ", persistencePackage='" + persistencePackage + '\'' +
-           ", domainImplPackage='" + domainImplPackage + '\'' +
-           ", persistenceImplPackage='" + persistenceImplPackage + '\'';
+    return name;
   }
 }
