@@ -73,7 +73,7 @@ public class NullImpl extends AbstractValidator<Null> {
                         // use object's value
                         validationContext.getObject() :
                         // replace with compound value which should be a script
-                        getValue(annotation.value(), null);
+                        getValue(annotation.value(), validationContext);
 
     if (value == null) {
       return null;

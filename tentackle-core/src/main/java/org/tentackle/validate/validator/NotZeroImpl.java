@@ -93,7 +93,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
                         // use object's value
                         validationContext.getObject() :
                         // replace with compound value which should be a script
-                        getValue(annotation.value(), null);
+                        getValue(annotation.value(), validationContext);
 
     if (value == null) {
       return createFailedValidationResult("value is null", validationContext);
