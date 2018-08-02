@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.wizard.fx;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 
 import org.tentackle.bind.Bindable;
@@ -130,18 +131,28 @@ public class PdoWizard extends AbstractFxController {
     genInheritanceType.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
     genSuperEntity.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
 
-    cancel.setOnAction(e -> Fx.getStage(getView()).close());
+    cancel.setOnAction(e -> close());
 
     generate.setOnAction(e -> {
       List<ValidationResult> results = gen.generate();
       if (!results.isEmpty()) {
         Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
       }
+      else {
+        Fx.info("files generated!");
+        close();
+      }
     });
   }
 
+  private void close() {
+    Fx.getStage(getView()).close();
+  }
+
   private void updateViewOfClassIdAndTableName() {
-    genClassId.updateView();
-    genTableName.updateView();
+    Platform.runLater(() -> {
+      genClassId.updateView();
+      genTableName.updateView();
+    });
   }
 }

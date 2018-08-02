@@ -67,6 +67,9 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   public List<ValidationResult> generate() {
     List<ValidationResult> results = validate(null, ValidationScopeFactory.getInstance().getMandatoryScope());
     results.addAll(validate(null, ValidationScopeFactory.getInstance().getInteractiveScope()));
+    if (results.isEmpty()) {
+      // TODO create the source files
+    }
     return results;
   }
 
