@@ -1,8 +1,8 @@
 
 package ${pdoPackage};
 
-import ${domainPackage}.${domainClass};
-import ${persistencePackage}.${persistenceClass};
+import ${domainPackage}.${domainInterface};
+import ${persistencePackage}.${persistenceInterface};
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.Plural;
 import org.tentackle.pdo.Singular;
@@ -14,8 +14,8 @@ import org.tentackle.session.TableName;
 <#if pdoTablename != "">
  * tablename = ${pdoTablename}
 </#if>
-<#if pdoEntityId != "0">
- * classid   = ${pdoEntityId}
+<#if pdoClassId != "">
+ * classid   = ${pdoClassId}
 </#if>
  * mapping   = $model/$tablename.map
  * @}
@@ -29,13 +29,13 @@ import org.tentackle.session.TableName;
 <#if pdoTablename != "">
  * table := $tablename
 </#if>
-<#if pdoEntityId != "0">
+<#if pdoClassId != "">
  * id := $classid
 </#if>
 <#if pdoExtends != "">
  * extends := ${pdoExtends}
 </#if>
-<#if pdoInheritance != "none">
+<#if pdoInheritance != "NONE">
  * inheritance := ${pdoInheritance}
 </#if>
  * integrity := $integrity
@@ -53,27 +53,27 @@ import org.tentackle.session.TableName;
 
 /**
  * ${pdoShortDescription}.
+<#if pdoLongDescription != "">
  * <p>
  * ${pdoLongDescription}
- *
- * @author ${user}
+</#if>
  */
 <#if pdoTablename != "">
 @TableName(value=/**/"${pdoTablename}"/**/,    // @wurblet < Inject --string $tablename
            mapSchema=/**/false/**/,     // @wurblet < Inject $mapSchema
            prefix=/**/""/**/)       // @wurblet < Inject --string $tablePrefix
 </#if>
-<#if pdoEntityId != "0">
-@ClassId(/**/${pdoEntityId}/**/) // @wurblet < Inject $classid
+<#if pdoClassId != "">
+@ClassId(/**/${pdoClassId}/**/) // @wurblet < Inject $classid
 </#if>
-<#if pdoInheritance != "plain">
-@Singular("${pdoEntity}")
-@Plural("${pdoEntity}s")
+<#if pdoInheritance != "PLAIN">
+@Singular("${pdoInterface}")
+@Plural("${pdoInterface}s")
 </#if>
-<#if pdoInheritance != "none">
-public interface ${pdoEntity}<T extends ${pdoEntity}<T>> extends ${superPdoInterface}<T>, ${persistenceClass}<T>, ${domainClass}<T> {
+<#if pdoInheritance != "NONE">
+public interface ${pdoInterface}<T extends ${pdoInterface}<T>> extends ${superPdoInterface}<T>, ${persistenceInterface}<T>, ${domainInterface}<T> {
 <#else>
-public interface ${pdoEntity} extends ${superPdoInterface}<${pdoEntity}>, ${persistenceClass}, ${domainClass} {
+public interface ${pdoInterface} extends ${superPdoInterface}<${pdoInterface}>, ${persistenceInterface}, ${domainInterface} {
 </#if>
 
   // @wurblet(fold=expanded) modelComment ModelComment

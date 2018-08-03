@@ -2,9 +2,9 @@
 package ${domainImplPackage};
 
 
-import ${pdoPackage}.${pdoEntity};
+import ${pdoPackage}.${pdoInterface};
 <#if domainPackage != domainImplPackage>
-import ${domainPackage}.${domainClass};
+import ${domainPackage}.${domainInterface};
 </#if>
 
 import org.tentackle.domain.AbstractDomainObject;
@@ -13,16 +13,14 @@ import org.tentackle.pdo.DomainObjectService;
 
 
 /**
- * Domain implementation for ${pdoEntity}.
- *
- * @author ${user}
+ * Domain implementation for ${pdoInterface}.
  */
-@DomainObjectService(${pdoEntity}.class)
-<#if pdoInheritance != "none">
-public class ${domainImplClass}<T extends ${pdoEntity}<T>, D extends ${domainImplClass}<T,D>>
-       extends ${superDomainImplementation}<T,D> implements ${domainClass}<T> {
+@DomainObjectService(${pdoInterface}.class)
+<#if pdoInheritance != "NONE">
+public class ${domainImplementation}<T extends ${pdoInterface}<T>, D extends ${domainImplementation}<T,D>>
+       extends ${superDomainImplementation}<T,D> implements ${domainInterface}<T> {
 <#else>
-public class ${domainImplClass} extends ${superDomainImplementation}<${pdoEntity}, ${domainImplClass}> implements ${domainClass} {
+public class ${domainImplementation} extends ${superDomainImplementation}<${pdoInterface}, ${domainImplementation}> implements ${domainInterface} {
 </#if>
 
   /** serial version UID. */
@@ -34,10 +32,10 @@ public class ${domainImplClass} extends ${superDomainImplementation}<${pdoEntity
    *
    * @param pdo the persistent domain object
    */
-<#if pdoInheritance != "none">
-  public ${domainImplClass}(T pdo) {
+<#if pdoInheritance != "NONE">
+  public ${domainImplementation}(T pdo) {
 <#else>
-  public ${domainImplClass}(${pdoEntity} pdo) {
+  public ${domainImplementation}(${pdoInterface} pdo) {
 </#if>
     super(pdo);
   }
@@ -45,7 +43,7 @@ public class ${domainImplClass} extends ${superDomainImplementation}<${pdoEntity
   /**
    * Creates a domain object.
    */
-  public ${domainImplClass}() {
+  public ${domainImplementation}() {
     super();
   }
 

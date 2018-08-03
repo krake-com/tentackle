@@ -18,6 +18,7 @@
 
 package org.tentackle.maven.wizard.fx;
 
+import freemarker.template.TemplateException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 
@@ -39,6 +40,8 @@ import org.tentackle.model.ModelException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -104,12 +107,26 @@ public class PdoWizard extends AbstractFxController {
   }
 
 
+  /**
+   * Sets the available profiles.
+   *
+   * @param profiles the profiles
+   */
   public void setProfiles(List<PdoProfile> profiles) {
     genProfile.getItems().clear();
     genProfile.getItems().addAll(profiles);
     if (!profiles.isEmpty()) {
       gen.setProfile(profiles.get(0));
     }
+  }
+
+  /**
+   * Sets the freemarker template directory.
+   *
+   * @param templateDirectory the directory
+   */
+  public void setTemplateDirectory(File templateDirectory) {
+    gen.setTemplateDirectory(templateDirectory);
   }
 
   @Override
@@ -165,13 +182,18 @@ public class PdoWizard extends AbstractFxController {
         return;
       }
 
-      List<ValidationResult> results = gen.generate();
-      if (results.isEmpty()) {
-        Fx.info("files generated!");
-        close();
+      try {
+        List<ValidationResult> results = gen.generate();
+        if (results.isEmpty()) {
+          Fx.info("files generated!");
+          close();
+        }
+        else {
+          Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
+        }
       }
-      else {
-        Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
+      catch (IOException | TemplateException ex) {
+        Fx.error("code generation failed", ex);
       }
     });
   }

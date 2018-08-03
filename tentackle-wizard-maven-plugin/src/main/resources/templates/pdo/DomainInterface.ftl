@@ -1,19 +1,17 @@
 
 package ${domainPackage};
 
-import ${pdoPackage}.${pdoEntity};
+import ${pdoPackage}.${pdoInterface};
 import org.tentackle.pdo.DomainObject;
 
 
 /**
- * Domain interface for ${pdoEntity}.
- *
- * @author ${user}
+ * Domain interface for ${pdoInterface}.
  */
-<#if pdoInheritance != "none">
-public interface ${domainClass}<T extends ${pdoEntity}<T>> extends ${superDomainInterface}<T> {
+<#if pdoInheritance != "NONE">
+public interface ${domainInterface}<T extends ${pdoInterface}<T>> extends ${superDomainInterface}<T> {
 <#else>
-public interface ${domainClass} extends ${superDomainInterface}<${pdoEntity}> {
+public interface ${domainInterface} extends ${superDomainInterface}<${pdoInterface}> {
 </#if>
 
 }

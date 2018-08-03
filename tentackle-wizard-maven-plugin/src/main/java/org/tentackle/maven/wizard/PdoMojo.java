@@ -32,6 +32,7 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 
+import java.io.File;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,7 @@ public class PdoMojo extends AbstractWizardMojo {
       try {
         PdoWizard wizard = Fx.load(PdoWizard.class);
         wizard.setProfiles(pdoProfiles);
+        wizard.setTemplateDirectory(new File(getTemplateDir(), "pdo"));
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(wizard.getView());
         stage.setScene(scene);

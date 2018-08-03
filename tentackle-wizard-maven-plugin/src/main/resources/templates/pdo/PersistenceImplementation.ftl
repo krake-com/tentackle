@@ -1,12 +1,12 @@
 
 package ${persistenceImplPackage};
 
-import ${pdoPackage}.${pdoEntity};
+import ${pdoPackage}.${pdoInterface};
 <#if persistencePackage != persistenceImplPackage>
-import ${persistencePackage}.${persistenceClass};
+import ${persistencePackage}.${persistenceInterface};
 </#if>
 <#if persistenceImplRemote = "true">
-import ${persistenceImplPackage}.rmi.${pdoEntity}RemoteDelegate;
+import ${persistenceImplPackage}.rmi.${pdoInterface}RemoteDelegate;
 </#if>
 
 import java.rmi.RemoteException;
@@ -46,16 +46,14 @@ import org.tentackle.validate.ValidationUtilities;
 
 
 /**
- * Persistence implementation for ${pdoEntity}.
- *
- * @author ${user}
+ * Persistence implementation for ${pdoInterface}.
  */
-@PersistentObjectService(${pdoEntity}.class)
-<#if pdoInheritance != "none">
-public class ${persistenceImplClass}<T extends ${pdoEntity}<T>, P extends ${persistenceImplClass}<T,P>>
-       extends ${superPersistenceImplementation}<T,P> implements ${persistenceClass}<T> {
+@PersistentObjectService(${pdoInterface}.class)
+<#if pdoInheritance != "NONE">
+public class ${persistenceImplementation}<T extends ${pdoInterface}<T>, P extends ${persistenceImplementation}<T,P>>
+       extends ${superPersistenceImplementation}<T,P> implements ${persistenceInterface}<T> {
 <#else>
-public class ${persistenceImplClass} extends ${superPersistenceImplementation}<${pdoEntity}, ${persistenceImplClass}> implements ${persistenceClass} {
+public class ${persistenceImplementation} extends ${superPersistenceImplementation}<${pdoInterface}, ${persistenceImplementation}> implements ${persistenceInterface} {
 </#if>
 
   /** serial version UID. */
@@ -75,10 +73,10 @@ public class ${persistenceImplClass} extends ${superPersistenceImplementation}<$
    * @param pdo the persistent domain object
    * @param context the domain context
    */
-<#if pdoInheritance != "none">
-  public ${persistenceImplClass}(T pdo, DomainContext context) {
+<#if pdoInheritance != "NONE">
+  public ${persistenceImplementation}(T pdo, DomainContext context) {
 <#else>
-  public ${persistenceImplClass}(${pdoEntity} pdo, DomainContext context) {
+  public ${persistenceImplementation}(${pdoInterface} pdo, DomainContext context) {
 </#if>
     super(pdo, context);
   }
@@ -89,10 +87,10 @@ public class ${persistenceImplClass} extends ${superPersistenceImplementation}<$
    * @param pdo the persistent domain object
    * @param session the session
    */
-<#if pdoInheritance != "none">
-  public ${persistenceImplClass}(T pdo, Session session) {
+<#if pdoInheritance != "NONE">
+  public ${persistenceImplementation}(T pdo, Session session) {
 <#else>
-  public ${persistenceImplClass}(${pdoEntity} pdo, Session session) {
+  public ${persistenceImplementation}(${pdoInterface} pdo, Session session) {
 </#if>
     super(pdo, session);
   }
@@ -102,10 +100,10 @@ public class ${persistenceImplClass} extends ${superPersistenceImplementation}<$
    *
    * @param pdo the persistent domain object
    */
-<#if pdoInheritance != "none">
-  public ${persistenceImplClass}(T pdo) {
+<#if pdoInheritance != "NONE">
+  public ${persistenceImplementation}(T pdo) {
 <#else>
-  public ${persistenceImplClass}(${pdoEntity} pdo) {
+  public ${persistenceImplementation}(${pdoInterface} pdo) {
 </#if>
     super(pdo);
   }
@@ -113,7 +111,7 @@ public class ${persistenceImplClass} extends ${superPersistenceImplementation}<$
   /**
    * Creates a persistent object.
    */
-  public ${persistenceImplClass}() {
+  public ${persistenceImplementation}() {
     super();
   }
 

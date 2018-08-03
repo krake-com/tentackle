@@ -18,6 +18,10 @@
 
 package org.tentackle.maven.wizard;
 
+import freemarker.template.Configuration;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
 import org.tentackle.model.Entity;
@@ -38,6 +42,11 @@ import org.tentackle.validate.validator.GreaterOrEqual;
 import org.tentackle.validate.validator.NotNull;
 import org.tentackle.validate.validator.True;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,8 +59,39 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   private static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
   private static final String PERSISTENCE_SUFFIX = "Persistence";
   private static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
+  private static final String JAVA_EXT = ".java";
 
 
+  /**
+   * Generated java file.
+   */
+  private static class GeneratedFile {
+
+    private final Configuration cfg;
+    private final PdoTemplateModel model;
+    private final String templateName;
+    private final File outputFile;
+
+    public GeneratedFile(Configuration cfg, PdoTemplateModel model, String templateName, File outputFile) {
+      this.cfg = cfg;
+      this.model = model;
+      this.templateName = templateName;
+      this.outputFile = outputFile;
+    }
+
+    public void generate() throws IOException, TemplateException {
+      Writer writer = new FileWriter(outputFile);
+      try {
+        cfg.getTemplate(templateName).process(model, writer);
+      }
+      finally {
+        writer.close();
+      }
+    }
+  }
+
+
+  private File templateDirectory;
   private PdoProfile profile;
   private String entityName;
   private Integer classId;
@@ -68,18 +108,75 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
 
   /**
+   * Sets the freemarker template directory.
+   *
+   * @param templateDirectory the template directory
+   */
+  public void setTemplateDirectory(File templateDirectory) {
+    this.templateDirectory = templateDirectory;
+  }
+
+
+  /**
    * Creates the PDO files.
    */
-  public List<ValidationResult> generate() {
+  public List<ValidationResult> generate() throws IOException, TemplateException {
     List<ValidationResult> results = validate(null, ValidationScopeFactory.getInstance().getMandatoryScope());
     results.addAll(validate(null, ValidationScopeFactory.getInstance().getInteractiveScope()));
     if (results.isEmpty()) {
-      // TODO create the source files
+      // configure freemarker
+      Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
+      cfg.setDirectoryForTemplateLoading(templateDirectory);
+      cfg.setDefaultEncoding("UTF-8");
+      cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+      cfg.setLogTemplateExceptions(false);
+      cfg.setWrapUncheckedExceptions(true);
+
+      // create freemarker model
+      PdoTemplateModel templateModel = new PdoTemplateModel(this);
+
+      // create targets
+      List<GeneratedFile> generatedFiles = new ArrayList<>();
+      generatedFiles.add(new GeneratedFile(cfg, templateModel,"PdoInterface.ftl",
+                         new File(getProfile().getPdoPackageInfo().getPath(), getEntityName() + JAVA_EXT)));
+      generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainInterface.ftl",
+                         new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + JAVA_EXT)));
+      generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceInterface.ftl",
+                         new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + JAVA_EXT)));
+      if (getDomainImplementation() != null) {
+        generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainImplementation.ftl",
+                           new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + JAVA_EXT)));
+      }
+      if (getPersistenceImplementation() != null) {
+        generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceImplementation.ftl",
+                           new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + JAVA_EXT)));
+      }
+
+      // genetate targets
+      for (GeneratedFile generatedFile: generatedFiles) {
+        generatedFile.generate();
+      }
     }
     return results;
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public Class<? extends ValidationScope>[] getDefaultScopes() {
+    return new Class[] { MandatoryScope.class, ChangeableScope.class};
+  }
 
+  @Override
+  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
+    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
+  }
+
+
+  /**
+   * Checks whether entity name is not already used in model.
+   *
+   * @return true if ok
+   */
   public boolean isNewEntity() {
     try {
       return entityName == null || Model.getInstance().getByEntityName(entityName) == null;
@@ -90,6 +187,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     }
   }
 
+  /**
+   * Checks whether classID is not already used in model.
+   *
+   * @return true if ok
+   */
   public boolean isNewClassId() {
     if (classId != null && classId > 0) {
       try {
@@ -106,6 +208,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     return true;
   }
 
+  /**
+   * Checks whether entity needs a class ID.
+   *
+   * @return true if class ID necessary
+   */
   public boolean isClassIdNecessary() {
     boolean necessary = InheritanceType.NONE == inheritanceType;
     if (!necessary) {
@@ -114,6 +221,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     return necessary;
   }
 
+  /**
+   * Checks whether the tablename is not already used in model.
+   *
+   * @return true if ok
+   */
   public boolean isNewTableName() {
     if (tableName != null) {
       try {
@@ -130,6 +242,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     return true;
   }
 
+  /**
+   * Checks whether entity needs a tablename.
+   *
+   * @return true if tablename necessary
+   */
   public boolean isTableNameNecessary() {
     boolean necessary = false;
     if (inheritanceType != null) {
@@ -155,6 +272,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     return necessary;
   }
 
+  /**
+   * Checks whether tablename set properly by the user.
+   *
+   * @return true if set, false if missing
+   */
   public Boolean isTableNameValid() {
     return tableName != null && (profile == null || profile.getTablePrefix() == null || !tableName.equals(profile.getTablePrefix())) ?
            Boolean.TRUE : null;   // TRUE != null, null -> @NotNull triggers
@@ -165,6 +287,10 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
            superEntity == null ||
            superEntity.getInheritanceType() == inheritanceType;
   }
+
+
+
+  // ------------------------------------- model -------------------------------------------------
 
 
   @Bindable
@@ -362,15 +488,100 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     this.remoteEnabled = remoteEnabled;
   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Class<? extends ValidationScope>[] getDefaultScopes() {
-    return new Class[] { MandatoryScope.class, ChangeableScope.class};
+
+  /**
+   * Gets the name of the parent pdo interface.
+   *
+   * @return the super interface
+   */
+  public String getSuperPdoInterface() {
+    String superPdoInterface;
+    if (superEntity != null) {
+      superPdoInterface = superEntity.getName();
+    }
+    else if (profile.getPdoInterface() != null) {
+      superPdoInterface = profile.getPdoInterface();
+    }
+    else {
+      superPdoInterface = "PersistentDomainObject";
+    }
+    return superPdoInterface;
   }
 
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
+  /**
+   * Gets the name of the parent domain interface.
+   *
+   * @return the super domain interface
+   */
+  public String getSuperDomainInterface() {
+    String superDomainInterface;
+    if (superEntity != null) {
+      superDomainInterface = superEntity.getName() + DOMAIN_SUFFIX;
+    }
+    else if (profile.getDomainInterface() != null) {
+      superDomainInterface = profile.getDomainInterface();
+    }
+    else {
+      superDomainInterface = "DomainObject";
+    }
+    return superDomainInterface;
+  }
+
+  /**
+   * Gets the name of the parent persistence interface.
+   *
+   * @return the super persistence interface
+   */
+  public String getSuperPersistenceInterface() {
+    String superPersistenceInterface;
+    if (superEntity != null) {
+      superPersistenceInterface = superEntity.getName() + PERSISTENCE_SUFFIX;
+    }
+    else if (profile.getPersistenceInterface() != null) {
+      superPersistenceInterface = profile.getPersistenceInterface();
+    }
+    else {
+      superPersistenceInterface = "PersistentObject";
+    }
+    return superPersistenceInterface;
+  }
+
+  /**
+   * Gets the name of the parent domain class.
+   *
+   * @return the super domain class
+   */
+  public String getSuperDomainImplementation() {
+    String superDomainImplementation;
+    if (superEntity != null) {
+      superDomainImplementation = superEntity.getName() + DOMAIN_IMPL_SUFFIX;
+    }
+    else if (profile.getDomainImplementation() != null) {
+      superDomainImplementation = profile.getDomainImplementation();
+    }
+    else {
+      superDomainImplementation = "AbstractDomainObject";
+    }
+    return superDomainImplementation;
+  }
+
+  /**
+   * Gets the name of the parent persistence class.
+   *
+   * @return the super persistence class
+   */
+  public String getSuperPersistenceImplementation() {
+    String superPersistenceImplementation;
+    if (superEntity != null) {
+      superPersistenceImplementation = superEntity.getName() + PERSISTENCE_IMPL_SUFFIX;
+    }
+    else if (profile.getPersistenceImplementation() != null) {
+      superPersistenceImplementation = profile.getPersistenceImplementation();
+    }
+    else {
+      superPersistenceImplementation = "AbstractPersistentObject";
+    }
+    return superPersistenceImplementation;
   }
 
 }

@@ -1,7 +1,7 @@
 
 package ${persistencePackage};
 
-import ${pdoPackage}.${pdoEntity};
+import ${pdoPackage}.${pdoInterface};
 import java.util.Collection;
 import java.util.List;
 import org.tentackle.bind.Bindable;
@@ -19,14 +19,12 @@ import org.tentackle.session.Persistent;
 
 
 /**
- * Persistence interface for ${pdoEntity}.
- *
- * @author ${user}
+ * Persistence interface for ${pdoInterface}.
  */
-<#if pdoInheritance != "none">
-public interface ${persistenceClass}<T extends ${pdoEntity}<T>> extends ${superPersistenceInterface}<T> {
+<#if pdoInheritance != "NONE">
+public interface ${persistenceInterface}<T extends ${pdoInterface}<T>> extends ${superPersistenceInterface}<T> {
 <#else>
-public interface ${persistenceClass} extends ${superPersistenceInterface}<${pdoEntity}> {
+public interface ${persistenceInterface} extends ${superPersistenceInterface}<${pdoInterface}> {
 </#if>
 
   // @wurblet attributeNames AttributeNames
