@@ -129,20 +129,49 @@ public class PdoWizard extends AbstractFxController {
     genInheritanceType.setDeselectAllowed(false);
 
     // changes may also change the model -> update view
-    genProfile.addViewToModelListener(() -> genTableName.updateView());
+    genProfile.addViewToModelListener(() -> {
+      genTableName.updateView();
+      genClassId.updateView();
+    });
+    genEntityName.addModelToViewListener(() -> {
+      genDomainInterface.updateView();
+      genDomainImplementation.updateView();
+      genPersistenceInterface.updateView();
+      genPersistenceImplementation.updateView();
+    });
     genInheritanceType.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
     genSuperEntity.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
+
+    genTableName.focusedProperty().addListener((observable, oldValue, newValue) -> {
+      if (newValue && gen.getProfile() != null && gen.getProfile().getTablePrefix() != null &&
+          gen.getProfile().getTablePrefix().equals(gen.getTableName())) {
+        Platform.runLater(() -> genTableName.positionCaret(gen.getTableName().length()));
+      }
+    });
 
     cancel.setOnAction(e -> close());
 
     generate.setOnAction(e -> {
-      List<ValidationResult> results = gen.generate();
-      if (!results.isEmpty()) {
-        Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
+      if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() != null &&
+          !Fx.question("do you really don't want a domain implementation?", false)) {
+        return;
       }
-      else {
+      else if (gen.getPersistenceImplementation() == null && gen.getDomainImplementation() != null &&
+               !Fx.question("do you really don't want a persistence implementation?", false)) {
+        return;
+      }
+      else if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() == null &&
+               !Fx.question("do you really don't want the implementation files?", false)) {
+        return;
+      }
+
+      List<ValidationResult> results = gen.generate();
+      if (results.isEmpty()) {
         Fx.info("files generated!");
         close();
+      }
+      else {
+        Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
       }
     });
   }

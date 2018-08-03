@@ -38,13 +38,19 @@ import org.tentackle.validate.validator.GreaterOrEqual;
 import org.tentackle.validate.validator.NotNull;
 import org.tentackle.validate.validator.True;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Generator for the PDO files.
  */
 public class PdoGenerator implements ScopeConfigurator, Validateable {
+
+
+  private static final String DOMAIN_SUFFIX = "Domain";
+  private static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
+  private static final String PERSISTENCE_SUFFIX = "Persistence";
+  private static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
+
 
   private PdoProfile profile;
   private String entityName;
@@ -151,7 +157,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
   public Boolean isTableNameValid() {
     return tableName != null && (profile == null || profile.getTablePrefix() == null || !tableName.equals(profile.getTablePrefix())) ?
-           Boolean.TRUE : null;
+           Boolean.TRUE : null;   // TRUE != null, null -> @NotNull triggers
   }
 
   public boolean isInheritanceTypeValid() {
@@ -189,6 +195,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
         }
       }
     }
+
     this.profile = profile;
   }
 
@@ -202,6 +209,26 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   @Bindable
   public void setEntityName(String entityName) {
     this.entityName = entityName;
+    if (entityName == null) {
+      domainInterface = null;
+      domainImplementation = null;
+      persistenceInterface = null;
+      persistenceImplementation = null;
+    }
+    else {
+      if (domainInterface == null || domainInterface.endsWith(DOMAIN_SUFFIX)) {
+        domainInterface = entityName + DOMAIN_SUFFIX;
+      }
+      if (domainImplementation == null || domainImplementation.endsWith(DOMAIN_IMPL_SUFFIX)) {
+        domainImplementation = entityName + DOMAIN_IMPL_SUFFIX;
+      }
+      if (persistenceInterface == null || persistenceInterface.endsWith(PERSISTENCE_SUFFIX)) {
+        persistenceInterface = entityName + PERSISTENCE_SUFFIX;
+      }
+      if (persistenceImplementation == null || persistenceImplementation.endsWith(PERSISTENCE_IMPL_SUFFIX)) {
+        persistenceImplementation = entityName + PERSISTENCE_IMPL_SUFFIX;
+      }
+    }
   }
 
   @Bindable
@@ -211,6 +238,11 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
                   message = "class IDs below 100 are reserved for tentackle", scope = InteractiveScope.class)
   @NotNull(condition = "$isClassIdNecessary", message = "missing class ID")
   public Integer getClassId() {
+    if (isClassIdNecessary()) {
+      if (classId == null || classId < profile.getMinClassId() || classId > profile.getMaxClassId()) {
+        classId = profile.getMinClassId();
+      }
+    }
     return classId;
   }
 

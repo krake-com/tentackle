@@ -23,12 +23,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.InstantiationStrategy;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.ResolutionScope;
 
-import org.tentackle.common.ModuleInfo;
-import org.tentackle.common.ModuleSorter;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.maven.wizard.fx.PdoWizard;
