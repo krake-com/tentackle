@@ -32,7 +32,10 @@ import org.tentackle.model.Entity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +51,10 @@ public class PdoMojo extends AbstractWizardMojo {
 
   private List<PdoProfile> pdoProfiles;
 
+  public List<PdoProfile> getPdoProfiles() {
+    return pdoProfiles;
+  }
+
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     super.execute();
@@ -58,8 +65,7 @@ public class PdoMojo extends AbstractWizardMojo {
     Platform.startup(() -> {
       try {
         PdoWizard wizard = Fx.load(PdoWizard.class);
-        wizard.setProfiles(pdoProfiles);
-        wizard.setTemplateDirectory(new File(getTemplateDir(), "pdo"));
+        wizard.applyMojo(this);
         Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
         Scene scene = new Scene(wizard.getView());
         stage.setScene(scene);
@@ -96,6 +102,11 @@ public class PdoMojo extends AbstractWizardMojo {
     }
   }
 
+  /**
+   * Updates the classIds in the profiles.
+   *
+   * @throws MojoExecutionException
+   */
   private void updateClassIDs() throws MojoExecutionException {
 
     // profiles sorted by classid, highest first
@@ -160,6 +171,10 @@ public class PdoMojo extends AbstractWizardMojo {
     for (Map.Entry<PdoProfile,Integer> entry: inUseIds.entrySet()) {
       PdoProfile profile = entry.getKey();
       int classId = entry.getValue() + 1;
+      Integer statusClassId = loadClassIdFromStatus(profile.getName());
+      if (statusClassId != null && statusClassId > classId) {
+        classId = statusClassId;
+      }
       profile.setMinClassId(classId);
       if (classId > profile.getMaxClassId()) {
         getLog().warn("no more free class-IDs for " + profile);
@@ -170,4 +185,20 @@ public class PdoMojo extends AbstractWizardMojo {
       }
     }
   }
+
+
+  private Integer loadClassIdFromStatus(String profileName) {
+    Integer classId = null;
+    try {
+      BufferedReader statusReader = new BufferedReader(new FileReader(new File(getStatusDir(), profileName + ".classid")));
+      String line = statusReader.readLine();
+      statusReader.close();
+      return Integer.parseInt(line);
+    }
+    catch (IOException e) {
+      // this is okay!
+    }
+    return classId;
+  }
+
 }

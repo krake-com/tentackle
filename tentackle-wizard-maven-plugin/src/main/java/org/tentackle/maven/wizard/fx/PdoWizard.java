@@ -32,6 +32,7 @@ import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.maven.wizard.PdoGenerator;
+import org.tentackle.maven.wizard.PdoMojo;
 import org.tentackle.maven.wizard.PdoProfile;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
@@ -106,27 +107,20 @@ public class PdoWizard extends AbstractFxController {
     gen.setRemoteEnabled(true);
   }
 
-
   /**
-   * Sets the available profiles.
+   * Configures the wizard with mojo's properties.
    *
-   * @param profiles the profiles
+   * @param mojo the PDO mojo
    */
-  public void setProfiles(List<PdoProfile> profiles) {
+  public void applyMojo(PdoMojo mojo) {
     genProfile.getItems().clear();
+    List<PdoProfile> profiles = mojo.getPdoProfiles();
     genProfile.getItems().addAll(profiles);
     if (!profiles.isEmpty()) {
       gen.setProfile(profiles.get(0));
     }
-  }
-
-  /**
-   * Sets the freemarker template directory.
-   *
-   * @param templateDirectory the directory
-   */
-  public void setTemplateDirectory(File templateDirectory) {
-    gen.setTemplateDirectory(templateDirectory);
+    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), "pdo"));
+    gen.setStatusDir(mojo.getStatusDir());
   }
 
   @Override

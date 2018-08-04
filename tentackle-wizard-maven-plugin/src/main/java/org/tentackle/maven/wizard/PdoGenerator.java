@@ -65,7 +65,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   /**
    * Generated java file.
    */
-  private static class GeneratedFile {
+  private class GeneratedFile {
 
     private final Configuration cfg;
     private final PdoTemplateModel model;
@@ -92,6 +92,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
 
 
   private File templateDirectory;
+  private File statusDir;
   private PdoProfile profile;
   private String entityName;
   private Integer classId;
@@ -116,6 +117,14 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     this.templateDirectory = templateDirectory;
   }
 
+  /**
+   * Sets the status directory.
+   *
+   * @param statusDir the status dir
+   */
+  public void setStatusDir(File statusDir) {
+    this.statusDir = statusDir;
+  }
 
   /**
    * Creates the PDO files.
@@ -155,6 +164,18 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       // genetate targets
       for (GeneratedFile generatedFile: generatedFiles) {
         generatedFile.generate();
+      }
+
+      // save class ID status, if any classid created
+      if (classId != null) {
+        statusDir.mkdirs();
+        FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + ".classid"));
+        try {
+          statusWriter.append(Integer.toString(classId + 1));
+        }
+        finally {
+          statusWriter.close();
+        }
       }
     }
     return results;

@@ -72,6 +72,15 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   protected File modelDir;
 
   /**
+   * Directory holding the status info.<br>
+   * Used to store the next free classId per profile in case multiple PDOs are
+   * generated without an intermediate mvn clean package/install or wurbel run.<br>
+   * Must be a subdir of the target directory to be removed via mvn clean.
+   */
+  @Parameter(defaultValue = "${project.build.directory}/wizard")
+  private File statusDir;
+
+  /**
    * The model defaults.
    */
   @Parameter(property = "tentackle.modelDefaults")
@@ -133,6 +142,15 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    */
   public File getTemplateDir() {
     return templateDir;
+  }
+
+  /**
+   * Gets the status directory.
+   *
+   * @return the status dir
+   */
+  public File getStatusDir() {
+    return statusDir;
   }
 
   @Override
@@ -346,15 +364,19 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   private void checkDir(MavenProject project, File dir, List<PackageInfo> packages, String packageName) {
     if (dir.isDirectory()) {
       boolean containsJavaFiles = false;
+      boolean empty = true;
       for (File file : dir.listFiles()) {
-        if (file.isDirectory()) {
-          checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
-        }
-        else if (file.getName().endsWith(".java")) {
-          containsJavaFiles = true;
+        if (!file.isHidden()) {
+          empty = false;
+          if (file.isDirectory()) {
+            checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
+          }
+          else if (file.getName().endsWith(".java")) {
+            containsJavaFiles = true;
+          }
         }
       }
-      if (containsJavaFiles && !packageName.isEmpty()) {
+      if ((empty || containsJavaFiles) && !packageName.isEmpty()) {
         packages.add(new PackageInfo(packageName, project, dir));
       }
     }
