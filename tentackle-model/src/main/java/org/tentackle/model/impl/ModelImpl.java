@@ -1065,26 +1065,21 @@ public class ModelImpl implements Model {
    * @param errors the collected model errors
    */
   protected void validateInheritanceHierarchy(Entity entity, InheritanceType inheritanceType, TrackType trackType,
-                                                Integrity integrity, Set<ModelError> errors) {
+                                              Integrity integrity, Set<ModelError> errors) {
 
     if (entity.getOptions().getTrackType() != trackType) {
       errors.add(new ModelError(entity,
               entity + " has wrong track type " + entity.getOptions().getTrackType() +
               ", expected " + trackType));
     }
+
     if (entity.getIntegrity() != integrity) {
       errors.add(new ModelError(entity,
               entity + " has wrong integrity type " + entity.getIntegrity() +
               ", expected " + integrity));
     }
 
-    if (entity.getSubEntities().isEmpty()) {
-      if (entity.getInheritanceType() != InheritanceType.NONE) {
-        errors.add(new ModelError(entity,
-                entity + " without child entities must have an inheritance type of NONE"));
-      }
-    }
-    else  {
+    if (!entity.getSubEntities().isEmpty()) {
       if (entity.getInheritanceType() != inheritanceType) {
         errors.add(new ModelError(entity,
                 entity + " has wrong inheritance type " + entity.getInheritanceType() +
@@ -1094,6 +1089,8 @@ public class ModelImpl implements Model {
         validateInheritanceHierarchy(child, inheritanceType, trackType, integrity, errors);
       }
     }
+    // else: no sub entities. We don't check for InheritanceType.NONE because we may be in the middle
+    // of development. We could issue warnings though, but there is no logger...
   }
 
 
