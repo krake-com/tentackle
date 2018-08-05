@@ -45,7 +45,6 @@ import org.tentackle.validate.validator.True;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,42 +52,6 @@ import java.util.List;
  * Generator for the PDO files.
  */
 public class PdoGenerator implements ScopeConfigurator, Validateable {
-
-
-  private static final String DOMAIN_SUFFIX = "Domain";
-  private static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
-  private static final String PERSISTENCE_SUFFIX = "Persistence";
-  private static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
-  private static final String JAVA_EXT = ".java";
-
-
-  /**
-   * Generated java file.
-   */
-  private class GeneratedFile {
-
-    private final Configuration cfg;
-    private final PdoTemplateModel model;
-    private final String templateName;
-    private final File outputFile;
-
-    public GeneratedFile(Configuration cfg, PdoTemplateModel model, String templateName, File outputFile) {
-      this.cfg = cfg;
-      this.model = model;
-      this.templateName = templateName;
-      this.outputFile = outputFile;
-    }
-
-    public void generate() throws IOException, TemplateException {
-      Writer writer = new FileWriter(outputFile);
-      try {
-        cfg.getTemplate(templateName).process(model, writer);
-      }
-      finally {
-        writer.close();
-      }
-    }
-  }
 
 
   private File templateDirectory;
@@ -147,18 +110,18 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       // create targets
       List<GeneratedFile> generatedFiles = new ArrayList<>();
       generatedFiles.add(new GeneratedFile(cfg, templateModel,"PdoInterface.ftl",
-                         new File(getProfile().getPdoPackageInfo().getPath(), getEntityName() + JAVA_EXT)));
+                         new File(getProfile().getPdoPackageInfo().getPath(), getEntityName() + Constants.JAVA_EXT)));
       generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainInterface.ftl",
-                         new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + JAVA_EXT)));
+                         new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + Constants.JAVA_EXT)));
       generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceInterface.ftl",
-                         new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + JAVA_EXT)));
+                         new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT)));
       if (getDomainImplementation() != null) {
         generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainImplementation.ftl",
-                           new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + JAVA_EXT)));
+                           new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + Constants.JAVA_EXT)));
       }
       if (getPersistenceImplementation() != null) {
         generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceImplementation.ftl",
-                           new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + JAVA_EXT)));
+                           new File(getProfile().getPersistenceImplPackageInfo().getPath(), getPersistenceImplementation() + Constants.JAVA_EXT)));
       }
 
       // genetate targets
@@ -169,7 +132,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       // save class ID status, if any classid created
       if (classId != null) {
         statusDir.mkdirs();
-        FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + ".classid"));
+        FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT));
         try {
           statusWriter.append(Integer.toString(classId + 1));
         }
@@ -251,7 +214,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     if (tableName != null) {
       try {
         for (Entity entity : Model.getInstance().getAllEntitites()) {
-          if (tableName.equals(entity.getTableName())) {
+          if (tableName.equalsIgnoreCase(entity.getTableName())) {
             return false;
           }
         }
@@ -363,17 +326,17 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       persistenceImplementation = null;
     }
     else {
-      if (domainInterface == null || domainInterface.endsWith(DOMAIN_SUFFIX)) {
-        domainInterface = entityName + DOMAIN_SUFFIX;
+      if (domainInterface == null || domainInterface.endsWith(Constants.DOMAIN_SUFFIX)) {
+        domainInterface = entityName + Constants.DOMAIN_SUFFIX;
       }
-      if (domainImplementation == null || domainImplementation.endsWith(DOMAIN_IMPL_SUFFIX)) {
-        domainImplementation = entityName + DOMAIN_IMPL_SUFFIX;
+      if (domainImplementation == null || domainImplementation.endsWith(Constants.DOMAIN_IMPL_SUFFIX)) {
+        domainImplementation = entityName + Constants.DOMAIN_IMPL_SUFFIX;
       }
-      if (persistenceInterface == null || persistenceInterface.endsWith(PERSISTENCE_SUFFIX)) {
-        persistenceInterface = entityName + PERSISTENCE_SUFFIX;
+      if (persistenceInterface == null || persistenceInterface.endsWith(Constants.PERSISTENCE_SUFFIX)) {
+        persistenceInterface = entityName + Constants.PERSISTENCE_SUFFIX;
       }
-      if (persistenceImplementation == null || persistenceImplementation.endsWith(PERSISTENCE_IMPL_SUFFIX)) {
-        persistenceImplementation = entityName + PERSISTENCE_IMPL_SUFFIX;
+      if (persistenceImplementation == null || persistenceImplementation.endsWith(Constants.PERSISTENCE_IMPL_SUFFIX)) {
+        persistenceImplementation = entityName + Constants.PERSISTENCE_IMPL_SUFFIX;
       }
     }
   }
@@ -398,7 +361,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     this.classId = classId;
   }
 
-  @Bindable
+  @Bindable(options = "lc")
   @True(value = "$isNewTableName", scope = InteractiveScope.class, message = "table name already in use")
   @Changeable(condition = "$isTableNameNecessary")
   @NotNull(value = "$isTableNameValid", condition = "$isTableNameNecessary", message = "missing table name")
@@ -458,7 +421,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   }
 
   @Bindable
-  @NotNull(message = "missing short domain interface")
+  @NotNull(message = "missing domain interface")
   public String getDomainInterface() {
     return domainInterface;
   }
@@ -537,7 +500,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   public String getSuperDomainInterface() {
     String superDomainInterface;
     if (superEntity != null) {
-      superDomainInterface = superEntity.getName() + DOMAIN_SUFFIX;
+      superDomainInterface = superEntity.getName() + Constants.DOMAIN_SUFFIX;
     }
     else if (profile.getDomainInterface() != null) {
       superDomainInterface = profile.getDomainInterface();
@@ -556,7 +519,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   public String getSuperPersistenceInterface() {
     String superPersistenceInterface;
     if (superEntity != null) {
-      superPersistenceInterface = superEntity.getName() + PERSISTENCE_SUFFIX;
+      superPersistenceInterface = superEntity.getName() + Constants.PERSISTENCE_SUFFIX;
     }
     else if (profile.getPersistenceInterface() != null) {
       superPersistenceInterface = profile.getPersistenceInterface();
@@ -575,7 +538,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   public String getSuperDomainImplementation() {
     String superDomainImplementation;
     if (superEntity != null) {
-      superDomainImplementation = superEntity.getName() + DOMAIN_IMPL_SUFFIX;
+      superDomainImplementation = superEntity.getName() + Constants.DOMAIN_IMPL_SUFFIX;
     }
     else if (profile.getDomainImplementation() != null) {
       superDomainImplementation = profile.getDomainImplementation();
@@ -594,7 +557,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   public String getSuperPersistenceImplementation() {
     String superPersistenceImplementation;
     if (superEntity != null) {
-      superPersistenceImplementation = superEntity.getName() + PERSISTENCE_IMPL_SUFFIX;
+      superPersistenceImplementation = superEntity.getName() + Constants.PERSISTENCE_IMPL_SUFFIX;
     }
     else if (profile.getPersistenceImplementation() != null) {
       superPersistenceImplementation = profile.getPersistenceImplementation();

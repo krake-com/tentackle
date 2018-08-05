@@ -49,11 +49,11 @@ public class PdoTemplateModel extends HashMap<String, String> {
 
     putValue("pdoTablename", generator.getTableName());
     putValue("pdoClassId", generator.getClassId());
-    putValue("pdoShortDescription", generator.getShortDescription());
-    putValue("pdoLongDescription", generator.getLongDescription());
+    putValue("shortDescription", generator.getShortDescription());
+    putValue("longDescription", generator.getLongDescription());
     putValue("pdoExtends", generator.getSuperEntity());
     putValue("pdoInheritance", generator.getInheritanceType());
-    putValue("persistenceImplRemote", generator.isRemoteEnabled());
+    putValue("remoteEnabled", generator.isRemoteEnabled());
   }
 
   private void putValue(String key, Object value) {

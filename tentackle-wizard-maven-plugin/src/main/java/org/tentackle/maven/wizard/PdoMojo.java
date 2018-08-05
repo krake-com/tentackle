@@ -190,7 +190,7 @@ public class PdoMojo extends AbstractWizardMojo {
   private Integer loadClassIdFromStatus(String profileName) {
     Integer classId = null;
     try {
-      BufferedReader statusReader = new BufferedReader(new FileReader(new File(getStatusDir(), profileName + ".classid")));
+      BufferedReader statusReader = new BufferedReader(new FileReader(new File(getStatusDir(), profileName + Constants.CLASSID_EXT)));
       String line = statusReader.readLine();
       statusReader.close();
       return Integer.parseInt(line);

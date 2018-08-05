@@ -24,7 +24,7 @@ import org.tentackle.session.TableName;
 /*
  * @> $mapping
  *
- * # ${pdoShortDescription}
+ * # ${shortDescription}
  * name := $classname
 <#if pdoTablename != "">
  * table := $tablename
@@ -52,10 +52,10 @@ import org.tentackle.session.TableName;
  */
 
 /**
- * ${pdoShortDescription}.
-<#if pdoLongDescription != "">
+ * ${shortDescription}.
+<#if longDescription != "">
  * <p>
- * ${pdoLongDescription}
+ * ${longDescription}
 </#if>
  */
 <#if pdoTablename != "">

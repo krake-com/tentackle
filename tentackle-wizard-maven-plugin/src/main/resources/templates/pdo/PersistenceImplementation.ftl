@@ -5,7 +5,7 @@ import ${pdoPackage}.${pdoInterface};
 <#if persistencePackage != persistenceImplPackage>
 import ${persistencePackage}.${persistenceInterface};
 </#if>
-<#if persistenceImplRemote = "true">
+<#if remoteEnabled == "true">
 import ${persistenceImplPackage}.rmi.${pdoInterface}RemoteDelegate;
 </#if>
 

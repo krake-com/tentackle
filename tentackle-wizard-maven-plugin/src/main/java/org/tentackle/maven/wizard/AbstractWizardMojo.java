@@ -306,7 +306,12 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
     installTemplate(CATEGORY_PDO, "PdoInterface.ftl");
     installTemplate(CATEGORY_PDO, "PersistenceImplementation.ftl");
     installTemplate(CATEGORY_PDO, "PersistenceInterface.ftl");
-    // TODO: add operation templates
+
+    installTemplate(CATEGORY_OPERATION, "DomainImplementation.ftl");
+    installTemplate(CATEGORY_OPERATION, "DomainInterface.ftl");
+    installTemplate(CATEGORY_OPERATION, "OperationInterface.ftl");
+    installTemplate(CATEGORY_OPERATION, "PersistenceImplementation.ftl");
+    installTemplate(CATEGORY_OPERATION, "PersistenceInterface.ftl");
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {
