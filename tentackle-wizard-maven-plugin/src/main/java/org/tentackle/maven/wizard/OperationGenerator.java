@@ -98,10 +98,14 @@ public class OperationGenerator implements ScopeConfigurator, Validateable {
       List<GeneratedFile> generatedFiles = new ArrayList<>();
       generatedFiles.add(new GeneratedFile(cfg, templateModel,"OperationInterface.ftl",
                          new File(getProfile().getOperationPackageInfo().getPath(), getOperationName() + Constants.JAVA_EXT)));
-      generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainInterface.ftl",
-                         new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + Constants.JAVA_EXT)));
-      generatedFiles.add(new GeneratedFile(cfg, templateModel,"PersistenceInterface.ftl",
-                         new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT)));
+      if (getDomainInterface() != null) {
+        generatedFiles.add(new GeneratedFile(cfg, templateModel, "DomainInterface.ftl",
+        new File(getProfile().getDomainPackageInfo().getPath(), getDomainInterface() + Constants.JAVA_EXT)));
+      }
+      if (getPersistenceInterface() != null) {
+        generatedFiles.add(new GeneratedFile(cfg, templateModel, "PersistenceInterface.ftl",
+        new File(getProfile().getPersistencePackageInfo().getPath(), getPersistenceInterface() + Constants.JAVA_EXT)));
+      }
       if (getDomainImplementation() != null) {
         generatedFiles.add(new GeneratedFile(cfg, templateModel,"DomainImplementation.ftl",
                            new File(getProfile().getDomainImplPackageInfo().getPath(), getDomainImplementation() + Constants.JAVA_EXT)));

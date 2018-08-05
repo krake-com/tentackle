@@ -112,7 +112,7 @@ public class OperationWizard extends AbstractFxController {
     if (!profiles.isEmpty()) {
       gen.setProfile(profiles.get(0));
     }
-    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), "pdo"));
+    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), "operation"));
   }
 
   @Override

@@ -1,8 +1,12 @@
 
 package ${operationPackage};
 
+<#if domainInterface != "">
 import ${domainPackage}.${domainInterface};
+</#if>
+<#if persistenceInterface != "">
 import ${persistencePackage}.${persistenceInterface};
+</#if>
 import org.tentackle.pdo.Operation;
 
 /**
@@ -18,7 +22,7 @@ public interface ${operationInterface}<T extends ${operationInterface}<T>> exten
   <#else>
 public interface ${operationInterface} extends ${superOperationInterface}<${operationInterface}>, ${persistenceInterface}, ${domainInterface} {
   </#if>
-<#elseif domainInterfacae != "">
+<#elseif domainInterface != "">
   <#if abstractOperation == "true">
 public interface ${operationInterface}<T extends ${operationInterface}<T>> extends ${superOperationInterface}<T> ${domainInterface}<T> {
   <#else>

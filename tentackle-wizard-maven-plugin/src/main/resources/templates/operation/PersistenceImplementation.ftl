@@ -10,9 +10,9 @@ import ${persistenceImplPackage}.rmi.${operationInterface}RemoteDelegate;
 </#if>
 
 import java.rmi.RemoteException;
-import org.tentackle.operation.DomainContext;
-import org.tentackle.operation.PersistentOperationService;
-import org.tentackle.operation.Operation;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.PersistentOperationService;
+import org.tentackle.pdo.Operation;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
