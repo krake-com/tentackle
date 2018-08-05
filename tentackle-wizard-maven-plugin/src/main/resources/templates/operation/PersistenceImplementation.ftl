@@ -30,9 +30,13 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   /** serial version UID. */
   private static final long serialVersionUID = -1;
 
+<#if abstractOperation == "true">
+  private static final PersistentOperationClassVariables CLASSVARIABLES =
+          new PersistentOperationClassVariables(${operationInterface}.class, ${persistenceImplementation}.class);
+<#else>
   private static final PersistentOperationClassVariables<${operationInterface}, ${persistenceImplementation}> CLASSVARIABLES =
           new PersistentOperationClassVariables<>(${operationInterface}.class, ${persistenceImplementation}.class);
-
+</#if>
 
   /**
    * Creates a persistent object for an operation.
