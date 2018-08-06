@@ -174,11 +174,12 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   public Function<T, String> toViewFunction() {
     return m -> {
       if (m != null) {
+        Object udk = m.getUniqueDomainKey();
         if (udkTranslator != null) {
-          viewValue = (String) ((Function) udkTranslator.toViewFunction()).apply(m.getUniqueDomainKey());
+          viewValue = (String) ((Function) udkTranslator.toViewFunction()).apply(udk);
         }
         else {
-          viewValue = m.toString();
+          viewValue = udk.toString();
         }
       }
       else {
