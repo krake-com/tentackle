@@ -23,21 +23,26 @@ package org.tentackle.maven.wizard;
 public class Constants {
 
   /** classname suffix for the domain interface. */
-  static final String DOMAIN_SUFFIX = "Domain";
+  public static final String DOMAIN_SUFFIX = "Domain";
 
   /** classname suffix for the domain implementation. */
-  static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
+  public static final String DOMAIN_IMPL_SUFFIX = "DomainImpl";
 
   /** classname suffix for the persistence interface. */
-  static final String PERSISTENCE_SUFFIX = "Persistence";
+  public static final String PERSISTENCE_SUFFIX = "Persistence";
 
   /** classname suffix for the persistence implementation. */
-  static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
+  public static final String PERSISTENCE_IMPL_SUFFIX = "PersistenceImpl";
 
   /** java file extension. */
-  static final String JAVA_EXT = ".java";
+  public static final String JAVA_EXT = ".java";
 
   /** classID status file extension. */
-  static final String CLASSID_EXT = ".classid";
+  public static final String CLASSID_EXT = ".classid";
 
+  /** template category for PDOs. */
+  public static final String CATEGORY_PDO = "pdo";
+
+  /** template category for operations. */
+  public static final String CATEGORY_OPERATION = "operation";
 }

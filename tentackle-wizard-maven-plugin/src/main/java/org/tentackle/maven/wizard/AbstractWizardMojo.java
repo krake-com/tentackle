@@ -52,23 +52,17 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractWizardMojo extends AbstractMojo {
 
-  private static final String CATEGORY_PDO = "pdo";
-  private static final String CATEGORY_OPERATION = "operation";
-
   /**
    * The Maven Project.
    */
-  @Parameter(defaultValue = "${project}",
-  readonly = true,
-  required = true)
+  @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject mavenProject;
 
   /**
    * Directory holding the model files to be processed.<br>
    * Ignored if fileset explicitly given.
    */
-  @Parameter(defaultValue = "${project.build.directory}/wurbel/model",
-  property = "tentackle.modelDir")
+  @Parameter(defaultValue = "${project.build.directory}/wurbel/model", property = "tentackle.modelDir")
   protected File modelDir;
 
   /**
@@ -301,17 +295,17 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    * @throws MojoExecutionException if failed
    */
   protected void installTemplates() throws MojoExecutionException {
-    installTemplate(CATEGORY_PDO, "DomainImplementation.ftl");
-    installTemplate(CATEGORY_PDO, "DomainInterface.ftl");
-    installTemplate(CATEGORY_PDO, "PdoInterface.ftl");
-    installTemplate(CATEGORY_PDO, "PersistenceImplementation.ftl");
-    installTemplate(CATEGORY_PDO, "PersistenceInterface.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "DomainImplementation.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "DomainInterface.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "PdoInterface.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "PersistenceImplementation.ftl");
+    installTemplate(Constants.CATEGORY_PDO, "PersistenceInterface.ftl");
 
-    installTemplate(CATEGORY_OPERATION, "DomainImplementation.ftl");
-    installTemplate(CATEGORY_OPERATION, "DomainInterface.ftl");
-    installTemplate(CATEGORY_OPERATION, "OperationInterface.ftl");
-    installTemplate(CATEGORY_OPERATION, "PersistenceImplementation.ftl");
-    installTemplate(CATEGORY_OPERATION, "PersistenceInterface.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "DomainImplementation.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "DomainInterface.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "OperationInterface.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "PersistenceImplementation.ftl");
+    installTemplate(Constants.CATEGORY_OPERATION, "PersistenceInterface.ftl");
   }
 
   private void installTemplate(String category, String template) throws MojoExecutionException {

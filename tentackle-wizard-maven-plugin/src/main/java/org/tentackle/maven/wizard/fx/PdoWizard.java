@@ -31,6 +31,7 @@ import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.maven.wizard.Constants;
 import org.tentackle.maven.wizard.PdoGenerator;
 import org.tentackle.maven.wizard.PdoMojo;
 import org.tentackle.maven.wizard.PdoProfile;
@@ -119,7 +120,7 @@ public class PdoWizard extends AbstractFxController {
     if (!profiles.isEmpty()) {
       gen.setProfile(profiles.get(0));
     }
-    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), "pdo"));
+    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_PDO));
     gen.setStatusDir(mojo.getStatusDir());
   }
 

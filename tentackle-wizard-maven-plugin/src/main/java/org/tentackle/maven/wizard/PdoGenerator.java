@@ -51,10 +51,8 @@ import java.util.List;
 /**
  * Generator for the PDO files.
  */
-public class PdoGenerator implements ScopeConfigurator, Validateable {
+public class PdoGenerator extends AbstractGenerator {
 
-
-  private File templateDirectory;
   private File statusDir;
   private PdoProfile profile;
   private String entityName;
@@ -70,15 +68,6 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
   private String persistenceImplementation;
   private boolean remoteEnabled;
 
-
-  /**
-   * Sets the freemarker template directory.
-   *
-   * @param templateDirectory the template directory
-   */
-  public void setTemplateDirectory(File templateDirectory) {
-    this.templateDirectory = templateDirectory;
-  }
 
   /**
    * Sets the status directory.
@@ -97,12 +86,7 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
     results.addAll(validate(null, ValidationScopeFactory.getInstance().getInteractiveScope()));
     if (results.isEmpty()) {
       // configure freemarker
-      Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
-      cfg.setDirectoryForTemplateLoading(templateDirectory);
-      cfg.setDefaultEncoding("UTF-8");
-      cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-      cfg.setLogTemplateExceptions(false);
-      cfg.setWrapUncheckedExceptions(true);
+      Configuration cfg = createFreemarkerConfiguration();
 
       // create freemarker model
       PdoTemplateModel templateModel = new PdoTemplateModel(this);
@@ -142,17 +126,6 @@ public class PdoGenerator implements ScopeConfigurator, Validateable {
       }
     }
     return results;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Class<? extends ValidationScope>[] getDefaultScopes() {
-    return new Class[] { MandatoryScope.class, ChangeableScope.class};
-  }
-
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
   }
 
 

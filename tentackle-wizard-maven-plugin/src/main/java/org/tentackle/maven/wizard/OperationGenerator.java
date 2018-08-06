@@ -51,9 +51,8 @@ import java.util.List;
 /**
  * Generator for the operation files.
  */
-public class OperationGenerator implements ScopeConfigurator, Validateable {
+public class OperationGenerator extends AbstractGenerator {
 
-  private File templateDirectory;
   private OperationProfile profile;
   private String operationName;
   private String superOperationName;
@@ -68,15 +67,6 @@ public class OperationGenerator implements ScopeConfigurator, Validateable {
 
 
   /**
-   * Sets the freemarker template directory.
-   *
-   * @param templateDirectory the template directory
-   */
-  public void setTemplateDirectory(File templateDirectory) {
-    this.templateDirectory = templateDirectory;
-  }
-
-  /**
    * Creates the operation files.
    */
   public List<ValidationResult> generate() throws IOException, TemplateException {
@@ -84,12 +74,7 @@ public class OperationGenerator implements ScopeConfigurator, Validateable {
     results.addAll(validate(null, ValidationScopeFactory.getInstance().getInteractiveScope()));
     if (results.isEmpty()) {
       // configure freemarker
-      Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
-      cfg.setDirectoryForTemplateLoading(templateDirectory);
-      cfg.setDefaultEncoding("UTF-8");
-      cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-      cfg.setLogTemplateExceptions(false);
-      cfg.setWrapUncheckedExceptions(true);
+      Configuration cfg = createFreemarkerConfiguration();
 
       // create freemarker model
       OperationTemplateModel templateModel = new OperationTemplateModel(this);
@@ -121,17 +106,6 @@ public class OperationGenerator implements ScopeConfigurator, Validateable {
       }
     }
     return results;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Class<? extends ValidationScope>[] getDefaultScopes() {
-    return new Class[] { MandatoryScope.class, ChangeableScope.class};
-  }
-
-  @Override
-  public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
-    return ValidationUtilities.getInstance().validate(this, validationPath, scope);
   }
 
 
