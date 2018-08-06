@@ -1,0 +1,170 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.maven.wizard.fx;
+
+import freemarker.template.TemplateException;
+import javafx.application.Platform;
+import javafx.fxml.FXML;
+
+import org.tentackle.bind.Bindable;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxCheckBox;
+import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.component.FxTextArea;
+import org.tentackle.fx.component.FxTextField;
+import org.tentackle.maven.wizard.Constants;
+import org.tentackle.maven.wizard.OperationGenerator;
+import org.tentackle.maven.wizard.OperationMojo;
+import org.tentackle.maven.wizard.OperationProfile;
+import org.tentackle.maven.wizard.PdoProfile;
+import org.tentackle.model.Entity;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelException;
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationUtilities;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * Controller for the operation wizard.
+ */
+@FxControllerService(resources = FxControllerService.RESOURCES_NONE)
+public class OperationWizard extends AbstractFxController {
+
+  @Bindable
+  private final OperationGenerator gen;
+
+
+  @FXML
+  private FxChoiceBox<OperationProfile> genProfile;
+
+  @FXML
+  private FxTextField genOperationName;
+
+  @FXML
+  private FxTextField genSuperOperation;
+
+  @FXML
+  private FxCheckBox genAbstractOperation;
+
+  @FXML
+  private FxTextField genShortDescription;
+
+  @FXML
+  private FxTextArea genLongDescription;
+
+  @FXML
+  private FxTextField genDomainInterface;
+
+  @FXML
+  private FxTextField genPersistenceInterface;
+
+  @FXML
+  private FxTextField genDomainImplementation;
+
+  @FXML
+  private FxTextField genPersistenceImplementation;
+
+  @FXML
+  private FxCheckBox genRemoteEnabled;
+
+  @FXML
+  private FxButton cancel;
+
+  @FXML
+  private FxButton generate;
+
+
+  public OperationWizard() {
+    gen = new OperationGenerator();
+    gen.setRemoteEnabled(true);
+  }
+
+  /**
+   * Configures the wizard with mojo's properties.
+   *
+   * @param mojo the PDO mojo
+   */
+  public void applyMojo(OperationMojo mojo) {
+    genProfile.getItems().clear();
+    List<OperationProfile> profiles = mojo.getOperationProfiles();
+    genProfile.getItems().addAll(profiles);
+    if (!profiles.isEmpty()) {
+      gen.setProfile(profiles.get(0));
+    }
+    gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_OPERATION));
+  }
+
+  @Override
+  public void configure() {
+
+    genProfile.setDeselectAllowed(false);
+
+    // changes may also change the model -> update view
+    genOperationName.addModelToViewListener(() -> {
+      genDomainInterface.updateView();
+      genDomainImplementation.updateView();
+      genPersistenceInterface.updateView();
+      genPersistenceImplementation.updateView();
+    });
+    genDomainInterface.addModelToViewListener(() -> {
+      genDomainImplementation.updateView();
+    });
+    genPersistenceInterface.addModelToViewListener(() -> {
+      genPersistenceImplementation.updateView();
+    });
+
+    cancel.setOnAction(e -> close());
+
+    generate.setOnAction(e -> {
+      if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null &&
+          !Fx.question("do you really don't want a domain implementation?", false)) {
+        return;
+      }
+      if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null &&
+               !Fx.question("do you really don't want a persistence implementation?", false)) {
+        return;
+      }
+
+      try {
+        List<ValidationResult> results = gen.generate();
+        if (results.isEmpty()) {
+          Fx.info("files generated!");
+          close();
+        }
+        else {
+          Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
+        }
+      }
+      catch (IOException | TemplateException ex) {
+        Fx.error("code generation failed", ex);
+      }
+    });
+  }
+
+  private void close() {
+    Fx.getStage(getView()).close();
+  }
+
+}

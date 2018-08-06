@@ -59,6 +59,7 @@
     <module>tentackle-i18n</module>
     <module>tentackle-i18n-maven-plugin</module>
     <module>tentackle-fx</module>
+    <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-fx-rdc</module>
     <module>tentackle-swing</module>
     <module>tentackle-swing-tinylaf</module>
@@ -203,6 +204,12 @@
         <artifactId>groovy</artifactId>
         <version>2.4.10</version>
         <classifier>indy</classifier>
+      </dependency>
+
+      <dependency>
+        <groupId>org.freemarker</groupId>
+        <artifactId>freemarker</artifactId>
+        <version>2.3.28</version>
       </dependency>
 
       <!-- test dependencies -->

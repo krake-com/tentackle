@@ -1,0 +1,17 @@
+
+package ${domainPackage};
+
+import ${operationPackage}.${operationInterface};
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainOperation;
+
+/**
+ * Domain interface for ${operationInterface}.
+ */
+<#if abstractOperation == "true">
+public interface ${domainInterface}<T extends ${operationInterface}<T>> extends ${superDomainInterface}<T> {
+<#else>
+public interface ${domainInterface} extends ${superDomainInterface}<${operationInterface}> {
+</#if>
+
+}
