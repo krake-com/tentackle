@@ -346,7 +346,7 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
           PackageInfo splitPkg = map.put(info.getName(), info);
           if (splitPkg != null) {
             throw new MojoExecutionException("split package detected: " + info.getName() + " in " + project.getName() +
-                                             " and " + info.getProject().getName());
+                                             " and " + splitPkg.getProject().getName());
           }
         }
       }
