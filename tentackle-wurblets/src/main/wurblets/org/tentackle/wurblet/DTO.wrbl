@@ -15,7 +15,7 @@ usage:<br>
 arguments:
 <ul>
 <li><em>--builder:</em> option to generate code according to the builder pattern.</li>
-<li><em>--bindable:</em> add &#64Bindable annotation to getter and setter (if not explicitly added via square brackets).</li>
+<li><em>--bindable:</em> add &#64;Bindable annotation to getter and setter (if not explicitly added via square brackets).</li>
 <li><em>filename:</em> the file holding the DTO model.</li>
 </ul>
 For more options, see {\@link AbstractWurblet}.
@@ -41,7 +41,7 @@ Example:
 </pre>
 The comment may contain optional annotations enclosed in square brackets.
 <pre>
-String name   the name [&#64Bindable(MAXCOL=20)] [&#64MyAnno]
+String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno]
 </pre
 <p>
 If the builder pattern is used and the class extends a superclass, the builder is created as an extension
