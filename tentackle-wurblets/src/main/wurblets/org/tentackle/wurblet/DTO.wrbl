@@ -42,7 +42,7 @@ Example:
 The comment may contain optional annotations enclosed in square brackets.
 <pre>
 String name   the name [&#64;Bindable(MAXCOL=20)] [&#64;MyAnno]
-</pre
+</pre>
 <p>
 If the builder pattern is used and the class extends a superclass, the builder is created as an extension
 of the superclass'es builder.
