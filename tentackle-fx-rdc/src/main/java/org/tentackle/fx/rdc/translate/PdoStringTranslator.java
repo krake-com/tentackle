@@ -18,12 +18,6 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Objects;
-import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -32,10 +26,12 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
@@ -51,6 +47,13 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainKey;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * PDO to String translator.
@@ -122,25 +125,29 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
 
     if (!control.getStyleClass().contains(PDO_STYLE)) {
       control.getStyleClass().add(PDO_STYLE);
-      ContextMenu menu = control.getContextMenu();
-      if (menu == null) {
-        menu = new ContextMenu();
-        // this replaces the default context menu, but that's ok.
-        // otherwise we would have to quirk TextFieldBehaviour which is still private API
-        control.setContextMenu(menu);
+
+      // menu only for textfields as others like comboboxes trigger actions on context mouse button
+      if (control instanceof TextInputControl) {
+        ContextMenu menu = control.getContextMenu();
+        if (menu == null) {
+          menu = new ContextMenu();
+          // this replaces the default context menu, but that's ok.
+          // otherwise we would have to quirk TextFieldBehaviour which is still private API
+          control.setContextMenu(menu);
+        }
+        else {
+          // append to existing menu
+          menu.getItems().add(new SeparatorMenuItem());
+        }
+        MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
+        editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+        editItem.setOnAction(event -> edit());
+        menu.setOnShowing(event -> editItem.setDisable(pdo == null));
+        MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
+        searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+        searchItem.setOnAction(event -> search());
+        menu.getItems().addAll(editItem, searchItem);
       }
-      else {
-        // append to existing menu
-        menu.getItems().add(new SeparatorMenuItem());
-      }
-      MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
-      editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-      editItem.setOnAction(event -> edit());
-      menu.setOnShowing(event -> editItem.setDisable(pdo == null));
-      MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
-      searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
-      searchItem.setOnAction(event -> search());
-      menu.getItems().addAll(editItem, searchItem);
     }
   }
 
