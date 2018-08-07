@@ -114,7 +114,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     if (editorExists()) {
       return new DefaultPdoEditor<>(getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
     }
-    throw new FxRuntimeException("no controller for " + pdo.toGenericString());
+    throw new FxRuntimeException("no controller for " + pdo.getEffectiveClass().getName());
   }
 
   @Override
