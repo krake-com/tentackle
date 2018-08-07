@@ -18,12 +18,6 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Objects;
-import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -32,11 +26,11 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxFactory;
@@ -54,7 +48,12 @@ import org.tentackle.pdo.DomainKey;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import javax.xml.soap.Text;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * PDO to String translator.
@@ -78,7 +77,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   private ValueStringTranslator<?> udkTranslator;
   private String viewValue;
   private T pdo;
-  private boolean inPdoSearch;
+  private boolean inSearchOrEdit;
 
 
   /**
@@ -112,16 +111,21 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     // F2 = edit/view current PDO
     // F3 = invoke search
     Control control = (Control) getComponent();
-    control.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+    control.addEventFilter(KeyEvent.ANY, event -> {
       if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
-              !event.isShiftDown() && !event.isShortcutDown()) {
+          !event.isShiftDown() && !event.isShortcutDown()) {
+
         if (event.getCode() == KeyCode.F2) {
           event.consume();
-          edit();
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            Platform.runLater(() -> edit());
+          }
         }
         else if (event.getCode() == KeyCode.F3) {
           event.consume();
-          search();
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            Platform.runLater(() -> search());
+          }
         }
       }
     });
@@ -129,29 +133,39 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     if (!control.getStyleClass().contains(PDO_STYLE)) {
       control.getStyleClass().add(PDO_STYLE);
 
-      // menu only for textfields as others like comboboxes trigger actions on context mouse button
-      if (control instanceof TextInputControl) {
-        ContextMenu menu = control.getContextMenu();
-        if (menu == null) {
-          menu = new ContextMenu();
-          // this replaces the default context menu, but that's ok.
-          // otherwise we would have to quirk TextFieldBehaviour which is still private API
-          control.setContextMenu(menu);
-        }
-        else {
-          // append to existing menu
-          menu.getItems().add(new SeparatorMenuItem());
-        }
-        MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
-        editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
-        editItem.setOnAction(event -> edit());
-        menu.setOnShowing(event -> editItem.setDisable(pdo == null));
-        MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
-        searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
-        searchItem.setOnAction(event -> search());
-        menu.getItems().addAll(editItem, searchItem);
+      ContextMenu menu = control.getContextMenu();
+      if (menu == null) {
+        menu = new ContextMenu();
+        // this replaces the default context menu in TextFields, but that's ok.
+        // otherwise we would have to quirk TextFieldBehaviour which is still private API
+        control.setContextMenu(menu);
       }
+      else {
+        // append to existing menu
+        menu.getItems().add(new SeparatorMenuItem());
+      }
+      MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
+      editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+      editItem.setOnAction(event -> edit());
+      menu.setOnShowing(event -> editItem.setDisable(pdo == null));
+      MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
+      searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+      searchItem.setOnAction(event -> search());
+      menu.getItems().addAll(editItem, searchItem);
     }
+  }
+
+
+  /**
+   * Gets the PDO via binding.<br>
+   * For non-editable comboboxes this translator isnt used, but registered,
+   * because it could be changed to editable.
+   *
+   * @return the model value
+   */
+  @SuppressWarnings("unchecked")
+  protected T getPdo() {
+    return (T) getComponent().getBinding().getModelValue();
   }
 
 
@@ -159,12 +173,17 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * Edit or view current pdo.
    */
   protected void edit() {
-    if (pdo != null) {
-      ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
-      pdoList.add(pdo);
-      pdo = RdcUtilities.getInstance().displayCrudStage(
-                    pdo, pdoList, !pdo.isImmutable(),
-                    Modality.APPLICATION_MODAL, Fx.getStage((Node) getComponent()),null);
+    if (!inSearchOrEdit) {
+      pdo = getPdo();
+      if (pdo != null) {
+        inSearchOrEdit = true;
+        ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+        pdoList.add(pdo);
+        pdo = RdcUtilities.getInstance().displayCrudStage(
+        pdo, pdoList, !pdo.isImmutable(),
+        Modality.APPLICATION_MODAL, Fx.getStage((Node) getComponent()), null);
+        inSearchOrEdit = false;
+      }
     }
   }
 
@@ -172,13 +191,15 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
    * Search for a PDO.
    */
   protected void search() {
-    inPdoSearch = true;
-    T found = searchPdo(createPdo());
-    inPdoSearch = false;
-    if (found != null && getComponent().isChangeable()) {
-      pdo = found;
-      getComponent().setViewValue(pdo);
-      getComponent().updateModel();
+    if (!inSearchOrEdit) {
+      inSearchOrEdit = true;
+      T found = searchPdo(createPdo());
+      if (found != null && getComponent().isChangeable()) {
+        pdo = found;
+        getComponent().setViewValue(pdo);
+        getComponent().updateModel();
+      }
+      inSearchOrEdit = false;
     }
   }
 
@@ -206,7 +227,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   @Override
   public Function<String, T> toModelFunction() {
     return v -> {
-      if (!inPdoSearch && !Objects.equals(v, viewValue)) {
+      if (!inSearchOrEdit && !Objects.equals(v, viewValue)) {
         // view changed
         if (v == null) {
           pdo = null;
