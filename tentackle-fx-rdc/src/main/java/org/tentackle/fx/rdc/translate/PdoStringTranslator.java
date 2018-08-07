@@ -144,7 +144,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
       editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
       editItem.setOnAction(event -> edit());
-      menu.setOnShowing(event -> editItem.setDisable(pdo == null));
+      menu.setOnShowing(event -> editItem.setDisable(getPdo() == null));
       MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
       searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
       searchItem.setOnAction(event -> search());
