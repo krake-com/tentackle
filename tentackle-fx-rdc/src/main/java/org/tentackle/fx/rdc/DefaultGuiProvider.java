@@ -18,6 +18,7 @@ import org.tentackle.common.BundleFactory;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.rdc.search.DefaultPdoFinder;
 import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.misc.IdentifiableKey;
@@ -123,6 +124,9 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public PdoFinder<T> createFinder() {
+    if (finderExists()) {
+      return Fx.load(DefaultPdoFinder.class);
+    }
     throw new FxRuntimeException("no finder for " + pdo.getEffectiveClass().getName());
   }
 
