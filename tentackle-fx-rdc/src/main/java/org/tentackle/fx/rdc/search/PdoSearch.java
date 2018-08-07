@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.rdc.search;
 
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.beans.InvalidationListener;
 import javafx.beans.WeakInvalidationListener;
@@ -48,6 +43,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.Fx;
@@ -63,16 +60,21 @@ import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
+import org.tentackle.fx.rdc.RdcFactory;
 import org.tentackle.fx.rdc.RdcRuntimeException;
+import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
-import org.tentackle.common.StringHelper;
-import org.tentackle.fx.rdc.RdcFactory;
-import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
+
+import java.net.URL;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 /**
  * Search controller for PDOs.
