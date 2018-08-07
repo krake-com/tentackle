@@ -508,10 +508,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Filters the result.
    */
   public void filterResult() {
-    String filterText = StringHelper.normalize(filterField.getText());
+    String text = filterField.getText();
+    String filterText = StringHelper.normalize(text);   // removes leading ! and -
     if (!StringHelper.isAllWhitespace(filterText)) {
+      boolean inverted = text.startsWith("!") || text.startsWith("-");
       List<T> filteredResult = getItems().stream().
-                               filter(p -> p.getNormText() != null && p.getNormText().contains(filterText)).
+                               filter(p -> p.getNormText() != null && p.getNormText().contains(filterText) != inverted).
                                collect(Collectors.toList());
       setItems(FXCollections.observableArrayList(filteredResult));
     }

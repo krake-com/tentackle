@@ -1945,7 +1945,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx, text);
+    st.setString(ndx, nt.getPattern());
 
     return st.executeQuery();
   }
@@ -1998,7 +1998,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (contextId >= 0) {
       st.setLong(ndx++, contextId);
     }
-    st.setString(ndx, text);
+    st.setString(ndx, nt.getPattern());
 
     return st.executeQuery();
   }
