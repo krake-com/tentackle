@@ -4,3 +4,10 @@
   -fx-background-repeat: no-repeat;
   -fx-background-position: right center;
 }
+
+/* for editable comboboxes only */
+.tt-pdo-style .arrow-button {
+  -fx-background-image: url('/org/tentackle/fx/rdc/translate/pdo-style.png');
+  -fx-background-repeat: no-repeat;
+  -fx-background-position: right center;
+}
