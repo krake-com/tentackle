@@ -313,7 +313,6 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
    * Creates the label.
    *
    * @param attribute the pdo member
-   * @param bundle optional bundle
    * @return the label node
    */
   protected Label createLabel(PdoMember attribute) {
