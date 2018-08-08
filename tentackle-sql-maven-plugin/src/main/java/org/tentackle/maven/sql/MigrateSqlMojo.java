@@ -468,7 +468,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       splittedMigrations.put("after_all.sql", sql);
     }
 
-    int tableCount = splittedMigrations.size();
+    int tableCount = splittedMigrations.size() + 1; // +1 for optional after-all
     int digits = 1;
     while ((tableCount /= 10) > 0) {
       digits++;
