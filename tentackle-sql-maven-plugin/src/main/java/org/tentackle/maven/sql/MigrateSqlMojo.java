@@ -463,24 +463,27 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * @throws MojoExecutionException if IO error
    */
   private void writeSplittedMigrations() throws MojoExecutionException {
-    String sql = backendMigrationHints.getAfterAll();
-    if (!sql.isEmpty()) {
-      splittedMigrations.put("after_all.sql", sql);
-    }
+    if (!splittedMigrations.isEmpty()) {
+      String sql = backendMigrationHints.getAfterAll();
+      if (!sql.isEmpty()) {
+        splittedMigrations.put("after_all.sql", sql);
+      }
+      sql = backendMigrationHints.getBeforeAll();
 
-    int tableCount = splittedMigrations.size() + 1; // +1 for optional after-all
-    int digits = 1;
-    while ((tableCount /= 10) > 0) {
-      digits++;
-    }
-    int splitCounter = 1;
-    for (Map.Entry<String,String> entry: splittedMigrations.entrySet()) {
-      writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue());
-    }
+      int tableCount = splittedMigrations.size() + (sql.isEmpty() ? 0 : 1); // +1 for optional after-all
+      int digits = 1;
+      while ((tableCount /= 10) > 0) {
+        digits++;
+      }
 
-    sql = backendMigrationHints.getBeforeAll();
-    if (!sql.isEmpty()) {
-      writeSplittedMigration(0, digits, "before_all.sql", sql);
+      int splitCounter = 1;
+      for (Map.Entry<String, String> entry : splittedMigrations.entrySet()) {
+        writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue());
+      }
+
+      if (!sql.isEmpty()) {
+        writeSplittedMigration(0, digits, "before_all.sql", sql);
+      }
     }
   }
 
