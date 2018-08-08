@@ -18,25 +18,13 @@
 
 package org.tentackle.maven.sql;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.wurbelizer.misc.Settings;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
@@ -49,6 +37,26 @@ import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
+import java.lang.management.MemoryPoolMXBean;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Generate sql script to migrate the tables.
@@ -66,6 +74,21 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   @Parameter(defaultValue = "migratemodel.sql",
              property = "tentackle.migrateSqlFile")
   private String sqlFileName;
+
+  /**
+   * The generated SQL file can be splitted into one file per entity.<br>
+   * This is especially useful if the migrations are processed any further,
+   * for example by shell scripts.
+   * <p>
+   * The main migration file will just contain statistic comments.<br>
+   * Each migrated table gets its own directory which is a number starting at 1
+   * and as much leading zeros as necessary to keep the directory names in numberic order.<br>
+   * If there is a before-all SQL, it will go into the folder zero, i.e. 0 or 00, etc...<br>
+   * Any after-all SQL will go into the folder with the highest number.
+   */
+  @Parameter
+  protected boolean split;
+
 
   /**
    * The database meta data retrieved from the backend.
@@ -96,6 +119,11 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * Number of skipped entities.
    */
   private int skippedEntites;
+
+  /**
+   * Map of splitted migrations.
+   */
+  private Map<String, String> splittedMigrations = new LinkedHashMap<>();   // <tablename:SQL-code>
 
   /**
    * Migration hints per jdbc-Url.
@@ -131,21 +159,26 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                .append(", skipped=")
                .append(Integer.toString(skippedEntites)).append("\n");
 
-      if (sqlCode.length() > 0) {
-        String sql = backendMigrationHints.getBeforeAll();
-        if (!sql.isEmpty()) {
-          sqlWriter.append("\n-- before all:\n");
-          sqlWriter.append(sql);
-          sqlWriter.append("\n\n");
+      if (sqlCode.length() > 0 || !splittedMigrations.isEmpty()) {
+        if (split) {
+          sqlWriter.append("-- migrated entities in subfolders: " + splittedMigrations.size() + "\n");
         }
+        else {
+          String sql = backendMigrationHints.getBeforeAll();
+          if (!sql.isEmpty()) {
+            sqlWriter.append("\n-- before all:\n");
+            sqlWriter.append(sql);
+            sqlWriter.append("\n\n");
+          }
 
-        sqlWriter.append(sqlCode.toString());
+          sqlWriter.append(sqlCode.toString());
 
-        sql = backendMigrationHints.getAfterAll();
-        if (!sql.isEmpty()) {
-          sqlWriter.append("\n\n-- after all:\n");
-          sqlWriter.append(sql);
-          sqlWriter.append('\n');
+          sql = backendMigrationHints.getAfterAll();
+          if (!sql.isEmpty()) {
+            sqlWriter.append("\n\n-- after all:\n");
+            sqlWriter.append(sql);
+            sqlWriter.append('\n');
+          }
         }
       }
       else {
@@ -343,7 +376,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
               if (migrate) {  // no dependencies
                 migratedTablenames.add(tableName);
-                sqlCode.append(tableSql);
+                flushSqlForTable(tableName, tableSql.toString());
 
                 // check if we can now migrate some pending table
                 for (Iterator<Map.Entry<String,String>> iter = pendingMigrations.entrySet().iterator(); iter.hasNext(); ) {
@@ -351,7 +384,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                   String pendingTablename = entry.getKey();
                   if (!isMigrationPending(backendMigrationHints.getDependencies(pendingTablename), migratedTablenames)) {
                     migratedTablenames.add(pendingTablename);
-                    sqlCode.append(entry.getValue());
+                    flushSqlForTable(pendingTablename, entry.getValue());
                     iter.remove();
                   }
                 }
@@ -379,7 +412,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           depErrors.append('\n');
           errorCount++;
         }
-        sqlCode.append(entry.getValue());
+        flushSqlForTable(pendingTablename, entry.getValue());
       }
 
       if (foreignKeySql.length() > 0) {
@@ -392,12 +425,89 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         sqlCode.append(depErrors);
       }
 
+      if (split) {
+        writeSplittedMigrations();
+      }
+
       getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
                     fileNames.length + " files processed, " +
                     errorCount + " errors, " +
                     getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFile.getName() + " created");
 
       totalErrors += errorCount;
+    }
+  }
+
+
+  /**
+   * Flushes the SQL statements for a table.
+   *
+   * @param tableName the tablename
+   * @param sql the SQL statements
+   * @throws MojoExecutionException if some IO-error
+   */
+  private void flushSqlForTable(String tableName, String sql) {
+    if (!StringHelper.isAllWhitespace(sql)) {
+      if (split) {
+        splittedMigrations.put(tableName + ".sql", sql);
+      }
+      else {
+        sqlCode.append(sql);
+      }
+    }
+  }
+
+  /**
+   * Creates the splitted migrations.
+   *
+   * @throws MojoExecutionException if IO error
+   */
+  private void writeSplittedMigrations() throws MojoExecutionException {
+    String sql = backendMigrationHints.getAfterAll();
+    if (!sql.isEmpty()) {
+      splittedMigrations.put("after_all.sql", sql);
+    }
+
+    int tableCount = splittedMigrations.size();
+    int digits = 1;
+    while ((tableCount /= 10) > 0) {
+      digits++;
+    }
+    int splitCounter = 1;
+    for (Map.Entry<String,String> entry: splittedMigrations.entrySet()) {
+      writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue());
+    }
+
+    sql = backendMigrationHints.getBeforeAll();
+    if (!sql.isEmpty()) {
+      writeSplittedMigration(0, digits, "before_all.sql", sql);
+    }
+  }
+
+  /**
+   * Writes a single migration file into its own subfolder.
+   *
+   * @param subDirCount the folder count
+   * @param digits the number of digits for the folder name
+   * @param fileName the sql filename in the folder
+   * @param sql the SQL code
+   * @throws MojoExecutionException if IO error
+   */
+  private void writeSplittedMigration(int subDirCount, int digits, String fileName, String sql) throws MojoExecutionException {
+    StringBuilder subDirName = new StringBuilder(Integer.toString(subDirCount));
+    while (subDirName.length() < digits) {
+      subDirName.insert(0, '0');
+    }
+    File dir = new File(sqlFile.getParent(), subDirName.toString());
+    dir.mkdirs();
+    File file = new File(dir, fileName);
+    try (Writer writer = Files.newBufferedWriter(file.toPath(), Settings.encodingCharset,
+                                                                StandardOpenOption.CREATE,
+                                                                StandardOpenOption.TRUNCATE_EXISTING)) {
+      writer.write(sql);
+    }
+    catch (IOException e) {
+      throw new MojoExecutionException("writing to " + file.getPath() + " failed", e);
     }
   }
 
