@@ -94,9 +94,9 @@ public class FxChoiceBoxDelegate extends FxComponentDelegate {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     // no value translator needed because items are of model's type already
-    return (T) getViewObject();
+    return (V) getViewObject();
   }
 
 

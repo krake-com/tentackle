@@ -33,27 +33,4 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(PasswordField.class)
 public class PasswordFieldConfigurator<T extends PasswordField> extends TextInputControlConfigurator<T> {
 
-  @Override
-  protected void remapKeys(T control) {
-    
-
-    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
-
-      switch (event.getCode()) {
-        case ENTER:
-          if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
-              event.getEventType() == KeyEvent.KEY_PRESSED) {
-
-            if (event.isShiftDown()) {
-              focusPrevious(control);
-            }
-            else {
-              focusNext(control);
-            }
-          }
-          break;
-      }
-    });
-  }
-
 }

@@ -8,23 +8,19 @@ package org.tentackle.fx.component.delegate;
 
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
 import javafx.scene.control.TextFormatter;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.fx.FxContainer;
-import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxPasswordField;
+import org.tentackle.fx.component.FxTextField;
 
 /**
  * Delegate for FxPasswordField.
  *
  * @author harald
  */
-public class FxPasswordFieldDelegate extends FxTextComponentDelegate {
-
-  private final FxPasswordField component;   // the component
+public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswordField> {
 
   /**
    * Creates the delegate.
@@ -32,69 +28,26 @@ public class FxPasswordFieldDelegate extends FxTextComponentDelegate {
    * @param component the component
    */
   public FxPasswordFieldDelegate(FxPasswordField component) {
-    this.component = component;
-    component.setTextFormatter(new TextFormatter<>(this));
-  }
-
-  @Override
-  public FxPasswordField getComponent() {
-    return component;
-  }
-
-  @Override
-  public FxContainer getParentContainer() {
-    Parent parent = component.getParent();
-    return parent instanceof FxContainer ? (FxContainer) parent : null;
+    super(component);
   }
 
   @Override
   public void setColumns(int columns) {
-    component.setPrefColumnCount(columns);
+    getComponent().setPrefColumnCount(columns);
   }
 
   @Override
   public int getColumns() {
-    return component.getPrefColumnCount();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public String getViewObject() {
-    String text = component.getText();
-    return StringHelper.isAllWhitespace(text) ? null : text;
-  }
-
-  @Override
-  public void setViewObject(Object viewObject) {
-    component.setText((String) viewObject);
+    return getComponent().getPrefColumnCount();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    Pos alignment = component.getTextAlignment();
-    if (alignment != null) {
-      component.setAlignment(alignment);
-    }
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (T) translator.toModel(getViewObject());
-  }
-
-  @Override
-  public void mapErrorOffsetToCaretPosition() {
-    Integer errorOffset = getErrorOffset();
-    if (errorOffset != null) {
-      Platform.runLater(() -> {
-        component.deselect();
-        component.positionCaret(errorOffset);
-      });
+    super.setViewValue(value);
+    Pos alignment = getTextAlignment();
+    if (alignment != null && getComponent().getAlignment() != alignment) {
+      getComponent().setAlignment(alignment);
     }
   }
 

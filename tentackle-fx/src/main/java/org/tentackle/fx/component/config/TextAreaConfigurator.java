@@ -34,11 +34,6 @@ import org.tentackle.fx.ConfiguratorService;
 @ConfiguratorService(TextArea.class)
 public class TextAreaConfigurator<T extends TextArea> extends TextInputControlConfigurator<T> {
 
-  /**
-   * Remaps certain keys.
-   *
-   * @param control the control
-   */
   @Override
   protected void remapKeys(T control) {
 

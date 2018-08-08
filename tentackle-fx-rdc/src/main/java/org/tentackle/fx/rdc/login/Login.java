@@ -84,6 +84,7 @@ public class Login extends AbstractFxController {
     loginButton.setGraphic(Fx.createImageView("ok"));
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
+    passwordField.setAutoSelect(true);
   }
 
   @Override

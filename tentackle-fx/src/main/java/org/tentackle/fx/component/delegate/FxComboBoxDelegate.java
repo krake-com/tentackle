@@ -128,13 +128,13 @@ public class FxComboBoxDelegate extends FxTextComponentDelegate {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     Object value = getViewObject();
     if (component.isEditable()) {
       ValueTranslator translator = getValueTranslator();
-      return (T) translator.toModel(value);
+      return (V) translator.toModel(value);
     }
-    return (T) value;
+    return (V) value;
   }
 
   @Override

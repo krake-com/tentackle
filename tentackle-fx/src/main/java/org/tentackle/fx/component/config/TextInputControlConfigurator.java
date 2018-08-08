@@ -56,6 +56,28 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
   }
 
 
+  @Override
+  protected void remapKeys(T control) {
+
+    control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+
+      switch (event.getCode()) {
+        case ENTER:
+          if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
+              event.getEventType() == KeyEvent.KEY_PRESSED) {
+            if (event.isShiftDown()) {
+              focusPrevious(control);
+            }
+            else {
+              focusNext(control);
+            }
+          }
+          break;
+      }
+    });
+  }
+
+
   /**
    * Moves the focus logically forward if not a table cell editor.
    *

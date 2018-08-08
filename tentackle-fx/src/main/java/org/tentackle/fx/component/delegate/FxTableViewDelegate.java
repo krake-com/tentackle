@@ -88,9 +88,9 @@ public class FxTableViewDelegate extends FxComponentDelegate {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T getViewValue() {
+  public <V> V getViewValue() {
     ValueTranslator translator = getValueTranslator();
-    return (T) translator.toModel(getViewObject());
+    return (V) translator.toModel(getViewObject());
   }
 
   @Override

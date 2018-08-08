@@ -20,9 +20,7 @@ import org.tentackle.fx.component.FxTextField;
  *
  * @author harald
  */
-public class FxTextFieldDelegate extends FxTextComponentDelegate {
-
-  private final FxTextField component;   // the component
+public class FxTextFieldDelegate extends AbstractTextFieldDelegate<FxTextField> {
 
   /**
    * Creates the delegate.
@@ -30,63 +28,26 @@ public class FxTextFieldDelegate extends FxTextComponentDelegate {
    * @param component the component
    */
   public FxTextFieldDelegate(FxTextField component) {
-    this.component = component;
-    component.setTextFormatter(new TextFormatter<>(this));
-  }
-
-  @Override
-  public FxTextField getComponent() {
-    return component;
+    super(component);
   }
 
   @Override
   public void setColumns(int columns) {
-    component.setPrefColumnCount(columns);
+    getComponent().setPrefColumnCount(columns);
   }
 
   @Override
   public int getColumns() {
-    return component.getPrefColumnCount();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public String getViewObject() {
-    String text = component.getText();
-    return StringHelper.isAllWhitespace(text) ? null : text;
-  }
-
-  @Override
-  public void setViewObject(Object viewObject) {
-    component.setText((String) viewObject);
+    return getComponent().getPrefColumnCount();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
-    ValueTranslator translator = getValueTranslator();
-    Pos alignment = component.getTextAlignment();
-    if (alignment != null) {
-      component.setAlignment(alignment);
-    }
-    setViewObject(translator.toView(value));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T getViewValue() {
-    ValueTranslator translator = getValueTranslator();
-    return (T) translator.toModel(getViewObject());
-  }
-
-  @Override
-  public void mapErrorOffsetToCaretPosition() {
-    Integer errorOffset = getErrorOffset();
-    if (errorOffset != null) {
-      Platform.runLater(() -> {
-        component.deselect();
-        component.positionCaret(errorOffset);
-      });
+    super.setViewValue(value);
+    Pos alignment = getTextAlignment();
+    if (alignment != null && getComponent().getAlignment() != alignment) {
+      getComponent().setAlignment(alignment);
     }
   }
 
