@@ -468,7 +468,6 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       if (!sql.isEmpty()) {
         splittedMigrations.put("after_all.sql", sql);
       }
-      sql = backendMigrationHints.getBeforeAll();
 
       int tableCount = splittedMigrations.size() + (sql.isEmpty() ? 0 : 1); // +1 for optional after-all
       int digits = 1;
@@ -481,6 +480,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue());
       }
 
+      sql = backendMigrationHints.getBeforeAll();
       if (!sql.isEmpty()) {
         writeSplittedMigration(0, digits, "before_all.sql", sql);
       }
