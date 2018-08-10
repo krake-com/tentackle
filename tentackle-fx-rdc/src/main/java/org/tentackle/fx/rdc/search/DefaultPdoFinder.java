@@ -36,7 +36,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 /**
  * The simple default finder.<br>
  * Provides normtext-search criteria (if entity provides a normtext).
- * If no normtext, all PDOs are selected.
+ * If no normtext, all PDOs are selected immediately.
  *
  * @author harald
  * @param <T> the PDO type
@@ -73,6 +73,11 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
   public void setPdo(T pdo) {
     this.pdo = pdo;
     patternField.clear(); // no preset of search criteria
+  }
+
+  @Override
+  public boolean isSearchRunningImmediately() {
+    return super.isSearchRunningImmediately() || (pdo != null && !pdo.isNormTextProvided());
   }
 
   @Override
