@@ -19,11 +19,6 @@
 
 package org.tentackle.fx.rdc.crud;
 
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
@@ -44,6 +39,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Popup;
 import javafx.stage.Stage;
+
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -72,6 +68,12 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
+
+import java.net.URL;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * CRUD controller for PDOs.
@@ -240,10 +242,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       throw new NullPointerException("pdo must not be null");
     }
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
-    editor.setPdo(pdo);
-    editor.getContainer().clearErrors();          // clears any pending error messages
-    editor.getContainer().invalidateSavedView();  // don't triggerViewModified via updateView
-    editor.getContainer().updateView();           // map model to view
+    editor.setPdo(pdo);   // set pdo before editor.isEditAllowed() is invoked below
 
     if (editor.isViewAllowed()) {
       noViewLabel.setVisible(false);
@@ -258,7 +257,13 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
       editing.set(false);    // no view -> no edit (no need to check again)
     }
     pdoIsNew.set(pdo.isNew());
+
+    editor.getContainer().clearErrors();          // clears any pending error messages
+    editor.getContainer().invalidateSavedView();  // don't triggerViewModified via updateView
+    editor.getContainer().updateView();           // map model to view
+
     getContainer().saveView();                    // triggerViewModified when view has changed
+
     updateTitle();
     updateButtons();
 
