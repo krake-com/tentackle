@@ -40,7 +40,7 @@ public class DomainException extends TentackleRuntimeException {
    * Scans the exception chain until it finds an {@link PersistenceException}.
    *
    * @param e the exception head
-   * @return the DbRuntimeException, null if none
+   * @return the DomainException, null if none
    */
   public static DomainException extractDomainException(Throwable e) {
     while (e != null) {
@@ -284,7 +284,7 @@ public class DomainException extends TentackleRuntimeException {
    * <p>
    * Example:
    * <pre>
-   *   "org.tentackle.pdo.DbRuntimeException: no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
+   *   "org.tentackle.session.PersistenceException: no write permission {Product[344/2] at Db1[1]=jdbc:mysql://localhost:3306/invoicer}"
    * </pre>
    * @return the message
    */

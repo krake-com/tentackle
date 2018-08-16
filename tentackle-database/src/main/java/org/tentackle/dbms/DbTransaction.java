@@ -19,14 +19,15 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SavepointHandle;
+
 import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SavepointHandle;
 
 /**
  * Holder for transaction local data.
@@ -401,7 +402,7 @@ public class DbTransaction {
     if (commitTxRunnables != null) {
       /*
        * execute pending runnables.
-       * Notice: the runnables should throw DbRuntimeException on failure!
+       * Notice: the runnables should throw PersistenceException on failure!
        */
       for (CommitTxRunnable r: commitTxRunnables.values())  {
         r.commit(db);
@@ -418,7 +419,7 @@ public class DbTransaction {
     if (rollbackTxRunnables != null) {
       /*
        * execute pending runnables.
-       * Notice: the runnables should throw DbRuntimeException on failure!
+       * Notice: the runnables should throw PersistenceException on failure!
        */
       for (RollbackTxRunnable r: rollbackTxRunnables.values())  {
         r.rollback(db);

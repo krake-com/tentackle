@@ -19,11 +19,12 @@
 
 package org.tentackle.reflect;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
-import org.tentackle.common.StringHelper;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * A reflective visitor to add application-specific functionality to existing objects.
@@ -110,7 +111,7 @@ public abstract class ReflectiveVisitor {
     catch (InvocationTargetException ite) {
       Throwable thrbl = ite.getCause();
       if (thrbl instanceof RuntimeException) {
-        // let it pass directly to the application (for example DbRuntimeExceptions)
+        // let it pass directly to the application (for example PersistenceExceptions)
         throw (RuntimeException) thrbl;
       }
       handleException(ite.getCause(), method, args);

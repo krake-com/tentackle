@@ -1248,7 +1248,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
       return (P) this;
     }
     catch (PersistenceException px) {
-      throw px;   // no cleanup necessary: done in DbRuntimeException
+      throw px;   // no cleanup necessary: done in PersistenceException
     }
     catch (RuntimeException re) {
       if (!db.isTxRunning()) {

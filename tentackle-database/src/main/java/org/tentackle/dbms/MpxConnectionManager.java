@@ -19,12 +19,13 @@
 
 package org.tentackle.dbms;
 
-import java.lang.ref.WeakReference;
-import java.util.Date;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
+
+import java.lang.ref.WeakReference;
+import java.util.Date;
 
 
 
@@ -545,7 +546,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
       count = minSize - conSize;
     }
 
-    // align count before we run into DbRuntimeException in addConnection()
+    // align count before we run into PersistenceException in addConnection()
     if (maxConSize > 0) {
       if (conSize + count > maxConSize) {
         count = maxConSize - conSize;

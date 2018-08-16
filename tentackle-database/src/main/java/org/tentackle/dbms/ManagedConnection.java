@@ -19,6 +19,14 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.MappedDiagnosticContext;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.Backend;
+
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
@@ -40,20 +48,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.MappedDiagnosticContext;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.sql.Backend;
 
 /**
  * A jdbc connection managed by the ConnectionManager.<br>
  *
  * The connection provides some additional features
  * such as a prepared statement cache
- * and translates SQLExceptions to DbRuntimeExceptions.
+ * and translates SQLExceptions to PersistenceExceptions.
  * The ConnectionManager is responsible to attach and detach
  * the connection to a session.
  *

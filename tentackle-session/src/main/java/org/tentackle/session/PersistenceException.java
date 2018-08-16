@@ -19,14 +19,15 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.misc.Identifiable;
+
 import java.lang.StackWalker.Option;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.misc.Identifiable;
 
 /**
  * Database runtime exception.
@@ -110,7 +111,7 @@ public class PersistenceException extends TentackleRuntimeException {
    * Scans the exception chain until it finds an {@link PersistenceException}.
    *
    * @param e the exception head
-   * @return the DbRuntimeException, null if none
+   * @return the PersistenceException, null if none
    */
   public static PersistenceException extractPersistenceException(Throwable e) {
     while (e != null) {
