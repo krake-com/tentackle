@@ -17,6 +17,7 @@ arguments:
 <li><em>--nori:</em> don't generate PdoIsReferencing wurblet anchors and addReferencingClass() invocations.</li>
 <li><em>--noselects:</em> don't generate PdoSelect... wurblet anchors.</li>
 <li><em>--nodeletes:</em> don't generate PdoDelete... wurblet anchors.</li>
+<li><em>--novalidate:</em> don't generate validate method.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -54,7 +55,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateAddReferencing                  = false;
     boolean generateSelects                         = true;
     boolean generateDeletes                         = true;
-    boolean generateValidate                        = false;
+    Boolean generateValidate                        = null;
     boolean generateSetImmutable                    = false;
     boolean generateSnapshot                        = false;
     boolean generateClearOnRemoteSave               = false;
@@ -77,6 +78,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if (arg.equals("nodeletecomponents")) {
         generateDeleteComponents = false;
+      }
+      else if (arg.equals("novalidate")) {
+        generateValidate = false;
       }
       else if (arg.equals("loadcomponents")) {
         generateLoadComponents = true;
@@ -114,9 +118,12 @@ For more options, see {\@link DbModelWurblet}.
         generateIsModified          = true;
         generateSetSession          = true;
         generateMarkDeleted         = true;
-        generateValidate            = true;
         generateSnapshot            = true;
         generateSetImmutable        = true;
+
+        if (generateValidate == null) {
+          generateValidate = true;
+        }
 
         if (rel.getRelationType() == RelationType.OBJECT) {
           generateSaveReferencedRelations = true;
@@ -1126,7 +1133,7 @@ For more options, see {\@link DbModelWurblet}.
 
 
     // generate code to validate
-    if (generateValidate)  {
+    if (Boolean.TRUE.equals(generateValidate))  {
 ]@
 
   \@Override

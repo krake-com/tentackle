@@ -8,7 +8,8 @@ usage:<br>
 arguments:
 <ul>
 <li><em>--noif:</em> there is no interface (don't generate \@Override).</li>
-<li><em>--noudk&gt;:</em> don't generate selectByUniqueDomainKey wurblet anchor.</li>
+<li><em>--noudk:</em> don't generate selectByUniqueDomainKey wurblet anchor.</li>
+<li><em>--noisroot:</em> don't generate isRoot method.</li>
 </ul>
 For more options, see {\@link DbModelWurblet}.
 }@
@@ -30,6 +31,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean noif = false;
     boolean generateSnapshot = false;
     boolean generateSelectByUDK = true;
+    boolean generateIsRoot = true;
 
     int argcount = 0;
     for (String arg: getOptionArgs())  {
@@ -38,6 +40,9 @@ For more options, see {\@link DbModelWurblet}.
       }
       else if ("noudk".equals(arg)) {
         generateSelectByUDK = false;
+      }
+      else if ("noisroot".equals(arg)) {
+        generateIsRoot = false;
       }
     }
 
@@ -83,7 +88,7 @@ For more options, see {\@link DbModelWurblet}.
 
     if (getEntity().getSuperEntity() == null) {
 
-      if (getEntity().getOptions().isRoot()) {
+      if (generateIsRoot && getEntity().getOptions().isRoot()) {
 ]@
 
   \@Override
