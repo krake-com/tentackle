@@ -20,30 +20,14 @@ package org.tentackle.maven.wizard;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
-import freemarker.template.TemplateExceptionHandler;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.fx.Fx;
-import org.tentackle.model.Entity;
-import org.tentackle.model.InheritanceType;
-import org.tentackle.model.Model;
-import org.tentackle.model.ModelException;
-import org.tentackle.validate.ScopeConfigurator;
-import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationResult;
-import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationScopeFactory;
-import org.tentackle.validate.ValidationUtilities;
-import org.tentackle.validate.scope.ChangeableScope;
-import org.tentackle.validate.scope.InteractiveScope;
-import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.validator.Changeable;
-import org.tentackle.validate.validator.GreaterOrEqual;
 import org.tentackle.validate.validator.NotNull;
-import org.tentackle.validate.validator.True;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,13 +101,6 @@ public class OperationGenerator extends AbstractGenerator {
     return persistenceInterface != null;
   }
 
-  public boolean isDomainNecessary() {
-    return !isPersistenceValid();
-  }
-
-  public boolean isPersistenceNecessary() {
-    return !isDomainValid();
-  }
 
   // ------------------------------------- model -------------------------------------------------
 
@@ -212,7 +189,7 @@ public class OperationGenerator extends AbstractGenerator {
   }
 
   @Bindable
-  @NotNull(message = "missing domain interface", condition = "$isDomainNecessary")
+  @NotNull(message = "missing domain interface", condition = "!$isPersistenceValid")
   public String getDomainInterface() {
     return domainInterface;
   }
@@ -229,7 +206,7 @@ public class OperationGenerator extends AbstractGenerator {
   }
 
   @Bindable
-  @NotNull(message = "missing persistence interface", condition = "$isPersistenceNecessary")
+  @NotNull(message = "missing persistence interface", condition = "!$isDomainValid")
   public String getPersistenceInterface() {
     return persistenceInterface;
   }
