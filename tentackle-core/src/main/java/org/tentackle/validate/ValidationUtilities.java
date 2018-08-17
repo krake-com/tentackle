@@ -167,7 +167,7 @@ public class ValidationUtilities {
    * @param collection the objects to validate
    * @param validationPath the validation path, null if {@link #getDefaultValidationPath(java.lang.Object) }
    * @param scope the validation scope
-   * @return the validation results
+   * @return the validation results, empty if okay, never null
    */
   public List<ValidationResult> validateCollection(Collection<? extends Validateable> collection,
                                                    String validationPath, ValidationScope scope)  {
