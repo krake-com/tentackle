@@ -67,11 +67,6 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
   /**
    * {@inheritDoc}
    * <p>

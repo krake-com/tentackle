@@ -64,11 +64,6 @@ public class LessOrEqualImpl extends AbstractValidator<LessOrEqual> {
   }
 
   @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
-  @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
     boolean failed;

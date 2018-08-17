@@ -64,11 +64,6 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
   /**
    * {@inheritDoc}
    * <p>

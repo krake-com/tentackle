@@ -64,12 +64,6 @@ public class EqualImpl extends AbstractValidator<Equal> {
   }
 
   @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
-
-  @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
     boolean failed;

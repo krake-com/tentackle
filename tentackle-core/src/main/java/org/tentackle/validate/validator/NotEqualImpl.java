@@ -64,11 +64,6 @@ public class NotEqualImpl extends AbstractValidator<NotEqual> {
   }
 
   @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
-  @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     boolean failed;
 

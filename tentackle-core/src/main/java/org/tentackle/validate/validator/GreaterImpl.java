@@ -63,10 +63,6 @@ public class GreaterImpl extends AbstractValidator<Greater> {
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {

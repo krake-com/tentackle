@@ -63,11 +63,6 @@ public class NullImpl extends AbstractValidator<Null> {
   }
 
   @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
-  @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object value = annotation.value().isEmpty() ?
                         // use object's value

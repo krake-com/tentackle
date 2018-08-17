@@ -67,11 +67,6 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
   /**
    * {@inheritDoc}
    * <p>

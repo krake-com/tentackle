@@ -64,11 +64,6 @@ public class MandatoryImpl extends AbstractValidator<Mandatory> implements Manda
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
   /**
    * {@inheritDoc}
    * <p>

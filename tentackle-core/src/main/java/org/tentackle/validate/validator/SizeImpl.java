@@ -67,11 +67,6 @@ public class SizeImpl extends AbstractValidator<Size> {
   }
 
   @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
-  @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();
     if (object == null) {

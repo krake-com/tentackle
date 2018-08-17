@@ -386,17 +386,7 @@ public class ValidationUtilities {
         // condition and scope applies
         List<? extends ValidationResult> results = validator.validate(validationContext);
         if (results != null) {
-          boolean failed = false;
-          for (ValidationResult result : results) {
-            allResults.add(result);
-            if (result.hasFailed() && validator.getStopIfFailed()) {
-              failed = true;
-              break;
-            }
-          }
-          if (failed) {
-            break;
-          }
+          allResults.addAll(results);
         }
       }
     }
@@ -449,17 +439,7 @@ public class ValidationUtilities {
           try {
             List<? extends ValidationResult> results = validator.validate(validationContext);
             if (results != null) {
-              boolean failed = false;
-              for (ValidationResult result : results) {
-                allResults.add(result);
-                if (result.hasFailed() && validator.getStopIfFailed()) {
-                  failed = true;
-                  break;
-                }
-              }
-              if (failed) {
-                break;
-              }
+              allResults.addAll(results);
             }
           }
           catch (RuntimeException ex) {

@@ -64,11 +64,6 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
     return annotation.condition();
   }
 
-  @Override
-  public boolean getStopIfFailed() {
-    return annotation.stop();
-  }
-
   /**
    * {@inheritDoc}
    * <p>
