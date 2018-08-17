@@ -117,13 +117,6 @@ public class OperationGenerator extends AbstractGenerator {
     return persistenceInterface != null;
   }
 
-  public boolean isDomainNecessary() {
-    return !isPersistenceValid();
-  }
-
-  public boolean isPersistenceNecessary() {
-    return !isDomainValid();
-  }
 
   // ------------------------------------- model -------------------------------------------------
 
@@ -212,7 +205,7 @@ public class OperationGenerator extends AbstractGenerator {
   }
 
   @Bindable
-  @NotNull(message = "missing domain interface", condition = "$isDomainNecessary")
+  @NotNull(message = "missing domain interface", condition = "!$isPersistenceValid")
   public String getDomainInterface() {
     return domainInterface;
   }
@@ -229,7 +222,7 @@ public class OperationGenerator extends AbstractGenerator {
   }
 
   @Bindable
-  @NotNull(message = "missing persistence interface", condition = "$isPersistenceNecessary")
+  @NotNull(message = "missing persistence interface", condition = "!$isDomainValid")
   public String getPersistenceInterface() {
     return persistenceInterface;
   }
