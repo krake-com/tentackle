@@ -262,6 +262,7 @@ public class CompoundValue {
               throw new IllegalArgumentException("negated boolean reference must start with !$");
             }
             reference = str.substring(2);
+            negate = true;
           }
 
           type = Type.REFERENCE;
