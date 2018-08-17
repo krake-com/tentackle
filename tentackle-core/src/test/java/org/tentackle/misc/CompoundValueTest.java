@@ -40,6 +40,10 @@ public class CompoundValueTest {
     return "hello!";
   }
 
+  public boolean thisIsFalse() {
+    return false;
+  }
+
   @Test
   public void testCompountValue() {
     CompoundValue par = new CompoundValue("100", Integer.class);
@@ -51,6 +55,11 @@ public class CompoundValueTest {
     result = par.getValue(this);
     Assert.assertTrue(result instanceof String);
     Assert.assertTrue(result.equals(sayHello()));
+
+    par = new CompoundValue("!$thisIsFalse");
+    result = par.getValue(this);
+    Assert.assertTrue(result instanceof Boolean);
+    Assert.assertEquals(result, !thisIsFalse());
 
     result = new CompoundValue("$org.tentackle.misc.DateHelper.now").getValue();
     Assert.assertTrue(result instanceof Timestamp);

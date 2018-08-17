@@ -18,12 +18,6 @@
 
 package org.tentackle.misc;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.StringTokenizer;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
 import org.tentackle.reflect.ReflectionHelper;
@@ -31,6 +25,13 @@ import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.StringTokenizer;
 
 
 /**
@@ -261,6 +262,7 @@ public class CompoundValue {
               throw new IllegalArgumentException("negated boolean reference must start with !$");
             }
             reference = str.substring(2);
+            negate = true;
           }
 
           type = Type.REFERENCE;
