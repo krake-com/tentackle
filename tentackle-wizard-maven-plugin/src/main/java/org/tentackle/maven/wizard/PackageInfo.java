@@ -21,6 +21,7 @@ package org.tentackle.maven.wizard;
 import org.apache.maven.project.MavenProject;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Contains info about a java package.
@@ -30,6 +31,8 @@ public class PackageInfo {
   private final String name;
   private final MavenProject project;
   private final File path;
+
+  private List<PackageInfo> emptyDuplicates;
 
   /**
    * Creates a package info.
@@ -69,6 +72,36 @@ public class PackageInfo {
    */
   public File getPath() {
     return path;
+  }
+
+  /**
+   * Determines whether this package contains any java files.<br>
+   * The method is used to detect split packages which are forbidden in JPMS.
+   *
+   * @return true if not empty, false if no java files found
+   */
+  public boolean isContainingJavaFiles() {
+    return path.list((dir, name) -> name.endsWith(Constants.JAVA_EXT)).length > 0;
+  }
+
+  /**
+   * Gets the empty duplicates for this package info.<br>
+   * If an empty package is found more than once in different modules, it cannot be used in profiles
+   * because the generator cannot decide which one to use.
+   *
+   * @return the duplicates, null if none
+   */
+  public List<PackageInfo> getEmptyDuplicates() {
+    return emptyDuplicates;
+  }
+
+  /**
+   * Sets the duplicates.
+   *
+   * @param emptyDuplicates the duplicates
+   */
+  public void setEmptyDuplicates(List<PackageInfo> emptyDuplicates) {
+    this.emptyDuplicates = emptyDuplicates;
   }
 
   @Override
