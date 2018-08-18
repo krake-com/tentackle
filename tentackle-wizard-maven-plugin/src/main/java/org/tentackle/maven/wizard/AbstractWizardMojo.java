@@ -340,17 +340,46 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    */
   protected Map<String, PackageInfo> createPackageMap() throws MojoExecutionException {
     Map<String, PackageInfo> map = new HashMap<>();
+    StringBuilder buf = new StringBuilder();
     for (MavenProject project : mavenProject.getCollectedProjects()) {
       for (String path : project.getCompileSourceRoots()) {
         for (PackageInfo info : getPackages(project, path)) {
-          PackageInfo splitPkg = map.put(info.getName(), info);
+          boolean infoContaingFiles = info.isContainingJavaFiles();
+          PackageInfo splitPkg = map.get(info.getName());
           if (splitPkg != null) {
-            throw new MojoExecutionException("split package detected: " + info.getName() + " in " + project.getName() +
-                                             " and " + splitPkg.getProject().getName());
+            if (splitPkg.isContainingJavaFiles()) {
+              if (infoContaingFiles) {
+                buf.append("\nsplit package detected: " + info.getName() + " in " + project.getName() +
+                               " and " + splitPkg.getProject().getName());
+              }
+              // other package is empty: keep existing with java files
+              continue;
+            }
+            else if (!infoContaingFiles) {
+              // more than one empty package found: add it to the suspects until we know whether a non-empty exists
+              List<PackageInfo> dups = splitPkg.getEmptyDuplicates();
+              if (dups == null) {
+                dups = new ArrayList<>();
+                splitPkg.setEmptyDuplicates(dups);
+              }
+              dups.add(info);
+              continue;
+            }
+            // else: split is empty and info contains java files -> replace empty
           }
+          // add new or replace empty package
+          map.put(info.getName(), info);
         }
       }
     }
+
+    if (buf.length() > 0) {
+      // at least one split package found
+      // this isnt okay whether used in profiles or not
+      buf.deleteCharAt(0);    // remove leading newline
+      throw new MojoExecutionException(buf.toString());
+    }
+
     return map;
   }
 

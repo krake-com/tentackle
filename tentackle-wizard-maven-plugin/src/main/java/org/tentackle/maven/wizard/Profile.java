@@ -159,12 +159,21 @@ public class Profile {
    * @param packageInfoMap the package info map
    * @param packageName the package name
    * @return the package info
-   * @throws MojoExecutionException if no such mapping
+   * @throws MojoExecutionException if no such mapping or more than one empty package in different modules
    */
   protected PackageInfo getPackageInfo(Map<String, PackageInfo> packageInfoMap, String packageName) throws MojoExecutionException {
     PackageInfo info = packageInfoMap.get(packageName);
     if (info == null) {
       throw new MojoExecutionException("cannot determine module for package " + packageName);
+    }
+    if (info.getEmptyDuplicates() != null) {    // !empty if != null
+      StringBuilder buf = new StringBuilder();
+      for (PackageInfo other: info.getEmptyDuplicates()) {
+        buf.append("\nempty split package detected: " + info.getName() + " in " + info.getProject().getName() +
+                       " and " + other.getProject().getName());
+      }
+      buf.deleteCharAt(0);    // remove leading newline
+      throw new MojoExecutionException(buf.toString());
     }
     return info;
   }
