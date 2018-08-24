@@ -224,7 +224,7 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   <P extends PersistentDomainObject<P>> Collection<? extends PersistentDomainObject<?>> getTreeParentObjects(P parent);
 
   /**
-   * Gets the tablename used in to initialize the table's gui.<br>
+   * Creates the table configuration.<br>
    *
    * @return the table configuration
    */
