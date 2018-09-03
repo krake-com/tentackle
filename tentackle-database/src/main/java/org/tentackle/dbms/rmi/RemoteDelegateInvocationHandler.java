@@ -317,7 +317,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   protected void log(Method method, Object[] args, Object retval, Duration duration) {
 
-    boolean durationExceeded = false;
+    boolean durationExceeded;
 
     if (duration != null) {
       if (!duration.isValid()) {
@@ -326,68 +326,79 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
         durationExceeded = true;
       }
+      else {
+        durationExceeded = false;
+      }
       if (collectStatistics && isMDCValid()) {
         delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), duration);
       }
+    }
+    else {
+      durationExceeded = false;
     }
 
     if (isMDCValid()) {
       int collectionSize = retval instanceof Collection ? ((Collection) retval).size() : 0;
       boolean collectionSizeExceeded = logMinReturnedCollectionSize > 0 && collectionSize > logMinReturnedCollectionSize;
 
-      if (logInvocations || durationExceeded || collectionSizeExceeded) {
-        StringBuilder buf = new StringBuilder();
-        if (logInvocationDetails) {
-          buf.append(ReflectionHelper.getClassBaseName(delegate.getServicedClass())).
-              append(": ").
-              append(ReflectionHelper.getClassBaseName(delegate.getClass())).
-              append('.').
-              append(method.getName()).
-              append('(');
-          if (args != null) {
-            for (int i=0; i < args.length; i++) {
-              if (i > 0)  {
-                buf.append(',');
-              }
-              buf.append(StringHelper.objectToLoggableString(args[i]));
-            }
-          }
-          buf.append(") = ").
-              append(StringHelper.objectToLoggableString(retval)).
-              append(" {").
-              append(duration != null ? duration.millisToString() : "<unknown>").
-              append("ms");
-          if (collectionSize > 0) {
-            buf.append(", ").
-                append(collectionSize).
-                append(" items");
-          }
-          buf.append('}');
-        }
-        else {
-          buf.append(delegate.getClass().getName()).
-              append('.').
-              append(method.getName()).
-              append(" [").
-              append(duration != null ? duration.millisToString() : "<unknown>").
-              append("ms]");
-        }
-
-        if (durationExceeded || collectionSizeExceeded) {
+      if (durationExceeded || collectionSizeExceeded) {
+        LOGGER.warning(() -> {
+          StringBuilder buf = createInvocationLog(method, args, retval, duration, collectionSize);
           if (durationExceeded) {
-            buf.insert(0, ">>> duration >>> ");
+            buf.insert(0, ">>> duration exceeded:\n");
           }
           if (collectionSizeExceeded) {
-            buf.insert(0, ">>> size >>> ");
+            buf.insert(0, ">>> collection size exceeded:\n");
           }
-          LOGGER.warning(buf.toString());
-        }
-        else {
-          LOGGER.info(buf.toString());
-        }
+          return buf.toString();
+        });
+      }
+      else if (logInvocations) {
+        LOGGER.info(() -> createInvocationLog(method, args, retval, duration, collectionSize).toString());
       }
     }
     // else no logging
+  }
+
+
+  private StringBuilder createInvocationLog(Method method, Object[] args, Object retval, Duration duration, int collectionSize) {
+    StringBuilder buf = new StringBuilder();
+    if (logInvocationDetails) {
+      buf.append(ReflectionHelper.getClassBaseName(delegate.getServicedClass())).
+          append(": ").
+          append(ReflectionHelper.getClassBaseName(delegate.getClass())).
+          append('.').
+          append(method.getName()).
+          append('(');
+      if (args != null) {
+        for (int i=0; i < args.length; i++) {
+          if (i > 0)  {
+            buf.append(',');
+          }
+          buf.append(StringHelper.objectToLoggableString(args[i]));
+        }
+      }
+      buf.append(") = ").
+          append(StringHelper.objectToLoggableString(retval)).
+          append(" {").
+          append(duration != null ? duration.millisToString() : "<unknown>").
+          append("ms");
+      if (collectionSize > 0) {
+        buf.append(", ").
+            append(collectionSize).
+            append(" items");
+      }
+      buf.append('}');
+    }
+    else {
+      buf.append(delegate.getClass().getName()).
+          append('.').
+          append(method.getName()).
+          append(" [").
+          append(duration != null ? duration.millisToString() : "<unknown>").
+          append("ms]");
+    }
+    return buf;
   }
 
 

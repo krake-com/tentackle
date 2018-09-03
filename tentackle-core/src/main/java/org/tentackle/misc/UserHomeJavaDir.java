@@ -75,7 +75,7 @@ public class UserHomeJavaDir {
   private static void checkDir(File dir) {
     if (!dir.exists()) {
       if (dir.mkdirs()) {
-        LOGGER.info("created directory " + dir.getAbsolutePath());
+        LOGGER.info("created directory {0}", () -> dir.getAbsolutePath());
       }
       else {
         throw new TentackleRuntimeException("couldn't create directory " + dir.getAbsolutePath());

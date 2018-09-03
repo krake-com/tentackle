@@ -259,20 +259,25 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
    * @return the file
    */
   private File getFile() {
-    File file = new File(UserHomeJavaDir.getDirectory("cache", "pdo"), applicationName);
-    if (!file.exists()) {
+    File dir;
+    File cacheDir = new File(UserHomeJavaDir.getDirectory("cache", "pdo"), applicationName);
+    if (!cacheDir.exists()) {
       // make application directory if it doesnt exist
-      file.mkdir();
-      LOGGER.info("Created cache application directory " + file.getAbsolutePath());
+      cacheDir.mkdir();
+      LOGGER.info(() -> "Created cache application directory " + cacheDir.getAbsolutePath());
     }
     if (backendName != null) {
-      file = new File(file, backendName);
-      if (!file.exists()) {
-        file.mkdir();
-        LOGGER.info("Created cache backend application directory " + file.getAbsolutePath());
+      File backendDir = new File(cacheDir, backendName);
+      if (!backendDir.exists()) {
+        backendDir.mkdir();
+        LOGGER.info(() -> "Created cache backend application directory " + backendDir.getAbsolutePath());
       }
+      dir = backendDir;
     }
-    return new File(file, fileName);
+    else {
+      dir = cacheDir;
+    }
+    return new File(dir, fileName);
   }
 
 }

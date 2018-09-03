@@ -525,7 +525,7 @@ public class FxUtilities {
         if (pickResult != null) {
           Node node = pickResult.getIntersectedNode();
           if (node != null) {
-            LOGGER.info("\n" + dumpComponentHierarchy(node));
+            LOGGER.info(() -> "\n" + dumpComponentHierarchy(node));
           }
         }
       }

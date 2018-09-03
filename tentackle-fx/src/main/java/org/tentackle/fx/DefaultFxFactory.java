@@ -305,7 +305,7 @@ public class DefaultFxFactory implements FxFactory {
 
       if (singleton) {
         controllers.put(controllerClass, controller);
-        LOGGER.info("controller {0} added to singletons", ReflectionHelper.getClassBaseName(controllerClass));
+        LOGGER.info("controller {0} added to singletons", () -> ReflectionHelper.getClassBaseName(controllerClass));
       }
 
       if (cssUrl == null) {
