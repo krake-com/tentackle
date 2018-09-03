@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.logging.LogRecord;
 import org.tentackle.common.StringHelper;
 
@@ -94,34 +95,35 @@ public class DefaultLogger implements Logger {
 
   @Override
   public void log(Level level, String message, Throwable cause) {
-    doLog(level, message, cause);
+    doLog(level, message, cause, null);
   }
 
 
   @Override
-  public void finer(String message, Throwable cause) {
-    doLog(Level.FINER, message, cause);
+  public void finer(String message) {
+    doLog(Level.FINER, message, null, null);
   }
 
   @Override
-  public void fine(String message, Throwable cause) {
-    doLog(Level.FINE, message, cause);
+  public void fine(String message) {
+    doLog(Level.FINE, message, null, null);
   }
 
   @Override
-  public void info(String message, Throwable cause) {
-    doLog(Level.INFO, message, cause);
+  public void info(String message) {
+    doLog(Level.INFO, message, null, null);
   }
 
   @Override
-  public void warning(String message, Throwable cause) {
-    doLog(Level.WARNING, message, cause);
+  public void warning(String message) {
+    doLog(Level.WARNING, message, null, null);
   }
 
   @Override
-  public void severe(String message, Throwable cause) {
-    doLog(Level.SEVERE, message, cause);
+  public void severe(String message) {
+    doLog(Level.SEVERE, message, null, null);
   }
+
 
   @Override
   public void finer(String message, Object... params) {
@@ -147,6 +149,84 @@ public class DefaultLogger implements Logger {
   public void severe(String message, Object... params) {
     doLog(Level.SEVERE, message, null, params);
   }
+
+
+  @Override
+  public void finer(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.FINER, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void fine(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.FINE, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void info(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.INFO, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void warning(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.WARNING, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void severe(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.SEVERE, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void finer(String message, Throwable cause) {
+    doLog(Level.FINER, message, cause, null);
+  }
+
+  @Override
+  public void fine(String message, Throwable cause) {
+    doLog(Level.FINE, message, cause, null);
+  }
+
+  @Override
+  public void info(String message, Throwable cause) {
+    doLog(Level.INFO, message, cause, null);
+  }
+
+  @Override
+  public void warning(String message, Throwable cause) {
+    doLog(Level.WARNING, message, cause, null);
+  }
+
+  @Override
+  public void severe(String message, Throwable cause) {
+    doLog(Level.SEVERE, message, cause, null);
+  }
+
+
+  @Override
+  public void finer(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.FINER, cause, messageSupplier);
+  }
+
+  @Override
+  public void fine(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.FINE, cause, messageSupplier);
+  }
+
+  @Override
+  public void info(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.INFO, cause, messageSupplier);
+  }
+
+  @Override
+  public void warning(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.WARNING, cause, messageSupplier);
+  }
+
+  @Override
+  public void severe(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.SEVERE, cause, messageSupplier);
+  }
+
 
   @Override
   public boolean isFinerLoggable() {
@@ -205,9 +285,6 @@ public class DefaultLogger implements Logger {
 
   /**
    * Logging workhorse.
-   * <p>
-   * If the {@link MappedDiagnosticContext} contains entries
-   * those entries will be prepended in brackets as key=value pairs.
    *
    * @param level the log level
    * @param message the message
@@ -215,14 +292,44 @@ public class DefaultLogger implements Logger {
    * @param params optional parameters
    */
   protected void doLog(Level level, String message, Throwable cause, Object... params) {
+    doLog(level, cause, () -> buildMessage(message, params));
+  }
+
+  /**
+   * Logging workhorse.
+   *
+   * @param level the log level
+   * @param cause the cause
+   * @param message the message
+   * @param paramSuppliers parameter suppliers
+   */
+  protected void doLog(Level level, Throwable cause, String message, Supplier<?>... paramSuppliers) {
+    doLog(level, cause, () -> {
+      Object[] params = new Object[paramSuppliers.length];
+      for (int i=0; i < params.length; i++) {
+        Supplier<?> supplier = paramSuppliers[i];
+        params[i] = supplier == null ? null : supplier.get();
+      }
+      return buildMessage(message, params);
+    });
+  }
+
+  /**
+   * Logging workhorse.
+   *
+   * @param level the log level
+   * @param cause the cause
+   * @param messageSupplier the message supplier
+   */
+  protected void doLog(Level level, Throwable cause, Supplier<String> messageSupplier) {
     java.util.logging.Level juLevel = translateLevel(level);
     if (logger.isLoggable(juLevel)) {
       String loggerName = getClass().getName();
       Optional<StackFrame> sfOpt = StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE).
-              walk(s -> s.dropWhile(f -> f.getClassName().equals(loggerName)).findFirst());
+                                               walk(s -> s.dropWhile(f -> f.getClassName().equals(loggerName)).findFirst());
       if (sfOpt.isPresent()) {
         StackFrame sf = sfOpt.get();
-        LogRecord lr = new LogRecord(juLevel, buildMessage(message, params));
+        LogRecord lr = new LogRecord(juLevel, messageSupplier.get());
         lr.setSourceClassName(sf.getClassName());
         lr.setSourceMethodName(sf.getMethodName());
         lr.setThrown(cause);
@@ -231,7 +338,6 @@ public class DefaultLogger implements Logger {
       }
     }
   }
-
 
   /**
    * Builds the message text to log.<br>

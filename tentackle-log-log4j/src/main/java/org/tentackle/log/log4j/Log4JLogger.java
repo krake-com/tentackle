@@ -19,13 +19,15 @@
 
 package org.tentackle.log.log4j;
 
-import java.io.PrintStream;
-import java.text.MessageFormat;
-import java.util.HashMap;
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
 import org.tentackle.log.MappedDiagnosticContext;
+
+import java.io.PrintStream;
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.function.Supplier;
 
 /**
  * Pluggable logger using <tt>org.apache.log4j</tt>.
@@ -82,37 +84,37 @@ public class Log4JLogger implements Logger {
   }
 
 
-
   @Override
   public void log(Level level, String message, Throwable cause) {
-    doLog(level, message, cause);
+    doLog(level, message, cause, null);
   }
 
 
   @Override
-  public void finer(String message, Throwable cause) {
-    doLog(Level.FINER, message, cause);
+  public void finer(String message) {
+    doLog(Level.FINER, message, null, null);
   }
 
   @Override
-  public void fine(String message, Throwable cause) {
-    doLog(Level.FINE, message, cause);
+  public void fine(String message) {
+    doLog(Level.FINE,  message, null, null);
   }
 
   @Override
-  public void info(String message, Throwable cause) {
-    doLog(Level.INFO, message, cause);
+  public void info(String message) {
+    doLog(Level.INFO,  message, null, null);
   }
 
   @Override
-  public void warning(String message, Throwable cause) {
-    doLog(Level.WARNING, message, cause);
+  public void warning(String message) {
+    doLog(Level.WARNING,  message, null, null);
   }
 
   @Override
-  public void severe(String message, Throwable cause) {
-    doLog(Level.SEVERE, message, cause);
+  public void severe(String message) {
+    doLog(Level.SEVERE,  message, null, null);
   }
+
 
   @Override
   public void finer(String message, Object... params) {
@@ -137,6 +139,84 @@ public class Log4JLogger implements Logger {
   @Override
   public void severe(String message, Object... params) {
     doLog(Level.SEVERE, message, null, params);
+  }
+
+
+  @Override
+  public void finer(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.FINER, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void fine(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.FINE, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void info(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.INFO, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void warning(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.WARNING, null, message, paramSuppliers);
+  }
+
+  @Override
+  public void severe(String message, Supplier<?>... paramSuppliers) {
+    doLog(Level.SEVERE, null, message, paramSuppliers);
+  }
+
+
+  @Override
+  public void finer(String message, Throwable cause) {
+    doLog(Level.FINER, message, cause, null);
+  }
+
+  @Override
+  public void fine(String message, Throwable cause) {
+    doLog(Level.FINE, message, cause, null);
+  }
+
+  @Override
+  public void info(String message, Throwable cause) {
+    doLog(Level.INFO, message, cause, null);
+  }
+
+  @Override
+  public void warning(String message, Throwable cause) {
+    doLog(Level.WARNING, message, cause, null);
+  }
+
+  @Override
+  public void severe(String message, Throwable cause) {
+    doLog(Level.SEVERE, message, cause, null);
+  }
+
+
+  @Override
+  public void finer(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.FINER, cause, null, messageSupplier);
+  }
+
+  @Override
+  public void fine(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.FINE, cause, null, messageSupplier);
+  }
+
+  @Override
+  public void info(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.INFO, cause, null, messageSupplier);
+  }
+
+  @Override
+  public void warning(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.WARNING, cause, null, messageSupplier);
+  }
+
+  @Override
+  public void severe(Throwable cause, Supplier<String> messageSupplier) {
+    doLog(Level.SEVERE, cause, null, messageSupplier);
   }
 
 
@@ -221,11 +301,44 @@ public class Log4JLogger implements Logger {
    * @param params optional parameters
    */
   protected void doLog(Level level, String message, Throwable cause, Object... params) {
-    if (params != null && params.length > 0) {
-      if (!isLoggable(level)) { // check before formatting
+    // LOG4J parameter strings are incompatible with {@link MessageFormat}
+    doLog(level, cause, null, () -> params != null && params.length > 0 ? MessageFormat.format(message, params) : message);
+  }
+
+  /**
+   * Logging workhorse.
+   *
+   * @param level the log level
+   * @param cause the cause
+   * @param message the message
+   * @param paramSuppliers parameter suppliers
+   */
+  protected void doLog(Level level, Throwable cause, String message, Supplier<?>... paramSuppliers) {
+    doLog(level, cause, null, () -> {
+      Object[] params = new Object[paramSuppliers.length];
+      for (int i=0; i < params.length; i++) {
+        Supplier<?> supplier = paramSuppliers[i];
+        params[i] = supplier == null ? null : supplier.get();
+      }
+      // LOG4J parameter strings are incompatible with {@link MessageFormat}
+      return MessageFormat.format(message, params);
+    });
+  }
+
+  /**
+   * Logging workhorse.
+   *
+   * @param level the log level
+   * @param cause the cause, null if none
+   * @param message the message, null if messageSupplier
+   * @param messageSupplier the message supplier, null if message
+   */
+  protected void doLog(Level level, Throwable cause, String message, Supplier<String> messageSupplier) {
+    if (messageSupplier != null) {
+      if (!isLoggable(level)) { // check before invoking the probably costly supplier
         return;
       }
-      message = MessageFormat.format(message, params);
+      message = messageSupplier.get();
     }
     logger.log(FQCN, translateLevel(level), message, cause);
   }

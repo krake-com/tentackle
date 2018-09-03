@@ -19,6 +19,7 @@
 package org.tentackle.log;
 
 import java.lang.StackWalker.Option;
+import java.util.function.Supplier;
 
 
 /**
@@ -148,12 +149,47 @@ public interface Logger {
    */
   void log(Level level, String message, Throwable cause);
 
+  /**
+   * Logs a message with level FINER.
+   *
+   * @param message the message
+   */
+  void finer(String message);
+
+  /**
+   * Logs a message with level FINE.
+   *
+   * @param message the message
+   */
+  void fine(String message);
+
+  /**
+   * Logs a message with level INFO.
+   *
+   * @param message the message
+   */
+  void info(String message);
+
+  /**
+   * Logs a message with level WARNING.
+   *
+   * @param message the message
+   */
+  void warning(String message);
+
+  /**
+   * Logs a message with level SEVERE.
+   *
+   * @param message the message
+   */
+  void severe(String message);
+
 
   /**
    * Logs a message with level FINER.
    *
    * @param message the message
-   * @param params optional parameters
+   * @param params message parameters
    */
   void finer(String message, Object... params);
 
@@ -161,7 +197,7 @@ public interface Logger {
    * Logs a message with level FINE.
    *
    * @param message the message
-   * @param params optional parameters
+   * @param params message parameters
    */
   void fine(String message, Object... params);
 
@@ -169,7 +205,7 @@ public interface Logger {
    * Logs a message with level INFO.
    *
    * @param message the message
-   * @param params optional parameters
+   * @param params message parameters
    */
   void info(String message, Object... params);
 
@@ -177,7 +213,7 @@ public interface Logger {
    * Logs a message with level WARNING.
    *
    * @param message the message
-   * @param params optional parameters
+   * @param params message parameters
    */
   void warning(String message, Object... params);
 
@@ -185,9 +221,51 @@ public interface Logger {
    * Logs a message with level SEVERE.
    *
    * @param message the message
-   * @param params optional parameters
+   * @param params message parameters
    */
   void severe(String message, Object... params);
+
+
+  /**
+   * Logs a message with level FINER.
+   *
+   * @param message the message
+   * @param paramSuppliers message parameter suppliers
+   */
+  void finer(String message, Supplier<?>... paramSuppliers);
+
+  /**
+   * Logs a message with level FINE.
+   *
+   * @param message the message
+   * @param paramSuppliers message parameter suppliers
+   */
+  void fine(String message, Supplier<?>... paramSuppliers);
+
+  /**
+   * Logs a message with level INFO.
+   *
+   * @param message the message
+   * @param paramSuppliers message parameter suppliers
+   */
+  void info(String message, Supplier<?>... paramSuppliers);
+
+  /**
+   * Logs a message with level WARNING.
+   *
+   * @param message the message
+   * @param paramSuppliers message parameter suppliers
+   */
+  void warning(String message, Supplier<?>... paramSuppliers);
+
+  /**
+   * Logs a message with level SEVERE.
+   *
+   * @param message the message
+   * @param paramSuppliers message parameter suppliers
+   */
+  void severe(String message, Supplier<?>... paramSuppliers);
+
 
   /**
    * Logs a message with level FINER.
@@ -228,6 +306,47 @@ public interface Logger {
    * @param cause the throwable
    */
   void severe(String message, Throwable cause);
+
+
+  /**
+   * Logs a message with level FINER.
+   *
+   * @param messageSupplier the message supplier
+   * @param cause the throwable
+   */
+  void finer(Throwable cause, Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level FINE.
+   *
+   * @param messageSupplier the message supplier
+   * @param cause the throwable
+   */
+  void fine(Throwable cause, Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level INFO.
+   *
+   * @param messageSupplier the message supplier
+   * @param cause the throwable
+   */
+  void info(Throwable cause, Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level WARNING.
+   *
+   * @param messageSupplier the message supplier
+   * @param cause the throwable
+   */
+  void warning(Throwable cause, Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level SEVERE.
+   *
+   * @param messageSupplier the message supplier
+   * @param cause the throwable
+   */
+  void severe(Throwable cause, Supplier<String> messageSupplier);
 
 
   /**

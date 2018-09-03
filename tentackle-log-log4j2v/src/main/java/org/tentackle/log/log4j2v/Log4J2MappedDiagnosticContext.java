@@ -26,9 +26,9 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.AbstractMappedDiagnosticContext;
 
 
-interface Log4JMappedDiagnosticContext$Singleton {
-  Log4JMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
-                Log4JMappedDiagnosticContext.class, Log4JMappedDiagnosticContext.class);
+interface Log4J2MappedDiagnosticContext$Singleton {
+  Log4J2MappedDiagnosticContext INSTANCE = ServiceFactory.createService(
+                Log4J2MappedDiagnosticContext.class, Log4J2MappedDiagnosticContext.class);
 }
 
 
@@ -37,16 +37,16 @@ interface Log4JMappedDiagnosticContext$Singleton {
  *
  * @author harald
  */
-@Service(Log4JMappedDiagnosticContext.class)    // defaults to self
-public class Log4JMappedDiagnosticContext extends AbstractMappedDiagnosticContext {
+@Service(Log4J2MappedDiagnosticContext.class)    // defaults to self
+public class Log4J2MappedDiagnosticContext extends AbstractMappedDiagnosticContext {
 
   /**
    * The singleton.
    *
    * @return the singleton
    */
-  public static Log4JMappedDiagnosticContext getInstance() {
-    return Log4JMappedDiagnosticContext$Singleton.INSTANCE;
+  public static Log4J2MappedDiagnosticContext getInstance() {
+    return Log4J2MappedDiagnosticContext$Singleton.INSTANCE;
   }
 
 
