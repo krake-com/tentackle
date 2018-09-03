@@ -160,9 +160,7 @@ public class GroovyScript extends AbstractScript {
 
     final CompiledScript script = getCompiledScript();
 
-    if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + compiledScript.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    }
+    LOGGER.finer(() -> "execute: \n" + compiledScript.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
 
     try {
       Binding binding = new Binding();

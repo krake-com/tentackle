@@ -641,7 +641,7 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
    */
   private int doBind(boolean declaredBindablesOnly, boolean declaredComponentsOnly) {
     addEligibleComponents(controller, controller.getClass().getName(), new HashSet<>(), declaredComponentsOnly);
-    if (LOGGER.isFineLoggable()) {
+    LOGGER.fine(() -> {
       StringBuilder buf = new StringBuilder();
       buf.append("--------- eligible components: ----------\n");
       for (Map.Entry<String,FxComponent> entry: eligibleComponents.entrySet()) {
@@ -651,8 +651,8 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         buf.append("\n");
       }
       buf.append("-----------------------------------------\n");
-      LOGGER.fine(buf.toString());
-    }
+      return buf.toString();
+    });
     return doBind(null, null, controller.getClass(), declaredBindablesOnly);
   }
 

@@ -111,9 +111,7 @@ public class AbstractJSRScript extends AbstractScript {
 
     final CompiledScript script = getCompiledScript();
 
-    if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    }
+    LOGGER.finer(() -> "execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
 
     try {
       Bindings bindings = new SimpleBindings();

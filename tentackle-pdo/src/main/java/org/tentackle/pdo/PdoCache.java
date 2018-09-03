@@ -319,9 +319,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * Forces the cache to be cleared for next access.
    */
   public synchronized void invalidate() {
-    if (LOGGER.isFineLoggable()) {
-      LOGGER.fine("invalidating cache " + this + ": " + printStatistics());
-    }
+    LOGGER.fine(() -> "invalidating cache " + this + ": " + printStatistics());
     invalidateImpl();
   }
 
@@ -474,8 +472,6 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
       maxTableSerial = maxSerial;
     }
 
-    boolean fineLoggable = LOGGER.isFineLoggable();
-
     if (tableSerial > 0 && !isPreloading())  {
       // table provides a tableSerial
       if (expiredTableSerial == 0) {   // if not already triggered
@@ -487,28 +483,20 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           // delay expire check
           expiredTableSerial = tableSerial; // set lower bound requested (once!)
         }
-        if (fineLoggable) {
-          LOGGER.fine("expire requested on " + this +
-                      ", tableSerial=" + tableSerial + "/" + maxSerial +
-                      (session == null ? ", delayed" : (", Db=" + session)));
-        }
+        LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
+                              (session == null ? ", delayed" : (", Db=" + session)));
       }
       else  {
-        if (fineLoggable) {
-          LOGGER.fine("expire requested on " + this +
-                      ", tableSerial=" + tableSerial + "/" + maxSerial +
-                      (session == null ? ", delayed" : (", Db=" + session)) +
-                      " -> ignored because already requested for tableSerial=" +
-                      expiredTableSerial + "/" + maxTableSerial);
-        }
+        LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial + "/" + maxSerial +
+                    (session == null ? ", delayed" : (", Db=" + session)) +
+                    " -> ignored because already requested for tableSerial=" +
+                    expiredTableSerial + "/" + maxTableSerial);
       }
     }
     else  {
-      if (fineLoggable) {
-        LOGGER.fine("expire requested on " + this + ", tableSerial=" + tableSerial +
+      LOGGER.fine(() -> "expire requested on " + this + ", tableSerial=" + tableSerial +
                     (session == null ? ", delayed" : (", Db=" + session)) +
                     " -> invalidate cache because objects don't provide a tableSerial or cache is preloading");
-      }
       invalidateImpl();
     }
   }
@@ -628,7 +616,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     else {
       synchronized (this)  {
         try {
-          long millis = 0;    // to determine the duration
+          long millis = 0;    // to determine the duration if with logging
           if (LOGGER.isFineLoggable()) {
             millis = System.currentTimeMillis();
             LOGGER.fine("shrinking cache " + this + ": " + printStatistics());

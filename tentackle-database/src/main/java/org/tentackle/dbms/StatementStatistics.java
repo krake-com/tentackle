@@ -113,14 +113,14 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
    */
   public static void log(Logger logger, Level level, boolean clear) {
     try {
-      if (logger.isLoggable(level)) {
+      logger.log(level, null, () -> {
         StringBuilder buf = new StringBuilder("SQL Statement Statistics:");
         for (StatementStatistics stat : getStatistics(clear)) {
           buf.append("\n    ");
           buf.append(stat);
         }
-        logger.log(level, buf.toString(), null);
-      }
+        return buf.toString();
+      });
     }
     catch (RuntimeException rex) {
       LOGGER.severe("cannot log SQL statistics", rex);

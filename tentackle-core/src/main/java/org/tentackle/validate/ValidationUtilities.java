@@ -260,12 +260,12 @@ public class ValidationUtilities {
    * @param scope optional validation scope, null = all
    */
   protected void addFieldValidatorsToMap(Map<ValidatorKey,Validator> validatorMap, Field field, Method method, ValidationScope scope) {
-    boolean fineLoggable = LOGGER.isFineLoggable();
+    boolean fineLoggable = LOGGER.isFineLoggable();  // faster than lambda because only one check if fine is not loggable
     if (field != null) {
       for (Validator validator: getElementValidators(field, scope)) {
         if (fineLoggable) {
           LOGGER.fine("field validator @{0} found for {1}:{2}",
-          validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
+                      validator.getClass().getName(), field.getDeclaringClass().getName(), field.getName());
         }
         validatorMap.put(new ValidatorKey(validator), validator);
       }

@@ -146,9 +146,7 @@ public class RubyScript extends AbstractScript {
 
     final CompiledScript script = getCompiledScript();
 
-    if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + script.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    }
+    LOGGER.finer(() -> "execute: \n" + script.getEffectiveCode() + "\nwith args: " + ScriptVariable.variablesToString(variables));
 
     try {
       if (isThreadSafe()) {

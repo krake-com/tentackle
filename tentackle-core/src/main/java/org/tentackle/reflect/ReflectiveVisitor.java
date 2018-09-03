@@ -57,25 +57,49 @@ public abstract class ReflectiveVisitor {
    * <p>
    * Notice: do not <em>override</em> this method!
    *
-   * @param args the visited object plus optional parameters
+   * @param visitedObject the visited object
+   * @param types optional parameters
+   * @param args optional arguments according to types
    * @throws NoSuchMethodException if no type specific implementation could be found
    */
-  public void visit(Object... args) throws NoSuchMethodException {
-
-    if (args == null || args.length == 0) {
-      throw new TentackleRuntimeException("cannot dispatch no-args visit method");
-    }
-
-    Class<?>[] types = new Class<?>[args.length];
-    for (int i=0; i < args.length; i++) {
-      types[i] = args[i].getClass();
-    }
+  public void visit(Object visitedObject, Class<?>[] types, Object... args) throws NoSuchMethodException {
 
     // figure out most specific overloaded method for concrete object
-    Method method = null;
-    Object visitedObject  = args[0];
-    Class<?> visitedClass = visitedObject.getClass();
+    Class<?> visitedClass = EffectiveClassProvider.getEffectiveClass(visitedObject);
+    Method method = findBestMethod(visitedClass, types);
 
+    if (method == null) {
+      throw new NoSuchMethodException("no visit method in " + getClass().getName() + " for " + visitedClass.getName());
+    }
+
+    // invoke the method
+    try {
+      LOGGER.fine(() -> "invoking " + method + "(" + StringHelper.objectArrayToString(args, ", ") + ")");
+      method.invoke(this, args);
+    }
+    catch (IllegalAccessException iae) {
+      handleException(iae, method, args);
+    }
+    catch (InvocationTargetException ite) {
+      Throwable thrbl = ite.getCause();
+      if (thrbl instanceof RuntimeException) {
+        // let it pass directly to the application (for example PersistenceExceptions)
+        throw (RuntimeException) thrbl;
+      }
+      handleException(ite.getCause(), method, args);
+    }
+  }
+
+
+  /**
+   * Finds the most specific overloaded method for a given class and method arguments.
+   *
+   * @param visitedClass the class to visit
+   * @param types the method arguments
+   * @return the method, null if no such method
+   */
+  protected Method findBestMethod(Class<?> visitedClass, Class<?>[] types) {
+    Method method = null;
     Class<?> clazz = visitedClass;
     while (clazz != null && isImplementedClass(clazz)) {
       method = METHOD_CACHE.getMethod(getClass(), types);
@@ -93,31 +117,8 @@ public abstract class ReflectiveVisitor {
       }
       break;
     }
-
-    if (method == null) {
-      throw new NoSuchMethodException("no visit method in " + getClass().getName() + " for " + visitedClass.getName());
-    }
-
-    // invoke the method
-    try {
-      if (LOGGER.isFineLoggable()) {
-        LOGGER.fine("invoking " + method + "(" + StringHelper.objectArrayToString(args, ", ") + ")");
-      }
-      method.invoke(this, args);
-    }
-    catch (IllegalAccessException iae) {
-      handleException(iae, method, args);
-    }
-    catch (InvocationTargetException ite) {
-      Throwable thrbl = ite.getCause();
-      if (thrbl instanceof RuntimeException) {
-        // let it pass directly to the application (for example PersistenceExceptions)
-        throw (RuntimeException) thrbl;
-      }
-      handleException(ite.getCause(), method, args);
-    }
+    return method;
   }
-
 
 
   /**

@@ -75,15 +75,11 @@ public class CompressedInputStream extends FilterInputStream {
     if (!closed) {
       closed = true;
       super.close();
-      if (LOGGER.isFineLoggable()) {
-        if (totalRead == 0)  {
-          totalRead = 1; // in case nothing has been written so far
-        }
-        LOGGER.fine("compressed output stream stats: total=" + totalRead +
-                           ", compressed=" + totalCompressed +
-                           ", uncompressed=" + totalUncompressed +
-                           ", ratio=" + (int)((totalCompressed + totalUncompressed) * 100.0d / totalRead) + "%");
-      }
+      LOGGER.fine(() ->
+          "compressed output stream stats: total=" + totalRead +
+          ", compressed=" + totalCompressed +
+          ", uncompressed=" + totalUncompressed +
+          ", ratio=" + (int)((totalCompressed + totalUncompressed) * 100.0d / (totalRead == 0 ? 1 : totalRead)) + "%");
     }
   }
 

@@ -93,6 +93,11 @@ public class Log4J2Logger implements Logger {
     doLog(level, message, cause, null);
   }
 
+  @Override
+  public void log(Level level, Throwable cause, Supplier<String> messageSupplier) {
+    doLog(level, cause, null, messageSupplier);
+  }
+
 
   @Override
   public void finer(String message) {
@@ -221,6 +226,32 @@ public class Log4J2Logger implements Logger {
   @Override
   public void severe(Throwable cause, Supplier<String> messageSupplier) {
     doLog(Level.SEVERE, cause, null, messageSupplier);
+  }
+
+
+  @Override
+  public void finer(Supplier<String> messageSupplier) {
+    doLog(Level.FINER, null, null, messageSupplier);
+  }
+
+  @Override
+  public void fine(Supplier<String> messageSupplier) {
+    doLog(Level.FINE, null, null, messageSupplier);
+  }
+
+  @Override
+  public void info(Supplier<String> messageSupplier) {
+    doLog(Level.INFO, null, null, messageSupplier);
+  }
+
+  @Override
+  public void warning(Supplier<String> messageSupplier) {
+    doLog(Level.WARNING, null, null, messageSupplier);
+  }
+
+  @Override
+  public void severe(Supplier<String> messageSupplier) {
+    doLog(Level.SEVERE, null, null, messageSupplier);
   }
 
 

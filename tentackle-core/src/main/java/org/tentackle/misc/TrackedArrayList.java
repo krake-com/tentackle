@@ -141,7 +141,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     // there is a 1:1 relation between the snapshot list and the element snapshots
     // and this relation must not be modified anymore! Hence, snapshots are immutable.
     snapshot.elementSnapshots = new ArrayList<>(size());
-    boolean fineLoggable = LOGGER.isFineLoggable();
+    boolean fineLoggable = LOGGER.isFineLoggable(); // faster than lambda because only one check if fine is not loggable
     for (E obj: snapshot) {
       if (obj instanceof Snapshotable) {
         E elementsnapshot = ((Snapshotable<E>) obj).createSnapshot();
@@ -179,7 +179,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       if (!snapshot.isSnapshot()) {
         throw new TentackleRuntimeException("not a snapshot");
       }
-      boolean fineLoggable = LOGGER.isFineLoggable();
+      boolean fineLoggable = LOGGER.isFineLoggable(); // faster than lambda because only one check if fine is not loggable
       if (isCopy()) {
         // reverting a snapshot to a copy just creates copies from the objects in the snapshot
         super.clear();
@@ -259,7 +259,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   @SuppressWarnings("unchecked")
   public TrackedList<E> copy() {
     TrackedArrayList<E> list = new TrackedArrayList<>(size(), false);
-    boolean fineLoggable = LOGGER.isFineLoggable();
+    boolean fineLoggable = LOGGER.isFineLoggable();  // faster than lambda because only one check if fine is not loggable
     for (E obj: this) {
       if (obj instanceof Snapshotable) {
         if (fineLoggable) {

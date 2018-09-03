@@ -106,9 +106,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
 
       try (ObjectOutputStream os = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
         os.writeObject(this);
-        if (LOGGER.isInfoLoggable()) {
-          LOGGER.info(objects.size() + " objects written to " + file.getAbsolutePath());
-        }
+        LOGGER.info(() -> objects.size() + " objects written to " + file.getAbsolutePath());
         return true;
       }
       catch (IOException ioe) {
@@ -140,9 +138,7 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
           PdoCacheFileStore<T> cacheFileStore = (PdoCacheFileStore<T>) object;
           cacheFileStore.verifyAfterRead();
           cacheFileStore.applyCache(session, cache);
-          if (LOGGER.isInfoLoggable()) {
-            LOGGER.info(cache.getObjects().size() + " objects loaded from " + file.getAbsolutePath());
-          }
+          LOGGER.info(() -> cache.getObjects().size() + " objects loaded from " + file.getAbsolutePath());
           return true;
         }
         else  {

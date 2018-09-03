@@ -150,6 +150,16 @@ public interface Logger {
   void log(Level level, String message, Throwable cause);
 
   /**
+   * Logs a message.
+   *
+   * @param level   the logging level
+   * @param cause   the Throwable associated with log message, null if none
+   * @param messageSupplier the message supplier
+   */
+  void log(Level level, Throwable cause, Supplier<String> messageSupplier);
+
+
+  /**
    * Logs a message with level FINER.
    *
    * @param message the message
@@ -347,6 +357,42 @@ public interface Logger {
    * @param cause the throwable
    */
   void severe(Throwable cause, Supplier<String> messageSupplier);
+
+
+  /**
+   * Logs a message with level FINER.
+   *
+   * @param messageSupplier the message supplier
+   */
+  void finer(Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level FINE.
+   *
+   * @param messageSupplier the message supplier
+   */
+  void fine(Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level INFO.
+   *
+   * @param messageSupplier the message supplier
+   */
+  void info(Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level WARNING.
+   *
+   * @param messageSupplier the message supplier
+   */
+  void warning(Supplier<String> messageSupplier);
+
+  /**
+   * Logs a message with level SEVERE.
+   *
+   * @param messageSupplier the message supplier
+   */
+  void severe(Supplier<String> messageSupplier);
 
 
   /**

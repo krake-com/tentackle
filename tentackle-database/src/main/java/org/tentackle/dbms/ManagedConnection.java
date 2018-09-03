@@ -474,8 +474,8 @@ public class ManagedConnection {
           LOGGER.warning("attached for " + (detachedSince - attachedSince) + "ms: " + toDiagnosticString());
         }
       }
-      else if (LOGGER.isFineLoggable() && isMDCValid()) {
-        LOGGER.fine(toDiagnosticString());
+      else if (isMDCValid()) {
+        LOGGER.fine(() -> toDiagnosticString());
       }
       this.db = null;
       db.setConnection(null);
@@ -841,8 +841,8 @@ public class ManagedConnection {
   public void rollback(boolean withLog) {
     assertAttached();
     try {
-      if (withLog && LOGGER.isInfoLoggable()) {
-        LOGGER.info(toDiagnosticString());
+      if (withLog) {
+        LOGGER.info(() -> toDiagnosticString());
       }
       getConnection().rollback();
       // unmark all statements marked ready

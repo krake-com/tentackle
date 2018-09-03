@@ -98,6 +98,11 @@ public class DefaultLogger implements Logger {
     doLog(level, message, cause, null);
   }
 
+  @Override
+  public void log(Level level, Throwable cause, Supplier<String> messageSupplier) {
+    doLog(level, cause, messageSupplier);
+  }
+
 
   @Override
   public void finer(String message) {
@@ -225,6 +230,32 @@ public class DefaultLogger implements Logger {
   @Override
   public void severe(Throwable cause, Supplier<String> messageSupplier) {
     doLog(Level.SEVERE, cause, messageSupplier);
+  }
+
+
+  @Override
+  public void finer(Supplier<String> messageSupplier) {
+    doLog(Level.FINER, null, messageSupplier);
+  }
+
+  @Override
+  public void fine(Supplier<String> messageSupplier) {
+    doLog(Level.FINE, null, messageSupplier);
+  }
+
+  @Override
+  public void info(Supplier<String> messageSupplier) {
+    doLog(Level.INFO, null, messageSupplier);
+  }
+
+  @Override
+  public void warning(Supplier<String> messageSupplier) {
+    doLog(Level.WARNING, null, messageSupplier);
+  }
+
+  @Override
+  public void severe(Supplier<String> messageSupplier) {
+    doLog(Level.SEVERE, null, messageSupplier);
   }
 
 

@@ -315,9 +315,8 @@ public abstract class AbstractBinding implements Binding {
    */
   protected void setModelValue(Object parent, Object value, boolean honourResyncByVetoException) {
 
-    if (LOGGER.isFineLoggable()) {
-      LOGGER.fine(member + " <- " + viewComponentToString() + " = " + StringHelper.objectToLoggableString(value));
-    }
+    LOGGER.fine(() -> member + " <- " + viewComponentToString() + " = " + StringHelper.objectToLoggableString(value));
+
     try {
       // set the value into the view
       if (parent != null) {
@@ -332,15 +331,16 @@ public abstract class AbstractBinding implements Binding {
       }
     }
     catch (BindingVetoException veto) {
-      if (LOGGER.isFineLoggable()) {
+      LOGGER.fine(() -> {
         String msg = "veto for value " + StringHelper.objectToLoggableString(value) +
                      " from " + viewComponentToString() +
                      " to " + member;
         if (veto.getMessage() != null) {
           msg += ": " + veto.getMessage();
         }
-        LOGGER.fine(msg);
-      }
+        return msg;
+      });
+
       if (honourResyncByVetoException && veto.isResyncRequested()) {
         // update the view with the old value from the model
         LOGGER.fine("view resynced from model");
@@ -371,14 +371,14 @@ public abstract class AbstractBinding implements Binding {
       updateView(value);
     }
     catch (BindingVetoException veto) {
-      if (LOGGER.isFineLoggable()) {
+      LOGGER.fine(() -> {
         String msg = "veto for value " + StringHelper.objectToLoggableString(value) +
                      " from " + member + " to " + viewComponentToString();
         if (veto.getMessage() != null) {
           msg += ": " + veto.getMessage();
         }
-        LOGGER.fine(msg);
-      }
+        return msg;
+      });
       if (honourResyncByVetoException && veto.isResyncRequested()) {
         // update the model with the old value from the view
         LOGGER.fine("model resynced from view");
@@ -397,13 +397,8 @@ public abstract class AbstractBinding implements Binding {
   protected Object getModelValue(Object parentObject) {
     try {
       Object modelValue = parentObject == null ? null : member.getObject(parentObject);
-      if (LOGGER.isFineLoggable()) {
-        LOGGER.fine(viewComponentToString() + " <- " +
-                            member + " = " + StringHelper.objectToLoggableString(modelValue));
-        if (parentObject == null && LOGGER.isFineLoggable()) {
-          LOGGER.fine("(some) object reference was null, " + viewComponentToString() + " not changed");
-        }
-      }
+      LOGGER.fine(() -> viewComponentToString() + " <- " + member + " = " + StringHelper.objectToLoggableString(modelValue) +
+                            (parentObject == null ? "\n(some) object reference was null, " + viewComponentToString() + " not changed" : ""));
       return modelValue;
     }
     catch (BindingException ex) {

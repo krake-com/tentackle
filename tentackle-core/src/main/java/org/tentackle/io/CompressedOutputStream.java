@@ -177,15 +177,11 @@ public class CompressedOutputStream extends FilterOutputStream {
       closed = true;
       deflater.end();
       super.close();
-      if (LOGGER.isFineLoggable()) {
-        if (totalWritten == 0)  {
-          totalWritten = 1; // in case nothing has been written so far
-        }
-        LOGGER.fine("compressed output stream stats: total=" + totalWritten +
-                           ", compressed=" + totalCompressed +
-                           ", uncompressed=" + totalUncompressed +
-                           ", ratio=" + (int)((totalCompressed + totalUncompressed) * 100.0d / totalWritten) + "%");
-      }
+      LOGGER.fine(() ->
+          "compressed output stream stats: total=" + totalWritten +
+          ", compressed=" + totalCompressed +
+          ", uncompressed=" + totalUncompressed +
+          ", ratio=" + (int)((totalCompressed + totalUncompressed) * 100.0d / (totalWritten == 0 ? 1 : totalWritten)) + "%");
     }
   }
 

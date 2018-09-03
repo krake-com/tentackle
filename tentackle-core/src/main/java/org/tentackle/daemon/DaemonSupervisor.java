@@ -130,7 +130,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
      */
     private void start() {
       startCount++;
-      if (LOGGER.isInfoLoggable()) {
+      LOGGER.info(() -> {
         StringBuilder msg = new StringBuilder("starting ");
         msg.append(this);
         msg.append(" (attempt ");
@@ -140,8 +140,8 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
           msg.append(maxStartCount);
         }
         msg.append(")");
-        LOGGER.info(msg.toString());
-      }
+        return msg.toString();
+      });
       supervisedDaemon.start();
     }
 

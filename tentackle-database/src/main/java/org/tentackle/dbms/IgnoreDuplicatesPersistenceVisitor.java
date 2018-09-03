@@ -71,8 +71,8 @@ public class IgnoreDuplicatesPersistenceVisitor extends PersistenceVisitor {
    */
   @Override
   public boolean isPersistenceOperationAllowed(AbstractDbObject<?> object, char modType) {
-    if (!persistenceOperationAllowed && LOGGER.isInfoLoggable()) {
-      LOGGER.info(object.toGenericString() + " already persisted -> '" + modType + "' ignored");
+    if (!persistenceOperationAllowed) {
+      LOGGER.info(() -> object.toGenericString() + " already persisted -> '" + modType + "' ignored");
     }
     return persistenceOperationAllowed;
   }

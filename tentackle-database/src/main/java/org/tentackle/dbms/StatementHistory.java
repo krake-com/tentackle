@@ -83,9 +83,7 @@ public class StatementHistory {
     if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
       LOGGER.warning(">>> duration >>> " + toString());
     }
-    else if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer(toString());
-    }
+    LOGGER.finer(() -> toString());
   }
 
   /**

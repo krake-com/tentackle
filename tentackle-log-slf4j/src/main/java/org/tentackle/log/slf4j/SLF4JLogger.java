@@ -19,8 +19,6 @@
 
 package org.tentackle.log.slf4j;
 
-import org.slf4j.Marker;
-
 import org.tentackle.common.Service;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerOutputStream;
@@ -95,6 +93,11 @@ public class SLF4JLogger implements Logger {
   @Override
   public void log(Level level, String message, Throwable cause) {
     doLog(level, message, cause, null);
+  }
+
+  @Override
+  public void log(Level level, Throwable cause, Supplier<String> messageSupplier) {
+    doLog(level, cause, null, messageSupplier);
   }
 
 
@@ -225,6 +228,32 @@ public class SLF4JLogger implements Logger {
   @Override
   public void severe(Throwable cause, Supplier<String> messageSupplier) {
     doLog(Level.SEVERE, cause, null, messageSupplier);
+  }
+
+
+  @Override
+  public void finer(Supplier<String> messageSupplier) {
+    doLog(Level.FINER, null, null, messageSupplier);
+  }
+
+  @Override
+  public void fine(Supplier<String> messageSupplier) {
+    doLog(Level.FINE, null, null, messageSupplier);
+  }
+
+  @Override
+  public void info(Supplier<String> messageSupplier) {
+    doLog(Level.INFO, null, null, messageSupplier);
+  }
+
+  @Override
+  public void warning(Supplier<String> messageSupplier) {
+    doLog(Level.WARNING, null, null, messageSupplier);
+  }
+
+  @Override
+  public void severe(Supplier<String> messageSupplier) {
+    doLog(Level.SEVERE, null, null, messageSupplier);
   }
 
 
