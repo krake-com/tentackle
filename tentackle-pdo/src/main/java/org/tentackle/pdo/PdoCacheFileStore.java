@@ -264,13 +264,13 @@ public class PdoCacheFileStore<T extends PersistentDomainObject<T>> implements S
     if (!cacheDir.exists()) {
       // make application directory if it doesnt exist
       cacheDir.mkdir();
-      LOGGER.info(() -> "Created cache application directory " + cacheDir.getAbsolutePath());
+      LOGGER.info(() -> "created cache application directory " + cacheDir.getAbsolutePath());
     }
     if (backendName != null) {
       File backendDir = new File(cacheDir, backendName);
       if (!backendDir.exists()) {
         backendDir.mkdir();
-        LOGGER.info(() -> "Created cache backend application directory " + backendDir.getAbsolutePath());
+        LOGGER.info(() -> "created cache backend application directory " + backendDir.getAbsolutePath());
       }
       dir = backendDir;
     }
