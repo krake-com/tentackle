@@ -27,7 +27,6 @@ import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
-import org.tentackle.log.Logger;
 import org.tentackle.persist.TokenLock;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.Backend;
@@ -84,8 +83,6 @@ public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenL
                                  TABLENAME);
 
   private static final long serialVersionUID = -1723181864077614924L;
-
-  private static final Logger LOGGER = Logger.get(DbTokenLock.class);
 
 
 

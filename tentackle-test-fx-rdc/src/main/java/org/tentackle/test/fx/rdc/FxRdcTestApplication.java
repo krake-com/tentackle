@@ -18,12 +18,14 @@
 
 package org.tentackle.test.fx.rdc;
 
-import com.sun.javafx.application.PlatformImpl;
-import java.awt.GraphicsEnvironment;
-import org.tentackle.test.pdo.TestApplication;
+import javafx.application.Platform;
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.BeforeSuite;
+
+import org.tentackle.test.pdo.TestApplication;
+
+import java.awt.GraphicsEnvironment;
 
 /**
  *
@@ -43,7 +45,7 @@ public abstract class FxRdcTestApplication extends TestApplication {
     else {
 
       try {
-        PlatformImpl.startup(() -> Reporter.log("FX started<br>", true));
+        Platform.startup(() -> Reporter.log("FX started<br>", true));
       }
       catch(RuntimeException rex) {
         throw new SkipException("FX not supported -> no FX tests");
