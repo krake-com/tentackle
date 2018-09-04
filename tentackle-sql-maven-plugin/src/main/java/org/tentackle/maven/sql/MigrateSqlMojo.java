@@ -41,7 +41,6 @@ import org.tentackle.sql.metadata.TableMetaData;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.management.MemoryPoolMXBean;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
@@ -444,7 +443,6 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    *
    * @param tableName the tablename
    * @param sql the SQL statements
-   * @throws MojoExecutionException if some IO-error
    */
   private void flushSqlForTable(String tableName, String sql) {
     if (!StringHelper.isAllWhitespace(sql)) {

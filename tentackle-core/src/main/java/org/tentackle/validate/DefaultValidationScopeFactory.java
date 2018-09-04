@@ -83,7 +83,7 @@ public class DefaultValidationScopeFactory implements ValidationScopeFactory {
         Class<? extends ValidationScope> oldValidationScope = scopesByName.put(name, scopeInterface);
         if (oldValidationScope != null) {
           throw new ValidationRuntimeException("scope name '" + name + "' of " + scopeImplementation.getName() +
-                                               " already used by " + oldValidationScope.getClass().getName());
+                                               " already used by " + oldValidationScope.getName());
         }
         scopesByIface.put(scopeInterface, scope);
 

@@ -105,12 +105,12 @@ public class PdoMojo extends AbstractWizardMojo {
   /**
    * Updates the classIds in the profiles.
    *
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if class ids overlap or model insane
    */
   private void updateClassIDs() throws MojoExecutionException {
 
     // profiles sorted by classid, highest first
-    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>(new Comparator<PdoProfile>() {
+    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>(new Comparator<>() {
       @Override
       public int compare(PdoProfile o1, PdoProfile o2) {
         return o2.getMinClassId() - o1.getMinClassId();

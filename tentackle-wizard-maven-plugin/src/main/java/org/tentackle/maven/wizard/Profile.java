@@ -169,8 +169,9 @@ public class Profile {
     if (info.getEmptyDuplicates() != null) {    // !empty if != null
       StringBuilder buf = new StringBuilder();
       for (PackageInfo other: info.getEmptyDuplicates()) {
-        buf.append("\nempty split package detected: " + info.getName() + " in " + info.getProject().getName() +
-                       " and " + other.getProject().getName());
+        buf.append("\nempty split package detected: ").append(info.getName()).
+            append(" in ").append(info.getProject().getName()).
+            append(" and ").append(other.getProject().getName());
       }
       buf.deleteCharAt(0);    // remove leading newline
       throw new MojoExecutionException(buf.toString());

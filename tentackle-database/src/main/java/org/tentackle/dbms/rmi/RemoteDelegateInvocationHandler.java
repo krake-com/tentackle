@@ -323,12 +323,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       if (!duration.isValid()) {
         duration.end();
       }
-      if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
-        durationExceeded = true;
-      }
-      else {
-        durationExceeded = false;
-      }
+      durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
       if (collectStatistics && isMDCValid()) {
         delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), duration);
       }

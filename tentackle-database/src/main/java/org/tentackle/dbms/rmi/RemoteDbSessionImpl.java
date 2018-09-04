@@ -865,9 +865,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
       return delegate;
     }
-    catch (RemoteException remex) {
-      throw remex;
-    }
     catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
            NoSuchMethodException | InvocationTargetException ex)  {
       throw new RemoteException("coudn't create delegate for " + classname, ex);

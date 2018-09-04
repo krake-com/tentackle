@@ -561,9 +561,6 @@ public class DefaultFxComponentBinder extends AbstractBinder implements FxCompon
         }
       }
     }
-    catch (BindingException bx) {
-      throw bx;
-    }
     catch (IllegalAccessException | IllegalArgumentException ex) {
       throw new BindingException("cannot access " + field, ex);
     }

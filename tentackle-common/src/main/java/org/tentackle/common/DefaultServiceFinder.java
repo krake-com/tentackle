@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -72,7 +73,7 @@ public class DefaultServiceFinder implements ServiceFinder {
     else  {
       while (servicePath.startsWith("/")) {
         // cut leading slashes, if any
-        servicePath = servicePath.substring(1, servicePath.length());
+        servicePath = servicePath.substring(1);
       }
       if (!servicePath.endsWith("/")) {
         // add trailing slash if missing
@@ -364,7 +365,7 @@ public class DefaultServiceFinder implements ServiceFinder {
    * @param services the implementing services map
    */
   protected void parseURL(URL url, String serviceName, Map<String, URL> services) {
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), "utf-8"))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
       String line;
       while ((line = reader.readLine()) != null) {
         line = normalizeLine(line);

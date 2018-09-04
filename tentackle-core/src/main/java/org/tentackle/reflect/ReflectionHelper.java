@@ -633,7 +633,7 @@ public final class ReflectionHelper {
         }
         catch (IllegalAccessException | InvocationTargetException | RuntimeException ex) {
           throw new TentackleRuntimeException("cannot retrieve '" + path + "' in " +
-                                              clazz.getClass().getName() + " by method " + method.getName(), ex);
+                                              clazz.getName() + " by method " + method.getName(), ex);
         }
       }
     }

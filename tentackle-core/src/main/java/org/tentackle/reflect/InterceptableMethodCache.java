@@ -186,12 +186,7 @@ public class InterceptableMethodCache {
       if (!duration.isValid()) {
         duration.end();
       }
-      if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
-        durationExceeded = true;
-      }
-      else {
-        durationExceeded = false;
-      }
+      durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
       if (collectStatistics) {
         methodStats.countMethodInvocation(method, delegate.getClass(), duration);
       }

@@ -17,10 +17,6 @@
  */
 
 /**
- * Application lifecycle.
- */
-
-/**
  * LockManager default implementation.
  */
 package org.tentackle.persist.lock;

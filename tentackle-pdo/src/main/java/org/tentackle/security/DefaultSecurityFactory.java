@@ -94,7 +94,7 @@ public class DefaultSecurityFactory implements SecurityFactory {
         Class<? extends Permission> oldPermission = permissionInterfacesByName.put(name, permissionInterface);
         if (oldPermission != null) {
           throw new SecurityException("permission name '" + name + "' of " + permissionImplementation.getName() +
-                  " already used by " + oldPermission.getClass().getName());
+                  " already used by " + oldPermission.getName());
         }
         permissionsByIface.put(permissionInterface, permission);
         permissions.add(permission);

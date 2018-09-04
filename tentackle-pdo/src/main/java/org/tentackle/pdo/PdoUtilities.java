@@ -547,10 +547,9 @@ public class PdoUtilities {
       }
       Persistent anno = method.getAnnotation(Persistent.class);
       if (anno != null) {   // getter annotated with @Persistent
-        Method getter = method;
         Method setter = null;
         try {
-          setter = clazz.getMethod("set" + StringHelper.firstToUpper(name), getter.getReturnType());
+          setter = clazz.getMethod("set" + StringHelper.firstToUpper(name), method.getReturnType());
         }
         catch (NoSuchMethodException e) {
           // no setter
@@ -558,7 +557,7 @@ public class PdoUtilities {
         PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
                               PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
                                 PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
-        members.add(new PdoMember(type, name, getter, setter, anno.component(), anno.parent(),
+        members.add(new PdoMember(type, name, method, setter, anno.component(), anno.parent(),
                                   method.getAnnotation(DomainKey.class) != null,
                                   anno.comment(), anno.ordinal()));
       }

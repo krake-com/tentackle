@@ -109,12 +109,8 @@ public class PdoGenerator extends AbstractGenerator {
       // save class ID status, if any classid created
       if (classId != null) {
         statusDir.mkdirs();
-        FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT));
-        try {
+        try (FileWriter statusWriter = new FileWriter(new File(statusDir, profile.getName() + Constants.CLASSID_EXT))) {
           statusWriter.append(Integer.toString(classId + 1));
-        }
-        finally {
-          statusWriter.close();
         }
       }
     }

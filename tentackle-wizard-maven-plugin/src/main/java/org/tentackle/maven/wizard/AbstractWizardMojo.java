@@ -349,8 +349,9 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
           if (splitPkg != null) {
             if (splitPkg.isContainingJavaFiles()) {
               if (infoContaingFiles) {
-                buf.append("\nsplit package detected: " + info.getName() + " in " + project.getName() +
-                               " and " + splitPkg.getProject().getName());
+                buf.append("\nsplit package detected: ").append(info.getName()).
+                    append(" in ").append(project.getName()).
+                    append(" and ").append(splitPkg.getProject().getName());
               }
               // other package is empty: keep existing with java files
               continue;

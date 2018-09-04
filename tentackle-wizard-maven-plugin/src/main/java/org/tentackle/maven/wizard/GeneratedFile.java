@@ -58,12 +58,8 @@ public class GeneratedFile {
    * @throws TemplateException if some template error
    */
   public void generate() throws IOException, TemplateException {
-    Writer writer = new FileWriter(outputFile);
-    try {
+    try (Writer writer = new FileWriter(outputFile)) {
       cfg.getTemplate(templateName).process(model, writer);
-    }
-    finally {
-      writer.close();
     }
   }
 }
