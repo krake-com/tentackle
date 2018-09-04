@@ -21,20 +21,22 @@
 
 package org.tentackle.fx.rdc.table;
 
-import java.io.File;
 import javafx.collections.ObservableList;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
+
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.component.FxTableView;
-import org.tentackle.log.Logger;
 import org.tentackle.fx.rdc.FileUtilities;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+
+import java.io.File;
 
 
 

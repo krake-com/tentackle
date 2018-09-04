@@ -23,6 +23,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.pdo.DomainContext;

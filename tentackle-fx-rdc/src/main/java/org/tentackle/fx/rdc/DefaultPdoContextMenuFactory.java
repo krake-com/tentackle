@@ -18,18 +18,20 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.reflect.ClassToServicesMapper;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.reflect.ClassToServicesMapper;
 
 /**
  * The default GUI provider factory.

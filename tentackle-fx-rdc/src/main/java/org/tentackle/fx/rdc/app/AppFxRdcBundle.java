@@ -18,9 +18,10 @@
 
 package org.tentackle.fx.rdc.app;
 
-import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
 import org.tentackle.common.BundleFactory;
+
+import java.util.ResourceBundle;
 
 /**
  * Bundle for app-package in tentackle-fx-rdc.

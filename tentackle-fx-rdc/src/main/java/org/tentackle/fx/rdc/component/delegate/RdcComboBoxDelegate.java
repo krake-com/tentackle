@@ -20,6 +20,7 @@
 package org.tentackle.fx.rdc.component.delegate;
 
 import javafx.collections.ObservableList;
+
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;

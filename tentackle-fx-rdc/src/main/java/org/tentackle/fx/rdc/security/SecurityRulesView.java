@@ -19,9 +19,6 @@
 
 package org.tentackle.fx.rdc.security;
 
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -31,6 +28,7 @@ import javafx.scene.control.Tab;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -55,6 +53,10 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.validate.ValidationFailedException;
+
+import java.net.URL;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 
 /**
  * CRUD controller for PDOs.

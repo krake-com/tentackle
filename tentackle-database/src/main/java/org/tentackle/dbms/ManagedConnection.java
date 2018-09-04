@@ -475,7 +475,7 @@ public class ManagedConnection {
         }
       }
       else if (isMDCValid()) {
-        LOGGER.fine(() -> toDiagnosticString());
+        LOGGER.fine(this::toDiagnosticString);
       }
       this.db = null;
       db.setConnection(null);
@@ -842,7 +842,7 @@ public class ManagedConnection {
     assertAttached();
     try {
       if (withLog) {
-        LOGGER.info(() -> toDiagnosticString());
+        LOGGER.info(this::toDiagnosticString);
       }
       getConnection().rollback();
       // unmark all statements marked ready

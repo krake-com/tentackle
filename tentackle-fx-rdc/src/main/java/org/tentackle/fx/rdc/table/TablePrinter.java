@@ -18,11 +18,6 @@
 
 package org.tentackle.fx.rdc.table;
 
-import java.net.URL;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -39,6 +34,7 @@ import javafx.scene.transform.Scale;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+
 import org.tentackle.common.Timestamp;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -57,6 +53,12 @@ import org.tentackle.misc.Duration;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
+
+import java.net.URL;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * A controller to print a table.

@@ -30,6 +30,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.bind.BindableElement;
 import org.tentackle.bind.BindingMember;
@@ -40,7 +41,6 @@ import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.bind.FxBindingFactory;
-import org.tentackle.fx.bind.FxComponentBinder;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;

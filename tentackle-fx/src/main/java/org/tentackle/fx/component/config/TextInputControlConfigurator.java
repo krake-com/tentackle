@@ -44,8 +44,10 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
 
     // Shift-Backspace clears the field
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
+
       if (event.getCode() == KeyCode.BACK_SPACE && event.isShiftDown() &&
           !event.isControlDown() && !event.isAltDown() && !event.isMetaDown()) {
+
         if (event.getEventType() == KeyEvent.KEY_PRESSED &&
             !control.isDisabled() && control.isEditable()) {
           control.clear();
@@ -61,18 +63,16 @@ public class TextInputControlConfigurator<T extends TextInputControl> extends Co
 
     control.addEventFilter(KeyEvent.ANY, (KeyEvent event) -> {
 
-      switch (event.getCode()) {
-        case ENTER:
-          if (!event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
-              event.getEventType() == KeyEvent.KEY_PRESSED) {
-            if (event.isShiftDown()) {
-              focusPrevious(control);
-            }
-            else {
-              focusNext(control);
-            }
-          }
-          break;
+      if (event.getCode() == KeyCode.ENTER &&
+          !event.isControlDown() && !event.isAltDown() && !event.isMetaDown() &&
+          event.getEventType() == KeyEvent.KEY_PRESSED) {
+
+        if (event.isShiftDown()) {
+          focusPrevious(control);
+        }
+        else {
+          focusNext(control);
+        }
       }
     });
   }

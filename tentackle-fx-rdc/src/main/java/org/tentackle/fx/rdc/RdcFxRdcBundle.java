@@ -18,10 +18,11 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.ResourceBundle;
 import org.tentackle.common.Bundle;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.common.LocaleProvider;
+
+import java.util.ResourceBundle;
 
 /**
  * Bundle for rdc-package in tentackle-swing-rdc.

@@ -19,9 +19,10 @@
 
 package org.tentackle.fx.rdc.service;
 
+import org.tentackle.common.ModuleHook;
+
 import java.util.Locale;
 import java.util.ResourceBundle;
-import org.tentackle.common.ModuleHook;
 
 /**
  * Hook for the fx rdc module.

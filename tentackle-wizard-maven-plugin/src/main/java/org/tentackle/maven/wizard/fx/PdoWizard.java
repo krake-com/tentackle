@@ -151,8 +151,8 @@ public class PdoWizard extends AbstractFxController {
       genPersistenceInterface.updateView();
       genPersistenceImplementation.updateView();
     });
-    genInheritanceType.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
-    genSuperEntity.addViewToModelListener(() -> updateViewOfClassIdAndTableName());
+    genInheritanceType.addViewToModelListener(this::updateViewOfClassIdAndTableName);
+    genSuperEntity.addViewToModelListener(this::updateViewOfClassIdAndTableName);
 
     genTableName.focusedProperty().addListener((observable, oldValue, newValue) -> {
       if (newValue && gen.getProfile() != null && gen.getProfile().getTablePrefix() != null &&
@@ -165,15 +165,14 @@ public class PdoWizard extends AbstractFxController {
 
     generate.setOnAction(e -> {
       if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() != null &&
-          !Fx.question("do you really don't want a domain implementation?", false)) {
-        return;
-      }
-      else if (gen.getPersistenceImplementation() == null && gen.getDomainImplementation() != null &&
-               !Fx.question("do you really don't want a persistence implementation?", false)) {
-        return;
-      }
-      else if (gen.getDomainImplementation() == null && gen.getPersistenceImplementation() == null &&
-               !Fx.question("do you really don't want the implementation files?", false)) {
+          !Fx.question("do you really don't want a domain implementation?", false)
+          ||
+          gen.getPersistenceImplementation() == null && gen.getDomainImplementation() != null &&
+          !Fx.question("do you really don't want a persistence implementation?", false)
+          ||
+          gen.getDomainImplementation() == null && gen.getPersistenceImplementation() == null &&
+          !Fx.question("do you really don't want the implementation files?", false)) {
+
         return;
       }
 

@@ -187,15 +187,24 @@ public class PdoMojo extends AbstractWizardMojo {
   }
 
 
+  /**
+   * Loads the class id from the status file if exists.
+   *
+   * @param profileName the name of the profile
+   * @return the classid, null if missing or empty or does not contain a number
+   */
   private Integer loadClassIdFromStatus(String profileName) {
     Integer classId = null;
     try {
-      BufferedReader statusReader = new BufferedReader(new FileReader(new File(getStatusDir(), profileName + Constants.CLASSID_EXT)));
-      String line = statusReader.readLine();
-      statusReader.close();
-      return Integer.parseInt(line);
+      try (BufferedReader statusReader =
+               new BufferedReader(
+                   new FileReader(
+                       new File(getStatusDir(), profileName + Constants.CLASSID_EXT)))) {
+
+        classId = Integer.parseInt(statusReader.readLine());
+      }
     }
-    catch (IOException e) {
+    catch (NumberFormatException | IOException e) {
       // this is okay!
     }
     return classId;

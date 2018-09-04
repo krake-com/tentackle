@@ -19,14 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Point2D;
@@ -39,6 +31,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.fx.Fx;
@@ -47,6 +40,15 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 
 interface RdcUtilities$Singleton {
   RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);

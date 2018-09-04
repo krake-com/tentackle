@@ -21,6 +21,7 @@ package org.tentackle.fx.rdc.app;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.log.Logger;

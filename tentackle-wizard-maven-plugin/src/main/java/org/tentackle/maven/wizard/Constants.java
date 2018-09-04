@@ -45,4 +45,6 @@ public class Constants {
 
   /** template category for operations. */
   public static final String CATEGORY_OPERATION = "operation";
+
+  private Constants() {}
 }

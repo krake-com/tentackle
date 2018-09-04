@@ -25,6 +25,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;

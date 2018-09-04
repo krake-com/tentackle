@@ -13,17 +13,11 @@
 
 package org.tentackle.fx.rdc.security;
 
-import java.net.URL;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeMap;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
+
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -38,6 +32,14 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
+
+import java.net.URL;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.TreeMap;
 
 
 

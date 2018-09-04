@@ -19,7 +19,6 @@
 package org.tentackle.maven.wizard.fx;
 
 import freemarker.template.TemplateException;
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 
 import org.tentackle.bind.Bindable;
@@ -35,10 +34,6 @@ import org.tentackle.maven.wizard.Constants;
 import org.tentackle.maven.wizard.OperationGenerator;
 import org.tentackle.maven.wizard.OperationMojo;
 import org.tentackle.maven.wizard.OperationProfile;
-import org.tentackle.maven.wizard.PdoProfile;
-import org.tentackle.model.Entity;
-import org.tentackle.model.Model;
-import org.tentackle.model.ModelException;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
@@ -128,12 +123,8 @@ public class OperationWizard extends AbstractFxController {
       genPersistenceInterface.updateView();
       genPersistenceImplementation.updateView();
     });
-    genDomainInterface.addModelToViewListener(() -> {
-      genDomainImplementation.updateView();
-    });
-    genPersistenceInterface.addModelToViewListener(() -> {
-      genPersistenceImplementation.updateView();
-    });
+    genDomainInterface.addModelToViewListener(genDomainImplementation::updateView);
+    genPersistenceInterface.addModelToViewListener(genPersistenceImplementation::updateView);
 
     cancel.setOnAction(e -> close());
 

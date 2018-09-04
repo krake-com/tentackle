@@ -18,17 +18,19 @@
 
 package org.tentackle.fx.rdc;
 
-import java.awt.Desktop;
-import java.io.File;
-import java.io.IOException;
-import java.util.prefs.BackingStoreException;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.prefs.PersistedPreferences;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.util.prefs.BackingStoreException;
 
 interface FileUtilities$Singleton {
   FileUtilities INSTANCE = ServiceFactory.createService(FileUtilities.class);

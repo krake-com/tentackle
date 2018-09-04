@@ -19,8 +19,10 @@
 
 package org.tentackle.fx.rdc.apt;
 
-import java.util.List;
-import java.util.Set;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
+import org.tentackle.common.AnnotationProcessor;
+import org.tentackle.pdo.PersistentDomainObject;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -31,9 +33,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractServiceAnnotationProcessor;
-import org.tentackle.common.AnnotationProcessor;
-import org.tentackle.pdo.PersistentDomainObject;
+import java.util.List;
+import java.util.Set;
 
 import static javax.lang.model.SourceVersion.RELEASE_10;
 

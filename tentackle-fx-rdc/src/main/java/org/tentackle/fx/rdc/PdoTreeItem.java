@@ -19,13 +19,15 @@
 
 package org.tentackle.fx.rdc;
 
+import javafx.collections.ObservableList;
+import javafx.scene.control.TreeItem;
+
+import org.tentackle.pdo.PersistentDomainObject;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javafx.collections.ObservableList;
-import javafx.scene.control.TreeItem;
-import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * Tree item for a PDO.

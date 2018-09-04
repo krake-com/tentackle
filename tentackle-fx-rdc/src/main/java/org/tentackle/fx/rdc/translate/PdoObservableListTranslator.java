@@ -18,10 +18,8 @@
 
 package org.tentackle.fx.rdc.translate;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
 import javafx.collections.ObservableList;
+
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.fx.component.FxTableView;
@@ -31,6 +29,10 @@ import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.fx.translate.ObservableListTranslator;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
 
 /**
  * List translator.<br>

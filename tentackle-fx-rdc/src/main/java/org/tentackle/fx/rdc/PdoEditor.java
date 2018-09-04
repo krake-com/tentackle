@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.TreeSet;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.pdo.DomainContext;
@@ -27,6 +26,8 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.validate.ValidationMapper;
+
+import java.util.TreeSet;
 
 /**
  * FxController to edit a PDO.

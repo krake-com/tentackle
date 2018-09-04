@@ -7,7 +7,6 @@
 package org.tentackle.fx.component.delegate;
 
 import javafx.application.Platform;
-import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
 
@@ -15,7 +14,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
-import org.tentackle.fx.component.FxTextField;
 
 /**
  * Delegate for FxTextField.

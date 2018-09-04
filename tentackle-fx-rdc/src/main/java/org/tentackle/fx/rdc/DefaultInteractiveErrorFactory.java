@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.TreeSet;
 import org.tentackle.bind.Binder;
 import org.tentackle.bind.Binding;
 import org.tentackle.common.Service;
@@ -28,6 +27,8 @@ import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
+
+import java.util.TreeSet;
 
 /**
  * Default interactive error factory.

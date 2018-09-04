@@ -20,6 +20,8 @@ package org.tentackle.fx.rdc.table;
 
 import javafx.print.PrinterJob;
 import javafx.stage.Stage;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Constants;
@@ -39,8 +41,6 @@ import org.tentackle.pdo.PdoMember;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;

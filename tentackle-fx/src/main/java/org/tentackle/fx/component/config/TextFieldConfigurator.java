@@ -20,7 +20,6 @@
 package org.tentackle.fx.component.config;
 
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyEvent;
 
 import org.tentackle.fx.ConfiguratorService;
 

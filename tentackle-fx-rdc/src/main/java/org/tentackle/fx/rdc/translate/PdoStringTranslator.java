@@ -115,13 +115,13 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
         if (event.getCode() == KeyCode.F2) {
           event.consume();
           if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-            Platform.runLater(() -> edit());
+            Platform.runLater(this::edit);
           }
         }
         else if (event.getCode() == KeyCode.F3) {
           event.consume();
           if (event.getEventType() == KeyEvent.KEY_PRESSED) {
-            Platform.runLater(() -> search());
+            Platform.runLater(this::search);
           }
         }
       }

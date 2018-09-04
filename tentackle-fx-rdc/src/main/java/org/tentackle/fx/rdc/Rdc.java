@@ -19,17 +19,19 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.function.Consumer;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.TreeCell;
 import javafx.stage.Modality;
 import javafx.stage.Window;
-import org.tentackle.fx.rdc.app.DesktopApplication;
+
 import org.tentackle.fx.FxUtilities;
+import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.function.Consumer;
 
 /**
  * Collected factory methods for FX-RDC-related stuff.<br>

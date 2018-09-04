@@ -19,15 +19,17 @@
 
 package org.tentackle.fx.rdc.app;
 
-import java.text.MessageFormat;
 import javafx.application.Platform;
 import javafx.scene.Parent;
+
 import org.tentackle.fx.Fx;
 import org.tentackle.log.Logger;
 import org.tentackle.session.AlreadyLoggedInException;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionInfoIncompatibleException;
+
+import java.text.MessageFormat;
 
 /**
  * To handle login failed exceptions.

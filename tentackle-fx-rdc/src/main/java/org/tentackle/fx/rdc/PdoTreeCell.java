@@ -19,14 +19,16 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.Objects;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.input.MouseEvent;
+
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.Objects;
 
 /**
  * A PDO tree cell.

@@ -28,7 +28,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.maven.wizard.fx.OperationWizard;
-import org.tentackle.maven.wizard.fx.PdoWizard;
 
 import java.util.List;
 import java.util.Map;

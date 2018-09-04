@@ -19,25 +19,27 @@
 
 package org.tentackle.fx.rdc.login;
 
-import java.net.URL;
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+
 import org.tentackle.app.AbstractApplication;
-import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
 import org.tentackle.session.SessionInfo;
+
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * Login controller.
