@@ -30,6 +30,8 @@ public class PdoTemplateModel extends HashMap<String, String> {
    * @param generator the PDO generator
    */
   public PdoTemplateModel(PdoGenerator generator) {
+    putValue("profile", generator.getProfile().getName());
+
     putValue("pdoPackage", generator.getProfile().getPdoPackage());
     putValue("domainPackage", generator.getProfile().getDomainPackage());
     putValue("persistencePackage", generator.getProfile().getPersistencePackage());

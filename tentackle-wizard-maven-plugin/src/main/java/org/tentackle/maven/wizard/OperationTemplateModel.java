@@ -30,6 +30,8 @@ public class OperationTemplateModel extends HashMap<String, String> {
    * @param generator the operation generator
    */
   public OperationTemplateModel(OperationGenerator generator) {
+    putValue("profile", generator.getProfile().getName());
+    
     putValue("operationPackage", generator.getProfile().getOperationPackage());
     putValue("domainPackage", generator.getProfile().getDomainPackage());
     putValue("persistencePackage", generator.getProfile().getPersistencePackage());
