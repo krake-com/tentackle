@@ -133,7 +133,7 @@ public abstract class FxContainerDelegate extends FxControlDelegate implements F
   public void updateModel() {
     for (Object obj: getContainer().getComponents()) {
       if (obj instanceof FxControl) {
-        ((FxControl) obj).updateView();
+        ((FxControl) obj).updateModel();
       }
     }
   }
