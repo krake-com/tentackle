@@ -81,7 +81,7 @@ public class BackendInfo {
     if (url == null || url.isEmpty()) {
       throw new BackendException("url missing");
     }
-    this.url = url;
+
     this.user = user;
     this.password = password;
     this.schemas = schemas;
@@ -129,9 +129,15 @@ public class BackendInfo {
       jndiDataSource = null;
     }
     else {
+      // JDBC
+      if (!url.startsWith(Constants.BACKEND_JDBC_URL_INTRO)) {
+        url = Constants.BACKEND_JDBC_URL_INTRO + url;
+      }
       backend = BackendFactory.getInstance().getBackendByUrl(url);
       jndiDataSource = null;
     }
+
+    this.url = url;
   }
 
 

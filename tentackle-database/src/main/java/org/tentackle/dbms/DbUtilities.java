@@ -18,14 +18,19 @@
 
 package org.tentackle.dbms;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.io.ReconnectionPolicy;
+import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
+
+import java.io.StringBufferInputStream;
+import java.util.Properties;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 
 interface DbUtilities$Singleton {
@@ -202,6 +207,43 @@ public class DbUtilities {
    */
   public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
     // the default does nothing
+  }
+
+  /**
+   * Applies the given backend configuration to properties.
+   *
+   * @param backendConfiguration the backend configuration
+   * @param properties the session properties.
+   */
+  public void applyBackendConfiguration(BackendConfiguration backendConfiguration, Properties properties) {
+    if (backendConfiguration.getUser() != null) {
+      properties.setProperty(Constants.BACKEND_USER, backendConfiguration.getUser());
+    }
+    if (backendConfiguration.getPassword() != null) {
+      properties.setProperty(Constants.BACKEND_PASSWORD, backendConfiguration.getPassword());
+    }
+    properties.setProperty(Constants.BACKEND_URL, backendConfiguration.getUrl());
+    if (backendConfiguration.getDriver() != null) {
+      // ex.: "org.postgresql.Driver:jar:file:/usr/share/java/postgresql.jar!/"
+      properties.setProperty(Constants.BACKEND_DRIVER,
+          backendConfiguration.getDriver().getDriver() + ":jar:file:" + backendConfiguration.getDriver().getUrl() + "!/");
+    }
+    if (backendConfiguration.getOptions() != null) {
+      for (String line: backendConfiguration.getOptions().split("\n")) {
+        String key;
+        String value;
+        int ndx = line.indexOf("=");
+        if (ndx >= 0) {
+          key = line.substring(0, ndx).trim();
+          value = line.substring(ndx + 1).trim();
+        }
+        else {
+          key = line.trim();
+          value = "";
+        }
+        properties.setProperty(key, value);
+      }
+    }
   }
 
 }

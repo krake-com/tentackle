@@ -27,15 +27,19 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.Constants;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.component.FxLabel;
 import org.tentackle.fx.component.FxPasswordField;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
+import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
 
 import java.net.URL;
@@ -51,10 +55,17 @@ public class Login extends AbstractFxController {
 
   private static final Logger LOGGER = Logger.get(Login.class);
 
-  private ResourceBundle resources;     // localization bundle
-  private SessionInfo sessionInfo;      // the session info
-  private boolean autoLogin;            // true if login immediately
+  private ResourceBundle resources;           // localization bundle
+  private SessionInfo sessionInfo;            // the session info
+  private boolean autoLogin;                  // true if login immediately
+  private boolean backendFromSystemPrefs;     // if select backend from system preferences
 
+  @FXML
+  private FxLabel backendLabel;
+  @FXML
+  private FxComboBox<BackendConfiguration> backendField;
+  @FXML
+  private FxButton backendButton;
 
   @FXML
   private FxTextField usernameField;
@@ -87,6 +98,23 @@ public class Login extends AbstractFxController {
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
     passwordField.setAutoSelect(true);
+    backendButton.setGraphic(Fx.createImageView("edit"));
+    backendButton.setOnAction(e -> {
+      Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs);
+      loadBackendConfigurations();
+    });
+
+    backendField.setOnAction(event -> {
+      BackendConfiguration backendConfiguration = backendField.getValue();
+      if (backendConfiguration != null && backendConfiguration.getUrl() != null &&
+          backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
+          backendConfiguration.getUser() != null) {
+        // copy the user and password from the backend config
+        // (for jdbc/jndi the user/pw is used to connect to the database only)
+        usernameField.setText(backendConfiguration.getUser());
+        passwordField.setText(backendConfiguration.getPassword());
+      }
+    });
   }
 
   @Override
@@ -101,6 +129,12 @@ public class Login extends AbstractFxController {
     });
   }
 
+  /**
+   * Sets the initial focus.
+   */
+  public void requestInitialFocus() {
+    Platform.runLater(usernameField::requestFocus);
+  }
 
   /**
    * Sets the session info.
@@ -111,6 +145,22 @@ public class Login extends AbstractFxController {
     this.sessionInfo = sessionInfo;
     usernameField.setText(sessionInfo.getUserName());
     passwordField.setText(sessionInfo.getPasswordAsString());
+    String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
+    boolean backendVisible = false;
+    if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
+      backendVisible = true;
+      backendFromSystemPrefs = false;
+    }
+    else if (Constants.BACKEND_INFO_SYSTEM.equals(backendInfo)) {
+      backendVisible = true;
+      backendFromSystemPrefs = true;
+    }
+    backendLabel.setManaged(backendVisible);
+    backendField.setManaged(backendVisible);
+    backendButton.setManaged(backendVisible);
+    if (backendVisible) {
+      loadBackendConfigurations();
+    }
   }
 
 
@@ -134,6 +184,11 @@ public class Login extends AbstractFxController {
       sessionInfo.setUserName(usernameField.getText());
       String pwd = passwordField.getText();
       sessionInfo.setPassword(pwd == null ? null : pwd.toCharArray());
+      BackendConfiguration backendConfiguration = backendField.getValue();
+      if (backendConfiguration != null) {
+        String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO) + ":" + backendConfiguration;
+        sessionInfo.getProperties().setProperty(Constants.BACKEND_INFO, backendInfo);
+      }
       setProgress(0.01);
       ((DesktopApplication) AbstractApplication.getRunningApplication()).login(getView(), sessionInfo);
     }
@@ -205,4 +260,8 @@ public class Login extends AbstractFxController {
     return java.awt.Toolkit.getDefaultToolkit().getLockingKeyState(java.awt.event.KeyEvent.VK_CAPS_LOCK);
   }
 
+  private void loadBackendConfigurations() {
+    backendField.getItems().clear();
+    backendField.getItems().addAll(BackendConfiguration.getBackendConfigurations(sessionInfo.getApplicationName(), backendFromSystemPrefs).values());
+  }
 }

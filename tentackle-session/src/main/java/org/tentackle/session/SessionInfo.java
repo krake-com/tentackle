@@ -192,11 +192,10 @@ public interface SessionInfo extends Immutable, Serializable {
    * Gets the connection properties.<br>
    * The the properties are not set so far, the method will load
    * the properties file by adding the extension {@code ".properties"}
-   * to {@code dbPropertiesName} (if it does not contain an extension already).<br>
+   * to {@link #getPropertiesName()} (if it does not contain an extension already).<br>
    * If there is no such file, the properties will be read as a resource according
    * to the classpath.<br>
-   * If all failes the db errorhandler
-   * will be invoked (which will usually terminate the application).
+   * If all failes a {@link PersistenceException} is thrown.
    *
    * @return the connection properties, never null
    */

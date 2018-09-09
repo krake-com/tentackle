@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<TabPane tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.login.Backends">
+   <tabs>
+      <Tab fx:id="backendTab" text="%backends">
+         <content>
+            <BorderPane>
+               <left>
+                  <BorderPane BorderPane.alignment="CENTER">
+                     <center>
+                        <ListView fx:id="backends" prefHeight="10.0" />
+                     </center>
+                  </BorderPane>
+               </left>
+               <center>
+                  <GridPane fx:id="backendPane" hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
+                    <columnConstraints>
+                      <ColumnConstraints minWidth="10.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="%backendname" GridPane.halignment="RIGHT">
+                           <GridPane.margin>
+                              <Insets />
+                           </GridPane.margin>
+                        </Label>
+                        <Label text="%backenddriver" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+                        <Label text="%backenduser" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
+                        <Label text="%backendpassword" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
+                        <TextField fx:id="backendName" maxWidth="-Infinity" GridPane.columnIndex="1" />
+                        <ChoiceBox fx:id="backendDriver" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <TextField fx:id="backendUser" maxWidth="-Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                        <PasswordField fx:id="backendPassword" maxWidth="-Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                        <Label text="%backendUrl" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                        <Label text="%backendOptions" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+                        <TextField fx:id="backendUrl" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <TextArea fx:id="backendOptions" prefRowCount="4" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                     </children>
+                     <BorderPane.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </BorderPane.margin>
+                  </GridPane>
+               </center>
+               <bottom>
+                  <HBox spacing="5.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <Button fx:id="addBackendButton" mnemonicParsing="false" />
+                        <Button fx:id="removeBackendButton" mnemonicParsing="false" />
+                     </children>
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </HBox>
+               </bottom>
+            </BorderPane>
+         </content>
+      </Tab>
+      <Tab fx:id="driverTab" text="%drivers">
+         <content>
+            <BorderPane>
+               <left>
+                  <BorderPane BorderPane.alignment="CENTER">
+                     <center>
+                        <ListView fx:id="drivers" prefHeight="10.0" />
+                     </center>
+                  </BorderPane>
+               </left>
+               <center>
+                  <GridPane fx:id="driverPane" hgap="5.0" vgap="5.0" BorderPane.alignment="CENTER">
+                     <columnConstraints>
+                        <ColumnConstraints minWidth="10.0" />
+                        <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
+                     </columnConstraints>
+                     <rowConstraints>
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+                     </rowConstraints>
+                     <BorderPane.margin>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </BorderPane.margin>
+                     <children>
+                        <Label text="%drivername" GridPane.halignment="RIGHT" />
+                        <Label text="%driverdriver" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+                        <Label text="%driverurl" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+                        <TextField fx:id="driverName" maxWidth="-Infinity" GridPane.columnIndex="1" />
+                        <TextField fx:id="driverDriver" maxWidth="-Infinity" prefColumnCount="30" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <TextField fx:id="driverUrl" prefColumnCount="40" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                        <Button fx:id="driverButton" mnemonicParsing="false" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                     </children>
+                  </GridPane>
+               </center>
+               <bottom>
+                  <HBox spacing="5.0" BorderPane.alignment="CENTER">
+                     <children>
+                        <Button fx:id="addDriverButton" mnemonicParsing="false" />
+                        <Button fx:id="removeDriverButton" mnemonicParsing="false" />
+                     </children>
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </HBox>
+               </bottom>
+            </BorderPane>
+         </content>
+      </Tab>
+   </tabs>
+</TabPane>

@@ -1,0 +1,341 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+package org.tentackle.session;
+
+import org.tentackle.bind.Bindable;
+import org.tentackle.validate.ScopeConfigurator;
+import org.tentackle.validate.Validateable;
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationScope;
+import org.tentackle.validate.ValidationUtilities;
+import org.tentackle.validate.scope.ChangeableScope;
+import org.tentackle.validate.scope.MandatoryScope;
+import org.tentackle.validate.validator.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
+
+/**
+ * Configuration for a database backend.<br>
+ * The configuration is stored via the standard {@link Preferences} and provides
+ * the paramaters necessary to connect to the database backend.<br>
+ * The config refers to a {@link DriverConfiguration} that loads the corresponding driver.
+ * <p>
+ * Whether username and password are optional depends on the use case. If the configuration
+ * is used by a standard DesktopApplication (see fx-rdc module), the user/password is mandatory
+ * for local sessions (with driver) and ignored for remote sessions (without driver).<br>
+ * Other application types may enforce their own rules.
+ * <p>
+ * Notice that the implementation does not depend on the tentackle-database or tentackle-sql module!
+ */
+public class BackendConfiguration extends AbstractSessionConfiguration {
+
+  private static final String NODE_NAME = "backends";
+  private static final String URL_KEY = "url";
+  private static final String OPTIONS_KEY = "options";
+  private static final String DRIVER_KEY = "driver";
+  private static final String USER_KEY = "user";
+  private static final String PASSWORD_KEY = "password";
+
+
+  /**
+   * Loads all backend configurations for a given application.
+   *
+   * @param application the application name
+   * @param system true if load from system preferences, else user preferences
+   * @return the backend configurations
+   */
+  public static Map<String, BackendConfiguration> getBackendConfigurations(String application, boolean system) {
+    Map<String, BackendConfiguration> backends = new TreeMap<>();    // sort by name
+    Preferences applicationPrefs = getPrefNode(system).node(application);
+    try {
+      for (String name : applicationPrefs.childrenNames()) {
+        Preferences backendPrefs = applicationPrefs.node(name);
+        String driverName = backendPrefs.get(DRIVER_KEY, null);
+        String url = backendPrefs.get(URL_KEY, null);
+        String options = backendPrefs.get(OPTIONS_KEY, null);
+        DriverConfiguration driver = driverName == null ? null : DriverConfiguration.getDriverConfigurations(system).get(driverName);
+        String user = backendPrefs.get(USER_KEY, null);
+        String password = backendPrefs.get(PASSWORD_KEY, null);
+        backends.put(name, new BackendConfiguration(application, name, url, options, driver, user, password));
+        // else ignore silently (we don't have a logger available)
+      }
+    }
+    catch (BackingStoreException bx) {
+      throw new PersistenceException("cannot load backend configurations for '" + application + "'", bx);
+    }
+    return backends;
+  }
+
+  /**
+   * Removes all backend configurations for given application.
+   *
+   * @param application the application name
+   * @param system true if load from system preferences, else user preferences
+   */
+  public static void removeBackendConfigurations(String application, boolean system) {
+    Preferences prefs = getPrefNode(system);
+    try {
+      prefs.node(application).removeNode();
+      prefs.flush();
+    }
+    catch (BackingStoreException bx) {
+      throw new PersistenceException("removing backend configurations for '" + application + "' failed", bx);
+    }
+  }
+
+  /**
+   * Gets the configuration parent node.
+   *
+   * @param system true if load from system preferences, else user preferences
+   * @return the node
+   */
+  private static Preferences getPrefNode(boolean system) {
+    return getPrefNode(NODE_NAME, system);
+  }
+
+
+  private String application;             // the application name
+  private String url;                     // the host- or service url
+  private String options;                 // other options (multiline!)
+  private DriverConfiguration driver;     // the driver, null if remote
+  private String user;                    // the user name
+  private String password;                // the user's password
+
+  /**
+   * Creates a backend configuration.
+   *
+   * @param application the application name
+   * @param name the symbolic backend name
+   * @param url the host- or service url
+   * @param driver the symbolic driver name, see {@link DriverConfiguration}, null or empty if remote
+   * @param user the optional username, null or empty if none
+   * @param password the optional password, null or empty if none
+   */
+  public BackendConfiguration(String application, String name, String url, String options, DriverConfiguration driver, String user, String password) {
+    setName(name);
+    this.application = application;
+    this.url = url;
+    this.options = options;
+    this.driver = driver;
+    this.user = user;
+    this.password = password;
+  }
+
+  /**
+   * Gets the application name.
+   *
+   * @return the application name
+   */
+  @Bindable
+  @NotNull
+  public String getApplication() {
+    return application;
+  }
+
+  /**
+   * Sets the application name.
+   *
+   * @param application the application name
+   */
+  @Bindable
+  public void setApplication(String application) {
+    this.application = application;
+  }
+
+
+  /**
+   * Gets the host- or service url.
+   *
+   * @return the url
+   */
+  @Bindable
+  @NotNull
+  public String getUrl() {
+    return url;
+  }
+
+  /**
+   * Sets the host- or service url.
+   *
+   * @param url the url
+   */
+  @Bindable
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  /**
+   * Gets other options.<br>
+   * Each option goes into a separate line.
+   *
+   * @return the options
+   */
+  @Bindable
+  public String getOptions() {
+    return options;
+  }
+
+  /**
+   * Sets the options.
+   *
+   * @param options the options, null if none
+   */
+  @Bindable
+  public void setOptions(String options) {
+    this.options = options;
+  }
+
+  /**
+   * Gets the driver configuration.
+   *
+   * @return the driver, null if remote or from classpath
+   */
+  @Bindable
+  public DriverConfiguration getDriver() {
+    return driver;
+  }
+
+  /**
+   * Sets the driver configuration.
+   *
+   * @param driver the driver, null if remote or from classpath
+   */
+  @Bindable
+  public void setDriver(DriverConfiguration driver) {
+    this.driver = driver;
+  }
+
+  /**
+   * Gets the optional username.
+   *
+   * @return the username
+   */
+  @Bindable
+  public String getUser() {
+    return user;
+  }
+
+  /**
+   * Gets the username.
+   *
+   * @param user the username
+   */
+  @Bindable
+  public void setUser(String user) {
+    this.user = user;
+  }
+
+  /**
+   * Gets the optional password.
+   *
+   * @return the password
+   */
+  @Bindable
+  public String getPassword() {
+    return password;
+  }
+
+  /**
+   * Sets the password.
+   *
+   * @param password the password
+   */
+  @Bindable
+  public void setPassword(String password) {
+    this.password = password;
+  }
+
+  /**
+   * Persists this configuration.
+   *
+   * @param system true if store in system preferences (requires extra permission), else user preferences
+   */
+  public void persist(boolean system) {
+    Preferences prefs = getPrefNode(system);
+    Preferences node = prefs.node(application).node(getName());
+    try {
+      node.put(URL_KEY, url);
+      if (options != null) {
+        node.put(OPTIONS_KEY, options);
+      }
+      else {
+        node.remove(OPTIONS_KEY);
+      }
+      if (driver != null) {
+        node.put(DRIVER_KEY, driver.getName());
+      }
+      else {
+        node.remove(DRIVER_KEY);
+      }
+      if (user != null && !user.isEmpty()) {
+        node.put(USER_KEY, user);
+      }
+      else {
+        node.remove(USER_KEY);
+      }
+      if (password != null && !password.isEmpty()) {
+        node.put(PASSWORD_KEY, password);
+      }
+      else {
+        node.remove(PASSWORD_KEY);
+      }
+      prefs.flush();
+    }
+    catch (BackingStoreException bx) {
+      throw new PersistenceException("cannot persist backend configuration " + this, bx);
+    }
+  }
+
+  /**
+   * Removes this configuration.
+   *
+   * @param system true if store in system preferences (requires extra permission), else user preferences
+   */
+  public void remove(boolean system) {
+    Preferences prefs = getPrefNode(system);
+    Preferences node = prefs.node(application).node(getName());
+    try {
+      node.removeNode();
+      prefs.flush();
+    }
+    catch (BackingStoreException bx) {
+      throw new PersistenceException("cannot remove backend configuration " + this, bx);
+    }
+  }
+
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    BackendConfiguration that = (BackendConfiguration) o;
+    return Objects.equals(application, that.application) &&
+        Objects.equals(getName(), that.getName());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(application, getName());
+  }
+
+}

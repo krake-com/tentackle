@@ -65,6 +65,9 @@ public class Constants {
   /** property key for the password. */
   public static final String BACKEND_PASSWORD = "password";
 
+  /** intro in URL to denote a JDBC connection. */
+  public static final String BACKEND_JDBC_URL_INTRO = "jdbc:";
+
   /** intro in URL to denote a remote connection. */
   public static final String BACKEND_RMI_URL_INTRO = "rmi:";
 
@@ -72,11 +75,35 @@ public class Constants {
   public static final String BACKEND_JNDI_URL_INTRO = "jndi:";
 
   /**
-   * Property file holding the technical backend info.<br>
-   * Useful to use different properties for the physical connection.
+   * Optional backend configuration.<br>
+   * Useful to define extra technical user credentials for the physical connection, to load JDBC-drivers at runtime or
+   * to switch between different backends.
+   * <p>
+   * The backend info comes in 3 flavours:
+   * <ol>
+   *   <li>{@code @user} or {@code @system}: the login dialog allows the user to manage backend parameters
+   *   and optional drivers through the UI. The settings are stored in the user-preferences for {@code @user}
+   *   and system preferences for {@code @system}</li>
+   *   <li>{@code @user:backendname} or {@code @system:backendname}: loads the configuration for the backend
+   *   with the given name from the user- or system-preferences, respectively</li>
+   *   <li>a property file name: loads the settings from the given property file</li>
+   * </ol>
    * If missing, the properties from the BACKEND_PROPS and optional user input are used.
    */
-  public static final String BACKEND_TECHNICAL_INFO = "backendinfo";
+  public static final String BACKEND_INFO = "backend";
+
+  /**
+   * Value of backendinfo to allow selecting the backend (see Login in fx-rdc) using user preferences.<br>
+   * If the value is followed by a colon and a name, that name is treaded as the {@code BackendConfiguration}.
+   */
+  public static final String BACKEND_INFO_USER = "@user";
+
+  /**
+   * Value of backendinfo to allow selecting the backend (see Login in fx-rdc) using system preferences.<br>
+   * If the value is followed by a colon and a name, that name is treaded as the {@code BackendConfiguration}.
+   */
+  public static final String BACKEND_INFO_SYSTEM = "@system";
+
 
 
   /** name of ID column. */

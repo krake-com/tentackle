@@ -65,6 +65,7 @@ import org.tentackle.io.SocketFactoryType;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.DefaultSessionTaskDispatcher;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.PersistenceException;
@@ -504,14 +505,31 @@ public class Db implements Session, Cloneable {
       // load configuration settings
       Properties sessionProperties = sessionInfo.getProperties();
       Properties backendProperties = sessionProperties;   // backend properties defaults to session properties
-      String technicalBackendInfoName = sessionInfo.getProperties().getProperty(Constants.BACKEND_TECHNICAL_INFO);
+      String technicalBackendInfoName = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
       if (technicalBackendInfoName != null) {
-        // programmatically predefined (usually technical) backend info
-        try {
-          backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
+        if (technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_USER) ||
+            technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM)) {
+          int ndx = technicalBackendInfoName.indexOf(":");
+          if (ndx >= 0 && ndx < technicalBackendInfoName.length()) {
+            String configName = technicalBackendInfoName.substring(ndx + 1);
+            boolean systemPrefs = technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM);
+            BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
+                sessionInfo.getApplicationName(), systemPrefs).get(configName);
+            if (backendConfiguration != null) {
+              backendProperties = new Properties();
+              DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
+            }
+          }
+          // else: user didn't select a backendConfiguration -> continue with default settings from properties
         }
-        catch (IOException e1) {
-          throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' could not be loaded", e1);
+        else{
+          // programmatically predefined (usually technical) backend info from another property file
+          try {
+            backendProperties = FileHelper.loadProperties(technicalBackendInfoName);
+          }
+          catch (IOException e1) {
+            throw new PersistenceException("technical backend properties '" + technicalBackendInfoName + "' could not be loaded", e1);
+          }
         }
       }
 

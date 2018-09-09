@@ -77,6 +77,7 @@ public class LoginApplication extends FxApplication {
       }
       stage.show();
       stage.setResizable(false);
+      controller.requestInitialFocus();
     }
     catch (RuntimeException rx) {
       throw new FxRuntimeException("cannot create session info", rx);

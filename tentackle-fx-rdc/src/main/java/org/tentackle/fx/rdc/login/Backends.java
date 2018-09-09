@@ -1,0 +1,308 @@
+/*
+ * Tentackle - http://www.tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+package org.tentackle.fx.rdc.login;
+
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.fxml.FXML;
+import javafx.scene.Scene;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+
+import org.tentackle.bind.Bindable;
+import org.tentackle.fx.AbstractFxController;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxControllerService;
+import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.component.FxListView;
+import org.tentackle.fx.component.FxPasswordField;
+import org.tentackle.fx.component.FxTextArea;
+import org.tentackle.fx.component.FxTextField;
+import org.tentackle.fx.container.FxGridPane;
+import org.tentackle.fx.container.FxTab;
+import org.tentackle.session.BackendConfiguration;
+import org.tentackle.session.DriverConfiguration;
+import org.tentackle.validate.ValidationResult;
+import org.tentackle.validate.ValidationScopeFactory;
+import org.tentackle.validate.ValidationUtilities;
+
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+
+/**
+ * Controller to add, edit and remove backends.
+ */
+@FxControllerService(binding = FxControllerService.BINDING.BINDABLE_INHERITED)
+public class Backends extends AbstractFxController {
+
+
+  /**
+   * Opens a dialog to edit the backend- and driver configurations.
+   *
+   * @param application the application name
+   * @param system true if user system preferences, else user preferences
+   */
+  public static void editBackends(String application, boolean system) {
+    Backends controller = Fx.load(Backends.class);
+    Scene scene = new Scene(controller.getView());
+    Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
+    stage.setScene(scene);
+    controller.setApplication(application, system);
+    controller.getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+      if (event.getCode() == KeyCode.ESCAPE) {
+        controller.persist();
+        stage.close();
+      }
+    });
+    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
+      controller.persist();
+    });
+    stage.showAndWait();
+  }
+
+
+
+  private String application;     // the application name
+  private boolean system;         // system preferences?
+
+
+  // list of backends with buttons to add and remove a backend
+  @FXML
+  private FxTab backendTab;
+  @FXML
+  private FxListView<BackendConfiguration> backends;
+  @FXML
+  private FxButton addBackendButton;
+  @FXML
+  private FxButton removeBackendButton;
+
+  // the current backend
+  @Bindable
+  private BackendConfiguration backend;
+
+  @FXML
+  private FxGridPane backendPane;
+  @FXML
+  private FxTextField backendName;
+  @FXML
+  private FxTextField backendUrl;
+  @FXML
+  private FxTextArea backendOptions;
+  @FXML
+  private FxChoiceBox<DriverConfiguration> backendDriver;
+  @FXML
+  private FxTextField backendUser;
+  @FXML
+  private FxPasswordField backendPassword;
+
+
+  // list of drivers with buttons to add and remove a backend
+  @FXML
+  private FxTab driverTab;
+  @FXML
+  private FxListView<DriverConfiguration> drivers;
+  @FXML
+  private FxButton addDriverButton;
+  @FXML
+  private FxButton removeDriverButton;
+
+  // the current driver
+  @Bindable
+  private DriverConfiguration driver;
+
+  @FXML
+  private FxGridPane driverPane;
+  @FXML
+  private FxTextField driverName;
+  @FXML
+  private FxTextField driverDriver;
+  @FXML
+  private FxTextField driverUrl;
+  @FXML
+  private FxButton driverButton;
+
+
+
+  @Override
+  public void initialize(URL location, ResourceBundle resources) {
+    backends.setBindable(false);
+    backends.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+    backends.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<BackendConfiguration>() {
+      @Override
+      public void changed(ObservableValue<? extends BackendConfiguration> observable, BackendConfiguration oldValue, BackendConfiguration newValue) {
+        if (oldValue != null) {
+          persist(oldValue);
+        }
+        backend = newValue;
+        removeBackendButton.setDisable(backend == null);
+        backendPane.setChangeable(backend != null);
+        backendName.setChangeable(backend.getName() == null);
+        backendPane.updateView();
+      }
+    });
+
+    addBackendButton.setGraphic(Fx.createImageView("add"));
+    addBackendButton.setOnAction(event -> {
+      backends.getItems().add(new BackendConfiguration(application, null, null, null,null, null, null));
+      backends.getSelectionModel().selectLast();
+    });
+
+    removeBackendButton.setGraphic(Fx.createImageView("delete"));
+    removeBackendButton.setOnAction(event -> {
+      BackendConfiguration current = backends.getSelectionModel().getSelectedItem();
+      if (current != null) {
+        backends.getItems().remove(current);
+        backends.getSelectionModel().selectFirst();
+        backends.scrollTo(0);
+        if (current.getName() != null) {
+          current.remove(system);
+        }
+      }
+    });
+
+    backendTab.setOnSelectionChanged(event -> {
+      if (backendTab.isSelected()) {
+        loadDriverConfigurations();
+      }
+    });
+
+    backendPane.setChangeable(false);
+
+    drivers.setBindable(false);
+    drivers.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+    drivers.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<DriverConfiguration>() {
+      @Override
+      public void changed(ObservableValue<? extends DriverConfiguration> observable, DriverConfiguration oldValue, DriverConfiguration newValue) {
+        if (oldValue != null) {
+          persist(driver);
+        }
+        driver = newValue;
+        removeDriverButton.setDisable(driver == null);
+        driverPane.setChangeable(driver != null);
+        driverName.setChangeable(driver.getName() == null);
+        driverButton.setDisable(driver == null);
+        driverPane.updateView();
+      }
+    });
+    driverPane.setChangeable(false);
+    driverButton.setDisable(true);
+
+    addDriverButton.setGraphic(Fx.createImageView("add"));
+    addDriverButton.setOnAction(event -> {
+      drivers.getItems().add(new DriverConfiguration(null, null, null));
+      drivers.getSelectionModel().selectLast();
+    });
+
+    removeDriverButton.setGraphic(Fx.createImageView("delete"));
+    removeDriverButton.setOnAction(event -> {
+      DriverConfiguration current = drivers.getSelectionModel().getSelectedItem();
+      if (current != null) {
+        drivers.getItems().remove(current);
+        drivers.getSelectionModel().selectFirst();
+        drivers.scrollTo(0);
+        if (current.getName() != null) {
+          current.remove(system);
+        }
+      }
+    });
+
+    driverButton.setGraphic(Fx.createImageView("file"));
+    driverButton.setOnAction(event -> {
+      FileChooser fileChooser = new FileChooser();
+      fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java JAR File", "*.jar"));
+      File file = fileChooser.showOpenDialog(Fx.getStage(getView()));
+      if (file != null) {
+        driver.setUrl(file.getAbsolutePath());
+        driverUrl.updateView();
+      }
+    });
+  }
+
+  /**
+   * Sets the application name and loads the configured backends.
+   *
+   * @param application the application name
+   * @param system true if use system preferences, else user preferences
+   */
+  public void setApplication(String application, boolean system) {
+    this.application = application;
+    backends.getSelectionModel().clearSelection();
+    backends.getItems().addAll(BackendConfiguration.getBackendConfigurations(application, system).values());
+    drivers.getSelectionModel().clearSelection();
+    drivers.getItems().addAll(DriverConfiguration.getDriverConfigurations(system).values());
+    loadDriverConfigurations();
+  }
+
+  /**
+   * Gets the selected backend.
+   *
+   * @return the backend, null if none selected
+   */
+  public BackendConfiguration getBackend() {
+    return backend;
+  }
+
+  /**
+   * Persists currently edited backend and/or driver.<br>
+   * Invoked when dialog is closed.
+   */
+  public void persist() {
+    if (backend != null) {
+      backendPane.updateModel();
+      persist(backend);
+    }
+    if (driver != null) {
+      driverPane.updateModel();
+      persist(driver);
+    }
+  }
+
+
+  private void persist(DriverConfiguration driver) {
+    List<ValidationResult> results = driver.validate("driver", ValidationScopeFactory.getInstance().getMandatoryScope());
+    if (results.isEmpty()) {
+      driver.persist(system);
+    }
+    else {
+      Fx.info(ValidationUtilities.getInstance().resultsToMessage(results));
+    }
+  }
+
+  private void persist(BackendConfiguration backend) {
+    List<ValidationResult> results = backend.validate("backend", ValidationScopeFactory.getInstance().getMandatoryScope());
+    if (results.isEmpty()) {
+      backend.persist(system);
+    }
+    else {
+      Fx.info(ValidationUtilities.getInstance().resultsToMessage(results));
+    }
+  }
+
+  private void loadDriverConfigurations() {
+    backendDriver.getItems().clear();
+    backendDriver.getItems().addAll(drivers.getItems());
+  }
+}
