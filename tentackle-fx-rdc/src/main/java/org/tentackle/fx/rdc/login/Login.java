@@ -155,8 +155,11 @@ public class Login extends AbstractFxController {
       backendVisible = true;
       backendFromSystemPrefs = true;
     }
+    backendLabel.setVisible(backendVisible);
     backendLabel.setManaged(backendVisible);
+    backendField.setVisible(backendVisible);
     backendField.setManaged(backendVisible);
+    backendButton.setVisible(backendVisible);
     backendButton.setManaged(backendVisible);
     if (backendVisible) {
       loadBackendConfigurations();
