@@ -35,9 +35,19 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 <#if abstractOperation == "true">
   private static final PersistentOperationClassVariables CLASSVARIABLES =
           new PersistentOperationClassVariables(${operationInterface}.class, ${persistenceImplementation}.class);
+
+  @Override
+  public PersistentOperationClassVariables<T,P> getClassVariables() {
+    return CLASSVARIABLES;
+  }
 <#else>
   private static final PersistentOperationClassVariables<${operationInterface}, ${persistenceImplementation}> CLASSVARIABLES =
           new PersistentOperationClassVariables<>(${operationInterface}.class, ${persistenceImplementation}.class);
+
+  @Override
+  public PersistentOperationClassVariables<${operationInterface}, ${persistenceImplementation}> getClassVariables() {
+    return CLASSVARIABLES;
+  }
 </#if>
 
   //</editor-fold>
@@ -94,4 +104,21 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 
   //</editor-fold>
 
+<#if remoteEnabled == "true">
+  //<editor-fold defaultstate="collapsed" desc="remote">
+
+  <#if abstractOperation == "true">
+  @Override
+  public ${operationInterface}RemoteDelegate<T,P> getRemoteDelegate() {
+    return (${operationInterface}RemoteDelegate<T,P>) super.getRemoteDelegate();
+  }
+  <#else>
+  @Override
+  public ${operationInterface}RemoteDelegate getRemoteDelegate() {
+    return (${operationInterface}RemoteDelegate) super.getRemoteDelegate();
+  }
+  </#if>
+
+  //</editor-fold>
+</#if>
 }
