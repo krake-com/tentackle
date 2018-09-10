@@ -25,6 +25,7 @@ public class ${domainImplementation} extends ${superDomainImplementation}<${oper
   /** serial version UID. */
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates a domain object for an operation.
@@ -45,5 +46,7 @@ public class ${domainImplementation} extends ${superDomainImplementation}<${oper
   public ${domainImplementation}() {
     super();
   }
+
+  //</editor-fold>
 
 }

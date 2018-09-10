@@ -26,6 +26,7 @@ public class ${domainImplementation} extends ${superDomainImplementation}<${pdoI
   /** serial version UID. */
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates a domain object for a PDO.
@@ -47,6 +48,7 @@ public class ${domainImplementation} extends ${superDomainImplementation}<${pdoI
     super();
   }
 
+  //</editor-fold>
 
   // @wurblet domainMethods DomainMethods
 

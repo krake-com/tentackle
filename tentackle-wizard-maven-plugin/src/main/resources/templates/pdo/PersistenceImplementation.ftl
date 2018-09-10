@@ -66,6 +66,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
 
   // @wurblet declare Declare
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates a persistent object for a PDO.
@@ -115,6 +116,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
     super();
   }
 
+  //</editor-fold>
 
   // @wurblet methods MethodsImpl
 

@@ -30,6 +30,8 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   /** serial version UID. */
   private static final long serialVersionUID = -1;
 
+  //<editor-fold defaultstate="collapsed" desc="classvariables">
+
 <#if abstractOperation == "true">
   private static final PersistentOperationClassVariables CLASSVARIABLES =
           new PersistentOperationClassVariables(${operationInterface}.class, ${persistenceImplementation}.class);
@@ -37,6 +39,10 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   private static final PersistentOperationClassVariables<${operationInterface}, ${persistenceImplementation}> CLASSVARIABLES =
           new PersistentOperationClassVariables<>(${operationInterface}.class, ${persistenceImplementation}.class);
 </#if>
+
+  //</editor-fold>
+
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates a persistent object for an operation.
@@ -85,5 +91,7 @@ public class ${persistenceImplementation} extends ${superPersistenceImplementati
   public ${persistenceImplementation}() {
     super();
   }
+
+  //</editor-fold>
 
 }
