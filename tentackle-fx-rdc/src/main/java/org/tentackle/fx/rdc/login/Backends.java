@@ -17,6 +17,7 @@
  */
 package org.tentackle.fx.rdc.login;
 
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
@@ -173,6 +174,7 @@ public class Backends extends AbstractFxController {
     addBackendButton.setOnAction(event -> {
       backends.getItems().add(new BackendConfiguration(application, null, null, null,null, null, null));
       backends.getSelectionModel().selectLast();
+      backendName.requestFocus();
     });
 
     removeBackendButton.setGraphic(Fx.createImageView("delete"));
@@ -217,6 +219,7 @@ public class Backends extends AbstractFxController {
     addDriverButton.setOnAction(event -> {
       drivers.getItems().add(new DriverConfiguration(null, null, null));
       drivers.getSelectionModel().selectLast();
+      driverName.requestFocus();
     });
 
     removeDriverButton.setGraphic(Fx.createImageView("delete"));
@@ -259,6 +262,7 @@ public class Backends extends AbstractFxController {
         if (backend.isPersisted()) {
           backend.remove(system); // remove old instance, will be persisted as new
         }
+        Platform.runLater(backends::refresh); // update name in list
       }
     });
     driverName.getBinding().addToModelListener(e -> {
@@ -271,8 +275,9 @@ public class Backends extends AbstractFxController {
           }
         }
         if (driver.isPersisted()) {
-          driver.remove(system); // remove old instance, will be persisted as new
+          driver.remove(system);
         }
+        Platform.runLater(drivers::refresh);
       }
     });
   }
