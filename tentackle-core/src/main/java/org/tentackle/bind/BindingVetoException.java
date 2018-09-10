@@ -31,14 +31,12 @@ public class BindingVetoException extends Exception {
   private static final long serialVersionUID = -2817529018969629515L;
 
 
-  private final boolean resyncRequested;     // true if model/view should be resync'd
+  private final boolean rethrowEnabled;       // true if rethrowEnabled as Binding(Runtime)Exception
+  private final boolean resyncRequested;      // true if model/view should be resync'd
 
 
   /**
-   * Constructs a <code>BindingVetoException</code> with a
-   * detailed message.<br>
-   * If the message is not null or empty the binder
-   * will log the message (no further action).
+   * Constructs a <code>BindingVetoException</code> with optional resync of model or view.
    *
    * @param message a descriptive message
    * @param resyncRequested true if resync model/view
@@ -46,21 +44,31 @@ public class BindingVetoException extends Exception {
   public BindingVetoException(String message, boolean resyncRequested) {
     super(message);
     this.resyncRequested = resyncRequested;
+    this.rethrowEnabled = false;
+  }
+
+  /**
+   * Constructs a <code>BindingVetoException</code> with optional rethrowEnabled as a binding runtime exception.
+   *
+   * @param message a descriptive message
+   * @param rethrowEnabled true to rethrowEnabled as Binding(Runtime)Exception, false to process silently
+   */
+  public BindingVetoException(boolean rethrowEnabled, String message) {
+    super(message);
+    this.resyncRequested = false;
+    this.rethrowEnabled = rethrowEnabled;
   }
 
 
   /**
-   * Constructs a <code>BindingVetoException</code> with a
-   * detailed message.<br>
-   * If the message is not null or empty the binder
-   * will log the message (no further action).<br>
-   * The model/view will not be resync'd.
-   * This is up to the application.
+   * Constructs a <code>BindingVetoException</code>.
    *
    * @param message a descriptive message
    */
   public BindingVetoException(String message) {
-    this(message, false);
+    super(message);
+    this.resyncRequested = false;
+    this.rethrowEnabled = false;
   }
 
 
@@ -73,4 +81,12 @@ public class BindingVetoException extends Exception {
     return resyncRequested;
   }
 
+  /**
+   * Returns whether veto exception should be rethrown as a binding runtime exception after being processed.
+   *
+   * @return true if re-throw, false if process silently
+   */
+  public boolean isRethrowEnabled() {
+    return rethrowEnabled;
+  }
 }

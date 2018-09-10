@@ -28,6 +28,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.PopupWindow;
 
+import org.tentackle.bind.BindingVetoException;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.table.FxTableCell;
@@ -269,7 +270,10 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
           ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
           String msg;
           if (vx == null) {
-            LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
+            BindingVetoException bve = ExceptionHelper.extractException(BindingVetoException.class, true, rex);
+            if (bve == null) {    // extended component log only if not a rethrown veto exception
+              LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
+            }
             msg = rex.getLocalizedMessage();
             if (msg == null) {
               msg = rex.getClass().getName();

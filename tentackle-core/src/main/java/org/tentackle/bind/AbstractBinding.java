@@ -346,9 +346,14 @@ public abstract class AbstractBinding implements Binding {
         LOGGER.fine("view resynced from model");
         updateView(parent, getModelValue(parent), false);
       }
+
+      if (veto.isRethrowEnabled()) {
+        throw new BindingException(veto.getLocalizedMessage(), veto);
+      }
     }
     catch (BindingException ex) {
-      throw new BindingException("setting model value failed for " + member, ex);
+      // improve exception message
+      throw new BindingException(member + ": " + ex.getLocalizedMessage(), ex);
     }
   }
 
@@ -379,10 +384,15 @@ public abstract class AbstractBinding implements Binding {
         }
         return msg;
       });
+
       if (honourResyncByVetoException && veto.isResyncRequested()) {
         // update the model with the old value from the view
         LOGGER.fine("model resynced from view");
         setModelValue(parent, value, false);
+      }
+
+      if (veto.isRethrowEnabled()) {
+        throw new BindingException(veto.getLocalizedMessage(), veto);
       }
     }
   }
@@ -403,7 +413,7 @@ public abstract class AbstractBinding implements Binding {
     }
     catch (BindingException ex) {
       // improve exception message
-      throw new BindingException("getting model value failed for " + member, ex);
+      throw new BindingException(member + ": " + ex.getLocalizedMessage(), ex);
     }
   }
 

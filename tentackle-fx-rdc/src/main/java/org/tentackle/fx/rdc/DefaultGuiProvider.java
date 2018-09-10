@@ -124,6 +124,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public PdoFinder<T> createFinder() {
     if (finderExists()) {
       return Fx.load(DefaultPdoFinder.class);
