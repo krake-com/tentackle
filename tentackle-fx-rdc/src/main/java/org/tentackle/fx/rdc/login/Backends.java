@@ -30,6 +30,8 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.bind.BindingException;
+import org.tentackle.bind.BindingVetoException;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
@@ -41,6 +43,7 @@ import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.container.FxGridPane;
 import org.tentackle.fx.container.FxTab;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.DriverConfiguration;
 import org.tentackle.validate.ValidationResult;
@@ -49,6 +52,7 @@ import org.tentackle.validate.ValidationUtilities;
 
 import java.io.File;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -70,6 +74,7 @@ public class Backends extends AbstractFxController {
     Scene scene = new Scene(controller.getView());
     Stage stage = Fx.createStage(Modality.APPLICATION_MODAL);
     stage.setScene(scene);
+    stage.setTitle(RdcFxRdcBundle.getString("Backends"));
     controller.setApplication(application, system);
     controller.getView().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
       if (event.getCode() == KeyCode.ESCAPE) {
@@ -154,12 +159,12 @@ public class Backends extends AbstractFxController {
       @Override
       public void changed(ObservableValue<? extends BackendConfiguration> observable, BackendConfiguration oldValue, BackendConfiguration newValue) {
         if (oldValue != null) {
+          backendPane.updateModel();  // necessary bec. focus lost may arrive after change event
           persist(oldValue);
         }
         backend = newValue;
         removeBackendButton.setDisable(backend == null);
         backendPane.setChangeable(backend != null);
-        backendName.setChangeable(backend.getName() == null);
         backendPane.updateView();
       }
     });
@@ -189,20 +194,18 @@ public class Backends extends AbstractFxController {
       }
     });
 
-    backendPane.setChangeable(false);
-
     drivers.setBindable(false);
     drivers.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
     drivers.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<DriverConfiguration>() {
       @Override
       public void changed(ObservableValue<? extends DriverConfiguration> observable, DriverConfiguration oldValue, DriverConfiguration newValue) {
         if (oldValue != null) {
+          driverPane.updateModel();   // necessary bec. focus lost may arrive after change event
           persist(driver);
         }
         driver = newValue;
         removeDriverButton.setDisable(driver == null);
         driverPane.setChangeable(driver != null);
-        driverName.setChangeable(driver.getName() == null);
         driverButton.setDisable(driver == null);
         driverPane.updateView();
       }
@@ -237,6 +240,39 @@ public class Backends extends AbstractFxController {
       if (file != null) {
         driver.setUrl(file.getAbsolutePath());
         driverUrl.updateView();
+      }
+    });
+  }
+
+  @Override
+  public void configure() {
+    // support renaming and check for duplicates
+    backendName.getBinding().addToModelListener(e -> {
+      if (e.getValue() != null && !e.getValue().equals(backend.getName())) {
+        // name changed
+        String newName = (String) e.getValue();
+        for (BackendConfiguration b : backends.getItems()) {
+          if (b != backend && newName.equals(b.getName())) {
+            throw new BindingVetoException(true, MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"),b));
+          }
+        }
+        if (backend.isPersisted()) {
+          backend.remove(system); // remove old instance, will be persisted as new
+        }
+      }
+    });
+    driverName.getBinding().addToModelListener(e -> {
+      if (e.getValue() != null && !e.getValue().equals(driver.getName())) {
+        // name changed
+        String newName = (String) e.getValue();
+        for (DriverConfiguration b : drivers.getItems()) {
+          if (b != driver && newName.equals(b.getName())) {
+            throw new BindingVetoException(true, MessageFormat.format(RdcFxRdcBundle.getString("{0} ALREADY EXISTS"),b));
+          }
+        }
+        if (driver.isPersisted()) {
+          driver.remove(system); // remove old instance, will be persisted as new
+        }
       }
     });
   }

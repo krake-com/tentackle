@@ -164,6 +164,26 @@ public class Login extends AbstractFxController {
     if (backendVisible) {
       loadBackendConfigurations();
     }
+    else if (backendInfo != null) {
+      int ndx = backendInfo.indexOf(':');
+      if (ndx >= 0) {
+        String configName = backendInfo.substring(ndx + 1);
+        boolean systemPrefs = backendInfo.substring(0, ndx).equals(Constants.BACKEND_INFO_SYSTEM);
+        BackendConfiguration backendConfiguration = BackendConfiguration.getBackendConfigurations(
+            sessionInfo.getApplicationName(), systemPrefs).get(configName);
+        if (backendConfiguration != null) {
+          if (backendConfiguration.getUrl().startsWith(Constants.BACKEND_RMI_URL_INTRO) &&
+              backendConfiguration.getUser() != null) {
+            // preset user/pw if fixed backend config is remote and user set
+            usernameField.setText(backendConfiguration.getUser());
+            passwordField.setText(backendConfiguration.getPassword());
+          }
+        }
+        else {
+          LOGGER.warning("no such backend configuration: " + configName);
+        }
+      }
+    }
   }
 
 

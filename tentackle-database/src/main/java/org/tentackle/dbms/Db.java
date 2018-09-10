@@ -519,6 +519,9 @@ public class Db implements Session, Cloneable {
               backendProperties = new Properties();
               DbUtilities.getInstance().applyBackendConfiguration(backendConfiguration, backendProperties);
             }
+            else {
+              LOGGER.warning("no such backend configuration: " + configName + " -> fallback to session properties");
+            }
           }
           // else: user didn't select a backendConfiguration -> continue with default settings from properties
         }

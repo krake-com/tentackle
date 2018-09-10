@@ -52,13 +52,13 @@
                         <Label text="%backenduser" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
                         <Label text="%backendpassword" GridPane.halignment="RIGHT" GridPane.rowIndex="5" />
                         <TextField fx:id="backendName" maxWidth="-Infinity" GridPane.columnIndex="1" />
+                        <TextField fx:id="backendUrl" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                        <TextArea fx:id="backendOptions" prefRowCount="4" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                         <ChoiceBox fx:id="backendDriver" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                         <TextField fx:id="backendUser" maxWidth="-Infinity" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                         <PasswordField fx:id="backendPassword" maxWidth="-Infinity" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                         <Label text="%backendUrl" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
                         <Label text="%backendOptions" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
-                        <TextField fx:id="backendUrl" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                        <TextArea fx:id="backendOptions" prefRowCount="4" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                      </children>
                      <BorderPane.margin>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

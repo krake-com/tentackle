@@ -18,6 +18,7 @@
 package org.tentackle.session;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.log.Logger;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationResult;
@@ -49,6 +50,8 @@ import java.util.prefs.Preferences;
  */
 public class BackendConfiguration extends AbstractSessionConfiguration {
 
+  private static final Logger LOGGER = Logger.get(BackendConfiguration.class);
+
   private static final String NODE_NAME = "backends";
   private static final String URL_KEY = "url";
   private static final String OPTIONS_KEY = "options";
@@ -73,10 +76,19 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
         String driverName = backendPrefs.get(DRIVER_KEY, null);
         String url = backendPrefs.get(URL_KEY, null);
         String options = backendPrefs.get(OPTIONS_KEY, null);
-        DriverConfiguration driver = driverName == null ? null : DriverConfiguration.getDriverConfigurations(system).get(driverName);
+        DriverConfiguration driver = null;
+        if (driverName != null) {
+          driver = DriverConfiguration.getDriverConfigurations(system).get(driverName);
+          if (driver == null) {
+            LOGGER.warning("no such driver: {0}", driverName);
+            // dont throw exception to allow the user to fix it
+          }
+        }
         String user = backendPrefs.get(USER_KEY, null);
         String password = backendPrefs.get(PASSWORD_KEY, null);
-        backends.put(name, new BackendConfiguration(application, name, url, options, driver, user, password));
+        BackendConfiguration configuration = new BackendConfiguration(application, name, url, options, driver, user, password);
+        configuration.setPersisted(true);
+        backends.put(name, configuration);
         // else ignore silently (we don't have a logger available)
       }
     }

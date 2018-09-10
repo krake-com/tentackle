@@ -34,7 +34,8 @@ import java.util.prefs.Preferences;
  */
 public abstract class AbstractSessionConfiguration implements Validateable, ScopeConfigurator {
 
-  private String name;   // the config name
+  private boolean persisted;      // loaded from preferences
+  private String name;            // the config name
 
   /**
    * Gets the symbolic name.
@@ -55,6 +56,24 @@ public abstract class AbstractSessionConfiguration implements Validateable, Scop
   @Bindable
   public void setName(String name) {
     this.name = name;
+  }
+
+  /**
+   * Returns whether configuration is loaded from preferences.
+   *
+   * @return true if persisted, false if just created in memory only
+   */
+  public boolean isPersisted() {
+    return persisted;
+  }
+
+  /**
+   * Sets whether configuration is loaded from preferences.
+   *
+   * @param persisted true if persisted, false if just created in memory only
+   */
+  public void setPersisted(boolean persisted) {
+    this.persisted = persisted;
   }
 
   @Override

@@ -62,7 +62,9 @@ public class DriverConfiguration extends AbstractSessionConfiguration {
         String driver = driverPrefs.get(DRIVER_KEY, null);
         String url = driverPrefs.get(URL_KEY, null);
         if (driver != null && url != null) {
-          drivers.put(name, new DriverConfiguration(name, driver, url));
+          DriverConfiguration configuration = new DriverConfiguration(name, driver, url);
+          configuration.setPersisted(true);
+          drivers.put(name, configuration);
         }
         // else ignore silently (we don't have a logger available)
       }
