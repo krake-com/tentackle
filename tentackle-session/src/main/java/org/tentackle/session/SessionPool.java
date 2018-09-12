@@ -28,6 +28,13 @@ package org.tentackle.session;
 public interface SessionPool extends ReturnableSessionProvider {
 
   /**
+   * Gets the session info.
+   *
+   * @return the session info
+   */
+  SessionInfo getSessionInfo();
+
+  /**
    * Gets the name of this pool.
    *
    * @return the name

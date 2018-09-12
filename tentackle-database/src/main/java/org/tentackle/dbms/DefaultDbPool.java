@@ -19,7 +19,7 @@
 
 package org.tentackle.dbms;
 
-import java.lang.ref.WeakReference;
+import org.tentackle.common.Constants;
 import org.tentackle.common.Timestamp;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.log.Logger;
@@ -28,6 +28,8 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+
+import java.lang.ref.WeakReference;
 
 
 /**
@@ -45,157 +47,28 @@ public class DefaultDbPool implements SessionPool {
 
   private static final Logger LOGGER = Logger.get(DefaultDbPool.class);
 
-
-  private static final long SECOND = 1000L;                 // a second
-  private static final long MINUTE = SECOND * 60;           // 1 minute
-  private static final long SLEEP_INTERVAL = SECOND * 10;   // sleep interval for timeout thread (10secs)
+  private static final long SLEEP_INTERVAL = Constants.SECOND_MS * 10;   // sleep interval for timeout thread (10secs)
 
 
-  // managed Db slot
-  private class PooledSession {
+  private final String name;                  // the pool's name
+  private final ConnectionManager conMgr;     // the connection manager
+  private final SessionInfo sessionInfo;      // the server's session info
+  private final int iniSize;                  // initial size of the pool (0 if initialization completed)
+  private int incSize;                        // increment size
+  private int minSize;                        // min pool size
+  private int maxSize;                        // max pool size
+  private long maxIdleMinutes;                // idle timeout in [minutes]
+  private long maxUsageMinutes;               // usage timeout in [minutes]
 
-    private Db db;                            // the managed db, null if currently lended
-    private final String dbStr;               // the db string (not the reference!)
-    private final WeakReference<Db> refDb;    // weak reference to detect unreferenced lended Db instances
-    private long usedSince;                   // last lend time, 0 if in pool
-    private String usingThreadStr;            // the lending thread string (not the reference!), null if in pool
-    private String mdcStr;                    // mapped diagnostic context string
-    private long unusedSince;                 // last return time, 0 if lended
-    private long firstUse;                    // epochal time of first use
+  private boolean initialized;                // true if pool is initialized
+  private PooledDb[] pooledSessions;          // the pooled sessions
+  private int[] freeList;                     // free slots in 'pool'
+  private int freeCount;                      // number of entries in freeList
+  private int[] unusedList;                   // unused Db instances in the pool
+  private int unusedCount;                    // number of unused Db instances
 
-    /**
-     * Creates a pooled db.
-     */
-    private PooledSession() {
-      /*
-       * Important: userInfo must be cloned because otherwise changes
-       * to the userinfo would affect all instances simultaneously.
-       */
-      LOGGER.fine("open pooled Db for {0}, connection manager {1}", sessionInfo, conMgr);
-      db = new Db(conMgr, sessionInfo.clone());
-      db.setPool(DefaultDbPool.this);
-      dbStr = db.toString();
-      unusedSince = System.currentTimeMillis();
-      refDb = new WeakReference<>(db);
-    }
-
-    @Override
-    public String toString() {
-      return dbStr;
-    }
-
-    /**
-     * Closes a pooled db.
-     */
-    private void close() {
-      Db dbToClose = refDb.get();    // db may be null because currently lended
-      if (dbToClose != null) {       // refDb.db may be null because already garbage collected
-        try {
-          closeDb(dbToClose);
-        }
-        catch (RuntimeException rex) {
-          LOGGER.warning("closing pooled Db " + dbToClose + " failed", rex);
-        }
-        finally {
-          db = null;
-        }
-      }
-    }
-
-    /**
-     * Marks a pooled db used.
-     *
-     * @param usingThread the using thread
-     */
-    private void use(Thread usingThread) {
-      if (db == null) {
-        throw new PersistenceException("unexpected loss of reference to " + dbStr +
-                " (last returned by " + usingThreadStr + " since " + new Timestamp(unusedSince) + ")");
-      }
-      usedSince = System.currentTimeMillis();
-      if (firstUse == 0) {
-        firstUse = usedSince;
-      }
-      unusedSince = 0;
-      usingThreadStr = usingThread.toString();
-      mdcStr = LOGGER.getMappedDiagnosticContext().toString();
-      // keep only the weak reference
-      db = null;
-    }
-
-    /**
-     * Marks a pooled db unused.
-     */
-    private void unUse(Db db) {
-      // switch back to hard reference
-      this.db = refDb.get();
-      if (this.db == null) {
-        throw new PersistenceException("unexpected loss of reference to " + dbStr +
-                " (last use by " + usingThreadStr + " since " + new Timestamp(usedSince) + ")");
-      }
-      if (this.db != db) {
-        this.db = null;
-        throw new PersistenceException("attempt to unuse " + db + " in wrong slot " + dbStr +
-                " (last use by " + usingThreadStr + " since " + new Timestamp(usedSince) + ")");
-      }
-      unusedSince = System.currentTimeMillis();
-      usedSince = 0;
-      usingThreadStr = null;
-      mdcStr = null;
-    }
-
-    /**
-     * Checks for forgotten puts.
-     *
-     * @return true if db has been lended but never returned and is not referenced anymore
-     */
-    private boolean isUnreferenced() {
-      return refDb.get() == null;
-    }
-
-    /**
-     * Returns the number of minutes the session has been unused.
-     *
-     * @param currentTimeMillis the current time to refer to in epochal milliseconds
-     * @return the idle minutes, 0 if in use or never used at all
-     */
-    private long idleMinutes(long currentTimeMillis) {
-      return firstUse == 0 || unusedSince == 0 ? 0 : (currentTimeMillis - unusedSince) / MINUTE;
-    }
-
-    /**
-     * Returns the number of minutes the session has been used at all.
-     *
-     * @param currentTimeMillis the current time to refer to in epochal milliseconds
-     * @return the usage minutes, 0 if never used at all
-     */
-    private long usedMinutes(long currentTimeMillis) {
-      return firstUse == 0 ? 0 : (currentTimeMillis - firstUse) / MINUTE;
-    }
-
-  }
-
-
-
-  private final String name;                // the pool's name
-  private final ConnectionManager conMgr;   // the connection manager
-  private final SessionInfo sessionInfo;    // the server's session info
-  private final int iniSize;                // initial size of the pool (0 if initialization completed)
-  private int incSize;                      // increment size
-  private int minSize;                      // min pool size
-  private int maxSize;                      // max pool size
-  private long maxIdleMinutes;              // idle timeout in [minutes]
-  private long maxUsageMinutes;             // usage timeout in [minutes]
-
-  private boolean initialized;              // true if pool is initialized
-  private PooledSession[] pooledSessions;   // session pool
-  private int[] freeList;                   // free slots in 'pool'
-  private int freeCount;                    // number of entries in freeList
-  private int[] unusedList;                 // unused Db instances in the pool
-  private int unusedCount;                  // number of unused Db instances
-
-  private Thread timeoutThread;             // watching for timed out Db instances to close and for min pool size
-  private volatile boolean shutdownRequested;  // true if shutdown procedure initiated
+  private Thread timeoutThread;               // watching for timed out Db instances to close and for min pool size
+  private volatile boolean shutdownRequested; // true if shutdown procedure initiated
 
 
   /**
@@ -236,7 +109,7 @@ public class DefaultDbPool implements SessionPool {
     this.maxUsageMinutes = maxUsageMinutes;
 
     // setup the pool
-    pooledSessions = new PooledSession[iniSize];
+    pooledSessions = new PooledDb[iniSize];
     freeList = new int[iniSize];
     unusedList = new int[iniSize];
     for (int i=0; i < iniSize; i++) {
@@ -263,32 +136,17 @@ public class DefaultDbPool implements SessionPool {
   }
 
 
-
-  /**
-   * Gets the pool's name
-   */
   @Override
   public String toString() {
     return name;
   }
 
-
-  /**
-   * Gets the name of this pool.
-   *
-   * @return the name
-   */
   @Override
   public String getName() {
     return name;
   }
 
-
-  /**
-   * Gets the server's session info.
-   *
-   * @return the session info
-   */
+  @Override
   public SessionInfo getSessionInfo() {
     return sessionInfo;
   }
@@ -409,117 +267,6 @@ public class DefaultDbPool implements SessionPool {
   }
 
 
-  /**
-   * Creates Db instances.<br>
-   * The number of created instances is at least 1.
-   *
-   * @param num the number of instances to add to the pool
-   * @throws PersistenceException if pool exhausted and max poolsize reached
-   */
-  private void createDbInstances(int num) {
-    if (num > freeCount) {
-      // enlarge arrays
-      int nSize = pooledSessions.length + num - freeCount;
-      if (maxSize > 0 && nSize > maxSize) {
-        nSize = maxSize;
-      }
-      if (nSize <= pooledSessions.length) {
-        throw new PersistenceException("cannot create more Db instances, max. poolsize " + maxSize + " reached");
-      }
-      PooledSession[] nPool  = new PooledSession[nSize];
-      int[] nFreeList   = new int[nSize];
-      int[] nUnusedList = new int[nSize];
-      System.arraycopy(pooledSessions, 0, nPool, 0, pooledSessions.length);
-      System.arraycopy(freeList, 0, nFreeList, 0, pooledSessions.length);
-      System.arraycopy(unusedList, 0, nUnusedList, 0, pooledSessions.length);
-      for (int i=pooledSessions.length; i < nSize; i++) {
-        nPool[i] = null;
-        nFreeList[freeCount++] = i;
-        nUnusedList[i] = -1;
-      }
-      pooledSessions = nPool;
-      freeList = nFreeList;
-      unusedList = nUnusedList;
-    }
-
-    // freeCount is at least 1: get from freelist
-    while (num > 0 && freeCount > 0) {
-      int index = freeList[freeCount - 1];  // no --freeCount because new PooledDb() may throw exceptions
-      pooledSessions[index] = new PooledSession();
-      freeCount--;
-      unusedList[unusedCount++] = index;
-      num--;
-    }
-
-    // now we have at least 1 unused Db instances
-  }
-
-
-
-  /**
-   * Closes a Db instance and removes it from the pool.
-   *
-   * @param dbToRemove the db instance to remove
-   * @param index the pool index
-   */
-  private void removeDbInstance(Db dbToRemove, int index) {
-    Db db = pooledSessions[index].refDb.get();    // pooledDb.db may be null because currently lended
-    if (db != dbToRemove) {
-      throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool " + this + " at index " + index);
-    }
-
-    if (db != null) {
-      try {
-        if (db.isOpen()) {
-          db.close();       // this will also check for pending attach/tx and rollback if necessary
-        }
-        db.setPoolId(-1);   // mark it as removed from pool -> cannot be re-opened again
-      }
-      catch (RuntimeException re) {
-        LOGGER.severe("closing pooled db failed", re);
-      }
-    }
-
-    removeDbIndex(index);
-  }
-
-
-  /**
-   * Removes the index from the pool.
-   *
-   * @param index the pool index
-   */
-  private void removeDbIndex(int index) {
-    pooledSessions[index] = null;
-    freeList[freeCount++] = index;  // add to freelist
-
-    // check if index was in the unused list. If so, remove it
-    for (int i=0; i < unusedCount; i++) {
-      if (unusedList[i] == index) {
-        // found:
-        System.arraycopy(unusedList, i + 1, unusedList, i, unusedCount - (i + 1));
-        unusedCount--;
-        break;
-      }
-    }
-  }
-
-
-  /**
-   * Closes a db.<br>
-   * The method can be overridden if there is something to do after/before close.
-   * For example, cleaning up the cache, etc...
-   *
-   * @param db the Db instance to close
-   */
-  protected void closeDb(Db db) {
-    db.close();
-  }
-
-
-  /**
-   * Closes all databases in the pool, cleans up and makes the pool unusable.
-   */
   @Override
   public void shutdown() {
     shutdownRequested = true;
@@ -536,7 +283,7 @@ public class DefaultDbPool implements SessionPool {
     }
 
     synchronized(this) {
-      for (PooledSession pdb: pooledSessions) {
+      for (PooledDb pdb: pooledSessions) {
         if (pdb != null) {
           pdb.close();
         }
@@ -554,12 +301,10 @@ public class DefaultDbPool implements SessionPool {
     return pooledSessions == null;
   }
 
-
   @Override
   public synchronized int getSize() {
     return pooledSessions == null ? 0 : pooledSessions.length - freeCount;
   }
-
 
   @Override
   public synchronized Db getSession() {
@@ -576,16 +321,16 @@ public class DefaultDbPool implements SessionPool {
       createDbInstances(incSize); // enlarge the pool (will throw Exception if pool is exhausted)
     }
     int poolId = unusedList[--unusedCount];
-    Db db = pooledSessions[poolId].db;
+    PooledDb pooledDb = pooledSessions[poolId];
+    Db db = pooledDb == null ? null : pooledDb.getSession();
     if (!db.isOpen()) {
       throw new SessionClosedException(db, this + ": Db has been closed unexpectedly");
     }
-    pooledSessions[poolId].use(Thread.currentThread());
+    pooledDb.use(Thread.currentThread());
     db.setPoolId(poolId + 1);   // starting at 1
     LOGGER.fine("{0}: Db {1} assigned to pool id {2}", this, db, poolId);
     return db;
   }
-
 
   @Override
   public synchronized void putSession(Session session) {
@@ -640,6 +385,109 @@ public class DefaultDbPool implements SessionPool {
 
 
   /**
+   * Creates a new pooled db.
+   *
+   * @param slotNumber the slot number, starting at 0
+   * @return the pooled db
+   */
+  protected PooledDb createPooledDb(int slotNumber) {
+    return new PooledDb(this, slotNumber);
+  }
+
+
+  /**
+   * Creates Db instances.<br>
+   * The number of created instances is at least 1.
+   *
+   * @param num the number of instances to add to the pool
+   * @throws PersistenceException if pool exhausted and max poolsize reached
+   */
+  private void createDbInstances(int num) {
+    if (num > freeCount) {
+      // enlarge arrays
+      int nSize = pooledSessions.length + num - freeCount;
+      if (maxSize > 0 && nSize > maxSize) {
+        nSize = maxSize;
+      }
+      if (nSize <= pooledSessions.length) {
+        throw new PersistenceException("cannot create more Db instances, max. poolsize " + maxSize + " reached");
+      }
+      PooledDb[] nPool  = new PooledDb[nSize];
+      int[] nFreeList   = new int[nSize];
+      int[] nUnusedList = new int[nSize];
+      System.arraycopy(pooledSessions, 0, nPool, 0, pooledSessions.length);
+      System.arraycopy(freeList, 0, nFreeList, 0, pooledSessions.length);
+      System.arraycopy(unusedList, 0, nUnusedList, 0, pooledSessions.length);
+      for (int i=pooledSessions.length; i < nSize; i++) {
+        nPool[i] = null;
+        nFreeList[freeCount++] = i;
+        nUnusedList[i] = -1;
+      }
+      pooledSessions = nPool;
+      freeList = nFreeList;
+      unusedList = nUnusedList;
+    }
+
+    // freeCount is at least 1: get from freelist
+    while (num > 0 && freeCount > 0) {
+      int slotNumber = freeList[freeCount - 1];  // no --freeCount because new PooledDb() may throw exceptions
+      pooledSessions[slotNumber] = createPooledDb(slotNumber);
+      freeCount--;
+      unusedList[unusedCount++] = slotNumber;
+      num--;
+    }
+
+    // now we have at least 1 unused Db instances
+  }
+
+  /**
+   * Closes a Db instance and removes it from the pool.
+   *
+   * @param dbToRemove the db instance to remove
+   * @param index the pool index
+   */
+  private void removeDbInstance(Db dbToRemove, int index) {
+    Db db = pooledSessions[index].getReferencedDb();    // pooledDb.db may be null because currently lended
+    if (db != dbToRemove) {
+      throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool " + this + " at index " + index);
+    }
+
+    if (db != null) {
+      try {
+        if (db.isOpen()) {
+          db.close();       // this will also check for pending attach/tx and rollback if necessary
+        }
+        db.setPoolId(-1);   // mark it as removed from pool -> cannot be re-opened again
+      }
+      catch (RuntimeException re) {
+        LOGGER.severe("closing pooled db failed", re);
+      }
+    }
+
+    removeDbIndex(index);
+  }
+
+  /**
+   * Removes the index from the pool.
+   *
+   * @param index the pool index
+   */
+  private void removeDbIndex(int index) {
+    pooledSessions[index] = null;
+    freeList[freeCount++] = index;  // add to freelist
+
+    // check if index was in the unused list. If so, remove it
+    for (int i=0; i < unusedCount; i++) {
+      if (unusedList[i] == index) {
+        // found:
+        System.arraycopy(unusedList, i + 1, unusedList, i, unusedCount - (i + 1));
+        unusedCount--;
+        break;
+      }
+    }
+  }
+
+  /**
    * Asserts that this pool wasn't shutdown.
    */
   private void assertNotShutdown() {
@@ -684,14 +532,15 @@ public class DefaultDbPool implements SessionPool {
             break;
           }
 
-            long curtime = System.currentTimeMillis();
+          long curtime = System.currentTimeMillis();
+
           synchronized (pool) {
 
             // bring down timed out unused Db instances
             int i = 0;    // start with oldest unused
             while (i < pool.unusedCount) {
               int index = pool.unusedList[i];
-              PooledSession pooledDb = pool.pooledSessions[index];  // pooledDb.db != null because unused
+              PooledDb pooledDb = pool.pooledSessions[index];  // pooledDb.db != null because unused
 
               long idleMinutes = pooledDb.idleMinutes(curtime);
               boolean idleTimedOut = idleMinutes > pool.getMaxIdleMinutes();
@@ -707,17 +556,17 @@ public class DefaultDbPool implements SessionPool {
 
               // if used at all and unused interval elapsed
               if (idleTimedOut || usageTimedOut) {
-                pool.removeDbInstance(pooledDb.db, index);
+                pool.removeDbInstance(pooledDb.getSession(), index);
                 i--; // start over at same slot
               }
-              else if (pooledDb.db.isRemote()) {
+              else if (pooledDb.getSession().isRemote()) {
                 try {
                   // remote connections must be kept alive in order not to be closed by remote server!
-                  pooledDb.db.setAlive(true);
+                  pooledDb.getSession().setAlive(true);
                 }
                 catch (RuntimeException ex) {
                   LOGGER.severe("remote keep alive failed", ex);
-                  pool.removeDbInstance(pooledDb.db, index);
+                  pool.removeDbInstance(pooledDb.getSession(), index);
                   i--; // start over at same slot
                 }
               }
@@ -726,12 +575,12 @@ public class DefaultDbPool implements SessionPool {
 
             // remove unreferenced Db instances
             i = 0;
-            for (PooledSession pooledDb : pool.pooledSessions) {
+            for (PooledDb pooledDb : pool.pooledSessions) {
               if (pooledDb != null && pooledDb.isUnreferenced()) {
                 LOGGER.warning("unreferenced " + pooledDb +
-                        " last used by " + pooledDb.usingThreadStr +
-                        " in MDC{" + pooledDb.mdcStr +
-                        "} since " + new Timestamp(pooledDb.usedSince) +
+                        " last used by " + pooledDb.getUsingThreadStr() +
+                        " in MDC{" + pooledDb.getMdcStr() +
+                        "} since " + new Timestamp(pooledDb.getUnusedSince()) +
                         " -> removed from pool!");
                 pool.removeDbIndex(i);
                 // note: the finalizer will close the Db physically
