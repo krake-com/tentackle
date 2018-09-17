@@ -115,10 +115,9 @@ public class InterceptableMethodCache {
    */
   public Object invoke(Class<?> effectiveClass, Interceptable delegate, Method method, Object[] args) throws Throwable {
     InterceptableMethod delegateMethod = methodCache.get(method);
-    Class<?> implClass = delegate.getClass();
     if (delegateMethod == null) {
       Method effectiveMethod = findDeclaredMethod(effectiveClass, method);
-      Method implMethod = implClass.getMethod(method.getName(), method.getParameterTypes());
+      Method implMethod = delegate.getClass().getMethod(method.getName(), method.getParameterTypes());
       Interceptor interceptor = InterceptionUtilities.getInstance().findInterceptors(
                                                     Interceptable.class, effectiveMethod, implMethod);
       delegateMethod = new InterceptableMethod(method, interceptor);
