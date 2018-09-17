@@ -19,14 +19,15 @@
 
 package org.tentackle.reflect;
 
-import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
+import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.log.MethodStatistics;
 import org.tentackle.misc.Duration;
-import org.tentackle.common.StringHelper;
+
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A cache for interceptable methods.<br>
@@ -114,10 +115,9 @@ public class InterceptableMethodCache {
    */
   public Object invoke(Class<?> effectiveClass, Interceptable delegate, Method method, Object[] args) throws Throwable {
     InterceptableMethod delegateMethod = methodCache.get(method);
-    Class<?> implClass = delegate.getClass();
     if (delegateMethod == null) {
       Method effectiveMethod = findDeclaredMethod(effectiveClass, method);
-      Method implMethod = implClass.getMethod(method.getName(), method.getParameterTypes());
+      Method implMethod = delegate.getClass().getMethod(method.getName(), method.getParameterTypes());
       Interceptor interceptor = InterceptionUtilities.getInstance().findInterceptors(
                                                     Interceptable.class, effectiveMethod, implMethod);
       delegateMethod = new InterceptableMethod(method, interceptor);
