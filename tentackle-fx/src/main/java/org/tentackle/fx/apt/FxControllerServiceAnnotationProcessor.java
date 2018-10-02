@@ -30,7 +30,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.Set;
 
-import static javax.lang.model.SourceVersion.RELEASE_10;
+import static javax.lang.model.SourceVersion.RELEASE_11;
 
 /**
  * Annotation processor for the {@code @FxControllerService} annotation.<br>
@@ -38,7 +38,7 @@ import static javax.lang.model.SourceVersion.RELEASE_10;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.FxControllerService")
-@SupportedSourceVersion(RELEASE_10)
+@SupportedSourceVersion(RELEASE_11)
 @AnnotationProcessor
 public class FxControllerServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

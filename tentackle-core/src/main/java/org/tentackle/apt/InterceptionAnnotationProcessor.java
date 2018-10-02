@@ -44,7 +44,7 @@ import org.tentackle.reflect.Interception;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.reflect.Interception")
-@SupportedSourceVersion(SourceVersion.RELEASE_10)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AnnotationProcessor
 public class InterceptionAnnotationProcessor extends AbstractProcessor {
 

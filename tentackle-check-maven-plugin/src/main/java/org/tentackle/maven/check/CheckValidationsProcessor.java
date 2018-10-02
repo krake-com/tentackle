@@ -46,7 +46,7 @@ import org.tentackle.validate.Validator;
  *
  * @author harald
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_10)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedOptions("verbosity")
 @SupportedAnnotationTypes("*")
 public class CheckValidationsProcessor extends AbstractTentackleProcessor {

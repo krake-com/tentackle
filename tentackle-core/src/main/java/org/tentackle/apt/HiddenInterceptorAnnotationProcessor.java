@@ -23,7 +23,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import org.tentackle.common.AnnotationProcessor;
 
-import static javax.lang.model.SourceVersion.RELEASE_10;
+import static javax.lang.model.SourceVersion.RELEASE_11;
 
 /**
  * Processor for the hidden interception annotations in the core package.<br>
@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.RELEASE_10;
 @SupportedAnnotationTypes({
   "org.tentackle.pdo.InvokeInBuddyDelegate"
 })
-@SupportedSourceVersion(RELEASE_10)
+@SupportedSourceVersion(RELEASE_11)
 @AnnotationProcessor
 public class HiddenInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 

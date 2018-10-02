@@ -25,6 +25,15 @@
       <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+
+    <dependency>    <!-- loads transitive java.xml, javafx.base, javafx.controls, javafx.graphics -->
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-fxml</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
