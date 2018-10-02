@@ -86,7 +86,7 @@ public class Log4JLogger implements Logger {
 
   @Override
   public void log(Level level, String message, Throwable cause) {
-    doLog(level, message, cause, null);
+    doLog(level, message, cause);
   }
 
   @Override
@@ -96,27 +96,27 @@ public class Log4JLogger implements Logger {
 
   @Override
   public void finer(String message) {
-    doLog(Level.FINER, message, null, null);
+    doLog(Level.FINER, message, null);
   }
 
   @Override
   public void fine(String message) {
-    doLog(Level.FINE,  message, null, null);
+    doLog(Level.FINE,  message, null);
   }
 
   @Override
   public void info(String message) {
-    doLog(Level.INFO,  message, null, null);
+    doLog(Level.INFO,  message, null);
   }
 
   @Override
   public void warning(String message) {
-    doLog(Level.WARNING,  message, null, null);
+    doLog(Level.WARNING,  message, null);
   }
 
   @Override
   public void severe(String message) {
-    doLog(Level.SEVERE,  message, null, null);
+    doLog(Level.SEVERE,  message, null);
   }
 
 
@@ -174,27 +174,27 @@ public class Log4JLogger implements Logger {
 
   @Override
   public void finer(String message, Throwable cause) {
-    doLog(Level.FINER, message, cause, null);
+    doLog(Level.FINER, message, cause);
   }
 
   @Override
   public void fine(String message, Throwable cause) {
-    doLog(Level.FINE, message, cause, null);
+    doLog(Level.FINE, message, cause);
   }
 
   @Override
   public void info(String message, Throwable cause) {
-    doLog(Level.INFO, message, cause, null);
+    doLog(Level.INFO, message, cause);
   }
 
   @Override
   public void warning(String message, Throwable cause) {
-    doLog(Level.WARNING, message, cause, null);
+    doLog(Level.WARNING, message, cause);
   }
 
   @Override
   public void severe(String message, Throwable cause) {
-    doLog(Level.SEVERE, message, cause, null);
+    doLog(Level.SEVERE, message, cause);
   }
 
 
