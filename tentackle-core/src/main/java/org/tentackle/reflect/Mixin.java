@@ -218,6 +218,9 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * @return true if clazz belongs to this mixin
    */
   public boolean matches(Class<?> clazz) {
+    // we cannot simply clazz.isAssignableFrom(implClass) because the implementation
+    // could theoretically extend classes that should not be treated as "implemented".
+    // Hence, we must check the interfaces.
     Map<Class<?>,Boolean> clazzMap = MATCH_CACHE.get(clazz);
     Boolean m = null;
     if (clazzMap == null) {

@@ -19,10 +19,10 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.pdo.Operation;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbOperationClassVariables;
-
+import org.tentackle.pdo.Operation;
+import org.tentackle.pdo.OperationMethodCache;
 
 
 /**
@@ -40,6 +40,11 @@ public class PersistentOperationClassVariables<T extends Operation<T>, P extends
    */
   public final Class<T> operationClass;
 
+  /**
+   * The PDO method invocation cache.
+   */
+  public final OperationMethodCache<T> methodCache;
+
 
   /**
    * Constructs a classvariable.
@@ -50,6 +55,7 @@ public class PersistentOperationClassVariables<T extends Operation<T>, P extends
   public PersistentOperationClassVariables(Class<T> operationClass, Class<P> clazz)  {
     super(clazz);
     this.operationClass = operationClass;
+    this.methodCache = new OperationMethodCache<>(operationClass);
   }
 
 }

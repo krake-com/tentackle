@@ -19,8 +19,6 @@
 
 package org.tentackle.persist;
 
-import java.lang.reflect.Method;
-import java.util.List;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
@@ -28,12 +26,16 @@ import org.tentackle.dbms.StatementId;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoMethodCache;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.security.SecurityPersistenceImpl;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.SessionUtilities;
+
+import java.lang.reflect.Method;
+import java.util.List;
 
 
 
@@ -59,6 +61,11 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    * The associated PDO class (i.e. the interface)
    */
   public final Class<T> pdoClass;
+
+  /**
+   * The PDO method invocation cache.
+   */
+  public final PdoMethodCache<T> methodCache;
 
   /**
    * The optional eager join.
@@ -191,6 +198,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
           SessionUtilities.getInstance().determineClassId(pdoClass),
           SessionUtilities.getInstance().determineTablename(pdoClass));
     this.pdoClass = pdoClass;
+    this.methodCache = new PdoMethodCache<>(pdoClass);
     this.tableAlias = tableAlias;
     this.superClassVariables = superClassVariables;
     this.eagerJoins = eagerJoins;

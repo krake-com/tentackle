@@ -41,6 +41,8 @@ import org.tentackle.pdo.LockException;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoFactory;
+import org.tentackle.pdo.PdoMethodCache;
+import org.tentackle.pdo.PdoMethodCacheProvider;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
@@ -90,7 +92,8 @@ import static org.tentackle.sql.Backend.*;
  * @author harald
  */
 public abstract class AbstractPersistentObject<T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>
-       extends AbstractDbObject<P> implements PersistentObject<T>, EffectiveClassProvider<T>, Cloneable {
+       extends AbstractDbObject<P>
+       implements PersistentObject<T>, EffectiveClassProvider<T>, PdoMethodCacheProvider<T>, Cloneable {
 
   private static final long serialVersionUID = 1921941642168910515L;
 
@@ -232,7 +235,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return pdo.getDomainDelegate();
   }
 
-
   @Override
   public T getPdo() {
     return pdo;
@@ -248,7 +250,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     this.pdo = pdo;
   }
 
-
   @Override
   public Class<T> getEffectiveClass() {
     return pdo.getEffectiveClass();
@@ -259,6 +260,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return pdo.getEffectiveSuperClasses();
   }
 
+  @Override
+  public PdoMethodCache<T> getPdoMethodCache() {
+    return getClassVariables().methodCache;
+  }
 
   /**
    * Clones this persistent object.<br>

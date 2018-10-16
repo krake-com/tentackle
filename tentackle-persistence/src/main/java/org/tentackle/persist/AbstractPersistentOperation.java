@@ -19,18 +19,21 @@
 
 package org.tentackle.persist;
 
-import java.util.List;
 import org.tentackle.dbms.AbstractDbOperation;
 import org.tentackle.dbms.Db;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
 import org.tentackle.pdo.Operation;
+import org.tentackle.pdo.OperationMethodCache;
+import org.tentackle.pdo.OperationMethodCacheProvider;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.pdo.PersistentOperation;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+
+import java.util.List;
 
 
 /**
@@ -43,7 +46,8 @@ import org.tentackle.session.Session;
  * @author harald
  */
 public abstract class AbstractPersistentOperation<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
-       extends AbstractDbOperation<P> implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T> {
+       extends AbstractDbOperation<P>
+       implements PersistenceDelegate<T>, PersistentOperation<T>, EffectiveClassProvider<T>, OperationMethodCacheProvider<T> {
 
   private static final long serialVersionUID = 1L;
 
@@ -123,6 +127,10 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
     throw new PersistenceException("classvariables undefined for " + getClass());
   }
 
+  @Override
+  public OperationMethodCache<T> getOperationMethodCache() {
+    return getClassVariables().methodCache;
+  }
 
   /**
    * {@inheritDoc}

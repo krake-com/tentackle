@@ -22,45 +22,72 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * A method wrapper to optionally invoke the interceptors around a method.
+ * A method wrapper to optionally invoke the interceptors around a delegate's method.
  *
  * @author harald
  */
 public class InterceptableMethod {
 
-  private final Method method;                // the method
+  private final Method method;                // the orginal method of the interface
+  private final Method delegateMethod;        // the delegate method
   private final Interceptor interceptor;      // the head of interceptors, null if none
 
   /**
-   * Creates a delegate method.
+   * Creates a interceptable method.
    *
-   * @param method the method
+   * @param method the orginal method of the interface
+   * @param delegateMethod the delegate's method
    * @param interceptor the head of interceptors, null if none
    */
-  public InterceptableMethod(Method method, Interceptor interceptor) {
-    if (method == null) {
-      throw new NullPointerException("method must not be null");
-    }
+  public InterceptableMethod(Method method,  Method delegateMethod, Interceptor interceptor) {
     this.method = method;
+    this.delegateMethod = delegateMethod;
     this.interceptor = interceptor;
   }
 
   /**
-   * Invokes a method.<br>
-   * If intercepted the head of interceptors will be invoked, else the method.
+   * Gets the original method.
    *
-   * @param delegate the delegate to invoke the method on, null if static
-   * @param args the method arguments
-   * @return the method's return value
+   * @return the method of the interface
+   */
+  public Method getMethod() {
+    return method;
+  }
+
+  /**
+   * Gets the delegate's method.
+   *
+   * @return the method to invoke
+   */
+  public Method getDelegateMethod() {
+    return delegateMethod;
+  }
+
+  /**
+   * Gets the interceptor.
+   *
+   * @return the interceptor, null if none
+   */
+  public Interceptor getInterceptor() {
+    return interceptor;
+  }
+
+  /**
+   * Invokes a delegateMethod.<br>
+   * If intercepted the head of interceptors will be invoked, else the delegateMethod.
+   *
+   * @param delegate the delegate to invoke the delegateMethod on, null if static
+   * @param args the delegateMethod arguments
+   * @return the delegateMethod's return value
    * @throws Throwable if invocation failed
    */
   public Object invoke(Object delegate, Object[] args) throws Throwable {
     try {
       if (interceptor != null) {
-        return interceptor.invoke(delegate, method, args);
+        return interceptor.invoke(delegate, delegateMethod, args);
       }
       else {
-        return method.invoke(delegate, args);
+        return delegateMethod.invoke(delegate, args);
       }
     }
     catch (InvocationTargetException ix) {

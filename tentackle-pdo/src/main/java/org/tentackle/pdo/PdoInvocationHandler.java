@@ -16,8 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.pdo;
+
+import org.tentackle.misc.Identifiable;
+import org.tentackle.reflect.ClassMapper;
+import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.reflect.Interceptable;
+import org.tentackle.reflect.InterceptableMethod;
+import org.tentackle.reflect.InterceptableMethodInvoker;
+import org.tentackle.reflect.Mixin;
+import org.tentackle.session.Session;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
@@ -25,13 +33,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.misc.Identifiable;
-import org.tentackle.reflect.ClassMapper;
-import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.Interceptable;
-import org.tentackle.reflect.InterceptableMethodCache;
-import org.tentackle.reflect.Mixin;
-import org.tentackle.session.Session;
 
 /**
  * Invocation handler for PDOs.<br>
@@ -45,24 +46,24 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   private static final long serialVersionUID = 1L;
 
   /**
-   * The method cache.<br>
-   * Speeds up method invocations and provides logging and statistics.
+   * The method invoker.<br>
+   * Performs the method invocations and provides logging and statistics.
    */
-  public static final InterceptableMethodCache METHOD_CACHE = new InterceptableMethodCache("PDO");
+  public static final InterceptableMethodInvoker INVOKER = new InterceptableMethodInvoker("PDO");
 
 
   // preloaded methods of java.lang.Object
   private static final Method HASHCODE_METHOD;
   private static final Method EQUALS_METHOD;
   private static final Method TOSTRING_METHOD;
+  private static final Method CLONE_METHOD;
 
   // preloaded methods of java.lang.Comparable
   private static final Method COMPARETO_METHOD;
 
   // preloaded methods of PersistentDomainObject
-  private static final Method CLONE_METHOD;
-  private static final Method GETDOMAINOBJECT_METHOD;
-  private static final Method GETPERSISTENTOBJECT_METHOD;
+  private static final Method GETDOMAINDELEGATE_METHOD;
+  private static final Method GETPERSISTENCEDELEGATE_METHOD;
 
   // preloaded methods of PdoHolder
   private static final Method TOGENERICSTRING_METHOD;
@@ -72,7 +73,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
 
   // preloaded methods of EffectiveClassProvider
   private static final Method GETEFFECTIVECLASS_METHOD;
-  private static final Method GETEFFECTIVESUPERCLASS_METHOD;
+  private static final Method GETEFFECTIVESUPERCLASSES_METHOD;
 
   static {
     try {
@@ -81,14 +82,14 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       TOSTRING_METHOD = Object.class.getDeclaredMethod("toString");
       CLONE_METHOD = Object.class.getDeclaredMethod("clone");
       COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
-      GETDOMAINOBJECT_METHOD = PersistentDomainObject.class.getDeclaredMethod("getDomainDelegate");
-      GETPERSISTENTOBJECT_METHOD = PersistentDomainObject.class.getDeclaredMethod("getPersistenceDelegate");
+      GETDOMAINDELEGATE_METHOD = PersistentDomainObject.class.getDeclaredMethod("getDomainDelegate");
+      GETPERSISTENCEDELEGATE_METHOD = PersistentDomainObject.class.getDeclaredMethod("getPersistenceDelegate");
       TOGENERICSTRING_METHOD = Identifiable.class.getDeclaredMethod("toGenericString");
       GETPDO_METHOD = PdoHolder.class.getDeclaredMethod("getPdo");
       SETPDO_METHOD = PdoHolder.class.getDeclaredMethod("setPdo", PersistentDomainObject.class);
       ON_METHOD = PdoHolder.class.getDeclaredMethod("on");
       GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
-      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
+      GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
     catch (NoSuchMethodException e) {
       throw new NoSuchMethodError(e.getMessage());
@@ -96,10 +97,21 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
+  // the following methods are a PdoInvocation, mapped by PdoMethodCache
+
+  private static Object invokePersistence(PdoInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
+    return INVOKER.invoke(invocationHandler.persistenceMixin.getDelegate(), method, args);
+  }
+
+  private static Object invokeDomain(PdoInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
+    return INVOKER.invoke(invocationHandler.domainMixin.getDelegate(), method, args);
+  }
+
+
+
   private final Class<T> clazz;                                   // the pdo class
   private final Mixin<T,PersistentObject<T>> persistenceMixin;    // the persistence mixin
   private final Mixin<T,DomainObject<T>> domainMixin;             // the domain mixin
-
 
 
   /**
@@ -266,38 +278,38 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   }
 
 
-
   @SuppressWarnings("unchecked")
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+    // a few methods should never be caught by an interceptor and are always executed directly
     Class<?> declaringClass = method.getDeclaringClass();
-    Interceptable delegate = null;
 
     if (declaringClass == Object.class) {
       if (method.equals(HASHCODE_METHOD)) {
-        delegate = persistenceMixin.getDelegate();
+        return persistenceMixin.getDelegate().hashCode();
       }
       else if (method.equals(EQUALS_METHOD)) {
         Object obj = args[0];
         if (obj instanceof PersistentDomainObject) {
-          args = new Object[] { ((PersistentDomainObject) obj).getPersistenceDelegate() };
-          delegate = persistenceMixin.getDelegate();
+          return persistenceMixin.getDelegate().equals(((PersistentDomainObject) obj).getPersistenceDelegate());
         }
         else  {
           return false;
         }
       }
       else if (method.equals(TOSTRING_METHOD)) {
-        delegate = domainMixin.getDelegate();
+        return domainMixin.getDelegate().toString();
+      }
+      else if (method.equals(CLONE_METHOD)) {
+        throw new CloneNotSupportedException("PDOs are not cloneable, use copy() instead");
       }
     }
     else if (declaringClass == Comparable.class) {
       if (method.equals(COMPARETO_METHOD)) {
         Object obj = args[0];
         if (obj instanceof PersistentDomainObject) {
-          args = new Object[] { ((PersistentDomainObject) obj).getPersistenceDelegate() };
-          delegate = persistenceMixin.getDelegate();
+          return ((Comparable) persistenceMixin.getDelegate()).compareTo(((PersistentDomainObject) obj).getPersistenceDelegate());
         }
         else  {
           return Integer.MAX_VALUE;
@@ -305,21 +317,18 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       }
     }
     else if (declaringClass == PersistentDomainObject.class) {
-      if (method.equals(GETDOMAINOBJECT_METHOD)) {
+      if (method.equals(GETDOMAINDELEGATE_METHOD)) {
         return domainMixin.getDelegate();
       }
-      else if (method.equals(GETPERSISTENTOBJECT_METHOD)) {
+      else if (method.equals(GETPERSISTENCEDELEGATE_METHOD)) {
         return persistenceMixin.getDelegate();
-      }
-      else if (method.equals(CLONE_METHOD)) {
-        throw new CloneNotSupportedException("PDOs are not cloneable");
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {
       if (method.equals(GETEFFECTIVECLASS_METHOD)) {
         return clazz;
       }
-      else if (method.equals(GETEFFECTIVESUPERCLASS_METHOD)) {
+      else if (method.equals(GETEFFECTIVESUPERCLASSES_METHOD)) {
         List<Class<?>> list = new ArrayList<>();
         for (Class<?> ifClass: clazz.getInterfaces()) {
           if (PersistentDomainObject.class.isAssignableFrom(ifClass)) {
@@ -329,31 +338,54 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
         return list;
       }
     }
-    else if (declaringClass == PdoHolder.class &&
-             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below, if overridden
+    else if (declaringClass == Identifiable.class) {
       if (method.equals(TOGENERICSTRING_METHOD)) {
         T pdo = (T) proxy;
         return clazz.getName() + '[' + pdo.getId() + '/' + pdo.getSerial() + ']';
       }
-      else if (method.equals(GETPDO_METHOD)) {
+    }
+    else if (declaringClass == PdoHolder.class &&
+        !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
+      if (method.equals(GETPDO_METHOD)) {
         return proxy;
       }
       else if (method.equals(SETPDO_METHOD)) {
         throw new PdoRuntimeException("method " + SETPDO_METHOD + " not allowed on PDO " + clazz);
       }
     }
-    else if (persistenceMixin.matches(declaringClass)) {
-      delegate = persistenceMixin.getDelegate();
+
+    // all persistence delegates must implement PdoMethodCacheProvider, but we don't
+    // want the PersistentObject to extend that because that's an implementation detail
+    return ((PdoMethodCacheProvider<T>) persistenceMixin.getDelegate()).getPdoMethodCache().invoke(this, method, args);
+  }
+
+
+  /**
+   * Determines the invocation method to be cached by the {@link PdoMethodCache}.
+   *
+   * @param method the interface method
+   * @return the info necessary to setup the cache entry
+   */
+  public PdoMethodCacheInfo determineInvocation(Method method) {
+
+    PdoInvocation invocation;
+    Class<? extends Interceptable> delegateClass;
+
+    Class<?> declaringClass = method.getDeclaringClass();
+
+    if (persistenceMixin.matches(declaringClass)) {
+      invocation = PdoInvocationHandler::invokePersistence;
+      delegateClass = persistenceMixin.getDelegate().getClass();
     }
     else if (domainMixin.matches(declaringClass)) {
-      delegate = domainMixin.getDelegate();
+      invocation = PdoInvocationHandler::invokeDomain;
+      delegateClass = domainMixin.getDelegate().getClass();
     }
     else {
-      throw new PdoRuntimeException("no delegate found for " + declaringClass);
+      throw new PdoRuntimeException("no delegate found for " + method);
     }
 
-    // execute method
-    return METHOD_CACHE.invoke(clazz, delegate, method, args);
+    return new PdoMethodCacheInfo(invocation, delegateClass);
   }
 
 }

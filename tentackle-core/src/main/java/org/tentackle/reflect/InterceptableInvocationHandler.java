@@ -23,10 +23,14 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Class mapping invocation handler.<br>
+ * Class mapping invocation handler.
+ * <p>
+ * This invocation handler is for dynamic proxies serving only one interface.
  *
  * @param <T> the interceptable type
  * @author harald
@@ -42,10 +46,12 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
 
   // preloaded methods of EffectiveClassProvider
   private static final Method GETEFFECTIVECLASS_METHOD;
+  private static final Method GETEFFECTIVESUPERCLASSES_METHOD;
 
   static {
     try {
-      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getMethod("getEffectiveClass");
+      GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
+      GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
     catch (NoSuchMethodException e) {
       throw new NoSuchMethodError(e.getMessage());
@@ -53,9 +59,9 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
   }
 
 
+
   private final Class<T> clazz;     // the handled class
   private final Mixin<T,T> mixin;   // the mixin
-
 
 
   /**
@@ -70,7 +76,6 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
     this.clazz = clazz;
     mixin = new Mixin<>(mapper, clazz, Interceptable.class);
   }
-
 
 
   /**
@@ -94,17 +99,24 @@ public class InterceptableInvocationHandler<T extends Interceptable & Serializab
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-    Class<?> delegateClass = method.getDeclaringClass();
-
-    if (delegateClass == EffectiveClassProvider.class && method.equals(GETEFFECTIVECLASS_METHOD)) {
+    if (method.equals(GETEFFECTIVECLASS_METHOD)) {
       return clazz;
+    }
+    else if (method.equals(GETEFFECTIVESUPERCLASSES_METHOD)) {
+      List<Class<?>> list = new ArrayList<>();
+      for (Class<?> ifClass: clazz.getInterfaces()) {
+        if (Interceptable.class.isAssignableFrom(ifClass)) {
+          list.add(ifClass);
+        }
+      }
+      return list;
     }
 
     InterceptableMethod delegateMethod = METHOD_CACHE.get(method);
     if (delegateMethod == null) {
-      Method implMethod = delegateClass.getMethod(method.getName(), method.getParameterTypes());
+      Method implMethod = mixin.getDelegate().getClass().getMethod(method.getName(), method.getParameterTypes());
       Interceptor interceptor = InterceptionUtilities.getInstance().findInterceptors(clazz, method, implMethod);
-      delegateMethod = new InterceptableMethod(method, interceptor);
+      delegateMethod = new InterceptableMethod(method, implMethod, interceptor);
       METHOD_CACHE.put(method, delegateMethod);
     }
     

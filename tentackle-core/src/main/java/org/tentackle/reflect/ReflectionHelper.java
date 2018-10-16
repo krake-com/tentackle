@@ -19,6 +19,9 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -27,8 +30,6 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import org.tentackle.common.StringHelper;
-import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -710,6 +711,31 @@ public final class ReflectionHelper {
     throw new TentackleRuntimeException("no such path '" + donePath + "'");
   }
 
+
+  /**
+   * Finds the topmost overridden interface method for a given method.
+   *
+   * @param clazz the interface
+   * @param method the method
+   * @return the possibly overridden method, else the original method
+   */
+  public static Method findDeclaredMethod(Class<?> clazz, Method method) {
+    try {
+      method = clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
+      // if found: return that method
+    }
+    catch (NoSuchMethodException nme) {
+      // try interfaces
+      for (Class<?> ifClass: clazz.getInterfaces()) {
+        Method m = findDeclaredMethod(ifClass, method);
+        if (!m.equals(method)) {
+          method = m;
+          break;
+        }
+      }
+    }
+    return method;
+  }
 
 
 

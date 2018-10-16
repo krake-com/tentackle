@@ -19,17 +19,19 @@
 
 package org.tentackle.pdo;
 
+import org.tentackle.reflect.ClassMapper;
+import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.reflect.Interceptable;
+import org.tentackle.reflect.InterceptableMethod;
+import org.tentackle.reflect.InterceptableMethodInvoker;
+import org.tentackle.reflect.Mixin;
+import org.tentackle.session.Session;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.reflect.ClassMapper;
-import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.Interceptable;
-import org.tentackle.reflect.InterceptableMethodCache;
-import org.tentackle.reflect.Mixin;
-import org.tentackle.session.Session;
 
 /**
  * Invocation handler for operations.<br>
@@ -41,24 +43,24 @@ import org.tentackle.session.Session;
 public class OperationInvocationHandler<T extends Operation<T>> implements InvocationHandler {
 
   /**
-   * The method cache.<br>
-   * Speeds up method invocations and provides logging and statistics.
+   * The method invoker.<br>
+   * Performs the method invocations and provides logging and statistics.
    */
-  public static final InterceptableMethodCache METHOD_CACHE = new InterceptableMethodCache("OPN");
+  public static final InterceptableMethodInvoker INVOKER = new InterceptableMethodInvoker("OPN");
 
 
   // preloaded methods of java.lang.Object
   private static final Method HASHCODE_METHOD;
   private static final Method EQUALS_METHOD;
   private static final Method TOSTRING_METHOD;
+  private static final Method CLONE_METHOD;
 
   // preloaded methods of java.lang.Comparable
   private static final Method COMPARETO_METHOD;
 
   // preloaded methods of Operation
-  private static final Method CLONE_METHOD;
   private static final Method GETDOMAINDELEGATE_METHOD;
-  private static final Method GETPERSISTENTDELEGATE_METHOD;
+  private static final Method GETPERSISTENCEDELEGATE_METHOD;
   private static final Method OP_METHOD;
 
   // preloaded methods of OperationHolder
@@ -67,7 +69,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
   // preloaded methods of EffectiveClassProvider
   private static final Method GETEFFECTIVECLASS_METHOD;
-  private static final Method GETEFFECTIVESUPERCLASS_METHOD;
+  private static final Method GETEFFECTIVESUPERCLASSES_METHOD;
 
   static {
     try {
@@ -77,12 +79,12 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       CLONE_METHOD = Object.class.getDeclaredMethod("clone");
       COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
       GETDOMAINDELEGATE_METHOD = Operation.class.getDeclaredMethod("getDomainDelegate");
-      GETPERSISTENTDELEGATE_METHOD = Operation.class.getDeclaredMethod("getPersistenceDelegate");
+      GETPERSISTENCEDELEGATE_METHOD = Operation.class.getDeclaredMethod("getPersistenceDelegate");
       GETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("getOperation");
       SETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("setOperation", Operation.class);
       OP_METHOD = OperationHolder.class.getDeclaredMethod("op");
       GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
-      GETEFFECTIVESUPERCLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
+      GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
     catch (NoSuchMethodException e) {
       throw new NoSuchMethodError(e.getMessage());
@@ -90,10 +92,22 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   }
 
 
+  // the following methods are an OperationInvocation, mapped by OperationMethodCache
+
+  private static Object invokePersistence(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
+    return INVOKER.invoke(invocationHandler.persistenceMixin.getDelegate(), method, args);
+  }
+
+  private static Object invokeDomain(OperationInvocationHandler invocationHandler, InterceptableMethod method, Object[] args) throws Throwable {
+    return INVOKER.invoke(invocationHandler.domainMixin.getDelegate(), method, args);
+  }
+
+
+
   private final Class<T> clazz;                                 // the operation class
   private Mixin<T,PersistentOperation<T>> persistenceMixin;     // the persistence mixin
   private Mixin<T,DomainOperation<T>> domainMixin;              // the domain mixin
-
+  private transient OperationMethodCache<T> methodCache;        // the method cache (not serialized!)
 
 
   /**
@@ -290,24 +304,22 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+    // a few methods should never be caught by an interceptor and are always executed directly
     Class<?> declaringClass = method.getDeclaringClass();
-    Interceptable delegate = null;
 
     if (declaringClass == Object.class) {
       if (method.equals(HASHCODE_METHOD)) {
-        delegate = persistenceMixin.isDummy() ? domainMixin.getDelegate() : persistenceMixin.getDelegate();
+        return persistenceMixin.isDummy() ? domainMixin.getDelegate().hashCode() : persistenceMixin.getDelegate().hashCode();
       }
       else if (method.equals(EQUALS_METHOD)) {
         Object obj = args[0];
         if (obj instanceof Operation) {
           if (persistenceMixin.isDummy()) {   // persistence delegate takes precedence over domain for equals
-            delegate = domainMixin.getDelegate();
-            args = new Object[] { ((Operation) obj).getDomainDelegate() };
+            return domainMixin.getDelegate().equals(((Operation) obj).getDomainDelegate());
           }
           else {
             // at least one of domain- or persistence delegate is present
-            delegate = persistenceMixin.getDelegate();
-            args = new Object[] { ((Operation) obj).getPersistenceDelegate() };
+            return persistenceMixin.getDelegate().equals(((Operation) obj).getPersistenceDelegate());
           }
         }
         else  {
@@ -316,7 +328,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       }
       else if (method.equals(TOSTRING_METHOD)) {
         // domain delegate takes precedence over persistence for toString
-        delegate = domainMixin.isDummy() ? persistenceMixin.getDelegate() : domainMixin.getDelegate();
+        return domainMixin.isDummy() ? persistenceMixin.getDelegate().toString() : domainMixin.getDelegate().toString();
+      }
+      else if (method.equals(CLONE_METHOD)) {
+        throw new CloneNotSupportedException("operations are not cloneable");
       }
     }
     else if (declaringClass == Comparable.class) {
@@ -325,12 +340,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         if (obj instanceof Operation) {
           // persistence delegate takes precedence over domain for compareTo
           if (persistenceMixin.isDummy()) {
-            delegate = domainMixin.getDelegate();
-            args = new Object[] { ((Operation) obj).getDomainDelegate() };
+            return ((Comparable) domainMixin.getDelegate()).compareTo(((Operation) obj).getDomainDelegate());
           }
           else {
-            delegate = persistenceMixin.getDelegate();
-            args = new Object[] { ((Operation) obj).getPersistenceDelegate() };
+            return ((Comparable) persistenceMixin.getDelegate()).compareTo(((Operation) obj).getPersistenceDelegate());
           }
         }
         else  {
@@ -342,18 +355,15 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       if (method.equals(GETDOMAINDELEGATE_METHOD)) {
         return domainMixin.getDelegate();
       }
-      else if (method.equals(GETPERSISTENTDELEGATE_METHOD)) {
+      else if (method.equals(GETPERSISTENCEDELEGATE_METHOD)) {
         return persistenceMixin.getDelegate();
-      }
-      else if (method.equals(CLONE_METHOD)) {
-        throw new CloneNotSupportedException("operations are not cloneable");
       }
     }
     else if (declaringClass == EffectiveClassProvider.class) {
       if (method.equals(GETEFFECTIVECLASS_METHOD)) {
         return clazz;
       }
-      else if (method.equals(GETEFFECTIVESUPERCLASS_METHOD)) {
+      else if (method.equals(GETEFFECTIVESUPERCLASSES_METHOD)) {
         List<Class<?>> list = new ArrayList<>();
         for (Class<?> ifClass: clazz.getInterfaces()) {
           if (Operation.class.isAssignableFrom(ifClass)) {
@@ -372,19 +382,49 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         throw new PdoRuntimeException("method " + SETOPERATION_METHOD + " not allowed on operation " + clazz);
       }
     }
+
+    if (methodCache == null) {
+      if (persistenceMixin.isDummy()) {
+        // use the global cachemap
+        methodCache = OperationMethodCache.getCache(clazz);
+      }
+      else {  // faster, but needs persistence delegate
+        // all persistence delegates must implement PdoMethodCacheProvider, but we don't
+        // want the PersistentObject to extend that because that's an implementation detail
+        methodCache = ((OperationMethodCacheProvider<T>) persistenceMixin.getDelegate()).getOperationMethodCache();
+      }
+    }
+
+    return methodCache.invoke(this, method, args);
+  }
+
+
+  /**
+   * Determines the invocation method to be cached by the {@link OperationMethodCache}.
+   *
+   * @param method the interface method
+   * @return the info necessary to setup the cache entry
+   */
+  public OperationMethodCacheInfo determineInvocation(Method method) {
+
+    OperationInvocation invocation;
+    Class<? extends Interceptable> delegateClass;
+
+    Class<?> declaringClass = method.getDeclaringClass();
+
+    if (persistenceMixin.matches(declaringClass)) {
+      invocation = OperationInvocationHandler::invokePersistence;
+      delegateClass = persistenceMixin.getDelegate().getClass();
+    }
     else if (domainMixin.matches(declaringClass)) {
-      delegate = domainMixin.getDelegate();
+      invocation = OperationInvocationHandler::invokeDomain;
+      delegateClass = domainMixin.getDelegate().getClass();
     }
-    else if (persistenceMixin.matches(declaringClass)) {
-      delegate = persistenceMixin.getDelegate();
-    }
-
-    if (delegate == null) {
-      throw new PdoRuntimeException("no delegate found for " + method + " declared in " + declaringClass);
+    else {
+      throw new PdoRuntimeException("no delegate found for " + method);
     }
 
-    // execute method
-    return METHOD_CACHE.invoke(clazz, delegate, method, args);
+    return new OperationMethodCacheInfo(invocation, delegateClass);
   }
 
 }

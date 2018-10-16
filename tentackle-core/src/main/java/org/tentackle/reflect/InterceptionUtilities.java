@@ -19,6 +19,10 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,9 +30,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.TentackleRuntimeException;
 
 
 interface InterceptionUtilities$Singleton {
@@ -156,6 +157,30 @@ public class InterceptionUtilities {
            NoSuchMethodException | SecurityException | InvocationTargetException ex) {
       throw new TentackleRuntimeException("interceptor @" + annotation + " could not be created", ex);
     }
+  }
+
+
+  /**
+   * Creates an interceptable method.
+   * <p>
+   * Finds the implementing method of the delegate and optional interceptors.
+   *
+   * @param clazz the topmost interceptable's interface
+   * @param delegateClazz the delegate's class to invoke the method on
+   * @param method the interface's method to invoke
+   * @return the interceptable method
+   */
+  public InterceptableMethod createInterceptableMethod(Class<? extends Interceptable> clazz, Class<? extends Interceptable> delegateClazz, Method method) {
+    Method effectiveMethod = ReflectionHelper.findDeclaredMethod(clazz, method);
+    Method implMethod;
+    try {
+      implMethod = delegateClazz.getMethod(method.getName(), method.getParameterTypes());
+    }
+    catch (NoSuchMethodException nx) {
+      throw new TentackleRuntimeException("cannot create interceptable method", nx);
+    }
+    Interceptor interceptor = findInterceptors(Interceptable.class, effectiveMethod, implMethod);
+    return new InterceptableMethod(method, implMethod, interceptor);
   }
 
 }
