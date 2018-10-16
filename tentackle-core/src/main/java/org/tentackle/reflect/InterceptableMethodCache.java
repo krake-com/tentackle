@@ -200,7 +200,7 @@ public class InterceptableMethodCache {
     if (logInvocations || durationExceeded || collectionSizeExceeded) {
       StringBuilder buf = new StringBuilder();
       if (logInvocationDetails) {
-        buf.append(ReflectionHelper.getClassBaseName(method.getDeclaringClass())).
+        buf.append(ReflectionHelper.getClassBaseName(delegate.getClass())).
             append(": ").
             append(ReflectionHelper.getClassBaseName(method.getDeclaringClass())).
             append('.').
@@ -227,7 +227,7 @@ public class InterceptableMethodCache {
         buf.append('}');
       }
       else {
-        buf.append(method.getDeclaringClass().getName()).
+        buf.append(ReflectionHelper.getClassBaseName(method.getDeclaringClass())).
             append('.').
             append(method.getName()).
             append(" [").

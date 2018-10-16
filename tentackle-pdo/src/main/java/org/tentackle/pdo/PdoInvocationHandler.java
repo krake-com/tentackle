@@ -19,12 +19,6 @@
 
 package org.tentackle.pdo;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.reflect.EffectiveClassProvider;
@@ -32,6 +26,13 @@ import org.tentackle.reflect.Interceptable;
 import org.tentackle.reflect.InterceptableMethodCache;
 import org.tentackle.reflect.Mixin;
 import org.tentackle.session.Session;
+
+import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Invocation handler for PDOs.<br>
@@ -343,13 +344,15 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
         return list;
       }
     }
-    else if (declaringClass == PdoHolder.class &&
-             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
+    else if (declaringClass == Identifiable.class) {
       if (method.equals(TOGENERICSTRING_METHOD)) {
         T pdo = (T) proxy;
         return clazz.getName() + '[' + pdo.getId() + '/' + pdo.getSerial() + ']';
       }
-      else if (method.equals(GETPDO_METHOD)) {
+    }
+    else if (declaringClass == PdoHolder.class &&
+             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
+      if (method.equals(GETPDO_METHOD)) {
         return proxy;
       }
       else if (method.equals(SETPDO_METHOD)) {
