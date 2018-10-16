@@ -19,6 +19,8 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
+import org.tentackle.pdo.PdoMethodCache;
+import org.tentackle.pdo.PdoMethodCacheProvider;
 import org.tentackle.test.pdo.mock.MockPersistentObject;
 import org.testng.Reporter;
 
@@ -28,7 +30,11 @@ import org.testng.Reporter;
  *
  * @author harald
  */
-public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistentObject<T,InvoicePersistenceImpl<T>> implements InvoicePersistence<T> {
+public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistentObject<T,InvoicePersistenceImpl<T>>
+       implements InvoicePersistence<T>, PdoMethodCacheProvider<T> {
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private static final PdoMethodCache METHOD_CACHE = new PdoMethodCache<>(Invoice.class);
 
   private String invoiceNo;
 
@@ -57,4 +63,9 @@ public class InvoicePersistenceImpl<T extends Invoice<T>> extends MockPersistent
     return "BlahPersist";
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public PdoMethodCache<T> getPdoMethodCache() {
+    return METHOD_CACHE;
+  }
 }

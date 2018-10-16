@@ -19,6 +19,8 @@
 
 package org.tentackle.test.pdo.pdofactory;
 
+import org.tentackle.pdo.OperationMethodCache;
+import org.tentackle.pdo.OperationMethodCacheProvider;
 import org.tentackle.test.pdo.mock.MockPersistentOperation;
 import org.testng.Reporter;
 
@@ -28,7 +30,10 @@ import org.testng.Reporter;
  *
  * @author harald
  */
-public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOperation> implements SomeOperationPersistence {
+public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOperation>
+       implements SomeOperationPersistence, OperationMethodCacheProvider<SomeOperation> {
+
+  private static final OperationMethodCache<SomeOperation> METHOD_CACHE = new OperationMethodCache<>(SomeOperation.class);
 
   /**
    * Creates an operation persistence object.
@@ -45,4 +50,8 @@ public class SomeOperationPersistenceImpl extends MockPersistentOperation<SomeOp
     return str;
   }
 
+  @Override
+  public OperationMethodCache<SomeOperation> getOperationMethodCache() {
+    return METHOD_CACHE;
+  }
 }
