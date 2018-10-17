@@ -65,14 +65,15 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    */
   private int logMinReturnedCollectionSize;
 
-
   /**
    * Set to true if method duration must be measured.
    */
   private boolean durationNecessary;
 
-
-  private final String name;      // the invoker's name
+  /**
+   * the invoker's name.
+   */
+  private final String name;
 
 
   /**
@@ -100,25 +101,13 @@ public class InterceptableMethodInvoker extends MethodStatistics {
     return getName();
   }
 
-  private void updateIsDurationNecessary() {
-    durationNecessary = logInvocations || collectStatistics || logMinDurationMillis > 0 || logMinReturnedCollectionSize > 0;
-  }
-
-  /**
-   * Returns whether duration of a method invocation must be measured.
-   *
-   * @return true if duration necessary
-   */
-  public boolean isDurationNecessary() {
-    return durationNecessary;
-  }
 
   /**
    * Retuns whether statictics should be collected.
    *
    * @return true if method invocations are counted and measured per method
    */
-  public boolean isCollectStatistics() {
+  public boolean isCollectingStatistics() {
     return collectStatistics;
   }
 
@@ -127,9 +116,9 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @param collectStatistics true if method invocations are counted and measured per method
    */
-  public void setCollectStatistics(boolean collectStatistics) {
+  public void setCollectingStatistics(boolean collectStatistics) {
     this.collectStatistics = collectStatistics;
-    updateIsDurationNecessary();
+    updateDurationNecessary();
   }
 
   /**
@@ -137,7 +126,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @return true if invocations are logged
    */
-  public boolean isLogInvocations() {
+  public boolean isLoggingInvocations() {
     return logInvocations;
   }
 
@@ -146,9 +135,9 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @param logInvocations true if invocations are logged
    */
-  public void setLogInvocations(boolean logInvocations) {
+  public void setLoggingInvocations(boolean logInvocations) {
     this.logInvocations = logInvocations;
-    updateIsDurationNecessary();
+    updateDurationNecessary();
   }
 
   /**
@@ -156,7 +145,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @return true if log args and retval
    */
-  public boolean isLogInvocationDetails() {
+  public boolean isLoggingInvocationDetails() {
     return logInvocationDetails;
   }
 
@@ -165,7 +154,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    *
    * @param logInvocationDetails true if log args and retval
    */
-  public void setLogInvocationDetails(boolean logInvocationDetails) {
+  public void setLoggingInvocationDetails(boolean logInvocationDetails) {
     this.logInvocationDetails = logInvocationDetails;
   }
 
@@ -185,7 +174,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    */
   public void setLogMinDurationMillis(long logMinDurationMillis) {
     this.logMinDurationMillis = logMinDurationMillis;
-    updateIsDurationNecessary();
+    updateDurationNecessary();
   }
 
   /**
@@ -204,7 +193,7 @@ public class InterceptableMethodInvoker extends MethodStatistics {
    */
   public void setLogMinReturnedCollectionSize(int logMinReturnedCollectionSize) {
     this.logMinReturnedCollectionSize = logMinReturnedCollectionSize;
-    updateIsDurationNecessary();
+    updateDurationNecessary();
   }
 
 
@@ -318,6 +307,10 @@ public class InterceptableMethodInvoker extends MethodStatistics {
           append("ms]");
     }
     return buf;
+  }
+
+  private void updateDurationNecessary() {
+    durationNecessary = logInvocations || collectStatistics || logMinDurationMillis > 0 || logMinReturnedCollectionSize > 0;
   }
 
 }

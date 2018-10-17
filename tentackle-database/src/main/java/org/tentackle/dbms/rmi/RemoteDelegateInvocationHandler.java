@@ -51,44 +51,164 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   public static final String MDC_SESSION_KEY = "session";
 
+
   /**
    * If true method invocations are counted and measured per method.
    * They can be logged via RemoteDbSession#logStatistics by the client request.
    * For debugging and profiling purposes only.
    */
-  public static boolean collectStatistics;
+  private static boolean collectStatistics;
 
   /**
    * If true, all invocations are logged.
    */
-  public boolean logInvocations;
+  private static boolean logInvocations;
 
   /**
    * If true, args and return values will be logged as well.
    */
-  public boolean logInvocationDetails;
+  private static boolean logInvocationDetails;
 
   /**
    * Minimum milliseconds a method needs to execute before being logged.<br>
    * 0 to disable.<p>
    * For analysis and debugging purposes only.
    */
-  public static long logMinDurationMillis;
+  private static long logMinDurationMillis;
 
   /**
    * Minimum size of returned collection to get logged.<br>
    * 0 to disable.<p>
    * For analysis and debugging purposes only.
    */
-  public static int logMinReturnedCollectionSize;
+  private static int logMinReturnedCollectionSize;
 
   /**
    * Optional filter to log only RMI-calls for certain MappedDiagnosticContexts.<br>
    * If set, statements are only collected for logging if the MDC is valid and the pattern matches the toString-value
    * of the MDC.
    */
-  public static Pattern mdcFilter;
+  private static Pattern mdcFilter;
 
+
+  /**
+   * Retuns whether statictics should be collected.
+   *
+   * @return true if method invocations are counted and measured per method
+   */
+  public static boolean isCollectingStatistics() {
+    return collectStatistics;
+  }
+
+  /**
+   * Sets whether statictics should be collected.
+   *
+   * @param collect true if method invocations are counted and measured per method
+   */
+  public static void setCollectingStatistics(boolean collect) {
+    collectStatistics = collect;
+    updateDurationNecessary();
+  }
+
+  /**
+   * Returns whether each invocation should be logged.
+   *
+   * @return true if invocations are logged
+   */
+  public static boolean isLoggingInvocations() {
+    return logInvocations;
+  }
+
+  /**
+   * Sets whether each invocation should be logged.
+   *
+   * @param log true if invocations are logged
+   */
+  public static void setLoggingInvocations(boolean log) {
+    logInvocations = log;
+    updateDurationNecessary();
+  }
+
+  /**
+   * Returns whether args and return values will be logged as well.
+   *
+   * @return true if log args and retval
+   */
+  public static boolean isLoggingInvocationDetails() {
+    return logInvocationDetails;
+  }
+
+  /**
+   * Sets whether args and return values will be logged as well.
+   *
+   * @param log true if log args and retval
+   */
+  public static void setLoggingInvocationDetails(boolean log) {
+    logInvocationDetails = log;
+  }
+
+  /**
+   * Gets the minimum milliseconds a method needs to execute before being logged.
+   *
+   * @return 0 if disabled
+   */
+  public static long getLogMinDurationMillis() {
+    return logMinDurationMillis;
+  }
+
+  /**
+   * Sets the minimum milliseconds a method needs to execute before being logged.
+   *
+   * @param millis 0 to disable
+   */
+  public static void setLogMinDurationMillis(long millis) {
+    logMinDurationMillis = millis;
+    updateDurationNecessary();
+  }
+
+  /**
+   * Gets the minimum size of returned collection to get logged.
+   *
+   * @return 0 if disabled
+   */
+  public static int getLogMinReturnedCollectionSize() {
+    return logMinReturnedCollectionSize;
+  }
+
+  /**
+   * Sets the minimum size of returned collection to get logged.
+   *
+   * @param size 0 to disable
+   */
+  public static void setLogMinReturnedCollectionSize(int size) {
+    logMinReturnedCollectionSize = size;
+    updateDurationNecessary();
+  }
+
+  /**
+   * Gets the MDC filter.
+   *
+   * @return the filter, null if none
+   */
+  public static Pattern getMdcFilter() {
+    return mdcFilter;
+  }
+
+  /**
+   * Sets the optional filter to log only RMI-calls for certain MappedDiagnosticContexts.<br>
+   * If set, statements are only collected for logging if the MDC is valid and the pattern matches the toString-value
+   * of the MDC.
+   *
+   * @param filter the filter, null to clear
+   */
+  public static void setMdcFilter(Pattern filter) {
+    mdcFilter = filter;
+  }
+
+  /**
+   * Set to true if method duration must be measured.
+   */
+  private static boolean durationNecessary;
 
   /**
    * RMI thread name lead string.
@@ -297,17 +417,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
 
 
   /**
-   * Returns whether measuring the duration is necessary.
-   *
-   * @return true if duration necessary
-   */
-  protected boolean needDuration() {
-    return logInvocations || collectStatistics || logMinDurationMillis > 0 || logMinReturnedCollectionSize > 0;
-  }
-
-
-  /**
-   * Logs the invocation.
+   * Logs and counts the invocation.
    * <p>
    *
    * @param method the method executed
@@ -317,19 +427,9 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   protected void log(Method method, Object[] args, Object retval, Duration duration) {
 
-    boolean durationExceeded;
-
-    if (duration != null) {
-      if (!duration.isValid()) {
-        duration.end();
-      }
-      durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
-      if (collectStatistics && isMDCValid()) {
-        delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), duration);
-      }
-    }
-    else {
-      durationExceeded = false;
+    boolean durationExceeded = logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis;
+    if (collectStatistics && isMDCValid()) {
+      delegate.getServerSession().countMethodInvocation(method, delegate.getServicedClass(), duration);
     }
 
     if (isMDCValid()) {
@@ -376,7 +476,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       buf.append(") = ").
           append(StringHelper.objectToLoggableString(retval)).
           append(" {").
-          append(duration != null ? duration.millisToString() : "<unknown>").
+          append(duration.millisToString()).
           append("ms");
       if (collectionSize > 0) {
         buf.append(", ").
@@ -390,7 +490,7 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
           append('.').
           append(method.getName()).
           append(" [").
-          append(duration != null ? duration.millisToString() : "<unknown>").
+          append(duration.millisToString()).
           append("ms]");
     }
     return buf;
@@ -451,10 +551,16 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
       }
 
       try {
-        Duration duration = needDuration() ? new Duration() : null;
-        Object retval = invokeImpl(proxy, method, args);
-        log(method, args, retval, duration);
-        return retval;
+        if (durationNecessary) {
+          Duration duration = new Duration();
+          Object retval = invokeImpl(proxy, method, args);
+          duration.end();
+          log(method, args, retval, duration);
+          return retval;
+        }
+        else {
+          return invokeImpl(proxy, method, args);
+        }
       }
       finally {
         if (locals != null) {
@@ -464,5 +570,8 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
     }
   }
 
+  private static void updateDurationNecessary() {
+    durationNecessary = logInvocations || collectStatistics || logMinDurationMillis > 0 || logMinReturnedCollectionSize > 0;
+  }
 
 }

@@ -91,37 +91,38 @@ public class ManagedConnection {
     return mgcons;
   }
 
+
   /**
    * Minimum milliseconds a connection remains attached before being logged.<br>
    * 0 to disable, -1 to log every detach.
    * <p>
    * For analysis and debugging purposes only.
    */
-  public static long logMinAttachMillis;
+  private static long logMinAttachMillis;
 
   /**
    * Flag to turn on statement statistics. (default is turned off)
    */
-  public static boolean collectStatistics;
+  private static boolean collectStatistics;
 
   /**
    * Optional periodical log of statistics in milliseconds. (default is off)
    * <br>
    * If turned on, the statistics will be logged and cleared every logStatisticsMillis milliseconds.
    */
-  public static long logStatisticsMillis;
+  private static long logStatisticsMillis;
 
   /**
    * Optional filter to log only statements for certain MappedDiagnosticContexts.<br>
    * If set, statements are only collected for logging if the MDC is valid and the pattern matches the toString-value
    * of the MDC.
    */
-  public static Pattern mdcFilter;
+  private static Pattern mdcFilter;
 
   /**
    * Optionally enable statement checks for resultSetType and resultSetConcurrency.
    */
-  public static boolean checkStatementResultSetParameters;
+  private static boolean checkStatementResultSetParameters;
 
   /**
    * Logging level to log nested selects.<br>
@@ -129,7 +130,122 @@ public class ManagedConnection {
    * This is usually means, that from within a loop processing a result set, a method is invoked,
    * that in turn triggers another select.
    */
-  public static Level logLevelForParallelOpenResultSets;
+  private static Level logLevelForParallelOpenResultSets;
+
+
+  /**
+   * Gets the minimum milliseconds a connection remains attached before being logged.
+   *
+   * @return the minimum milliseconds
+   */
+  public static long getLogMinAttachMillis() {
+    return logMinAttachMillis;
+  }
+
+  /**
+   * Sets the minimum milliseconds a connection remains attached before being logged.
+   *
+   * @param millis milliseconds, 0 to disable, -1 to log every detach
+   */
+  public static void setLogMinAttachMillis(long millis) {
+    logMinAttachMillis = millis;
+  }
+
+  /**
+   * Returns whether to collect statement statistics.
+   *
+   * @return true if statistics enabled
+   */
+  public static boolean isCollectingStatistics() {
+    return collectStatistics;
+  }
+
+  /**
+   * Sets a flag whether to collect statement statistics.
+   *
+   * @param collect true to count invocations and execution times
+   */
+  public static void setCollectingStatistics(boolean collect) {
+    collectStatistics = collect;
+  }
+
+  /**
+   * Gets the ptional periodical log of statistics in milliseconds.
+   *
+   * @return the period in milliseconds, 0 if disabled (default)
+   */
+  public static long getLogStatisticsMillis() {
+    return logStatisticsMillis;
+  }
+
+  /**
+   * Sets the ptional periodical log of statistics in milliseconds.<br>
+   * If turned on, the statistics will be logged and cleared every logStatisticsMillis milliseconds.
+   *
+   * @param millis the period in milliseconds, 0 to disable
+   */
+  public static void setLogStatisticsMillis(long millis) {
+    ManagedConnection.logStatisticsMillis = millis;
+  }
+
+  /**
+   * Gets the MDC filter.
+   *
+   * @return the filter, null if none
+   */
+  public static Pattern getMdcFilter() {
+    return mdcFilter;
+  }
+
+  /**
+   * Sets Optional filter to log only statements for certain MappedDiagnosticContexts.<br>
+   * If set, statements are only collected for logging if the MDC is valid and the pattern matches the toString-value
+   * of the MDC.
+   *
+   * @param filter the filter, null to clear
+   */
+  public static void setMdcFilter(Pattern filter) {
+    mdcFilter = filter;
+  }
+
+  /**
+   * Returns whether to check that requested resulttype and concurrency matches the prepared statement reused.
+   *
+   * @return true if check is enabled
+   */
+  public static boolean isCheckingStatementResultSetParameters() {
+    return checkStatementResultSetParameters;
+  }
+
+  /**
+   * Sets whether to check that requested resulttype and concurrency matches the prepared statement reused.
+   *
+   * @param check true to enable check
+   */
+  public static void setCheckingStatementResultSetParameters(boolean check) {
+    checkStatementResultSetParameters = check;
+  }
+
+  /**
+   * Gets the logging level to log nested selects.
+   *
+   * @return the level, null if disabled
+   */
+  public static Level getLogLevelForParallelOpenResultSets() {
+    return logLevelForParallelOpenResultSets;
+  }
+
+  /**
+   * Sets the logging level to log nested selects.<br>
+   * If enabled, selects running in parallel on the same connection will be logged.
+   * This is usually means, that from within a loop processing a result set, a method is invoked,
+   * that in turn triggers another select.
+   *
+   * @param level the logging level, null to disable
+   */
+  public static void setLogLevelForParallelOpenResultSets(Level level) {
+    logLevelForParallelOpenResultSets = level;
+  }
 
 
   private static final Logger LOGGER = Logger.get(ManagedConnection.class);
