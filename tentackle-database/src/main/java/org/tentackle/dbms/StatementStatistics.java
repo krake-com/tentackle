@@ -51,7 +51,26 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
   /**
    * If true the statistics are per statement and parameters, else only per statement.
    */
-  public static boolean withParameters;
+  private static boolean withParameters;
+
+
+  /**
+   * Sets whether statistics should be separated according to the statement parameters.
+   *
+   * @param withParms true if with parameter stats
+   */
+  public static void setWithParameters(boolean withParms) {
+    withParameters = withParms;
+  }
+
+  /**
+   * Returns hether statistics should be separated according to the statement parameters.
+   *
+   * @return rue if with parameter stats
+   */
+  public static boolean isWithParameters() {
+    return withParameters;
+  }
 
 
   /**
