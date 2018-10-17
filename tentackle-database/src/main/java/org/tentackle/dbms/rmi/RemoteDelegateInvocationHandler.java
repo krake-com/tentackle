@@ -19,6 +19,18 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.StringHelper;
+import org.tentackle.dbms.Db;
+import org.tentackle.log.Loggable;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.log.MappedDiagnosticContext;
+import org.tentackle.misc.Duration;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.Session;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,17 +38,6 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.log.Loggable;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.log.MappedDiagnosticContext;
-import org.tentackle.misc.Duration;
-import org.tentackle.common.StringHelper;
-import org.tentackle.dbms.Db;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.Session;
 
 
 /**
@@ -61,12 +62,12 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
   /**
    * If true, all invocations are logged.
    */
-  public boolean logInvocations;
+  public static boolean logInvocations;
 
   /**
    * If true, args and return values will be logged as well.
    */
-  public boolean logInvocationDetails;
+  public static boolean logInvocationDetails;
 
   /**
    * Minimum milliseconds a method needs to execute before being logged.<br>
