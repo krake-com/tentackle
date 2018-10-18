@@ -22,11 +22,11 @@ package org.tentackle.io;
 import java.util.StringTokenizer;
 
 /**
- * The socket factory type.
+ * The RMI socket factory type.
  *
  * @author harald
  */
-public enum SocketFactoryType {
+public enum RMISocketFactoryType {
 
   /**
    * System default.<br>
@@ -82,9 +82,9 @@ public enum SocketFactoryType {
    * @param config the socket factory configuration string
    * @return the socket factory type
    */
-  public static SocketFactoryType parse(String config) {
+  public static RMISocketFactoryType parse(String config) {
 
-    SocketFactoryType type = SYSTEM;
+    RMISocketFactoryType type = SYSTEM;
 
     if (config != null) {
       StringTokenizer stok = new StringTokenizer(config, ", \t");
@@ -105,11 +105,11 @@ public enum SocketFactoryType {
             break;
 
           case "ssl":
-            type = type == SocketFactoryType.COMPRESSED ? SocketFactoryType.SSL_COMPRESSED : SocketFactoryType.SSL;
+            type = type == RMISocketFactoryType.COMPRESSED ? RMISocketFactoryType.SSL_COMPRESSED : RMISocketFactoryType.SSL;
             break;
 
           case "compressed":
-            type = type == SocketFactoryType.SSL ? SocketFactoryType.SSL_COMPRESSED : SocketFactoryType.COMPRESSED;
+            type = type == RMISocketFactoryType.SSL ? RMISocketFactoryType.SSL_COMPRESSED : RMISocketFactoryType.COMPRESSED;
             break;
         }
       }

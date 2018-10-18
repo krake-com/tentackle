@@ -20,8 +20,9 @@
 package org.tentackle.dbms.rmi;
 
 import java.util.Objects;
-import org.tentackle.io.SocketFactoryFactory;
-import org.tentackle.io.SocketFactoryType;
+
+import org.tentackle.io.RMISocketFactoryFactory;
+import org.tentackle.io.RMISocketFactoryType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -272,9 +273,9 @@ public class RmiServer {
     if (val != null) {
       createRegistry = true;
       if (!val.isEmpty()) {
-        SocketFactoryType factoryType = SocketFactoryType.parse(val);
-        loginCsf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
-        loginSsf = SocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
+        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(val);
+        loginCsf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+        loginSsf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
       }
     }
 
@@ -342,33 +343,33 @@ public class RmiServer {
     val = props.getProperty(CIPHER_SUITES);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
-      SocketFactoryFactory.enabledCipherSuites = new String[stok.countTokens()];
+      RMISocketFactoryFactory.getInstance().setEnabledCipherSuites(new String[stok.countTokens()]);
       int i = 0;
       while (stok.hasMoreTokens()) {
-        SocketFactoryFactory.enabledCipherSuites[i++] = stok.nextToken();
+        RMISocketFactoryFactory.getInstance().getEnabledCipherSuites()[i++] = stok.nextToken();
       }
     }
 
     val = props.getProperty(PROTOCOLS);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
-      SocketFactoryFactory.enabledProtocols = new String[stok.countTokens()];
+      RMISocketFactoryFactory.getInstance().setEnabledProtocols(new String[stok.countTokens()]);
       int i = 0;
       while (stok.hasMoreTokens()) {
-        SocketFactoryFactory.enabledProtocols[i++] = stok.nextToken();
+        RMISocketFactoryFactory.getInstance().getEnabledProtocols()[i++] = stok.nextToken();
       }
     }
 
     val = props.getProperty(CLIENT_AUTH);
     if (val != null)  {
-      SocketFactoryFactory.needClientAuth = true;
+      RMISocketFactoryFactory.getInstance().setClientAuthenticationRequired(true);
     }
 
 
     // switch socket factories
-    SocketFactoryType factoryType = SocketFactoryType.parse(sessionInfo.getProperties().getProperty(SOCKET_FACTORY));
-    csf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
-    ssf = SocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
+    RMISocketFactoryType factoryType = RMISocketFactoryType.parse(sessionInfo.getProperties().getProperty(SOCKET_FACTORY));
+    csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+    ssf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
 
     val = props.getProperty(PORT);
     // notice: ssl and/or compressed requires another port than the original serverport
@@ -410,7 +411,7 @@ public class RmiServer {
    * @param factoryType the socket factory type
    * @return the granted port, 0 = use system default
    */
-  public int getPort(int requestedPort, SocketFactoryType factoryType) {
+  public int getPort(int requestedPort, RMISocketFactoryType factoryType) {
 
     checkPort(requestedPort);
 

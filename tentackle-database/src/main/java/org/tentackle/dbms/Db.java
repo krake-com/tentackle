@@ -60,8 +60,8 @@ import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDelegate;
 import org.tentackle.io.ReconnectionPolicy;
 import org.tentackle.io.Reconnector;
-import org.tentackle.io.SocketFactoryFactory;
-import org.tentackle.io.SocketFactoryType;
+import org.tentackle.io.RMISocketFactoryFactory;
+import org.tentackle.io.RMISocketFactoryType;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.Holder;
 import org.tentackle.reflect.ReflectionHelper;
@@ -545,8 +545,8 @@ public class Db implements Session, Cloneable {
 
       if (backendInfo.isRemote()) {
         conMgr = null;                         // no connection manager for remote connections
-        SocketFactoryType factoryType = SocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
-        csf = SocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
+        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
+        csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
         LOGGER.info("using client socket factory {0}", csf);
       }
       else  {

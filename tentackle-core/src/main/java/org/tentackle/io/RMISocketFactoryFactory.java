@@ -25,8 +25,8 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
 
-interface SocketFactoryFactory$Singleton {
-  SocketFactoryFactory INSTANCE = ServiceFactory.createService(SocketFactoryFactory.class, SocketFactoryFactory.class);
+interface RMISocketFactoryFactory$Singleton {
+  RMISocketFactoryFactory INSTANCE = ServiceFactory.createService(RMISocketFactoryFactory.class, RMISocketFactoryFactory.class);
 }
 
 
@@ -38,46 +38,87 @@ interface SocketFactoryFactory$Singleton {
  *
  * @author harald
  */
-@Service(SocketFactoryFactory.class)    // defaults to self
-public class SocketFactoryFactory {
+@Service(RMISocketFactoryFactory.class)    // defaults to self
+public class RMISocketFactoryFactory {
 
   /**
    * The singleton.
    *
    * @return the singleton
    */
-  public static SocketFactoryFactory getInstance() {
-    return SocketFactoryFactory$Singleton.INSTANCE;
+  public static RMISocketFactoryFactory getInstance() {
+    return RMISocketFactoryFactory$Singleton.INSTANCE;
   }
 
 
-  /**
-   * the enabled cipher suites.<br>
-   * null if system default.
-   */
-  public static String[] enabledCipherSuites;
+  private String[] enabledCipherSuites;
+  private String[] enabledProtocols;
+  private boolean clientAuthenticationRequired;
+
 
   /**
-   * the enabled protocols.<br>
-   * null if system default.
+   * Gets the enabled cipher suites.
+   *
+   * @return null if system default
    */
-  public static String[] enabledProtocols;
+  public String[] getEnabledCipherSuites() {
+    return enabledCipherSuites;
+  }
 
   /**
-   * true if server request SSL-client-authentication.
+   * Sets the enabled cipher suites.
+   *
+   * @param enabledCipherSuites the cipher names, null if system default
    */
-  public static boolean needClientAuth;
+  public void setEnabledCipherSuites(String[] enabledCipherSuites) {
+    this.enabledCipherSuites = enabledCipherSuites;
+  }
 
+  /**
+   * Gets the enabled protocols.
+   *
+   * @return null if system default
+   */
+  public String[] getEnabledProtocols() {
+    return enabledProtocols;
+  }
+
+  /**
+   * Sets the enabled protocols.
+   *
+   * @param enabledProtocols the protocol names, null if system default
+   */
+  public void setEnabledProtocols(String[] enabledProtocols) {
+    this.enabledProtocols = enabledProtocols;
+  }
+
+  /**
+   * Returns whether server requests SSL-client-authentication.
+   *
+   * @return true if client certificates required
+   */
+  public boolean isClientAuthenticationRequired() {
+    return clientAuthenticationRequired;
+  }
+
+  /**
+   * Sets whether server requests SSL-client-authentication.
+   *
+   * @param clientAuthenticationRequired true if client certificates required
+   */
+  public void setClientAuthenticationRequired(boolean clientAuthenticationRequired) {
+    this.clientAuthenticationRequired = clientAuthenticationRequired;
+  }
 
 
   /**
    * Creates a client socket factory.
    *
-   * @param defaultFactory the factory for {@link SocketFactoryType#DEFAULT}
+   * @param defaultFactory the factory for {@link RMISocketFactoryType#DEFAULT}
    * @param factoryType the socket factory type
    * @return the factory, null if system default
    */
-  public RMIClientSocketFactory createClientSocketFactory(RMIClientSocketFactory defaultFactory, SocketFactoryType factoryType) {
+  public RMIClientSocketFactory createClientSocketFactory(RMIClientSocketFactory defaultFactory, RMISocketFactoryType factoryType) {
     RMIClientSocketFactory factory;
 
     switch (factoryType) {
@@ -112,11 +153,11 @@ public class SocketFactoryFactory {
   /**
    * Creates a server socket factory.
    *
-   * @param defaultFactory the factory for {@link SocketFactoryType#DEFAULT}
+   * @param defaultFactory the factory for {@link RMISocketFactoryType#DEFAULT}
    * @param factoryType the socket factory type
    * @return the factory, null if system default
    */
-  public RMIServerSocketFactory createServerSocketFactory(RMIServerSocketFactory defaultFactory, SocketFactoryType factoryType) {
+  public RMIServerSocketFactory createServerSocketFactory(RMIServerSocketFactory defaultFactory, RMISocketFactoryType factoryType) {
     RMIServerSocketFactory factory;
 
     switch (factoryType) {
@@ -129,7 +170,7 @@ public class SocketFactoryFactory {
         break;
 
       case SSL:
-        factory = new SslServerSocketFactory(enabledCipherSuites, enabledProtocols, needClientAuth);
+        factory = new SslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
         break;
 
       case COMPRESSED:
@@ -137,7 +178,7 @@ public class SocketFactoryFactory {
         break;
 
       case SSL_COMPRESSED:
-        factory = new CompressedSslServerSocketFactory(enabledCipherSuites, enabledProtocols, needClientAuth);
+        factory = new CompressedSslServerSocketFactory(getEnabledCipherSuites(), getEnabledProtocols(), isClientAuthenticationRequired());
         break;
 
       default:
