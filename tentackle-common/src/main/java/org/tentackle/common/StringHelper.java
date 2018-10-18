@@ -46,7 +46,29 @@ public final class StringHelper {
    * of items is logged in {@link #objectToLoggableString}
    * instead of each item.
    */
-  public static int maxLogCollectionSize = 10;
+  private static int maxLogCollectionSize = 10;
+
+  /**
+   * Sets the size limit of collections to be logged.<br>
+   * If an object is logged and it is a collection
+   * and the size exceeds {@code maxLogCollectionSize}, only the number
+   * of items is logged in {@link #objectToLoggableString}
+   * instead of each item.
+   *
+   * @param maxLogCollectionSize the limit
+   */
+  public static void setMaxLogCollectionSize(int maxLogCollectionSize) {
+    StringHelper.maxLogCollectionSize = maxLogCollectionSize;
+  }
+
+  /**
+   * Gets the size limit of collections to be logged.
+   *
+   * @return the limit (default is 10)
+   */
+  public static int getMaxLogCollectionSize() {
+    return maxLogCollectionSize;
+  }
 
   // fixed maps for converting single-char diacrits
   private static final String CRITS = "ÄÀÁÂÃÅÆÇÈÉÊËÌÍÎÏÐÑÖÒÓÔÕ×ØÜÙÚÛÝÞäàáâãåæçèéêëìíîïñöðòóôõøüùúûýþÿß";
