@@ -19,13 +19,14 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.log.Logger;
+import org.tentackle.misc.Duration;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeSet;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.Duration;
 
 /**
  * History of statement execution.
@@ -34,12 +35,25 @@ import org.tentackle.misc.Duration;
  */
 public class StatementHistory {
 
+  private static long logMinDurationMillis;
+
   /**
-   * Minimum milliseconds a statement needs to execute before being logged.<br>
-   * 0 to disable.<p>
-   * For analysis and debugging purposes only.
+   * Sets the duration of statements to be logged as a warning.
+   *
+   * @param logMinDurationMillis the duration in milliseconds, 0 to disable (default)
    */
-  public static long logMinDurationMillis;
+  public static void setLogMinDurationMillis(long logMinDurationMillis) {
+    StatementHistory.logMinDurationMillis = logMinDurationMillis;
+  }
+
+  /**
+   * Gets the duration of statements to be logged as a warning.
+   *
+   * @return the duration in milliseconds
+   */
+  public static long getLogMinDurationMillis() {
+    return logMinDurationMillis;
+  }
 
   /**
    * Format for execution starting time.
@@ -81,9 +95,11 @@ public class StatementHistory {
   public void end() {
     duration.end();
     if (logMinDurationMillis > 0 && duration.millis() > logMinDurationMillis) {
-      LOGGER.warning(">>> duration >>> " + toString());
+      LOGGER.warning(">>> duration >>> " + this);
     }
-    LOGGER.finer(this::toString);
+    else {
+      LOGGER.finer(this::toString);
+    }
   }
 
   /**
