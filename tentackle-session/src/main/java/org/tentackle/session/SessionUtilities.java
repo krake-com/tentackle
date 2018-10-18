@@ -18,6 +18,12 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.ServiceFinder;
+import org.tentackle.common.StringHelper;
+import org.tentackle.misc.IdSerialTuple;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,11 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.ServiceFinder;
-import org.tentackle.common.StringHelper;
-import org.tentackle.misc.IdSerialTuple;
 
 
 interface SessionUtilities$Singleton {
@@ -52,10 +53,6 @@ public class SessionUtilities {
   public static SessionUtilities getInstance() {
     return SessionUtilities$Singleton.INSTANCE;
   }
-
-
-  /** minimum keep alive interval in milliseconds. */
-  public static long minSessionKeepAliveMillis = 1000;
 
 
 
@@ -219,7 +216,7 @@ public class SessionUtilities {
    */
   public synchronized void startKeepAliveDaemonIfNotRunning() {
     if (keepAliveDaemon == null || !keepAliveDaemon.isAlive()) {
-      keepAliveDaemon = new SessionKeepAliveDaemon(minSessionKeepAliveMillis);
+      keepAliveDaemon = createKeepAliveDaemon();
       keepAliveDaemon.start();
     }
   }
@@ -271,6 +268,16 @@ public class SessionUtilities {
       someRemoved = true;  // no expired pdos found or gap at end
     }
     return someRemoved;
+  }
+
+
+  /**
+   * Creates the session keep alive daemon.
+   *
+   * @return the daemon (not started yet!)
+   */
+  protected SessionKeepAliveDaemon createKeepAliveDaemon() {
+    return new SessionKeepAliveDaemon(1000);    // 1 second minAliveInterval
   }
 
 }
