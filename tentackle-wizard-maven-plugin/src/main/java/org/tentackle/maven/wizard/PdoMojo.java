@@ -110,12 +110,7 @@ public class PdoMojo extends AbstractWizardMojo {
   private void updateClassIDs() throws MojoExecutionException {
 
     // profiles sorted by classid, highest first
-    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>(new Comparator<>() {
-      @Override
-      public int compare(PdoProfile o1, PdoProfile o2) {
-        return o2.getMinClassId() - o1.getMinClassId();
-      }
-    });
+    TreeSet<PdoProfile> sortedProfiles = new TreeSet<>((o1, o2) -> o2.getMinClassId() - o1.getMinClassId());
 
     // map of profiles to next free classid
     Map<PdoProfile, Integer> inUseIds = new HashMap<>();

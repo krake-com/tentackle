@@ -42,7 +42,7 @@ public class InterceptableMethodCache {
    * @return the method cache
    */
   public static InterceptableMethodCache getCache(Class<? extends Interceptable> effectiveClass) {
-    return CACHE_MAP.computeIfAbsent(effectiveClass, cls -> new InterceptableMethodCache(cls));
+    return CACHE_MAP.computeIfAbsent(effectiveClass, InterceptableMethodCache::new);
   }
 
 
@@ -54,7 +54,6 @@ public class InterceptableMethodCache {
    * Creates a method cache.
    *
    * @param clazz the interceptable class
-   * @param invoker the invoker
    */
   public InterceptableMethodCache(Class<? extends Interceptable> clazz) {
     this.clazz = clazz;

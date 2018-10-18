@@ -31,7 +31,6 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingVetoException;
 import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
@@ -83,9 +82,7 @@ public class Backends extends AbstractFxController {
         stage.close();
       }
     });
-    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-      controller.persist();
-    });
+    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> controller.persist());
     stage.showAndWait();
   }
 
@@ -156,18 +153,15 @@ public class Backends extends AbstractFxController {
   public void initialize(URL location, ResourceBundle resources) {
     backends.setBindable(false);
     backends.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-    backends.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<BackendConfiguration>() {
-      @Override
-      public void changed(ObservableValue<? extends BackendConfiguration> observable, BackendConfiguration oldValue, BackendConfiguration newValue) {
-        if (oldValue != null) {
-          backendPane.updateModel();  // necessary bec. focus lost may arrive after change event
-          persist(oldValue);
-        }
-        backend = newValue;
-        removeBackendButton.setDisable(backend == null);
-        backendPane.setChangeable(backend != null);
-        backendPane.updateView();
+    backends.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+      if (oldValue != null) {
+        backendPane.updateModel();  // necessary bec. focus lost may arrive after change event
+        persist(oldValue);
       }
+      backend = newValue;
+      removeBackendButton.setDisable(backend == null);
+      backendPane.setChangeable(backend != null);
+      backendPane.updateView();
     });
 
     addBackendButton.setGraphic(Fx.createImageView("add"));
@@ -198,19 +192,16 @@ public class Backends extends AbstractFxController {
 
     drivers.setBindable(false);
     drivers.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
-    drivers.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<DriverConfiguration>() {
-      @Override
-      public void changed(ObservableValue<? extends DriverConfiguration> observable, DriverConfiguration oldValue, DriverConfiguration newValue) {
-        if (oldValue != null) {
-          driverPane.updateModel();   // necessary bec. focus lost may arrive after change event
-          persist(driver);
-        }
-        driver = newValue;
-        removeDriverButton.setDisable(driver == null);
-        driverPane.setChangeable(driver != null);
-        driverButton.setDisable(driver == null);
-        driverPane.updateView();
+    drivers.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+      if (oldValue != null) {
+        driverPane.updateModel();   // necessary bec. focus lost may arrive after change event
+        persist(driver);
       }
+      driver = newValue;
+      removeDriverButton.setDisable(driver == null);
+      driverPane.setChangeable(driver != null);
+      driverButton.setDisable(driver == null);
+      driverPane.updateView();
     });
     driverPane.setChangeable(false);
     driverButton.setDisable(true);

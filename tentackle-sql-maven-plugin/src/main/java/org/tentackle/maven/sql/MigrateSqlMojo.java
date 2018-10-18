@@ -160,23 +160,19 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       if (sqlCode.length() > 0 || !splittedMigrations.isEmpty()) {
         if (split) {
-          sqlWriter.append("-- migrated entities in subfolders: " + splittedMigrations.size() + "\n");
+          sqlWriter.append("-- migrated entities in subfolders: ").append(String.valueOf(splittedMigrations.size())).append("\n");
         }
         else {
           String sql = backendMigrationHints.getBeforeAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n-- before all:\n");
-            sqlWriter.append(sql);
-            sqlWriter.append("\n\n");
+            sqlWriter.append("\n-- before all:\n").append(sql).append("\n\n");
           }
 
           sqlWriter.append(sqlCode.toString());
 
           sql = backendMigrationHints.getAfterAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n\n-- after all:\n");
-            sqlWriter.append(sql);
-            sqlWriter.append('\n');
+            sqlWriter.append("\n\n-- after all:\n").append(sql).append('\n');
           }
         }
       }

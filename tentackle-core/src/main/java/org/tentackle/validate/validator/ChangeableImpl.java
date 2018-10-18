@@ -81,8 +81,8 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
    */
   @Override
   public boolean isChangeable(ValidationContext validationContext) {
-    Boolean changeable = annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext);
-    return changeable && isConditionValid(validationContext);
+    return (annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext)) &&
+           isConditionValid(validationContext);
   }
 
 

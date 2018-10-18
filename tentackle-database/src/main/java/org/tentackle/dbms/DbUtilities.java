@@ -27,7 +27,6 @@ import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionPool;
 
-import java.io.StringBufferInputStream;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Supplier;

@@ -49,7 +49,7 @@ public class OperationMethodCache<T extends Operation<T>> {
    */
   @SuppressWarnings("unchecked")
   public static <T extends Operation<T>> OperationMethodCache getCache(Class<T> effectiveClass) {
-    return CACHE_MAP.computeIfAbsent(effectiveClass, cls -> new OperationMethodCache(cls));
+    return CACHE_MAP.computeIfAbsent(effectiveClass, OperationMethodCache::new);
   }
 
   /**

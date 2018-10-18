@@ -81,8 +81,8 @@ public class MandatoryImpl extends AbstractValidator<Mandatory> implements Manda
    */
   @Override
   public boolean isMandatory(ValidationContext validationContext) {
-    Boolean mandatory = annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext);
-    return mandatory && isConditionValid(validationContext);
+    return (annotation.value().isEmpty() || getValue(annotation.value(), Boolean.class, validationContext)) &&
+           isConditionValid(validationContext);
   }
 
 
