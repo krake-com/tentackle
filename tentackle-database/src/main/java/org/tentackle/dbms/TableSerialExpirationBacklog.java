@@ -19,13 +19,14 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.misc.IdSerialTuple;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.misc.IdSerialTuple;
 
 
 /**
@@ -37,11 +38,7 @@ import org.tentackle.misc.IdSerialTuple;
  */
 public class TableSerialExpirationBacklog {
 
-
-  /**
-   * Default size of expiration table.
-   */
-  public static int defaultSize = 64;          // should be enough for the 99% case
+  private static final int DEFAULT_SIZE = 64;          // should be enough for the 99% case
 
 
 
@@ -96,7 +93,7 @@ public class TableSerialExpirationBacklog {
    * Creates a backlog with a default size.
    */
   public TableSerialExpirationBacklog() {
-    this(defaultSize);
+    this(DEFAULT_SIZE);
   }
 
 
