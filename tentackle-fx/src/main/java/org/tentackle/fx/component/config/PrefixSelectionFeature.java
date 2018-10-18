@@ -23,6 +23,8 @@ import javafx.scene.control.Control;
 import javafx.scene.input.KeyEvent;
 import javafx.util.StringConverter;
 
+import org.tentackle.fx.FxUtilities;
+
 import java.util.Collection;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -49,11 +51,6 @@ public class PrefixSelectionFeature<T extends Control> {
    * </pre>
    */
   public static final String ENABLED = "prefixSelectionEnabled";
-
-  /**
-   * Timeout in milliseconds to start over from index 0.
-   */
-  public static long timeout = 500;
 
 
   protected final T control;
@@ -109,7 +106,7 @@ public class PrefixSelectionFeature<T extends Control> {
         String chr = event.getCharacter();
         if (chr != null) {    // for sure... can it be null at all?
            long now = System.currentTimeMillis();
-           if (now > lastPressMillis + timeout) {
+           if (now > lastPressMillis + FxUtilities.getInstance().getPrefixSelectionTimeout()) {
              // clear after timeout
              prefixBuf.setLength(0);
              index = 0;

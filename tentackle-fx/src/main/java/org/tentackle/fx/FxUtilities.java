@@ -142,6 +142,15 @@ public class FxUtilities {
     return 30;
   }
 
+  /**
+   * Gets the timeout for the prefix selection in dropdown lists such as in comboboxes.
+   *
+   * @return the timeout in milliseconds (default is 500)
+   */
+  public long getPrefixSelectionTimeout() {
+    return 500;
+  }
+
 
   /**
    * Opens the online help for a given component.
