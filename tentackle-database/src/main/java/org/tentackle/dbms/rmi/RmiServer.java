@@ -191,12 +191,12 @@ public class RmiServer {
   /**
    * Default timeout check interval in milliseconds (1s).
    */
-  private static long DEFAULT_CHECK_INTERVAL = 1000;
+  private static final long DEFAULT_CHECK_INTERVAL = 1000;
 
   /**
    * Default timeout in timeout check intervals (30s).
    */
-  private static int DEFAULT_SESSION_TIMEOUT = 30;
+  private static final int DEFAULT_SESSION_TIMEOUT = 30;
 
 
   private static final Logger LOGGER = Logger.get(RmiServer.class);

@@ -25,11 +25,10 @@ package org.tentackle.session;
  */
 public abstract class ModificationListenerAdapter implements ModificationListener {
 
-  /** the default priority. */
-  public static int defaultPriority = 100;
+  private static final int DEFAULT_PRIORITY = 100;
 
-  /** the modification names. */
-  private final String[] names;
+
+  private final String[] names;         // the modification names
 
   /**
    * Creates a listener for the given modification names.
@@ -54,7 +53,7 @@ public abstract class ModificationListenerAdapter implements ModificationListene
 
   @Override
   public int getPriority() {
-    return defaultPriority;
+    return DEFAULT_PRIORITY;
   }
 
   @Override
