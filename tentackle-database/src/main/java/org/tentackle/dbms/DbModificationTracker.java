@@ -18,6 +18,24 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.Service;
+import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
+import org.tentackle.io.ReconnectedException;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.DefaultSessionTaskDispatcher;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationEventDetail;
+import org.tentackle.session.ModificationListener;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
+import org.tentackle.task.Task;
+
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,23 +50,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.Service;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.session.AbstractSessionTask;
-import org.tentackle.session.DefaultSessionTaskDispatcher;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationEventDetail;
-import org.tentackle.session.ModificationListener;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
-import org.tentackle.task.Task;
-import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
-import org.tentackle.io.ReconnectedException;
-import org.tentackle.session.SessionUtilities;
 
 
 
@@ -61,16 +62,10 @@ import org.tentackle.session.SessionUtilities;
 @Service(ModificationTracker.class)
 public class DbModificationTracker extends DefaultSessionTaskDispatcher implements ModificationTracker {
 
-  /**
-   * default polling interval in milliseconds.
-   */
-  public static long defaultPollingInterval = 2000;
-
-
   private static final Logger LOGGER = Logger.get(DbModificationTracker.class);
 
+  private static final long DEFAULT_POLLING_INTERVAL = 2000;        // 2s
 
-  /** listener key instance counter. */
   private static final AtomicInteger LISTENER_KEY_INSTANCE_COUNTER = new AtomicInteger();
 
 
@@ -352,7 +347,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
      */
     setDaemon(false);
     setSessionClosedOnTermination(true);
-    setSleepInterval(defaultPollingInterval);
+    setSleepInterval(DEFAULT_POLLING_INTERVAL);
 
     countersByName = new ConcurrentHashMap<>();
     countersById = new HashMap<>();
