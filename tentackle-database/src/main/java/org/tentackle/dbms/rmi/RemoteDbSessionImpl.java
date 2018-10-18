@@ -601,9 +601,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @param crashed true if client crashed, else regular logout
    */
   protected void cleanup(boolean crashed) {
-    if (crashed) {
-      LOGGER.warning("cleaning up crashed {0}{1}", this, DiagnosticUtilities.getInstance().createStackDump());
-    }
     DbUtilities.getInstance().cleanupRemoteSession(this);
     resources.cleanup(crashed);
   }
