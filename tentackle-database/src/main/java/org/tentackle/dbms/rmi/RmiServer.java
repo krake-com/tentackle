@@ -189,14 +189,14 @@ public class RmiServer {
 
 
   /**
-   * Default timeout check interval in milliseconds.
+   * Default timeout check interval in milliseconds (1s).
    */
-  public static long defaultSessionTimeoutCheckInterval = 1000;
+  private static long DEFAULT_CHECK_INTERVAL = 1000;
 
   /**
-   * Default timeout in timeout check intervals.
+   * Default timeout in timeout check intervals (30s).
    */
-  public static int defaultSessionTimeout = 30;
+  private static int DEFAULT_SESSION_TIMEOUT = 30;
 
 
   private static final Logger LOGGER = Logger.get(RmiServer.class);
@@ -284,7 +284,7 @@ public class RmiServer {
       sessionTimeout = Integer.parseInt(val);
     }
     else {
-      sessionTimeout = defaultSessionTimeout;
+      sessionTimeout = DEFAULT_SESSION_TIMEOUT;
     }
 
     val = props.getProperty(TIMEOUT_INTERVAL);
@@ -292,7 +292,7 @@ public class RmiServer {
       sessionTimeoutCheckInterval = Long.parseLong(val);
     }
     else  {
-      sessionTimeoutCheckInterval = defaultSessionTimeoutCheckInterval;
+      sessionTimeoutCheckInterval = DEFAULT_CHECK_INTERVAL;
     }
 
     // check for default ports
@@ -541,9 +541,10 @@ public class RmiServer {
 
 
   /**
-   * Gets the default session timeout.
+   * Gets the default session timeout.<br>
+   * The default is 30s.
    *
-   * @return the timeout in polling intervals.
+   * @return the timeout in polling intervals
    * @see #getSessionTimeoutCheckInterval()
    */
   public int getSessionTimeout() {
@@ -551,7 +552,18 @@ public class RmiServer {
   }
 
   /**
-   * Gets the timeout check interval in milliseconds.
+   * Sets the session timeout.
+   *
+   * @param sessionTimeout the timeout in units of check intervals
+   * @see #getSessionTimeoutCheckInterval()
+   */
+  public void setSessionTimeout(int sessionTimeout) {
+    this.sessionTimeout = sessionTimeout;
+  }
+
+  /**
+   * Gets the timeout check interval in milliseconds.<br>
+   * The default is 1000 (1s).
    *
    * @return the polling interval
    * @see #getSessionTimeout()
@@ -560,6 +572,14 @@ public class RmiServer {
     return sessionTimeoutCheckInterval;
   }
 
+  /**
+   * Sets the timeout check interval in milliseconds.
+   *
+   * @param sessionTimeoutCheckInterval the polling interval
+   */
+  public void setSessionTimeoutCheckInterval(long sessionTimeoutCheckInterval) {
+    this.sessionTimeoutCheckInterval = sessionTimeoutCheckInterval;
+  }
 
   /**
    * Starts the RMI server.
