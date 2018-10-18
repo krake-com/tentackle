@@ -38,7 +38,26 @@ public class StoredBundleFactory extends DefaultBundleFactory {
   /**
    * Controls whether loading bundles from backend is enabled at all.
    */
-  public static boolean enabled = true;
+  private static boolean enabled = true;
+
+  /**
+   * Returns whether loading bundles from backend is enabled at all.
+   *
+   * @return true if enabled (default)
+   */
+  public static boolean isEnabled() {
+    return enabled;
+  }
+
+  /**
+   * Sets whether loading bundles from backend is enabled at all.
+   *
+   * @param enabled true if enabled (default)
+   */
+  public static void setEnabled(boolean enabled) {
+    StoredBundleFactory.enabled = enabled;
+  }
+
 
   private final Map<StoredBundle.StoredBundleUDK, ResourceBundle> bundleMap;      // bundlename_locale..._... : stored bundle
   private final StoredBundleControl control;                                      // bundle control used to load the stored bundle

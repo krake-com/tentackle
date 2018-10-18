@@ -133,7 +133,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
   public void execute() throws MojoExecutionException, MojoFailureException {
 
     // disable provider because we need only the PDOs from tt-i18n, not the bundle control
-    StoredBundleFactory.enabled = false;
+    StoredBundleFactory.setEnabled(false);
 
     // validate configuration
     if (validate()) {
