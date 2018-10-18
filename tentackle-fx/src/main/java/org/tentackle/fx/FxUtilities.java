@@ -113,10 +113,22 @@ public class FxUtilities {
 
   /**
    * The help url.
-   * prefix for online help, e.g.: http://localhost/manual/index.html
+   * Prefix for online help, e.g.: http://localhost/manual/index.html
    */
   private String helpURL;
 
+
+  /**
+   * Returns whether decimal separator should be inserted automatically if missing in money input.<br>
+   * This is usually a global setting for the whole application, but it can be filtered according
+   * to the component (parent component, etc...).
+   *
+   * @param component the input component
+   * @return true if insert separator according to scale if missing
+   */
+  public boolean isLenientMoneyInput(FxTextComponent component) {
+    return false;
+  }
 
 
   /**

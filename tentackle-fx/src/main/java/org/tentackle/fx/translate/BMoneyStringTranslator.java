@@ -23,6 +23,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.DMoney;
 import org.tentackle.fx.FxFxBundle;
 import org.tentackle.fx.FxTextComponent;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.ValueTranslatorService;
 import org.tentackle.misc.FormatHelper;
 
@@ -41,12 +42,6 @@ import java.util.function.Function;
  */
 @ValueTranslatorService(modelClass = BMoney.class, viewClass = String.class)
 public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMoney> {
-
-  /**
-   * Application wide setting for money input without comma.
-   */
-  public static boolean autoComma = false;
-
 
   /**
    * Creates a translator.
@@ -89,9 +84,10 @@ public class BMoneyStringTranslator extends FractionNumberStringTranslator<BMone
       DecimalFormat decimalFormat = getFormat();
       char commaChar = decimalFormat.getDecimalFormatSymbols().getDecimalSeparator();
       boolean parseDMoney = DMoney.class.isAssignableFrom(getComponent().getType());
-      // check for autocomma if no comma in input
-      if (autoComma && getComponent().getScale() > 0 && str.indexOf(commaChar) < 0) {
-        // insert comma
+      // check if decimal sep
+      if (getComponent().getScale() > 0 && str.indexOf(commaChar) < 0 &&        // decimal separator missing?
+          FxUtilities.getInstance().isLenientMoneyInput(getComponent())) {      // insert automatically?
+        // insert decimal separator according to scale
         int len = str.length();
         int prec = getComponent().getScale();
         while (len <= prec) {
