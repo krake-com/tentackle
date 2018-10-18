@@ -65,6 +65,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.Note;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
@@ -128,6 +129,17 @@ public class FxUtilities {
    */
   public boolean isLenientMoneyInput(FxTextComponent component) {
     return false;
+  }
+
+
+  /**
+   * Gets the default column width for text areas if not set by the binding or the model's COLS= option.
+   *
+   * @param textArea the text area component
+   * @return the column width (default is 30)
+   */
+  public int getDefaultTextAreaColumns(FxTextArea textArea) {
+    return 30;
   }
 
 

@@ -65,13 +65,6 @@ import java.util.ResourceBundle;
  */
 public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEditor<T> {
 
-  /**
-   * Default column width for text areas.<br>
-   * Can be changed per attribute in model via COLS= option.
-   */
-  public static int textAreaColumns = 30;
-
-
   private final Class<T> pdoClass;                      // the PDO class
   private final ResourceBundle bundle;                  // optional bundle
 
@@ -254,7 +247,7 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
       }
       else if (node instanceof FxTextArea) {
         FxTextArea textArea = (FxTextArea) node;
-        textArea.setColumns(textAreaColumns);
+        textArea.setColumns(FxUtilities.getInstance().getDefaultTextAreaColumns(textArea));
       }
     }
   }
