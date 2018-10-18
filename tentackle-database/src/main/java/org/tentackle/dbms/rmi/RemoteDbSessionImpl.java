@@ -623,10 +623,12 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   /**
    * Closes the database connection (and thus rolls back any pending transaction).
    * If the db is pooled, it will be returned to the pool instead of being closed.
+   *
    * @param cleanup true if db must be physically closed even if pooled, due to cleanup
    */
   protected void closeDb(boolean cleanup) {
     if (closedSince == 0) {
+      resources.me = this;    // programmatic cleanup
       resources.closeDb(cleanup);
       closedSince = System.currentTimeMillis();
     }
@@ -780,8 +782,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @Override
   public void close() throws RemoteException {
-    resources.me = this;    // programmatic cleanup
-    cleanable.clean();
+    closeDb(false);
   }
 
 
