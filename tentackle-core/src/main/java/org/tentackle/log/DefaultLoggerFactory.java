@@ -19,13 +19,14 @@
 
 package org.tentackle.log;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
 
 
 
@@ -38,11 +39,13 @@ import org.tentackle.common.ServiceFactory;
 public class DefaultLoggerFactory implements LoggerFactory {
 
   private static Class<? extends Logger> getConfiguredLoggerClass() {
+    Logger logger = new DefaultLogger(DefaultLoggerFactory.class.getName());
     try {
-      return ServiceFactory.createServiceClass(Logger.class);
+      Class<Logger> loggerClass = ServiceFactory.createServiceClass(Logger.class);
+      logger.info("configured logger is " + loggerClass.getName());
+      return loggerClass;
     }
     catch (RuntimeException ex) {
-      Logger logger = new DefaultLogger(DefaultLoggerFactory.class.getName());
       String msg = "no logging backend configured -> using DefaultLogger";
       if (logger.isFineLoggable()) {
         logger.fine(msg, ex);
