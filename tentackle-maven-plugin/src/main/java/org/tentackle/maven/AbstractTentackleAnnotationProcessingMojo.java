@@ -376,6 +376,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
 
       // JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();   // picks the wrong classloader :(
+      // @todo check if still necessary with Java 11 (check also Netbeans editor highlighting)
       JavaCompiler compiler = JavacTool.create();
       boolean withModules = compiler.getSourceVersions().contains(SourceVersion.RELEASE_9);
 
