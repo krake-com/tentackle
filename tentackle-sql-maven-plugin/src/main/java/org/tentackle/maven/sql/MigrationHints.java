@@ -376,7 +376,7 @@ public class MigrationHints {
                 StringBuilder buf = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(
                                                new InputStreamReader(
-                                                 new FileInputStream(hintFile), Settings.encodingCharset))) {
+                                                 new FileInputStream(hintFile), Settings.getEncodingCharset()))) {
                   char[] readBuf = new char[1024];
                   int len;
                   while ((len = reader.read(readBuf)) != -1) {

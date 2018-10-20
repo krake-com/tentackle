@@ -76,7 +76,7 @@ public class ResourceManager {
         writer = new PrintWriter(
                     new BufferedWriter(
                       new OutputStreamWriter(
-                        new FileOutputStream(getFile()), Settings.encodingCharset)));
+                        new FileOutputStream(getFile()), Settings.getEncodingCharset())));
       }
       return writer;
     }
@@ -85,7 +85,7 @@ public class ResourceManager {
       if (reader == null) {
         reader = new BufferedReader(
                   new InputStreamReader(
-                    new FileInputStream(getFile()), Settings.encodingCharset));
+                    new FileInputStream(getFile()), Settings.getEncodingCharset()));
       }
       return reader;
     }

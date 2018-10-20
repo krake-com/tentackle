@@ -41,7 +41,7 @@ public class TentackleWurbletsModel extends ModelImpl {
    */
   public TentackleWurbletsModel() {
     // use the charset from the wurbelizer plugin
-    org.tentackle.common.Settings.encodingCharset = org.wurbelizer.misc.Settings.encodingCharset;
+    org.tentackle.common.Settings.setEncodingCharset(org.wurbelizer.misc.Settings.getEncodingCharset());
   }
 
 

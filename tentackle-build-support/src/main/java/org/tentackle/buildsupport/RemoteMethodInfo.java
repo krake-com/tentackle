@@ -99,7 +99,7 @@ public class RemoteMethodInfo {
     RemoteMethodInfo info;
     try (LineNumberReader reader = new LineNumberReader(
                                      new InputStreamReader(
-                                       new FileInputStream(infoFile), Settings.encodingCharset))) {
+                                       new FileInputStream(infoFile), Settings.getEncodingCharset()))) {
       info = readInfo(reader);
     }
     return info;

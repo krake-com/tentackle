@@ -28,34 +28,29 @@ import java.nio.charset.StandardCharsets;
  */
 public class Settings {
 
+  private static Charset encodingCharset = StandardCharsets.UTF_8;
+
+
   /**
-   * The encoding used to read and write files.<br>
-   * Defaults to "UTF-8".
-   * <p>
+   * Gets the encoding used to read and write files.<br>
    * Usually set by the maven plugins from "project.build.sourceEncoding".
+   *
+   * @return the charset, default is {@link StandardCharsets#UTF_8}
    */
-  public static Charset encodingCharset = StandardCharsets.UTF_8;
+  public static Charset getEncodingCharset() {
+    return encodingCharset;
+  }
 
   /**
-   * The service factory class name.
-   * <p>
-   * If this value is null, the {@link ServiceFactory} is loaded via the {@link java.util.ServiceLoader}.
-   * However, if for whatever reason, the loader doesn't find the service configuration or cannot
-   * be used, the class defined by {@code serviceFactoryClassname} can be instantiated.
-   * Applications must change this at a very early stage of startup, for example in the main-method.
+   * Sets the encoding used to read and write files.
+   *
+   * @param encodingCharset the charset, default is {@link StandardCharsets#UTF_8}
    */
-  public static String serviceFactoryClassname;
-
-  /**
-   * The classloader to load the service factorty.
-   * <p>
-   * If this value is null, the the {@link ServiceFactory} is loaded via a default classloader.
-   */
-  public static ClassLoader serviceFactoryClassloader;
-
+  public static void setEncodingCharset(Charset encodingCharset) {
+    Settings.encodingCharset = encodingCharset;
+  }
 
 
   private Settings() {
   }
-
 }

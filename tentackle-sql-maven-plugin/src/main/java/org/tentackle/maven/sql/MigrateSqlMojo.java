@@ -498,7 +498,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     File dir = new File(sqlFile.getParent(), subDirName.toString());
     dir.mkdirs();
     File file = new File(dir, fileName);
-    try (Writer writer = Files.newBufferedWriter(file.toPath(), Settings.encodingCharset,
+    try (Writer writer = Files.newBufferedWriter(file.toPath(), Settings.getEncodingCharset(),
                                                                 StandardOpenOption.CREATE,
                                                                 StandardOpenOption.TRUNCATE_EXISTING)) {
       writer.write(sql);

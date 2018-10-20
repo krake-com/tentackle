@@ -296,7 +296,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
       sqlDirName = getCanonicalPath(dir);
       dir.mkdirs();
       // create the SQL output file
-      sqlWriter = Files.newBufferedWriter(sqlFile.toPath(), Settings.encodingCharset,
+      sqlWriter = Files.newBufferedWriter(sqlFile.toPath(), Settings.getEncodingCharset(),
                                           StandardOpenOption.CREATE,
                                           StandardOpenOption.TRUNCATE_EXISTING);
     }
@@ -520,7 +520,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             try (BufferedWriter writer =
                  new BufferedWriter(
                  new OutputStreamWriter(
-                 new FileOutputStream(dumpFile), Settings.encodingCharset))) {
+                 new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
               writer.write(new EntityPrinter(entity, configuration).print());
             }
           }
@@ -538,7 +538,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
             try (BufferedWriter writer =
                      new BufferedWriter(
                          new OutputStreamWriter(
-                             new FileOutputStream(dumpFile), Settings.encodingCharset))) {
+                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
               writer.write("# attributes\n");
               for (Attribute attribute: entity.getAttributesIncludingInherited()) {
                 if (!attribute.isImplicit()) {

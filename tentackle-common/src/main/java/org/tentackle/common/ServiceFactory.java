@@ -68,6 +68,55 @@ public class ServiceFactory {
    */
   private static final Logger LOGGER = Logger.getLogger(ServiceFactory.class.getName());
 
+
+  private static String factoryClassname;
+  private static ClassLoader factoryClassloader;
+
+  /**
+   * Sets the classname of the service factory.
+   * <p>
+   * If this value is null, the {@link ServiceFactory} is loaded via the {@link ServiceLoader}.
+   * However, if for whatever reason, the loader doesn't find the service configuration or cannot
+   * be used, the class defined by {@code factoryClassname} can be instantiated.
+   * Applications must change this at a very early stage of startup, for example in the main-method.
+   *
+   * @param factoryClassname the classname
+   */
+  public static void setFactoryClassname(String factoryClassname) {
+    ServiceFactory.factoryClassname = factoryClassname;
+  }
+
+  /**
+   * Gets the classname of the service factory.
+   *
+   * @return the classname, default is null
+   */
+  public static String getFactoryClassname() {
+    return factoryClassname;
+  }
+
+
+  /**
+   * Sets the classloader to load the service factorty.
+   * <p>
+   * If this value is null, the the {@link ServiceFactory} is loaded via a default classloader.
+   *
+   * @param factoryClassloader the classloader
+   */
+  public static void setFactoryClassloader(ClassLoader factoryClassloader) {
+    ServiceFactory.factoryClassloader = factoryClassloader;
+  }
+
+  /**
+   * Gets the classloader to load the service factorty.
+   *
+   * @return the classloader, default is null
+   */
+  public static ClassLoader getFactoryClassloader() {
+    return factoryClassloader;
+  }
+
+
   /**
    * Creates the singleton via {@link ServiceLoader}.
    *
@@ -75,13 +124,13 @@ public class ServiceFactory {
    */
   private static ServiceFactory createServiceFactory() {
 
-    if (Settings.serviceFactoryClassname != null) {
+    if (factoryClassname != null) {
       try {
         @SuppressWarnings("unchecked")
         Class<? extends ServiceFactory> clazz = (Class<? extends ServiceFactory>) (
-          Settings.serviceFactoryClassloader == null ?
-            Class.forName(Settings.serviceFactoryClassname) :
-            Class.forName(Settings.serviceFactoryClassname, true, Settings.serviceFactoryClassloader));
+          factoryClassloader == null ?
+            Class.forName(factoryClassname) :
+            Class.forName(factoryClassname, true, factoryClassloader));
 
         return clazz.getDeclaredConstructor().newInstance();
       }
@@ -94,9 +143,9 @@ public class ServiceFactory {
     }
 
     try {
-      ServiceLoader<ServiceFactory> loader = Settings.serviceFactoryClassloader == null ?
+      ServiceLoader<ServiceFactory> loader = factoryClassloader == null ?
               ServiceLoader.load(ServiceFactory.class) :
-              ServiceLoader.load(ServiceFactory.class, Settings.serviceFactoryClassloader);
+              ServiceLoader.load(ServiceFactory.class, factoryClassloader);
       for (ServiceFactory factory: loader) {
         if (factory != null) {
           return factory;

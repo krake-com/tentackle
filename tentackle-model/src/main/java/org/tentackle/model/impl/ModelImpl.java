@@ -1070,7 +1070,7 @@ public class ModelImpl implements Model {
    */
   protected Reader createReader(String name) throws ModelException {
     try {
-      return new BufferedReader(new InputStreamReader(new FileInputStream(name), Settings.encodingCharset));
+      return new BufferedReader(new InputStreamReader(new FileInputStream(name), Settings.getEncodingCharset()));
     }
     catch (IOException ex) {
       throw new ModelException("cannot open reader for " + name, ex);

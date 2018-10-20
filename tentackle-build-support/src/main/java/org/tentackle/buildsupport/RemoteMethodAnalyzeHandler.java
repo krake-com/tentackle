@@ -107,7 +107,7 @@ public class RemoteMethodAnalyzeHandler extends AbstractAnalyzeHandler {
             try (PrintWriter pw = new PrintWriter(
                                     new BufferedWriter(
                                       new OutputStreamWriter(
-                                        new FileOutputStream(outputFile), Settings.encodingCharset)))) {
+                                        new FileOutputStream(outputFile), Settings.getEncodingCharset())))) {
               info.write(pw);
             }
             if (getProcessor().isDebugLogging()) {

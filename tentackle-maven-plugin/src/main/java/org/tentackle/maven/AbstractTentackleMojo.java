@@ -94,8 +94,9 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   protected void determineEncoding() {
     if (charset != null) {
-      Settings.encodingCharset =
-      org.wurbelizer.misc.Settings.encodingCharset = Charset.forName(charset);
+      Charset cs = Charset.forName(charset);
+      Settings.setEncodingCharset(cs);
+      org.wurbelizer.misc.Settings.setEncodingCharset(cs);
     }
   }
 
