@@ -19,13 +19,15 @@
 
 package org.tentackle.maven;
 
-import com.sun.tools.javac.api.JavacTool;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.wurbelizer.misc.Constants;
+
+import org.tentackle.buildsupport.AbstractTentackleProcessor;
+
 import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -33,13 +35,13 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.buildsupport.AbstractTentackleProcessor;
-import org.wurbelizer.misc.Constants;
+import javax.tools.ToolProvider;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -375,15 +377,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
       }
 
-      // JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();   // picks the wrong classloader :(
-      // @todo check if still necessary with Java 11 (check also Netbeans editor highlighting)
-      JavaCompiler compiler = JavacTool.create();
-      boolean withModules = compiler.getSourceVersions().contains(SourceVersion.RELEASE_9);
-
+      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
       if (compiler == null) {
-        throw new MojoExecutionException(withModules ?
-                "No Java compiler! jdk.compiler in module path?" :
-                "No Java compiler! Make sure you're using the JDK and tools.jar is in your classpath.");
+        throw new MojoExecutionException("No Java compiler! jdk.compiler in module path?");
       }
       DiagnosticCollector<JavaFileObject> diagnosticCollector = new DiagnosticCollector<>();
       StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnosticCollector, null, null);
@@ -403,11 +399,9 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
         }
         options.add(buf.toString());
 
-        if (withModules) {
-          // and add to the module path as well (since Java 9)
-          options.add("--module-path");
-          options.add(buf.toString());
-        }
+        // and add to the module path as well (since Java 9, we're at least on java 11)
+        options.add("--module-path");
+        options.add(buf.toString());
       }
       // options started with -A are passed to the annotation processors (without leading -A)
       options.add("-Averbosity=" + verbosityLevel);
