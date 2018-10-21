@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle Script Groovy</name>
   <description>Tentackle Scripting with Groovy</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

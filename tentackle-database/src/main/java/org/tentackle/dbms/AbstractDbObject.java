@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,7 +52,7 @@ import static org.tentackle.sql.Backend.*;
  * to a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
  * overriding methods (pure OO-approach). These methods are generated
- * by wurblets (see http://www.wurbelizer.org) which are already provided by Tentackle.
+ * by wurblets (see https://wurbelizer.org) which are already provided by Tentackle.
  * <p>
  * AbstractDbObjects have the following predefined attributes:
  * <ul>

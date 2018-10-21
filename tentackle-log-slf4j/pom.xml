@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle Logging SLF4J</name>
   <description>SLF4J Logging Adapter for Tentackle</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

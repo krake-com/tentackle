@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle FX</name>
   <description>UI components based on FX</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>

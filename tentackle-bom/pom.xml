@@ -13,7 +13,7 @@
   <packaging>pom</packaging>
   <name>Tentackle BOM</name>
   <description>Tentackle Bill Of Materials</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencyManagement>
     <dependencies>

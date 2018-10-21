@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle FX RDC POI Extension</name>
   <description>POI Extension for FX Rich Desktop Client</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

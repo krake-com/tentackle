@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  * Copyright (C) 2001-2009 Harald Krake, harald@krake.de, +49 7722 9508-0
  *
  * This library is free software; you can redistribute it and/or

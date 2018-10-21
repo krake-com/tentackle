@@ -18,7 +18,7 @@
     contains some PDO tests.
     This artifact must be included in test-scope only!
   </description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <properties>
     <rootBasedir>${project.parent.basedir}</rootBasedir>

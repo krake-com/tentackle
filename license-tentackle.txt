@@ -1,7 +1,7 @@
 <#if licenseFirst??>
 ${licenseFirst}
 </#if>
-${licensePrefix}Tentackle - http://www.tentackle.org
+${licensePrefix}Tentackle - https://tentackle.org
 ${licensePrefix}
 ${licensePrefix}This library is free software; you can redistribute it and/or
 ${licensePrefix}modify it under the terms of the GNU Lesser General Public

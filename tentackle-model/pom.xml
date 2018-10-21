@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle Data Model</name>
   <description>Data Model for Tentackle</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

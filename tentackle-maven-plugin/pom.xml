@@ -13,7 +13,7 @@
   <name>Tentackle Maven Plugin</name>
   <description>Maven Plugin for Tentackle</description>
   <version>2.2-SNAPSHOT</version>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>

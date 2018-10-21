@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
   <name>Tentackle PDO</name>
   <description>The PDO application layer of the Tentackle Framework</description>
-  <url>http://www.tentackle.org</url>
+  <url>https://tentackle.org</url>
 
   <dependencies>
     <dependency>
