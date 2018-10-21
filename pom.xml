@@ -11,7 +11,7 @@
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
-  <description>Parent pom.xml for the Tentackle modules.</description>
+  <description>Parent pom.xml for the Tentackle modules</description>
   <url>https://tentackle.org/</url>
   <organization>
     <name>Krake Softwaretechnik</name>
