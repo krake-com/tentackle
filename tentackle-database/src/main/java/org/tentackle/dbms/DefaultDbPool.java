@@ -322,7 +322,13 @@ public class DefaultDbPool implements SessionPool {
     }
     int poolId = unusedList[--unusedCount];
     PooledDb pooledDb = pooledSessions[poolId];
-    Db db = pooledDb == null ? null : pooledDb.getSession();
+    if (pooledDb == null) {
+      throw new SessionClosedException(this + ": session cleared unexpectedly");
+    }
+    Db db = pooledDb.getSession();
+    if (db == null) {
+      throw new SessionClosedException(this + ": session still in use unexpectedly");
+    }
     if (!db.isOpen()) {
       throw new SessionClosedException(db, this + ": Db has been closed unexpectedly");
     }
