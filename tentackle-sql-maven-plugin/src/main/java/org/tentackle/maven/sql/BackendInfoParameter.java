@@ -18,7 +18,12 @@
 
 package org.tentackle.maven.sql;
 
-import java.io.File;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.shared.model.fileset.FileSet;
+
+import org.tentackle.sql.BackendInfo;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,11 +31,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.function.Predicate;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.shared.model.fileset.FileSet;
-import org.tentackle.sql.BackendInfo;
 
 /**
  * Maven parameter to create a {@link BackendInfo}.
@@ -154,19 +154,8 @@ public class BackendInfoParameter {
     if (minVersion != null) {
       logger.debug("applying filter '" + minVersion + "'");
     }
-    hints.load(migrationHints, createFilter(minVersion), logger, verbose, resourceDirs);
+    hints.load(migrationHints, minVersion, logger, verbose, resourceDirs);
     return hints;
-  }
-
-
-  /**
-   * Creates a filter according to the version.
-   *
-   * @param version the minimum version, null if none
-   * @return the filter, null if version is null
-   */
-  public Predicate<File> createFilter(String version) {
-    return version == null ? null : new VersionFileFilter(version);
   }
 
 }

@@ -141,6 +141,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       catch (SQLException sqx) {
         throw new MojoExecutionException("could not retrieve metadata from " + backendInfo, sqx);
       }
+      getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
       sqlCode = new StringBuilder();
     }
@@ -210,8 +211,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
-    migrationHints.put(backendInfo.getUrl(),
-            backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs));
+    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs);
+    migrationHints.put(backendInfo.getUrl(), hints);
+    getLog().info(backendInfo + ": version " + backendParameter.minVersion);
   }
 
   @Override

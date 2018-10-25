@@ -18,6 +18,14 @@
 
 package org.tentackle.maven.sql;
 
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
+
+import org.tentackle.common.Settings;
+import org.tentackle.model.migrate.ColumnMigration;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,15 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.common.Settings;
-import org.tentackle.model.migrate.ColumnMigration;
 
 /**
  * Migration hints.
@@ -344,13 +345,13 @@ public class MigrationHints {
    * Load the migration hints.
    *
    * @param filesets the filesets to load hints from
-   * @param filter file filter, null if none
+   * @param version the mininum hint file version
    * @param logger the maven logger
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @throws MojoExecutionException if failed
    */
-  public void load(List<FileSet> filesets, Predicate<File> filter, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public void load(List<FileSet> filesets, String version, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
     if (filesets != null) {
       for (FileSet fileset: filesets) {
         FileSetManager fileSetManager = new FileSetManager(logger, verbose);
@@ -371,7 +372,7 @@ public class MigrationHints {
           if (fileNames.length > 0) {
             for (String filename : fileNames) {
               File hintFile = new File(new File(propertiesDirName), filename);
-              if (filter == null || filter.test(hintFile)) {
+              if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
                 logger.debug("loading migration hints from " + hintFile);
                 StringBuilder buf = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(
