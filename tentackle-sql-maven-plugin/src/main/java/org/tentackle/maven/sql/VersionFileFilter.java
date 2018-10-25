@@ -1,6 +1,5 @@
 /*
- * Tentackle - a framework for java desktop applications
- * http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,67 +18,44 @@
 
 package org.tentackle.maven.sql;
 
+import org.tentackle.common.ServiceFactory;
+
 import java.io.File;
-import java.util.StringTokenizer;
-import java.util.function.Predicate;
+
+
+interface VersionFileFilter$Singleton {
+  VersionFileFilter INSTANCE = ServiceFactory.createService(VersionFileFilter.class, VersionFileFilter.class);
+}
 
 /**
- * Filter files according to major/minor/hotfix-version.
- *
- * @author harald
+ * Filters files according to their version.
  */
-public class VersionFileFilter implements Predicate<File> {
-
-  /** the minimum version. */
-  private final String version;
+public interface VersionFileFilter {
 
   /**
-   * Creates a filter.
+   * The singleton.
    *
-   * @param version the minimum version
+   * @return the singleton
    */
-  public VersionFileFilter(String version) {
-    this.version = version;
+  public static VersionFileFilter getInstance() {
+    return VersionFileFilter$Singleton.INSTANCE;
   }
 
-  @Override
-  public boolean test(File t) {
-    // directory holds the version
-    File dir = t.getParentFile();
-    if (dir != null) {
-      String name = dir.getName();
-      int ndx = name.indexOf('-');    // cut -SNAPSHOT and things like that
-      if (ndx > 0) {
-        name = name.substring(0, ndx);
-      }
-      // split version major/minor/hotfix
-      StringTokenizer filterTokenizer = new StringTokenizer(version, ".");
-      StringTokenizer nameTokenizer = new StringTokenizer(name, ".");
-      while (filterTokenizer.hasMoreTokens() && nameTokenizer.hasMoreTokens()) {
-        String filterToken = filterTokenizer.nextToken();
-        String nameToken = nameTokenizer.nextToken();
-        try {
-          int filterNumber = Integer.valueOf(filterToken);
-          try {
-            int nameNumber = Integer.valueOf(nameToken);
-            if (filterNumber > nameNumber) {
-              return false;
-            }
-          }
-          catch (NumberFormatException nfx) {
-            // not a number
-            return false;
-          }
-        }
-        catch (NumberFormatException nfx) {
-          // not a number: compare as strings
-          if (filterToken.compareTo(nameToken) > 0) {
-            return false;
-          }
-        }
-      }
-    }
-    return true;
-  }
+
+  /**
+   * Gets the name of the filter.
+   *
+   * @return the filter name
+   */
+  String getName();
+
+  /**
+   * Checks whether given migration hint file's version is logically greater or equal the given version.
+   *
+   * @param version the application's version
+   * @param hintFile the migration hint file
+   * @return true if hint applies to given version, false if too old
+   */
+  boolean isValid(String version, File hintFile);
 
 }
