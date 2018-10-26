@@ -20,7 +20,7 @@ import org.tentackle.persist.security.SecurityPersistenceImpl;
 public interface SecurityRemoteDelegate
        extends AbstractPersistentObjectRemoteDelegate<Security,SecurityPersistenceImpl> {
 
-  void assertRemoteSecurityManagerInitialized(DomainContext contextDb) throws RemoteException;
+  void assertRemoteSecurityManagerInitialized(DomainContext context) throws RemoteException;
 
   // @wurblet inclrmi Include --missingok .$classname/methods
 

@@ -37,9 +37,9 @@ public class SecurityRemoteDelegateImpl
   }
 
   @Override
-  public void assertRemoteSecurityManagerInitialized(DomainContext contextDb) throws RemoteException {
+  public void assertRemoteSecurityManagerInitialized(DomainContext context) throws RemoteException {
     try {
-      setDomainContext(contextDb);
+      setDomainContext(context);
       // sufficient to update the security manager's table
       dbObject.isPermissionAccepted(SecurityFactory.getInstance().getReadPermission());
     }

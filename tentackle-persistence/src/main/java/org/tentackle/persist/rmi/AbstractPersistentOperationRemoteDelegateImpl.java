@@ -98,8 +98,8 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    * @param context the domain context
    */
   protected void setDomainContext(DomainContext context) {
-    // set the db in the contextDb first as this will be copied to the object below
-    context.setSession(getSession());   // db in contextDb is transient, so we must set it here
+    // set the session in the context first as this will be copied to the object below
+    context.setSession(getSession());   // session in context is transient, so we must set it here
     dbOperation.setDomainContext(context);
   }
 

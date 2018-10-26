@@ -65,7 +65,7 @@ public abstract class AbstractBinder implements Binder {
   /**
    * Sets a binding property that can be used by components.
    * <p>
-   * Example: putBindingProperty(ContextDb.class, contextDb);
+   * Example: putBindingProperty(DomainContext.class, context);
    *
    * @param key the key to locate the property
    * @param value the property value
@@ -80,7 +80,7 @@ public abstract class AbstractBinder implements Binder {
    * Gets a binding property.<br>
    * Some components need additional info which is not provided by the bound field.
    * <p>
-   * Example: contextDb = getBindingProperty(ContextDb.class);
+   * Example: context = getBindingProperty(DomainContext.class);
    *
    * @param key the key to locate the property
    * @return the property value, null if no such key
