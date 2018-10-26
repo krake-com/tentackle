@@ -36,9 +36,7 @@ import org.tentackle.validate.scope.MandatoryScope;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * Base class for tentackle fx controllers.
@@ -172,11 +170,6 @@ public abstract class AbstractFxController implements FxController, ScopeConfigu
       binder = createBinder();
     }
     return binder;
-  }
-
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
-    // the default does nothing
   }
 
   @Override

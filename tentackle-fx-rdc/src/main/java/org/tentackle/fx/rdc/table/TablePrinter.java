@@ -54,7 +54,6 @@ import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
 
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,9 +109,8 @@ public class TablePrinter extends AbstractFxController {
   private static final String STYLE_BOTTOMLINE = "bottomline";
   private static final String STYLE_TOTALS = "totals";
 
-
+  @FXML
   private ResourceBundle resources;   // I18N resources
-  private int pageCount;              // number of pages
 
   @FXML
   private FxLabel titleLabel;
@@ -130,6 +128,7 @@ public class TablePrinter extends AbstractFxController {
   private FxLabel pageLabel;
 
 
+  private int pageCount;                            // number of pages
   private Duration jobDuration;                     // for logging only
   private int rowCount;                             // number of rows to print (incl. totals)
   private int totalsRowCount;                       // number of total rows, 0 = none
@@ -209,10 +208,9 @@ public class TablePrinter extends AbstractFxController {
   }
 
 
-  @Override
+  @FXML
   @SuppressWarnings("unchecked")
-  public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
+  private void initialize() {
     titleLabel.getStyleClass().add(STYLE_TITLE);
     bottomLine.getStyleClass().add(STYLE_BOTTOMLINE);
     pageLabel.getStyleClass().add(STYLE_BOTTOMLINE);

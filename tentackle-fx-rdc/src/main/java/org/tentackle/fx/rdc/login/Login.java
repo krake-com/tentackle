@@ -42,7 +42,6 @@ import org.tentackle.log.Logger;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
 
-import java.net.URL;
 import java.util.ResourceBundle;
 
 /**
@@ -55,10 +54,12 @@ public class Login extends AbstractFxController {
 
   private static final Logger LOGGER = Logger.get(Login.class);
 
-  private ResourceBundle resources;           // localization bundle
   private SessionInfo sessionInfo;            // the session info
   private boolean autoLogin;                  // true if login immediately
   private boolean backendFromSystemPrefs;     // if select backend from system preferences
+
+  @FXML
+  private ResourceBundle resources;           // localization bundle
 
   @FXML
   private FxLabel backendLabel;
@@ -86,9 +87,8 @@ public class Login extends AbstractFxController {
   private FxButton cancelButton;
 
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
+  @FXML
+  private void initialize() {
     progressBar.setVisible(false);
     setCapsLockMessage(isCapsLock());
     cancelButton.setOnAction(e -> cancel());

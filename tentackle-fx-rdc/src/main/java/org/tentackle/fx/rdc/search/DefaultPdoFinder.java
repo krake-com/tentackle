@@ -32,9 +32,6 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
 /**
  * The simple default finder.<br>
  * Provides normtext-search criteria (if entity provides a normtext).
@@ -61,8 +58,8 @@ public class DefaultPdoFinder<T extends PersistentDomainObject<T>> extends PdoFi
   }
 
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
+  @FXML
+  private void initialize() {
     patternField.setCaseConversion(CaseConversion.UPPER_CASE);
   }
 

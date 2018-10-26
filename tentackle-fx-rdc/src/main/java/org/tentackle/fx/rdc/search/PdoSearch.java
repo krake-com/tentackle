@@ -70,7 +70,6 @@ import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
 
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -115,6 +114,9 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   @FXML
   private FxLabel countLabel;
 
+  @FXML
+  private ResourceBundle resources;             // the resources
+
   /**
    * The items found.<br>
    * Initially empty, never null.
@@ -122,7 +124,6 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private SortedList<T> items = new SortedList<>(FXCollections.observableArrayList());
 
   private InvalidationListener itemsListener;   // listener for items totals change
-  private ResourceBundle resources;             // the resources
   private PdoFinder<T> finder;                  // the finder
   private PdoCrud<T> pdoCrud;                   // the CRUD view
   private FxBorderPane tablePane;               // the border pane holding the table view
@@ -664,11 +665,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
-
-    this.resources = resources;
-
+  @FXML
+  private void initialize() {
     treeButton.setGraphic(Fx.createImageView("tree"));
     treeButton.setOnAction(e -> {
       if (treeShown) {

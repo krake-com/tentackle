@@ -19,7 +19,6 @@
 
 package org.tentackle.fx;
 
-import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
 
@@ -34,7 +33,7 @@ import java.util.List;
  *
  * @author harald
  */
-public interface FxController extends Initializable {
+public interface FxController {
 
   /**
    * Sets the view managed by this controller.

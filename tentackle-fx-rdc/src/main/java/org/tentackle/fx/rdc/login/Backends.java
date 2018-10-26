@@ -49,10 +49,8 @@ import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.ValidationUtilities;
 
 import java.io.File;
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * Controller to add, edit and remove backends.
@@ -147,8 +145,8 @@ public class Backends extends AbstractFxController {
 
 
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
+  @FXML
+  private void initialize() {
     backends.setBindable(false);
     backends.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
     backends.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {

@@ -33,11 +33,9 @@ import org.tentackle.security.Permission;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.security.pdo.Security;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -82,9 +80,9 @@ public class SecurityEditor extends PdoEditor<Security> {
 
 
 
-  @Override
+  @FXML
   @SuppressWarnings("unchecked")
-  public void initialize(URL location, ResourceBundle resources) {
+  private void initialize() {
     secGranteeField.setChangeable(false);
     granteeButton.setOnAction(e -> selectGrantee());
     allowButton.setBindable(false);

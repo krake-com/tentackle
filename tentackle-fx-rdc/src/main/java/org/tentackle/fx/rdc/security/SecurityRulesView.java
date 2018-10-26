@@ -54,7 +54,6 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.validate.ValidationFailedException;
 
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
@@ -128,7 +127,9 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   private ObservableList<Security> pdoRules;        // the security rules for the PDO
   private TrackedList<Security> trackedPdoRules;    // to track the changes
 
+  @FXML
   private ResourceBundle resources;                 // bundle
+
   private DomainContext context;                    // the domain context
   private PersistentDomainObject<?> pdo;            // the PDO, null if application class
   private int classId;                              // the class id, 0 if non-PDO class
@@ -141,11 +142,8 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     return context;
   }
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
-
-    this.resources = resources;
-
+  @FXML
+  private void initialize() {
     pdoRules = FXCollections.observableArrayList();
     classRules = FXCollections.observableArrayList();
 

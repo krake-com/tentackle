@@ -33,7 +33,6 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoRemoteSession;
 
-import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -62,18 +61,17 @@ public class SessionsView extends AbstractFxController {
   @FXML
   private FxButton killButton;
 
-
+  @FXML
   private ResourceBundle resources;
+
   private AdminExtension adminExt;
   private TablePopup<SessionData> popup;
 
 
 
-  @Override
+  @FXML
   @SuppressWarnings("unchecked")
-  public void initialize(URL location, ResourceBundle resources) {
-    this.resources = resources;
-
+  private void initialize() {
     securityButton.setGraphic(Fx.createImageView("security"));
     securityButton.setOnAction(e -> security());
 
@@ -83,17 +81,12 @@ public class SessionsView extends AbstractFxController {
     killButton.setGraphic(Fx.createImageView("cancel"));
     killButton.setOnAction(e -> kill());
     killButton.disableProperty().bind(sessionsNode.getSelectionModel().selectedItemProperty().isNull());
-
-    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", false, resources.getString("Sessions"));
-
-    TableConfiguration<SessionData> config = createTableConfiguration();
-    config.getBinder().bind();
-    config.configure(sessionsNode);
   }
 
 
   @Override
   public void configure() {
+    popup = RdcFactory.getInstance().createTablePopup(sessionsNode, "Sessions", false, resources.getString("Sessions"));
     DomainContext context = Pdo.createDomainContext();
     if (context.getSession().isRemote()) {    // needs check to run tests
       PdoRemoteSession remoteSession = (PdoRemoteSession) context.getSession().getRemoteSession();
@@ -102,6 +95,10 @@ public class SessionsView extends AbstractFxController {
       securityButton.setDisable(!SecurityDialogFactory.getInstance().isDialogAllowed(context));
       refresh();
     }
+
+    TableConfiguration<SessionData> config = createTableConfiguration();
+    config.getBinder().bind();
+    config.configure(sessionsNode);
   }
 
 

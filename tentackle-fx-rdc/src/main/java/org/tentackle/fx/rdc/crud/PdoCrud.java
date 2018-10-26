@@ -68,7 +68,6 @@ import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
 
-import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,8 +123,9 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   @FXML
   private FxButton cancelButton;
 
-
+  @FXML
   private ResourceBundle resources;                 // the resources
+
   private PdoEditor<T> editor;                      // the editor
   private ObservableList<T> pdoList;                // optional list of PDOs
   private int pdoListIndex;                         // index in list
@@ -314,11 +314,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   }
 
 
-  @Override
-  public void initialize(URL location, ResourceBundle resources) {
-
-    this.resources = resources;
-
+  @FXML
+  private void initialize() {
     securityButton.setGraphic(Fx.createImageView("security"));
     securityButton.setOnAction(e -> security());
 
