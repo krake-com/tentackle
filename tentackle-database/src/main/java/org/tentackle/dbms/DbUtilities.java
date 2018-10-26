@@ -231,7 +231,7 @@ public class DbUtilities {
       for (String line: backendConfiguration.getOptions().split("\n")) {
         String key;
         String value;
-        int ndx = line.indexOf("=");
+        int ndx = line.indexOf('=');
         if (ndx >= 0) {
           key = line.substring(0, ndx).trim();
           value = line.substring(ndx + 1).trim();

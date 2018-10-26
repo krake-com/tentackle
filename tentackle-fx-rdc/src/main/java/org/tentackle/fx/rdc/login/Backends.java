@@ -18,8 +18,6 @@
 package org.tentackle.fx.rdc.login;
 
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.SelectionMode;

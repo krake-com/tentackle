@@ -144,7 +144,6 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
     }
 
     File dir = new File(fileSet.getDirectory());
-
     String dirName = getCanonicalPath(dir);
 
     if (verbosityLevel.isDebug()) {
@@ -165,7 +164,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
         }
         String beanInfoName = fileName.substring(0, ndx); // cut trailing BeanInfo.java
         // check if file exists
-        File beanFile = new File(dirName + "/" + beanInfoName + Constants.JAVA_SOURCE_EXTENSION);
+        File beanFile = new File(dir, beanInfoName + Constants.JAVA_SOURCE_EXTENSION);
         if (!beanFile.exists()) {
           getLog().error("no matching java-file for " + fileName);
           errorCount++;

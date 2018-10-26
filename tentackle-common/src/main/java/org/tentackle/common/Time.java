@@ -126,36 +126,45 @@ public class Time extends java.sql.Time implements Freezable {
     cal = null;
   }
 
+  // others overridden to check for frozen.
+  // those methods are deprecated anyway, but may still be used by an application
+
+  @Deprecated
   @Override
   public void setYear(int year) {
     assertNotFrozen();
     super.setYear(year);
   }
 
+  @Deprecated
   @Override
   public void setMonth(int month) {
     assertNotFrozen();
     super.setMonth(month);
   }
 
+  @Deprecated
   @Override
   public void setDate(int date) {
     assertNotFrozen();
     super.setDate(date);
   }
 
+  @Deprecated
   @Override
   public void setHours(int hours) {
     assertNotFrozen();
     super.setHours(hours);
   }
 
+  @Deprecated
   @Override
   public void setMinutes(int minutes) {
     assertNotFrozen();
     super.setMinutes(minutes);
   }
 
+  @Deprecated
   @Override
   public void setSeconds(int seconds) {
     assertNotFrozen();

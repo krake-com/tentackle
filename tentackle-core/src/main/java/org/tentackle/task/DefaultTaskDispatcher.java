@@ -449,7 +449,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       throw new TaskException(this + ": is not allowed to lock itself");
     }
 
-    return _lock(key);
+    return lockImpl(key);
   }
 
   @Override
@@ -461,7 +461,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
     checkNullKey(key);
 
-    return _unlock(key);
+    return unlockImpl(key);
   }
 
 
@@ -513,7 +513,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    * Requests a lock for executing a task from the queue.
    */
   protected void lockInternal() {
-    _lock(null);
+    lockImpl(null);
   }
 
 
@@ -523,7 +523,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    * @param sleepMs milliseconds to sleep after unlock, 0 if no sleep
    */
   protected void unlockInternal(long sleepMs) {
-    _unlock(null);
+    unlockImpl(null);
     if (sleepMs > 0 && !wasInterrupted) {
       sleepForInterval(sleepMs);
     }
@@ -744,7 +744,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    * @param key the optional unlock key
    * @return the lock if really locked, else just incremented the lock count
    */
-  private TaskDispatcherLock _lock(Object key) {
+  private TaskDispatcherLock lockImpl(Object key) {
 
     int lockingLevel;
 
@@ -847,7 +847,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
     else if (key != unlockKey) {
       // nested lock for a different key: unlock and start over
       if (usingMutexLocking) {
-        _unlock(unlockKey);
+        unlockImpl(unlockKey);
         throw new TaskException(this + ": same thread '" + Thread.currentThread()
                 + "' requested nested mutex lock with non-matching key! Expected="
                 + (unlockKey == null ? "<null>" : unlockKey.toString())
@@ -877,7 +877,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
    * @param key the unlock key
    * @return true if really unlocked, else just decremented the lock count
    */
-  private boolean _unlock(Object key) {
+  private boolean unlockImpl(Object key) {
 
     int lockingLevel;
 
@@ -908,7 +908,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           lockingLevel = nonMutexLockCount;
         }
         finally {
-          notifyAll();    // notify all threads waiting for a lock (see _lock: wait() above)
+          notifyAll();    // notify all threads waiting for a lock (see lockImpl: wait() above)
         }
       }
     }

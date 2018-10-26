@@ -70,8 +70,8 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       fileSet.setDirectory(modelDir.getAbsolutePath());
     }
 
-    File dir = new File(fileSet.getDirectory());
-    String modelDirName = getCanonicalPath(dir);
+    File modelDir = new File(fileSet.getDirectory());
+    String modelDirName = getCanonicalPath(modelDir);
     if (verbosityLevel.isDebug()) {
       getLog().info("processing files in " + modelDirName);
     }
@@ -97,7 +97,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       Arrays.sort(fileNames);
       for (String filename : fileNames) {
         // check if file exists
-        File modelFile = new File(modelDirName + "/" + filename);
+        File modelFile = new File(modelDir, filename);
         if (!modelFile.exists()) {
           getLog().error("no such modelfile: " + filename);
           errorCount++;

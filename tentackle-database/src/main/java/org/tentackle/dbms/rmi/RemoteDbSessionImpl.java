@@ -285,8 +285,8 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   }
 
 
-  private final Resources resources;                      // resources to be cleaned up
-  private final Cleanable cleanable;                      // to cleanup the connection
+  private final Resources resources;                  // resources to be cleaned up
+  private final Cleanable cleanable;                  // to cleanup the connection
 
   private final SessionInfo clientInfo;               // saved client info
   private final long sessionNumber;                   // unique session number

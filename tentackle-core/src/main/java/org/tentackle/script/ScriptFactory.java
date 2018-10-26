@@ -84,14 +84,15 @@ public interface ScriptFactory {
    * Creates a script object.
    * <p>
    * Implementations of the {@link ScriptFactory} must implement this method.
+   * <p>
+   * Throws {@link ScriptRuntimeException} if creating the script failed
    *
    * @param abbreviation the scripting language, null or empty for default
    * @param code the scripting code
    * @param cached use caching if possible (script may be used more than once)
    * @param threadSafe true if script must be threadsafe
    * @return the script
-   * @throws ScriptRuntimeException if creating the script failed
    */
-  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe) throws ScriptRuntimeException;
+  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe);
 
 }

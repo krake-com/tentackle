@@ -25,10 +25,7 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.misc.Provider;
 
 
-interface Session$ThreadLocal {
-  /**
-   * The session of the current thread.
-   */
+interface SessionThreadLocalHolder {
   ThreadLocal<Session> TL_SESSION = new ThreadLocal<>();
 }
 
@@ -46,7 +43,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @return the session, null if current thread is not using a session
    */
   static Session getCurrentSession() {
-    return Session$ThreadLocal.TL_SESSION.get();
+    return SessionThreadLocalHolder.TL_SESSION.get();
   }
 
   /**
@@ -56,7 +53,7 @@ public interface Session extends Comparable<Session>, AutoCloseable {
    * @param session the db
    */
   static void setCurrentSession(Session session) {
-    Session$ThreadLocal.TL_SESSION.set(session);
+    SessionThreadLocalHolder.TL_SESSION.set(session);
   }
 
   /**

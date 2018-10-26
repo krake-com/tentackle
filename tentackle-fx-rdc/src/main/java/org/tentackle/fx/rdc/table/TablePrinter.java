@@ -308,37 +308,6 @@ public class TablePrinter extends AbstractFxController {
   }
 
 
-  private int getVisibleRowCount() {
-    VirtualFlow<?> flow = (VirtualFlow<?>) ((TableViewSkin<?>) tableView.getSkin()).getChildren().get(1);
-    int start = 0;
-    IndexedCell<?> cell = flow.getFirstVisibleCell();
-    if (cell != null) {
-      start = cell.getIndex();
-    }
-    cell = flow.getLastVisibleCell();
-    int count = -1;
-    if (cell != null) {
-      int end = cell.getIndex();
-      count = end - start;
-      if (end >= flow.getCellCount() - 1) {
-        // last cell:
-        // in FX9 VirtualFlow.getLastVisibleCellWithinViewport is package scope
-        // we use scrollTo to test whether last cell is within viewport
-        tableView.scrollTo(end);
-        cell = flow.getFirstVisibleCell();
-        if (cell != null && cell.getIndex() == start) {
-          // last cell completely visible
-          count++;
-        }
-        else {
-          tableView.scrollTo(start);
-        }
-      }
-    }
-    return count;
-  }
-
-
 
   /**
    * Task using the ModificationTracker to print the table.
@@ -436,6 +405,36 @@ public class TablePrinter extends AbstractFxController {
           stage.close();
         });
       }
+    }
+
+    private int getVisibleRowCount() {
+      VirtualFlow<?> flow = (VirtualFlow<?>) ((TableViewSkin<?>) tableView.getSkin()).getChildren().get(1);
+      int start = 0;
+      IndexedCell<?> cell = flow.getFirstVisibleCell();
+      if (cell != null) {
+        start = cell.getIndex();
+      }
+      cell = flow.getLastVisibleCell();
+      int count = -1;
+      if (cell != null) {
+        int end = cell.getIndex();
+        count = end - start;
+        if (end >= flow.getCellCount() - 1) {
+          // last cell:
+          // in FX9 VirtualFlow.getLastVisibleCellWithinViewport is package scope
+          // we use scrollTo to test whether last cell is within viewport
+          tableView.scrollTo(end);
+          cell = flow.getFirstVisibleCell();
+          if (cell != null && cell.getIndex() == start) {
+            // last cell completely visible
+            count++;
+          }
+          else {
+            tableView.scrollTo(start);
+          }
+        }
+      }
+      return count;
     }
   }
 

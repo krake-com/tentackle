@@ -28,7 +28,6 @@ import org.wurbelizer.misc.Constants;
 
 import org.tentackle.buildsupport.AbstractTentackleProcessor;
 
-import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;

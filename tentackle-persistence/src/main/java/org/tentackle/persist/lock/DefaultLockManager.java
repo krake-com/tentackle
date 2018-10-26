@@ -48,7 +48,7 @@ import org.tentackle.session.SessionUtilities;
 @Service(LockManager.class)
 public class DefaultLockManager implements LockManager {
 
-  private final Logger LOGGER = Logger.get(DefaultLockManager.class);
+  private static final Logger LOGGER = Logger.get(DefaultLockManager.class);
 
   /**
    * The lockmanager is enabled in servers only.<br>
