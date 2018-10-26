@@ -21,7 +21,7 @@ package org.tentackle.reflect;
 import org.tentackle.common.ServiceFactory;
 
 
-interface ClassMapperFactory$Singleton {
+interface ClassMapperFactoryHolder {
   ClassMapperFactory INSTANCE = ServiceFactory.createService(ClassMapperFactory.class);
 }
 
@@ -38,7 +38,7 @@ public interface ClassMapperFactory {
    * @return the singleton
    */
   static ClassMapperFactory getInstance() {
-    return ClassMapperFactory$Singleton.INSTANCE;
+    return ClassMapperFactoryHolder.INSTANCE;
   }
 
   /**

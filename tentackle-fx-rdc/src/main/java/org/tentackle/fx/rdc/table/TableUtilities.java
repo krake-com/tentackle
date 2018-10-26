@@ -56,7 +56,7 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.ResourceBundle;
 
-interface TableUtilities$Singleton {
+interface TableUtilitiesHolder {
   TableUtilities INSTANCE = ServiceFactory.createService(TableUtilities.class);
 }
 
@@ -74,7 +74,7 @@ public class TableUtilities {
    * @return the singleton
    */
   public static TableUtilities getInstance() {
-    return TableUtilities$Singleton.INSTANCE;
+    return TableUtilitiesHolder.INSTANCE;
   }
 
 

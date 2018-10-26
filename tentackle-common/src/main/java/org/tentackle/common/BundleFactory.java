@@ -25,7 +25,7 @@ import java.util.ResourceBundle;
 import java.util.spi.ResourceBundleControlProvider;
 
 
-interface BundleFactory$Singleton {
+interface BundleFactoryHolder {
   BundleFactory INSTANCE = ServiceFactory.createService(BundleFactory.class, DefaultBundleFactory.class);
 }
 
@@ -78,7 +78,7 @@ public interface BundleFactory {
    * @return the singleton
    */
   static BundleFactory getInstance() {
-    return BundleFactory$Singleton.INSTANCE;
+    return BundleFactoryHolder.INSTANCE;
   }
 
   /**

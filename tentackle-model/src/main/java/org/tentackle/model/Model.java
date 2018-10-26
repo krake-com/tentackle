@@ -22,7 +22,7 @@ import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 
 
-interface Model$Singleton {
+interface ModelHolder {
   Model INSTANCE = ServiceFactory.createService(Model.class);
 }
 
@@ -41,7 +41,7 @@ public interface Model {
    * @return the singleton
    */
   static Model getInstance() {
-    return Model$Singleton.INSTANCE;
+    return ModelHolder.INSTANCE;
   }
 
 

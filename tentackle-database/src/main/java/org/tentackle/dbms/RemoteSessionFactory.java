@@ -22,7 +22,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.session.RemoteSession;
 
-interface RemoteSessionFactory$Singleton {
+interface RemoteSessionFactoryHolder {
   RemoteSessionFactory INSTANCE = ServiceFactory.createService(RemoteSessionFactory.class);
 }
 
@@ -39,7 +39,7 @@ public interface RemoteSessionFactory {
    * @return the singleton
    */
   static RemoteSessionFactory getInstance() {
-    return RemoteSessionFactory$Singleton.INSTANCE;
+    return RemoteSessionFactoryHolder.INSTANCE;
   }
 
   /**

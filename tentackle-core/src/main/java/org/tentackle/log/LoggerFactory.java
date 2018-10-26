@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 
-interface LoggerFactory$Singleton {
+interface LoggerFactoryHolder {
   LoggerFactory INSTANCE = ServiceFactory.createService(LoggerFactory.class, DefaultLoggerFactory.class);
 }
 
@@ -41,7 +41,7 @@ public interface LoggerFactory {
    * @return the singleton
    */
   static LoggerFactory getInstance() {
-    return LoggerFactory$Singleton.INSTANCE;
+    return LoggerFactoryHolder.INSTANCE;
   }
 
 

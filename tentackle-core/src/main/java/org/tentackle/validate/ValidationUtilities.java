@@ -44,7 +44,7 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.validate.validator.FailedValidationResult;
 
 
-interface ValidationUtilities$Singleton {
+interface ValidationUtilitiesHolder {
   ValidationUtilities INSTANCE = ServiceFactory.createService(ValidationUtilities.class, ValidationUtilities.class);
 }
 
@@ -66,7 +66,7 @@ public class ValidationUtilities {
    * @return the singleton
    */
   public static ValidationUtilities getInstance() {
-    return ValidationUtilities$Singleton.INSTANCE;
+    return ValidationUtilitiesHolder.INSTANCE;
   }
 
 

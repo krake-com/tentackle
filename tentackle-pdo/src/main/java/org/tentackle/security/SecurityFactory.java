@@ -30,7 +30,7 @@ import org.tentackle.security.permissions.ViewPermission;
 import org.tentackle.security.permissions.WritePermission;
 
 
-interface SecurityFactory$Singleton {
+interface SecurityFactoryHolder {
   SecurityFactory INSTANCE = ServiceFactory.createService(SecurityFactory.class);
 }
 
@@ -51,7 +51,7 @@ public interface SecurityFactory {
    * @return the singleton
    */
   static SecurityFactory getInstance() {
-    return SecurityFactory$Singleton.INSTANCE;
+    return SecurityFactoryHolder.INSTANCE;
   }
 
 

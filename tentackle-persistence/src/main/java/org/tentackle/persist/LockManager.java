@@ -24,7 +24,7 @@ import org.tentackle.dbms.Db;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.lock.DefaultLockManager;
 
-interface LockManager$Singleton {
+interface LockManagerHolder {
   LockManager INSTANCE = ServiceFactory.createService(LockManager.class, DefaultLockManager.class);
 }
 
@@ -52,7 +52,7 @@ public interface LockManager {
    * @return the singleton
    */
   static LockManager getInstance() {
-    return LockManager$Singleton.INSTANCE;
+    return LockManagerHolder.INSTANCE;
   }
 
 

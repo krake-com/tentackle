@@ -28,7 +28,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
 
-interface ValidatorCache$Singleton {
+interface ValidatorCacheHolder {
   ValidatorCache INSTANCE = ServiceFactory.createService(ValidatorCache.class, ValidatorCache.class);
 }
 
@@ -50,7 +50,7 @@ public class ValidatorCache {
    * @return the singleton
    */
   public static ValidatorCache getInstance() {
-    return ValidatorCache$Singleton.INSTANCE;
+    return ValidatorCacheHolder.INSTANCE;
   }
 
 

@@ -28,7 +28,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.AbstractMappedDiagnosticContext;
 
 
-interface SLF4JMappedDiagnosticContext$Singleton {
+interface SLF4JMappedDiagnosticContextHolder {
   SLF4JMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
                 SLF4JMappedDiagnosticContext.class, SLF4JMappedDiagnosticContext.class);
 }
@@ -48,7 +48,7 @@ public class SLF4JMappedDiagnosticContext extends AbstractMappedDiagnosticContex
    * @return the singleton
    */
   public static SLF4JMappedDiagnosticContext getInstance() {
-    return SLF4JMappedDiagnosticContext$Singleton.INSTANCE;
+    return SLF4JMappedDiagnosticContextHolder.INSTANCE;
   }
 
 

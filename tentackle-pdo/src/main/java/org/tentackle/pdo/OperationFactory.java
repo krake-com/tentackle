@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.session.Session;
 
 
-interface OperationFactory$Singleton {
+interface OperationFactoryHolder {
   OperationFactory INSTANCE = ServiceFactory.createService(
               OperationFactory.class, DefaultOperationFactory.class);
 }
@@ -41,7 +41,7 @@ public interface OperationFactory {
    * @return the singleton
    */
   static OperationFactory getInstance() {
-    return OperationFactory$Singleton.INSTANCE;
+    return OperationFactoryHolder.INSTANCE;
   }
 
   /**

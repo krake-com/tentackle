@@ -22,7 +22,7 @@ package org.tentackle.dbms;
 import org.tentackle.common.ServiceFactory;
 
 
-interface ModificationLogFactory$Singleton {
+interface ModificationLogFactoryHolder {
   ModificationLogFactory INSTANCE = ServiceFactory.createService(
               ModificationLogFactory.class, DefaultModificationLogFactory.class);
 }
@@ -40,7 +40,7 @@ public interface ModificationLogFactory {
    * @return the singleton
    */
   static ModificationLogFactory getInstance() {
-    return ModificationLogFactory$Singleton.INSTANCE;
+    return ModificationLogFactoryHolder.INSTANCE;
   }
 
 

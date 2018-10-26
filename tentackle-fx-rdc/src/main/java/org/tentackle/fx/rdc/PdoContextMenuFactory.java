@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.pdo.PersistentDomainObject;
 
 
-interface PdoContextMenuFactory$Singleton {
+interface PdoContextMenuFactoryHolder {
   PdoContextMenuFactory INSTANCE = ServiceFactory.createService(PdoContextMenuFactory.class);
 }
 
@@ -43,7 +43,7 @@ public interface PdoContextMenuFactory {
    * @return the singleton
    */
   static PdoContextMenuFactory getInstance() {
-    return PdoContextMenuFactory$Singleton.INSTANCE;
+    return PdoContextMenuFactoryHolder.INSTANCE;
   }
 
   /**

@@ -21,7 +21,7 @@ package org.tentackle.dbms.rmi;
 import org.tentackle.common.ServiceFactory;
 
 
-interface RemoteDelegateLocator$Singleton {
+interface RemoteDelegateLocatorHolder {
   RemoteDelegateLocator INSTANCE = ServiceFactory.createService(
               RemoteDelegateLocator.class, DbRemoteDelegateLocator.class);
 }
@@ -41,7 +41,7 @@ public interface RemoteDelegateLocator {
    * @return the singleton
    */
   static RemoteDelegateLocator getInstance() {
-    return RemoteDelegateLocator$Singleton.INSTANCE;
+    return RemoteDelegateLocatorHolder.INSTANCE;
   }
 
   /**

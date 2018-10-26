@@ -28,7 +28,7 @@ import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
 
-interface ValidationScopeFactory$Singleton {
+interface ValidationScopeFactoryHolder {
   ValidationScopeFactory INSTANCE = ServiceFactory.createService(ValidationScopeFactory.class);
 }
 
@@ -49,7 +49,7 @@ public interface ValidationScopeFactory {
    * @return the singleton
    */
   static ValidationScopeFactory getInstance() {
-    return ValidationScopeFactory$Singleton.INSTANCE;
+    return ValidationScopeFactoryHolder.INSTANCE;
   }
 
 

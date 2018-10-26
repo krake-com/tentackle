@@ -23,7 +23,7 @@ import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 
 
-interface BackendFactory$Singleton {
+interface BackendFactoryHolder {
   BackendFactory INSTANCE = ServiceFactory.createService(BackendFactory.class, DefaultBackendFactory.class);
 }
 
@@ -41,7 +41,7 @@ public interface BackendFactory {
    * @return the singleton
    */
   static BackendFactory getInstance() {
-    return BackendFactory$Singleton.INSTANCE;
+    return BackendFactoryHolder.INSTANCE;
   }
 
 

@@ -24,7 +24,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.misc.InheritableThreadLocalHashTable;
 
 
-interface DefaultMappedDiagnosticContext$Singleton {
+interface DefaultMappedDiagnosticContextHolder {
   DefaultMappedDiagnosticContext INSTANCE = ServiceFactory.createService(
               DefaultMappedDiagnosticContext.class, DefaultMappedDiagnosticContext.class);
 }
@@ -48,7 +48,7 @@ public class DefaultMappedDiagnosticContext extends AbstractMappedDiagnosticCont
    * @return the singleton
    */
   public static DefaultMappedDiagnosticContext getInstance() {
-    return DefaultMappedDiagnosticContext$Singleton.INSTANCE;
+    return DefaultMappedDiagnosticContextHolder.INSTANCE;
   }
 
 

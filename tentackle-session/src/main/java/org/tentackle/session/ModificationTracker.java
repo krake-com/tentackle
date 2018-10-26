@@ -22,7 +22,7 @@ package org.tentackle.session;
 import org.tentackle.common.ServiceFactory;
 
 
-interface ModificationTracker$Singleton {
+interface ModificationTrackerHolder {
   ModificationTracker INSTANCE = ServiceFactory.createService(ModificationTracker.class);
 }
 
@@ -44,7 +44,7 @@ public interface ModificationTracker extends SessionTaskDispatcher, ExclusiveSes
    * @return the singleton
    */
   static ModificationTracker getInstance() {
-    return ModificationTracker$Singleton.INSTANCE;
+    return ModificationTrackerHolder.INSTANCE;
   }
 
 

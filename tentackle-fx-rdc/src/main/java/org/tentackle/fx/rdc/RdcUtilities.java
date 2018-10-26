@@ -50,7 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
-interface RdcUtilities$Singleton {
+interface RdcUtilitiesHolder {
   RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
 }
 
@@ -68,7 +68,7 @@ public class RdcUtilities {
    * @return the singleton
    */
   public static RdcUtilities getInstance() {
-    return RdcUtilities$Singleton.INSTANCE;
+    return RdcUtilitiesHolder.INSTANCE;
   }
 
 

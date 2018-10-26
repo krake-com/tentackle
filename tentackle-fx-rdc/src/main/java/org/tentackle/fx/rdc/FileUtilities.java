@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.prefs.BackingStoreException;
 
-interface FileUtilities$Singleton {
+interface FileUtilitiesHolder {
   FileUtilities INSTANCE = ServiceFactory.createService(FileUtilities.class);
 }
 
@@ -50,7 +50,7 @@ public class FileUtilities {
    * @return the singleton
    */
   public static FileUtilities getInstance() {
-    return FileUtilities$Singleton.INSTANCE;
+    return FileUtilitiesHolder.INSTANCE;
   }
 
   private static final Logger LOGGER = Logger.get(FileUtilities.class);

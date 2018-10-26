@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.session.Session;
 
 
-interface DomainContextFactory$Singleton {
+interface DomainContextFactoryHolder {
   DomainContextFactory INSTANCE = ServiceFactory.createService(
               DomainContextFactory.class, DefaultDomainContextFactory.class);
 }
@@ -42,7 +42,7 @@ public interface DomainContextFactory {
    * @return the singleton
    */
   static DomainContextFactory getInstance() {
-    return DomainContextFactory$Singleton.INSTANCE;
+    return DomainContextFactoryHolder.INSTANCE;
   }
 
 

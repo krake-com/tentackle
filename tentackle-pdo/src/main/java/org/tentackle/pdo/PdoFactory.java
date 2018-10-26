@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.session.Session;
 
 
-interface PdoFactory$Singleton {
+interface PdoFactoryHolder {
   PdoFactory INSTANCE = ServiceFactory.createService(PdoFactory.class);
 }
 
@@ -40,7 +40,7 @@ public interface PdoFactory {
    * @return the singleton
    */
   static PdoFactory getInstance() {
-    return PdoFactory$Singleton.INSTANCE;
+    return PdoFactoryHolder.INSTANCE;
   }
 
   /**

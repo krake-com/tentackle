@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
-interface DbUtilities$Singleton {
+interface DbUtilitiesHolder {
   DbUtilities INSTANCE = ServiceFactory.createService(DbUtilities.class, DbUtilities.class);
 }
 
@@ -55,7 +55,7 @@ public class DbUtilities {
    * @return the singleton
    */
   public static DbUtilities getInstance() {
-    return DbUtilities$Singleton.INSTANCE;
+    return DbUtilitiesHolder.INSTANCE;
   }
 
 

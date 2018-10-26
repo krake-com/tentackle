@@ -22,7 +22,7 @@ import java.io.Serializable;
 import org.tentackle.common.ServiceFactory;
 
 
-interface InterceptableFactory$Singleton {
+interface InterceptableFactoryHolder {
   InterceptableFactory INSTANCE = ServiceFactory.createService(
               InterceptableFactory.class, DefaultInterceptableFactory.class);
 }
@@ -41,7 +41,7 @@ public interface InterceptableFactory {
    * @return the singleton
    */
   static InterceptableFactory getInstance() {
-    return InterceptableFactory$Singleton.INSTANCE;
+    return InterceptableFactoryHolder.INSTANCE;
   }
 
   /**

@@ -25,7 +25,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 
 
-interface RMISocketFactoryFactory$Singleton {
+interface RMISocketFactoryFactoryHolder {
   RMISocketFactoryFactory INSTANCE = ServiceFactory.createService(RMISocketFactoryFactory.class, RMISocketFactoryFactory.class);
 }
 
@@ -47,7 +47,7 @@ public class RMISocketFactoryFactory {
    * @return the singleton
    */
   public static RMISocketFactoryFactory getInstance() {
-    return RMISocketFactoryFactory$Singleton.INSTANCE;
+    return RMISocketFactoryFactoryHolder.INSTANCE;
   }
 
 

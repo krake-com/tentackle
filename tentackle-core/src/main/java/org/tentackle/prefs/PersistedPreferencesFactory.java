@@ -25,7 +25,7 @@ import org.tentackle.common.ServiceFactory;
 
 
 
-interface PersistedPreferencesFactory$Singleton {
+interface PersistedPreferencesFactoryHolder {
   PersistedPreferencesFactory INSTANCE = ServiceFactory.createService(PersistedPreferencesFactory.class);
 }
 
@@ -47,7 +47,7 @@ public interface PersistedPreferencesFactory extends PreferencesFactory {
    * @return the singleton
    */
   static PersistedPreferencesFactory getInstance() {
-    return PersistedPreferencesFactory$Singleton.INSTANCE;
+    return PersistedPreferencesFactoryHolder.INSTANCE;
   }
 
   /**

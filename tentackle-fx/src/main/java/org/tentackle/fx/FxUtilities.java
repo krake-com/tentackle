@@ -82,7 +82,7 @@ import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
 
-interface FxUtilities$Singleton {
+interface FxUtilitiesHolder {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
 }
 
@@ -100,7 +100,7 @@ public class FxUtilities {
    * @return the singleton
    */
   public static FxUtilities getInstance() {
-    return FxUtilities$Singleton.INSTANCE;
+    return FxUtilitiesHolder.INSTANCE;
   }
   
   

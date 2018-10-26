@@ -28,7 +28,7 @@ import org.tentackle.validate.ValidationResult;
 import java.util.TreeSet;
 
 
-interface InteractiveErrorFactory$Singleton {
+interface InteractiveErrorFactoryHolder {
   InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class);
 }
 
@@ -45,7 +45,7 @@ public interface InteractiveErrorFactory {
    * @return the singleton
    */
   static InteractiveErrorFactory getInstance() {
-    return InteractiveErrorFactory$Singleton.INSTANCE;
+    return InteractiveErrorFactoryHolder.INSTANCE;
   }
 
   /**

@@ -23,7 +23,7 @@ package org.tentackle.dbms;
 import org.tentackle.common.ServiceFactory;
 
 
-interface IdSourceConfigurator$Singleton {
+interface IdSourceConfiguratorHolder {
   IdSourceConfigurator INSTANCE = ServiceFactory.createService(
               IdSourceConfigurator.class, DefaultIdSourceConfigurator.class);
 }
@@ -42,7 +42,7 @@ public interface IdSourceConfigurator {
    * @return the singleton
    */
   static IdSourceConfigurator getInstance() {
-    return IdSourceConfigurator$Singleton.INSTANCE;
+    return IdSourceConfiguratorHolder.INSTANCE;
   }
 
 

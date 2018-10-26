@@ -27,7 +27,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 
 
-interface Reconnector$Singleton {
+interface ReconnectorHolder {
   Reconnector INSTANCE = ServiceFactory.createService(Reconnector.class, Reconnector.class);
 }
 
@@ -45,7 +45,7 @@ public class Reconnector {
    * @return the singleton
    */
   public static Reconnector getInstance() {
-    return Reconnector$Singleton.INSTANCE;
+    return ReconnectorHolder.INSTANCE;
   }
 
 

@@ -21,7 +21,7 @@ package org.tentackle.fx.table;
 import org.tentackle.common.ServiceFactory;
 
 
-interface TableCellTypeFactory$Singleton {
+interface TableCellTypeFactoryHolder {
   TableCellTypeFactory INSTANCE = ServiceFactory.createService(TableCellTypeFactory.class);
 }
 
@@ -39,7 +39,7 @@ public interface TableCellTypeFactory {
    * @return the singleton
    */
   static TableCellTypeFactory getInstance() {
-    return TableCellTypeFactory$Singleton.INSTANCE;
+    return TableCellTypeFactoryHolder.INSTANCE;
   }
 
   /**

@@ -42,7 +42,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-interface PdoUtilities$Singleton {
+interface PdoUtilitiesHolder {
   PdoUtilities INSTANCE = ServiceFactory.createService(PdoUtilities.class, PdoUtilities.class);
 }
 
@@ -65,7 +65,7 @@ public class PdoUtilities {
    * @return the singleton
    */
   public static PdoUtilities getInstance() {
-    return PdoUtilities$Singleton.INSTANCE;
+    return PdoUtilitiesHolder.INSTANCE;
   }
 
 

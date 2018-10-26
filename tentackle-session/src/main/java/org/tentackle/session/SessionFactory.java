@@ -22,7 +22,7 @@ package org.tentackle.session;
 import org.tentackle.common.ServiceFactory;
 
 
-interface SessionFactory$Singleton {
+interface SessionFactoryHolder {
   SessionFactory INSTANCE = ServiceFactory.createService(SessionFactory.class);
 }
 
@@ -40,7 +40,7 @@ public interface SessionFactory {
    * @return the singleton
    */
   static SessionFactory getInstance() {
-    return SessionFactory$Singleton.INSTANCE;
+    return SessionFactoryHolder.INSTANCE;
   }
 
   /**

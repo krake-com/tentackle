@@ -30,7 +30,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.task.TaskDispatcher;
 
 
-interface DiagnosticUtilities$Singleton {
+interface DiagnosticUtilitiesHolder {
   DiagnosticUtilities INSTANCE = ServiceFactory.createService(
               DiagnosticUtilities.class, DiagnosticUtilities.class);
 }
@@ -50,7 +50,7 @@ public class DiagnosticUtilities {
    * @return the singleton
    */
   public static DiagnosticUtilities getInstance() {
-    return DiagnosticUtilities$Singleton.INSTANCE;
+    return DiagnosticUtilitiesHolder.INSTANCE;
   }
 
 

@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 
-interface InterceptionUtilities$Singleton {
+interface InterceptionUtilitiesHolder {
   InterceptionUtilities INSTANCE = ServiceFactory.createService(InterceptionUtilities.class, InterceptionUtilities.class);
 }
 
@@ -51,7 +51,7 @@ public class InterceptionUtilities {
    * @return the singleton
    */
   public static InterceptionUtilities getInstance() {
-    return InterceptionUtilities$Singleton.INSTANCE;
+    return InterceptionUtilitiesHolder.INSTANCE;
   }
 
 

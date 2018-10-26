@@ -20,7 +20,7 @@ package org.tentackle.ns;
 
 import org.tentackle.common.ServiceFactory;
 
-interface NumberSourceFactory$Singleton {
+interface NumberSourceFactoryHolder {
   NumberSourceFactory INSTANCE = ServiceFactory.createService(NumberSourceFactory.class);
 }
 
@@ -37,7 +37,7 @@ public interface NumberSourceFactory {
    * @return the singleton
    */
   static NumberSourceFactory getInstance() {
-    return NumberSourceFactory$Singleton.INSTANCE;
+    return NumberSourceFactoryHolder.INSTANCE;
   }
 
 

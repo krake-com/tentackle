@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 
-interface SessionUtilities$Singleton {
+interface SessionUtilitiesHolder {
   SessionUtilities INSTANCE = ServiceFactory.createService(SessionUtilities.class, SessionUtilities.class);
 }
 
@@ -51,7 +51,7 @@ public class SessionUtilities {
    * @return the singleton
    */
   public static SessionUtilities getInstance() {
-    return SessionUtilities$Singleton.INSTANCE;
+    return SessionUtilitiesHolder.INSTANCE;
   }
 
 

@@ -23,7 +23,7 @@ import org.tentackle.common.ServiceFactory;
 import java.io.File;
 
 
-interface VersionFileFilter$Singleton {
+interface VersionFileFilterHolder {
   VersionFileFilter INSTANCE = ServiceFactory.createService(VersionFileFilter.class);
 }
 
@@ -38,7 +38,7 @@ public interface VersionFileFilter {
    * @return the singleton
    */
   public static VersionFileFilter getInstance() {
-    return VersionFileFilter$Singleton.INSTANCE;
+    return VersionFileFilterHolder.INSTANCE;
   }
 
 

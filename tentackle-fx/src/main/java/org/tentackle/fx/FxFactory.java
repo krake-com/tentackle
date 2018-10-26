@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.ResourceBundle;
 
 
-interface FxFactory$Singleton {
+interface FxFactoryHolder {
   FxFactory INSTANCE = ServiceFactory.createService(FxFactory.class);
 }
 
@@ -50,7 +50,7 @@ public interface FxFactory {
    * @return the singleton
    */
   static FxFactory getInstance() {
-    return FxFactory$Singleton.INSTANCE;
+    return FxFactoryHolder.INSTANCE;
   }
 
 

@@ -27,7 +27,7 @@ import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.pdo.PersistentDomainObject;
 
 
-interface RdcFactory$Singleton {
+interface RdcFactoryHolder {
   RdcFactory INSTANCE = ServiceFactory.createService(RdcFactory.class);
 }
 
@@ -44,7 +44,7 @@ public interface RdcFactory {
    * @return the singleton
    */
   static RdcFactory getInstance() {
-    return RdcFactory$Singleton.INSTANCE;
+    return RdcFactoryHolder.INSTANCE;
   }
 
 

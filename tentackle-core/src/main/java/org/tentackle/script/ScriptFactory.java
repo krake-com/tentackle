@@ -23,7 +23,7 @@ import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 
 
-interface ScriptFactory$Singleton {
+interface ScriptFactoryHolder {
   ScriptFactory INSTANCE = ServiceFactory.createService(ScriptFactory.class, DefaultScriptFactory.class);
 }
 
@@ -41,7 +41,7 @@ public interface ScriptFactory {
    * @return the singleton
    */
   static ScriptFactory getInstance() {
-    return ScriptFactory$Singleton.INSTANCE;
+    return ScriptFactoryHolder.INSTANCE;
   }
 
 
