@@ -248,9 +248,8 @@ public class PdoGenerator extends AbstractGenerator {
   @Bindable
   public void setProfile(PdoProfile profile) {
     if (isTableNameNecessary()) {
-      String oldPrefix = null;
       if (this.profile != null) {
-        oldPrefix = this.profile.getTablePrefix();
+        String oldPrefix = this.profile.getTablePrefix();
         if (oldPrefix != null && tableName != null && tableName.startsWith(oldPrefix)) {
           tableName = tableName.substring(oldPrefix.length());
           if (tableName.isEmpty()) {

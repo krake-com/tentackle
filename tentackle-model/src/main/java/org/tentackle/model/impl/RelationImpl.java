@@ -633,18 +633,13 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
     // check constraints
 
-    if (composite &&
-        selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-      throw createModelException("composite relations must be eager or lazy");
-    }
-
-    if (immutable) {
-      if (!composite) {
-        throw createModelException("immutable relations must be composite");
-      }
+    if (composite) {
       if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
-        throw createModelException("immutable relations must be eager or lazy");
+        throw createModelException("composite relations must be eager or lazy");
       }
+    }
+    else if (immutable) {
+      throw createModelException("immutable relations must be composite");
     }
 
     if (reversed && (composite || relationType != RelationType.LIST)) {

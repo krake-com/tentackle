@@ -37,7 +37,7 @@ public interface VersionFileFilter {
    *
    * @return the singleton
    */
-  public static VersionFileFilter getInstance() {
+  static VersionFileFilter getInstance() {
     return VersionFileFilterHolder.INSTANCE;
   }
 

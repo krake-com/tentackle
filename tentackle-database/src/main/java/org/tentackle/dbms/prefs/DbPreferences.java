@@ -741,7 +741,7 @@ public class DbPreferences extends Preferences implements PersistedPreferences, 
             if (updatedNode == null) {
               // node removed in the meantime
               prefNode.setRemoved(true);
-              return flushImpl(db, triggerListeners) || updated;    // start over
+              return flushImpl(db, triggerListeners);    // start over
             }
             updatePersistentNode(updatedNode);
             // don't treat as updated if node just added meanwhile
