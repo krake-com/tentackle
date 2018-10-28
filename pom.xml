@@ -84,7 +84,7 @@
     <javac.version.target>1.8</javac.version.target>
     <javac.version.require>1.8.0-45</javac.version.require>
     <maven.version>3.3.9</maven.version>
-    <postgresql.version>9.1-901-1.jdbc4</postgresql.version>
+    <postgresql.version>42.2.5</postgresql.version>
 
     <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
     <java9.sourceDirectory>${project.basedir}/src/main/java9</java9.sourceDirectory>
@@ -234,7 +234,7 @@
       </dependency>
 
       <dependency>
-        <groupId>postgresql</groupId>
+        <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
         <version>${postgresql.version}</version>
         <scope>test</scope>
@@ -268,7 +268,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>postgresql</groupId>
+      <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>test</scope>
     </dependency>
