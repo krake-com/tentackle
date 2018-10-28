@@ -547,7 +547,6 @@ public class Db implements Session, Cloneable {
         conMgr = null;                         // no connection manager for remote connections
         RMISocketFactoryType factoryType = RMISocketFactoryType.parse(backendProperties.getProperty(SOCKET_FACTORY));
         csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
-        LOGGER.info("using client socket factory {0}", csf);
       }
       else  {
         if (conMgr == null) {
