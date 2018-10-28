@@ -28,10 +28,14 @@ import org.tentackle.test.pdo.TestApplication;
 import java.awt.GraphicsEnvironment;
 
 /**
+ * FX test application.
  *
  * @author harald
  */
 public abstract class FxRdcTestApplication extends TestApplication {
+
+  private static final String HEADLESS_MSG = "JVM is headless -> no FX tests";
+
 
   public FxRdcTestApplication(String name) {
     super(name);
@@ -40,10 +44,10 @@ public abstract class FxRdcTestApplication extends TestApplication {
   @BeforeSuite(alwaysRun = true)
   public void startFx() {
     if (GraphicsEnvironment.isHeadless()) {
-      throw new SkipException("JVM is headless -> no FX tests");
+      System.out.println(HEADLESS_MSG);   // Reporter.log ignored with SkipException
+      throw new SkipException(HEADLESS_MSG);
     }
     else {
-
       try {
         Platform.startup(() -> Reporter.log("FX started<br>", true));
       }
