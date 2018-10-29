@@ -423,7 +423,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, numberPoolId);
+    st.setLong(ndx, numberPoolId);
     return executeTrackedListQuery(st);
   }
 

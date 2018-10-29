@@ -317,7 +317,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     );
     int ndx = 1;
     st.setString(ndx++, name);
-    st.setString(ndx++, locale, true);
+    st.setString(ndx, locale, true);
     return executeFirstPdoQuery(st);
   }
 
@@ -660,7 +660,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
       }
     );
     int ndx = 1;
-    st.setString(ndx++, name);
+    st.setString(ndx, name);
     return executeTrackedListQuery(st, js);
   }
 
@@ -711,7 +711,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
     );
     int ndx = 1;
     st.setString(ndx++, name);
-    st.setString(ndx++, locale, true);
+    st.setString(ndx, locale, true);
     return executeFirstPdoQuery(st, js);
   }
 

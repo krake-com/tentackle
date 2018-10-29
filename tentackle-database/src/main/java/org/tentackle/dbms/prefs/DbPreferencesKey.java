@@ -154,7 +154,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, rootNodeId);
+    st.setLong(ndx, rootNodeId);
     try (ResultSetWrapper rs = st.executeQuery()) {
       TrackedArrayList<DbPreferencesKey> list = new TrackedArrayList<>();
       boolean derived = getClass() != DbPreferencesKey.class;
@@ -197,7 +197,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, nodeId);
+    st.setLong(ndx, nodeId);
     try (ResultSetWrapper rs = st.executeQuery()) {
       TrackedArrayList<DbPreferencesKey> list = new TrackedArrayList<>();
       boolean derived = getClass() != DbPreferencesKey.class;
@@ -243,7 +243,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
     );
     int ndx = 1;
     st.setLong(ndx++, nodeId);
-    st.setString(ndx++, key);
+    st.setString(ndx, key);
     try (ResultSetWrapper rs = st.executeQuery()) {
       if (rs.next()) {
         return readFromResultSetWrapper(rs);

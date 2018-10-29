@@ -371,7 +371,7 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, bundleId);
+    st.setLong(ndx, bundleId);
     return executeTrackedListQuery(st);
   }
 

@@ -959,7 +959,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = 1;
-    st.setTimestamp(ndx++, null, true);
+    st.setTimestamp(ndx, null, true);
     return st.executeQuery();
   }
 
@@ -1049,7 +1049,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = 1;
-    st.setTimestamp(ndx++, when);
+    st.setTimestamp(ndx, when);
     return st.executeQuery();
   }
 
@@ -1137,7 +1137,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, id);
+    st.setLong(ndx, id);
     return st.executeQuery();
   }
 
@@ -1242,7 +1242,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
     st.setInt(ndx++, objectClassId);
-    st.setLong(ndx++, objectId);
+    st.setLong(ndx, objectId);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
       boolean derived = getClass() != ModificationLog.class;
@@ -1302,7 +1302,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
     st.setString(ndx++, user);
-    st.setChar(ndx++, modType);
+    st.setChar(ndx, modType);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
       boolean derived = getClass() != ModificationLog.class;
@@ -1472,7 +1472,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setInt(ndx++, objectClassId);
     st.setLong(ndx++, objectId);
     st.setChar(ndx++, modType);
-    st.setLong(ndx++, serial);
+    st.setLong(ndx, serial);
     return st.executeUpdate();
   }
 
@@ -1534,7 +1534,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setInt(ndx++, objectClassId);
     st.setLong(ndx++, objectId);
     st.setChar(ndx++, modType);
-    st.setLong(ndx++, serial);
+    st.setLong(ndx, serial);
     return st.executeUpdate();
   }
 
@@ -1580,7 +1580,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, txId);
+    st.setLong(ndx, txId);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
       boolean derived = getClass() != ModificationLog.class;
@@ -1638,7 +1638,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     int ndx = 1;
     st.setTimestamp(ndx++, processed, true);
     st.setLong(ndx++, txId);
-    st.setTimestamp(ndx++, null, true);
+    st.setTimestamp(ndx, null, true);
     return st.executeUpdate();
   }
 
@@ -1679,7 +1679,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       }
     );
     int ndx = 1;
-    st.setLong(ndx++, txId);
+    st.setLong(ndx, txId);
     return st.executeUpdate();
   }
 
@@ -1727,7 +1727,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     );
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
-    st.setTimestamp(ndx++, processed, true);
+    st.setTimestamp(ndx, processed, true);
     return st.executeUpdate();
   }
 
@@ -1778,7 +1778,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     );
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
-    st.setTimestamp(ndx++, processed, true);
+    st.setTimestamp(ndx, processed, true);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
       boolean derived = getClass() != ModificationLog.class;

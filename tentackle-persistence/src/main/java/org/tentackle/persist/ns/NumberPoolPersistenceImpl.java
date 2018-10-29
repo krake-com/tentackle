@@ -549,7 +549,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
       }
     );
     int ndx = 1;
-    st.setString(ndx++, name);
+    st.setString(ndx, name);
     return executeFirstPdoQuery(st);
   }
 
@@ -777,7 +777,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
     );
     int ndx = 1;
     st.setString(ndx++, name);
-    st.setString(ndx++, realm, true);
+    st.setString(ndx, realm, true);
     return executeFirstPdoQuery(st);
   }
 

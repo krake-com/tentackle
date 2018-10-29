@@ -68,3 +68,16 @@
       }
     }
 ]@
+@{code
+
+  \@Override
+  public String process(String code) {
+    int ref = code.lastIndexOf("ndx");
+    int pos = code.lastIndexOf("(ndx++,");
+    if (pos >= 0 && ref == pos + 1) {
+      // remove unnecessary last ++
+      return code.substring(0, pos + 4) + code.substring(pos + 6);
+    }
+    return code;
+  }
+}@

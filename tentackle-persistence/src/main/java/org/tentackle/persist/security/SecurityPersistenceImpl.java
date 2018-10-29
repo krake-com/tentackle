@@ -444,7 +444,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, granteeClassId);
-    st.setLong(ndx++, granteeId);
+    st.setLong(ndx, granteeId);
     return executeListQuery(st);
   }
 
@@ -489,7 +489,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, objectClassId);
-    st.setLong(ndx++, objectId);
+    st.setLong(ndx, objectId);
     return executeTrackedListQuery(st);
   }
 
@@ -530,7 +530,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
       }
     );
     int ndx = 1;
-    st.setString(ndx++, objectClassName);
+    st.setString(ndx, objectClassName);
     return executeTrackedListQuery(st);
   }
 
@@ -575,7 +575,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, domainContextClassId);
-    st.setLong(ndx++, domainContextId);
+    st.setLong(ndx, domainContextId);
     return executeTrackedListQuery(st);
   }
 
@@ -615,7 +615,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, granteeClassId);
-    st.setLong(ndx++, granteeId);
+    st.setLong(ndx, granteeId);
     return st.executeUpdate();
   }
 
@@ -661,7 +661,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, objectClassId);
-    st.setLong(ndx++, objectId);
+    st.setLong(ndx, objectId);
     return st.executeUpdate();
   }
 
@@ -704,7 +704,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, 0);
-    st.setString(ndx++, objectClassName);
+    st.setString(ndx, objectClassName);
     return st.executeUpdate();
   }
 
@@ -747,7 +747,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
     );
     int ndx = 1;
     st.setInt(ndx++, domainContextClassId);
-    st.setLong(ndx++, domainContextId);
+    st.setLong(ndx, domainContextId);
     return st.executeUpdate();
   }
 
