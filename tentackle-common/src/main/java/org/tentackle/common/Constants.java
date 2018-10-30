@@ -94,13 +94,13 @@ public class Constants {
 
   /**
    * Value of backendinfo to allow selecting the backend (see Login in fx-rdc) using user preferences.<br>
-   * If the value is followed by a colon and a name, that name is treaded as the {@code BackendConfiguration}.
+   * If the value is followed by a colon and a name, that name is treated as the {@code BackendConfiguration}.
    */
   public static final String BACKEND_INFO_USER = "@user";
 
   /**
    * Value of backendinfo to allow selecting the backend (see Login in fx-rdc) using system preferences.<br>
-   * If the value is followed by a colon and a name, that name is treaded as the {@code BackendConfiguration}.
+   * If the value is followed by a colon and a name, that name is treated as the {@code BackendConfiguration}.
    */
   public static final String BACKEND_INFO_SYSTEM = "@system";
 
