@@ -79,7 +79,7 @@
     <javac.version.target>10</javac.version.target>
     <java.version>11</java.version>
     <javafx.version>11</javafx.version>
-    <ow2.asm.version>6.2.1</ow2.asm.version>    <!-- change this to 7.0.x when maven plugin tools switched to ASM7 -->
+    <ow2.asm.version>7.0</ow2.asm.version>
     <maven.version>3.5.4</maven.version>
     <postgresql.version>42.2.5</postgresql.version>
 
