@@ -18,6 +18,9 @@
 
 package org.tentackle.apt;
 
+import org.tentackle.apt.visitor.NoArgsVisitor;
+import org.tentackle.apt.visitor.SuperTypeVisitor;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -30,8 +33,6 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.visitor.NoArgsVisitor;
-import org.tentackle.apt.visitor.SuperTypeVisitor;
 
 /**
  * Common implementation for service annotation processors.
@@ -70,7 +71,8 @@ public abstract class AbstractServiceAnnotationProcessor extends AbstractProcess
         m = upper;
       }
     }
-    return m.accept(typeVisitor, v);
+    Boolean accept = m.accept(typeVisitor, v);
+    return accept == null ? false : accept;
   }
 
   /**
