@@ -75,12 +75,12 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
-    <javac.version.src>10</javac.version.src>     <!-- stick to 10 bytecode cause maven plugin tools are still using ASM5 -->
-    <javac.version.target>10</javac.version.target>
+    <javac.version.src>11</javac.version.src>
+    <javac.version.target>11</javac.version.target>
     <java.version>11</java.version>
     <javafx.version>11</javafx.version>
     <ow2.asm.version>7.0</ow2.asm.version>
-    <maven.version>3.5.4</maven.version>
+    <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.5</postgresql.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
@@ -248,7 +248,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.5.4</version>
+        <version>3.6.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
@@ -258,7 +258,7 @@
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.5.2</version>
+        <version>3.6.0</version>
         <scope>provided</scope><!-- annotations are needed only to build the plugin -->
       </dependency>
 
@@ -290,7 +290,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-plugin-plugin</artifactId>
-          <version>3.5.2</version>
+          <version>3.6.0</version>
           <dependencies>
             <dependency>
               <groupId>org.ow2.asm</groupId>
