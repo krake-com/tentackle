@@ -88,7 +88,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>2.2-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>2.2.0</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
