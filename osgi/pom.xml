@@ -8,12 +8,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.1-SNAPSHOT</version>
+    <version>2.1.6-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
-  <version>2.1-SNAPSHOT</version>
+  <version>2.1.6-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle OSGi Parent</name>
@@ -37,8 +37,9 @@
     <module>tentackle.script.groovy.osgi</module>
     <module>tentackle.script.ruby.osgi</module>
     <module>tentackle.web.osgi</module>
-    <module>tentackle.fx.osgi</module>
-    <module>tentackle.fx.rdc.osgi</module>
+    <!-- OSGI doesnt work with multi-release jars -->
+    <!--<module>tentackle.fx.osgi</module>-->
+    <!--<module>tentackle.fx.rdc.osgi</module>-->
   </modules>
 
   <build>
