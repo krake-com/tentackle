@@ -23,7 +23,7 @@ import org.tentackle.bind.AbstractBinding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.bind.BindingVetoException;
-import org.tentackle.common.Constants;
+import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.validate.ChangeableBindingEvaluator;
 import org.tentackle.validate.MandatoryBindingEvaluator;
@@ -34,7 +34,6 @@ import org.tentackle.validate.Validator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringTokenizer;
 
 /**
  * Common implemenation of a table binding.
@@ -69,7 +68,7 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
 
     this.columnConfiguration = columnConfiguration;
 
-    processOptions(columnOptions);
+    FxUtilities.getInstance().applyBindingOptions(columnConfiguration, member, columnOptions);
     applyType();
     determineValidators();
   }
@@ -129,90 +128,6 @@ public class DefaultFxTableBinding<S,T> extends AbstractBinding implements FxTab
         }
       }
     }
-  }
-
-
-  /**
-   * Process the component options.
-   *
-   * @param columnOptions the options from the annotation
-   */
-  protected void processOptions(String columnOptions) {
-    if (columnOptions != null) {
-      StringTokenizer stok = new StringTokenizer(columnOptions.toUpperCase(), ",");
-      while (stok.hasMoreTokens()) {
-        String token = stok.nextToken();
-        if (!processOption(token))  {
-          throw new BindingException("unsupported @Bindable option \"" +
-                                     token + "\") in " + getMember());
-        }
-      }
-    }
-  }
-
-
-  /**
-   * Processes an option for a table binding.
-   *
-   * @param option the option
-   * @return true if option known and processed, false if unknown option
-   */
-  protected boolean processOption(String option) {
-
-    boolean processed = false;
-
-
-    if      (Constants.BIND_UC.equals(option)) {
-      columnConfiguration.setCaseConversion(Boolean.TRUE);
-      processed = true;
-    }
-    else if (Constants.BIND_LC.equals(option)) {
-      columnConfiguration.setCaseConversion(Boolean.FALSE);
-      processed = true;
-    }
-    else if (Constants.BIND_AUTOSELECT.equals(option)) {
-      columnConfiguration.setAutoSelect(Boolean.TRUE);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
-      columnConfiguration.setAutoSelect(Boolean.FALSE);
-      processed = true;
-    }
-    else if (Constants.BIND_UNSIGNED.equals(option)) {
-      columnConfiguration.setUnsigned(true);
-      processed = true;
-    }
-    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
-      columnConfiguration.setUnsigned(false);
-      processed = true;
-    }
-    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
-      try {
-        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                   option + "\") in " + getMember(), ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
-      try {
-        columnConfiguration.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
-                                   option + "\") in " + getMember(), ex);
-      }
-    }
-    else if (option.startsWith(Constants.BIND_COLS + "=") ||
-             option.startsWith(Constants.BIND_LINES + "=")) {
-      // COLS= and LINES= not applicable to table cells: just ignore
-      processed = true;
-    }
-
-    return processed;
   }
 
 

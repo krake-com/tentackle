@@ -67,6 +67,7 @@ import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.Note;
+import org.tentackle.fx.table.TableColumnConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
 
@@ -617,26 +618,6 @@ public class FxUtilities {
 
 
   /**
-   * Applies the bindable options to a text component.
-   *
-   * @param comp the component
-   * @param member the binding member
-   * @param options the options from the @{@link Bindable} annotation
-   */
-  public void applyBindingOptions(FxTextComponent comp, BindingMember member, String options) {
-    if (options != null) {
-      StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
-      while (stok.hasMoreTokens()) {
-        String token = stok.nextToken();
-        if (!applyBindingOption(comp, member, token))  {
-          throw new BindingException("unsupported @Bindable option \"" + token + "\") in " + member);
-        }
-      }
-    }
-  }
-
-
-  /**
    * Gets a binding option from an options string.
    *
    * @param options the binding options string
@@ -657,6 +638,54 @@ public class FxUtilities {
   }
 
 
+
+  /**
+   * Applies the bindable options to a text component.
+   *
+   * @param comp the component
+   * @param member the binding member
+   * @param options the options from the @{@link Bindable} annotation
+   */
+  public void applyBindingOptions(FxTextComponent comp, BindingMember member, String options) {
+    applyBindingOptions(comp, null, member, options);
+  }
+
+
+  /**
+   * Applies the bindable options to a table column.
+   *
+   * @param columnConfiguration the column configuration
+   * @param member the binding member
+   * @param options the options from the @{@link Bindable} annotation
+   */
+  public void applyBindingOptions(TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
+    applyBindingOptions(null, columnConfiguration, member, options);
+  }
+
+
+  private void applyBindingOptions(FxTextComponent comp, TableColumnConfiguration columnConfiguration, BindingMember member, String options) {
+    if (options != null) {
+      StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
+      while (stok.hasMoreTokens()) {
+        String token = stok.nextToken();
+        boolean processed;
+        if (comp != null) {
+          processed = applyBindingOption(comp, member, token);
+        }
+        else if (columnConfiguration != null) {
+          processed = applyBindingOption(columnConfiguration, member, token);
+        }
+        else {
+          throw new BindingException("unsupported @Bindable target " + member);
+        }
+        if (!processed) {
+          throw new BindingException("unsupported @Bindable option \"" + token + "\") in " + member);
+        }
+      }
+    }
+  }
+
+
   /**
    * Applies a single binding option to a text component.
    *
@@ -665,7 +694,7 @@ public class FxUtilities {
    * @param option the option
    * @return true if option known and applied, false if unknown option
    */
-  public boolean applyBindingOption(FxTextComponent comp, BindingMember member, String option) {
+  protected boolean applyBindingOption(FxTextComponent comp, BindingMember member, String option) {
 
     boolean processed = false;
 
@@ -746,6 +775,72 @@ public class FxUtilities {
         throw new BindingException(Constants.BIND_LINES + " @Bindable option \"" +
                                    option + "\") in " + member + " not applicable to " + comp.getClass().getName());
       }
+    }
+
+    return processed;
+  }
+
+
+  /**
+   * Processes an option for a table binding.
+   *
+   * @param columnConfiguration the column config
+   * @param member the binding member
+   * @param option the option
+   * @return true if option known and processed, false if unknown option
+   */
+  protected boolean applyBindingOption(TableColumnConfiguration columnConfiguration, BindingMember member, String option) {
+
+    boolean processed = false;
+
+    if      (Constants.BIND_UC.equals(option)) {
+      columnConfiguration.setCaseConversion(Boolean.TRUE);
+      processed = true;
+    }
+    else if (Constants.BIND_LC.equals(option)) {
+      columnConfiguration.setCaseConversion(Boolean.FALSE);
+      processed = true;
+    }
+    else if (Constants.BIND_AUTOSELECT.equals(option)) {
+      columnConfiguration.setAutoSelect(Boolean.TRUE);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_AUTOSELECT).equals(option)) {
+      columnConfiguration.setAutoSelect(Boolean.FALSE);
+      processed = true;
+    }
+    else if (Constants.BIND_UNSIGNED.equals(option)) {
+      columnConfiguration.setUnsigned(true);
+      processed = true;
+    }
+    else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
+      columnConfiguration.setUnsigned(false);
+      processed = true;
+    }
+    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
+      try {
+        columnConfiguration.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
+                                       option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_SCALE + "=")) {
+      try {
+        columnConfiguration.setScale(Integer.parseInt(option.substring(Constants.BIND_SCALE.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_SCALE + " @Bindable option \"" +
+                                       option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_COLS + "=") ||
+                 option.startsWith(Constants.BIND_LINES + "=")) {
+      // COLS= and LINES= not applicable to table cells: just ignore
+      processed = true;
     }
 
     return processed;
