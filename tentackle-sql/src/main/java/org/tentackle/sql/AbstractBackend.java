@@ -19,6 +19,13 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.IndexColumnMetaData;
+import org.tentackle.sql.metadata.IndexMetaData;
+import org.tentackle.sql.metadata.ModelMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -28,12 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.sql.metadata.ColumnMetaData;
-import org.tentackle.sql.metadata.IndexColumnMetaData;
-import org.tentackle.sql.metadata.IndexMetaData;
-import org.tentackle.sql.metadata.ModelMetaData;
-import org.tentackle.sql.metadata.TableMetaData;
 
 
 /**
@@ -910,11 +911,13 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String toQuotedString(String str) {
     StringBuilder buf = new StringBuilder("'");
-    for (int i=0; i < str.length(); i++) {
-      char c = str.charAt(i);
-      buf.append(c);
-      if (c == '\'') {
+    if (str != null) {
+      for (int i = 0; i < str.length(); i++) {
+        char c = str.charAt(i);
         buf.append(c);
+        if (c == '\'') {
+          buf.append(c);
+        }
       }
     }
     buf.append("'");
