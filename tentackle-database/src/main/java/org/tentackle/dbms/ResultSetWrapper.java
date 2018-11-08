@@ -1127,7 +1127,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>BMoney</code> with full precision.<br>
    * Notice that BMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (= name + "_2")
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -1136,7 +1136,7 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public BMoney getBMoney (String name) {
     double value = getDouble(name);
-    return wasNull() ? null : new BMoney (value, getInt(name + "P"));
+    return wasNull() ? null : new BMoney (value, getInt(name + "_2"));
   }
 
   /**
@@ -1145,7 +1145,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * <code>DMoney</code> with full precision.<br>
    * Notice that DMoney fields use two fields:
    * one for the value and
-   * one for the scale (= name + "P")
+   * one for the scale (= name + "_2")
    *
    * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
    * @return the column value (full precision);
@@ -1157,7 +1157,7 @@ public class ResultSetWrapper implements AutoCloseable {
       BigDecimal decimal = rs.getBigDecimal(name);
       if (!wasNull()) {
         // set scale
-        return new DMoney(decimal.movePointLeft(getInt(name + "P")));
+        return new DMoney(decimal.movePointLeft(getInt(name + "_2")));
       }
       else  {
         return null;

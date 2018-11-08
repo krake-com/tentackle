@@ -605,15 +605,15 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (m == null) {
         getStatement().setNull(ep, Types.DOUBLE);
-        getStatement().setNull(ep + 1, Types.INTEGER);
+        getStatement().setNull(ep + 1, Types.SMALLINT);
         rememberParameter(ep, null);
         rememberParameter(ep + 1, null);
       }
       else {
         double d = m.doubleValue();
-        int s = m.scale();
+        short s = (short) m.scale();
         getStatement().setDouble(ep, d);    // set the value
-        getStatement().setInt(ep + 1, s);   // set the scale
+        getStatement().setShort(ep + 1, s);   // set the scale
         rememberParameter(ep, d);
         rememberParameter(ep + 1, s);
       }
@@ -643,15 +643,15 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (m == null) {
         getStatement().setNull(ep, Types.DECIMAL);
-        getStatement().setNull(ep + 1, Types.INTEGER);
+        getStatement().setNull(ep + 1, Types.SMALLINT);
         rememberParameter(ep, null);
         rememberParameter(ep + 1, null);
       }
       else {
-        int s = m.scale();
+        short s = (short) m.scale();
         BigDecimal d = m.movePointRight(s);
         getStatement().setBigDecimal(ep, d);  // set the value
-        getStatement().setInt(ep + 1, s);     // set the scale
+        getStatement().setShort(ep + 1, s);     // set the scale
         rememberParameter(ep, d);
         rememberParameter(ep + 1, s);
       }
