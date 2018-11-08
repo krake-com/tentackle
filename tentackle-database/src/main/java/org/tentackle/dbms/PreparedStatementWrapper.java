@@ -20,6 +20,13 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Binary;
+import org.tentackle.common.DMoney;
+import org.tentackle.misc.DateHelper;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.BackendPreparedStatement;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -34,12 +41,6 @@ import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.Binary;
-import org.tentackle.common.DMoney;
-import org.tentackle.misc.DateHelper;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.sql.BackendPreparedStatement;
 
 
 
@@ -605,15 +606,15 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (m == null) {
         getStatement().setNull(ep, Types.DOUBLE);
-        getStatement().setNull(ep + 1, Types.INTEGER);
+        getStatement().setNull(ep + 1, Types.SMALLINT);
         rememberParameter(ep, null);
         rememberParameter(ep + 1, null);
       }
       else {
         double d = m.doubleValue();
-        int s = m.scale();
+        short s = (short) m.scale();
         getStatement().setDouble(ep, d);    // set the value
-        getStatement().setInt(ep + 1, s);   // set the scale
+        getStatement().setShort(ep + 1, s);   // set the scale
         rememberParameter(ep, d);
         rememberParameter(ep + 1, s);
       }
@@ -643,15 +644,15 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
       int ep = effectivePosition(p);
       if (m == null) {
         getStatement().setNull(ep, Types.DECIMAL);
-        getStatement().setNull(ep + 1, Types.INTEGER);
+        getStatement().setNull(ep + 1, Types.SMALLINT);
         rememberParameter(ep, null);
         rememberParameter(ep + 1, null);
       }
       else {
-        int s = m.scale();
+        short s = (short) m.scale();
         BigDecimal d = m.movePointRight(s);
         getStatement().setBigDecimal(ep, d);  // set the value
-        getStatement().setInt(ep + 1, s);     // set the scale
+        getStatement().setShort(ep + 1, s);     // set the scale
         rememberParameter(ep, d);
         rememberParameter(ep + 1, s);
       }

@@ -71,10 +71,10 @@ public enum DataType {
   BIGDECIMAL("BigDecimal", false, false, true, false, false, SqlType.DECIMAL),
 
   /** A {@link org.tentackle.common.BMoney} (tentackle type). */
-  BMONEY("BMoney", false, false, true, false, false, SqlType.DOUBLE, SqlType.INTEGER),
+  BMONEY("BMoney", false, false, true, false, false, SqlType.DOUBLE, SqlType.SMALLINT),
 
   /** A {@link org.tentackle.common.DMoney} (tentackle type). */
-  DMONEY("DMoney", false, false, true, false, false, SqlType.DECIMAL, SqlType.INTEGER),
+  DMONEY("DMoney", false, false, true, false, false, SqlType.DECIMAL, SqlType.SMALLINT),
 
   /** A {@link Character}. */
   CHARACTER("Character", false, false, false, false, false, SqlType.CHAR),
@@ -222,7 +222,7 @@ public enum DataType {
     this.sqlTypes = sqlTypes;
     this.sqlTypesWithPostfix = new SqlTypeWithPostfix[sqlTypes.length];
     for (int i=0; i < sqlTypes.length; i++) {
-      sqlTypesWithPostfix[i] = new SqlTypeWithPostfix(sqlTypes[i], i == 0 ? "" : ("_" + (i+1)));
+      sqlTypesWithPostfix[i] = new SqlTypeWithPostfix(sqlTypes[i], ModelUtilities.getInstance().createColumnPostfix(javaType, i));
     }
   }
 
