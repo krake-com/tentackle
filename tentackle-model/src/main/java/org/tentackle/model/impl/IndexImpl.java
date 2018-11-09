@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
@@ -340,27 +341,7 @@ public class IndexImpl implements Index {
 
   @Override
   public String sqlCreateIndex(Backend backend, Entity entity) {
-    StringBuilder buf = new StringBuilder();
-
-    if (getComment() != null) {
-      buf.append("-- ");
-      buf.append(getComment());
-      buf.append('\n');
-    }
-    String[] columnNames = new String[getAttributes().size()];
-    int attributeCount = 0;
-    for (IndexAttribute indexAttribute : getAttributes()) {
-      if (indexAttribute.isDescending()) {
-        columnNames[attributeCount] = "-" + indexAttribute.getAttribute().getColumnName();
-      }
-      else {
-        columnNames[attributeCount] = indexAttribute.getAttribute().getColumnName();
-      }
-      attributeCount++;
-    }
-    buf.append(backend.sqlCreateIndex(entity.getTableName(), createDatabaseIndexName(entity), isUnique(), getFilterCondition(), columnNames));
-
-    return buf.toString();
+    return CodeFactory.getInstance().createSqlIndex(backend, entity, this);
   }
 
 }

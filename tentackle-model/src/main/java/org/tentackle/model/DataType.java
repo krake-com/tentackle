@@ -222,7 +222,7 @@ public enum DataType {
     this.sqlTypes = sqlTypes;
     this.sqlTypesWithPostfix = new SqlTypeWithPostfix[sqlTypes.length];
     for (int i=0; i < sqlTypes.length; i++) {
-      sqlTypesWithPostfix[i] = new SqlTypeWithPostfix(sqlTypes[i], ModelUtilities.getInstance().createColumnPostfix(javaType, i));
+      sqlTypesWithPostfix[i] = new SqlTypeWithPostfix(sqlTypes[i], CodeFactory.getInstance().createColumnPostfix(javaType, i));
     }
   }
 

@@ -18,11 +18,11 @@
 
 package org.tentackle.model.impl;
 
-import java.util.Objects;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Compare;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.CodeFactory;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ModelElement;
@@ -31,6 +31,8 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
+
+import java.util.Objects;
 
 /**
  * Attribute implementation.
@@ -507,56 +509,22 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
   @Override
   public String getGetterName() {
-    StringBuilder buf = new StringBuilder();
-    if (getDataType().isBool()) {
-      buf.append("is");
-    }
-    else  {
-      buf.append("get");
-    }
-    buf.append(getMethodNameSuffix());
-    return buf.toString();
+    return CodeFactory.getInstance().createGetterName(this);
   }
 
   @Override
   public String getSetterName() {
-    return "set" + getMethodNameSuffix();
+    return CodeFactory.getInstance().createSetterName(this);
   }
 
   @Override
   public String getBindableAnnotation() {
-    if (getOptions().isBind()) {
-      String bindOptions = getOptions().getBindOptions();
-      if (StringHelper.isAllWhitespace(bindOptions)) {
-        return "@Bindable";
-      }
-      else {
-        return "@Bindable(options=\"" + bindOptions + "\")";
-      }
-    }
-    return null;
+    return CodeFactory.getInstance().createBindableAnnotation(this);
   }
 
   @Override
   public String toMethodArgument(String value) {
-    if (getDataType().isNumeric()) {
-      // check to downcast for (short) or (byte)
-      switch (getDataType()) {
-        case BYTE:
-          value = "(Byte) " + value;
-          break;
-        case BYTE_PRIMITIVE:
-          value = "(byte) " + value;
-          break;
-        case SHORT:
-          value = "(Short) " + value;
-          break;
-        case SHORT_PRIMITIVE:
-          value = "(short) " + value;
-          break;
-      }
-    }
-    return value;
+    return CodeFactory.getInstance().createMethodArgument(this, value);
   }
 
 }
