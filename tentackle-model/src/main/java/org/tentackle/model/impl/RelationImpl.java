@@ -23,6 +23,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.MethodArgument;
 import org.tentackle.model.ModelElement;
@@ -1113,41 +1114,22 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   @Override
   public String getGetterName() {
-    return "get" + getMethodNameSuffix();
+    return CodeFactory.getInstance().createGetterName(this);
   }
 
   @Override
   public String getSetterName() {
-    return "set" + getMethodNameSuffix();
+    return CodeFactory.getInstance().createSetterName(this);
   }
 
   @Override
   public String getDeclaredJavaType(boolean withinForeignEntity) {
-    String type = getClassName();
-    if (getForeignEntity().isAbstract()) {
-      if (withinForeignEntity) {
-        type = "T";
-      }
-      else {
-        type += "<?>";
-      }
-    }
-    if (getRelationType() == RelationType.LIST && !reversed) {
-      return (isTracked() ? "TrackedList" : "List") + "<" + type + ">";
-    }
-    else {
-      return type;
-    }
+    return CodeFactory.getInstance().createDeclaredJavaType(this, withinForeignEntity);
   }
 
   @Override
   public String getJavaType() {
-    if (getRelationType() == RelationType.LIST && !reversed) {
-      return (isTracked() ? "TrackedArrayList" : "ArrayList") + "<>";
-    }
-    else {
-      return getClassName();
-    }
+    return CodeFactory.getInstance().createJavaType(this);
   }
 
   @Override

@@ -21,6 +21,7 @@ package org.tentackle.model.impl;
 import java.util.Objects;
 import org.tentackle.common.Compare;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.CodeFactory;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.sql.Backend;
@@ -134,13 +135,7 @@ public class ForeignKeyImpl implements ForeignKey, Comparable<ForeignKey> {
 
   @Override
   public String sqlCreateForeignKey(Backend backend) {
-    return backend.sqlCreateForeignKey(
-            getReferencingTableProvidingEntity().getTableName(),
-            getReferencingAttribute().getColumnName(),
-            getReferencedTableProvidingEntity().getTableName(),
-            getReferencedAttribute().getColumnName(),
-            getReferencingEntity().getTableAlias() + "_" + getReferencingAttribute().getColumnName() + "_fkey",
-            isComposite() && getReferencingEntity().getIntegrity().isCompositesCheckedByDatabase());
+    return CodeFactory.getInstance().createSqlForeignKey(this, backend);
   }
 
 

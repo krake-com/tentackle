@@ -23,6 +23,7 @@ import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
+import org.tentackle.model.CodeFactory;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
@@ -1383,55 +1384,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
 
   @Override
   public String sqlCreateTable(Backend backend) throws ModelException {
-    StringBuilder buf = new StringBuilder();
-    buf.append(backend.sqlCreateTableIntro(getTableName(), getOptions().getComment()));
-
-    List<Attribute> tableAttributes = getTableAttributes();
-    int attributeNum = tableAttributes.size();
-    int attributeCount = 1;
-
-    for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isDerived()) {
-        DataType dataType = attribute.getEffectiveType();
-        int multiColumnIndex = 1;
-        int multiColumnSize = dataType.getSqlTypes().length;
-        for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
-          buf.append("    ");
-          String columnName = attribute.getColumnName() + sp.getPostfix();
-          int size = attribute.getSizeWithDefault();
-          int scale = attribute.getScaleWithDefault();
-          Object defaultValue = attribute.getOptions().getDefaultValue();
-          String comment = attribute.getOptions().getComment();
-          if (multiColumnIndex > 1) {
-            comment = null;
-            if (defaultValue != null) {
-              defaultValue = sp.getSqlType().getDefaultValue();
-            }
-          }
-          if (dataType.isScaleInSecondColumn()) {
-            if (multiColumnIndex == 2) {
-              size = 0;
-            }
-            scale = 0;
-          }
-          buf.append(backend.sqlCreateColumn(
-                  columnName, comment, sp.getSqlType(), size, scale,
-                  attribute.isNullable(), defaultValue,
-                  attribute.getName().equals(Constants.AN_ID) && !getOptions().isNoPrimaryKey(),
-                  attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
-          multiColumnIndex++;
-        }
-        attributeCount++;
-      }
-    }
-    buf.append(backend.sqlCreateTableClosing(getTableName(), getOptions().getComment()));
-    buf.append(backend.sqlCreateTableComment(getTableName(), getOptions().getComment()));
-    for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isDerived()) {
-        buf.append(backend.sqlCreateColumnComment(getTableName(), attribute.getColumnName(), attribute.getOptions().getComment()));
-      }
-    }
-    return buf.toString();
+    return CodeFactory.getInstance().createSqlTable(this, backend);
   }
 
   @Override
