@@ -26,8 +26,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-
-
+import java.util.Arrays;
 
 
 /**
@@ -117,7 +116,18 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
     return binary;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Binary<?> binary = (Binary<?>) o;
+    return Arrays.equals(data, binary.data);
+  }
 
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(data);
+  }
 
   /**
    * Creates a Binary out of an InputStream.
