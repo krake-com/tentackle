@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,17 +32,19 @@ import java.util.Arrays;
 /**
  * Datatype for storing arbitrary (binary) data in a database.
  * <p>
- * Its primary use is to store {@code Serializable}s but it can handle arbitrary {@code byte}-data as well.
  * It uses the XXXBinaryStream-methods to read and write the data avoiding
  * the transactional limits of blobs, because blobs usually are only valid within a transaction.
  * {@code Binary} instead provides a blob-like interface while remaining valid outside transactions.
  * <p>
  * Furthermore, binaries can be frozen, i.e. made immutable.
+ * <p>
+ * Keep in mind that the wrapped object is serialized when the Binary is created or setObject is invoked.
+ * Any subsequent changes to the object are not reflected in the internal byte array.
  *
- * @param <T> the java class handled by this Binary
+ * @param <T> the serializable type
  */
 
-public class Binary<T> implements Serializable, Cloneable, Freezable {
+public class Binary<T extends Serializable> implements Serializable, Cloneable, Freezable {
 
   private static final long serialVersionUID = 5853122168291704220L;
 
@@ -54,7 +56,8 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
 
   private byte[] data;                  // byte array of arbitrary data or serialized object
   private int length;                   // length of data/object
-  private boolean frozen;               // true if timestamp cannot be modified anymore
+  private Integer hash;                 // the lazy hash code
+  private boolean frozen;               // true if binary cannot be modified anymore
   private transient T object;           // cached object
 
 
@@ -70,17 +73,7 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
   }
 
   /**
-   * Creates a Binary out of an array of arbitrary bytes.
-
-   * @param data the byte array to be stored in the database.
-   */
-  public Binary(byte[] data) {
-    setData(data);
-  }
-
-
-  /**
-   * Creates an empty binary
+   * Creates an empty binary.
    */
   public Binary() {
   }
@@ -113,6 +106,7 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
       System.arraycopy(data, 0, binary.data, 0, length);
     }
     binary.frozen = false;
+    // hash remains the same
     return binary;
   }
 
@@ -126,7 +120,10 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(data);
+    if (hash == null) {
+      hash = Arrays.hashCode(data);
+    }
+    return hash;
   }
 
   /**
@@ -141,13 +138,14 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
    *
    * @return the new Binary or null if stream is null or empty.
    * @throws java.io.IOException if reading from the input stream failed
+   * @param <T> the serializable type
    */
-  public static Binary<?> createBinary(InputStream stream, int bufSize, boolean frozen) throws IOException {
+  public static <T extends Serializable> Binary<T> createBinary(InputStream stream, int bufSize, boolean frozen) throws IOException {
     if (stream == null) {
       return null;
     }
     try (InputStream s = stream) {
-      Binary<?> b = new Binary<>();
+      Binary<T> b = new Binary<>();
       if (bufSize <= 0) {
         bufSize = Binary.INITIAL_SIZE;
       }
@@ -203,7 +201,6 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
   @SuppressWarnings("unchecked")
   public T getObject() throws IOException, ClassNotFoundException {
     if (object == null && data != null) {
-      // try to treat data as a serialized object
       try (ObjectInputStream is = new ObjectInputStream(getInputStream())) {
         object = (T) is.readObject();
       }
@@ -217,8 +214,10 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
    *
    * @param object the serializable object.
    */
-  private void setObject(T object) throws IOException {
+  public void setObject(T object) throws IOException {
+    assertNotfrozen();
     this.object = object;
+    hash = null;
     if (object == null) {
       data   = null;
       length = 0;
@@ -231,34 +230,6 @@ public class Binary<T> implements Serializable, Cloneable, Freezable {
         data   = bos.toByteArray();
         length = bos.size();
       }
-    }
-  }
-
-
-  /**
-   * Retrieves the @{code Binary} data as a byte[]-array.
-   *
-   * @return the byte[] representation of the @{code Binary}, null if none (or NULL-value in db).
-   */
-  public byte[] getData() {
-    return data;
-  }
-
-
-  /**
-   * Sets the binary data.
-   *
-   * @param data the byte[]-array data.
-   */
-  public void setData(byte[] data) {
-    assertNotfrozen();
-    this.data = data;
-    object = null;
-    if (data == null) {
-      length = 0;
-    }
-    else  {
-      length = data.length;
     }
   }
 

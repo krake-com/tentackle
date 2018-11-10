@@ -304,20 +304,15 @@ For more options, see {\@link DbModelWurblet}.
           boolean useSetter = isSetGetRequired(attr);
 
           if (attr.getDataType() == DataType.BINARY) {
-            // Binary getter takes additional size argument
-            String castStr = "";
-            if (attr.getJavaType().indexOf('<') >= 0) {
-              // with generic type: -> need a cast
-              castStr = "(" + attr.getJavaType() + ") ";
-            }
+            // Binary getter takes additional buffer size argument
             if (useSetter)  {
 ]@
-    @(attr.getSetterName())@(@(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@));
+    @(attr.getSetterName())@(rs.@(getterMethod)@(@(attr.getSizeWithDefault())@));
 @[
             }
             else  {
 ]@
-    @(attr.getName())@ = @(castStr)@rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
+    @(attr.getName())@ = rs.@(getterMethod)@(@(attr.getSizeWithDefault())@);
 @[
             }
           }

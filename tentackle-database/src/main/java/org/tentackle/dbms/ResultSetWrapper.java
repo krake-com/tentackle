@@ -20,7 +20,19 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Binary;
+import org.tentackle.common.DMoney;
+import org.tentackle.common.Date;
+import org.tentackle.common.Time;
+import org.tentackle.common.Timestamp;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.DateHelper;
+import org.tentackle.session.PersistenceException;
+
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -33,16 +45,6 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.Binary;
-import org.tentackle.common.DMoney;
-import org.tentackle.common.Date;
-import org.tentackle.common.Time;
-import org.tentackle.common.Timestamp;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.DateHelper;
-import org.tentackle.session.PersistenceException;
 
 
 /**
@@ -1701,7 +1703,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
    */
-  public Binary<?> getBinary(String name, int bufSize)  {
+  public <T extends Serializable> Binary<T> getBinary(String name, int bufSize)  {
     try {
       return Binary.createBinary(rs.getBinaryStream(name), bufSize, true);
     }
@@ -2458,7 +2460,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
    */
-  public Binary<?> getBinary(int pos, int bufSize)  {
+  public <T extends Serializable> Binary<T> getBinary(int pos, int bufSize)  {
     try {
       return Binary.createBinary(rs.getBinaryStream(pos + columnOffset), bufSize, true);
     }
@@ -3156,7 +3158,7 @@ public class ResultSetWrapper implements AutoCloseable {
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
    */
-  public Binary<?> getBinary(int bufSize)  {
+  public <T extends Serializable> Binary<T> getBinary(int bufSize)  {
     try {
       return Binary.createBinary(rs.getBinaryStream(nextConfiguredIndex() + columnOffset), bufSize, true);
     }
