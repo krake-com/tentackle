@@ -1702,7 +1702,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a {@link Binary} in the Java programming language.
    *
-   * @param T the serializable type
    * @param name the label for the column specified with the SQL AS clause.
    *        If the SQL AS clause was not specified, then the label is the name of the column
    * @param bufSize the initial buffersize for the Binary
@@ -2461,7 +2460,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a {@link Binary} in the Java programming language.
    *
-   * @param T the serializable type
    * @param pos the parameter index in the result set
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
@@ -3161,7 +3159,6 @@ public class ResultSetWrapper implements AutoCloseable {
    * of this <code>ResultSet</code> object as
    * a {@link Binary} in the Java programming language.
    *
-   * @param T the serializable type
    * @param bufSize the initial buffersize for the Binary
    * @return the binary read from db
    */
