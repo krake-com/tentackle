@@ -30,9 +30,11 @@ import org.tentackle.session.Session;
  * @author harald
  * @param <T> the operation type
  */
-public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, Serializable {
+public class DummyPersistentOperation<T extends Operation<T>> implements PersistentOperation<T>, OperationMethodCacheProvider<T>, Serializable {
 
   private static final long serialVersionUID = 1L;
+
+  private static final OperationMethodCache METHOD_CACHE = new OperationMethodCache<>(Operation.class);
 
   private DomainContext context;                  // application domain context
   private transient Session session;              // the session
@@ -214,4 +216,8 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
     }
   }
 
+  @Override
+  public OperationMethodCache<T> getOperationMethodCache() {
+    return METHOD_CACHE;
+  }
 }
