@@ -62,9 +62,19 @@ public interface Snapshotable<T> {
    * The list contains the snapshots in the order they were taken,
    * i.e. first snapshot comes first.
    *
-   * @return the list of snapshots for this object, null if none taken so far
+   * @return the list of snapshots for this object, empty list if none taken so far
    */
   List<? extends T> getSnapshots();
+
+  /**
+   * Discards the given snapshot.
+   * <p>
+   * Notice that depending on the implementation, it's usually not necessary to explicitly
+   * discard a snapshot, since {@link java.lang.ref.WeakReference}s are normally used.
+   *
+   * @param snapshot the snapshot
+   */
+  void discardSnapshot(T snapshot);
 
   /**
    * Creates a deep copy of this object.

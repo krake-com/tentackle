@@ -68,11 +68,13 @@ import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -133,7 +135,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   private transient boolean expired;              // true = object is expired in all caches it belongs to
 
   // snapshot
-  private transient List<T> snapshots;            // taken snapshots, null if none
+  private transient List<WeakReference<T>> snapshots;    // taken snapshots, null if none
   private transient boolean objectIsCopy;         // true if this is a deep copy
   private transient boolean objectIsSnapshot;     // true if this is a snapshot
 
@@ -437,7 +439,30 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   @Override
   public List<T> getSnapshots() {
-    return snapshots;
+    List<T> shots = new ArrayList<>();
+    if (snapshots != null) {
+      for (Iterator<WeakReference<T>> iterator = snapshots.iterator(); iterator.hasNext(); ) {
+        T snapshot = iterator.next().get();
+        if (snapshot == null) {
+          iterator.remove();
+        }
+        else {
+          shots.add(snapshot);
+        }
+      }
+    }
+    return shots;
+  }
+
+  @Override
+  public void discardSnapshot(T snapshot) {
+    int index = getSnapshotIndex(snapshot);
+    if (index >= 0) {
+      snapshots.remove(index);
+    }
+    else {
+      throw new PersistenceException(this, "not my snapshot");
+    }
   }
 
   /**
@@ -449,13 +474,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (snapshots == null) {
       snapshots = new ArrayList<>();
     }
-    for (T sh: snapshots) {
-      // we cannot use contains() because all snaphots have the same object ID
-      if (sh == snapshot) {
-        throw new PersistenceException(this, "snapshot already added");
-      }
+    else if (getSnapshotIndex(snapshot) >= 0) {
+      throw new PersistenceException(this, "snapshot already added");
     }
-    snapshots.add(snapshot);
+    snapshots.add(new WeakReference<>(snapshot));
   }
 
 
@@ -468,19 +490,30 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     if (!snapshot.isSnapshot()) {
       throw new PersistenceException(this, "not a snapshot");
     }
-    if (!isCopy()) {
-      if (snapshots != null) {
-        for (T sh : snapshots) {
-          // we cannot use contains() because all snaphots have the same object ID
-          if (sh == snapshot) {
-            return;
-          }
-        }
-      }
+    if (!isCopy() && getSnapshotIndex(snapshot) < 0) {
       throw new PersistenceException(this, "not my snapshot");
     }
   }
 
+  private int getSnapshotIndex(T snapshot) {
+    if (snapshots != null) {
+      int index = 0;
+      for (Iterator<WeakReference<T>> iterator = snapshots.iterator(); iterator.hasNext(); ) {
+        T shot = iterator.next().get();
+        if (shot == null) {
+          iterator.remove();
+        }
+        else {
+          // we cannot use contains() because all snaphots have the same object ID
+          if (shot == snapshot) {
+            return index;
+          }
+          ++index;
+        }
+      }
+    }
+    return -1;
+  }
 
   /**
    * Asserts that the PDO is not cached.

@@ -19,6 +19,7 @@
 
 package org.tentackle.misc;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -39,6 +40,8 @@ import org.tentackle.log.Logger;
  */
 public class TrackedArrayList<E> extends ImmutableArrayList<E> implements TrackedList<E> {
 
+  private static final String MSG_NOT_MY_SNAPSHOT = "not my snapshot";
+
   private static final long serialVersionUID = 5820724718467532237L;
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
@@ -49,7 +52,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   private Set<E> removedObjects;                    // set of removed objects
   private boolean removedObjectsFiltered;           // true if removed objects filtered
 
-  private transient List<TrackedArrayList<E>> snapshots; // snapshots of this list
+  private transient List<WeakReference<TrackedArrayList<E>>> snapshots; // snapshots of this list
   private transient List<E> elementSnapshots;       // snapshots for the elements of this list (if this is a snapshot)
   private transient boolean copied;                 // true if this list is a copy
 
@@ -134,7 +137,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
       snapshots = new ArrayList<>();
     }
     TrackedArrayList<E> snapshot = (TrackedArrayList<E>) super.clone();
-    snapshots.add(snapshot);
+    snapshots.add(new WeakReference<>(snapshot));
     snapshot.removedObjects = removedObjects == null ? null : new LinkedHashSet<>(removedObjects);
     snapshot.snapshots = new ArrayList<>(snapshots);
     // create snapshots for elements in new list.
@@ -202,7 +205,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
         init();
       }
       else {
-        if (isMySnapshot(snapshot)) {
+        if (getSnapshotIndex(snapshot) >= 0) {
           TrackedArrayList<E> mySnapshot = (TrackedArrayList<E>) snapshot;
           super.clear();
           // restore objects from snapshot.
@@ -233,12 +236,22 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
           simpleEqualsAndHashCode = mySnapshot.simpleEqualsAndHashCode;
         }
         else {
-          throw new TentackleRuntimeException("not my snapshot");
+          throw new TentackleRuntimeException(MSG_NOT_MY_SNAPSHOT);
         }
       }
     }
   }
 
+  @Override
+  public void discardSnapshot(TrackedList<E> snapshot) {
+    int index = getSnapshotIndex(snapshot);
+    if (index >= 0) {
+      snapshots.remove(index);
+    }
+    else {
+      throw new TentackleRuntimeException(MSG_NOT_MY_SNAPSHOT);
+    }
+  }
 
   @Override
   public boolean isCopy() {
@@ -298,11 +311,23 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Gets all snapshots.
    *
-   * @return the list of snapshots for this object, null if none taken so far
+   * @return the list of snapshots for this object, never null
    */
   @Override
   public List<TrackedArrayList<E>> getSnapshots() {
-    return snapshots;
+    List<TrackedArrayList<E>> shots = new ArrayList<>();
+    if (snapshots != null) {
+      for (Iterator<WeakReference<TrackedArrayList<E>>> iterator = snapshots.iterator(); iterator.hasNext(); ) {
+        TrackedArrayList<E> snapshot = iterator.next().get();
+        if (snapshot == null) {
+          iterator.remove();
+        }
+        else {
+          shots.add(snapshot);
+        }
+      }
+    }
+    return shots;
   }
 
 
@@ -862,17 +887,25 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * We cannot use .contains() because equals and hashcode check elements as well.
    *
    * @param snapshot the snapshot to test
-   * @return true if snapshot belongs to me
+   * @return the index >= 0 if my snapshot, -1 if not my snapshot
    */
-  private boolean isMySnapshot(TrackedList<E> snapshot) {
+  private int getSnapshotIndex(TrackedList<E> snapshot) {
     if (snapshots != null) {
-      for (TrackedList<E> snap: snapshots) {
-        if (snap == snapshot) {
-          return true;
+      int index = 0;
+      for (Iterator<WeakReference<TrackedArrayList<E>>> iterator = snapshots.iterator(); iterator.hasNext(); ) {
+        TrackedArrayList<E> shot = iterator.next().get();
+        if (shot == null) {
+          iterator.remove();
+        }
+        else {
+          if (shot == snapshot) {
+            return index;
+          }
+          ++index;
         }
       }
     }
-    return false;
+    return -1;
   }
 
   /**
