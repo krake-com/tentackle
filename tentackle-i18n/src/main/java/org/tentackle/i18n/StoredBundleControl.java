@@ -42,10 +42,7 @@ import org.tentackle.session.Session;
  */
 public class StoredBundleControl extends ResourceBundle.Control implements DomainContextProvider {
 
-  /**
-   * Controls whether properties should be tried if no stored bundle found.
-   */
-  public static boolean fallbackToProperties = true;
+  private static boolean fallbackToProperties = true;
 
   private static final Logger LOGGER = Logger.get(StoredBundleControl.class);
 
@@ -53,6 +50,24 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
 
   private DomainContext context;    // session local domain context
+
+  /**
+   * Returns whether properties should be tried if no stored bundle found.
+   *
+   * @return true if use resources from properties (default)
+   */
+  public static boolean isFallbackToProperties() {
+    return fallbackToProperties;
+  }
+
+  /**
+   * Sets whether properties should be tried if no stored bundle found.
+   *
+   * @param fallbackToProperties true if use resources from properties, false to throw {@link java.util.MissingResourceException}
+   */
+  public static void setFallbackToProperties(boolean fallbackToProperties) {
+    StoredBundleControl.fallbackToProperties = fallbackToProperties;
+  }
 
   @Override
   public DomainContext getDomainContext() {
