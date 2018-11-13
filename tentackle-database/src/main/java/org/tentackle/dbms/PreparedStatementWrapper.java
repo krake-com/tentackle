@@ -28,6 +28,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendPreparedStatement;
 
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -312,6 +313,38 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     setString(p, s, false);
   }
 
+  @Override
+  public void setLargeString(int p, String s, boolean mapNull) {
+    if (con.getBackend().isClobSupported()) {
+      try {
+        int ep = effectivePosition(p);
+        if (s == null) {
+          if (mapNull) {
+            s = getAttachedSession().getBackend().getEmptyString();
+          }
+          else {
+            getStatement().setNull(ep, Types.CLOB);
+            return;
+          }
+        }
+        Clob clob = con.getConnection().createClob();
+        clob.setString(1, s);
+        getStatement().setClob(p, clob);
+        rememberParameter(ep, s);
+      }
+      catch (SQLException e)  {
+        throw new PersistenceException(getSession(), this.toString(), e);
+      }
+    }
+    else {
+      setString(p, s, mapNull);
+    }
+  }
+
+  @Override
+  public void setLargeString(int p, String s) {
+    setLargeString(p, s, false);
+  }
 
   @Override
   public void setBoolean (int p, boolean b) {
@@ -779,7 +812,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * The driver converts this to an SQL <code>BLOB</code> value when it sends it to the
    * database.
    * The implementation translates the Binary into an Inputstream and invokes
-   * {@link PreparedStatement#setBinaryStream(int, java.io.InputStream, int)}.
+   * {@link PreparedStatement#setBlob(int, java.io.InputStream, int)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param b the parameter value, null if the value should be set to SQL NULL
@@ -793,7 +826,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
         getStatement().setNull(ep, Types.LONGVARBINARY);
       }
       else {
-        getStatement().setBinaryStream(ep, b.getInputStream(), b.getLength());
+        getStatement().setBlob(ep, b.getInputStream(), b.getLength());
       }
       rememberParameter(ep, b);
     }

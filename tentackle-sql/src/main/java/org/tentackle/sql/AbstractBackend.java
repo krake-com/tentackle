@@ -49,6 +49,7 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_BIGINT = "BIGINT";
   protected static final String TYPE_BIT = "BIT";
   protected static final String TYPE_BLOB = "BLOB";
+  protected static final String TYPE_CLOB = "CLOB";
   protected static final String TYPE_BOOL = "BOOL";
   protected static final String TYPE_BOOLEAN = "BOOLEAN";
   protected static final String TYPE_BYTEA = "BYTEA";
@@ -237,7 +238,8 @@ public abstract class AbstractBackend implements Backend {
       case DATE:
       case TIME:
       case TIMESTAMP:
-      case LONGVARBINARY:
+      case BLOB:
+      case CLOB:
         return -1;    // sizeless type
 
       default:
@@ -896,7 +898,12 @@ public abstract class AbstractBackend implements Backend {
       case Types.VARBINARY:
       case Types.LONGVARBINARY:
       case Types.BLOB:
-        sqlType = SqlType.LONGVARBINARY;
+        sqlType = SqlType.BLOB;
+        break;
+
+      case Types.CLOB:
+      case Types.NCLOB:
+        sqlType = SqlType.CLOB;
         break;
 
       default:
@@ -951,6 +958,10 @@ public abstract class AbstractBackend implements Backend {
     return false;
   }
 
+  @Override
+  public boolean isClobSupported() {
+    return true;
+  }
 
   /**
    * Checks if the exception's state starts with a given string.

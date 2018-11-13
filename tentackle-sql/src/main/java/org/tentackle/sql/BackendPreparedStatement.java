@@ -420,6 +420,25 @@ public interface BackendPreparedStatement {
   void setString(int p, String s, boolean mapNull);
 
   /**
+   * Sets a very large string.<br>
+   * This is usually converted to SQL <code>CLOB</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value
+   * @param mapNull true if null values should be mapped to the empty string, else SQL NULL
+   */
+  void setLargeString(int p, String s, boolean mapNull);
+
+  /**
+   * Sets a very large string.<br>
+   * This is usually converted to SQL <code>CLOB</code>.
+   *
+   * @param p the first parameter is 1, the second is 2, ...
+   * @param s the parameter value, null if the value should be set to SQL NULL
+   */
+  void setLargeString(int p, String s);
+
+  /**
    * Sets the designated parameter to the given <code>java.sql.Time</code> value.
    * The driver converts this
    * to an SQL <code>TIME</code> value when it sends it to the database.

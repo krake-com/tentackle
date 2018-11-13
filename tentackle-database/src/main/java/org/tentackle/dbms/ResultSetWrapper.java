@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -991,6 +992,48 @@ public class ResultSetWrapper implements AutoCloseable {
   }
 
 
+  /**
+   * Gets a large string.<br>
+   * The backend usually stores such strings in a CLOB.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getLargeString (String name, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isClobSupported()) {
+        Clob clob = resources.rs.getClob(name);
+        String str = clob == null ? null : clob.getSubString(1, (int) clob.length());
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(name, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+  /**
+   * Retrieves the value of the designated column in the current row
+   * of this <code>ResultSet</code> object as
+   * a <code>String</code> in the Java programming language.
+   *
+   * @param name the label for the column specified with the SQL AS clause.  If the SQL AS clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getLargeString (String name) {
+    return getLargeString(name, false);
+  }
+
 
   /**
    * Retrieves the value of the designated column in the current row
@@ -1779,6 +1822,47 @@ public class ResultSetWrapper implements AutoCloseable {
 
 
   /**
+   * Retrieves a String from a CLOB.
+   *
+   * @param pos the parameter index in the result set
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getLargeString (int pos, boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isClobSupported()) {
+        Clob clob = resources.rs.getClob(pos + columnOffset);
+        String str = clob == null ? null : clob.getSubString(1, (int) clob.length());
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(pos, mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves a String from a CLOB.
+   *
+   * @param pos the parameter index in the result set
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getLargeString (int pos) {
+    return getLargeString(pos, false);
+  }
+
+
+  /**
    * Retrieves the value of the designated column in the current row
    * of this <code>ResultSet</code> object as
    * a <code>boolean</code> in the Java programming language.
@@ -2511,6 +2595,45 @@ public class ResultSetWrapper implements AutoCloseable {
    */
   public String getString () {
     return getString(nextConfiguredIndex(), false);
+  }
+
+
+  /**
+   * Retrieves a String from a CLOB column.
+   *
+   * @param mapNull if empty strings should be treated as null values
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   */
+  public String getLargeString (boolean mapNull)  {
+    try {
+      if (resources.stmt.getConnection().getBackend().isClobSupported()) {
+        Clob clob = resources.rs.getClob(nextConfiguredIndex() + columnOffset);
+        String str = clob == null ? null : clob.getSubString(1, (int) clob.length());
+        if (mapNull && str != null && str.equals(resources.db.getBackend().getEmptyString())) {
+          return null;
+        }
+        return str;
+      }
+      else {
+        return getString(mapNull);
+      }
+    }
+    catch (SQLException e)  {
+      throw new PersistenceException(resources.db, e);
+    }
+  }
+
+
+  /**
+   * Retrieves a String from a CLOB column.
+   *
+   * @return the column value; if the value is SQL <code>NULL</code>, the
+   * value returned is <code>null</code>
+   * @see #getString(java.lang.String, boolean)
+   */
+  public String getLargeString () {
+    return getLargeString(nextConfiguredIndex(), false);
   }
 
 

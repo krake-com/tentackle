@@ -853,7 +853,12 @@ public class DbModelWurblet extends ModelWurblet {
       buf.append(StringHelper.firstToUpper(type.toString()));
     }
     else  {
-      buf.append(type.toString());
+      if (type == DataType.LARGESTRING) {
+        buf.append("LargeString");
+      }
+      else {
+        buf.append(type.toString());
+      }
     }
     return buf.toString();
   }
@@ -888,6 +893,9 @@ public class DbModelWurblet extends ModelWurblet {
     }
     else if (type == DataType.DOUBLE) {
       buf.append("ADouble");
+    }
+    else if (type == DataType.LARGESTRING) {
+      buf.append("LargeString");
     }
     else  {
       buf.append(type.toString());

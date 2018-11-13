@@ -35,10 +35,10 @@ import java.util.function.Function;
 public enum SqlType {
 
   /** String. */
-  VARCHAR(Types.VARCHAR, false, false, "", SqlType::removeSingleQuotes),
+  VARCHAR(false, false, "", SqlType::removeSingleQuotes),
 
   /** Date. */
-  DATE(Types.DATE, false, false, new Date(0), t -> {
+  DATE(false, false, new Date(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Date.valueOf(t);
@@ -49,7 +49,7 @@ public enum SqlType {
   }),
 
   /** Time. */
-  TIME(Types.TIME, false, false, new Time(0), t -> {
+  TIME(false, false, new Time(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Time.valueOf(t);
@@ -60,7 +60,7 @@ public enum SqlType {
   }),
 
   /** Timestamp. */
-  TIMESTAMP(Types.TIMESTAMP, false, false, new Timestamp(0), t -> {
+  TIMESTAMP(false, false, new Timestamp(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return Timestamp.valueOf(t);
@@ -70,11 +70,14 @@ public enum SqlType {
     }
   }),
 
-  /** Binary. */
-  LONGVARBINARY(Types.LONGVARBINARY, false, false, null, t -> null),  // cannot be converted
+  /** Arbitrary data usually stored as BLOB. */
+  BLOB(false, false, null, t -> null),  // cannot be converted
+
+  /** Large Strings usually stored as CLOB. */
+  CLOB(false, false, "", SqlType::removeSingleQuotes),
 
   /** BigDecimal and DMoney. */
-  DECIMAL(Types.DECIMAL, true, true, new BigDecimal(0), t -> {
+  DECIMAL(true, true, new BigDecimal(0), t -> {
     t = removeSingleQuotes(t);
     try {
       return BigDecimal.valueOf(Double.valueOf(t));
@@ -85,7 +88,7 @@ public enum SqlType {
   }),
 
   /** Character and char. */
-  CHAR(Types.CHAR, false, false, ' ', t -> {
+  CHAR(false, false, ' ', t -> {
     t = removeSingleQuotes(t);
     try {
       return t.isEmpty() ? ' ' : t.charAt(0);
@@ -96,7 +99,7 @@ public enum SqlType {
   }),
 
   /** Boolean and boolean. */
-  BIT(Types.BIT, false, false, false, t -> {
+  BIT(false, false, false, t -> {
     t = removeSingleQuotes(t);
     try {
       return Boolean.valueOf(t);
@@ -107,7 +110,7 @@ public enum SqlType {
   }),
 
   /** Byte and byte. */
-  TINYINT(Types.TINYINT, true, false, (byte) 0, t -> {
+  TINYINT(true, false, (byte) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Byte.valueOf(t);
@@ -118,7 +121,7 @@ public enum SqlType {
   }),
 
   /** Short and short. */
-  SMALLINT(Types.SMALLINT, true, false, (short) 0, t -> {
+  SMALLINT(true, false, (short) 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Short.valueOf(t);
@@ -129,7 +132,7 @@ public enum SqlType {
   }),
 
   /** Integer and int. */
-  INTEGER(Types.INTEGER, true, false, 0, t -> {
+  INTEGER(true, false, 0, t -> {
     t = removeSingleQuotes(t);
     try {
       return Integer.valueOf(t);
@@ -140,7 +143,7 @@ public enum SqlType {
   }),
 
   /** Long and long. */
-  BIGINT(Types.BIGINT, true, false, 0L, t -> {
+  BIGINT(true, false, 0L, t -> {
     t = removeSingleQuotes(t);
     try {
       return Long.valueOf(t);
@@ -151,7 +154,7 @@ public enum SqlType {
   }),
 
   /** Float and float. */
-  FLOAT(Types.FLOAT, true, true, 0.0f, t -> {
+  FLOAT(true, true, 0.0f, t -> {
     t = removeSingleQuotes(t);
     try {
       return Float.valueOf(t);
@@ -162,7 +165,7 @@ public enum SqlType {
   }),
 
   /** Double and double. */
-  DOUBLE(Types.DOUBLE, true, true, 0.0d, t -> {
+  DOUBLE(true, true, 0.0d, t -> {
     t = removeSingleQuotes(t);
     try {
       return Double.valueOf(t);
@@ -173,7 +176,7 @@ public enum SqlType {
   }),
 
   /** Application specific. */
-  JAVA_OBJECT(Types.JAVA_OBJECT, false, false, null, t -> null);    // conversion not possible (never returned from meta data)
+  JAVA_OBJECT(false, false, null, t -> null);    // conversion not possible (never returned from meta data)
 
 
   /**
@@ -190,7 +193,6 @@ public enum SqlType {
   }
 
 
-  private final int jdbcType;                       // the JDBC sql type
   private final boolean numeric;                    // true if numeric type
   private final boolean fractional;                 // true if fractional numeric type
   private final Object defaultValue;                // the default value
@@ -199,29 +201,18 @@ public enum SqlType {
   /**
    * Creates an SQL type.
    *
-   * @param jdbcType the JDBC type
    * @param numeric true if numeric
    * @param fractional true if fractional
    * @param defaultValue the default value
    * @param parser the parser to parse JDBC metadata (e.g. DEFAULTs)
    */
-  SqlType(int jdbcType, boolean numeric, boolean fractional, Object defaultValue, Function<String,Object> parser) {
-    this.jdbcType = jdbcType;
+  SqlType(boolean numeric, boolean fractional, Object defaultValue, Function<String,Object> parser) {
     this.numeric = numeric;
     this.fractional = fractional;
     this.defaultValue = defaultValue;
     this.parser = parser;
   }
 
-
-  /**
-   * Gets the java SQL type.
-   *
-   * @return the sql type
-   */
-  public int getJdbcType() {
-    return jdbcType;
-  }
 
   /**
    * Returns whether numeric type.

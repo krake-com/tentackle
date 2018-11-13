@@ -159,8 +159,11 @@ public class MsSql extends AbstractSql2003Backend {
       case TIMESTAMP:
         return TYPE_DATETIME;
 
-      case LONGVARBINARY:
+      case BLOB:
         return TYPE_VARBINARY_MAX;
+
+      case CLOB:
+        return TYPE_CLOB;
 
       default:
         return super.sqlTypeToString(sqlType, size);

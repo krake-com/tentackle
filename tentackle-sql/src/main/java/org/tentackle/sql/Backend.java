@@ -933,4 +933,12 @@ public interface Backend {
    */
   boolean isReleaseSavepointSupported();
 
+  /**
+   * Returns whether the backend support CLOB types.<br>
+   * If not, it will be emulated as VARCHAR with the maximum possible size.
+   *
+   * @return true if supported, false if treat as varchar
+   */
+  boolean isClobSupported();
+
 }

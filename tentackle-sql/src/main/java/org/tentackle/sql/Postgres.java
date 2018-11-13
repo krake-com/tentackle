@@ -116,6 +116,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isClobSupported() {
+    return false;   // use TEXT instead
+  }
+
+  @Override
   public boolean needTxForFetchsize() {
     return true;
   }
@@ -197,6 +202,14 @@ public class Postgres extends AbstractSql92Backend {
       case Types.SMALLINT:
         return new SqlType[] { SqlType.TINYINT, SqlType.SMALLINT };
 
+      case Types.VARCHAR:
+      case Types.LONGVARCHAR:
+      case Types.NVARCHAR:
+      case Types.LONGNVARCHAR:
+      case Types.CLOB:
+      case Types.NCLOB:
+        return new SqlType[] { SqlType.VARCHAR, SqlType.CLOB };
+
       default:
         return super.jdbcTypeToSqlType(jdbcType, size, scale);
     }
@@ -245,8 +258,11 @@ public class Postgres extends AbstractSql92Backend {
       case TIMESTAMP:
         return TYPE_TIMESTAMP;
 
-      case LONGVARBINARY:
+      case BLOB:
         return TYPE_BYTEA;
+
+      case CLOB:
+        return TYPE_TEXT;
 
       default:
         return super.sqlTypeToString(sqlType, size);

@@ -364,6 +364,14 @@ public class ManagedConnection {
     return manager;
   }
 
+  /**
+   * Gets the backend.
+   *
+   * @return the backend
+   */
+  public Backend getBackend() {
+    return backend;
+  }
 
   /**
    * Gets the low level connection.

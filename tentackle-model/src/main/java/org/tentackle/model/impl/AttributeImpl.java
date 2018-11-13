@@ -162,7 +162,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setName(line.getJavaName());
     setScale(line.getScale());
     setSize(line.getSize());
-    setDataType(DataType.createFromJavaType(line.getJavaType()));
+    DataType dataType = DataType.createFromJavaType(line.getJavaType());
+    // special handling for LARGESTRING: String with explicit size of 0
+    if (Integer.valueOf(0).equals(line.getSize())) {
+      dataType = DataType.LARGESTRING;
+    }
+    setDataType(dataType);
     if (getDataType() == null) {
       setDataType(DataType.APPLICATION);
     }
@@ -468,6 +473,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       switch(dataType) {
         case CHARACTER:
         case STRING:
+        case LARGESTRING:
         case DATE:
         case TIMESTAMP:
         case LOCALDATE:

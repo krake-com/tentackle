@@ -137,8 +137,11 @@ public class Db2 extends AbstractSql2003Backend {
       case TIMESTAMP:
         return TYPE_TIMESTAMP;
 
-      case LONGVARBINARY:
+      case BLOB:
         return TYPE_BLOB;
+
+      case CLOB:
+        return TYPE_CLOB;
 
       default:
         return super.sqlTypeToString(sqlType, size);

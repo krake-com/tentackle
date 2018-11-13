@@ -46,6 +46,9 @@ public enum DataType {
   /** A {@link String}. */
   STRING("String", false, false, false, false, false, SqlType.VARCHAR),
 
+  /** A very large {@link String}. */
+  LARGESTRING("String", false, false, false, false, false, SqlType.CLOB),
+
   /** A {@link java.sql.Date}. */
   DATE("Date", false, true, false, true, false, SqlType.DATE),
 
@@ -64,8 +67,8 @@ public enum DataType {
   /** A {@link java.time.LocalDateTime}. */
   LOCALDATETIME("LocalDateTime", false, false, false, true, false, SqlType.TIMESTAMP),
 
-  /** A {@link org.tentackle.common.Binary} (tentackle type). */
-  BINARY("Binary", false, true, false, false, false, SqlType.LONGVARBINARY),
+  /** A {@link org.tentackle.common.Binary}. */
+  BINARY("Binary", false, true, false, false, false, SqlType.BLOB),
 
   /** A {@link BigDecimal}. */
   BIGDECIMAL("BigDecimal", false, false, true, false, false, SqlType.DECIMAL),

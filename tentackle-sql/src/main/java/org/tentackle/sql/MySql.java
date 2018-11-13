@@ -190,8 +190,11 @@ public class MySql extends AbstractSql92Backend {
       case TIMESTAMP:
         return TYPE_DATETIME;
 
-      case LONGVARBINARY:
+      case BLOB:
         return TYPE_BLOB;
+
+      case CLOB:
+        return TYPE_CLOB;
 
       default:
         return super.sqlTypeToString(sqlType, size);
