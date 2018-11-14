@@ -162,12 +162,12 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     setName(line.getJavaName());
     setScale(line.getScale());
     setSize(line.getSize());
-    DataType dataType = DataType.createFromJavaType(line.getJavaType());
+    DataType type = DataType.createFromJavaType(line.getJavaType());
     // special handling for LARGESTRING: String with explicit size of 0
     if (Integer.valueOf(0).equals(line.getSize())) {
-      dataType = DataType.LARGESTRING;
+      type = DataType.LARGESTRING;
     }
-    setDataType(dataType);
+    setDataType(type);
     if (getDataType() == null) {
       setDataType(DataType.APPLICATION);
     }

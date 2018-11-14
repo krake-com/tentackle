@@ -509,7 +509,7 @@ public class Db implements Session, Cloneable {
       if (technicalBackendInfoName != null) {
         if (technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_USER) ||
             technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM)) {
-          int ndx = technicalBackendInfoName.indexOf(":");
+          int ndx = technicalBackendInfoName.indexOf(':');
           if (ndx >= 0 && ndx < technicalBackendInfoName.length()) {
             String configName = technicalBackendInfoName.substring(ndx + 1);
             boolean systemPrefs = technicalBackendInfoName.startsWith(Constants.BACKEND_INFO_SYSTEM);

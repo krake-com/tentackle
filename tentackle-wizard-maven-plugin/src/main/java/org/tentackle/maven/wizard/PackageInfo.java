@@ -81,7 +81,7 @@ public class PackageInfo {
    * @return true if not empty, false if no java files found
    */
   public boolean isContainingJavaFiles() {
-    return path.list((dir, name) -> name.endsWith(Constants.JAVA_EXT)).length > 0;
+    return path.list((dir, nam) -> nam.endsWith(Constants.JAVA_EXT)).length > 0;
   }
 
   /**
