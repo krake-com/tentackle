@@ -34,6 +34,7 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
 
   private static final long serialVersionUID = 1L;
 
+  @SuppressWarnings("unchecked")
   private static final OperationMethodCache METHOD_CACHE = new OperationMethodCache(Operation.class);
 
   private DomainContext context;                  // application domain context
