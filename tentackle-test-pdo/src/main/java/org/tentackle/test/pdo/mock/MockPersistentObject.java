@@ -555,7 +555,10 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public void discardSnapshot(T snapshot) {
+  }
 
+  @Override
+  public void discardSnapshots() {
   }
 
   @Override

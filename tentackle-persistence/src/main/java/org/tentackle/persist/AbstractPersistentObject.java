@@ -465,6 +465,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     }
   }
 
+  @Override
+  public void discardSnapshots() {
+    snapshots = null;
+  }
+
   /**
    * Adds a snapshot to the list of snapshots.
    *

@@ -77,6 +77,12 @@ public interface Snapshotable<T> {
   void discardSnapshot(T snapshot);
 
   /**
+   * Discards all snapshots.<br>
+   * @see #discardSnapshot(Object)
+   */
+  void discardSnapshots();
+
+  /**
    * Creates a deep copy of this object.
    *
    * @return the copied object

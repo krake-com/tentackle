@@ -254,6 +254,11 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
   @Override
+  public void discardSnapshots() {
+    snapshots = null;
+  }
+
+  @Override
   public boolean isCopy() {
     return copied;
   }
