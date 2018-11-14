@@ -22,6 +22,7 @@ package org.tentackle.pdo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +46,8 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
 
   private final String name;                    // symbolic name of the index
-  private final Map<CacheKey<C>, T> cacheMap;   // map of cache indexes to PDOs
+  private final Map<CacheKey, T> cacheMap;      // map of cache indexes to PDOs
+  private final Set<CacheKey> missingSet;       // set of keys for missing PDOs (not in database)
 
   private PdoCache<T> cache;                    // the associated cache, null if not already added
   private long accessCount;                     // for statistics if fineLoggable
@@ -62,6 +64,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   public PdoCacheIndex(String name, boolean sorted)  {
     this.name = name;
     cacheMap  = sorted ? new TreeMap<>() : new HashMap<>();
+    missingSet = new HashSet<>();
   }
 
   /**
@@ -98,6 +101,40 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   public abstract C extract(T object);
 
 
+  /**
+   * Adds the key to the set of missing PDOs.
+   *
+   * @param ck the internal key
+   */
+  protected void addToMissing(CacheKey ck) {
+    missingSet.add(ck);
+  }
+
+  /**
+   * Removes the key from the set of missing PDOs.
+   *
+   * @param ck the internal key
+   */
+  protected void removeFromMissing(CacheKey ck) {
+    missingSet.remove(ck);
+  }
+
+  /**
+   * Returns whether key is known to belong to a missing PDO.
+   *
+   * @param ck the internal key
+   * @return true if known to be missing, false if unknown
+   */
+  protected boolean isMissing(CacheKey ck) {
+    return missingSet.contains(ck);
+  }
+
+  /**
+   * Clears all keys for missing PDOs.
+   */
+  protected void clearMissing() {
+    missingSet.clear();
+  }
 
   /**
    * maintain the link to the cache
@@ -144,6 +181,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected void clear()  {
     cacheMap.clear();
+    clearMissing();
   }
 
 
@@ -188,9 +226,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * (cause the ordering of the tree is corrupted in an unknown way).
    * This is done in PdoCache.
    */
-  private void assertKeyIsUnchanged(T object, CacheKey<C> ck) {
+  private void assertKeyIsUnchanged(T object, CacheKey ck) {
     // assert that key was not changed in object by application
-    CacheKey<C> objck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
+    CacheKey objck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
     if (objck.compareTo(ck) != 0) {
       throw new PdoCacheException(object,
                                   "modified key detected in " + this + " for " + object.toGenericString() +
@@ -209,20 +247,18 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
 
   /**
-   * get object from cache by key.
+   * Gets the PDO from cache by key.
    *
    * @param context the domain context
    * @param key the Comparable that uniquely identifies the object
    *
-   * @return the object or null if not in cache
+   * @return the result holding the PDO and the internal cache key
    */
-  protected T get(DomainContext context, C key) {
+  protected CacheResult get(DomainContext context, C key) {
 
-    context = cache.processContext(context);
-
-    CacheKey<C> ck;
+    CacheKey ck;
     try {
-      ck = new CacheKey<>(context, key);
+      ck = new CacheKey(cache.processContext(context), key);
     }
     catch (PdoCacheException e)  {
       // no need to invalidate the whole cache, but a hint to application prob
@@ -244,7 +280,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       assertKeyIsUnchanged(obj, ck);
     }
 
-    return obj;
+    return new CacheResult(obj, ck);
   }
 
 
@@ -257,7 +293,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected List<T> getObjects(boolean verifyKey) {
     List<T> col = new ArrayList<>(cacheMap.size());
     // check keys for not changed
-    for (Map.Entry<CacheKey<C>, T> entry: cacheMap.entrySet()) {
+    for (Map.Entry<CacheKey, T> entry: cacheMap.entrySet()) {
       T object = entry.getValue();
       if (verifyKey) {
         assertKeyIsUnchanged(object, entry.getKey());
@@ -291,22 +327,22 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     context = cache.processContext(context);
 
     if (cacheMap instanceof TreeMap<?, ?>) {
-      CacheKey<C> fromCk;
-      CacheKey<C> toCk;
+      CacheKey fromCk;
+      CacheKey toCk;
 
       try {
-        fromCk = new CacheKey<>(context, fromKey);
-        toCk = new CacheKey<>(context, toKey);
+        fromCk = new CacheKey(context, fromKey);
+        toCk = new CacheKey(context, toKey);
       }
       catch (PdoCacheException e) {
         logInvalidKey(e);
         return Collections.emptyList();
       }
 
-      Set<Map.Entry<CacheKey<C>, T>> entries = ((TreeMap<CacheKey<C>, T>) cacheMap).subMap(fromCk, toCk).entrySet();
+      Set<Map.Entry<CacheKey, T>> entries = ((TreeMap<CacheKey, T>) cacheMap).subMap(fromCk, toCk).entrySet();
       List<T> list = new ArrayList<>();    // entries.size() will iterate to count size. too expensive!
 
-      for (Map.Entry<CacheKey<C>, T> entry : entries) {
+      for (Map.Entry<CacheKey, T> entry : entries) {
         T object = entry.getValue();
         assertKeyIsUnchanged(object, entry.getKey());
         list.add(object);
@@ -366,7 +402,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
   protected boolean add(T object) {
     processPdo(object);
     try {
-      return cacheMap.put(new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object)), object) == null;
+      return cacheMap.put(new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object)), object) == null;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -386,9 +422,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected void addUnique(T object) {
     processPdo(object);
-    CacheKey<C> ck;
+    CacheKey ck;
     try {
-      ck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
+      ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -416,7 +452,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    */
   protected boolean remove(T object) {
     try {
-      return cacheMap.remove(new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object))) != null;
+      return cacheMap.remove(new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object))) != null;
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -432,9 +468,9 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
    * @param object the object to remove (never null)
    */
   protected void removeExisting(T object) {
-    CacheKey<C> ck;
+    CacheKey ck;
     try {
-      ck = new CacheKey<>(object.getPersistenceDelegate().getDomainContext(), extract(object));
+      ck = new CacheKey(object.getPersistenceDelegate().getDomainContext(), extract(object));
     }
     catch (PdoCacheException e)  {
       logInvalidKey(e);
@@ -466,20 +502,18 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
 
 
   /**
-   * key for the cache map.<br>
+   * The key for the cache map.<br>
    * We must compare C with domain context, because the same object may live in different
    * contexts. The domain context is essential, especially when it comes to different
    * Db (database connections)!
    * The CacheKey does not allow null context or null keys and throws PdoCacheException
    * if it detects such.
-   *
-   * @param <K> the {@link Comparable} type
    */
-  private class CacheKey<K extends Comparable<? super K>> implements Comparable<CacheKey<K>> {
+  public final class CacheKey implements Comparable<CacheKey> {
 
-    private DomainContext context;      // the context the object lives in
-    private int sessionInstanceNumber;  // to avoid memleaks if application changed the session of an object
-    private K key;                      // the comparable that uniquely identifies the object
+    private final DomainContext context;      // the context the object lives in
+    private final int sessionInstanceNumber;  // to avoid memleaks if application changed the session of an object
+    private final C key;                      // the comparable that uniquely identifies the object
 
     /**
      * Creates a cache key.
@@ -487,7 +521,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
      * @param context the domain context
      * @param key the unique key from the PDO
      */
-    private CacheKey(DomainContext context, K key) {
+    private CacheKey(DomainContext context, C key) {
       if (context == null) {
         throw new PdoCacheException("null context");
       }
@@ -499,9 +533,36 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       this.key = key;
     }
 
+    /**
+     * Gets the domain context.
+     *
+     * @return the domain context
+     */
+    public DomainContext getContext() {
+      return context;
+    }
+
+    /**
+     * Gets the session instance number to assert session was not changed.
+     *
+     * @return the session instance number
+     */
+    public int getSessionInstanceNumber() {
+      return sessionInstanceNumber;
+    }
+
+    /**
+     * Gets the PDO's key.
+     *
+     * @return the key
+     */
+    public C getKey() {
+      return key;
+    }
+
     @Override
-    public int compareTo (CacheKey<K> obj) {
-      // db first cause of getObjects( fromKey, toKey )
+    public int compareTo (CacheKey obj) {
+      // context/session first for getObjects(context, from, to)
       int rv = context.compareTo(obj.context);  // never null
       if (rv == 0)  {
         rv = key.compareTo(obj.key);    // never null
@@ -513,7 +574,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
     public boolean equals(Object obj) {
       if (obj != null && obj.getClass() == getClass()) {
         @SuppressWarnings("unchecked")
-        CacheKey<K> otherKey = (CacheKey<K>) obj;
+        CacheKey otherKey = (CacheKey) obj;
         return otherKey.context.equals(context) &&
                otherKey.key.equals(key);
       }
@@ -537,6 +598,39 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
         return str;
       }
       return "?";
+    }
+  }
+
+
+  /**
+   * The result from a cache query.
+   */
+  public final class CacheResult {
+
+    private final T pdo;
+    private final CacheKey cacheKey;
+
+    private CacheResult(T pdo, CacheKey cacheKey) {
+      this.pdo = pdo;
+      this.cacheKey = cacheKey;
+    }
+
+    /**
+     * Gets the PDO.
+     *
+     * @return the PDO if cached, null if not in cache
+     */
+    public T getPdo() {
+      return pdo;
+    }
+
+    /**
+     * Gets the cache key.
+     *
+     * @return the internal key
+     */
+    public CacheKey getCacheKey() {
+      return cacheKey;
     }
   }
 

@@ -302,6 +302,14 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     tableSerial = 0;  // no object in cache -> tableSerial = 0
   }
 
+  /**
+   * Clears the missing PDO info in all indexes.
+   */
+  private void clearMissing() {
+    for (PdoCacheIndex<T,?> index: indexes)  {
+      index.clearMissing();
+    }
+  }
 
 
   /**
@@ -331,6 +339,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
    * @param curSerial is the current table serial (from Modification-table), 0 = don't check
    */
   public synchronized void expireByExpirationInfo(List<IdSerialTuple> expireSet, long curSerial)  {
+
+    clearMissing();   // some PDO added, removed, whatever: invalidate missing PDO info
 
     // Build a set of IDs and check for gaps in tableSerial
     boolean gapFound = false;
@@ -809,7 +819,8 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
     if (enabled && allEnabled)  {
       // check if the object is in cache
       try {
-        pdo = index.get(context, key);
+        PdoCacheIndex<T,C>.CacheResult result = index.get(context, key);
+        pdo = result.getPdo();
         boolean expired = false;
 
         if (pdo != null && pdo.getPersistenceDelegate().isExpired())  {
@@ -825,10 +836,11 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
           pdo = null;   // treat as if not in cache
         }
 
-        if (pdo == null && loadIfMissing && (!isPreloading() || expired))  {
-          // not in cache and not preloaded or expired: get it from db
+        if (pdo == null && loadIfMissing && (!isPreloading() || expired) && !index.isMissing(result.getCacheKey()))  {
+          // not in cache and not preloaded or expired and not known to be missing: get it from db
           pdo = index.select(context, key);
           if (pdo != null) {
+            index.removeFromMissing(result.getCacheKey());
             if (pdo.getPersistenceDelegate().isCacheable()) {
               selectCount++;
               // add to all indexes
@@ -849,6 +861,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
             }
           }
           else {
+            index.addToMissing(result.getCacheKey());
             selectMissingCount++;
           }
         }
