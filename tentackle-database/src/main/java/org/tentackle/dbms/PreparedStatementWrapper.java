@@ -812,7 +812,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
    * The driver converts this to an SQL <code>BLOB</code> value when it sends it to the
    * database.
    * The implementation translates the Binary into an Inputstream and invokes
-   * {@link PreparedStatement#setBlob(int, java.io.InputStream, int)}.
+   * {@link PreparedStatement#setBlob(int, java.io.InputStream, long)}.
    *
    * @param p the first parameter is 1, the second is 2, ...
    * @param b the parameter value, null if the value should be set to SQL NULL

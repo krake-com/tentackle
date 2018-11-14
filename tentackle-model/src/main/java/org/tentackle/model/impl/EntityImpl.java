@@ -24,7 +24,6 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.CodeFactory;
-import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;

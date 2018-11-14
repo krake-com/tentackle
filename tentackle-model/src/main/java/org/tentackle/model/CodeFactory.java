@@ -57,7 +57,7 @@ public class CodeFactory {
    * @return the postfix, never null
    */
   public String createColumnPostfix(String javaType, int index) {
-    /**
+    /*
      * The first index 0 gets no postfix. The others start at "_2" (for second column),
      * "_3" and so forth.<br>
      * The postfix currently does not depend on the javatype
