@@ -88,6 +88,7 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
 
 
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     return Collections.EMPTY_LIST;    // validation is always ok

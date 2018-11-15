@@ -64,6 +64,7 @@ public class NotEqualImpl extends AbstractValidator<NotEqual> {
     return annotation.condition();
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
