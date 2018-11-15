@@ -77,11 +77,11 @@ public class PatternImpl extends AbstractValidator<Pattern> {
     Object object = validationContext.getObject();
 
     if (object == null) {
-      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+      return annotation.ignoreNulls() ? Collections.emptyList() :
           createFailedValidationResult("object is null", validationContext);
     }
     java.util.regex.Pattern pattern = getPattern(validationContext);
-    return pattern.matcher(object.toString()).matches() ? Collections.EMPTY_LIST :
+    return pattern.matcher(object.toString()).matches() ? Collections.emptyList() :
         createFailedValidationResult("'" + object + "' does not match '" + pattern.pattern() + "'", validationContext);
   }
 

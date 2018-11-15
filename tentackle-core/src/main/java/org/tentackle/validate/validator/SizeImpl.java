@@ -72,7 +72,7 @@ public class SizeImpl extends AbstractValidator<Size> {
     Object object = validationContext.getObject();
 
     if (object == null) {
-      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+      return annotation.ignoreNulls() ? Collections.emptyList() :
                                         createFailedValidationResult("object is null", validationContext);
     }
     else {
@@ -96,7 +96,7 @@ public class SizeImpl extends AbstractValidator<Size> {
 
       return size < annotation.min() || size > annotation.max() ?
           createFailedValidationResult("size = " + size + " (expected " + annotation.min() + " <= size <= " + annotation.max() + ")", validationContext) :
-          Collections.EMPTY_LIST;
+          Collections.emptyList();
     }
   }
 

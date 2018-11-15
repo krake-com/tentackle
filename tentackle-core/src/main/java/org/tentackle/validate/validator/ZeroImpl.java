@@ -76,7 +76,7 @@ public class ZeroImpl extends AbstractValidator<Zero> {
                         getValue(annotation.value(), validationContext);
 
     if (value == null) {
-      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+      return annotation.ignoreNulls() ? Collections.emptyList() :
           createFailedValidationResult("value is null", validationContext);
     }
 
@@ -103,7 +103,7 @@ public class ZeroImpl extends AbstractValidator<Zero> {
         zero = ((Number) value).longValue() == 0;
       }
 
-      return zero ? Collections.EMPTY_LIST : createFailedValidationResult("value is not zero", validationContext);
+      return zero ? Collections.emptyList() : createFailedValidationResult("value is not zero", validationContext);
     }
     else  {
       return createFailedValidationResult("not a number", validationContext);

@@ -88,7 +88,7 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
                         // replace with compound value which should be a script
                         getValue(annotation.value(), validationContext);
 
-    return value == null ? createFailedValidationResult("value is null", validationContext) : Collections.EMPTY_LIST;
+    return value == null ? createFailedValidationResult("value is null", validationContext) : Collections.emptyList();
   }
 
 }

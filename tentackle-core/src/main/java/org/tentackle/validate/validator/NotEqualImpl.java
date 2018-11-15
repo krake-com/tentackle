@@ -92,7 +92,7 @@ public class NotEqualImpl extends AbstractValidator<NotEqual> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " == " + valueStr, validationContext) : Collections.EMPTY_LIST;
+    return failed ? createFailedValidationResult(object + " == " + valueStr, validationContext) : Collections.emptyList();
   }
 
 }

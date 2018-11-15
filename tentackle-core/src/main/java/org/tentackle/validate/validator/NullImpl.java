@@ -71,7 +71,7 @@ public class NullImpl extends AbstractValidator<Null> {
                         // replace with compound value which should be a script
                         getValue(annotation.value(), validationContext);
 
-    return value != null ? createFailedValidationResult("value is not null", validationContext) : Collections.EMPTY_LIST;
+    return value != null ? createFailedValidationResult("value is not null", validationContext) : Collections.emptyList();
   }
 
 }

@@ -92,7 +92,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
                         getValue(annotation.value(), validationContext);
 
     if (value == null) {
-      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+      return annotation.ignoreNulls() ? Collections.emptyList() :
           createFailedValidationResult("value is null", validationContext);
     }
 
@@ -119,7 +119,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
         failed = ((Number) value).longValue() == 0;
       }
 
-      return failed ? createFailedValidationResult("value is zero", validationContext) : Collections.EMPTY_LIST;
+      return failed ? createFailedValidationResult("value is zero", validationContext) : Collections.emptyList();
     }
     else  {
       return createFailedValidationResult("not a number", validationContext);

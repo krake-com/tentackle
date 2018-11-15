@@ -59,11 +59,11 @@ public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectV
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();
     if (object == null) {
-      return Collections.EMPTY_LIST;
+      return Collections.emptyList();
     }
     if (object instanceof TestObject) {
       if (((TestObject)object).percent % 2 == 0) {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
       }
       return createFailedValidationResult("percent is not even", validationContext);
     }

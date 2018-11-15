@@ -92,7 +92,7 @@ public class LessImpl extends AbstractValidator<Less> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " >= " + valueStr, validationContext) : Collections.EMPTY_LIST;
+    return failed ? createFailedValidationResult(object + " >= " + valueStr, validationContext) : Collections.emptyList();
   }
 
 }

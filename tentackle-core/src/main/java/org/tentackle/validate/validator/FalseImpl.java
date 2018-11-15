@@ -73,7 +73,7 @@ public class FalseImpl extends AbstractValidator<False> {
                         // replace with compound value which should be a script
                         getValue(annotation.value(), Boolean.class, validationContext);
 
-    return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.EMPTY_LIST :
+    return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.emptyList() :
            createFailedValidationResult("object is not false", validationContext);
   }
 

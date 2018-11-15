@@ -92,7 +92,7 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " < " + valueStr, validationContext) : Collections.EMPTY_LIST;
+    return failed ? createFailedValidationResult(object + " < " + valueStr, validationContext) : Collections.emptyList();
   }
 
 }

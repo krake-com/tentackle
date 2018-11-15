@@ -72,7 +72,7 @@ public class TrueImpl extends AbstractValidator<True> {
                         // replace with compound value which should be a script
                         getValue(annotation.value(), Boolean.class, validationContext);
 
-    return value == null && annotation.ignoreNulls() || Boolean.TRUE.equals(value) ? Collections.EMPTY_LIST :
+    return value == null && annotation.ignoreNulls() || Boolean.TRUE.equals(value) ? Collections.emptyList() :
         createFailedValidationResult("object is not true", validationContext);
   }
 

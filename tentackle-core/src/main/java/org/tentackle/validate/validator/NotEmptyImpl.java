@@ -109,7 +109,7 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());
     }
 
-    return empty ? createFailedValidationResult("object is empty", validationContext) : Collections.EMPTY_LIST;
+    return empty ? createFailedValidationResult("object is empty", validationContext) : Collections.emptyList();
   }
 
 }

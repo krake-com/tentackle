@@ -90,7 +90,7 @@ public class ChangeableImpl extends AbstractValidator<Changeable> implements Cha
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    return Collections.EMPTY_LIST;    // validation is always ok
+    return Collections.emptyList();    // validation is always ok
   }
 
 }
