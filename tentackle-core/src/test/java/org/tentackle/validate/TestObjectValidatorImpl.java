@@ -55,7 +55,6 @@ public class TestObjectValidatorImpl extends AbstractObjectValidator<TestObjectV
     return annotation.scope();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();

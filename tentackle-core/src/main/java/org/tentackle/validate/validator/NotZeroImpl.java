@@ -83,7 +83,6 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
     return isConditionValid(validationContext) && !validate(validationContext).isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object value = annotation.value().isEmpty() ?

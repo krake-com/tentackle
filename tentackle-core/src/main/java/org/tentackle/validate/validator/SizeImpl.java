@@ -67,7 +67,6 @@ public class SizeImpl extends AbstractValidator<Size> {
     return annotation.condition();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();

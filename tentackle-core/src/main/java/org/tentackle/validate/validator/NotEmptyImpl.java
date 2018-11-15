@@ -83,7 +83,6 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
     return isConditionValid(validationContext) && !validate(validationContext).isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();

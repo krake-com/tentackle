@@ -63,7 +63,6 @@ public class NullImpl extends AbstractValidator<Null> {
     return annotation.condition();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object value = annotation.value().isEmpty() ?

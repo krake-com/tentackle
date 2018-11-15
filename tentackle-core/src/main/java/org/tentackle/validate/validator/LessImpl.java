@@ -64,7 +64,6 @@ public class LessImpl extends AbstractValidator<Less> {
     return annotation.condition();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 

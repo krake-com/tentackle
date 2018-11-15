@@ -64,7 +64,6 @@ public class EqualImpl extends AbstractValidator<Equal> {
     return annotation.condition();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
