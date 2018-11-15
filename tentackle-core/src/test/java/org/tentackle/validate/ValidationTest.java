@@ -63,7 +63,7 @@ public class ValidationTest {
     Assert.assertEquals(validators.size(), 9);
 
 
-    object.text = null;
+    object.text = "no match";
     object.percent = 200;
 
     AllScope allScopeImpl = ValidationScopeFactory.getInstance().getAllScope();
