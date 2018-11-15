@@ -969,7 +969,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     // optionally configure the created delegate
     if (configArgs != null && configArgs.length > 0) {
       Method configureMethod = delegateImplClass.getMethod("configureDelegate", Object[].class);
-      configureMethod.invoke(delegate, configArgs);
+      configureMethod.invoke(delegate, new Object[] { configArgs });
     }
     return delegate;
   }
