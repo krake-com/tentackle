@@ -113,4 +113,11 @@ public @interface Size {
    */
   int max() default Integer.MAX_VALUE;
 
+  /**
+   * Determines whether null matches any size.
+   *
+   * @return true if ignore nulls (default), false to treat nulls as non-matching
+   */
+  boolean ignoreNulls() default true;
+
 }

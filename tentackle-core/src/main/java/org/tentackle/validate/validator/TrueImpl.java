@@ -19,12 +19,13 @@
 
 package org.tentackle.validate.validator;
 
-import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
-import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of the {@link True}-validator.
@@ -70,20 +71,9 @@ public class TrueImpl extends AbstractValidator<True> {
                         validationContext.getObject() :
                         // replace with compound value which should be a script
                         getValue(annotation.value(), Boolean.class, validationContext);
-    if (value == null) {
-      return null;
-    }
-    if (value instanceof Boolean) {
-      if (!((Boolean) value)) {
-        return createFailedValidationResult("object is false", validationContext);
-      }
-      else  {
-        return null;
-      }
-    }
-    else  {
-      throw new ValidationRuntimeException("not a Boolean");
-    }
+
+    return value == null && annotation.ignoreNulls() || Boolean.TRUE.equals(value) ? Collections.EMPTY_LIST :
+        createFailedValidationResult("object is not true", validationContext);
   }
 
 }

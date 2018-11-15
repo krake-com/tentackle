@@ -21,6 +21,7 @@ package org.tentackle.validate.validator;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.common.BMoney;
 import org.tentackle.validate.MandatoryBindingEvaluator;
@@ -79,7 +80,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
 
   @Override
   public boolean isMandatory(ValidationContext validationContext) {
-    return isConditionValid(validationContext) && validate(validationContext) != null;
+    return isConditionValid(validationContext) && !validate(validationContext).isEmpty();
   }
 
   @Override
@@ -91,12 +92,13 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
                         getValue(annotation.value(), validationContext);
 
     if (value == null) {
-      return createFailedValidationResult("value is null", validationContext);
+      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+          createFailedValidationResult("value is null", validationContext);
     }
 
     if (value instanceof Number) {
 
-      boolean failed;
+      final boolean failed;
 
       if (value instanceof BMoney) {
         failed = ((BMoney) value).isZero();
@@ -117,10 +119,7 @@ public class NotZeroImpl extends AbstractValidator<NotZero> implements Mandatory
         failed = ((Number) value).longValue() == 0;
       }
 
-      if (failed) {
-        return createFailedValidationResult("value is zero", validationContext);
-      }
-      return null;
+      return failed ? createFailedValidationResult("value is zero", validationContext) : Collections.EMPTY_LIST;
     }
     else  {
       return createFailedValidationResult("not a number", validationContext);

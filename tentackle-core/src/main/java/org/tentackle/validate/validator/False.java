@@ -107,4 +107,11 @@ public @interface False {
    */
   String value() default "";
 
+  /**
+   * If either the object or the value to compare with is null, the result is valid.
+   *
+   * @return true if ignore nulls (default), false to treat nulls as "not false"
+   */
+  boolean ignoreNulls() default true;
+
 }

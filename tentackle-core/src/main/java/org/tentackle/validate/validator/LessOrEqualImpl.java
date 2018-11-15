@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -66,7 +67,7 @@ public class LessOrEqualImpl extends AbstractValidator<LessOrEqual> {
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
-    boolean failed;
+    final boolean failed;
     
     String valueStr = annotation.value();
     Comparable<Object> object = assertComparable(validationContext.getObject());
@@ -74,25 +75,24 @@ public class LessOrEqualImpl extends AbstractValidator<LessOrEqual> {
 
     if (object == null) {
       // object is always logically less or equal than value whether ignoreNulls or not
-      return null;
-    }
-
-    if (value == null) {
-      if (annotation.ignoreNulls()) {
-        return null;
-      }
-      failed = true;
+      failed = false;
     }
     else {
-      try {
-        failed = object.compareTo(value) > 0;
+      if (value == null) {
+        // object != null is always greater, except if ignore nulls
+        failed = !annotation.ignoreNulls();
       }
-      catch (RuntimeException rex) {
-        throw new ValidationRuntimeException("comparison failed", rex);
+      else {
+        try {
+          failed = object.compareTo(value) > 0;
+        }
+        catch (RuntimeException rex) {
+          throw new ValidationRuntimeException("comparison failed", rex);
+        }
       }
     }
 
-    return failed ? createFailedValidationResult(object + " > " + valueStr, validationContext) : null;
+    return failed ? createFailedValidationResult(object + " > " + valueStr, validationContext) : Collections.EMPTY_LIST;
   }
 
 }

@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -66,7 +67,7 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
-    boolean failed;
+    final boolean failed;
 
     String valueStr = annotation.value();
     Comparable<Object> object = assertComparable(validationContext.getObject());
@@ -74,15 +75,12 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
 
     if (value == null) {
       // object is always logically greater or equal than value whether ignoreNulls or not
-      return null;
+      failed = false;
     }
     else {
       if (object == null) {
-        if (annotation.ignoreNulls()) {
-          return null;
-        }
-        // value != null is greater
-        failed = true;
+        // value != null is always greater, except if ignore nulls
+        failed = !annotation.ignoreNulls();
       }
       else {
         try {
@@ -94,7 +92,7 @@ public class GreaterOrEqualImpl extends AbstractValidator<GreaterOrEqual> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " < " + valueStr, validationContext) : null;
+    return failed ? createFailedValidationResult(object + " < " + valueStr, validationContext) : Collections.EMPTY_LIST;
   }
 
 }

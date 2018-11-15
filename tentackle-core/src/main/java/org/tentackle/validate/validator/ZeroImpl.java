@@ -21,6 +21,7 @@ package org.tentackle.validate.validator;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.common.BMoney;
 import org.tentackle.validate.ValidationContext;
@@ -75,36 +76,34 @@ public class ZeroImpl extends AbstractValidator<Zero> {
                         getValue(annotation.value(), validationContext);
 
     if (value == null) {
-      return createFailedValidationResult("value is null", validationContext);
+      return annotation.ignoreNulls() ? Collections.EMPTY_LIST :
+          createFailedValidationResult("value is null", validationContext);
     }
 
     if (value instanceof Number) {
 
-      boolean ok;
+      final boolean zero;
 
       if (value instanceof BMoney) {
-        ok = ((BMoney) value).isZero();
+        zero = ((BMoney) value).isZero();
       }
       else if (value instanceof BigInteger) {
-        ok = value.equals(BigInteger.ZERO);
+        zero = value.equals(BigInteger.ZERO);
       }
       else if (value instanceof BigDecimal) {
-        ok = value.equals(BigDecimal.ZERO);
+        zero = value.equals(BigDecimal.ZERO);
       }
       else if (value instanceof Double) {
-        ok = ((Double) value) == 0.0d;
+        zero = ((Double) value) == 0.0d;
       }
       else if (value instanceof Float) {
-        ok = ((Float) value) == 0.0f;
+        zero = ((Float) value) == 0.0f;
       }
       else {
-        ok = ((Number) value).longValue() == 0;
+        zero = ((Number) value).longValue() == 0;
       }
 
-      if (!ok) {
-        return createFailedValidationResult("value is not zero", validationContext);
-      }
-      return null;
+      return zero ? Collections.EMPTY_LIST : createFailedValidationResult("value is not zero", validationContext);
     }
     else  {
       return createFailedValidationResult("not a number", validationContext);

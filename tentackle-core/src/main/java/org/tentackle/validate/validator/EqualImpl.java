@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -66,24 +67,18 @@ public class EqualImpl extends AbstractValidator<Equal> {
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
 
-    boolean failed;
+    final boolean failed;
 
     String valueStr = annotation.value();
     Object object = validationContext.getObject();
     Object value = getValue(valueStr, validationContext);
 
     if (value == null) {
-      if (annotation.ignoreNulls()) {
-        return null;
-      }
-      failed = object != null;
+      failed = !annotation.ignoreNulls() && object != null;
     }
     else {
       if (object == null) {
-        if (annotation.ignoreNulls()) {
-          return null;
-        }
-        failed = true;
+        failed = !annotation.ignoreNulls();
       }
       else {
         try {
@@ -95,7 +90,7 @@ public class EqualImpl extends AbstractValidator<Equal> {
       }
     }
 
-    return failed ? createFailedValidationResult(object + " != " + valueStr, validationContext) : null;
+    return failed ? createFailedValidationResult(object + " != " + valueStr, validationContext) : Collections.EMPTY_LIST;
   }
 
 }

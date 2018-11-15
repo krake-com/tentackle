@@ -21,6 +21,7 @@ package org.tentackle.validate.validator;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.tentackle.validate.MandatoryBindingEvaluator;
@@ -79,7 +80,7 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
 
   @Override
   public boolean isMandatory(ValidationContext validationContext) {
-    return isConditionValid(validationContext) && validate(validationContext) != null;
+    return isConditionValid(validationContext) && !validate(validationContext).isEmpty();
   }
 
   @Override
@@ -90,7 +91,8 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
       return createFailedValidationResult("object is null", validationContext);
     }
 
-    boolean empty;
+    final boolean empty;
+
     if (object instanceof String) {
       empty = ((String) object).isEmpty();
     }
@@ -107,10 +109,7 @@ public class NotEmptyImpl extends AbstractValidator<Size> implements MandatoryBi
       throw new ValidationRuntimeException("unsupported type: " + object.getClass().getName());
     }
 
-    if (empty) {
-      return createFailedValidationResult("object is empty", validationContext);
-    }
-    return null;
+    return empty ? createFailedValidationResult("object is empty", validationContext) : Collections.EMPTY_LIST;
   }
 
 }

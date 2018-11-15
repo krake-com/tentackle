@@ -173,7 +173,7 @@ public interface Validator {
    * Performs the validation.
    *
    * @param validationContext the validation context
-   * @return the validation results, null or empty if valid and no messages
+   * @return immutable list of validation results, empty if valid and no messages
    */
   List<? extends ValidationResult> validate(ValidationContext validationContext);
 

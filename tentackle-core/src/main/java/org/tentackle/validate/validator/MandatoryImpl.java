@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
@@ -89,7 +90,7 @@ public class MandatoryImpl extends AbstractValidator<Mandatory> implements Manda
 
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
-    return null;    // validation is always ok
+    return Collections.EMPTY_LIST;    // validation is always ok
   }
 
 }

@@ -23,6 +23,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -348,15 +349,13 @@ public abstract class AbstractValidator<T extends Annotation> implements Validat
    *
    * @param message the fail message
    * @param validationContext the validation context
-   * @return the results
+   * @return immutable list of the result
    */
   protected List<? extends ValidationResult> createFailedValidationResult(String message, ValidationContext validationContext) {
     String msg = createMessage(message, validationContext);
     ValidationResult result = ValidationUtilities.getInstance().createFailedValidationResult(
             this, validationContext, msg == null || msg.isEmpty() ? message : msg);
-    List<ValidationResult> results = new ArrayList<>(1);
-    results.add(result);
-    return results;
+    return List.of(result);
   }
 
 

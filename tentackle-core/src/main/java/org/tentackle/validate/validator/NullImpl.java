@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -70,12 +71,7 @@ public class NullImpl extends AbstractValidator<Null> {
                         // replace with compound value which should be a script
                         getValue(annotation.value(), validationContext);
 
-    if (value == null) {
-      return null;
-    }
-    else  {
-      return createFailedValidationResult("value is not null", validationContext);
-    }
+    return value != null ? createFailedValidationResult("value is not null", validationContext) : Collections.EMPTY_LIST;
   }
 
 }

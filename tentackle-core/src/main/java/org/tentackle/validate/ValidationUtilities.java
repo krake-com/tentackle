@@ -385,7 +385,7 @@ public class ValidationUtilities {
           inTest) {
         // condition and scope applies
         List<? extends ValidationResult> results = validator.validate(validationContext);
-        if (results != null) {
+        if (results != null && !results.isEmpty()) {  // should never be null, but who knows...
           allResults.addAll(results);
         }
       }
@@ -438,7 +438,7 @@ public class ValidationUtilities {
           // condition and scope applies
           try {
             List<? extends ValidationResult> results = validator.validate(validationContext);
-            if (results != null) {
+            if (results != null && !results.isEmpty()) {    // should never be null, but who knows...
               allResults.addAll(results);
             }
           }

@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationResult;
@@ -71,20 +72,9 @@ public class FalseImpl extends AbstractValidator<False> {
                         object :
                         // replace with compound value which should be a script
                         getValue(annotation.value(), Boolean.class, validationContext);
-    if (value == null) {
-      return null;
-    }
-    if (value instanceof Boolean) {
-      if (((Boolean) value)) {
-        return createFailedValidationResult("object is true", validationContext);
-      }
-      else  {
-        return null;
-      }
-    }
-    else  {
-      throw new ValidationRuntimeException("not a Boolean");
-    }
+
+    return value == null && annotation.ignoreNulls() || Boolean.FALSE.equals(value) ? Collections.EMPTY_LIST :
+           createFailedValidationResult("object is not false", validationContext);
   }
 
 }

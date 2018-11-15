@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.validate.MandatoryBindingEvaluator;
 import org.tentackle.validate.ValidationContext;
@@ -76,7 +77,7 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
 
   @Override
   public boolean isMandatory(ValidationContext validationContext) {
-    return isConditionValid(validationContext) && validate(validationContext) != null;
+    return isConditionValid(validationContext) && !validate(validationContext).isEmpty();
   }
 
   @Override
@@ -87,12 +88,7 @@ public class NotNullImpl extends AbstractValidator<NotNull> implements Mandatory
                         // replace with compound value which should be a script
                         getValue(annotation.value(), validationContext);
 
-    if (value != null) {
-      return null;
-    }
-    else  {
-      return createFailedValidationResult("value is null", validationContext);
-    }
+    return value == null ? createFailedValidationResult("value is null", validationContext) : Collections.EMPTY_LIST;
   }
 
 }

@@ -19,6 +19,7 @@
 
 package org.tentackle.validate.validator;
 
+import java.util.Collections;
 import java.util.List;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.ScriptVariable;
@@ -74,19 +75,19 @@ public class PatternImpl extends AbstractValidator<Pattern> {
   @Override
   public List<? extends ValidationResult> validate(ValidationContext validationContext) {
     Object object = validationContext.getObject();
+
+    final boolean matches;
+
     if (object == null) {
-      return null;
+      matches = !annotation.ignoreNulls();
     }
-    if (object instanceof String) {
-      String value = annotation.value();
-      if (getPattern(validationContext).matcher((String) object).matches()) {
-        return null;    // okay
-      }
-      return createFailedValidationResult("'" + object + "' does not match '" + value + "'", validationContext);
+    else {
+      matches = getPattern(validationContext).matcher(object.toString()).matches();
     }
-    else  {
-      throw new ValidationRuntimeException("not a String");
-    }
+
+    return matches ?
+        Collections.EMPTY_LIST :
+        createFailedValidationResult("'" + object + "' does not match '" + annotation.value() + "'", validationContext);
   }
 
 

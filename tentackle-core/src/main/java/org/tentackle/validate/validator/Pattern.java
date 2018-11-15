@@ -109,4 +109,11 @@ public @interface Pattern {
    */
   String value();
 
+  /**
+   * Determines whether null matches any pattern.
+   *
+   * @return true if ignore nulls (default), false to treat nulls as non-matching
+   */
+  boolean ignoreNulls() default true;
+
 }
