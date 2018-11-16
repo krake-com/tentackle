@@ -48,9 +48,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   private static final List<String> FORMATS = Collections.singletonList("");
 
-
-  private DomainContext context;    // session local domain context
-  private boolean contextLoaded;    // true if context is loaded once
+  private static boolean listenerRegistered;   // true if modification listener registered for bundle factory
 
   /**
    * Returns whether properties should be tried if no stored bundle found.
@@ -69,6 +67,10 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   public static void setFallbackToProperties(boolean fallbackToProperties) {
     StoredBundleControl.fallbackToProperties = fallbackToProperties;
   }
+
+
+
+  private DomainContext context;    // session local domain context
 
   @Override
   public DomainContext getDomainContext() {
@@ -149,31 +151,36 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
     synchronized (this) {
-      if (!contextLoaded) {
-        contextLoaded = true;
+      if (context == null) {
         Session session = Session.getCurrentSession();
-        if (session == null) {    // thread-local session must be set!
-          LOGGER.warning("no thread-local session -> fallback to resource bundles");
-          return null;
-        }
-        context = Pdo.createDomainContext();    // thread-local domain context
+        if (session != null) {    // thread-local session must be set!
+          context = Pdo.createDomainContext();    // thread-local domain context
 
-        // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
-        // application start
-        ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
-          @Override
-          public void dataChanged(ModificationEvent ev) {
-            BundleFactory.getInstance().clearCache();
-            // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
-            // only the changed or added bundles are effectively reloaded from the database.
+          if (!listenerRegistered) {
+            // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
+            // application start
+            ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
+              @Override
+              public void dataChanged(ModificationEvent ev) {
+                BundleFactory.getInstance().clearCache();
+                // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
+                // only the changed or added bundles are effectively reloaded from the database.
+              }
+            });
+            listenerRegistered = true;
+            LOGGER.info("bundle factory modification listener registered");
           }
-        });
+        }
       }
+      // try again later...
     }
-    StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
-    if (bundle != null) {
-      LOGGER.info("stored bundle {0} loaded", bundle);
-      return new StoredResourceBundle(bundle);
+
+    if (context != null) {
+      StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
+      if (bundle != null) {
+        LOGGER.info("stored bundle {0} loaded", bundle);
+        return new StoredResourceBundle(bundle);
+      }
     }
     return null;
   }
