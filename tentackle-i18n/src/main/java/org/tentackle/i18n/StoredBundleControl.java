@@ -50,6 +50,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
 
   private DomainContext context;    // session local domain context
+  private boolean contextLoaded;    // true if context is loaded once
 
   /**
    * Returns whether properties should be tried if no stored bundle found.
@@ -129,7 +130,7 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    */
   protected StoredBundle.StoredBundleUDK createUDK(String baseName, Locale locale) {
     String bundleName = toBundleName(baseName, locale);
-    String resourceName = toResourceName(bundleName, "");
+    String resourceName = toResourceName(bundleName, "").replace('/', '.');
     String name = resourceName.substring(0, resourceName.length() - 1);    // cut trailing dot
     String loc  = null;
     int ndx = name.indexOf('_');
@@ -148,12 +149,14 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
     synchronized (this) {
-      if (context == null) {
+      if (!contextLoaded) {
+        contextLoaded = true;
         Session session = Session.getCurrentSession();
-        if (session == null) {
-          return null;    // fallback to Resource Bundle
+        if (session == null) {    // thread-local session must be set!
+          LOGGER.warning("no thread-local session -> fallback to resource bundles");
+          return null;
         }
-        context = Pdo.createDomainContext(session);
+        context = Pdo.createDomainContext();    // thread-local domain context
 
         // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
         // application start
