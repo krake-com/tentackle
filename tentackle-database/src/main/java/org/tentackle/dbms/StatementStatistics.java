@@ -269,30 +269,38 @@ public class StatementStatistics implements Comparable<StatementStatistics> {
 
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder(">SQL-Stats: ");
-    buf.append(statResult.getMinDuration().millisToString()).
-        append(' ').
-        append(statResult.getMaxDuration().millisToString()).
-        append(' ').
-        append(statResult.getTotalDuration().millisToString()).
-        append(" ms / ").
-        append(statResult.getCount()).
-        append(" x ").
-        append(sql == null ? "<null>" : sql);
-    if (parameters != null && !parameters.isEmpty()) {
-      for (Integer pos: new TreeSet<>(parameters.keySet())) {
-        buf.append(", ").
-            append(pos).
-            append("='");
-        Object value = parameters.get(pos);
-        buf.append(value == null ? "<null>" : value.toString()).
-            append("'");
+    StringBuilder buf = new StringBuilder();
+    if (statResult.getMinDuration() != null &&
+        statResult.getMaxDuration() != null &&
+        statResult.getTotalDuration() != null) {
+
+      buf.append(">SQL-Stats: ").
+          append(statResult.getMinDuration().millisToString()).
+          append(' ').
+          append(statResult.getMaxDuration().millisToString()).
+          append(' ').
+          append(statResult.getTotalDuration().millisToString()).
+          append(" ms / ").
+          append(statResult.getCount()).
+          append(" x ").
+          append(sql == null ? "<null>" : sql);
+
+      if (parameters != null && !parameters.isEmpty()) {
+        for (Integer pos : new TreeSet<>(parameters.keySet())) {
+          buf.append(", ").
+              append(pos).
+              append("='");
+          Object value = parameters.get(pos);
+          buf.append(value == null ? "<null>" : value.toString()).
+              append("'");
+        }
       }
-    }
-    if (txName != null) {
-      buf.append(" in [").
-          append(txName).
-          append(']');
+
+      if (txName != null) {
+        buf.append(" in [").
+            append(txName).
+            append(']');
+      }
     }
     return buf.toString();
   }
