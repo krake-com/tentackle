@@ -19,14 +19,16 @@
 
 package org.tentackle.fx;
 
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
+
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.reflect.ReflectionHelper;
+
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Delegate implementing FxComponent.
@@ -283,7 +285,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       // adjust cursor if length changed
       int diff = text.length() - t.getText().length();
       t.setText(text);
-      if (diff != 0) {
+      if (diff != 0 && text.length() > 0) {   // empty field is pathological since pos must be > 0
         int pos = t.getCaretPosition() + diff;
         // align for sure
         if (pos <= 0) {
