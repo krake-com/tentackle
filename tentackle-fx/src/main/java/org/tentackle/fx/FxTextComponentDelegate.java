@@ -285,7 +285,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       // adjust cursor if length changed
       int diff = text.length() - t.getText().length();
       t.setText(text);
-      if (diff != 0) {
+      if (diff != 0 && text.length() > 0) {   // empty field is pathological since pos must be > 0
         int pos = t.getCaretPosition() + diff;
         // align for sure
         if (pos <= 0) {
