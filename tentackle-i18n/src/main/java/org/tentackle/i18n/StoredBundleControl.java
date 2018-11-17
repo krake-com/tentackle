@@ -133,7 +133,8 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
   protected StoredBundle.StoredBundleUDK createUDK(String baseName, Locale locale) {
     String bundleName = toBundleName(baseName, locale);
     String resourceName = toResourceName(bundleName, "").replace('/', '.');
-    String name = resourceName.substring(0, resourceName.length() - 1);    // cut trailing dot
+    // cut trailing dot, if any
+    String name = resourceName.endsWith(".") ? resourceName.substring(0, resourceName.length() - 1) : resourceName;
     String loc  = null;
     int ndx = name.indexOf('_');
     if (ndx >= 0) {
