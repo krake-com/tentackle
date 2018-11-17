@@ -14,49 +14,35 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  */
 
-package org.tentackle.script.nashorn;
+package org.tentackle.validate.validator;
 
-import org.tentackle.common.Service;
-import org.tentackle.script.AbstractJSRScriptingLanguage;
-import org.tentackle.script.Script;
+import org.tentackle.misc.CompoundValue;
+import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptingLanguage;
+import org.tentackle.validate.ValidationUtilities;
 
 /**
- * The groovy scripting language.
+ * Converts a validator message script.
  *
  * @author harald
  */
-@Service(ScriptingLanguage.class)
-public class JavaScriptLanguage extends AbstractJSRScriptingLanguage {
+public abstract class AbstractScriptValidationMessageConverter implements ScriptConverter {
 
-  /** the primary language name. */
-  public static final String NAME = "JavaScript";
-
-
-  private static final String[] ABBREVIATIONS = new String[] { NAME, "js", "nashorn" };
-
-  /**
-   * Creates the groovy language.
-   */
-  public JavaScriptLanguage() {
-    super("text/javascript", Naming.MIMETYPE);
-  }
+  private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
 
   @Override
-  public String getName() {
-    return NAME;
-  }
-
-  @Override
-  public String[] getAbbreviations() {
-    return ABBREVIATIONS;
-  }
-
-  @Override
-  public Script createScript(boolean cached) {
-    return new JavaScript(this);
+  public String convert(String code, ScriptingLanguage language) {
+    int ndx = code.indexOf("@(");
+    if (ndx > 0) {
+      return code.substring(0, ndx) + VALIDATION_UTILITIES_NAME + ".getInstance().format(" +
+              language.createLocalVariableReference(CompoundValue.VAR_OBJECT) +
+              "," +
+              code.substring(ndx + 2);
+    }
+    return code;
   }
 
 }

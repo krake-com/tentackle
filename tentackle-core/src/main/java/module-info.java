@@ -38,7 +38,6 @@ module org.tentackle.core {
   exports org.tentackle.prefs;
   exports org.tentackle.reflect;
   exports org.tentackle.script;
-  exports org.tentackle.script.nashorn;
   exports org.tentackle.task;
   exports org.tentackle.validate;
   exports org.tentackle.validate.scope;

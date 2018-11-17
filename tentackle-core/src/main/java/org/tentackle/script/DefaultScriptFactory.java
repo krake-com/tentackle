@@ -26,7 +26,6 @@ import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
-import org.tentackle.script.nashorn.JavaScriptLanguage;
 
 
 /**
@@ -86,7 +85,6 @@ public class DefaultScriptFactory implements ScriptFactory {
             LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
           }
         }
-        setDefaultLanguage(JavaScriptLanguage.NAME);
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
              NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
