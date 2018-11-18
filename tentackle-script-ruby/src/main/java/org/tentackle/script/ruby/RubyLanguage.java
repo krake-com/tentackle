@@ -34,7 +34,7 @@ public class RubyLanguage extends AbstractScriptingLanguage {
   /** the primary language name. */
   public static final String NAME = "Ruby";
 
-  private static final String[] abbreviations = new String[] { NAME, "jruby", "rb" };
+  private static final String[] abbreviations = new String[] { NAME, "jruby", "rb", "ruby" };
 
 
   @Override

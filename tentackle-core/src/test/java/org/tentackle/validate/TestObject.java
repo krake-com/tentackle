@@ -36,7 +36,6 @@ import org.tentackle.validate.validator.True;
 @TestObjectValidator
 public class TestObject {
 
-
   @NotZero
   public DMoney amount = new DMoney("1", 2);
 
@@ -46,19 +45,24 @@ public class TestObject {
 
   @LessOrEqual("100")
   @GreaterOrEqual("0")
-  @True(condition="{ object.text != null }",
-        value="{ object.percent % 10 == 0 }",
-        message="{ value + ' not divideable by 10' }")
+  @True(condition="$textValid", value="$percentModulo10", message="not divideable by 10")
+  // we cannot use scripts in core since nashorn was removed (see CompoundValue<Scriptinglanguage>Test)
   public int percent;
-
 
   @Greater("100")
   @Greater("50")
   @Greater("25")
   public int value;
 
-
   public String getPattern() {
     return "bl.*";
+  }
+
+  public boolean isTextValid() {
+    return text != null;
+  }
+
+  public boolean isPercentModulo10() {
+    return percent % 10 == 0;
   }
 }
