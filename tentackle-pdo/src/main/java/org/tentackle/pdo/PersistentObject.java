@@ -593,7 +593,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * Checks whether this object is token locked (editedBy != 0) and
    * the lock is not expired.
    *
-   * @return true if locked by another user
+   * @return true if locked by any user
    */
   boolean isTokenLocked();
 
