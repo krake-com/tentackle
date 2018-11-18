@@ -77,4 +77,8 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
     return currentRange;
   }
 
+  @Override
+  public boolean isSlave() {
+    return me().getLowWaterMark() > 0 && me().getRequestSize() > 0;   // the uplink URL is checked in validator
+  }
 }

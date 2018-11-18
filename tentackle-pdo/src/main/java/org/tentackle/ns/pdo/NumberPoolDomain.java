@@ -38,4 +38,11 @@ public interface NumberPoolDomain extends DomainObject<NumberPool> {
    */
   NumberRange getCurrentRange();
 
+  /**
+   * Returns whether this pool is a slave pool and gets its ranges from an uplink.
+   *
+   * @return true if slave
+   */
+  boolean isSlave();
+
 }
