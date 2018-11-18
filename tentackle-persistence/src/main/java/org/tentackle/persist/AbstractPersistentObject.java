@@ -3750,6 +3750,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             setTableSerial(newTableSerial);
           }
           int ndx = 0;
+          setEditedBy(userId);
           st.setLong(++ndx, userId);
           if (withTableSerial) {
             st.setLong(++ndx, getTableSerial());
