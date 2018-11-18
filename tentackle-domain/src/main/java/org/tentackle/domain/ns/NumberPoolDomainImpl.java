@@ -19,13 +19,14 @@
 
 package org.tentackle.domain.ns;
 
-import java.util.Iterator;
-import org.tentackle.ns.NumberSourceEmptyException;
 import org.tentackle.domain.AbstractDomainObject;
+import org.tentackle.ns.NumberSourceEmptyException;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberPoolDomain;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.pdo.DomainObjectService;
+
+import java.util.Iterator;
 
 /**
  * NumberPool domain implementation.
@@ -77,4 +78,8 @@ public class NumberPoolDomainImpl extends AbstractDomainObject<NumberPool, Numbe
     return currentRange;
   }
 
+  @Override
+  public boolean isSlave() {
+    return me().getLowWaterMark() > 0 && me().getRequestSize() > 0;   // the uplink URL is checked in validator
+  }
 }

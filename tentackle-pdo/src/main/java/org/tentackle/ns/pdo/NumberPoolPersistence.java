@@ -264,7 +264,7 @@ public interface NumberPoolPersistence extends PersistentObject<NumberPool> {
    * @return uplink configuration (optional)
    */
   @Persistent("uplink configuration (optional)")
-  @NotNull(condition="{object.lowWaterMark > 0 && object.requestSize > 0}")
+  @NotNull(condition="$slave")
   String getUplink();
 
   /**

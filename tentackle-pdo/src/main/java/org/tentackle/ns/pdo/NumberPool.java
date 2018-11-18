@@ -53,7 +53,7 @@ import org.tentackle.session.TableName;
  * ## validations
  * name: @NotNull
  *
- * uplink: @NotNull(condition="{object.lowWaterMark > 0 && object.requestSize > 0}")
+ * uplink: @NotNull(condition="$slave")
  *
  * ## relations
  *
