@@ -779,6 +779,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @Override
   public void close() throws RemoteException {
+    cleanup(false);
     closeDb(false);
   }
 
