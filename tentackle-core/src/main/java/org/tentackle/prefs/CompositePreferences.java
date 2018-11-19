@@ -41,20 +41,29 @@ import java.util.prefs.BackingStoreException;
 public abstract class CompositePreferences {
 
 
-  private final PersistedPreferences userPrefs;        // preferences for current user
-  private final PersistedPreferences systemPrefs;      // system default prefs
+  private final boolean systemOnly;               // true if refer to system-preferences only
+  private PersistedPreferences userPrefs;         // preferences for current user
+  private PersistedPreferences systemPrefs;       // system default prefs
 
 
   /**
    * Creates composite preferences.
    *
-   * @param systemOnly true if refer to system-preferences only, false = user space overwrites system space
+   * @param systemOnly true if refer to system-preferences only, false = user space overrides system space
    */
   public CompositePreferences(boolean systemOnly) {
-    systemPrefs = PersistedPreferencesFactory.getInstance().systemNodeForPackage(this.getClass());
-    userPrefs = systemOnly ? null : PersistedPreferencesFactory.getInstance().userNodeForPackage(this.getClass());
+    this.systemOnly = systemOnly;
   }
 
+
+  /**
+   * Returns whether preferences are system only or user space overrides system space.
+   *
+   * @return true if system, false user first with system default
+   */
+  public boolean isSystemOnly() {
+    return systemOnly;
+  }
 
   /**
    * Gets the user peferences.
@@ -62,6 +71,9 @@ public abstract class CompositePreferences {
    * @return the user-scope preferences, null if systemOnly
    */
   public PersistedPreferences getUserPrefs()  {
+    if (!systemOnly && userPrefs == null) {
+      userPrefs = PersistedPreferencesFactory.getInstance().userNodeForPackage(this.getClass());
+    }
     return userPrefs;
   }
 
@@ -71,6 +83,9 @@ public abstract class CompositePreferences {
    * @return the system-scope preferences
    */
   public PersistedPreferences getSystemPrefs()  {
+    if (systemPrefs == null) {
+      systemPrefs = PersistedPreferencesFactory.getInstance().systemNodeForPackage(this.getClass());
+    }
     return systemPrefs;
   }
 
@@ -81,10 +96,10 @@ public abstract class CompositePreferences {
    * @throws BackingStoreException if failed
    */
   public void flush() throws BackingStoreException {
-    if (userPrefs != null) {
-      userPrefs.flush();
+    if (!systemOnly) {
+      getUserPrefs().flush();
     }
-    systemPrefs.flush();
+    getSystemPrefs().flush();
   }
 
 
@@ -94,10 +109,10 @@ public abstract class CompositePreferences {
    * @throws BackingStoreException if failed
    */
   public void sync() throws BackingStoreException {
-    if (userPrefs != null) {
-      userPrefs.sync();
+    if (!systemOnly) {
+      getUserPrefs().sync();
     }
-    systemPrefs.sync();
+    getSystemPrefs().sync();
   }
 
 
@@ -110,11 +125,11 @@ public abstract class CompositePreferences {
    */
   public String getString(String key) {
     String val = null;
-    if (userPrefs != null) {
-      val = userPrefs.get(key, null);
+    if (!systemOnly) {
+      val = getUserPrefs().get(key, null);
     }
     if (val == null) {
-      val = systemPrefs.get(key, null);
+      val = getSystemPrefs().get(key, null);
     }
     return val;
   }
@@ -141,20 +156,20 @@ public abstract class CompositePreferences {
    * @param val the value
    */
   public void setString(String key, String val) {
-    if (userPrefs != null)  {
-      if (val == null || Objects.equals(val, systemPrefs.get(key, null))) {
-        userPrefs.remove(key);
+    if (!systemOnly)  {
+      if (val == null || Objects.equals(val, getSystemPrefs().get(key, null))) {
+        getUserPrefs().remove(key);
       }
       else  {
-        userPrefs.put(key, val);
+        getUserPrefs().put(key, val);
       }
     }
     else  {
       if (val == null)  {
-        systemPrefs.remove(key);
+        getSystemPrefs().remove(key);
       }
       else  {
-        systemPrefs.put(key, val);
+        getSystemPrefs().put(key, val);
       }
     }
   }
@@ -351,11 +366,11 @@ public abstract class CompositePreferences {
    */
   public byte[] getByteArray(String key) {
     byte[] val = null;
-    if (userPrefs != null) {
-      val = userPrefs.getByteArray(key, null);
+    if (!systemOnly) {
+      val = getUserPrefs().getByteArray(key, null);
     }
     if (val == null) {
-      val = systemPrefs.getByteArray(key, null);
+      val = getSystemPrefs().getByteArray(key, null);
     }
     return val;
   }
@@ -382,20 +397,20 @@ public abstract class CompositePreferences {
    * @param val the values
    */
   public void setByteArray(String key, byte[] val) {
-    if (userPrefs != null)  {
-      if (val == null || areByteArraysEqual(val, systemPrefs.getByteArray(key, null))) {
-        userPrefs.remove(key);
+    if (!systemOnly)  {
+      if (val == null || areByteArraysEqual(val, getSystemPrefs().getByteArray(key, null))) {
+        getUserPrefs().remove(key);
       }
       else  {
-        userPrefs.putByteArray(key, val);
+        getUserPrefs().putByteArray(key, val);
       }
     }
     else  {
       if (val == null)  {
-        systemPrefs.remove(key);
+        getSystemPrefs().remove(key);
       }
       else  {
-        systemPrefs.putByteArray(key, val);
+        getSystemPrefs().putByteArray(key, val);
       }
     }
   }
