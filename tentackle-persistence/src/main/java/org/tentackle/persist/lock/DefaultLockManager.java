@@ -144,59 +144,57 @@ public class DefaultLockManager implements LockManager {
   public <T extends PersistentDomainObject<T>> void update(T pdo) {
     if (enabled) {
       synchronized (lockMap) {
-        IdentifiableKey<T> key = new IdentifiableKey<>(pdo);
-        DbTokenLock lock = lockMap.get(key);
-        boolean locked = pdo.isTokenLocked();
-        if (lock == null && locked) {
-          Db db = (Db) pdo.getSession();
-          db.assertTxRunning();
-          lock = createTokenLock(db);
-          try {
-            lock.setId(pdo.getId());
-            lock.setSerial(1);
-            lock.setPdoClassId(pdo.getClassId());
-            lock.setLockedBy(pdo.getEditedBy());
-            lock.setLockedSince(pdo.getEditedSince());
-            lock.setLockExpiry(pdo.getEditedExpiry());
-            lock.insertPlain();
-            lockMap.put(key, lock);
+        Db db = (Db) pdo.getSession();
+        db.transaction("update lock", () -> {
+          IdentifiableKey<T> key = new IdentifiableKey<>(pdo);
+          DbTokenLock lock = lockMap.get(key);
+          boolean locked = pdo.isTokenLocked();
+          if (lock == null && locked) {
+            lock = createTokenLock(db);
+            try {
+              lock.setId(pdo.getId());
+              lock.setSerial(1);
+              lock.setPdoClassId(pdo.getClassId());
+              lock.setLockedBy(pdo.getEditedBy());
+              lock.setLockedSince(pdo.getEditedSince());
+              lock.setLockExpiry(pdo.getEditedExpiry());
+              lock.insertPlain();
+              lockMap.put(key, lock);
+            }
+            finally {
+              lock.setSession(null);    // remove link to session to allow GC
+            }
           }
-          finally {
-            lock.setSession(null);    // remove link to session to allow GC
-          }
-        }
-        else if (lock != null) {
-          if (locked) {
-            if (lock.getLockedBy() != pdo.getEditedBy() ||
-                !Objects.equals(lock.getLockedSince(), pdo.getEditedSince()) ||
-                !Objects.equals(lock.getLockExpiry(), pdo.getEditedExpiry())) {
-              Db db = (Db) pdo.getSession();
-              db.assertTxRunning();
+          else if (lock != null) {
+            if (locked) {
+              if (lock.getLockedBy() != pdo.getEditedBy() ||
+                  !Objects.equals(lock.getLockedSince(), pdo.getEditedSince()) ||
+                  !Objects.equals(lock.getLockExpiry(), pdo.getEditedExpiry())) {
+                lock.setSession(db);
+                try {
+                  lock.setLockedBy(pdo.getEditedBy());
+                  lock.setLockedSince(pdo.getEditedSince());
+                  lock.setLockExpiry(pdo.getEditedExpiry());
+                  lock.updatePlain();
+                }
+                finally {
+                  lock.setSession(null);    // remove link to session to allow GC
+                }
+              }
+            }
+            else {
               lock.setSession(db);
               try {
-                lock.setLockedBy(pdo.getEditedBy());
-                lock.setLockedSince(pdo.getEditedSince());
-                lock.setLockExpiry(pdo.getEditedExpiry());
-                lock.updatePlain();
+                lock.deleteObject();
+                lockMap.remove(key);
               }
               finally {
                 lock.setSession(null);    // remove link to session to allow GC
               }
             }
           }
-          else {
-            Db db = (Db) pdo.getSession();
-            db.assertTxRunning();
-            lock.setSession(db);
-            try {
-              lock.deleteObject();
-              lockMap.remove(key);
-            }
-            finally {
-              lock.setSession(null);    // remove link to session to allow GC
-            }
-          }
-        }
+          return null;
+        });
       }
     }
   }
