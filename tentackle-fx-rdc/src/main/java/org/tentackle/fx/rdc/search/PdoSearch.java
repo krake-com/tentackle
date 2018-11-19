@@ -74,6 +74,7 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -135,6 +136,28 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private boolean singleSelectMode;             // true if in (modal) single selection mode
   private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
   private T createdPdo;                         // != null if new PDO has been created in modal mode
+  private Consumer<T> doubleClickHandler;       // handler to be invoked on double-click in non-modal mode
+
+
+  /**
+   * Gets the double click handler.
+   *
+   * @return the handler, null if default handler
+   */
+  public Consumer<T> getDoubleClickHandler() {
+    return doubleClickHandler;
+  }
+
+  /**
+   * Sets the double-click handler.<br>
+   * If the search dialog is non-modal and the user double-clicks on a row of the table view,
+   * this handler will be invoked instead of the default (showing the PDO editor, if any provided).
+   *
+   * @param doubleClickHandler the handler, null to clear
+   */
+  public void setDoubleClickHandler(Consumer<T> doubleClickHandler) {
+    this.doubleClickHandler = doubleClickHandler;
+  }
 
 
   /**
@@ -197,7 +220,10 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
             close();
           }
           else {
-            if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
+            if (doubleClickHandler != null) {
+              doubleClickHandler.accept(firstPdo);
+            }
+            else if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
               Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), crud -> {
                 pdoCrud = crud;
                 // event filter will removed when stage is hidden (see RdcUtilities)
