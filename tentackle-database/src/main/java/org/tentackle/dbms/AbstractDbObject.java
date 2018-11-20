@@ -1655,29 +1655,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Copies an object from one db connection to another.
-   *
-   * @param destDb the destination db
-   * @param plain is true to use insertPlain (recommended), else insert
-   */
-  public void copyToDb(Db destDb, boolean plain) {
-    Db oldDb = getSession();
-    setSession(destDb);
-    try {
-      if (plain) {
-        insertPlain();
-      }
-      else  {
-        insertObject();
-      }
-    }
-    finally {
-      setSession(oldDb);
-    }
-  }
-
-
-  /**
    * Gets the number of columns for this entity class.<br>
    * The method does a dummy select if not known so far.
    *
@@ -1697,7 +1674,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     }
     return classVariables.columnCount;
   }
-
 
 
   /**

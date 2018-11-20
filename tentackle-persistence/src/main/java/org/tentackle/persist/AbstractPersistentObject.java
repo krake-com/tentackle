@@ -182,7 +182,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   /** delete all in context **/
   public static final String TX_DELETE_ALL_IN_CONTEXT   = "delete all in context";
   /** transfer edited by **/
-  public static final String TX_TRANSFER_TOKENLOCK      = "transfer token lock";
+  public static final String TX_TRANSFER_TOKENLOCK      = "transfer lock";
+  /** update tokenlock **/
+  public static final String TX_UPDATE_TOKENLOCK        = "update lock";
+  /** update tokenlock only **/
+  public static final String TX_UPDATE_TOKENLOCK_ONLY   = "update lock only";
 
 
 
@@ -3542,9 +3546,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         throw rex;
       }
     }
-
     else  {
-
       assertTokenLockProvided();
       assertNotCached();
       assertPersistable();
@@ -3552,47 +3554,57 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertWritePermission();
 
       if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+        long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
+        try {
+          PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
+                                                             this::createUpdateTokenLockSql);
+          long newUser = tokenExpiry != null ? userId : 0;
 
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockStatementId,
-                                                           this::createUpdateTokenLockSql);
+          st.setLong(1, newUser);
+          st.setTimestamp(2, curTime);
+          st.setTimestamp(3, tokenExpiry);
+          st.setLong(4, getId());
+          st.setLong(5, userId);
+          st.setTimestamp(6, curTime);
 
-        long newUser = tokenExpiry != null ? userId : 0;
-
-        st.setLong(1, newUser);
-        st.setTimestamp(2, curTime);
-        st.setTimestamp(3, tokenExpiry);
-        st.setLong(4, getId());
-        st.setLong(5, userId);
-        st.setTimestamp(6, curTime);
-
-        if (st.executeUpdate() == 1) {
-          // update was successful
-          setEditedBy(newUser);
-          setEditedSince(curTime);
-          setEditedExpiry(tokenExpiry);
-          LockManager.getInstance().update(pdo);
-        }
-        else {
-          // no success: another user is currently holding the token
-          st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, this::createSelectTokenLockSql);
-          st.setLong(1, getId());
-          try (ResultSetWrapper rs = st.executeQuery()) {
-            if (rs.next()) {
-              setEditedBy(rs.getLong(CN_EDITEDBY));
-              setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
-              setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
-              throw new LockException(db, new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
-            }
-            else {
-              throw new NotFoundException(this, "could not retrieve token lock", -1);
+          if (st.executeUpdate() == 1) {
+            // update was successful
+            setEditedBy(newUser);
+            setEditedSince(curTime);
+            setEditedExpiry(tokenExpiry);
+            LockManager.getInstance().update(pdo);
+          }
+          else {
+            // no success: another user is currently holding the token
+            st = getPreparedStatement(getClassVariables().selectTokenLockStatementId, this::createSelectTokenLockSql);
+            st.setLong(1, getId());
+            try (ResultSetWrapper rs = st.executeQuery()) {
+              if (rs.next()) {
+                setEditedBy(rs.getLong(CN_EDITEDBY));
+                setEditedSince(rs.getTimestamp(CN_EDITEDSINCE));
+                setEditedExpiry(rs.getTimestamp(CN_EDITEDEXPIRY));
+                throw new LockException(db, new TokenLockInfo(getEditedBy(), getEditedSince(), getEditedExpiry()));
+              }
+              else {
+                throw new NotFoundException(this, "could not retrieve token lock", -1);
+              }
             }
           }
+        }
+        catch (PersistenceException px) {
+          setPersistable(false);
+          db.rollback(txVoucher);
+          px.updateDbObject(this);
+          throw px;
+        }
+        catch (RuntimeException ex) {
+          setPersistable(false);
+          db.rollback(txVoucher);
+          throw new PersistenceException(this, ex);
         }
       }
     }
   }
-
-
 
 
   /**
@@ -3649,15 +3661,29 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       assertRootEntity();
       assertWritePermission();
 
-      if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
-        PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
-                                                           this::createUpdateTokenLockOnlySql);
-        st.setLong(1, getEditedBy());
-        st.setTimestamp(2, getEditedSince());
-        st.setTimestamp(3, getEditedExpiry());
-        st.setLong(4, getId());
-        assertThisRowAffected(st.executeUpdate());
-        LockManager.getInstance().update(pdo);
+      long txVoucher = db.begin(TX_UPDATE_TOKENLOCK);
+      try {
+        if (db.isPersistenceOperationAllowed(this, ModificationLog.UPDATE)) {
+          PreparedStatementWrapper st = getPreparedStatement(getClassVariables().updateTokenLockOnlyStatementId,
+              this::createUpdateTokenLockOnlySql);
+          st.setLong(1, getEditedBy());
+          st.setTimestamp(2, getEditedSince());
+          st.setTimestamp(3, getEditedExpiry());
+          st.setLong(4, getId());
+          assertThisRowAffected(st.executeUpdate());
+          LockManager.getInstance().update(pdo);
+        }
+      }
+      catch (PersistenceException px) {
+        setPersistable(false);
+        db.rollback(txVoucher);
+        px.updateDbObject(this);
+        throw px;
+      }
+      catch (RuntimeException ex) {
+        setPersistable(false);
+        db.rollback(txVoucher);
+        throw new PersistenceException(this, ex);
       }
     }
   }
@@ -3676,7 +3702,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
         throw PersistenceException.createFromRemoteException(this, e);
       }
     }
-
     else  {
       assertNotCached();
       assertPersistable();

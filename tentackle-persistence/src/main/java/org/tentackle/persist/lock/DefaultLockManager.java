@@ -18,12 +18,6 @@
 
 package org.tentackle.persist.lock;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
@@ -38,6 +32,13 @@ import org.tentackle.persist.TokenLock;
 import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Default implementation of {@link LockManager}.
