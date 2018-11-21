@@ -20,6 +20,40 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.FileHelper;
+import org.tentackle.daemon.Scavenger;
+import org.tentackle.dbms.rmi.DbRemoteDelegate;
+import org.tentackle.dbms.rmi.RemoteDbConnection;
+import org.tentackle.dbms.rmi.RemoteDbSession;
+import org.tentackle.dbms.rmi.RemoteDelegate;
+import org.tentackle.io.RMISocketFactoryFactory;
+import org.tentackle.io.RMISocketFactoryType;
+import org.tentackle.io.ReconnectionPolicy;
+import org.tentackle.io.Reconnector;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.Holder;
+import org.tentackle.misc.Provider;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.BackendConfiguration;
+import org.tentackle.session.DefaultSessionTaskDispatcher;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.RemoteSession;
+import org.tentackle.session.SavepointHandle;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionCloseHandler;
+import org.tentackle.session.SessionClosedException;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionPool;
+import org.tentackle.session.SessionTaskDispatcher;
+import org.tentackle.session.SessionUtilities;
+import org.tentackle.session.VersionInfoIncompatibleException;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendException;
+import org.tentackle.sql.BackendInfo;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.Cleaner;
@@ -50,39 +84,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import org.tentackle.common.Constants;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.FileHelper;
-import org.tentackle.daemon.Scavenger;
-import org.tentackle.dbms.rmi.DbRemoteDelegate;
-import org.tentackle.dbms.rmi.RemoteDbConnection;
-import org.tentackle.dbms.rmi.RemoteDbSession;
-import org.tentackle.dbms.rmi.RemoteDelegate;
-import org.tentackle.io.ReconnectionPolicy;
-import org.tentackle.io.Reconnector;
-import org.tentackle.io.RMISocketFactoryFactory;
-import org.tentackle.io.RMISocketFactoryType;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.Holder;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.BackendConfiguration;
-import org.tentackle.session.DefaultSessionTaskDispatcher;
-import org.tentackle.session.LoginFailedException;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.RemoteSession;
-import org.tentackle.session.SavepointHandle;
-import org.tentackle.session.Session;
-import org.tentackle.session.SessionCloseHandler;
-import org.tentackle.session.SessionClosedException;
-import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionPool;
-import org.tentackle.session.SessionTaskDispatcher;
-import org.tentackle.session.SessionUtilities;
-import org.tentackle.session.VersionInfoIncompatibleException;
-import org.tentackle.sql.Backend;
-import org.tentackle.sql.BackendException;
-import org.tentackle.sql.BackendInfo;
-import org.tentackle.misc.Provider;
 
 
 /**
@@ -2119,9 +2120,8 @@ public class Db implements Session, Cloneable {
    * Invocations of this method will be logged as a warning.
    *
    * @param cause the cause of the rollback, may be null
-   * @return true if rolled back
    */
-  public boolean rollbackImmediately(Throwable cause) {
+  public void rollbackImmediately(Throwable cause) {
 
     assertNotRemote();
 
@@ -2147,12 +2147,10 @@ public class Db implements Session, Cloneable {
         // remember the txLevel for pending rollback()s, if any will arive from the application
         immediatelyRolledBack = currentTxLevel;
         forceDetached();
-        return true;
       }
       else  {
         // not within a transaction: cleanup forced
         forceDetached();
-        return false;
       }
     }
     catch (RuntimeException rex) {
@@ -2197,7 +2195,6 @@ public class Db implements Session, Cloneable {
       finally {
         handleExceptionForScavenger(rex);
       }
-      return transaction != null;
     }
   }
 
