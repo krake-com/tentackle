@@ -1415,7 +1415,7 @@ public class Db implements Session, Cloneable {
       commit(txVoucher);
       return rv;
     }
-    catch (Exception ex) {    // Exception ok here because of type E
+    catch (Throwable ex) {
       try {
         if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
           // log only if cause is a PersistenceException
