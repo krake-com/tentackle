@@ -1365,7 +1365,7 @@ public class Db implements Session, Cloneable {
       commit(txVoucher);
       return rv;
     }
-    catch (RuntimeException ex) {
+    catch (Throwable ex) {
       try {
         if (txVoucher != 0 && ExceptionHelper.extractException(PersistenceException.class, true, ex) != null) {
           // log only if cause is a PersistenceException
