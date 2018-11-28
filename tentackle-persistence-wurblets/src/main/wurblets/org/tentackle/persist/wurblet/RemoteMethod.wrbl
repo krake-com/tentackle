@@ -316,7 +316,6 @@ For more options, see {\@link DbModelWurblet}.
   }
 @{to}@
         @(imethod)@.@(methodName)@(@(iparms)@);
-        return;
 @[
       }
 
