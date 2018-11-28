@@ -12,6 +12,8 @@ import ${persistenceImplPackage}.rmi.${operationInterface}RemoteDelegate;
 import java.rmi.RemoteException;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentOperationService;
+import org.tentackle.persist.AbstractPersistentOperation;
+import org.tentackle.persist.PersistentOperationClassVariables;
 import org.tentackle.pdo.Operation;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
