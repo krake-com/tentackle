@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,15 +19,14 @@
 
 package org.tentackle.persist.rmi;
 
-import java.rmi.RemoteException;
 import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegateImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
 import org.tentackle.persist.AbstractPersistentOperation;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.session.PersistenceException;
 
+import java.rmi.RemoteException;
 
 
 /**
@@ -38,19 +37,30 @@ import org.tentackle.session.PersistenceException;
  * @author harald
  */
 public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>>
-       extends AbstractDbOperationRemoteDelegateImpl<P>
-       implements AbstractPersistentOperationRemoteDelegate<T,P> {
+    extends AbstractDbOperationRemoteDelegateImpl<P>
+    implements AbstractPersistentOperationRemoteDelegate<T,P> {
+
+  /**
+   * The PDO interface class.
+   */
+  protected final Class<T> opClass;
+
+  /**
+   * Operation with a default domain context associated to the delegate's session.
+   */
+  protected T operation;
 
 
   /**
    * Creates a delegate on the serverSession socket.
    *
    * @param serverSession the RMI serverSession
-   * @param clazz the subclass of DbObject
-   * @throws java.rmi.RemoteException
+   * @param clazz the class of the persistence implementation
+   * @param opClass the operation class
    */
-  public AbstractPersistentOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz) throws RemoteException {
+  public AbstractPersistentOperationRemoteDelegateImpl(RemoteDbSessionImpl serverSession, Class<P> clazz, Class<T> opClass) throws RemoteException {
     super(serverSession, clazz);
+    this.opClass = opClass;
   }
 
 
@@ -60,21 +70,26 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    * minimizes object construction.
    */
   @Override
+  @SuppressWarnings("unchecked")
   public void initialize() {
-    /**
-     * Try to set a default contextDb.
-     * This will fail in apps that extend the contextdb, but is useful for other apps.
+    /*
+     * Try to set a default context.
+     * This will fail in apps that extend the domain context, but is useful for other apps.
+     * We ignore any thrown exception safely.
      */
     try {
-      dbOperation = newInstance(Pdo.createDomainContext(getSession()));
+      operation = newInstance(Pdo.createDomainContext(getSession()));
     }
-    catch (Exception e) {
-      /**
-       * Application requires an extended contextdb.
-       * Try construction with a session only.
+    catch (RuntimeException e) {
+      /*
+       * Application requires extended contextdb.
+       * Leave the dbObject as it is for simple methods.
+       * In all other cases, the application must pass the context via the remote method
+       * and set the context explicitly.
        */
-      dbOperation = newInstance();
+      operation = newInstance(null);    // create without domain context
     }
+    dbOperation = (P) operation.getPersistenceDelegate();
   }
 
 
@@ -83,28 +98,25 @@ public class AbstractPersistentOperationRemoteDelegateImpl<T extends Operation<T
    *
    * @param context the domain context
    */
-  protected void setContextDb(DomainContext context) {
-    // set the db in the contextDb first as this will be copied to the object below
-    context.setSession(getSession());   // db in contextDb is transient, so we must set it here
+  protected void setDomainContext(DomainContext context) {
+    // set the session in the context first as this will be copied to the object below
+    context.setSession(getSession());   // session in context is transient, so we must set it here
     dbOperation.setDomainContext(context);
   }
 
 
   /**
    * Creates a new instance of the required class in the given context
-   * for methods that return a new object.
+   * for methods that return a new operation.
    *
    * @param context the domain context
-   * @return the created object
+   * @return the created operation
    */
-  protected P newInstance(DomainContext context) {
-    try {
+  protected T newInstance(DomainContext context) {
+    if (context != null) {
       context.setSession(getSession());
-      return getServicedClass().getConstructor(DomainContext.class).newInstance(context);
     }
-    catch (Exception e) {
-      throw new PersistenceException("creating object for class '" + getServicedClass() + "' in failed", e);
-    }
+    return context == null ? Pdo.createOperation(opClass, getSession()) : Pdo.createOperation(opClass, context);
   }
 
 }
