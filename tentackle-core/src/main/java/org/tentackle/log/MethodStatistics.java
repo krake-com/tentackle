@@ -78,37 +78,39 @@ public class MethodStatistics {
    * @param clear true if clear statistics after dump
    */
   public synchronized void logStatistics(String title, Logger.Level level, String tag, boolean clear) {
-    if (LOGGER.isLoggable(level)) {
-      try {
-        StringBuilder buf = new StringBuilder();
-        if (title == null) {
-          title = "Invocation statistics:";
-        }
-        buf.append(title);
-        for (Map.Entry<MethodStatisticsKey,StatisticsResult> entry: stats.entrySet()) {
-          StatisticsResult result = entry.getValue();
-          MethodStatisticsKey key = entry.getKey();
-          buf.append('\n').append(tag).
-              append(result.getMinDuration().millisToString()).append(' ').
-              append(result.getMaxDuration().millisToString()).append(' ').
-              append(result.getTotalDuration().millisToString()).
-              append(" ms / ").append(result.getCount()).append(" x ").
-              append(ReflectionHelper.methodToString(key.getMethod()));
-          if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
-            buf.append(" for ").append(ReflectionHelper.getClassBaseName(key.getServicedClass()));
+    if (!stats.isEmpty()) {
+      if (LOGGER.isLoggable(level)) {
+        try {
+          StringBuilder buf = new StringBuilder();
+          if (title == null) {
+            title = "Invocation statistics:";
           }
+          buf.append(title);
+          for (Map.Entry<MethodStatisticsKey, StatisticsResult> entry : stats.entrySet()) {
+            StatisticsResult result = entry.getValue();
+            MethodStatisticsKey key = entry.getKey();
+            buf.append('\n').append(tag).
+                append(result.getMinDuration().millisToString()).append(' ').
+                append(result.getMaxDuration().millisToString()).append(' ').
+                append(result.getTotalDuration().millisToString()).
+                append(" ms / ").append(result.getCount()).append(" x ").
+                append(ReflectionHelper.methodToString(key.getMethod()));
+            if (!key.getServicedClass().equals(key.getMethod().getDeclaringClass())) {
+              buf.append(" for ").append(ReflectionHelper.getClassBaseName(key.getServicedClass()));
+            }
+          }
+          if (clear) {
+            buf.append("\n    (cleared)");
+          }
+          LOGGER.log(level, buf.toString(), null);
         }
-        if (clear) {
-          buf.append("\n    (cleared)");
+        catch (RuntimeException rex) {
+          LOGGER.severe("cannot log method statistics", rex);
         }
-        LOGGER.log(level, buf.toString(), null);
       }
-      catch (RuntimeException rex) {
-        LOGGER.severe("cannot log method statistics", rex);
+      if (clear) {
+        stats.clear();
       }
-    }
-    if (clear) {
-      stats.clear();
     }
   }
 
