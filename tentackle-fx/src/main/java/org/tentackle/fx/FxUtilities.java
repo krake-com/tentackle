@@ -59,15 +59,18 @@ import javafx.stage.Window;
 import javafx.util.Callback;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.bind.Binding;
 import org.tentackle.bind.BindingException;
 import org.tentackle.bind.BindingMember;
 import org.tentackle.common.Constants;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.common.StringHelper;
+import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.component.FxTextArea;
 import org.tentackle.fx.component.Note;
 import org.tentackle.fx.table.TableColumnConfiguration;
+import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.ConcurrencyHelper;
 
@@ -264,12 +267,30 @@ public class FxUtilities {
     if (stage != null) {
       buf.append("stage '").append(stage.getTitle()).append("'");
     }
-    buf.append('\n');
     while (node != null) {
-      buf.append(node).append(" @ [").append(node.getLayoutX()).append("/").append(node.getLayoutY()).append("]\n");
+      buf.append("\n    ");
+      if (node instanceof FxContainer) {
+        FxController controller = ((FxContainer) node).getController();
+        if (controller != null) {
+          buf.append(controller.getClass().getName()).append(": ");
+        }
+      }
+      else if (node instanceof FxTableView) {
+        TableConfiguration tableConfiguration = ((FxTableView) node).getConfiguration();
+        if (tableConfiguration != null) {
+          buf.append(tableConfiguration.getName()).append(": ");
+        }
+      }
+      buf.append(node).append(" @ [").append(node.getLayoutX()).append("/").append(node.getLayoutY()).append(']');
+      if (node instanceof FxComponent) {
+        Binding binding = ((FxComponent) node).getBinding();
+        if (binding != null) {
+          buf.append(" bound to ").append(binding.getMember());
+        }
+      }
       node = node.getParent();
     }
-    buf.append("<<<");
+    buf.append("\n<<<");
     return buf.toString();
   }
 
