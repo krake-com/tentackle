@@ -18,18 +18,10 @@
 
 package org.tentackle.maven.i18n;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.StringTokenizer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
+
 import org.tentackle.buildsupport.BundleHandler;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ServiceFactory;
@@ -44,6 +36,16 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.StringTokenizer;
 
 
 /**
@@ -166,6 +168,7 @@ public abstract class AbstractI18nMojo extends AbstractTentackleMojo implements 
 
     try {
       session.open();
+      session.makeCurrent();
       context = Pdo.createDomainContext(session);
 
       ModificationTracker pdoTracker = ModificationTracker.getInstance();   // create tracker but don't start the thread
