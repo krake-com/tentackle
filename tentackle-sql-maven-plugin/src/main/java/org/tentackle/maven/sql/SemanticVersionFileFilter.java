@@ -41,7 +41,7 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
   public boolean isValid(String version, File hintFile) {
     // directory holds the version
     File dir = hintFile.getParentFile();
-    if (dir != null) {
+    if (dir != null && version != null) {
       String name = dir.getName();
       int ndx = name.indexOf('-');    // cut -SNAPSHOT and things like that
       if (ndx > 0) {
