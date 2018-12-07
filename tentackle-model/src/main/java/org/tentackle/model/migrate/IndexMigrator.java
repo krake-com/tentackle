@@ -155,24 +155,16 @@ public class IndexMigrator {
           modelFilter = "";
         }
         else {
-          modelFilter = modelFilter.trim().toUpperCase();
-          if (!modelFilter.startsWith("(")) {
-            modelFilter = "(" + modelFilter + ")";
-          }
-          modelFilter = modelFilter.replace(" ", "");
+          modelFilter = modelFilter.toUpperCase().replace(" ", "");
         }
         String currentFilter = indexMetaData.getFilterCondition();
         if (StringHelper.isAllWhitespace(currentFilter)) {
           currentFilter = "";
         }
         else {
-          currentFilter = currentFilter.trim().toUpperCase();
-          if (!currentFilter.startsWith("(")) {
-            currentFilter = "(" + currentFilter + ")";
-          }
-          currentFilter = currentFilter.replace(" ", "");
+          currentFilter = currentFilter.toUpperCase().replace(" ", "");
         }
-        changed = !modelFilter.equals(currentFilter);
+        changed = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
       }
       if (!changed) {
         // check index columns
@@ -220,6 +212,67 @@ public class IndexMigrator {
     return backend.sqlDropIndex(indexMetaData.getTableMetaData().getSchemaName(),
                                 indexMetaData.getTableMetaData().getTableName(),
                                 indexMetaData.getIndexName());
+  }
+
+
+  /**
+   * Compares two expression strings ignoring extra matching parenthesis.<br>
+   * The backend or the user may add extra parenthesis which would cause comparison to fail.
+   *
+   * @param s1 the first string
+   * @param s2 the second string
+   * @return true if s1 equals s2
+   */
+  private boolean equalsIgnoreMatchingParenthesis(String s1, String s2) {
+    int ndx1 = 0;
+    int ndx2 = 0;
+    int pending1 = 0;   // > 0 pending open parenthesis in s1
+    int pending2 = 0;   // > 0 pending open parentheses in s2
+
+    while (ndx1 < s1.length() || ndx2 < s2.length()) {    // one of both still pending chars
+      char c1 = ndx1 < s1.length() ? s1.charAt(ndx1) : 0;
+      char c2 = ndx2 < s2.length() ? s2.charAt(ndx2) : 0;
+      if (c1 != c2) {
+        if (c1 == '(') {
+          pending1++;
+          ndx1++;
+          continue;
+        }
+        if (c1 == ')') {
+          if (pending1 > 0) {
+            pending1--;
+            ndx1++;
+            continue;
+          }
+          break;
+        }
+
+        if (c2 == '(') {
+          pending2++;
+          ndx2++;
+          continue;
+        }
+        if (c2 == ')') {
+          if (pending2 > 0) {
+            pending2--;
+            ndx2++;
+            continue;
+          }
+          break;
+        }
+
+        break;
+      }
+
+      if (ndx1 < s1.length()) {
+        ndx1++;
+      }
+      if (ndx2 < s2.length()) {
+        ndx2++;
+      }
+    }
+
+    return ndx1 == s1.length() && ndx2 == s2.length() && pending1 == 0 && pending2 == 0;
   }
 
 }
