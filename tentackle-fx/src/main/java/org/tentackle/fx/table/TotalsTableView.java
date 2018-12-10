@@ -49,15 +49,20 @@ public class TotalsTableView<S> extends FxTableView<S> {
    */
   private final ListChangeListener<TableColumn<S, ?>> columnListener
           = (ListChangeListener.Change<? extends TableColumn<S, ?>> c) -> {
+
             while (c.next()) {
-              ObservableList<TableColumn<S, ?>> totalsColumns = FXCollections.observableArrayList(getColumns());
-              int j = 0;
-              for (TableColumn<S, ?> col : c.getAddedSubList()) {
-                int i = c.getRemoved().indexOf(col);
-                totalsColumns.set(j, getColumns().get(i));
-                j++;
+              if (c.wasAdded()) {
+                ObservableList<TableColumn<S, ?>> totalsColumns = FXCollections.observableArrayList(getColumns());
+                int j = c.getFrom();      // will always be 0, but...
+                for (TableColumn<S, ?> col : c.getAddedSubList()) {   // contains all columns!
+                  int i = c.getRemoved().indexOf(col);                // contains all columns as well!
+                  if (i >= 0) {   // just for sure...
+                    totalsColumns.set(j, getColumns().get(i));
+                    j++;
+                  }
+                }
+                getColumns().setAll(totalsColumns);
               }
-              getColumns().setAll(totalsColumns);
             }
           };
 
@@ -136,9 +141,8 @@ public class TotalsTableView<S> extends FxTableView<S> {
   @SuppressWarnings("unchecked")
   protected void bind() {
     if (boundTable != null) {
-      int index = 0;
       for (TableColumn<S,?> boundColumn: boundTable.getColumns()) {
-        getColumns().add(createTotalsColumn(boundColumn, index++));
+        getColumns().add(createTotalsColumn(boundColumn));
       }
       boundTable.getColumns().addListener(columnListener);
       boundTable.setTotalsTableView(this);
@@ -160,11 +164,10 @@ public class TotalsTableView<S> extends FxTableView<S> {
    * Creates a totals column from the original bound column.
    *
    * @param boundColumn the original column
-   * @param index the index within the columns
    * @return the totals column
    */
   @SuppressWarnings("unchecked")
-  protected TableColumn<S,?> createTotalsColumn(TableColumn<S,?> boundColumn, int index) {
+  protected TableColumn<S,?> createTotalsColumn(TableColumn<S,?> boundColumn) {
     TableColumn totalsColumn = new TableColumn<>();
     if (isSummable(boundColumn)) {
       totalsColumn.setCellValueFactory(boundColumn.getCellValueFactory());
