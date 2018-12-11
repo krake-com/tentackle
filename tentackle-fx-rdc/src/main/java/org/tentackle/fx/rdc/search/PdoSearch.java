@@ -459,7 +459,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
       });
     }
     else {
-      setItems(finder.runSearch());
+      Platform.runLater(() -> setItems(finder.runSearch()));
     }
     cancelButton.setText(resources.getString(Fx.isModal(getStage()) ? "cancel" : "close"));
   }
