@@ -52,6 +52,10 @@ public class OperationGenerator extends AbstractGenerator {
 
   /**
    * Creates the operation files.
+   *
+   * @return the validation results, empty if okay, never null
+   * @throws IOException if file creation failed
+   * @throws TemplateException if code generation failed
    */
   public List<ValidationResult> generate() throws IOException, TemplateException {
     List<ValidationResult> results = validate(null, ValidationScopeFactory.getInstance().getMandatoryScope());

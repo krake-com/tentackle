@@ -110,6 +110,7 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
   /**
    * Gets the profiles.
    *
+   * @param <T> the profile type
    * @param clazz the concrete profile class
    * @return the list of profiles
    * @throws MojoExecutionException if profile names are not unique
@@ -239,6 +240,7 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
    *
    * @param fileSet the fileset containing the model
    * @return the number of errors
+   * @throws MojoExecutionException if model defaults or entity aliases could not be determined
    */
   protected int processFileSet(FileSet fileSet) throws MojoExecutionException {
     int errors = 0;
