@@ -213,6 +213,7 @@ public class Binary<T extends Serializable> implements Serializable, Cloneable, 
    * Sets the serializable.
    *
    * @param object the serializable object.
+   * @throws IOException if object could not be serialized
    */
   public void setObject(T object) throws IOException {
     assertNotfrozen();
