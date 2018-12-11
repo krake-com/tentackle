@@ -19,6 +19,7 @@
 package org.tentackle.reflect;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.tentackle.common.TentackleRuntimeException;
 
@@ -62,10 +63,15 @@ public abstract class AbstractInterceptor implements Interceptor {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    if (chainedMethod != null) {
-      return proceed(chainedInterceptor, chainedMethod, new Object[] { proxy, method, args }, proxy, method, args);
+    try {
+      if (chainedMethod != null) {
+        return proceed(chainedInterceptor, chainedMethod, new Object[]{proxy, method, args}, proxy, method, args);
+      }
+      return proceed(proxy, method, args, proxy, method, args);
     }
-    return proceed(proxy, method, args, proxy, method, args);
+    catch (InvocationTargetException ix) {
+      throw ix.getCause();
+    }
   }
 
   /**
