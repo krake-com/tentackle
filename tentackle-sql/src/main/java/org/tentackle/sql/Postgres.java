@@ -121,6 +121,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isFilteredIndexSupported() {
+    return true;
+  }
+
+  @Override
   public boolean needTxForFetchsize() {
     return true;
   }

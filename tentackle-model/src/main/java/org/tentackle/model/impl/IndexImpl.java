@@ -301,6 +301,9 @@ public class IndexImpl implements Index {
     for (Backend backend: factory.getBackends()) {
       try {
         backend.assertValidName("index name", createDatabaseIndexName(entity));
+        if (filterCondition != null && !backend.isFilteredIndexSupported()) {
+          throw createModelException("filtered/partial index not supported by " + backend);
+        }
       }
       catch (RuntimeException rex) {
         throw new ModelException(rex.getMessage(), this, rex);

@@ -941,4 +941,11 @@ public interface Backend {
    */
   boolean isClobSupported();
 
+  /**
+   * Returns whether backend supports filtered indexes.
+   *
+   * @return true if supported, false if model will raise an error if filtered index is used
+   */
+  boolean isFilteredIndexSupported();
+
 }

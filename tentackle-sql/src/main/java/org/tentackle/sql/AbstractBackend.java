@@ -697,6 +697,7 @@ public abstract class AbstractBackend implements Backend {
     }
     buf.append(')');
     if (filterCondition != null) {
+      // isFilteredIndexSupported already checked in model (IndexImpl)
       buf.append(" WHERE ").append(filterCondition);
     }
     buf.append(";\n");
@@ -961,6 +962,11 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public boolean isClobSupported() {
     return true;
+  }
+
+  @Override
+  public boolean isFilteredIndexSupported() {
+    return false;
   }
 
   /**
