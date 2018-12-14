@@ -42,6 +42,10 @@ public class MsSql extends AbstractSql2003Backend {
   /** TOP string. */
   public static final String SQL_TOP_PAR = SQL_TOP + "? ";
 
+  @Override
+  public boolean isFilteredIndexSupported() {
+    return true;
+  }
 
   @Override
   public boolean isMatchingUrl(String url) {
