@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>2.1.6-SNAPSHOT</version>
+    <version>2.1.6</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle.persistence.osgi</artifactId>
-  <version>2.1.6-SNAPSHOT</version>
+  <version>2.1.6</version>
   <packaging>bundle</packaging>
 
   <name>Tentackle Persistence OSGi Bundle</name>

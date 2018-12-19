@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>2.1.6-SNAPSHOT</version>
+    <version>2.1.6</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-database-osgi-activator</artifactId>
-  <version>2.1.6-SNAPSHOT</version>
+  <version>2.1.6</version>
   <packaging>jar</packaging>
 
   <name>Tentackle Database OSGi Bundle Activator</name>
