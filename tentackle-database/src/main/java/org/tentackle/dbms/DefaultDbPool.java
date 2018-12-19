@@ -454,11 +454,10 @@ public class DefaultDbPool implements SessionPool {
    */
   private void removeDbInstance(Db dbToRemove, int index) {
     Db db = pooledSessions[index].getReferencedDb();    // pooledDb.db may be null because currently lended
-    if (db != dbToRemove) {
-      throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool " + this + " at index " + index);
-    }
-
     if (db != null) {
+      if (db != dbToRemove) {
+        throw new PersistenceException(dbToRemove + " to remove does not match " + db + " in pool " + this + " at index " + index);
+      }
       try {
         if (db.isOpen()) {
           db.close();       // this will also check for pending attach/tx and rollback if necessary
