@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>2.2-SNAPSHOT</version>
+    <version>2.3-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle.model.osgi</artifactId>
-  <version>2.2-SNAPSHOT</version>
+  <version>2.3-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>Tentackle Data-Model OSGi Bundle</name>
