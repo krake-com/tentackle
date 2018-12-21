@@ -20,7 +20,7 @@ package org.tentackle.fx.rdc.component.delegate;
 
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
-import org.tentackle.fx.rdc.translate.PdoTranslatorImpl;
+import org.tentackle.fx.rdc.translate.PdoComponentAddon;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -31,7 +31,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
-  private PdoTranslatorImpl transImpl;
+  private PdoComponentAddon addon;
 
   /**
    * Creates the delegate.
@@ -47,7 +47,7 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   public void setType(Class<?> type) {
     boxImpl.prepareSetType(type);
     if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      transImpl = new PdoTranslatorImpl(getComponent(), this::getViewValue);
+      addon = createPdoAddon();
     }
     super.setType(type);
   }
@@ -56,6 +56,16 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   public void setViewValue(Object value) {
     boxImpl.prepareSetViewValue();
     super.setViewValue(value);
+  }
+
+  /**
+   * Creates the PDO style implementation.
+   *
+   * @return the implementation
+   */
+  @SuppressWarnings("unchecked")
+  protected PdoComponentAddon createPdoAddon() {
+    return new PdoComponentAddon(getComponent(), this::getViewValue);
   }
 
 }

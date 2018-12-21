@@ -22,7 +22,6 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 
 import org.tentackle.bind.Bindable;
-import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxTextComponent;
@@ -54,7 +53,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
 
   private static final Logger LOGGER = Logger.get(PdoStringTranslator.class);
 
-  private final PdoTranslatorImpl<T> transImpl;
+  private final PdoComponentAddon<T> addon;
   private ValueStringTranslator<?> udkTranslator;
   private String viewValue;
 
@@ -87,7 +86,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       // no translator found, try default (see below)
     }
 
-    transImpl = createImpl(component);
+    addon = createPdoAddon();
   }
 
   @Override
@@ -106,7 +105,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
       else {
         viewValue = null;
       }
-      transImpl.setPdo(m);
+      addon.setPdo(m);
       return viewValue;
     };
   }
@@ -114,21 +113,21 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   @Override
   public Function<String, T> toModelFunction() {
     return v -> {
-      if (!transImpl.isInSearchOrEdit() && !Objects.equals(v, viewValue)) {
+      if (!addon.isInSearchOrEdit() && !Objects.equals(v, viewValue)) {
         // view changed
         if (v == null) {
-          transImpl.setPdo(null);
+          addon.setPdo(null);
         }
         else {
-          T proxy = transImpl.createPdo();
+          T proxy = addon.createPdo();
           Class<?> udkClass = proxy.getUniqueDomainKeyType();
           if (udkTranslator != null) {
             Object udk = udkTranslator.toModelFunction().apply(v);
-            transImpl.setPdo(proxy.findByUniqueDomainKey(udk));
-            if (transImpl.getPdo() == null) {
+            addon.setPdo(proxy.findByUniqueDomainKey(udk));
+            if (addon.getPdo() == null) {
               // no such pdo: try interactive search
               proxy.setUniqueDomainKey(udk);
-              transImpl.setPdo(transImpl.searchPdo(proxy));
+              addon.setPdo(addon.searchPdo(proxy));
               Platform.runLater(() -> ((Node) getComponent()).requestFocus());
             }
           }
@@ -147,9 +146,9 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                   // this usually means that the input is malformed, incomplete, whatever.
                   // in such cases get the PDO from the search dialog
                   presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                  transImpl.setPdo(transImpl.searchPdo(proxy));
+                  addon.setPdo(addon.searchPdo(proxy));
                   Platform.runLater(() -> ((Node) getComponent()).requestFocus());
-                  return transImpl.getPdo();
+                  return addon.getPdo();
                 }
                 catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
                         IllegalArgumentException e) {
@@ -157,11 +156,11 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                                                "(" + v.getClass().getName() + ")", e);
                 }
               }
-              transImpl.setPdo(proxy.findByUniqueDomainKey(udk));
-              if (transImpl.getPdo() == null) {
+              addon.setPdo(proxy.findByUniqueDomainKey(udk));
+              if (addon.getPdo() == null) {
                 // no such pdo: try search
                 presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                transImpl.setPdo(transImpl.searchPdo(proxy));
+                addon.setPdo(addon.searchPdo(proxy));
                 Platform.runLater(() -> ((Node) getComponent()).requestFocus());
               }
             }
@@ -173,7 +172,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
           }
         }
       }
-      return transImpl.getPdo();
+      return addon.getPdo();
     };
   }
 
@@ -181,11 +180,10 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
   /**
    * Creates the PDO style implementation.
    *
-   * @param component the component
    * @return the implementation
    */
-  protected PdoTranslatorImpl<T> createImpl(FxComponent component) {
-    return new PdoTranslatorImpl<>(component, this::getPdo);
+  protected PdoComponentAddon<T> createPdoAddon() {
+    return new PdoComponentAddon<>(getComponent(), this::getPdo);
   }
 
   /**
