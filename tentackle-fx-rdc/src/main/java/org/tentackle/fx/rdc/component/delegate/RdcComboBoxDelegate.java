@@ -34,7 +34,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class RdcComboBoxDelegate extends FxComboBoxDelegate {
 
-  private boolean loadPdosPending;
+  private final RdcBoxDelegateImpl impl;
 
   /**
    * Creates the delegate.
@@ -43,32 +43,19 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    */
   public RdcComboBoxDelegate(FxComboBox<?> component) {
     super(component);
+    impl = new RdcBoxDelegateImpl(component, component::getItems);
   }
 
   @Override
   public void setType(Class<?> type) {
+    impl.prepareSetType(type);
     super.setType(type);
-    if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      loadPdosPending = true;
-    }
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setViewValue(Object value) {
-    if (loadPdosPending) {
-      loadPdosPending = false;
-      FxComponentBinding binding = getComponent().getBinding();
-      DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
-      if (context != null) {
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) getType(), context);
-        ObservableList items = getComponent().getItems();
-        items.clear();
-        items.addAll(pdo.selectAll());
-      }
-    }
-
-    super.setViewValue(value); //To change body of generated methods, choose Tools | Templates.
+    impl.prepareSetViewValue();
+    super.setViewValue(value);
   }
 
 }
