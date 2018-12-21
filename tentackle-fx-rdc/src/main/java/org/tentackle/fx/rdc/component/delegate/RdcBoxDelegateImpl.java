@@ -41,6 +41,7 @@ public class RdcBoxDelegateImpl {
    * Creates the delegate impl.
    *
    * @param component the component
+   * @param itemSupplier gets the list of items shown by the component
    */
   public RdcBoxDelegateImpl(FxComponent component, Supplier<ObservableList> itemSupplier) {
     this.component = component;
