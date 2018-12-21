@@ -43,11 +43,11 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.util.function.Supplier;
 
 /**
- * Adds style and context-menu to components showing or editing a PDO.
+ * Adds style, context-menu and function-keys to components bound to a PDO.
  *
  * @param <T> the PDO type
  */
-public class PdoTranslatorImpl<T extends PersistentDomainObject<T>> {
+public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
   private static final String PDO_STYLE = "tt-pdo-style";
 
@@ -56,7 +56,13 @@ public class PdoTranslatorImpl<T extends PersistentDomainObject<T>> {
   private boolean inSearchOrEdit;
   private T pdo;
 
-  public PdoTranslatorImpl(FxComponent component, Supplier<T> pdoSupplier) {
+  /**
+   * Creates the addon.
+   *
+   * @param component the fx component
+   * @param pdoSupplier a supplier for the currently displayed PDO
+   */
+  public PdoComponentAddon(FxComponent component, Supplier<T> pdoSupplier) {
     this.component = component;
     this.pdoSupplier = pdoSupplier;
 
@@ -126,6 +132,11 @@ public class PdoTranslatorImpl<T extends PersistentDomainObject<T>> {
     this.pdo = pdo;
   }
 
+  /**
+   * Returns whether search or edit dialog is currently displayed.
+   *
+   * @return true if within search or edit
+   */
   public boolean isInSearchOrEdit() {
     return inSearchOrEdit;
   }
