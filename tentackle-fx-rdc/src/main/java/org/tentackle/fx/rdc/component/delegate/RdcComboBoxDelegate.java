@@ -18,14 +18,8 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import javafx.collections.ObservableList;
-
-import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxComboBox;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistentDomainObject;
 
 /**
  * Delegate for RdcComboBox.
@@ -34,7 +28,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class RdcComboBoxDelegate extends FxComboBoxDelegate {
 
-  private final RdcBoxDelegateImpl impl;
+  private final RdcBoxDelegateImpl boxImpl;
 
   /**
    * Creates the delegate.
@@ -43,18 +37,18 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    */
   public RdcComboBoxDelegate(FxComboBox<?> component) {
     super(component);
-    impl = new RdcBoxDelegateImpl(component, component::getItems);
+    boxImpl = new RdcBoxDelegateImpl(component, component::getItems);
   }
 
   @Override
   public void setType(Class<?> type) {
-    impl.prepareSetType(type);
+    boxImpl.prepareSetType(type);
     super.setType(type);
   }
 
   @Override
   public void setViewValue(Object value) {
-    impl.prepareSetViewValue();
+    boxImpl.prepareSetViewValue();
     super.setViewValue(value);
   }
 

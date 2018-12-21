@@ -1,0 +1,206 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.fx.rdc.translate;
+
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Control;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyEvent;
+import javafx.stage.Modality;
+
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.rdc.RdcUtilities;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.function.Supplier;
+
+/**
+ * Adds style and context-menu to components showing or editing a PDO.
+ *
+ * @param <T> the PDO type
+ */
+public class PdoTranslatorImpl<T extends PersistentDomainObject<T>> {
+
+  private static final String PDO_STYLE = "tt-pdo-style";
+
+  private final FxComponent component;
+  private final Supplier<T> pdoSupplier;
+  private boolean inSearchOrEdit;
+  private T pdo;
+
+  public PdoTranslatorImpl(FxComponent component, Supplier<T> pdoSupplier) {
+    this.component = component;
+    this.pdoSupplier = pdoSupplier;
+
+    // register function keys:
+    // F2 = edit/view current PDO
+    // F3 = invoke search
+    Control control = (Control) component;
+    control.addEventFilter(KeyEvent.ANY, event -> {
+      if (!event.isAltDown() && !event.isControlDown() && !event.isMetaDown() &&
+          !event.isShiftDown() && !event.isShortcutDown()) {
+
+        if (event.getCode() == KeyCode.F2) {
+          event.consume();
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            Platform.runLater(this::edit);
+          }
+        }
+        else if (event.getCode() == KeyCode.F3) {
+          event.consume();
+          if (event.getEventType() == KeyEvent.KEY_PRESSED) {
+            Platform.runLater(this::search);
+          }
+        }
+      }
+    });
+
+    if (!control.getStyleClass().contains(PDO_STYLE)) {
+      control.getStyleClass().add(PDO_STYLE);
+
+      ContextMenu menu = control.getContextMenu();
+      if (menu == null) {
+        menu = new ContextMenu();
+        // this replaces the default context menu in TextFields, but that's ok.
+        // otherwise we would have to quirk TextFieldBehaviour which is still private API
+        control.setContextMenu(menu);
+      }
+      else {
+        // append to existing menu
+        menu.getItems().add(new SeparatorMenuItem());
+      }
+      MenuItem editItem = new MenuItem(RdcFxRdcBundle.getString("EDIT"));
+      editItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+      editItem.setOnAction(event -> edit());
+      menu.setOnShowing(event -> editItem.setDisable(pdoSupplier.get() == null));
+      MenuItem searchItem = new MenuItem(RdcFxRdcBundle.getString("SEARCH"));
+      searchItem.setAccelerator(new KeyCodeCombination(KeyCode.F3));
+      searchItem.setOnAction(event -> search());
+      menu.getItems().addAll(editItem, searchItem);
+    }
+  }
+
+  /**
+   * Gets the PDO.<br>
+   *
+   * @return the pdo
+   */
+  public T getPdo() {
+    return pdo;
+  }
+
+  /**
+   * Sets the PDO.<br>
+   *
+   * @param pdo the pdo
+   */
+  public void setPdo(T pdo) {
+    this.pdo = pdo;
+  }
+
+  public boolean isInSearchOrEdit() {
+    return inSearchOrEdit;
+  }
+
+  /**
+   * Edit or view current pdo.
+   */
+  public void edit() {
+    if (!inSearchOrEdit) {
+      pdo = pdoSupplier.get();
+      if (pdo != null) {
+        inSearchOrEdit = true;
+        ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+        pdoList.add(pdo);
+        pdo = RdcUtilities.getInstance().displayCrudStage(pdo, pdoList, !pdo.isImmutable(),
+                                                          Modality.APPLICATION_MODAL, Fx.getStage((Node) component), null);
+        inSearchOrEdit = false;
+      }
+    }
+  }
+
+  /**
+   * Search for a PDO.
+   */
+  public void search() {
+    if (!inSearchOrEdit) {
+      inSearchOrEdit = true;
+      T found = searchPdo(createPdo());
+      if (found != null && component.isChangeable()) {
+        pdo = found;
+        component.setViewValue(pdo);
+        component.updateModel();
+      }
+      inSearchOrEdit = false;
+    }
+  }
+
+  /**
+   * Creates a new PDO.
+   *
+   * @return the pdo
+   */
+  @SuppressWarnings("unchecked")
+  public T createPdo() {
+    Class<T> pdoClass = (Class<T>) component.getType();
+    DomainContext context;
+    if (component.getParentContainer() != null) {
+      context = component.getBinding().getBinder().getBindingProperty(DomainContext.class);
+    }
+    else if (component.getTableCell() != null) {
+      context = component.getTableCell().getColumnConfiguration().getTableConfiguration().getBinder().getBindingProperty(DomainContext.class);
+    }
+    else {
+      context = (DomainContext) ((Node) component).getProperties().get(DomainContext.class);
+    }
+    if (context == null) {
+      throw new FxRuntimeException("missing binding property for DomainContext");
+    }
+    return Pdo.create(pdoClass, context);
+  }
+
+
+  /**
+   * Modal search of the pdo.
+   *
+   * @param proxy the proxy pdo (possibly presetted with partial search criteria)
+   * @return the selected pdo, null if none
+   */
+  public T searchPdo(T proxy) {
+    ObservableList<T> list = RdcUtilities.getInstance().displaySearchStage(
+        proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true);
+    if (!list.isEmpty()) {
+      return list.get(0);
+    }
+    return null;
+  }
+
+}
