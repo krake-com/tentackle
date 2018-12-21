@@ -1,6 +1,5 @@
 /*
- * Tentackle - a framework for java desktop applications
- * http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,12 +18,9 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import javafx.collections.ObservableList;
-import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.Pdo;
+import org.tentackle.fx.rdc.translate.PdoTranslatorImpl;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -34,7 +30,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
-  private final RdcBoxDelegateImpl impl;
+  private final RdcBoxDelegateImpl boxImpl;
+  private PdoTranslatorImpl transImpl;
 
   /**
    * Creates the delegate.
@@ -43,18 +40,21 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    */
   public RdcChoiceBoxDelegate(FxChoiceBox<?> component) {
     super(component);
-    impl = new RdcBoxDelegateImpl(component, component::getItems);
+    boxImpl = new RdcBoxDelegateImpl(component, component::getItems);
   }
 
   @Override
   public void setType(Class<?> type) {
-    impl.prepareSetType(type);
+    boxImpl.prepareSetType(type);
+    if (PersistentDomainObject.class.isAssignableFrom(type)) {
+      transImpl = new PdoTranslatorImpl(getComponent(), this::getViewValue);
+    }
     super.setType(type);
   }
 
   @Override
   public void setViewValue(Object value) {
-    impl.prepareSetViewValue();
+    boxImpl.prepareSetViewValue();
     super.setViewValue(value);
   }
 
