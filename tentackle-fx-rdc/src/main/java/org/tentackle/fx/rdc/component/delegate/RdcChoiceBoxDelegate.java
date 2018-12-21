@@ -34,6 +34,8 @@ import org.tentackle.pdo.PersistentDomainObject;
  */
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
+  private final RdcBoxDelegateImpl impl;
+
   /**
    * Creates the delegate.
    *
@@ -41,23 +43,19 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
    */
   public RdcChoiceBoxDelegate(FxChoiceBox<?> component) {
     super(component);
+    impl = new RdcBoxDelegateImpl(component, component::getItems);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void setType(Class<?> type) {
+    impl.prepareSetType(type);
     super.setType(type);
+  }
 
-    if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      FxComponentBinding binding = getComponent().getBinding();
-      DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
-      if (context != null) {
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) type, context);
-        ObservableList items = getComponent().getItems();
-        items.clear();
-        items.addAll(pdo.selectAll());
-      }
-    }
+  @Override
+  public void setViewValue(Object value) {
+    impl.prepareSetViewValue();
+    super.setViewValue(value);
   }
 
 }
