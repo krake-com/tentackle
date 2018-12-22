@@ -19,7 +19,6 @@
 package org.tentackle.fx.rdc.component;
 
 import org.tentackle.fx.component.FxChoiceBox;
-import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
 import org.tentackle.fx.rdc.component.delegate.RdcChoiceBoxDelegate;
 
 /**
@@ -31,7 +30,7 @@ import org.tentackle.fx.rdc.component.delegate.RdcChoiceBoxDelegate;
 public class RdcChoiceBox<T> extends FxChoiceBox<T> {
 
   @Override
-  protected FxChoiceBoxDelegate createDelegate() {
+  protected RdcChoiceBoxDelegate createDelegate() {
     return new RdcChoiceBoxDelegate(this);
   }
 

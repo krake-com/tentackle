@@ -22,7 +22,7 @@ import javafx.collections.ObservableList;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.bind.FxComponentBinding;
-import org.tentackle.fx.component.FxChoiceBox;
+import org.tentackle.fx.rdc.translate.PdoComponentAddon;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -36,6 +36,7 @@ public class RdcBoxDelegateImpl {
 
   private final FxComponent component;
   private final Supplier<ObservableList> itemSupplier;
+  private final Supplier<PdoComponentAddon> pdoAddonSupplier;
   private boolean loadPdosPending;
 
   /**
@@ -43,10 +44,13 @@ public class RdcBoxDelegateImpl {
    *
    * @param component the component
    * @param itemSupplier gets the list of items shown by the component
+   * @param pdoAddonSupplier get the PDO addon
    */
-  public RdcBoxDelegateImpl(FxComponent component, Supplier<ObservableList> itemSupplier) {
+  public RdcBoxDelegateImpl(FxComponent component, Supplier<ObservableList> itemSupplier,
+                            Supplier<PdoComponentAddon> pdoAddonSupplier) {
     this.component = component;
     this.itemSupplier = itemSupplier;
+    this.pdoAddonSupplier = pdoAddonSupplier;
   }
 
   /**
@@ -73,7 +77,7 @@ public class RdcBoxDelegateImpl {
         PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) component.getType(), context);
         ObservableList items = itemSupplier.get();
         items.clear();
-        items.addAll(pdo.selectAllCached());
+        items.addAll(pdoAddonSupplier.get().selectAll(pdo));
       }
     }
   }
