@@ -19,7 +19,6 @@
 package org.tentackle.fx.rdc.component;
 
 import org.tentackle.fx.component.FxComboBox;
-import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
 import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
 
 /**
@@ -31,7 +30,7 @@ import org.tentackle.fx.rdc.component.delegate.RdcComboBoxDelegate;
 public class RdcComboBox<T> extends FxComboBox<T> {
 
   @Override
-  protected FxComboBoxDelegate createDelegate() {
+  protected RdcComboBoxDelegate createDelegate() {
     return new RdcComboBoxDelegate(this);
   }
 

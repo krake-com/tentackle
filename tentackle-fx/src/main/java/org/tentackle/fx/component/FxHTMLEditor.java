@@ -70,9 +70,19 @@ public class FxHTMLEditor extends HTMLEditor implements FxTextComponent {
   @Override
   public /**/FxHTMLEditorDelegate/**/ getDelegate() {  // @wurblet < Inject ${classname}Delegate
     if (delegate == null) {
-      delegate = createDelegate();
+      setDelegate(createDelegate());
     }
     return delegate;
+  }
+
+  /**
+   * Sets the delegate.<br>
+   * Useful for application specific needs.
+   *
+   * @param delegate the delegate
+   */
+  public void setDelegate(/**/FxHTMLEditorDelegate/**/ delegate) {  // @wurblet < Inject ${classname}Delegate
+    this.delegate = delegate;
   }
 
   // @wurblet component Include $currentDir/component.include

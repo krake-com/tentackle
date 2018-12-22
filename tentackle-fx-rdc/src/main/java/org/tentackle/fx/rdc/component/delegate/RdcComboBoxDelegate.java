@@ -18,8 +18,11 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import org.tentackle.fx.component.FxComboBox;
+import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.delegate.FxComboBoxDelegate;
+import org.tentackle.fx.rdc.component.RdcComboBox;
+import org.tentackle.fx.rdc.translate.PdoComponentAddon;
+import org.tentackle.fx.rdc.translate.PdoStringTranslator;
 
 /**
  * Delegate for RdcComboBox.
@@ -35,9 +38,9 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
    *
    * @param component the component
    */
-  public RdcComboBoxDelegate(FxComboBox<?> component) {
+  public RdcComboBoxDelegate(RdcComboBox<?> component) {
     super(component);
-    boxImpl = new RdcBoxDelegateImpl(component, component::getItems);
+    boxImpl = new RdcBoxDelegateImpl(component, component::getItems, this::getPdoAddon);
   }
 
   @Override
@@ -50,6 +53,14 @@ public class RdcComboBoxDelegate extends FxComboBoxDelegate {
   public void setViewValue(Object value) {
     boxImpl.prepareSetViewValue();
     super.setViewValue(value);
+  }
+
+  private PdoComponentAddon getPdoAddon() {
+    ValueTranslator translator = getValueTranslator();
+    if (translator instanceof PdoStringTranslator) {
+      return ((PdoStringTranslator) translator).getPdoAddon();
+    }
+    return null;    // not bound to a PDO type
   }
 
 }

@@ -34,12 +34,14 @@ import javafx.stage.Modality;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -212,6 +214,17 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       return list.get(0);
     }
     return null;
+  }
+
+  /**
+   * Returns a list of all pdos.<br>
+   * Used in comboboxes and choiceboxes to initialize the component's drop down list.
+   *
+   * @param proxy the proxy pdo
+   * @return the list of all allowed PDOs
+   */
+  public List<T> selectAll(T proxy) {
+    return proxy.selectAllCached();
   }
 
 }

@@ -18,8 +18,8 @@
 
 package org.tentackle.fx.rdc.component.delegate;
 
-import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.delegate.FxChoiceBoxDelegate;
+import org.tentackle.fx.rdc.component.RdcChoiceBox;
 import org.tentackle.fx.rdc.translate.PdoComponentAddon;
 import org.tentackle.pdo.PersistentDomainObject;
 
@@ -31,23 +31,23 @@ import org.tentackle.pdo.PersistentDomainObject;
 public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
 
   private final RdcBoxDelegateImpl boxImpl;
-  private PdoComponentAddon addon;
+  private PdoComponentAddon pdoAddon;
 
   /**
    * Creates the delegate.
    *
    * @param component the component
    */
-  public RdcChoiceBoxDelegate(FxChoiceBox<?> component) {
+  public RdcChoiceBoxDelegate(RdcChoiceBox<?> component) {
     super(component);
-    boxImpl = new RdcBoxDelegateImpl(component, component::getItems);
+    boxImpl = new RdcBoxDelegateImpl(component, component::getItems, this::getPdoAddon);
   }
 
   @Override
   public void setType(Class<?> type) {
     boxImpl.prepareSetType(type);
     if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      addon = createPdoAddon();
+      setPdoAddon(createPdoAddon());
     }
     super.setType(type);
   }
@@ -56,6 +56,24 @@ public class RdcChoiceBoxDelegate extends FxChoiceBoxDelegate {
   public void setViewValue(Object value) {
     boxImpl.prepareSetViewValue();
     super.setViewValue(value);
+  }
+
+  /**
+   * Gets the PDO addon.
+   *
+   * @return the addon
+   */
+  public PdoComponentAddon getPdoAddon() {
+    return pdoAddon;
+  }
+
+  /**
+   * Sets the PDO addon.
+   *
+   * @param pdoAddon the addon
+   */
+  public void setPdoAddon(PdoComponentAddon pdoAddon) {
+    this.pdoAddon = pdoAddon;
   }
 
   /**
