@@ -20,16 +20,17 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.io.Serializable;
-import java.rmi.RemoteException;
-import java.util.Collection;
-import java.util.List;
 import org.tentackle.dbms.CommitTxRunnable;
 import org.tentackle.dbms.DbTransactionHandle;
 import org.tentackle.dbms.ModificationLog;
 import org.tentackle.dbms.PersistenceVisitor;
 import org.tentackle.dbms.RollbackTxRunnable;
 import org.tentackle.session.SavepointHandle;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Remote delegate interface for {@link org.tentackle.dbms.Db}.
@@ -43,8 +44,6 @@ public interface DbRemoteDelegate extends RemoteDelegate {
   void setSessionGroupId(int number) throws RemoteException;
 
   int groupWith(int number) throws RemoteException;
-
-  int getSessionGroupId() throws RemoteException;
 
   boolean isAlive() throws RemoteException;
 
