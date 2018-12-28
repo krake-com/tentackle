@@ -20,15 +20,14 @@
 
 package org.tentackle.dbms;
 
-import java.lang.ref.WeakReference;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.session.ConstraintException;
 import org.tentackle.session.PersistenceException;
 
+import java.lang.ref.WeakReference;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 
 /**
@@ -304,24 +303,11 @@ public class StatementWrapper implements AutoCloseable {
     }
     catch (SQLException e)  {
       Db db = getAttachedSession();
-      boolean dead = db.checkForDeadLink(e);
+      boolean dead = con.checkForDeadLink(e);
       if (!dead && db.getBackend().isConstraintException(e)) {
         throw new ConstraintException(db, this.toString(), e);
       }
-      else  {
-        /*
-         * due to the fact that sqlstates for "access violation" are mixed with syntax-error codes
-         * we cannot detect such violations. Even worse, each DBMS got its own set of codes.
-         * Postgres, for example, startswith 42. Others return 37, 2A or alike.
-         * Hence, it doesn't make sense to check for an access violation in order to
-         * give the user a more detailed error message.
-         */
-        PersistenceException px = new PersistenceException(db, this.toString(), e);
-        if (dead && db.optionallyReconnect()) {
-          throw new ReconnectedException(px);
-        }
-        throw px;
-      }
+      throw con.createFromSqlException(this.toString(), e);
     }
     finally {
       setRunning(false);
@@ -402,7 +388,7 @@ public class StatementWrapper implements AutoCloseable {
     }
     catch (SQLException e)  {
       Db db = getAttachedSession();
-      boolean dead = db.checkForDeadLink(e);
+      con.checkForDeadLink(e);
       if (withinTx) {
         try {
           db.rollback(txVoucher);
@@ -422,11 +408,7 @@ public class StatementWrapper implements AutoCloseable {
           LOGGER.severe("detach failed", e);
         }
       }
-      PersistenceException px = new PersistenceException(getSession(), this.toString(), e);
-      if (dead && db.optionallyReconnect()) {
-        throw new ReconnectedException(px);
-      }
-      throw px;
+      throw con.createFromSqlException(this.toString(), e);
     }
   }
 

@@ -21,10 +21,12 @@ package org.tentackle.dbms;
 
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.io.ReconnectedException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.Logger.Level;
 import org.tentackle.log.MappedDiagnosticContext;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionClosedException;
 import org.tentackle.sql.Backend;
 
 import java.lang.ref.Cleaner;
@@ -262,6 +264,7 @@ public class ManagedConnection {
   private static class Resources implements Runnable {
     private Connection connection;  // the wrapped connection, null if closed
     private String name;            // the name of the managed connection
+    private boolean dead;           // connection is dead (comlink error detected)
     private ManagedConnection me;   // != null if programmatic cleanup
 
     Resources(Connection connection) {
@@ -281,7 +284,9 @@ public class ManagedConnection {
             c.close();
           }
           catch (SQLException | RuntimeException sx) {
-            LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
+            if (!dead) {
+              LOGGER.severe("low level close failed for " + name + " -> marked closed", sx);
+            }
           }
           finally {
             connection = null;
@@ -311,7 +316,6 @@ public class ManagedConnection {
   private int attachCount;                                // 0 = not attached, else number of times db is attached
   private int maxCountForClearWarnings;                   // trigger when to clearWarning() on a connection (0 = disabled)
   private int counterForClearWarnings;                    // current counter
-  private boolean dead;                                   // connection is dead (comlink error detected)
   private StatementHistory currentStatement;              // statement history while not in transaction
 
   private final List<StatementHistory> statementHistory;                        // statement history while in transaction
@@ -471,7 +475,7 @@ public class ManagedConnection {
    * @param dead true if marked dead, false not dead
    */
   public void setDead(boolean dead) {
-    this.dead = dead;
+    resources.dead = dead;
   }
 
   /**
@@ -479,7 +483,7 @@ public class ManagedConnection {
    * @return true if dead
    */
   public boolean isDead() {
-    return dead;
+    return resources.dead;
   }
 
 
@@ -595,7 +599,7 @@ public class ManagedConnection {
       detachedSince = System.currentTimeMillis();
       if (logMinAttachMillis != 0 && detachedSince - attachedSince > logMinAttachMillis) {
         if (isMDCValid()) {
-          LOGGER.warning("attached for " + (detachedSince - attachedSince) + "ms: " + toDiagnosticString());
+          LOGGER.warning("attached for {0}ms: {1}", () -> detachedSince - attachedSince, this::toDiagnosticString);
         }
       }
       else if (isMDCValid()) {
@@ -694,7 +698,7 @@ public class ManagedConnection {
     if (attachCount > 0) {
       buf.append(", attached ").append(attachCount).append(" since ").append(new Timestamp(attachedSince));
     }
-    if (dead) {
+    if (resources.dead) {
       buf.append(", dead");
     }
     return buf.toString();
@@ -818,7 +822,7 @@ public class ManagedConnection {
    */
   public String toDiagnosticString() {
     StringBuilder buf = new StringBuilder(toString());
-    if (dead) {
+    if (resources.dead) {
       buf.append(" *** DEAD *** ");
     }
     buf.append(": ");
@@ -923,7 +927,7 @@ public class ManagedConnection {
       getConnection().setAutoCommit(autoCommit);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting autocommit failed", ex);
+      throw createFromSqlException("setting autocommit failed", ex);
     }
   }
 
@@ -938,7 +942,7 @@ public class ManagedConnection {
       return getConnection().getAutoCommit();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "getting autocommit failed", ex);
+      throw createFromSqlException("getting autocommit failed", ex);
     }
   }
 
@@ -952,7 +956,7 @@ public class ManagedConnection {
       getConnection().commit();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "commit failed", ex);
+      throw createFromSqlException("commit failed", ex);
     }
   }
 
@@ -973,7 +977,7 @@ public class ManagedConnection {
       unmarkPreparedStatements();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "rollback failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("rollback failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -989,7 +993,7 @@ public class ManagedConnection {
       return getConnection().setSavepoint();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting unnamed savepoint failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("setting unnamed savepoint failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -1006,7 +1010,7 @@ public class ManagedConnection {
       return getConnection().setSavepoint(name);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -1021,7 +1025,7 @@ public class ManagedConnection {
       getConnection().rollback(savepoint);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -1038,7 +1042,7 @@ public class ManagedConnection {
         getConnection().releaseSavepoint(savepoint);
       }
       catch (SQLException ex) {
-        throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+        throw createFromSqlException("release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
       }
     }
   }
@@ -1142,7 +1146,7 @@ public class ManagedConnection {
       // we ignore the unprepared running statements.
     }
     catch (SQLException e) {
-      throw new PersistenceException (db, "reading warnings failed", e);
+      throw createFromSqlException("reading warnings failed", e);
     }
   }
 
@@ -1193,19 +1197,21 @@ public class ManagedConnection {
   void forceDetached() {
     if (isAttached()) {
       // database is still attached
-      LOGGER.warning("forcing detach of connection " + this + " attached to " + db);
+      LOGGER.warning("forcing detach of connection {0}, attached to {1}", this, db);
       // close pending statements
       closePreparedStatements(true);
       if (!isClosed()) {
         try {
           if (!getAutoCommit()) {
             // in transaction!!! rollback
-            LOGGER.severe("rolling back pending transaction for " + db);
+            LOGGER.severe("rolling back pending transaction for {0}", db);
             rollback(true);
           }
         }
         catch (PersistenceException pex) {
-          LOGGER.severe("connection is broken", pex);
+          if (!resources.dead) {
+            LOGGER.severe("connection is broken", pex);
+          }
           closeImpl();
         }
       }
@@ -1232,12 +1238,12 @@ public class ManagedConnection {
       try {
         // rollback before close to prevent an implicit commit (JDBC implementation specific behaviour)
         if (!getConnection().getAutoCommit())  {
-          LOGGER.warning("closing connection while in transaction:\n" + toDiagnosticString());
+          LOGGER.warning("closing connection while in transaction:\n{0}", this::toDiagnosticString);
           getConnection().rollback();
         }
       }
       catch (SQLException ex) {
-        LOGGER.warning("low level rollback failed: " + ex.getMessage());
+        LOGGER.warning("low level rollback failed: {0}", ex.getMessage());
       }
 
       logAndClearWarnings();
@@ -1338,7 +1344,7 @@ public class ManagedConnection {
       return new StatementWrapper(this, stmt);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "creating statement failed for " + this, ex);
+      throw createFromSqlException("creating statement failed for " + this, ex);
     }
   }
 
@@ -1363,7 +1369,7 @@ public class ManagedConnection {
               sql);
     }
     catch (SQLException e) {
-      throw new PersistenceException(db, "creating prepared statement failed", e);
+      throw createFromSqlException("creating prepared statement failed", e);
     }
   }
 
@@ -1411,6 +1417,49 @@ public class ManagedConnection {
 
 
   /**
+   * Checks for a dead communications link.<br>
+   * If the link is down, for example the database server closed it,
+   * the connection is marked dead.
+   *
+   * @param ex the sql exception
+   * @return true if connection is dead
+   */
+  public boolean checkForDeadLink(SQLException ex) {
+    if (!isDead() && backend.isCommunicationLinkException(ex)) {
+      // some severe comlink error, probably closed by server
+      LOGGER.severe("managed connection {0}: *** MARKED DEAD ***", this);
+      setDead(true);
+    }
+    return isDead();
+  }
+
+
+  /**
+   * Creates a {@link PersistenceException} or {@link SessionClosedException} depending on the SQL error.<br>
+   * If the session was reconnected, a {@link ReconnectedException} is returned.
+   *
+   * @param message the message
+   * @param sx the SQL exception
+   * @return the persistence exception
+   */
+  public PersistenceException createFromSqlException(String message, SQLException sx) {
+    PersistenceException persistenceException;
+    if (checkForDeadLink(sx)) {
+      persistenceException = new SessionClosedException(db, message, sx);
+      Db ldb = db;
+      if (ldb != null && ldb.optionallyReconnect()) {
+        throw new ReconnectedException(persistenceException);
+      }
+    }
+    else {
+      persistenceException = new PersistenceException(db, message, sx);
+    }
+    return persistenceException;
+  }
+
+
+
+  /**
    * Check that requested resulttype and concurrency matches the prepared statement to reuse.
    *
    * @param prepStmt the prepared statement
@@ -1430,8 +1479,7 @@ public class ManagedConnection {
       }
     }
     catch (SQLException sqx) {
-      throw new PersistenceException(
-              "cannot determine prepared statement configuration for '" + prepStmt.getSql() + "'", sqx);
+      throw createFromSqlException("cannot determine prepared statement configuration for '" + prepStmt.getSql() + "'", sqx);
     }
   }
 

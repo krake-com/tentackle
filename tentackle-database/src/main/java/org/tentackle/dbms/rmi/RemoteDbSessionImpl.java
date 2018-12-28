@@ -19,6 +19,24 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.dbms.ConnectionManager;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.DbUtilities;
+import org.tentackle.io.ServerSocketConfigurator;
+import org.tentackle.io.ServerSocketConfiguratorHolder;
+import org.tentackle.io.SocketConfigurator;
+import org.tentackle.io.SocketConfiguratorHolder;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.MethodStatistics;
+import org.tentackle.misc.DiagnosticUtilities;
+import org.tentackle.misc.Duration;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.LoginFailedException;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionInfo;
+import org.tentackle.session.SessionPool;
+
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.WeakReference;
@@ -39,23 +57,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.tentackle.dbms.ConnectionManager;
-import org.tentackle.dbms.Db;
-import org.tentackle.dbms.DbUtilities;
-import org.tentackle.io.ServerSocketConfigurator;
-import org.tentackle.io.ServerSocketConfiguratorHolder;
-import org.tentackle.io.SocketConfigurator;
-import org.tentackle.io.SocketConfiguratorHolder;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.MethodStatistics;
-import org.tentackle.misc.DiagnosticUtilities;
-import org.tentackle.misc.Duration;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.LoginFailedException;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SessionInfo;
-import org.tentackle.session.SessionPool;
 
 
 
@@ -758,18 +759,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public boolean isOpen() {
     return resources.db != null;
-  }
-
-
-  /**
-   * Returns whether this is grouped session.<br>
-   * By default, user sessions are grouped, i.e. one for the modification thread
-   * and one for the AWT/FX thread.
-   *
-   * @return true if user session
-   */
-  public boolean isGrouped() {
-    return resources.db.getSessionGroupId() != 0;
   }
 
 

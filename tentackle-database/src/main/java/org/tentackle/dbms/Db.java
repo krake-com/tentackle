@@ -1055,29 +1055,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Checks for a dead communications link.<br>
-   * If the link is down, for example the database server closed it,
-   * the connection is marked dead.
-   *
-   * @param ex the sql exception
-   * @return true if connection is dead
-   * @see ManagedConnection#setDead(boolean)
-   */
-  public boolean checkForDeadLink(SQLException ex) {
-    if (getBackend().isCommunicationLinkException(ex)) {
-      // some severe comlink error, probably closed by server
-      ManagedConnection mc = getConnection();
-      if (mc != null) {
-        // if connection still attached: mark it dead!
-        mc.setDead(true);
-        LOGGER.severe("managed connection " + mc + " marked dead", ex);
-        return true;
-      }
-    }
-    return false;
-  }
-
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Serializable> T setProperty(String key, T value) {
@@ -1164,9 +1141,7 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Re-opens the session.
-   */
+  @Override
   public void reOpen() {
     if (isOpen()) {
       try {
@@ -1179,6 +1154,9 @@ public class Db implements Session, Cloneable {
     clearMembers();
     unregisterSession();
     open(resources.conMgr);
+    if (sessionGroupId > 0) {
+      groupWith(sessionGroupId);
+    }
   }
 
 
@@ -1537,14 +1515,15 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = connection().setSavepoint();
+      ManagedConnection mc = connection();
+      Savepoint savepoint = mc.setSavepoint();
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointId());
         transaction.addSavepoint(handle, savepoint);
         return handle;
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(this, "setting unnamed savepoint failed", sqx);
+        throw mc.createFromSqlException("setting unnamed savepoint failed", sqx);
       }
     }
   }
@@ -1568,14 +1547,15 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = connection().setSavepoint(name);
+      ManagedConnection mc = connection();
+      Savepoint savepoint = mc.setSavepoint(name);
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointName());
         transaction.addSavepoint(handle, savepoint);
         return handle;
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(this, "setting named savepoint '" + name + "' failed", sqx);
+        throw mc.createFromSqlException("setting named savepoint '" + name + "' failed", sqx);
       }
     }
   }
@@ -2297,15 +2277,6 @@ public class Db implements Session, Cloneable {
 
   @Override
   public int getSessionGroupId() {
-    assertOpen();
-    if (isRemote()) {
-      try {
-        return resources.rdel.getSessionGroupId();
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
     return sessionGroupId;
   }
 
@@ -2325,7 +2296,6 @@ public class Db implements Session, Cloneable {
       }
     }
     else  {
-
       if (sessionGroupId > 0 && sessionId != sessionGroupId) {
         throw new PersistenceException(this,
                 "session to join group " + sessionId + " already belongs to group " + sessionGroupId);
@@ -2655,7 +2625,6 @@ public class Db implements Session, Cloneable {
       transaction = null;
     }
 
-    sessionGroupId = 0;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
@@ -2690,6 +2659,7 @@ public class Db implements Session, Cloneable {
 
       newDb.resources = null;
       newDb.clearMembers();
+      newDb.sessionGroupId = 0;
 
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;
