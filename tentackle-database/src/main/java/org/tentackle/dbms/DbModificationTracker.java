@@ -18,6 +18,26 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.Service;
+import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
+import org.tentackle.io.ReconnectedException;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.DefaultSessionTaskDispatcher;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationEventDetail;
+import org.tentackle.session.ModificationListener;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionClosedException;
+import org.tentackle.session.SessionUtilities;
+import org.tentackle.task.Task;
+
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,24 +52,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.Service;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.session.AbstractSessionTask;
-import org.tentackle.session.DefaultSessionTaskDispatcher;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationEventDetail;
-import org.tentackle.session.ModificationListener;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
-import org.tentackle.task.Task;
-import org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegate;
-import org.tentackle.io.ReconnectedException;
-import org.tentackle.session.SessionUtilities;
 
 
 
@@ -666,20 +668,33 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   @Override
+  @SuppressWarnings("unchecked")
   protected void lockInternal() {
     try {
       poll();
       invokeDelayedListeners();
     }
     catch (Throwable t) {
-      ReconnectedException rx  = ExceptionHelper.extractException(ReconnectedException.class, true, t);
-      if (rx != null) {
-        // reconnected: just log and start over.
-        // requires Db.enableReconnection(true, >0) on the tracker's session
-        LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
-      }
-      else {
-        throw t;  // all other exceptions will be thrown
+      if (!ExceptionHelper.handleException(true, t,
+              new ExceptionHelper.Handler<ReconnectedException>(ReconnectedException.class, rx -> {
+                // reconnected: just log and start over.
+                // requires Db.enableReconnection(true, >0) on the tracker's session
+                LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
+              }),
+              new ExceptionHelper.Handler<SessionClosedException>(SessionClosedException.class, sx -> {
+                // if remote: session has been closed by the server (deadlock, timeout, whatever)
+                // if local: database server has closed the session
+                // reopen once and treat as if polling was ok
+                // if the session could not be re-opened: the process will terminate
+                if (getSession().getSessionGroupId() == 0) {    // only if ungrouped (else rich client)
+                  LOGGER.severe("session " + getSession() + " closed unexpectedly -> try to re-open ...", sx);
+                  getSession().reOpen();
+                }
+                else {
+                  throw sx;
+                }
+              }))) {
+        throw t;  // all other exceptions will be thrown as is
       }
     }
 

@@ -19,10 +19,11 @@
 
 package org.tentackle.session;
 
-import java.io.Serializable;
-import java.util.Collection;
 import org.tentackle.misc.Provider;
 import org.tentackle.misc.TrackedList;
+
+import java.io.Serializable;
+import java.util.Collection;
 
 
 interface Session$ThreadLocal {
@@ -194,12 +195,19 @@ public interface Session extends Comparable<Session> {
 
   /**
    * Clones a session.<br>
-   * If the session is open, the new session will be open as well.
-   * If the session is closed, the cloned session will be closed.
+   * If the session is closed, a PersistenceException is thrown.<br>
+   * The cloned session will always be non-grouped.
    *
    * @return the cloned session
    */
   Session clone();
+
+  /**
+   * Re-opens a session.<br>
+   * If the session is open, it will be closed first.<br>
+   * If the session belongs to a group, the re-opened session will be grouped as well.
+   */
+  void reOpen();
 
   /**
    * Gets the current user info.

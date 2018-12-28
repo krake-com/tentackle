@@ -19,6 +19,17 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.io.ReconnectedException;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.log.MappedDiagnosticContext;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionClosedException;
+import org.tentackle.sql.Backend;
+
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -38,14 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.log.MappedDiagnosticContext;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.sql.Backend;
 
 /**
  * A jdbc connection managed by the ConnectionManager.<br>
@@ -970,8 +973,8 @@ public class ManagedConnection {
       // as this statement is called when there are no more running statements
       // we ignore the unprepared running statements.
     }
-    catch (Exception e) {
-      throw new PersistenceException (db, "reading warnings failed", e);
+    catch (SQLException e) {
+      throw createFromSqlException("reading warnings failed", e);
     }
   }
 
@@ -1034,7 +1037,9 @@ public class ManagedConnection {
           }
         }
         catch (PersistenceException pex) {
-          LOGGER.severe("connection is broken", pex);
+          if (!dead) {
+            LOGGER.severe("connection is broken", pex);
+          }
           closeImpl();
         }
       }
@@ -1200,7 +1205,7 @@ public class ManagedConnection {
       return new StatementWrapper(this, stmt);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "creating statement failed for " + this, ex);
+      throw createFromSqlException("creating statement failed for " + this, ex);
     }
   }
 
@@ -1224,7 +1229,7 @@ public class ManagedConnection {
               sql);
     }
     catch (SQLException e) {
-      throw new PersistenceException(db, "creating prepared statement failed", e);
+      throw createFromSqlException("creating prepared statement failed", e);
     }
   }
 
@@ -1272,6 +1277,49 @@ public class ManagedConnection {
 
 
   /**
+   * Checks for a dead communications link.<br>
+   * If the link is down, for example the database server closed it,
+   * the connection is marked dead.
+   *
+   * @param ex the sql exception
+   * @return true if connection is dead
+   */
+  public boolean checkForDeadLink(SQLException ex) {
+    if (!isDead() && backend.isCommunicationLinkException(ex)) {
+      // some severe comlink error, probably closed by server
+      LOGGER.severe("managed connection {0}: *** MARKED DEAD ***", this);
+      setDead(true);
+    }
+    return isDead();
+  }
+
+
+  /**
+   * Creates a {@link PersistenceException} or {@link SessionClosedException} depending on the SQL error.<br>
+   * If the session was reconnected, a {@link ReconnectedException} is returned.
+   *
+   * @param message the message
+   * @param sx the SQL exception
+   * @return the persistence exception
+   */
+  public PersistenceException createFromSqlException(String message, SQLException sx) {
+    PersistenceException persistenceException;
+    if (checkForDeadLink(sx)) {
+      persistenceException = new SessionClosedException(db, message, sx);
+      Db ldb = db;
+      if (ldb != null && ldb.optionallyReconnect()) {
+        throw new ReconnectedException(persistenceException);
+      }
+    }
+    else {
+      persistenceException = new PersistenceException(db, message, sx);
+    }
+    return persistenceException;
+  }
+
+
+
+  /**
    * Check that requested resulttype and concurrency matches the prepared statement to reuse.
    *
    * @param prepStmt the prepared statement
@@ -1291,8 +1339,7 @@ public class ManagedConnection {
       }
     }
     catch (SQLException sqx) {
-      throw new PersistenceException(
-              "cannot determine prepared statement configuration for '" + prepStmt.getSql() + "'", sqx);
+      throw createFromSqlException("cannot determine prepared statement configuration for '" + prepStmt.getSql() + "'", sqx);
     }
   }
 

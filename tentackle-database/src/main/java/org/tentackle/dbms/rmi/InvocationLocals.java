@@ -18,9 +18,11 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.util.Locale;
 import org.tentackle.common.LocaleProvider;
+import org.tentackle.dbms.Db;
 import org.tentackle.session.Session;
+
+import java.util.Locale;
 
 /**
  * Holds the old thread-locals during remote delegate method invocation.
@@ -54,7 +56,10 @@ public class InvocationLocals {
    */
   public void restore() {
     Session.setCurrentSession(currentSession);
-    delegate.getSession().setOwnerThread(ownerThread);
+    Db db = delegate.getSession();
+    if (db != null) {
+      db.setOwnerThread(ownerThread);
+    }
     LocaleProvider.getInstance().setCurrentLocale(currentLocale);
   }
 

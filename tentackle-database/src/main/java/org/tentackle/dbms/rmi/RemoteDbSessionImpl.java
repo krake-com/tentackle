@@ -19,23 +19,6 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbUtilities;
@@ -53,6 +36,24 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 
@@ -687,18 +688,6 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public boolean isOpen() {
     return db != null;
-  }
-
-
-  /**
-   * Returns whether this is grouped session.<br>
-   * By default, user sessions are grouped, i.e. one for the modification thread
-   * and one for the AWT/FX thread.
-   *
-   * @return true if user session
-   */
-  public boolean isGrouped() {
-    return db.getSessionGroupId() != 0;
   }
 
 

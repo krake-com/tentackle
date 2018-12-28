@@ -20,6 +20,7 @@ package org.tentackle.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.function.Consumer;
 
 /**
  * Helper methods dealing with exceptions.
@@ -62,13 +63,94 @@ public final class ExceptionHelper {
    */
   @SuppressWarnings("unchecked")
   public static Throwable extractException(boolean first, Throwable headOfChain, Class<? extends Throwable>... types) {
-    for (Class<? extends Throwable> type: types) {
-      Throwable t = extractException(type, first, headOfChain);
-      if (t != null) {
-        return t;
+    Throwable ex = null;    // the chained exception found
+    outer: while (headOfChain != null) {
+      for (Class<? extends Throwable> type: types) {
+        if (type.isAssignableFrom(headOfChain.getClass())) {
+          ex = headOfChain;
+          if (first) {
+            break outer;
+          }
+          break;
+        }
       }
+      headOfChain = headOfChain.getCause();
     }
-    return null;
+    return ex;
+  }
+
+
+  /**
+   * Exception handler.
+   *
+   * @param <T> the exception type
+   * @see #handleException(boolean, Throwable, Handler[])
+   */
+  public static class Handler<T extends Throwable> {
+    private final Class<T> type;
+    private final Consumer<T> consumer;
+
+    /**
+     * Creates an exception handler.
+     *
+     * @param type the exception class
+     * @param consumer the consumer to handle the exception
+     */
+    public Handler(Class<T> type, Consumer<T> consumer) {
+      this.type = type;
+      this.consumer = consumer;
+    }
+
+    /**
+     * Checks if handler applies to the given exception.
+     *
+     * @param t the exception
+     * @return true if handler applies
+     */
+    public boolean appliesTo(Throwable t) {
+      return type.isAssignableFrom(t.getClass());
+    }
+
+    /**
+     * Handles the exception.
+     *
+     * @param t the exception
+     */
+    public void handle(T t) {
+      consumer.accept(t);
+    }
+  }
+
+  /**
+   * Extracts any of the given exception types from an exception chain.
+   *
+   * @param first true if handle the first, else the last in chain
+   * @param headOfChain the head of chained exceptions, may be null
+   * @param handlers the exception handlers
+   * @return true if handled, false if no matching exception found in chain
+   */
+  @SuppressWarnings("unchecked")
+  public static boolean handleException(boolean first, Throwable headOfChain, Handler<? extends Throwable>... handlers) {
+    Throwable ex = null;      // the chained exception found
+    Handler found = null;     // corresponding handler
+    outer: while (headOfChain != null) {
+      for (Handler<? extends Throwable> handler: handlers) {
+        if (handler.appliesTo(headOfChain)) {
+          found = handler;
+          ex = headOfChain;
+          if (first) {
+            break outer;
+          }
+          break;
+        }
+      }
+      headOfChain = headOfChain.getCause();
+    }
+    if (found != null) {
+      found.handle(ex);
+      return true;
+    }
+    return false;
   }
 
 

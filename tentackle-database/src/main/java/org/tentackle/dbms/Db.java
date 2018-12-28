@@ -20,33 +20,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.FileNotFoundException;
-import java.io.Serializable;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.RMIClientSocketFactory;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Savepoint;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.FileHelper;
@@ -78,6 +51,33 @@ import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
+
+import java.io.FileNotFoundException;
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.net.URI;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.RMIClientSocketFactory;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Savepoint;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 
 /**
@@ -803,29 +803,6 @@ public class Db implements Session, Cloneable {
   }
 
 
-  /**
-   * Checks for a dead communications link.<br>
-   * If the link is down, for example the database server closed it,
-   * the connection is marked dead.
-   *
-   * @param ex the sql exception
-   * @return true if connection is dead
-   * @see ManagedConnection#setDead(boolean)
-   */
-  public boolean checkForDeadLink(SQLException ex) {
-    if (getBackend().isCommunicationLinkException(ex)) {
-      // some severe comlink error, probably closed by server
-      ManagedConnection mc = getConnection();
-      if (mc != null) {
-        // if connection still attached: mark it dead!
-        mc.setDead(true);
-        LOGGER.severe("managed connection " + mc + " marked dead", ex);
-        return true;
-      }
-    }
-    return false;
-  }
-
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Serializable> T setProperty(String key, T value) {
@@ -1029,6 +1006,9 @@ public class Db implements Session, Cloneable {
     clearMembers();
     unregisterSession();
     open();
+    if (sessionGroupId > 0) {
+      groupWith(sessionGroupId);
+    }
   }
 
 
@@ -1487,14 +1467,15 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = connection().setSavepoint();
+      ManagedConnection mc = connection();
+      Savepoint savepoint = mc.setSavepoint();
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointId());
         transaction.addSavepoint(handle, savepoint);
         return handle;
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(this, "setting unnamed savepoint failed", sqx);
+        throw mc.createFromSqlException("setting unnamed savepoint failed", sqx);
       }
     }
   }
@@ -1518,14 +1499,15 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = connection().setSavepoint(name);
+      ManagedConnection mc = connection();
+      Savepoint savepoint = mc.setSavepoint(name);
       try {
         SavepointHandle handle = new SavepointHandle(savepoint.getSavepointName());
         transaction.addSavepoint(handle, savepoint);
         return handle;
       }
       catch (SQLException sqx) {
-        throw new PersistenceException(this, "setting named savepoint '" + name + "' failed", sqx);
+        throw mc.createFromSqlException("setting named savepoint '" + name + "' failed", sqx);
       }
     }
   }
@@ -2251,15 +2233,6 @@ public class Db implements Session, Cloneable {
 
   @Override
   public int getSessionGroupId() {
-    assertOpen();
-    if (isRemote()) {
-      try {
-        return rdel.getSessionGroupId();
-      }
-      catch (RemoteException e)  {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
     return sessionGroupId;
   }
 
@@ -2279,7 +2252,6 @@ public class Db implements Session, Cloneable {
       }
     }
     else  {
-
       if (sessionGroupId > 0 && sessionId != sessionGroupId) {
         throw new PersistenceException(this,
                 "session to join group " + sessionId + " already belongs to group " + sessionGroupId);
@@ -2612,8 +2584,7 @@ public class Db implements Session, Cloneable {
       transaction         = null;
     }
 
-    sessionGroupId  = 0;
-    sessionId       = 0;
+    sessionId = 0;
     ownerThread = null;
 
     if (sessionInfo != null && !sessionInfo.isImmutable()) {
@@ -2645,6 +2616,7 @@ public class Db implements Session, Cloneable {
       }
 
       newDb.clearMembers();
+      newDb.sessionGroupId = 0;
 
       newDb.instanceNumber = INSTANCE_COUNTER.incrementAndGet();
       newDb.clonedFromDb = this;

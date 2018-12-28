@@ -19,12 +19,13 @@
 
 package org.tentackle.dbms;
 
-import java.util.Date;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
+
+import java.util.Date;
 
 
 
@@ -430,7 +431,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
              * Anyway: mark the connection dead so that it is closed and cleaned up.
              * The Db is also closed to prevent any further use.
              */
-            LOGGER.severe("connection {0} detached while still in transaction -> marked dead", con);
+            LOGGER.severe("connection {0} detached while still in transaction: *** MARKED DEAD ***", con);
             con.setDead(true);
           }
 
