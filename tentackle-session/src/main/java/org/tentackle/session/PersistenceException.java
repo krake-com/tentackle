@@ -24,6 +24,7 @@ import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.misc.Identifiable;
 
 import java.lang.StackWalker.Option;
+import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.List;
@@ -56,10 +57,19 @@ public class PersistenceException extends TentackleRuntimeException {
    * @return the runtime exception
    */
   public static RuntimeException createFromRemoteException(Object relatedObject, RemoteException remoteException) {
+
     // find the first cause in chain which is not a RemoteException
     Throwable remoteCause = remoteException;
-    while (remoteCause instanceof RemoteException && remoteCause.getCause() != null) {
-      remoteCause = remoteCause.getCause();
+
+    boolean remoteClosed;
+    if (remoteCause instanceof NoSuchObjectException) {
+      remoteClosed = true;
+    }
+    else {
+      remoteClosed = false;
+      while (remoteCause instanceof RemoteException && remoteCause.getCause() != null) {
+        remoteCause = remoteCause.getCause();
+      }
     }
 
     RuntimeException pex;
@@ -69,14 +79,27 @@ public class PersistenceException extends TentackleRuntimeException {
     }
     else  {
       // other exception found
-      if (relatedObject instanceof Identifiable) {
-        pex = new PersistenceException((Identifiable) relatedObject, remoteCause);
+      if (remoteClosed) {
+        if (relatedObject instanceof Identifiable) {
+          pex = new SessionClosedException((Identifiable) relatedObject, remoteCause);
+        }
+        else if (relatedObject instanceof Session) {
+          pex = new SessionClosedException((Session) relatedObject, remoteCause);
+        }
+        else {
+          pex = new SessionClosedException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
+        }
       }
-      else if (relatedObject instanceof Session) {
-        pex = new PersistenceException((Session) relatedObject, remoteCause);
-      }
-      else  {
-        pex = new PersistenceException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
+      else {
+        if (relatedObject instanceof Identifiable) {
+          pex = new PersistenceException((Identifiable) relatedObject, remoteCause);
+        }
+        else if (relatedObject instanceof Session) {
+          pex = new PersistenceException((Session) relatedObject, remoteCause);
+        }
+        else {
+          pex = new PersistenceException((relatedObject != null ? relatedObject.toString() : ""), remoteCause);
+        }
       }
     }
 
