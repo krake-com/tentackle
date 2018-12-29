@@ -1243,7 +1243,9 @@ public class ManagedConnection {
         }
       }
       catch (SQLException ex) {
-        LOGGER.warning("low level rollback failed: {0}", ex.getMessage());
+        if (!resources.dead) {
+          LOGGER.warning("low level rollback failed: {0}", ex.getMessage());
+        }
       }
 
       logAndClearWarnings();
