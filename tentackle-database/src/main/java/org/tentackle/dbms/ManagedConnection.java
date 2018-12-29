@@ -1093,7 +1093,9 @@ public class ManagedConnection {
       getConnection().close();
     }
     catch (SQLException ex) {
-      LOGGER.warning("low level close failed: " + ex.getMessage() + " -> " + this + " marked closed!");
+      if (!dead) {
+        LOGGER.warning("low level close failed: " + ex.getMessage() + " -> " + this + " marked closed!");
+      }
     }
     finally {
       connection = null;          // to GC
