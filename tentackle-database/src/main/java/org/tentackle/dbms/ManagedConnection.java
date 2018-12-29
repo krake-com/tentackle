@@ -753,7 +753,7 @@ public class ManagedConnection {
       getConnection().setAutoCommit(autoCommit);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting autocommit failed", ex);
+      throw createFromSqlException("setting autocommit failed", ex);
     }
   }
 
@@ -768,7 +768,7 @@ public class ManagedConnection {
       return getConnection().getAutoCommit();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "getting autocommit failed", ex);
+      throw createFromSqlException("getting autocommit failed", ex);
     }
   }
 
@@ -782,7 +782,7 @@ public class ManagedConnection {
       getConnection().commit();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "commit failed", ex);
+      throw createFromSqlException("commit failed", ex);
     }
   }
 
@@ -803,7 +803,7 @@ public class ManagedConnection {
       unmarkPreparedStatements();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "rollback failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("rollback failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -819,7 +819,7 @@ public class ManagedConnection {
       return getConnection().setSavepoint();
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting unnamed savepoint failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("setting unnamed savepoint failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -836,7 +836,7 @@ public class ManagedConnection {
       return getConnection().setSavepoint(name);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("setting savepoint '" + name + "' failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -851,7 +851,7 @@ public class ManagedConnection {
       getConnection().rollback(savepoint);
     }
     catch (SQLException ex) {
-      throw new PersistenceException(db, "rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+      throw createFromSqlException("rollback of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
     }
   }
 
@@ -868,7 +868,7 @@ public class ManagedConnection {
         getConnection().releaseSavepoint(savepoint);
       }
       catch (SQLException ex) {
-        throw new PersistenceException(db, "release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
+        throw createFromSqlException("release of savepoint '" + savepoint + "' failed: " + toDiagnosticString(), ex);
       }
     }
   }
@@ -1071,7 +1071,9 @@ public class ManagedConnection {
         }
       }
       catch (SQLException ex) {
-        LOGGER.warning("low level rollback failed: " + ex.getMessage());
+        if (!dead) {
+          LOGGER.warning("low level rollback failed: " + ex.getMessage());
+        }
       }
 
       logAndClearWarnings();

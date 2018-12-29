@@ -308,7 +308,7 @@ public class Db implements Session, Cloneable {
   private BackendInfo backendInfo;                        // the backend information
   private String idConfig;                                // configuration of IdSource
   private final ConnectionManager conMgr;                 // connection manager for local connections
-  private int sessionId;                                  // local session ID
+  private int sessionId;                                  // unique session ID
   private int sessionGroupId;                             // ID of the session group, 0 = none
   private volatile ManagedConnection con;                 // connection if attached, null = detached
   private SessionPool dbPool;                             // != null if this Db is managed by a SessionPool
