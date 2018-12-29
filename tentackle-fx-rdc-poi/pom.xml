@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>2.2.1-SNAPSHOT</version>
+    <version>11.2.3.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-fx-rdc-poi</artifactId>
-  <version>2.2.1-SNAPSHOT</version>
+  <version>11.2.3.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle FX RDC POI Extension</name>
   <description>POI Extension for FX Rich Desktop Client</description>
