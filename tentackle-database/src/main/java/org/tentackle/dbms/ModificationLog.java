@@ -16,9 +16,39 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-
 package org.tentackle.dbms;
+
+/*
+ * @> $mapfile
+ *
+ * # modification table for async coupling
+ * name := $classname
+ * id := $classid
+ * table := $tablename
+ *
+ * [remote]
+ *
+ * ## attributes
+ * long           objectId         objectid         object id
+ * int            objectClassId    classid          object class id
+ * String(192)    objectClassName  classname        object classname (if classid == 0)
+ * long           txId             txid             transaction id (optional)
+ * String(64)     txName           txname           transaction name (optional) [TRIMWRITE]
+ * char           modType          modtype          modification type
+ * Timestamp      when             modtime          time of event
+ * long           userId           userid           user id
+ * String         message          message          optional informational or error message [NOMETHOD]
+ * Timestamp      processed        processed        processing time [MAPNULL]
+ *
+ * ## indexes
+ * index next := processed, id
+ * index txid := txid
+ * index object := processed, objectid, classid
+ * index user := processed, userid
+ *
+ * @<
+ */
+
 
 import org.tentackle.common.Freezable;
 import org.tentackle.common.RemoteMethod;
@@ -40,41 +70,6 @@ import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
-
-
-/*
- * @> $mapfile
- *
- * # modification table for async coupling
- * name := $classname
- * id := $classid
- * table := $tablename
- *
- * [remote]
- *
- * ## attributes
- * long           objectId         objectid         object id
- * int            objectClassId    classid          object class id
- * String(192)    objectClassName  classname        object classname (if classid == 0)
- * long           txId             txid             transaction id (optional)
- * String(64)     txName           txname           transaction name (optional) [TRIMWRITE]
- * char           modType          modtype          modification type
- * Timestamp      when             modtime          time of event
- * String(32)     user             moduser          name of user [TRIMWRITE]
- * String         message          message          optional informational or error message [NOMETHOD]
- * Timestamp      processed        processed        processing time [MAPNULL]
- *
- * ## indexes
- * index next := processed, id
- * index txid := txid
- * index object := processed, objectid, classid
- * index user := processed, moduser
- *
- * @<
- */
-
 
 
 /**
@@ -149,8 +144,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /** database column name for 'when'. */
   public static final String CN_WHEN = "modtime";
 
-  /** database column name for 'user'. */
-  public static final String CN_USER = "moduser";
+  /** database column name for 'userId'. */
+  public static final String CN_USERID = "userid";
 
   /** database column name for 'message'. */
   public static final String CN_MESSAGE = "message";
@@ -171,9 +166,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   /** maximum number of characters for 'txName'. */
   int CL_TXNAME = 64;
-
-  /** maximum number of characters for 'user'. */
-  int CL_USER = 32;
 
   //</editor-fold>//GEN-END:fieldnames
 
@@ -222,8 +214,8 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /** time of event. */
   private Timestamp when;
 
-  /** name of user. */
-  private String user;
+  /** user id. */
+  private long userId;
 
   /** optional informational or error message. */
   private String message;
@@ -258,7 +250,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     txName = db.getTxName();
     txId   = db.getLogModificationTxId();
     when   = DateHelper.now();
-    user   = db.getSessionInfo().getUserName();
+    userId = db.getSessionInfo().getUserId();
   }
 
 
@@ -314,7 +306,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     txId = template.txId;
     txName = template.txName;
     when = template.when;
-    user = template.user;
+    userId = template.userId;
     message = template.message;
     this.modType = modType;
   }
@@ -351,7 +343,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
       rs.configureColumn(CN_TXNAME);
       rs.configureColumn(CN_MODTYPE);
       rs.configureColumn(CN_WHEN);
-      rs.configureColumn(CN_USER);
+      rs.configureColumn(CN_USERID);
       rs.configureColumn(CN_MESSAGE);
       rs.configureColumn(CN_PROCESSED);
       rs.configureColumn(CN_ID);
@@ -367,7 +359,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     txName = rs.getString();
     modType = rs.getChar();
     when = rs.getTimestamp();
-    user = rs.getString();
+    userId = rs.getLong();
     message = rs.getString();
     processed = rs.getTimestamp(true);
     setId(rs.getLong());
@@ -384,7 +376,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     st.setString(++ndx, StringHelper.trim(txName, 64));
     st.setChar(++ndx, modType);
     st.setTimestamp(++ndx, when);
-    st.setString(++ndx, StringHelper.trim(user, 32));
+    st.setLong(++ndx, userId);
     st.setString(++ndx, message);
     st.setTimestamp(++ndx, processed, true);
     st.setLong(++ndx, getId());
@@ -402,7 +394,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
            CN_TXNAME + Backend.SQL_COMMA +
            CN_MODTYPE + Backend.SQL_COMMA +
            CN_WHEN + Backend.SQL_COMMA +
-           CN_USER + Backend.SQL_COMMA +
+           CN_USERID + Backend.SQL_COMMA +
            CN_MESSAGE + Backend.SQL_COMMA +
            CN_PROCESSED + Backend.SQL_COMMA +
            CN_ID + Backend.SQL_COMMA +
@@ -432,7 +424,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
            CN_TXNAME + Backend.SQL_EQUAL_PAR_COMMA +
            CN_MODTYPE + Backend.SQL_EQUAL_PAR_COMMA +
            CN_WHEN + Backend.SQL_EQUAL_PAR_COMMA +
-           CN_USER + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_USERID + Backend.SQL_EQUAL_PAR_COMMA +
            CN_MESSAGE + Backend.SQL_EQUAL_PAR_COMMA +
            CN_PROCESSED + Backend.SQL_EQUAL_PAR_COMMA +
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
@@ -576,22 +568,22 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   }
 
   /**
-   * Gets the attribute user.
+   * Gets the attribute userId.
    *
-   * @return name of user
+   * @return user id
    */
-  public String getUser()    {
-    return user;
+  public long getUserId()    {
+    return userId;
   }
 
   /**
-   * Sets the attribute user.
+   * Sets the attribute userId.
    *
-   * @param user name of user
+   * @param userId user id
    */
-  public void setUser(String user) {
+  public void setUserId(long userId) {
     assertMutable();
-    this.user = user;
+    this.userId = userId;
   }
 
   /*
@@ -634,7 +626,6 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   public void canonicalize(Canonicalizer<String> stringCanonicalizer, Canonicalizer<ModificationLoggable> objectCanonicalizer) {
     if (stringCanonicalizer != null) {
       txName = stringCanonicalizer.canonicalize(txName);
-      user = stringCanonicalizer.canonicalize(user);
       message = stringCanonicalizer.canonicalize(message);
       messageParameters = null;   // force rebuild
     }
@@ -807,28 +798,44 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   @Override
   public String toString()  {
+    // I: 242222 U2104 T8988112/BlahDomain#move 2016-11-12 14:33:10.000 org.example.Blah[34243/4] "masterData, serverId=404"
     StringBuilder buf = new StringBuilder();
-    buf.append('<').append(getId()).append('/').append(modType).append(':');
-    buf.append(Objects.requireNonNullElse(user, "no-user"));
-    if (txId != 0) {
-      buf.append(',').append(txId);
+
+    buf.append(modType).append(": ").append(getId());
+    if (objectId == 0) {
+      buf.append('/').append(getSerial());
+    }
+
+    buf.append(" U").append(userId);
+
+    if (txId != 0 || txName != null) {
+      buf.append(' ');
+      if (txId != 0) {
+        buf.append('T').append(txId).append('/');
+      }
       if (txName != null) {
-        buf.append('/').append(txName);
+        buf.append(txName);
       }
     }
-    buf.append(',');
-    if (when == null) {
-      buf.append("no-time");
-    }
-    else {
-      buf.append(when);
-    }
-    buf.append(">");
 
-    if (objectClassId != 0 && objectId != 0) {
-      buf.append(' ').append(SessionUtilities.getInstance().getClassName(objectClassId))
-         .append('[').append(objectId).append('/').append(getSerial()).append(']');
+    if (when != null) {
+      buf.append(' ').append(when);
     }
+
+    if (objectId != 0) {
+      buf.append(' ');
+      if (objectClassId != 0) {
+        buf.append(SessionUtilities.getInstance().getClassName(objectClassId));
+      }
+      else if (objectClassName != null) {
+        buf.append(objectClassName);
+      }
+      buf.append('[').append(objectId).append('/').append(getSerial()).append(']');
+    }
+    else if (objectClassName != null) {
+      buf.append(' ').append(objectClassName);
+    }
+
     if (message != null) {
       buf.append(" \"").append(message).append("\"");
     }
@@ -1264,18 +1271,18 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Selects all logs for a given user and type.
    *
-   * @param user the username
+   * @param userId the user ID
    * @param modType the modlog type
    * @return the modlogs
-   * @wurblet selectByUserAndType DbSelectList --model=$mapfile processed:=:null user modType
+   * @wurblet selectByUserAndType DbSelectList --model=$mapfile processed:=:null userId modType
    */
   //<editor-fold defaultstate="collapsed" desc="code 'selectByUserAndType' generated by wurblet DbSelectList">//GEN-BEGIN:selectByUserAndType
 
-  public List<ModificationLog> selectByUserAndType(String user, char modType) {
+  public List<ModificationLog> selectByUserAndType(long userId, char modType) {
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        List<ModificationLog> list = getRemoteDelegate().selectByUserAndType(user, modType);
+        List<ModificationLog> list = getRemoteDelegate().selectByUserAndType(userId, modType);
         db.applyTo(list);
         return list;
       }
@@ -1290,7 +1297,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
-        sql.append(CN_USER);
+        sql.append(CN_USERID);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
         sql.append(CN_MODTYPE);
@@ -1301,7 +1308,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     );
     int ndx = 1;
     st.setTimestamp(ndx++, null, true);
-    st.setString(ndx++, user);
+    st.setLong(ndx++, userId);
     st.setChar(ndx, modType);
     try (ResultSetWrapper rs = st.executeQuery()) {
       List<ModificationLog> list = new ArrayList<>();
@@ -1324,16 +1331,16 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
   /**
    * Checks if there are logs for a given user.
    *
-   * @param user the user name
+   * @param userId the user ID
    * @return true if there are logs
-   * @wurblet isReferencingUser DbIsReferencing --model=$mapfile processed:=:null user
+   * @wurblet isReferencingUser DbIsReferencing --model=$mapfile processed:=:null userId
    */
   //<editor-fold defaultstate="collapsed" desc="code 'isReferencingUser' generated by wurblet DbIsReferencing">//GEN-BEGIN:isReferencingUser
 
-  public boolean isReferencingUser(String user) {
+  public boolean isReferencingUser(long userId) {
     if (getSession().isRemote())  {
       try {
-        return getRemoteDelegate().isReferencingUser(user);
+        return getRemoteDelegate().isReferencingUser(userId);
       }
       catch (RemoteException e) {
         throw PersistenceException.createFromRemoteException(getSession(), e);
@@ -1346,7 +1353,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
         sql.append(CN_PROCESSED);
         sql.append(Backend.SQL_EQUAL_PAR);
         sql.append(Backend.SQL_AND);
-        sql.append(CN_USER);
+        sql.append(CN_USERID);
         sql.append(Backend.SQL_EQUAL_PAR);
         getBackend().buildSelectSql(sql, false, 1, 0);
         return sql.toString();
@@ -1354,7 +1361,7 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
     );
     int ndx = getBackend().setLeadingSelectParameters(st, 1, 0);
     st.setTimestamp(ndx++, null, true);
-    st.setString(ndx++, user);
+    st.setLong(ndx++, userId);
     getBackend().setTrailingSelectParameters(st, ndx, 1, 0);
     try (ResultSetWrapper rs = st.executeQuery()) {
       return rs.next();
