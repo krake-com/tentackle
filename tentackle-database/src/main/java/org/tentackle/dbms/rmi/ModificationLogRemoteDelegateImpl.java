@@ -20,11 +20,12 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.Timestamp;
+import org.tentackle.dbms.ModificationLog;
+
 import java.rmi.RemoteException;
 import java.text.ParseException;
 import java.util.List;
-import org.tentackle.common.Timestamp;
-import org.tentackle.dbms.ModificationLog;
 
 /**
  * Remote delegate implementation  for {@link ModificationLog}.
@@ -120,9 +121,9 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public List<ModificationLog> selectByUserAndType(String user, char modType) throws RemoteException {
+  public List<ModificationLog> selectByUserAndType(long userId, char modType) throws RemoteException {
     try {
-      return dbObject.selectByUserAndType(user, modType);
+      return dbObject.selectByUserAndType(userId, modType);
     }
     catch (RuntimeException e) {
       throw createException(e);
@@ -130,9 +131,9 @@ public class ModificationLogRemoteDelegateImpl
   }
 
   @Override
-  public boolean isReferencingUser(String user) throws RemoteException {
+  public boolean isReferencingUser(long userId) throws RemoteException {
     try {
-      return dbObject.isReferencingUser(user);
+      return dbObject.isReferencingUser(userId);
     }
     catch (RuntimeException e) {
       throw createException(e);
