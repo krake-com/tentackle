@@ -23,8 +23,11 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SavepointHandle;
 
 import java.sql.Savepoint;
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,6 +51,7 @@ public class DbTransaction {
   private final long txVoucher;         // the random voucher for commit or rollback
   private int handleCount;              // the last handle number
   private int txLevel;                  // number of nested begin() (only for local Db), Integer.MIN_VALUE if invalid
+  private Deque<String> nestedTxNames;  // transaction names for nested transactions
   private int updateCount;              // number of object modified by executeUpdate since the last begin()
   private AbstractDbObject<?> txObject; // optional top-level object initiating the transaction
 
@@ -177,6 +181,7 @@ public class DbTransaction {
    */
   public void invalidateTxLevel() {
     txLevel = Integer.MIN_VALUE;
+    nestedTxNames = null;
   }
 
 
@@ -193,10 +198,18 @@ public class DbTransaction {
   /**
    * Increments the transaction level.
    *
+   * @param txName the optional transaction name
    * @return the new tx level
    */
-  public int incrementTxLevel() {
+  public int incrementTxLevel(String txName) {
     if (isTxLevelValid()) {
+      if (txName == null) {
+        txName = DEFAULT_TXNAME;
+      }
+      if (nestedTxNames == null) {
+        nestedTxNames = new ArrayDeque<>();
+      }
+      nestedTxNames.push(txName);
       txLevel++;
     }
     return txLevel;
@@ -210,9 +223,12 @@ public class DbTransaction {
    */
   public int decrementTxLevel() {
     if (isTxLevelValid()) {
-      --txLevel;
-      if (txLevel < 1) {
+      if (txLevel <= 1) {
         throw new PersistenceException(db, "unbalanced tx level");
+      }
+      --txLevel;
+      if (nestedTxNames != null) {
+        nestedTxNames.pop();
       }
     }
     return txLevel;
@@ -226,6 +242,19 @@ public class DbTransaction {
    */
   public long getTxVoucher() {
     return txVoucher;
+  }
+
+
+  /**
+   * Asserts the validity of the given voucher.<br>
+   * If the voucher does not match, a {@link PersistenceException} is thrown.
+   *
+   * @param txVoucher the voucher to test
+   */
+  public void assertValidTxVoucher(long txVoucher) {
+    if (this.txVoucher != txVoucher) {
+      throw new PersistenceException(db, "invalid voucher " + txVoucher);
+    }
   }
 
 
@@ -279,7 +308,18 @@ public class DbTransaction {
 
   @Override
   public String toString() {
-    return "transaction-" + txNumber + (isTxLevelValid() ? ("." + txLevel) : "") + "(" + txName + ") on " + db;
+    StringBuilder buf = new StringBuilder();
+    buf.append("TX").append(txNumber);
+    if (isTxLevelValid()) {
+      buf.append('.').append(txLevel);
+    }
+    buf.append('-').append(txName);
+    if (nestedTxNames != null) {
+      for (Iterator<String> iterator = nestedTxNames.descendingIterator(); iterator.hasNext(); ) {
+        buf.append('>').append(iterator.next());
+      }
+    }
+    return buf.toString();
   }
 
 

@@ -719,6 +719,9 @@ public class Db implements Session, Cloneable {
     if (mc != null) {
       buf.append('|').append(mc.getName());
     }
+    if (isTxRunning()) {
+      buf.append('|').append(transaction);
+    }
     return buf.toString();
   }
 
@@ -1484,15 +1487,15 @@ public class Db implements Session, Cloneable {
         modificationLogList = null;
         transaction = new DbTransaction(this, txName, fromRemote);
         txVoucher = transaction.getTxVoucher();
+        LOGGER.fine("{0}: begin transaction, voucher {1}", this, txVoucher);
       }
       else  {
         // already running transaction
         assertTxRunning();
-        transaction.incrementTxLevel();    // just increment the nesting level
+        transaction.incrementTxLevel(txName);    // just increment the nesting level
+        LOGGER.fine("{0}: nested begin", this);
       }
     }
-
-    LOGGER.fine("{0} {1}", transaction, txVoucher != 0 ? " begun" : " already running");
 
     return txVoucher;
   }
@@ -1920,6 +1923,8 @@ public class Db implements Session, Cloneable {
 
         if (!autoCommit) {
           // within a transaction: commit!
+          LOGGER.fine("{0}: commit transaction, voucher {1}", this, txVoucher);
+          transaction.assertValidTxVoucher(txVoucher);
           logCommitTx();
           if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
             LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
@@ -1932,16 +1937,15 @@ public class Db implements Session, Cloneable {
           committed = true;
         }
         else  {
-          throw new PersistenceException(this, "transaction ended unexpectedly before commit (valid voucher)");
+          throw new PersistenceException(this, "transaction ended unexpectedly before commit, valid voucher " + txVoucher);
         }
       }
       else {
         // no voucher, no change (this is ok)
+        LOGGER.fine("{0}: nested commit", this);
         transaction.decrementTxLevel();   // just decrement the tx level
       }
     }
-
-    LOGGER.fine("{0} {1}", transaction, committed ? " committed" : " nesting level decremented");
 
     return committed;
   }
@@ -1963,6 +1967,7 @@ public class Db implements Session, Cloneable {
     assertNotRemote();
 
     if (transaction != null) {
+      LOGGER.warning("*** immediate commit for " + this + " ***");
       int currentTxLevel = transaction.getTxLevel();
       immediatelyCommitted = 0;
       immediatelyRolledBack = 0;
@@ -1971,7 +1976,6 @@ public class Db implements Session, Cloneable {
         throw new PersistenceException(this, transaction + " not committed despite valid voucher");
       }
       transaction = null;
-      LOGGER.warning("*** immediate commit for " + this + " ***");
       if (!isRemote()) {
         // keep the txLevel for pending commit()s, if any will arrive from the application
         immediatelyCommitted = currentTxLevel;
@@ -2051,6 +2055,8 @@ public class Db implements Session, Cloneable {
           // begin() started a new tx
           if (!autoCommit) {
             // within a transaction
+            LOGGER.fine("{0}: rollback transaction, voucher {1}", this, txVoucher);
+            transaction.assertValidTxVoucher(txVoucher);
             if (transaction.isTxLevelValid() && transaction.getTxLevel() != 1) {
               LOGGER.warning(this + ": txLevel=" + transaction.getTxLevel() + ", should be 1");
             }
@@ -2064,7 +2070,6 @@ public class Db implements Session, Cloneable {
               LOGGER.warning("rollback too late: connection already detached");
               autoCommit = true;
             }
-            LOGGER.fine("{0} rolled back", transaction);
             logModificationDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
@@ -2077,12 +2082,12 @@ public class Db implements Session, Cloneable {
         }
         else {
           // no voucher, no change (this is ok)
+          LOGGER.fine("{0}: nested rollback", this);
           transaction.decrementTxLevel();
-          LOGGER.fine("{0} nesting level decremented -> no physical rollback", transaction);
         }
       }
       else {
-        LOGGER.fine("no transaction running -> no physical rollback");
+        LOGGER.fine("{0}: no transaction running -> no physical rollback", this);
       }
     }
 

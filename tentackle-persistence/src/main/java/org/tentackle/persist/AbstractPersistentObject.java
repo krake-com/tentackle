@@ -3573,6 +3573,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
             setEditedSince(curTime);
             setEditedExpiry(tokenExpiry);
             LockManager.getInstance().update(pdo);
+            db.commit(txVoucher);
           }
           else {
             // no success: another user is currently holding the token
@@ -3672,6 +3673,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           st.setLong(4, getId());
           assertThisRowAffected(st.executeUpdate());
           LockManager.getInstance().update(pdo);
+          db.commit(txVoucher);
         }
       }
       catch (PersistenceException px) {
