@@ -49,6 +49,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Scale;
@@ -309,6 +310,20 @@ public class FxUtilities {
     blockingFxExecutor.execute(runnable);
   }
 
+  /**
+   * Workaround for the bug that messages are not completely displayed if text is wrapped.
+   *
+   * @param alert the alert dialog
+   * @param message the text message
+   */
+  protected void setAlertMessage(Alert alert, String message) {
+    alert.setHeaderText(null);
+    Label textLabel = new Label();    // replace with non-wrapping label!
+    textLabel.setWrapText(false);
+    textLabel.setText(message);
+    alert.getDialogPane().setContent(textLabel);
+    alert.setResizable(true);   // RT-38998
+  }
 
   /**
    * Shows an info dialog.
@@ -318,9 +333,7 @@ public class FxUtilities {
   public void showInfoDialog(String message) {
     Alert alert = new Alert(Alert.AlertType.INFORMATION);
     alert.setTitle(FxFxBundle.getString("INFORMATION"));
-    alert.setHeaderText(null);
-    alert.setContentText(message);
-    alert.setResizable(true);   // RT-38998
+    setAlertMessage(alert, message);
     alert.showAndWait();
   }
 
@@ -334,9 +347,7 @@ public class FxUtilities {
   public boolean showQuestionDialog(String message, boolean defaultYes) {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(FxFxBundle.getString("QUESTION"));
-    alert.setHeaderText(null);
-    alert.setContentText(message);
-    alert.setResizable(true);   // RT-38998
+    setAlertMessage(alert, message);
     alert.getButtonTypes().clear();
     alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
     Button noButton = (Button) alert.getDialogPane().lookupButton(ButtonType.NO);
@@ -356,8 +367,7 @@ public class FxUtilities {
   public void showErrorDialog(String message, Throwable t) {
     Alert alert = new Alert(Alert.AlertType.ERROR);
     alert.setTitle(FxFxBundle.getString("ERROR"));
-    alert.setHeaderText(null);
-    alert.setContentText(message);
+    setAlertMessage(alert, message);
 
     if (t != null) {
       StringWriter sw = new StringWriter();
