@@ -398,4 +398,111 @@ public class DefaultLockManager implements LockManager {
     return new DbTokenLock(session);
   }
 
+
+  /**
+   * Reloads locks from the database into the internal map.<br>
+   * There must be no transactions running!
+   *
+   * @param session the session
+   */
+  protected void reloadLocks(Db session) {
+    lockMap.clear();
+    createTokenLock((Db) session).selectAllObjects().forEach(lock -> lockMap.put(new PdoKey(lock), lock));
+  }
+
+
+  /**
+   * A lock was created within a transaction.
+   *
+   * @param lock the new lock
+   */
+  private void addCreatedLock(DbTokenLock lock) {
+    TransactionKey txKey = new TransactionKey(lock.getSession());
+    PdoKey key = new PdoKey(lock);
+    createdLocksInFlight.computeIfAbsent(txKey, tk -> new HashMap<>()).put(key, lock);
+    Map<PdoKey, DbTokenLock> updatedLocks = updatedLocksInFlight.get(txKey);
+    if (updatedLocks != null) {
+      updatedLocks.remove(key);
+    }
+    Map<PdoKey, DbTokenLock> removedLocks = removedLocksInFlight.get(txKey);
+    if (removedLocks != null) {
+      removedLocks.remove(key);
+    }
+  }
+
+  /**
+   * A lock was updated within a transaction.
+   *
+   * @param lock the updated lock
+   */
+  private void addUpdatedLock(DbTokenLock lock) {
+    DbTokenLock copy = new DbTokenLock();
+    copy.setId(lock.getId());
+    copy.setSerial(lock.getSerial());
+    copy.setPdoClassId(lock.getPdoClassId());
+    copy.setLockedBy(lock.getLockedBy());
+    copy.setLockedSince(lock.getLockedSince());
+    copy.setLockExpiry(lock.getLockExpiry());
+    // add the first update only
+    updatedLocksInFlight.computeIfAbsent(new TransactionKey(lock.getSession()), tk -> new HashMap<>()).putIfAbsent(new PdoKey(copy), copy);
+  }
+
+  /**
+   * A lock was removed within a transaction.
+   *
+   * @param lock the removed lock
+   */
+  private void addRemovedLock(DbTokenLock lock) {
+    TransactionKey txKey = new TransactionKey(lock.getSession());
+    PdoKey pdoKey = new PdoKey(lock);
+    Map<PdoKey, DbTokenLock> updatedLocks = updatedLocksInFlight.get(txKey);
+    if (updatedLocks != null) {
+      updatedLocks.remove(pdoKey);
+    }
+    Map<PdoKey, DbTokenLock> createdLocks = createdLocksInFlight.get(txKey);
+    if (createdLocks != null) {
+      if (createdLocks.remove(pdoKey) != null) {
+        // lock was created in flight: don't add to the removed in flight
+        return;
+      }
+    }
+    removedLocksInFlight.computeIfAbsent(txKey, tk -> new HashMap<>()).put(pdoKey, lock);
+  }
+
+  /**
+   * Rebuilds the internal if rebuild requested and no locks are in flight.
+   *
+   * @param session the session
+   */
+  private void rebuildIfFailed(Db session) {
+    if (rebuild) {
+      // we can only rebuild if there are no locks in flight (i.e. no locking relevant tx running)
+      if (isTxMapEmpty(createdLocksInFlight) &&
+          isTxMapEmpty(updatedLocksInFlight) &&
+          isTxMapEmpty(removedLocksInFlight)) {
+
+        reloadLocks(session);
+        rebuild = false;
+        LOGGER.warning("lock manager re-initialized");
+      }
+    }
+  }
+
+  /**
+   * Checks if in-flight map is empty and removes dummy weak references.
+   *
+   * @param txMap the in-flight map
+   * @return true if empty
+   */
+  private boolean isTxMapEmpty(Map<TransactionKey, Map<PdoKey, DbTokenLock>> txMap) {
+    // remove unreferenced transactions
+    for (Iterator<TransactionKey> iter = txMap.keySet().iterator(); iter.hasNext(); ) {
+      TransactionKey txKey = iter.next();
+      if (txKey.sessionRef.get() == null) {
+        iter.remove();
+      }
+    }
+    return txMap.isEmpty();
+  }
+
 }
