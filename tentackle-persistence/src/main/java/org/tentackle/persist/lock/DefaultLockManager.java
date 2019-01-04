@@ -271,10 +271,10 @@ public class DefaultLockManager implements LockManager {
               if (lock.getLockedBy() != pdo.getEditedBy() ||
                   !Objects.equals(lock.getLockedSince(), pdo.getEditedSince()) ||
                   !Objects.equals(lock.getLockExpiry(), pdo.getEditedExpiry())) {
-                addUpdatedLock(lock);
                 Db db = (Db) pdo.getSession();
                 db.assertTxRunning();
                 lock.setSession(db);
+                addUpdatedLock(lock);
                 try {
                   lock.setLockedBy(pdo.getEditedBy());
                   lock.setLockedSince(pdo.getEditedSince());
@@ -436,7 +436,7 @@ public class DefaultLockManager implements LockManager {
    * @param lock the updated lock
    */
   private void addUpdatedLock(DbTokenLock lock) {
-    DbTokenLock copy = new DbTokenLock();
+    DbTokenLock copy = createTokenLock(lock.getSession());
     copy.setId(lock.getId());
     copy.setSerial(lock.getSerial());
     copy.setPdoClassId(lock.getPdoClassId());
