@@ -19,11 +19,12 @@
 
 package org.tentackle.session;
 
+import org.tentackle.misc.Immutable;
+
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TimeZone;
-import org.tentackle.misc.Immutable;
 
 /**
  * Session information.
@@ -161,7 +162,7 @@ public interface SessionInfo extends Immutable, Serializable {
   void clearCloned();
 
   /**
-   * Checks whether this UserInfo is cloned.
+   * Checks whether this session info is cloned.
    *
    * @return true if cloned
    */
@@ -302,5 +303,20 @@ public interface SessionInfo extends Immutable, Serializable {
    * @throws VersionInfoIncompatibleException if versions are not compatible
    */
   void checkServerVersionInfo(Serializable serverVersionInfo);
+
+  /**
+   * Determines whether tokenlocks are removed when session is closed.<br>
+   * By default, locks are not removed for cloned sessions.
+   *
+   * @return true if leave locks untouched, false to remove locks
+   */
+  boolean isLockLingerEnabled();
+
+  /**
+   * Sets whether tokenlocks are removed when session is closed.
+   *
+   * @param enabled true if leave locks untouched, false to remove locks
+   */
+  void setLockLingerEnabled(boolean enabled);
 
 }

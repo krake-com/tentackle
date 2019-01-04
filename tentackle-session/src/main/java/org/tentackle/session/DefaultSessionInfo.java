@@ -19,6 +19,12 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.ImmutableException;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
@@ -26,11 +32,6 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
-import org.tentackle.common.Constants;
-import org.tentackle.common.FileHelper;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.ImmutableException;
-import org.tentackle.common.StringHelper;
 
 /**
  * The default implementation for a session info.
@@ -62,6 +63,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private String hostInfo;                      // info about the host(name)
   private TimeZone timeZone;                    // the timezone
   private boolean cloned;                       // true if session info is cloned
+  private boolean lockLinger;                   // true if locks are not removed when session is closed
 
 
   /**
@@ -374,9 +376,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    */
   @Override
   public DefaultSessionInfo clone() {
-    DefaultSessionInfo ui;
+    DefaultSessionInfo sessionInfo;
     try {
-      ui = (DefaultSessionInfo) super.clone();
+      sessionInfo = (DefaultSessionInfo) super.clone();
     }
     catch (CloneNotSupportedException ex) {
       throw new InternalError();    // should never happen
@@ -384,18 +386,19 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
     if (password != null) {
       // physically copy the password (as it might be cleared)
-      ui.password = new char[password.length];
-      System.arraycopy(password, 0, ui.password, 0, password.length);
+      sessionInfo.password = new char[password.length];
+      System.arraycopy(password, 0, sessionInfo.password, 0, password.length);
     }
 
     if (properties != null) {
-      ui.properties = (Properties) properties.clone();
+      sessionInfo.properties = (Properties) properties.clone();
     }
 
-    ui.immutable = false;
-    ui.cloned = true;
+    sessionInfo.immutable = false;
+    sessionInfo.cloned = true;
+    sessionInfo.lockLinger = true;    // don't remove locks for cloned sessions
 
-    return ui;
+    return sessionInfo;
   }
 
 
@@ -410,13 +413,14 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   }
 
   /**
-   * Cleares the cloned flag.
+   * Cleares the cloned flag.<br>
    * Useful if the userinfo should no longer be treated as cloned.
    */
   @Override
   public void clearCloned() {
     assertMutable();
     cloned = false;
+    lockLinger = false;
   }
 
 
@@ -583,4 +587,14 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     this.userClassId = userClassId;
   }
 
+  @Override
+  public boolean isLockLingerEnabled() {
+    return lockLinger;
+  }
+
+  @Override
+  public void setLockLingerEnabled(boolean enabled) {
+    assertMutable();
+    lockLinger = enabled;
+  }
 }
