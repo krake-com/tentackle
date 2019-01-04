@@ -23,6 +23,7 @@ import org.tentackle.common.Service;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
+import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbUtilities;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -136,5 +137,15 @@ public class PersistenceUtilities extends DbUtilities {
     if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // cleanup tokens only once for the main session
       LockManager.getInstance().cleanupUserTokens(remoteSession.getSession(), remoteSession.getClientSessionInfo().getUserId());
     }
+  }
+
+  @Override
+  public void notifyRollback(Db session, long txNumber) {
+    LockManager.getInstance().rollback(session, txNumber);
+  }
+
+  @Override
+  public void notifyCommit(Db session, long txNumber) {
+    LockManager.getInstance().commit(session, txNumber);
   }
 }

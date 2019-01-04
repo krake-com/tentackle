@@ -245,4 +245,24 @@ public class DbUtilities {
     }
   }
 
+  /**
+   * Notifies interested parties that a physical rollback has happened.
+   *
+   * @param session the session
+   * @param txNumber the transaction number
+   */
+  public void notifyRollback(Db session, long txNumber) {
+    // nothing to do
+  }
+
+  /**
+   * Notifies interested parties that a physical commit has happened.
+   *
+   * @param session the session
+   * @param txNumber the transaction number
+   */
+  public void notifyCommit(Db session, long txNumber) {
+    // nothing to do
+  }
+
 }

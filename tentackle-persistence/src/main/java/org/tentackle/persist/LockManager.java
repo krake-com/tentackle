@@ -18,11 +18,12 @@
 
 package org.tentackle.persist;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.dbms.Db;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.lock.DefaultLockManager;
+
+import java.util.Collection;
 
 interface LockManagerHolder {
   LockManager INSTANCE = ServiceFactory.createService(LockManager.class, DefaultLockManager.class);
@@ -73,11 +74,12 @@ public interface LockManager {
   void cleanupUserTokens(Db session, long userId);
 
   /**
-   * Removes all token locks.
+   * Initializes the lockmanager.<br>
+   * Called once at server startup to remove all locks.
    *
    * @param session the session to use
    */
-  void cleanupAllTokens(Db session);
+  void initialize(Db session);
 
   /**
    * Gets the token lock for a PDO.
@@ -111,5 +113,21 @@ public interface LockManager {
    * @param <T> the PDO type
    */
   <T extends PersistentDomainObject<T>> void update(T pdo);
+
+  /**
+   * Notifies the lockmanager that a transaction has been committed.
+   *
+   * @param session the session
+   * @param txNumber the unique transaction number
+   */
+  void commit(Db session, long txNumber);
+
+  /**
+   * Notifies the lockmanager that a transaction has been rolled back.
+   *
+   * @param session the session
+   * @param txNumber the unique transaction number
+   */
+  void rollback(Db session, long txNumber);
 
 }
