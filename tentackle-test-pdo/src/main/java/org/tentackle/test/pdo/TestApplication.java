@@ -18,6 +18,10 @@
 
 package org.tentackle.test.pdo;
 
+import org.testng.SkipException;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
@@ -26,9 +30,6 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
-import org.testng.SkipException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
 
 /**
  * Base class for tests that must run as an application.
@@ -80,7 +81,7 @@ public abstract class TestApplication extends AbstractApplication {
   }
 
   @Override
-  public boolean isServer() {
+  protected boolean isServerImpl() {
     return false;
   }
 

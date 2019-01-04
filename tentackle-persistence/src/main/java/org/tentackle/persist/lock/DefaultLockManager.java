@@ -161,7 +161,7 @@ public class DefaultLockManager implements LockManager {
    * Enabled only if running within a server application.
    */
   public DefaultLockManager() {
-    enabled = AbstractApplication.getRunningApplication().isServer();
+    enabled = AbstractApplication.isServer();
     lockMap = new HashMap<>();
     createdLocksInFlight = new HashMap<>();
     updatedLocksInFlight = new HashMap<>();
