@@ -210,7 +210,7 @@ public class DefaultLockManager implements LockManager {
    * @param lock the token lock
    * @param context the application's domain context
    */
-  private void remove(DbTokenLock lock, DomainContext context) {
+  protected void remove(DbTokenLock lock, DomainContext context) {
     String className = SessionUtilities.getInstance().getClassName(lock.getPdoClassId());
     if (className == null) {
       throw new PersistenceException(context.getSession(), "no PDO class for classId " + lock.getPdoClassId());
@@ -236,7 +236,7 @@ public class DefaultLockManager implements LockManager {
    * @param session the session
    * @return the PO
    */
-  private DbTokenLock createTokenLock(Db session) {
+  protected DbTokenLock createTokenLock(Db session) {
     return new DbTokenLock(session);
   }
 
