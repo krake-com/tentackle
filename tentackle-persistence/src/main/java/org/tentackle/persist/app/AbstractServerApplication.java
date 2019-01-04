@@ -18,13 +18,6 @@
 
 package org.tentackle.persist.app;
 
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Enumeration;
-import java.util.Properties;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
@@ -40,6 +33,14 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 import org.tentackle.session.SessionPoolProvider;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Enumeration;
+import java.util.Properties;
 
 /**
  * Base class for server applications.
@@ -72,7 +73,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
   }
 
   @Override
-  public boolean isServer() {
+  protected boolean isServerImpl() {
     return true;
   }
 

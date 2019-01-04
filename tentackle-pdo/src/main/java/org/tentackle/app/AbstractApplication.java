@@ -19,15 +19,6 @@
 
 package org.tentackle.app;
 
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
 import org.tentackle.common.ModuleInfo;
 import org.tentackle.common.ModuleSorter;
 import org.tentackle.common.TentackleRuntimeException;
@@ -45,6 +36,16 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionProvider;
+
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
 
 
 /**
@@ -154,11 +155,21 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
+   * Returns whether the running application is a server.
+   *
+   * @return true if server, false if not a server or no application running at all
+   */
+  public static boolean isServer() {
+    AbstractApplication application = getRunningApplication();
+    return application != null && application.isServerImpl();
+  }
+
+  /**
    * Returns whether the application is a server.
    *
    * @return true if server, false if a client or nothing of both
    */
-  public abstract boolean isServer();
+  protected abstract boolean isServerImpl();
 
 
   /**

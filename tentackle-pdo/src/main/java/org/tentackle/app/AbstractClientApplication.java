@@ -45,7 +45,7 @@ public abstract class AbstractClientApplication extends AbstractApplication {
   }
 
   @Override
-  public boolean isServer() {
+  protected boolean isServerImpl() {
     return false;
   }
 
