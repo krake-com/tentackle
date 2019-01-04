@@ -3236,15 +3236,15 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Gets the expiration in milliseconds of the "being-edited-token" if
-   * this object should request such a token when being edited.<br>
+   * Gets the expiration in milliseconds of a token lock.<br>
+   * If isTokenLockProvided, the default is 1 hour, else 0.
    *
    * @return the timespan in ms, 0 = no token required.
    */
   @Override
   public long getTokenLockTimeout() {
-    // if token lock columns are provided the default timeout is 5 minutes
-    return isTokenLockProvided() ? Constants.MINUTE_MS * 5 : 0;
+    // if token lock columns are provided the default timeout is 1 hour
+    return isTokenLockProvided() ? Constants.HOUR_MS : 0;
   }
 
 
