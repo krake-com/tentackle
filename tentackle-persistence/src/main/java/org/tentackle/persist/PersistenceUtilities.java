@@ -133,7 +133,7 @@ public class PersistenceUtilities extends DbUtilities {
 
   @Override
   public void cleanupRemoteSession(RemoteDbSessionImpl remoteSession) {
-    if (!remoteSession.getClientSessionInfo().isCloned()) {   // cleanup tokens only once for the main session
+    if (!remoteSession.getClientSessionInfo().isLockLingerEnabled()) {   // cleanup tokens only once for the main session
       LockManager.getInstance().cleanupUserTokens(remoteSession.getSession(), remoteSession.getClientSessionInfo().getUserId());
     }
   }
