@@ -697,7 +697,7 @@ public class FxUtilities {
     if (options != null) {
       StringTokenizer stok = new StringTokenizer(options.toUpperCase(), ",");
       while (stok.hasMoreTokens()) {
-        String token = stok.nextToken();
+        String token = stok.nextToken().trim();
         boolean processed;
         if (comp != null) {
           processed = applyBindingOption(comp, member, token);
