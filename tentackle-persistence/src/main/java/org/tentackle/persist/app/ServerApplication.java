@@ -18,12 +18,13 @@
 
 package org.tentackle.persist.app;
 
-import java.rmi.RemoteException;
-import org.tentackle.log.Logger;
-import org.tentackle.dbms.rmi.RmiServer;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
+import org.tentackle.dbms.rmi.RmiServer;
+import org.tentackle.log.Logger;
 import org.tentackle.persist.LockManager;
+
+import java.rmi.RemoteException;
 
 
 /**
@@ -96,7 +97,7 @@ public abstract class ServerApplication extends AbstractServerApplication {
 
   @Override
   protected void finishStartup() {
-    LockManager.getInstance().cleanupAllTokens(getSession());
+    LockManager.getInstance().initialize(getSession());
     super.finishStartup();
     rmiServer = createRmiServer(connectionClass);
   }

@@ -1472,7 +1472,8 @@ public class Db implements Session, Cloneable {
       }
       // else: only the outermost transaction is initiated by the remote client
       // there is no transaction nesting level at the client side!
-      // as a result: the nesting level at the server side is max. 1
+      // However, if remote methods are invoked within a tx, those methods running
+      // at the server may increase the nesting level > 1.
     }
     else {
 
@@ -1884,7 +1885,7 @@ public class Db implements Session, Cloneable {
     boolean committed = false;
 
     if (isRemote()) {
-      if (txVoucher != 0) {
+      if (txVoucher != 0) {   // ignore remote nesting levels
         try {
           if (autoCommit) {
             throw new PersistenceException(this, "no client transaction running");
@@ -1932,9 +1933,11 @@ public class Db implements Session, Cloneable {
           transaction.invokeCommitTxRunnables();
           setAutoCommit(true);    // according to the specs: this will commit!
           logModificationDeferred = false;
+          long txNo = getTxNumber();
           transaction = null;
           modificationLogList = null;
           committed = true;
+          DbUtilities.getInstance().notifyCommit(this, txNo);
         }
         else  {
           throw new PersistenceException(this, "transaction ended unexpectedly before commit, valid voucher " + txVoucher);
@@ -2014,7 +2017,7 @@ public class Db implements Session, Cloneable {
     boolean rolledBack = false;
 
     if (isRemote()) {
-      if (txVoucher != 0) {
+      if (txVoucher != 0) {   // ignore remote nesting levels
         try {
           if (autoCommit) {
             throw new PersistenceException(this, "no client transaction running");
@@ -2049,10 +2052,8 @@ public class Db implements Session, Cloneable {
       }
 
       if (transaction != null) {
-
         if (txVoucher != 0) {
-
-          // begin() started a new tx
+          // matching begin() started a new tx
           if (!autoCommit) {
             // within a transaction
             LOGGER.fine("{0}: rollback transaction, voucher {1}", this, txVoucher);
@@ -2073,8 +2074,10 @@ public class Db implements Session, Cloneable {
             logModificationDeferred = false;
             modificationLogList = null;
             logModificationTxId = 0;
+            long txNo = getTxNumber();
             transaction = null;
             rolledBack = true;
+            DbUtilities.getInstance().notifyRollback(this, txNo);
           }
           else {
             throw new PersistenceException(this, "transaction ended unexpectedly before rollback (valid voucher)");
@@ -2131,12 +2134,9 @@ public class Db implements Session, Cloneable {
         transaction = null;
         // remember the txLevel for pending rollback()s, if any will arive from the application
         immediatelyRolledBack = currentTxLevel;
-        forceDetached();
       }
-      else  {
-        // not within a transaction: cleanup forced
-        forceDetached();
-      }
+      // else: not within a transaction: cleanup forced
+      forceDetached();
     }
     catch (RuntimeException rex) {
       try {
@@ -2161,6 +2161,10 @@ public class Db implements Session, Cloneable {
             try {
               c.getConnection().rollback();
               c.getConnection().setAutoCommit(true);
+              long txNo = getTxNumber();
+              if (txNo != 0) {
+                DbUtilities.getInstance().notifyRollback(this, txNo);
+              }
             }
             catch (SQLException ex) {
               LOGGER.warning("low-level connection rollback failed for " + c, ex);

@@ -22,20 +22,20 @@ import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Service;
 import org.tentackle.dbms.Db;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.LockManager;
 import org.tentackle.persist.TokenLock;
-import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionUtilities;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -51,6 +51,77 @@ public class DefaultLockManager implements LockManager {
 
   private static final Logger LOGGER = Logger.get(DefaultLockManager.class);
 
+
+  /**
+   * PdoKey for a PDO.
+   */
+  private static class PdoKey {
+    final int classId;
+    final long pdoId;
+
+    PdoKey(int classId, long pdoId) {
+      this.classId = classId;
+      this.pdoId = pdoId;
+    }
+
+    PdoKey(DbTokenLock lock) {
+      this.classId = lock.getPdoClassId();
+      this.pdoId = lock.getPdoId();
+    }
+
+    PdoKey(PersistentDomainObject pdo) {
+      this.classId = pdo.getClassId();
+      this.pdoId = pdo.getId();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      PdoKey key = (PdoKey) o;
+      return classId == key.classId &&
+          pdoId == key.pdoId;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(classId, pdoId);
+    }
+  }
+
+
+  /**
+   * PdoKey for a transaction in flight.
+   */
+  private static class TransactionKey {
+    final long txNo;
+    final WeakReference<Db> sessionRef;
+
+    public TransactionKey(Db session, long txNo) {
+      this.txNo = txNo;
+      sessionRef = new WeakReference<>(session);
+    }
+
+    public TransactionKey(Db session) {
+      this(session, session.getTxNumber());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      TransactionKey that = (TransactionKey) o;
+      return txNo == that.txNo;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(txNo);
+    }
+  }
+
+
+
   /**
    * The lockmanager is enabled in servers only.<br>
    * In 2-tier applications or 3-tier clients, the token in the PDO will be used and
@@ -62,12 +133,39 @@ public class DefaultLockManager implements LockManager {
    * Map of PDO-keys to token locks.<br>
    * The DbTokenLocks must have their sessions set to null if outside a tx!
    */
-  private final Map<IdentifiableKey<?>, DbTokenLock> lockMap;
+  private final Map<PdoKey, DbTokenLock> lockMap;
+
+  /**
+   * Map of transaction numbers to a list of locks that were created but not committed yet.
+   */
+  private final Map<TransactionKey, Map<PdoKey, DbTokenLock>> createdLocksInFlight;
+
+  /**
+   * Map of transaction numbers to a list of locks that were updated but not committed yet.
+   */
+  private final Map<TransactionKey, Map<PdoKey, DbTokenLock>> updatedLocksInFlight;
+
+  /**
+   * Map of transaction numbers to a list of locks that were removed but not committed yet.
+   */
+  private final Map<TransactionKey, Map<PdoKey, DbTokenLock>> removedLocksInFlight;
+
+  /**
+   * Flag to rebuild the internal map in case some unexpected persistence exception happened.
+   */
+  private boolean rebuild;
 
 
+  /**
+   * Creates the lock manager.<br>
+   * Enabled only if running within a server application.
+   */
   public DefaultLockManager() {
-    enabled = AbstractApplication.getRunningApplication() instanceof ServerApplication;
+    enabled = AbstractApplication.getRunningApplication().isServer();
     lockMap = new HashMap<>();
+    createdLocksInFlight = new HashMap<>();
+    updatedLocksInFlight = new HashMap<>();
+    removedLocksInFlight = new HashMap<>();
   }
 
   @Override
@@ -101,7 +199,7 @@ public class DefaultLockManager implements LockManager {
   }
 
   @Override
-  public void cleanupAllTokens(Db session) {
+  public void initialize(Db session) {
     if (enabled) {
       DomainContext context = Pdo.createDomainContext(session);
       for (DbTokenLock lock: createTokenLock(session).selectAllObjects()) {
@@ -121,7 +219,7 @@ public class DefaultLockManager implements LockManager {
   @Override
   public <T extends PersistentDomainObject<T>> TokenLock getLock(T pdo) {
     synchronized (lockMap) {
-      return lockMap.get(new IdentifiableKey<>(pdo));
+      return lockMap.get(new PdoKey(pdo.getClassId(), pdo.getId()));
     }
   }
 
@@ -144,64 +242,124 @@ public class DefaultLockManager implements LockManager {
   @Override
   public <T extends PersistentDomainObject<T>> void update(T pdo) {
     if (enabled) {
-      synchronized (lockMap) {
-        IdentifiableKey<T> key = new IdentifiableKey<>(pdo);
-        DbTokenLock lock = lockMap.get(key);
-        boolean locked = pdo.isTokenLocked();
-        if (lock == null && locked) {
-          Db db = (Db) pdo.getSession();
-          db.assertTxRunning();
-          lock = createTokenLock(db);
-          try {
-            lock.setId(pdo.getId());
-            lock.setSerial(1);
-            lock.setPdoClassId(pdo.getClassId());
-            lock.setLockedBy(pdo.getEditedBy());
-            lock.setLockedSince(pdo.getEditedSince());
-            lock.setLockExpiry(pdo.getEditedExpiry());
-            lock.insertPlain();
-            lockMap.put(key, lock);
+      try {
+        synchronized (lockMap) {
+          PdoKey key = new PdoKey(pdo);
+          DbTokenLock lock = lockMap.get(key);
+          boolean locked = pdo.isTokenLocked();
+          if (lock == null && locked) {
+            Db db = (Db) pdo.getSession();
+            db.assertTxRunning();
+            lock = createTokenLock(db);
+            try {
+              lock.setId(key.pdoId);
+              lock.setSerial(1);
+              lock.setPdoClassId(key.classId);
+              lock.setLockedBy(pdo.getEditedBy());
+              lock.setLockedSince(pdo.getEditedSince());
+              lock.setLockExpiry(pdo.getEditedExpiry());
+              lock.insertPlain();
+              lockMap.put(key, lock);
+              addCreatedLock(lock);
+            }
+            finally {
+              lock.setSession(null);    // remove link to session to allow GC
+            }
           }
-          finally {
-            lock.setSession(null);    // remove link to session to allow GC
-          }
-        }
-        else if (lock != null) {
-          if (locked) {
-            if (lock.getLockedBy() != pdo.getEditedBy() ||
-                !Objects.equals(lock.getLockedSince(), pdo.getEditedSince()) ||
-                !Objects.equals(lock.getLockExpiry(), pdo.getEditedExpiry())) {
+          else if (lock != null) {
+            if (locked) {
+              if (lock.getLockedBy() != pdo.getEditedBy() ||
+                  !Objects.equals(lock.getLockedSince(), pdo.getEditedSince()) ||
+                  !Objects.equals(lock.getLockExpiry(), pdo.getEditedExpiry())) {
+                addUpdatedLock(lock);
+                Db db = (Db) pdo.getSession();
+                db.assertTxRunning();
+                lock.setSession(db);
+                try {
+                  lock.setLockedBy(pdo.getEditedBy());
+                  lock.setLockedSince(pdo.getEditedSince());
+                  lock.setLockExpiry(pdo.getEditedExpiry());
+                  lock.updatePlain();
+                }
+                finally {
+                  lock.setSession(null);    // remove link to session to allow GC
+                }
+              }
+            }
+            else {
               Db db = (Db) pdo.getSession();
               db.assertTxRunning();
               lock.setSession(db);
               try {
-                lock.setLockedBy(pdo.getEditedBy());
-                lock.setLockedSince(pdo.getEditedSince());
-                lock.setLockExpiry(pdo.getEditedExpiry());
-                lock.updatePlain();
+                lock.deleteObject();
+                lockMap.remove(key);
+                addRemovedLock(lock);
               }
               finally {
                 lock.setSession(null);    // remove link to session to allow GC
               }
             }
           }
-          else {
-            Db db = (Db) pdo.getSession();
-            db.assertTxRunning();
-            lock.setSession(db);
-            try {
-              lock.deleteObject();
-              lockMap.remove(key);
-            }
-            finally {
-              lock.setSession(null);    // remove link to session to allow GC
-            }
-          }
         }
+      }
+      catch (RuntimeException rx) {
+        LOGGER.severe("trigger re-initialization of lock manager", rx);
+        rebuild = true;
+        throw rx;
       }
     }
   }
 
+
+  @Override
+  public void rollback(Db session, long txNumber) {
+    if (enabled) {
+      TransactionKey txKey = new TransactionKey(session, txNumber);
+      synchronized (lockMap) {
+        // remove the created in flight
+        Map<PdoKey, DbTokenLock> createdLocks = createdLocksInFlight.get(txKey);
+        if (createdLocks != null) {
+          for (PdoKey key : createdLocks.keySet()) {
+            lockMap.remove(key);
+          }
+        }
+        createdLocksInFlight.remove(txKey);
+
+        // restore updated locks
+        Map<PdoKey, DbTokenLock> updatedLocks = updatedLocksInFlight.get(txKey);
+        if (updatedLocks != null) {
+          for (Map.Entry<PdoKey, DbTokenLock> entry : updatedLocks.entrySet()) {
+            lockMap.put(entry.getKey(), entry.getValue());
+          }
+        }
+        updatedLocksInFlight.remove(txKey);
+
+        // add removed locks
+        Map<PdoKey, DbTokenLock> removedLocks = removedLocksInFlight.get(txKey);
+        if (removedLocks != null) {
+          for (Map.Entry<PdoKey, DbTokenLock> entry : updatedLocks.entrySet()) {
+            lockMap.put(entry.getKey(), entry.getValue());
+          }
+        }
+        removedLocksInFlight.remove(txKey);
+
+        rebuildIfFailed(session);
+      }
+    }
+  }
+
+  @Override
+  public void commit(Db session, long txNumber) {
+    if (enabled) {
+      TransactionKey txKey = new TransactionKey(session, txNumber);
+      synchronized (lockMap) {
+        createdLocksInFlight.remove(txKey);
+        updatedLocksInFlight.remove(txKey);
+        removedLocksInFlight.remove(txKey);
+        rebuildIfFailed(session);
+      }
+    }
+  }
 
 
   /**
