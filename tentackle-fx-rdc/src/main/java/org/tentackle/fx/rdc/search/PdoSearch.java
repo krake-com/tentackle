@@ -33,7 +33,9 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -137,7 +139,26 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   private BooleanProperty wrongTypeSelected;    // true if wrong type in selected tree cell
   private T createdPdo;                         // != null if new PDO has been created in modal mode
   private Consumer<T> doubleClickHandler;       // handler to be invoked on double-click in non-modal mode
+  private String noDataMessage;                 // optional message to be displayed when there is no data in the table
 
+
+  /**
+   * Gets the message displayed in tableview when there was no data found.
+   *
+   * @return the placeholder message, null if default message, empty if no message at all
+   */
+  public String getNoDataMessage() {
+    return noDataMessage;
+  }
+
+  /**
+   * Sets the message displayed in tableview when there was no data found.
+   *
+   * @param noDataMessage the placeholder message, null if default message, empty if no message at all
+   */
+  public void setNoDataMessage(String noDataMessage) {
+    this.noDataMessage = noDataMessage;
+  }
 
   /**
    * Gets the double click handler.
@@ -498,6 +519,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     else {
       tableView.setItems(this.items);
+      if (this.items.isEmpty()) {
+        Node placeHolder = createPlaceHolder();
+        if (placeHolder != null) {
+          tableView.setPlaceholder(placeHolder);
+        }
+      }
       tableView.getSelectionModel().clearSelection();
       tableView.refresh();
       treeViewInvalid = true;
@@ -768,6 +795,20 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     }
     pdoCrud = null;
     return false;
+  }
+
+  /**
+   * Creates the placeholder node for the empty table view.
+   *
+   * @return the node, null if use tableview's default placeholder
+   */
+  protected Node createPlaceHolder() {
+    Label placeHolder = null;
+    if (noDataMessage != null) {
+      placeHolder = Fx.createNode(Label.class);
+      placeHolder.setText(noDataMessage);
+    }
+    return placeHolder;
   }
 
 }
