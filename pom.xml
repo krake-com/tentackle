@@ -7,7 +7,7 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent</artifactId>
-  <version>11.2.3.0-SNAPSHOT</version>
+  <version>11.2.3.0</version>
   <packaging>pom</packaging>
 
   <name>Tentackle Parent</name>
@@ -88,7 +88,7 @@
     <tentackle.manifestDirectory>${project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
     <netbeans.hint.license>tentackle</netbeans.hint.license>
 
-    <wurbelizer.version>11.2.2.1-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>11.2.2.1</wurbelizer.version>
     <!-- override the default wurbelDir for multi-module project -->
     <wurbel.wurbelDir>${rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
