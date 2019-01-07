@@ -210,21 +210,25 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
 
   @Override
   public void updateView() {
-    super.updateView();
-    viewModifiedTriggered = false;
+    if (!isUpdatingView()) {
+      super.updateView();
+      viewModifiedTriggered = false;
+    }
   }
 
   @Override
   public void updateModel() {
-    viewModifiedTriggered = false;
-    errorOffset = null;
-    if (getComponent() instanceof TextInputControl) {
-      if (((TextInputControl) getComponent()).isEditable()) {
+    if (!isUpdatingModel()) {
+      viewModifiedTriggered = false;
+      errorOffset = null;
+      if (getComponent() instanceof TextInputControl) {
+        if (((TextInputControl) getComponent()).isEditable()) {
+          super.updateModel();
+        }
+      }
+      else {
         super.updateModel();
       }
-    }
-    else {
-      super.updateModel();
     }
   }
 

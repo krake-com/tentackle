@@ -19,9 +19,6 @@
 
 package org.tentackle.fx;
 
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Objects;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -29,12 +26,17 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.stage.PopupWindow;
+
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.validate.ValidationFailedException;
 import org.tentackle.validate.ValidationResult;
+
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Delegate implementing FxComponent.
@@ -141,6 +143,16 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
    */
   private boolean modelUpdated;
 
+  /**
+   * Flag to update model only once in recursive invocations.
+   */
+  private boolean updatingModel;
+
+  /**
+   * Flag to update view only once in recursive invocations.
+   */
+  private boolean updatingView;
+
 
 
   /**
@@ -231,56 +243,90 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
 
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateModel()}.
+   *
+   * @return true if currently updating the model
+   */
+  protected boolean isUpdatingModel() {
+    return updatingModel;
+  }
+
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateView()}.
+   *
+   * @return true if currently updating the view
+   */
+  protected boolean isUpdatingView() {
+    return updatingView;
+  }
+
   @Override
   public void updateView() {
-    modelUpdated = false;
-    fireModelToViewListeners();
-    if (binding != null) {
-      binding.setViewValue(binding.getModelValue());
+    if (!updatingView) {
+      try {
+        updatingView = true;
+        modelUpdated = false;
+        fireModelToViewListeners();
+        if (binding != null) {
+          binding.setViewValue(binding.getModelValue());
+        }
+      }
+      finally {
+        updatingView = false;
+      }
     }
   }
 
   @Override
   public void updateModel() {
-    if (!getNode().isDisabled()) {
-      setError(null);
+    if (!updatingModel) {
       try {
-        if (binding != null) {
-          binding.setModelValue(binding.getViewValue());
-          List<ValidationResult> results = binding.validate();
-          if (results != null && !results.isEmpty()) {
-            throw new ValidationFailedException(results);
+        updatingModel = true;
+        if (!getNode().isDisabled()) {
+          setError(null);
+          try {
+            if (binding != null) {
+              binding.setModelValue(binding.getViewValue());
+              List<ValidationResult> results = binding.validate();
+              if (results != null && !results.isEmpty()) {
+                throw new ValidationFailedException(results);
+              }
+            }
+            fireViewToModelListeners();
+            modelUpdated = true;
           }
-        }
-        fireViewToModelListeners();
-        modelUpdated = true;
-      }
-      catch (RuntimeException rex) {
-        if (getError() == null) {
-          ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
-          String msg;
-          if (vx == null) {
-            LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
-            msg = rex.getLocalizedMessage();
-            if (msg == null) {
-              msg = rex.getClass().getName();
+          catch (RuntimeException rex) {
+            if (getError() == null) {
+              ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
+              String msg;
+              if (vx == null) {
+                LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
+                msg = rex.getLocalizedMessage();
+                if (msg == null) {
+                  msg = rex.getClass().getName();
+                }
+              }
+              else {
+                msg = vx.resultsAsMessage();
+              }
+              // some conversion/mapping failed (usually parse-exception):
+              // -> show error popup and stay in component
+              setError(msg);
+              Node node = getNode().getScene().getFocusOwner();
+              if (node != getNode() &&
+                  (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+                // only if other component currently holding the focus has no error (would loop otherwise)
+                Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+              }
             }
           }
-          else {
-            msg = vx.resultsAsMessage();
-          }
-          // some conversion/mapping failed (usually parse-exception):
-          // -> show error popup and stay in component
-          setError(msg);
-          Node node = getNode().getScene().getFocusOwner();
-          if (node != getNode() &&
-              (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
-            // only if other component currently holding the focus has no error (would loop otherwise)
-            Platform.runLater(() -> ((Node) getComponent()).requestFocus());
-          }
+          triggerViewModified();
         }
       }
-      triggerViewModified();
+      finally {
+        updatingModel = false;
+      }
     }
   }
 
@@ -477,9 +523,7 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       }
     }
     else {
-      if (getNode().getStyleClass().contains(MANDATORY_STYLE)) {
-        getNode().getStyleClass().remove(MANDATORY_STYLE);
-      }
+      getNode().getStyleClass().remove(MANDATORY_STYLE);
     }
   }
 
