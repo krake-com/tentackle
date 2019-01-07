@@ -143,6 +143,16 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   private boolean modelUpdated;
 
   /**
+   * Flag to update model only once in recursive invocations.
+   */
+  private boolean updatingModel;
+
+  /**
+   * Flag to update view only once in recursive invocations.
+   */
+  private boolean updatingView;
+
+  /**
    * The table cell, if this is used as a cell editor.
    */
   private FxTableCell<?,?> tableCell;
@@ -241,62 +251,96 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   }
 
 
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateModel()}.
+   *
+   * @return true if currently updating the model
+   */
+  protected boolean isUpdatingModel() {
+    return updatingModel;
+  }
+
+  /**
+   * Returns a flag to avoid recursive invocations of {@link #updateView()}.
+   *
+   * @return true if currently updating the view
+   */
+  protected boolean isUpdatingView() {
+    return updatingView;
+  }
+
   @Override
   public void updateView() {
-    modelUpdated = false;
-    fireModelToViewListeners();
-    if (binding != null) {
-      binding.setViewValue(binding.getModelValue());
+    if (!updatingView) {
+      try {
+        updatingView = true;
+        modelUpdated = false;
+        fireModelToViewListeners();
+        if (binding != null) {
+          binding.setViewValue(binding.getModelValue());
+        }
+      }
+      finally {
+        updatingView = false;
+      }
     }
   }
 
   @Override
   public void updateModel() {
-    if (!getNode().isDisabled()) {
-      setError(null);
+    if (!updatingModel) {
       try {
-        if (binding != null) {
-          binding.setModelValue(binding.getViewValue());
-          List<ValidationResult> results = binding.validate();
-          if (!results.isEmpty()) {
-            throw new ValidationFailedException(results);
+        updatingModel = true;
+        if (!getNode().isDisabled()) {
+          setError(null);
+          try {
+            if (binding != null) {
+              binding.setModelValue(binding.getViewValue());
+              List<ValidationResult> results = binding.validate();
+              if (!results.isEmpty()) {
+                throw new ValidationFailedException(results);
+              }
+            }
+            fireViewToModelListeners();
+            modelUpdated = true;
           }
+          catch (RuntimeException rex) {
+            if (getError() == null) {
+              ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
+              String msg;
+              if (vx == null) {
+                BindingVetoException bve = ExceptionHelper.extractException(BindingVetoException.class, true, rex);
+                if (bve == null) {    // extended component log only if not a rethrown veto exception
+                  LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
+                }
+                msg = rex.getLocalizedMessage();
+                if (msg == null) {
+                  msg = rex.getClass().getName();
+                }
+              }
+              else {
+                msg = vx.resultsAsMessage();
+              }
+              // some conversion/mapping failed (usually parse-exception):
+              // -> show error popup and stay in component
+              setError(msg);
+              Scene scene = getNode().getScene();
+              if (scene != null) {
+                Node node = scene.getFocusOwner();
+                if (node != getNode() &&
+                    (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
+                  // only if other component currently holding the focus has no error (would loop otherwise)
+                  Platform.runLater(((Node) getComponent())::requestFocus);
+                }
+              }
+            }
+          }
+          triggerViewModified();
         }
-        fireViewToModelListeners();
-        modelUpdated = true;
       }
-      catch (RuntimeException rex) {
-        if (getError() == null) {
-          ValidationFailedException vx = ExceptionHelper.extractException(ValidationFailedException.class, true, rex);
-          String msg;
-          if (vx == null) {
-            BindingVetoException bve = ExceptionHelper.extractException(BindingVetoException.class, true, rex);
-            if (bve == null) {    // extended component log only if not a rethrown veto exception
-              LOGGER.severe("update model failed for " + FxUtilities.getInstance().dumpComponentHierarchy(getNode()), rex);
-            }
-            msg = rex.getLocalizedMessage();
-            if (msg == null) {
-              msg = rex.getClass().getName();
-            }
-          }
-          else {
-            msg = vx.resultsAsMessage();
-          }
-          // some conversion/mapping failed (usually parse-exception):
-          // -> show error popup and stay in component
-          setError(msg);
-          Scene scene = getNode().getScene();
-          if (scene != null) {
-            Node node = scene.getFocusOwner();
-            if (node != getNode() &&
-                (!(node instanceof FxComponent) || ((FxComponent) node).getError() == null)) {
-              // only if other component currently holding the focus has no error (would loop otherwise)
-              Platform.runLater(((Node) getComponent())::requestFocus);
-            }
-          }
-        }
+      finally {
+        updatingModel = false;
       }
-      triggerViewModified();
     }
   }
 
