@@ -798,16 +798,21 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   }
 
   /**
-   * Creates the placeholder node for the empty table view.
+   * Creates the placeholder node for the empty search result in table view.
    *
    * @return the node, null if use tableview's default placeholder
    */
   protected Node createPlaceHolder() {
-    Label placeHolder = null;
+    Label placeHolder = Fx.createNode(Label.class);   // default impl always returns a placeholder
+    String text;
     if (noDataMessage != null) {
-      placeHolder = Fx.createNode(Label.class);
-      placeHolder.setText(noDataMessage);
+      text = noDataMessage;
     }
+    else {
+      // create default according to PDO type
+      text = MessageFormat.format(resources.getString("no {0} found"), getPdo().getPlural());
+    }
+    placeHolder.setText(text);
     return placeHolder;
   }
 
