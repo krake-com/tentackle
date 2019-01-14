@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>11.2.3.0</version>
+    <version>11.2.3.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-database</artifactId>
-  <version>11.2.3.0</version>
+  <version>11.2.3.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Database</name>
   <description>Tentackle Low-Level DBMS Layer</description>
