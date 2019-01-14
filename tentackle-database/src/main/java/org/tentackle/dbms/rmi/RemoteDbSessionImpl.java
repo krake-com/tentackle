@@ -232,10 +232,12 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     try {
       clientHost = UnicastRemoteObject.getClientHost();
       db = openDb();
-      clientInfo.setSince(System.currentTimeMillis());
-      verifySessionInfo(clientInfo);
-      // switch to client info for logging
-      db.setSessionInfo(clientInfo);
+      synchronized (SESSIONS) {   // prevents race condition between verifySessionInfo and SESSIONS.add
+        clientInfo.setSince(System.currentTimeMillis());
+        verifySessionInfo(clientInfo);
+        db.setSessionInfo(clientInfo);    // switch to client info for logging
+        SESSIONS.add(new WeakReference<>(this));
+      }
     }
     catch (Exception ex)  {
       if (db != null) {
@@ -247,9 +249,6 @@ abstract public class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       }
       throw new RemoteException("could not setup remote session", ex);
     }
-
-    // add session to the set
-    SESSIONS.add(new WeakReference<>(this));
 
     // config from connection
     port = con.getPort(db, clientInfo, serverInfo);
