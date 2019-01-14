@@ -167,7 +167,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
                 return null;
               }
-              showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.0);
+              showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.05);
               // connect to server/backend
               Session session;
               try {
