@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc.app;
 
-import java.text.MessageFormat;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
@@ -29,7 +28,9 @@ import javafx.scene.Scene;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
@@ -39,7 +40,6 @@ import org.tentackle.log.Logger.Level;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
 import org.tentackle.misc.CommandLine;
-import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.reflect.ReflectionHelper;
@@ -47,6 +47,8 @@ import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.text.MessageFormat;
 
 /**
  * Java FX tentackle desktop application.
@@ -174,7 +176,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 showApplicationStatus(AppFxRdcBundle.getString("PLEASE ENTER THE USERNAME"), 0.0);
                 return null;
               }
-              showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.0);
+              showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.05);
               // connect to server/backend
               Session session = createSession(sessionInfo);
               try {

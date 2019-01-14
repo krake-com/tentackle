@@ -154,7 +154,7 @@ public class Login extends AbstractFxController {
   /**
    * Sets the progress.
    *
-   * @param value negative to infinite, 0 to hide progress bar, else up to 1 for 100%
+   * @param value &le; 0 to hide progress bar, else up to 1 for 100%
    */
   public void setProgress(double value) {
     if (value <= 0.0 && !autoLogin) {
