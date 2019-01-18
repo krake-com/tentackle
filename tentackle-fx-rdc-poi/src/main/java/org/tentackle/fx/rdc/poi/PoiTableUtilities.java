@@ -18,14 +18,6 @@
 
 package org.tentackle.fx.rdc.poi;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
 import javafx.stage.Stage;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -36,7 +28,9 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+
 import org.tentackle.common.BMoney;
+import org.tentackle.common.ClasspathFirst;
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
@@ -47,6 +41,15 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.table.TableUtilities;
 import org.tentackle.fx.table.TableColumnConfiguration;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+
 
 /**
  * Table-related utility methods with POI extension to create XLS files.
@@ -54,6 +57,7 @@ import org.tentackle.fx.table.TableColumnConfiguration;
  * @author harald
  */
 @Service(TableUtilities.class)
+@ClasspathFirst(TableUtilities.class)   // POI isn't modularized yet, but fx-rdc is
 public class PoiTableUtilities extends TableUtilities {
 
   private static final String SPREADSHEET_EXTENSION = ".xls";

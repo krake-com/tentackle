@@ -27,10 +27,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 
-
 /**
- * Annotation to express that the annotated class
- * is a service implementation.
+ * Annotation to express that the annotated class is a service implementation.
  */
 @Documented
 @Inherited
@@ -40,11 +38,22 @@ import java.lang.annotation.Target;
 public @interface Service {
 
   /**
-   * Gets the service class.<br>
+   * Gets the serviced class.<br>
    *
-   * @return the service
+   * @return the serviced class
    */
   Class<?> value();
+
+  /**
+   * Determines whether the servicing class is the annotated class or the value of the annotated annotation.<br>
+   * Notice the difference between the serviced and servicing class!
+   * <p>
+   * Meta services go to META-INF/meta-services instead of META-INF/services because the
+   * provider usually resides in another module.
+   *
+   * @return true if this a meta annotation and the servicing class is provided by the annotated annotation
+   */
+  boolean meta() default false;
 
 }
 

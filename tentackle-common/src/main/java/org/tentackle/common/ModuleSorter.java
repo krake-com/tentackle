@@ -18,11 +18,16 @@
 
 package org.tentackle.common;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +53,7 @@ public final class ModuleSorter {
   private final Map<String, ModuleInfo> nameToModules;  // name:info
   private final Map<String, ModuleInfo> urlToModules;   // urlPath:info
   private final List<ModuleInfo> sortedModules;         // modules sorted by dependency
+  private final Set<String> classpathFirstServices;     // services to override from classpath
 
   /**
    * Creates a module sorter and loads the module hierarchy.
@@ -71,6 +77,25 @@ public final class ModuleSorter {
         visit(info, sortedModules);
       }
       // else: module already sorted
+    }
+
+    classpathFirstServices = new HashSet<>();
+    // we can't use ServiceLoader because we're in modular mode and we can't use ServiceFinder yet
+    // because of chicken egg. Hence, we must do that really low level...
+    try {
+      Enumeration<URL> urls = getClass().getClassLoader().getResources(Constants.META_SERVICE_PATH + ClasspathFirst.class.getName());
+      while (urls.hasMoreElements()) {
+        URL url = urls.nextElement();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
+          String line;
+          while ((line = reader.readLine()) != null) {
+            classpathFirstServices.add(line);
+          }
+        }
+      }
+    }
+    catch (IOException io) {
+      throw new TentackleRuntimeException("can't determine classpathFirst services", io);
     }
   }
 
@@ -157,9 +182,10 @@ public final class ModuleSorter {
    * The top of the hierarchy comes first.
    *
    * @param urls the urls, usually from ClassLoader.getResources
+   * @param serviceName the service name
    * @return the sorted urls
    */
-  public Collection<URL> sort(Enumeration<URL> urls) {
+  public Collection<URL> sort(Enumeration<URL> urls, String serviceName) {
     Set<SortKey> urlSet = new TreeSet<>();
     List<URL> unsortedUrls = new ArrayList<>();
 
@@ -174,10 +200,19 @@ public final class ModuleSorter {
       }
     }
 
-    // add URLs of named modules sorted by dependency first
+    // URLs of named modules sorted by dependency
     List<URL> sortedUrls = urlSet.stream().map(SortKey::getUrl).collect(Collectors.toList());
-    // add URLs of the unnamed module next
-    sortedUrls.addAll(unsortedUrls);
+
+    if (classpathFirstServices.contains(serviceName)) {
+      // prepend URLs of the unnamed module
+      unsortedUrls.addAll(sortedUrls);
+      sortedUrls = unsortedUrls;
+    }
+    else {
+      // append URLs of the unnamed module
+      sortedUrls.addAll(unsortedUrls);
+    }
+
     return sortedUrls;
   }
 

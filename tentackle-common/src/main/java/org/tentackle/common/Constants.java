@@ -29,6 +29,9 @@ public class Constants {
   /** the directory for mapped service provider configurations. */
   public static final String MAPPED_SERVICE_PATH = "META-INF/mapped-services/";
 
+  /** the directory for meta service provider configurations. */
+  public static final String META_SERVICE_PATH = "META-INF/meta-services/";
+
   /** the directory for default service provider configurations. */
   public static final String DEFAULT_SERVICE_PATH = "META-INF/services/";
 
