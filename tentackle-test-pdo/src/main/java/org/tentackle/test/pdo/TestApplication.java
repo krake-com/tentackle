@@ -81,11 +81,6 @@ public abstract class TestApplication extends AbstractApplication {
   }
 
   @Override
-  protected boolean isServerImpl() {
-    return false;
-  }
-
-  @Override
   protected void startup() {
   }
 
