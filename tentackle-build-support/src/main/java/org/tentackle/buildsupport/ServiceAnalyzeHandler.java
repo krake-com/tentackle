@@ -19,8 +19,10 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
-import java.util.Map;
+import org.tentackle.common.Constants;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceName;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -29,9 +31,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
-import org.tentackle.common.Constants;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceName;
+import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -83,6 +84,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
 
         // determine the serviced class
         String servicedClassName = null;
+        boolean meta = false;
 
         // check if this is meta-annotation annotated by @Service or @ServiceName
         for (AnnotationMirror annoMirror: annotationType.getAnnotationMirrors()) {
@@ -91,32 +93,31 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             // this is the correct annotation: find the value element
             for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                     annoMirror.getElementValues().entrySet()) {
-              if ("value".equals(entry.getKey().getSimpleName().toString())) {
-                servicedClassName = entry.getValue().toString();    // found
-                // cut trailing .class
-                int ndx = servicedClassName.lastIndexOf(".class");
-                if (ndx >= 0) {
-                  servicedClassName = servicedClassName.substring(0, ndx);
-                }
-                break;
+              String argName = entry.getKey().getSimpleName().toString();
+              if ("value".equals(argName)) {
+                servicedClassName = extractServicedClassName(entry.getValue());
+              }
+              else if ("meta".equals(argName)) {
+                meta = true;    // get servicing class from value of annotated annotation
               }
             }
             break;
           }
         }
 
-        if (servicedClassName == null) {
-          // check if @Service or @ServiceName annotation used directly
+        if (servicedClassName == null || meta) {
+          // check if @Service or @ServiceName annotation used directly or get value from here if meta
           for (AnnotationMirror annoMirror: element.getAnnotationMirrors()) {
             if (annoMirror.getAnnotationType().toString().equals(annotationName)) {
               for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
                       annoMirror.getElementValues().entrySet()) {
                 if ("value".equals(entry.getKey().getSimpleName().toString())) {
-                  servicedClassName = entry.getValue().toString();    // found
-                  // cut trailing .class
-                  int ndx = servicedClassName.lastIndexOf(".class");
-                  if (ndx >= 0) {
-                    servicedClassName = servicedClassName.substring(0, ndx);
+                  String name = extractServicedClassName(entry.getValue());
+                  if (meta) {
+                    servicingClassName = name;
+                  }
+                  else {
+                    servicedClassName = name;
                   }
                   break;
                 }
@@ -137,7 +138,7 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
           servicedClassName = servicedClassName.substring(1, servicedClassName.length() - 1);
         }
 
-        String relativeName = Constants.DEFAULT_SERVICE_PATH + servicedClassName;
+        String relativeName = (meta ? Constants.META_SERVICE_PATH : Constants.DEFAULT_SERVICE_PATH) + servicedClassName;
 
         if (processor.isDebugLogging()) {
           processor.getProcessingEnvironment().getMessager().printMessage(
@@ -165,4 +166,13 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
   }
 
 
+  private String extractServicedClassName(AnnotationValue value) {
+    String servicedClassName = value.toString();
+    // cut trailing .class
+    int ndx = servicedClassName.lastIndexOf(".class");
+    if (ndx >= 0) {
+      servicedClassName = servicedClassName.substring(0, ndx);
+    }
+    return servicedClassName;
+  }
 }

@@ -29,8 +29,9 @@ import java.lang.annotation.Target;
 
 
 /**
- * Annotation to express that the annotated class
- * is a service implementation.
+ * Annotation to express that the annotated class is a service implementation.<br>
+ * Differs from @{@link Service} that the service can be some arbitrary name.
+ * Also useful if the serviced class is not within the scope.
  */
 @Documented
 @Inherited
@@ -42,9 +43,20 @@ public @interface ServiceName {
   /**
    * Gets the service name.<br>
    *
-   * @return the service
+   * @return the service name
    */
   String value();
+
+  /**
+   * Determines whether the servicing class is the annotated class or the value of the annotated annotation.<br>
+   * Notice the difference between the serviced and servicing class!
+   * <p>
+   * Meta services go to META-INF/meta-services instead of META-INF/services because the
+   * provider usually resides in another module.
+   *
+   * @return true if this a meta annotation and the servicing class is provided by the annotated annotation
+   */
+  boolean meta() default false;
 
 }
 

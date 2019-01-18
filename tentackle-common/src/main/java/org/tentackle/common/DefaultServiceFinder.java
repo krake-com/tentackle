@@ -139,7 +139,7 @@ public class DefaultServiceFinder implements ServiceFinder {
   public Collection<URL> findServiceURLs(String serviceName) {
     try {
       Enumeration<URL> resources = getClassLoader(serviceName).getResources(servicePath + serviceName);
-      return ModuleSorter.INSTANCE.sort(resources);
+      return ModuleSorter.INSTANCE.sort(resources, serviceName);
     }
     catch (IOException iox) {
       throw new TentackleRuntimeException("loading service information failed", iox);
