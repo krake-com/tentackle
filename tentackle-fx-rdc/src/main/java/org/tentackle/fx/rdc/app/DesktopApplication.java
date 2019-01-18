@@ -79,6 +79,11 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     super(name);
   }
 
+  @Override
+  protected boolean isInteractiveImpl() {
+    return true;
+  }
+
   /**
    * Gets the main-controller to be displayed initially.<br>
    * Maintains the main-scene of the application.

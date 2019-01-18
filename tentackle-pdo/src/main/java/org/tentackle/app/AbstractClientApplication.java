@@ -32,8 +32,6 @@ public abstract class AbstractClientApplication extends AbstractApplication {
 
   private static final Logger LOGGER = Logger.get(AbstractClientApplication.class);
 
-  private boolean deployedByJNLP;             // true if application has been started via WebStart
-
   /**
    * Creates a client application.
    *
@@ -41,37 +39,9 @@ public abstract class AbstractClientApplication extends AbstractApplication {
    */
   public AbstractClientApplication(String name) {
     super(name);
-    detectJNLP();
-  }
-
-  @Override
-  protected boolean isServerImpl() {
-    return false;
   }
 
 
-  /**
-   * Indicates whether this application has been started by JNLP (Java Webstart).
-   *
-   * @return true if invoked by WebStart, false if not
-   */
-  public boolean isDeployedByJNLP() {
-    return deployedByJNLP;
-  }
-
-
-  /**
-   * Detects whether this application has been started by JNLP (Java Webstart).<br>
-   * The result can be retrieved by {@link #isDeployedByJNLP()}.
-   */
-  protected void detectJNLP() {
-    deployedByJNLP = System.getProperty("javawebstart.version", null) != null;
-    if (deployedByJNLP) {
-      LOGGER.info("Java Webstart detected");
-    }
-  }
-
-  
   /**
    * Updates the session info after sucessful login.
    */

@@ -169,8 +169,28 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    *
    * @return true if server, false if a client or nothing of both
    */
-  protected abstract boolean isServerImpl();
+  protected boolean isServerImpl() {
+    return false;
+  }
 
+  /**
+   * Returns whether the running application is interactive.
+   *
+   * @return true if interaction with user, false if server, daemon or whatever
+   */
+  public static boolean isInteractive() {
+    AbstractApplication application = getRunningApplication();
+    return application != null && application.isInteractiveImpl();
+  }
+
+  /**
+   * Returns whether the application is interactive.
+   *
+   * @return true if interaction with user, false if server, daemon or whatever
+   */
+  protected boolean isInteractiveImpl() {
+    return false;
+  }
 
   /**
    * Registers the application.<br>
