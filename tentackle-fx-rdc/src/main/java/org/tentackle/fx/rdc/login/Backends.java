@@ -34,6 +34,7 @@ import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.component.FxButton;
+import org.tentackle.fx.component.FxCheckBox;
 import org.tentackle.fx.component.FxChoiceBox;
 import org.tentackle.fx.component.FxListView;
 import org.tentackle.fx.component.FxPasswordField;
@@ -116,6 +117,8 @@ public class Backends extends AbstractFxController {
   private FxTextField backendUser;
   @FXML
   private FxPasswordField backendPassword;
+  @FXML
+  private FxCheckBox asDefault;
 
 
   // list of drivers with buttons to add and remove a backend
@@ -144,9 +147,13 @@ public class Backends extends AbstractFxController {
   private FxButton driverButton;
 
 
+  private String defaultBackendName;
+
 
   @FXML
   private void initialize() {
+    asDefault.setBindable(false);
+
     backends.setBindable(false);
     backends.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
     backends.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -156,6 +163,7 @@ public class Backends extends AbstractFxController {
       }
       backend = newValue;
       removeBackendButton.setDisable(backend == null);
+      asDefault.setSelected(backend != null && defaultBackendName != null && defaultBackendName.equals(backend.getName()));
       backendPane.setChangeable(backend != null);
       backendPane.updateView();
     });
@@ -281,6 +289,8 @@ public class Backends extends AbstractFxController {
     backends.getItems().addAll(BackendConfiguration.getBackendConfigurations(application, system).values());
     drivers.getSelectionModel().clearSelection();
     drivers.getItems().addAll(DriverConfiguration.getDriverConfigurations(system).values());
+    BackendConfiguration defaultBackend = BackendConfiguration.getDefault(application, system);
+    defaultBackendName = defaultBackend != null ? defaultBackend.getName() : null;
     loadDriverConfigurations();
   }
 
@@ -323,6 +333,14 @@ public class Backends extends AbstractFxController {
     List<ValidationResult> results = backend.validate("backend", ValidationScopeFactory.getInstance().getMandatoryScope());
     if (results.isEmpty()) {
       backend.persist(system);
+      if (asDefault.isSelected()) {
+        defaultBackendName = backend.getName();
+        BackendConfiguration.setDefault(backend, application, system);
+      }
+      else if (backend.getName().equals(defaultBackendName)) {
+        defaultBackendName = null;
+        BackendConfiguration.setDefault(null, application, system);
+      }
     }
     else {
       Fx.info(ValidationUtilities.getInstance().resultsToMessage(results));
