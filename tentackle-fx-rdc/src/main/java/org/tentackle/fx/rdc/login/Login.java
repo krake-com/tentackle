@@ -20,6 +20,7 @@
 package org.tentackle.fx.rdc.login;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -286,5 +287,10 @@ public class Login extends AbstractFxController {
   private void loadBackendConfigurations() {
     backendField.getItems().clear();
     backendField.getItems().addAll(BackendConfiguration.getBackendConfigurations(sessionInfo.getApplicationName(), backendFromSystemPrefs).values());
+    BackendConfiguration defaultBackend = BackendConfiguration.getDefault(sessionInfo.getApplicationName(), backendFromSystemPrefs);
+    if (defaultBackend != null) {
+      backendField.setValue(defaultBackend);
+      Platform.runLater(() -> backendField.fireEvent(new ActionEvent()));
+    }
   }
 }

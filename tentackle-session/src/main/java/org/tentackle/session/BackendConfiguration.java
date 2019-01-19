@@ -35,7 +35,7 @@ import java.util.prefs.Preferences;
  * <p>
  * Whether username and password are optional depends on the use case. If the configuration
  * is used by a standard DesktopApplication (see fx-rdc module), the user/password is mandatory
- * for local sessions (with driver) and ignored for remote sessions (without driver).<br>
+ * for local sessions (with driver) and optional for remote sessions (without driver).<br>
  * Other application types may enforce their own rules.
  * <p>
  * Notice that the implementation does not depend on the tentackle-database or tentackle-sql module!
@@ -50,6 +50,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   private static final String DRIVER_KEY = "driver";
   private static final String USER_KEY = "user";
   private static final String PASSWORD_KEY = "password";
+  private static final String DEFAULT_KEY = "default";
 
 
   /**
@@ -108,6 +109,46 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   }
 
   /**
+   * Sets the default backend configuration.
+   *
+   * @param backend the configuration, null to clear
+   * @param application the application name
+   * @param system true if save to system preferences, else user preferences
+   */
+  public static void setDefault(BackendConfiguration backend, String application, boolean system) {
+    Preferences prefs = getPrefNode(system);
+    Preferences node = prefs.node(application);
+    try {
+      if (backend == null) {
+        node.remove(DEFAULT_KEY);
+      }
+      else {
+        node.put(DEFAULT_KEY, backend.getName());
+      }
+      prefs.flush();
+    }
+    catch (BackingStoreException bx) {
+      throw new PersistenceException("cannot set default backend configuration", bx);
+    }
+  }
+
+  /**
+   * Gets the default backend configuration.
+   *
+   * @param application the application name
+   * @param system true if load from system preferences, else user preferences
+   * @return the configuration, null if no default
+   */
+  public static BackendConfiguration getDefault(String application, boolean system) {
+    String name = getPrefNode(system).node(application).get(DEFAULT_KEY, null);
+    BackendConfiguration backend = null;
+    if (name != null) {
+      backend = getBackendConfigurations(application, system).get(name);
+    }
+    return backend;
+  }
+
+  /**
    * Gets the configuration parent node.
    *
    * @param system true if load from system preferences, else user preferences
@@ -116,6 +157,8 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   private static Preferences getPrefNode(boolean system) {
     return getPrefNode(NODE_NAME, system);
   }
+
+
 
 
   private String application;             // the application name
