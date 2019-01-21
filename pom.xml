@@ -65,6 +65,7 @@
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>
+    <module>tentackle-jlink-maven-plugin</module>
     <module>tentackle-bom</module>
   </modules>
 
