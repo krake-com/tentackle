@@ -28,10 +28,10 @@ import java.lang.annotation.Target;
  * Annotation to override a service on the modulepath from the classpath.
  * <p>
  * By default, the {@link ModuleSorter} organizes resources for the <em>same</em> service name
- * according to the module dependency hierarchy first and then followed by the classpath. This is the desired
- * behavior in most cases, since it allows modules to override/implement services declared or already
- * implemented on the module- or the classpath.<br>
- * This would mean, however, that a non-modularized dependency could never override a service from the modulepath.
+ * according to the module dependency hierarchy first and then followed by the automatic modules and classpath.
+ * This is the desired behavior in most cases, since it allows modules to override/implement services declared or already
+ * implemented by real modules or traditional artifacts.<br>
+ * This would mean, however, that a non-modularized dependency could never override a service from a real module.
  * Think of maven artifacts that in turn depend on some 3rd party dependency that isn't modularized yet.<br>
  * In such cases, this annotation causes the classpath to take precedence over the modulepath.
  * <p>

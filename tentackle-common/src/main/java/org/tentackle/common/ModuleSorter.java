@@ -204,12 +204,12 @@ public final class ModuleSorter {
     List<URL> sortedUrls = urlSet.stream().map(SortKey::getUrl).collect(Collectors.toList());
 
     if (classpathFirstServices.contains(serviceName)) {
-      // prepend URLs of the unnamed module
+      // prepend URLs of the unnamed or automatic module
       unsortedUrls.addAll(sortedUrls);
       sortedUrls = unsortedUrls;
     }
     else {
-      // append URLs of the unnamed module
+      // append URLs of the unnamed or automatic module
       sortedUrls.addAll(unsortedUrls);
     }
 
