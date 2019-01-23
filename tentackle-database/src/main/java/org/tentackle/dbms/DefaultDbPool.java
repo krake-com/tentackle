@@ -19,7 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.lang.ref.WeakReference;
 import org.tentackle.common.Timestamp;
 import org.tentackle.daemon.Scavenger;
 import org.tentackle.log.Logger;
@@ -29,6 +28,8 @@ import org.tentackle.session.Session;
 import org.tentackle.session.SessionClosedException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
+
+import java.lang.ref.WeakReference;
 
 
 /**
@@ -606,11 +607,19 @@ public class DefaultDbPool implements SessionPool {
     if (db.isOpen()) {
       boolean txRunning = db.isTxRunning();
       if (txRunning) {
-        // rollback first and return to pool, log the exception later (see below)
-        db.rollbackImmediately(null);
+        if (db.isRemote()) {
+          // rollbackImmediately not allowed for remote sessions.
+          // just close it, the rollback will be performed at the remote side.
+          removeDbInstance(db, poolId - 1);
+          poolId = 0;
+        }
+        else {
+          // rollback first and return to pool, log the exception later (see below)
+          db.rollbackImmediately(null);
+        }
       }
       if (poolId > 0) { // if not returned to pool yet
-        // check if there are no pending transactions
+        // check if there are no pending statements
         ManagedConnection con = db.getConnection();
         if (con != null) {
           con.closePreparedStatements(true); // cleanup all pending statements
