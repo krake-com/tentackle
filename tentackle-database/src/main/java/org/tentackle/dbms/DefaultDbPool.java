@@ -330,11 +330,11 @@ public class DefaultDbPool implements SessionPool {
       throw new SessionClosedException(this + ": session still in use unexpectedly");
     }
     if (!db.isOpen()) {
-      throw new SessionClosedException(db, this + ": Db has been closed unexpectedly");
+      throw new SessionClosedException(db, this + ": session has been closed unexpectedly");
     }
     pooledDb.use(Thread.currentThread());
     db.setPoolId(poolId + 1);   // starting at 1
-    LOGGER.fine("{0}: Db {1} assigned to pool id {2}", this, db, poolId);
+    LOGGER.fine("{0}: session {1} assigned to pool id {2}", this, db, poolId);
     return db;
   }
 
@@ -343,24 +343,29 @@ public class DefaultDbPool implements SessionPool {
     assertNotShutdown();
     final Db db = (Db) session;
     if (db.getPool() != this) {
-      throw new PersistenceException(db, "Db is not managed by pool " + this);
+      throw new PersistenceException(db, "session is not managed by pool " + this);
     }
     int poolId = db.getPoolId();
     // 0 = already returned to pool, -1 removed from pool, else not returned yet
     if (poolId < -1 || poolId > pooledSessions.length) {
-      throw new PersistenceException(db, this + ": Db has invalid poolid " + poolId);
+      throw new PersistenceException(db, this + ": session has invalid poolid " + poolId);
     }
     if (db.isOpen()) {
       boolean txRunning = db.isTxRunning();
+      String exMsg = null;
       if (txRunning) {
+        exMsg = "session " + db + " was still running a transaction -> ";
         if (db.isRemote()) {
           // rollbackImmediately not allowed for remote sessions.
           // just close it, the rollback will be performed at the remote side.
+          exMsg = "remote " + exMsg + "closed and removed from pool";
           removeDbInstance(db, poolId - 1);
           poolId = 0;
+
         }
         else {
           // rollback first and return to pool, log the exception later (see below)
+          exMsg += "rolled back";
           db.rollbackImmediately(null);
         }
       }
@@ -372,7 +377,7 @@ public class DefaultDbPool implements SessionPool {
           removeDbInstance(db, poolId - 1);  // remove from pool
         }
         else {
-          LOGGER.fine("{0}: Db {1} returned to pool, id {2}", this, db, poolId);
+          LOGGER.fine("{0}: session {1} returned to pool, id {2}", this, db, poolId);
           poolId--;
           pooledSessions[poolId].unUse(db);
           unusedList[unusedCount++] = poolId;
@@ -380,19 +385,19 @@ public class DefaultDbPool implements SessionPool {
         db.setPoolId(0);            // returned to pool
         db.setSessionGroupId(0);    // clear group
         db.setOwnerThread(null);    // unlink any owner thread
-      }
-      // else: not an error to return a db more than once
-      if (txRunning) {
-        throw new PersistenceException(db, "Db was still running a transaction -- rolled back!");
+      } // else: not an error to return a db more than once
+
+      if (exMsg != null) {
+        throw new PersistenceException(db, exMsg);
       }
     }
     else {
       if (poolId > 0) { // if not returned to pool yet
         removeDbInstance(db, poolId - 1);           // remove from pool
-        LOGGER.warning(this + ": returned Db " + db + " was closed and removed from pool");
+        LOGGER.warning(this + ": returned session " + db + " was closed and removed from pool");
       }
       else {
-        LOGGER.warning(this + ": returned Db " + db + " was closed and already returned to pool");
+        LOGGER.warning(this + ": returned session " + db + " was closed and already returned to pool");
       }
     }
   }
@@ -424,7 +429,7 @@ public class DefaultDbPool implements SessionPool {
         nSize = maxSize;
       }
       if (nSize <= pooledSessions.length) {
-        throw new PersistenceException("cannot create more Db instances, max. poolsize " + maxSize + " reached");
+        throw new PersistenceException("cannot create more session instances, max. poolsize " + maxSize + " reached");
       }
       PooledDb[] nPool  = new PooledDb[nSize];
       int[] nFreeList   = new int[nSize];
@@ -473,7 +478,7 @@ public class DefaultDbPool implements SessionPool {
         db.setPoolId(-1);   // mark it as removed from pool -> cannot be re-opened again
       }
       catch (RuntimeException re) {
-        LOGGER.severe("closing pooled db failed", re);
+        LOGGER.severe("closing pooled session failed", re);
       }
     }
 
@@ -523,7 +528,7 @@ public class DefaultDbPool implements SessionPool {
     private final WeakReference<DefaultDbPool> poolRef;
 
     private TimeoutThread(DefaultDbPool pool) {
-      super("Db-Pool '" + pool.getName() + "' Timeout Thread");
+      super("Sessionpool '" + pool.getName() + "' Timeout Thread");
       poolRef = new WeakReference<>(pool);
       setDaemon(true);
     }
@@ -609,7 +614,7 @@ public class DefaultDbPool implements SessionPool {
           }
         }
         catch (RuntimeException ex) {
-          LOGGER.severe("cleaning up unused Db instance(s) failed", ex);
+          LOGGER.severe("cleaning up unused session instance(s) failed", ex);
         }
       }
       LOGGER.info(this + " terminated");
