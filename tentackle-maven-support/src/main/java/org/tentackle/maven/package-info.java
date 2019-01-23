@@ -17,10 +17,6 @@
  */
 
 /**
- * Tentackle maven plugin.
- */
-
-/**
- * Tentackle Maven Plugin Support.
+ * Support for Tentackle Maven Plugins.
  */
 package org.tentackle.maven;

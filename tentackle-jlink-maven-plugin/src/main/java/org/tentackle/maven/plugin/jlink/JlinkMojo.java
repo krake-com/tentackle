@@ -32,13 +32,6 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     super.execute();
-
-  }
-
-  @Override
-  protected void validate() throws MojoExecutionException {
-    super.validate();
-
   }
 
 }
