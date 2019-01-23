@@ -19,11 +19,14 @@
 
 package org.tentackle.maven;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.wurbelizer.misc.Verbosity;
 
 import org.tentackle.common.Settings;
@@ -49,6 +52,21 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
              readonly = true,
              required = true)
   protected MavenProject mavenProject;
+
+  /**
+   * Toolchain manager to locate tools.
+   */
+  @Component
+  protected ToolchainManager toolchainManager;
+
+  /**
+   * The current build session instance.<br>
+   * Used for toolchain manager API calls.
+   */
+  @Parameter(defaultValue = "${session}",
+             readonly = true,
+             required = true)
+  protected MavenSession session;
 
   /**
    * The verbosity.<br>
@@ -81,6 +99,11 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * List of resource dirs.
    */
   protected List<String> resourceDirs;
+
+  /**
+   * The toolfinder.
+   */
+  private ToolFinder toolFinder;
 
 
   /**
@@ -222,6 +245,19 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       return false;
     }
     return true;
+  }
+
+
+  /**
+   * Gets the toolfinder to locate tools like java, jdeps, jlink, etc.
+   *
+   * @return the toolfinder
+   */
+  protected ToolFinder getToolFinder() {
+    if (toolFinder == null) {
+      toolFinder = new ToolFinder( toolchainManager, session);
+    }
+    return toolFinder;
   }
 
 }

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- defines the jlink packaging type -->
+<!-- requires this plugin to be used with <extensions>true</extensions> -->
+
+<component-set>
+  <components>
+    <component>
+      <role>org.apache.maven.artifact.handler.ArtifactHandler</role>
+      <role-hint>jlink</role-hint>
+      <implementation>org.apache.maven.artifact.handler.DefaultArtifactHandler</implementation>
+      <configuration>
+        <type>jlink</type>
+        <extension>zip</extension>
+        <includesDependencies>true</includesDependencies>
+        <language>java</language>
+        <addedToClasspath>false</addedToClasspath>
+      </configuration>
+    </component>
+
+    <component>
+      <role>org.apache.maven.lifecycle.mapping.LifecycleMapping</role>
+      <role-hint>jlink</role-hint>
+      <implementation>org.apache.maven.lifecycle.mapping.DefaultLifecycleMapping</implementation>
+      <configuration>
+        <lifecycles>
+          <lifecycle>
+            <id>default</id>
+            <phases>
+              <process-resources>
+                org.apache.maven.plugins:maven-resources-plugin:${maven.resources.plugin.version}:resources
+              </process-resources>
+              <compile>
+                org.apache.maven.plugins:maven-compiler-plugin:${maven.compiler.plugin.version}:compile
+              </compile>
+              <process-test-resources>
+                org.apache.maven.plugins:maven-resources-plugin:${maven.resources.plugin.version}:testResources
+              </process-test-resources>
+              <test-compile>
+                org.apache.maven.plugins:maven-compiler-plugin:${maven.compiler.plugin.version}:testCompile
+              </test-compile>
+              <test>
+                org.apache.maven.plugins:maven-surefire-plugin:${maven.surefire.plugin.version}:test
+              </test>
+              <package>
+                org.tentackle:tentackle-jlink-maven-plugin:${project.version}:jlink
+              </package>
+              <install>
+                org.apache.maven.plugins:maven-install-plugin:${maven.install.plugin.version}:install
+              </install>
+              <deploy>
+                org.apache.maven.plugins:maven-deploy-plugin:${maven.deploy.plugin.version}:deploy
+              </deploy>
+            </phases>
+          </lifecycle>
+        </lifecycles>
+      </configuration>
+    </component>
+  </components>
+</component-set>

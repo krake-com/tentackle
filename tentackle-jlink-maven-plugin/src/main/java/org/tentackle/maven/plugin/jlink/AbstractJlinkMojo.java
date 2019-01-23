@@ -25,6 +25,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
+import org.tentackle.maven.AbstractTentackleMojo;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,20 +42,25 @@ import java.util.stream.Collectors;
  *
  * @author harald
  */
-public abstract class AbstractJlinkMojo extends AbstractMojo {
-
-  /**
-   * The Maven Project.
-   */
-  @Parameter(defaultValue = "${project}", readonly = true, required = true)
-  private MavenProject mavenProject;
-
+public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
 
   /**
    * The directory holding the script templates.
    */
-  @Parameter(defaultValue = "${project.basedir}/templates/jlink")
+  @Parameter(defaultValue = "${project.basedir}/templates")
   private File templateDir;
+
+  /**
+   * File of the jdeps tool.
+   */
+  @Parameter
+  private File jdepsTool;
+
+  /**
+   * File of the jlink tool.
+   */
+  @Parameter
+  private File jlinkTool;
 
 
   /**
@@ -68,31 +75,40 @@ public abstract class AbstractJlinkMojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
+    if (jdepsTool == null) {
+      jdepsTool = getToolFinder().find("jdeps");
+    }
+    if (jlinkTool == null) {
+      jlinkTool = getToolFinder().find("jlink");
+    }
     validate();
   }
 
 
-  /**
-   * Validates the configuration.
-   *
-   * @throws MojoExecutionException if project not set or misconfigured
-   */
-  protected void validate() throws MojoExecutionException {
-    if (mavenProject == null) {
-      throw new MojoExecutionException("missing project");
-    }
-    if (mavenProject.getBasedir() == null) {
-      throw new MojoExecutionException("missing project.baseDir");
-    }
-    if (templateDir.exists()) {
-      if (!templateDir.isDirectory()) {
-        throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+  @Override
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      if (jdepsTool == null) {
+        throw new MojoExecutionException("jdeps tool not found");
       }
+      getLog().info("using " + jdepsTool);
+      if (jlinkTool == null) {
+        throw new MojoExecutionException("jlink tool not found");
+      }
+      getLog().info("using " + jlinkTool);
+
+      if (templateDir.exists()) {
+        if (!templateDir.isDirectory()) {
+          throw new MojoExecutionException(templateDir.getPath() + " is not a directory");
+        }
+      }
+      else {
+        getLog().info("template directory created: " + templateDir.getPath());
+        installTemplates();
+      }
+      return true;
     }
-    else {
-      getLog().info("template directory created: " + templateDir.getPath());
-      installTemplates();
-    }
+    return false;
   }
 
 
