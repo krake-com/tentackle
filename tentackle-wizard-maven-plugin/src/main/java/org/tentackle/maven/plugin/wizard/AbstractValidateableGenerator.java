@@ -17,9 +17,7 @@
  */
 package org.tentackle.maven.plugin.wizard;
 
-import freemarker.template.Configuration;
-import freemarker.template.TemplateExceptionHandler;
-
+import org.tentackle.maven.AbstractGenerator;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationResult;
@@ -28,42 +26,13 @@ import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**
  * Base class for generators.<br>
  * Holds common methods for {@link PdoGenerator} and {@link OperationGenerator}.
  */
-public class AbstractGenerator implements ScopeConfigurator, Validateable {
-
-  private File templateDirectory;
-
-  /**
-   * Sets the freemarker template directory.
-   *
-   * @param templateDirectory the template directory
-   */
-  public void setTemplateDirectory(File templateDirectory) {
-    this.templateDirectory = templateDirectory;
-  }
-
-  /**
-   * Creates the freemarker configuration.
-   *
-   * @return the config
-   * @throws IOException if there's some trouble with the template directory
-   */
-  public Configuration createFreemarkerConfiguration() throws IOException {
-    Configuration cfg = new Configuration(Configuration.VERSION_2_3_28);
-    cfg.setDirectoryForTemplateLoading(templateDirectory);
-    cfg.setDefaultEncoding("UTF-8");
-    cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-    cfg.setLogTemplateExceptions(false);
-    cfg.setWrapUncheckedExceptions(true);
-    return cfg;
-  }
+public class AbstractValidateableGenerator extends AbstractGenerator implements ScopeConfigurator, Validateable {
 
   @Override
   @SuppressWarnings("unchecked")
@@ -75,5 +44,4 @@ public class AbstractGenerator implements ScopeConfigurator, Validateable {
   public List<ValidationResult> validate(String validationPath, ValidationScope scope) {
     return ValidationUtilities.getInstance().validate(this, validationPath, scope);
   }
-
 }

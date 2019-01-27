@@ -17,9 +17,7 @@
  */
 package org.tentackle.maven;
 
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.toolchain.Toolchain;
-import org.apache.maven.toolchain.ToolchainManager;
 
 import java.io.File;
 
@@ -28,18 +26,15 @@ import java.io.File;
  */
 public class ToolFinder {
 
-  private final ToolchainManager toolchainManager;
-  private final MavenSession session;
+  private final Toolchain toolchain;
 
   /**
    * Creates the toolfinder.
    *
-   * @param toolchainManager the toolchain manager
-   * @param session the maven session
+   * @param toolchain the optional toolchain
    */
-  public ToolFinder(ToolchainManager toolchainManager, MavenSession session) {
-    this.toolchainManager = toolchainManager;
-    this.session = session;
+  public ToolFinder(Toolchain toolchain) {
+    this.toolchain = toolchain;
   }
 
   /**
@@ -52,9 +47,8 @@ public class ToolFinder {
     File file = null;
 
     // locate via toolchain, if possible
-    Toolchain tc = toolchainManager.getToolchainFromBuildContext("jdk", session);
-    if (tc != null) {
-      String fileName = tc.findTool(toolName);
+    if (toolchain != null) {
+      String fileName = toolchain.findTool(toolName);
       if (fileName != null) {
         file = new File(fileName);
       }
@@ -69,9 +63,9 @@ public class ToolFinder {
         if (!file.isFile()) {
           // try to append .exe for windozes
           file = new File(binDir, toolName + ".exe");
-        }
-        if (!file.isFile()) {
-          file = null;
+          if (!file.isFile()) {
+            file = null;
+          }
         }
       }
     }

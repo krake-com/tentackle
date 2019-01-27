@@ -26,16 +26,21 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.wurbelizer.misc.Verbosity;
 
 import org.tentackle.common.Settings;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -51,22 +56,28 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}",
              readonly = true,
              required = true)
-  protected MavenProject mavenProject;
-
-  /**
-   * Toolchain manager to locate tools.
-   */
-  @Component
-  protected ToolchainManager toolchainManager;
+  private MavenProject mavenProject;
 
   /**
    * The current build session instance.<br>
    * Used for toolchain manager API calls.
    */
   @Parameter(defaultValue = "${session}",
-             readonly = true,
-             required = true)
-  protected MavenSession session;
+      readonly = true,
+      required = true)
+  private MavenSession mavenSession;
+
+  /**
+   * Toolchain manager to locate tools.
+   */
+  @Component
+  private ToolchainManager toolchainManager;
+
+  /**
+   * The optional toolchain.
+   */
+  private Toolchain toolChain;
+
 
   /**
    * The verbosity.<br>
@@ -107,6 +118,42 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
 
 
   /**
+   * Gets the maven project.
+   *
+   * @return the project, never null
+   */
+  public MavenProject getMavenProject() {
+    return mavenProject;
+  }
+
+  /**
+   * Gets the maven session.
+   *
+   * @return the session, never null
+   */
+  public MavenSession getMavenSession() {
+    return mavenSession;
+  }
+
+  /**
+   * Gets the toolchain manager.
+   *
+   * @return the manager, never null
+   */
+  public ToolchainManager getToolchainManager() {
+    return toolchainManager;
+  }
+
+  /**
+   * Gets the toolchain.
+   *
+   * @return the toolchain, null if none
+   */
+  public Toolchain getToolChain() {
+    return toolChain;
+  }
+
+  /**
    * Determines the encode charset.
    */
   protected void determineEncoding() {
@@ -144,7 +191,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @param path the absolute path
    * @return the shortened path
    */
-  protected String getPathRelativeToBasedir(String path) {
+  public String getPathRelativeToBasedir(String path) {
     String basePath = mavenProject.getBasedir().getAbsolutePath();
     while (basePath.length() > 0) {
       if (path.startsWith(basePath)) {
@@ -193,7 +240,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @param dirName the directory name
    * @return the resource dir, null if not a resource
    */
-  protected String getResourceDirName(String dirName) {
+  public String getResourceDirName(String dirName) {
     if (resourceDirs != null) {
       for (String resourceDir: resourceDirs) {
         if (dirName.startsWith(resourceDir)) {
@@ -212,7 +259,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @return the path
    * @throws MojoExecutionException if failed
    */
-  protected String getCanonicalPath(File dir) throws MojoExecutionException {
+  public String getCanonicalPath(File dir) throws MojoExecutionException {
     try {
       return dir.getCanonicalPath();
     }
@@ -231,9 +278,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   protected boolean validate() throws MojoExecutionException {
     determineEncoding();
     determineVerbosity();
-    if (mavenProject == null) {
-      throw new MojoExecutionException("missing project");
-    }
     if (mavenProject.getBasedir() == null) {
       throw new MojoExecutionException("missing project.baseDir");
     }
@@ -244,6 +288,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       getLog().info("skipped");
       return false;
     }
+    toolChain = toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
+    if (toolChain != null) {
+      getLog().debug("using toolchain " + toolChain);
+    }
     return true;
   }
 
@@ -253,11 +301,27 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    *
    * @return the toolfinder
    */
-  protected ToolFinder getToolFinder() {
+  public ToolFinder getToolFinder() {
     if (toolFinder == null) {
-      toolFinder = new ToolFinder( toolchainManager, session);
+      toolFinder = new ToolFinder(toolChain);
     }
     return toolFinder;
+  }
+
+  /**
+   * Loads a resource file into a string.
+   *
+   * @param path the path to the resource file
+   * @return the contents
+   * @throws MojoExecutionException
+   */
+  public String loadResourceFileIntoString(String path) throws MojoExecutionException {
+    InputStream inputStream = getClass().getResourceAsStream(path);
+    if (inputStream == null) {
+      throw new MojoExecutionException("no such resource: " + path);
+    }
+    BufferedReader buffer = new BufferedReader(new InputStreamReader(inputStream));
+    return buffer.lines().collect(Collectors.joining(System.getProperty("line.separator")));
   }
 
 }

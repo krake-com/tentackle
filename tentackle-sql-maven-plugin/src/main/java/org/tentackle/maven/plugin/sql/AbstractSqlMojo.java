@@ -22,7 +22,6 @@ package org.tentackle.maven.plugin.sql;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Settings;
@@ -73,14 +72,6 @@ import java.util.StringTokenizer;
  * @author harald
  */
 public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
-
-  /**
-   * The Maven Project.
-   */
-  @Parameter(defaultValue = "${project}",
-             readonly = true,
-             required = true)
-  protected MavenProject mvnProject;
 
   /**
    * Explicit filesets given instead of model directory.
@@ -363,7 +354,6 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
   @Override
   protected boolean validate() throws MojoExecutionException {
-    mavenProject = mvnProject;    // fix for mavenProject is null, for whatever reason???
     if (super.validate()) {
       if (modelDir == null) {
         throw new MojoExecutionException("missing tentackle.modelDir");

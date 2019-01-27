@@ -22,6 +22,7 @@ import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.maven.GeneratedFile;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.validator.Changeable;
@@ -35,7 +36,7 @@ import java.util.List;
 /**
  * Generator for the operation files.
  */
-public class OperationGenerator extends AbstractGenerator {
+public class OperationGenerator extends AbstractValidateableGenerator {
 
   private OperationProfile profile;
   private String operationName;

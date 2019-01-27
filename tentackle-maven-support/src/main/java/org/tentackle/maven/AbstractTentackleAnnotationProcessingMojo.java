@@ -274,7 +274,7 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
       }
 
       if (totalErrors > 0) {
-        throw new MojoFailureException(totalErrors + " wurbel errors");
+        throw new MojoFailureException(totalErrors + " analyze errors");
       }
     }
   }
