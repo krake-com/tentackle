@@ -24,7 +24,6 @@ module org.tentackle.core {
   requires java.management;
   requires java.rmi;
   requires java.scripting;
-  requires java.desktop;
   requires java.compiler;
   requires java.sql;
 

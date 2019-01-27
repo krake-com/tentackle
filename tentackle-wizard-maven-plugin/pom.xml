@@ -31,10 +31,6 @@
       <artifactId>tentackle-maven-support</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.freemarker</groupId>
-      <artifactId>freemarker</artifactId>
-    </dependency>
   </dependencies>
 
   <properties>

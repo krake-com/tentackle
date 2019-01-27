@@ -15,7 +15,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package org.tentackle.maven.plugin.jlink;
+package org.tentackle.maven;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
@@ -24,12 +24,20 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Base class for generators.<br>
- * Holds common methods for {@link PdoGenerator} and {@link OperationGenerator}.
+ * Base class for generators.
  */
 public class AbstractGenerator {
 
   private File templateDirectory;
+
+  /**
+   * Gets the freemarker template directory.
+   *
+   * @return the template directory
+   */
+  public File getTemplateDirectory() {
+    return templateDirectory;
+  }
 
   /**
    * Sets the freemarker template directory.

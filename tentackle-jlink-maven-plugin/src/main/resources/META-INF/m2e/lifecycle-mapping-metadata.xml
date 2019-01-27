@@ -6,6 +6,7 @@
         <goals>
           <goal>init</goal>
           <goal>jlink</goal>
+          <goal>jpackage</goal>
         </goals>
       </pluginExecutionFilter>
       <action>

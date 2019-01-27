@@ -19,19 +19,64 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.codehaus.plexus.archiver.Archiver;
+import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.zip.ZipArchiver;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
- * Wizard to create an application ZIP with jlink.
+ * Mojo to create an application ZIP with jlink.
  */
-@Mojo(name = "jlink", requiresDependencyResolution = ResolutionScope.RUNTIME, defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true)
+@Mojo(name = "jlink",
+      requiresDependencyResolution = ResolutionScope.RUNTIME,
+      defaultPhase = LifecyclePhase.PACKAGE,
+      requiresProject = true)
+
 public class JlinkMojo extends AbstractJlinkMojo {
+
+  /**
+   * The archiver to zip the image.
+   */
+  @Component(role = Archiver.class, hint = "zip")
+  private ZipArchiver zipArchiver;
+
+  /**
+   * The directory where to store the ZIP file.
+   */
+  @Parameter(defaultValue = "${project.build.directory}", required = true)
+  private File zipDirectory;
+
+  /**
+   * The generated ZIP file name.
+   */
+  @Parameter(defaultValue = "${project.build.finalName}", required = true)
+  private String finalName;
+
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
     super.execute();
+    File zipFile = createZipFile();
+    getMavenProject().getArtifact().setFile(zipFile);
   }
 
+  private File createZipFile() throws MojoExecutionException {
+    File zipFile = new File(zipDirectory, finalName + ".zip");
+    zipArchiver.addDirectory(getImageDirectory());
+    zipArchiver.setDestFile(zipFile);
+    try {
+      zipArchiver.createArchive();
+    }
+    catch (ArchiverException | IOException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
+    return zipFile;
+  }
 }

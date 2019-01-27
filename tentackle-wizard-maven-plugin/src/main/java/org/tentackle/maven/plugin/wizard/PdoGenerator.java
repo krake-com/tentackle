@@ -23,6 +23,7 @@ import freemarker.template.TemplateException;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.Fx;
+import org.tentackle.maven.GeneratedFile;
 import org.tentackle.model.Entity;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Model;
@@ -44,7 +45,7 @@ import java.util.List;
 /**
  * Generator for the PDO files.
  */
-public class PdoGenerator extends AbstractGenerator {
+public class PdoGenerator extends AbstractValidateableGenerator {
 
   private File statusDir;
   private PdoProfile profile;
