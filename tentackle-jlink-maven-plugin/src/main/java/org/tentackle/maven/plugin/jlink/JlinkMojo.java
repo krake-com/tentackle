@@ -32,7 +32,37 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Mojo to create an application ZIP with jlink.
+ * Creates an application image zip with jlink.<br>
+ * This mojo works for modular, non-modular and mixed applications.
+ * It does so by analyzing the dependencies and finding the best strategy to invoke jlink.<br>
+ * Basically, applications fall into one of 3 categories:
+ * <ol>
+ *   <li>full-blown modular applications: all module-infos must only require real modules. Jlink will be used to create
+ *   an image from the application modules. Optional (but not required!) automatic modules are allowed and will be added
+ *   to the module path by the generated run-script.</li>
+ *   <li>modular applications with non-modular dependencies: jlink will used to create an image from java's runtime modules only,
+ *   which are determined by the plugin automatically. The application's dependencies are placed on the module-path
+ *   by the generated run-script.</li>
+ *   <li>non-modular applications: same as 2, but all dependencies are placed on the classpath.</li>
+ * </ol>
+ *
+ * The minimum plugin configuration is very simpel:
+ *
+ * <pre>
+ *       &lt;plugin&gt;
+ *         &lt;groupId&gt;org.tentackle&lt;/groupId&gt;
+ *         &lt;artifactId&gt;tentackle-jlink-maven-plugin&lt;/artifactId&gt;
+ *         &lt;version&gt;${tentackle.version}&lt;/version&gt;
+ *         &lt;extensions&gt;true&lt;/extensions&gt;
+ *         &lt;configuration&gt;
+ *           &lt;mainModule&gt;com.example&lt;/mainModule&gt;
+ *           &lt;mainClass&gt;com.example.MyApp&lt;/mainClass&gt;
+ *         &lt;/configuration&gt;
+ *       &lt;/plugin&gt;
+ * </pre>
+ *
+ * The platform specific script templates are copied to the project's template folder (if it does not exist)
+ * and become part of the project.
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
