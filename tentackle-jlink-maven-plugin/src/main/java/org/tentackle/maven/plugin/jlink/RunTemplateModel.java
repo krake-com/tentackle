@@ -15,7 +15,10 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
 package org.tentackle.maven.plugin.jlink;
+
+import org.apache.maven.plugin.MojoExecutionException;
 
 import java.util.HashMap;
 
@@ -24,20 +27,33 @@ import java.util.HashMap;
  */
 public class RunTemplateModel extends HashMap<String, String> {
 
+  private final AbstractJlinkMojo mojo;
+  private final JlinkResolver.Result result;
+
   /**
    * Creates the model.
    *
    * @param mojo the jlink mojo
    * @param result the resolver results
+   * @throws MojoExecutionException if module path could not generated
    */
-  public RunTemplateModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) {
+  public RunTemplateModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+    this.mojo = mojo;
+    this.result = result;
+
     putValue("mainModule", mojo.getMainModule());
     putValue("mainClass", mojo.getMainClass());
     putValue("modulePath", result.generateModulePath());
     putValue("classPath", result.generateClassPath());
+
+    for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
+      putValue(entry.getKey().toString(), entry.getValue().toString());
+    }
   }
 
   private void putValue(String key, Object value) {
-    put(key, value == null ? "" : value.toString());
+    String val = value == null ? "" : value.toString();
+    put(key, val);
+    mojo.getLog().debug("script variable " + key + " = \"" + val + "\"");
   }
 }

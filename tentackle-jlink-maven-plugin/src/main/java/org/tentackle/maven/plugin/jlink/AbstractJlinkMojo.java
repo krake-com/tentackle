@@ -60,7 +60,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String mainClass;
 
   /**
-   * Dependencies that should go to the classpath.
+   * Dependencies that should go to the classpath instead of modulepath.
    */
   @Parameter
   private List<ClasspathDependency> classpathDependencies;
@@ -313,7 +313,8 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   private JlinkResolver.Result runJlink() throws MojoExecutionException, MojoFailureException {
     JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
-    getLog().info("\n" + result.toString());
+    getLog().info("generating image for a " + (result.isModular() ? "modular" : "classpath") + " application");
+    getLog().debug(result.toString());
 
     ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
     if (saveOpts != null) {
@@ -354,7 +355,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
     try {
       // module path, if any
-      if (!result.getModulePath().isEmpty()) {
+      if (result.isModular() && !result.getModulePath().isEmpty()) {
         File mpDir = new File(imageDirectory, "mp");
         mpDir.mkdir();
         for (ModularArtifact artifact : result.getModulePath()) {
