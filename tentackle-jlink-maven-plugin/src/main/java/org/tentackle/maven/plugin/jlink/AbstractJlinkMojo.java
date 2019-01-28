@@ -28,7 +28,6 @@ import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
-import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -84,43 +83,10 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private File jdepsTool;
 
   /**
-   * File of the jlink tool.
-   */
-  @Parameter
-  private File jlinkTool;
-
-  /**
    * The directory holding extra resources that go to conf.
    */
   @Parameter(defaultValue = "${project.build.directory}/classes", required = true)
   private File resourcesDirectory;
-
-  /**
-   * The directory created by jlink holding the image.
-   */
-  @Parameter(defaultValue = "${project.build.directory}/jlink", required = true)
-  private File imageDirectory;
-
-  /**
-   * The optional file holding the jlink options.<br>
-   * Corresponds to the <code>jlink</code> option <code>--save-opts</code>.
-   */
-  @Parameter
-  private File saveOpts;
-
-  /**
-   * Strip debug information.<br>
-   * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
-   */
-  @Parameter( defaultValue = "false" )
-  private boolean stripDebug;
-
-  /**
-   * Compression of resources.<br>
-   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
-   */
-  @Parameter
-  private Integer compress;
 
   /**
    * Extra jre or jdk modules to add to the image.<br>
@@ -136,28 +102,6 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private List<String> addModules;
 
   /**
-   * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
-   * Corresponds to the <code>jlink</code> option <code>--ignore-signing-information</code>
-   */
-  @Parameter( defaultValue = "false" )
-  private boolean ignoreSigningInformation;
-
-  /**
-   * Suppress the <code>includes</code> directory.<br>
-   * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
-   */
-  @Parameter( defaultValue = "false" )
-  private boolean noHeaderFiles;
-
-  /**
-   * Suppress the <code>man</code> directory.<br>
-   * Corresponds to the <code>jlink</code> option <code>--no-man-pages</code>
-   */
-  @Parameter( defaultValue = "false" )
-  private boolean noManPages;
-
-
-  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -171,9 +115,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    *
    * @return the image dir, never null
    */
-  public File getImageDirectory() {
-    return imageDirectory;
-  }
+  abstract public File getImageDirectory();
 
   /**
    * Gets the name of the module holding the main class.
@@ -212,68 +154,12 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Gets the jlink tool.
-   *
-   * @return the file, never null
-   */
-  public File getJlinkTool() {
-    return jlinkTool;
-  }
-
-  /**
-   * Optionally strip debug information.<br>
-   * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
-   *
-   * @return true to strip debug information, default is false
-   */
-  public boolean isStripDebug() {
-    return stripDebug;
-  }
-
-  /**
-   * Gets the compression of resources.<br>
-   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
-   *
-   * @return the compression level, null if none (default)
-   */
-  public Integer getCompress() {
-    return compress;
-  }
-
-  /**
    * Gets extra jre or jdk modules to add to the image.
    *
    * @return extra module names, never null
    */
   public List<String> getAddModules() {
     return addModules == null ? new ArrayList<>() : addModules;
-  }
-
-  /**
-   * Gets whether to suppress fatal errors when signed modular JARs are linked in the runtime image.
-   *
-   * @return true to ignore this error, false is default
-   */
-  public boolean isIgnoreSigningInformation() {
-    return ignoreSigningInformation;
-  }
-
-  /**
-   * Returns whether to uppress the <code>includes</code> directory.
-   *
-   * @return true to suppress, false is default
-   */
-  public boolean isNoHeaderFiles() {
-    return noHeaderFiles;
-  }
-
-  /**
-   * Suppress the <code>man</code> directory.
-   *
-   * @return true to suppress, false is default
-   */
-  public boolean isNoManPages() {
-    return noManPages;
   }
 
 
@@ -283,18 +169,17 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     if (jdepsTool == null) {
       jdepsTool = getToolFinder().find("jdeps");
     }
-    if (jlinkTool == null) {
-      jlinkTool = getToolFinder().find("jlink");
-    }
     if (validate()) {
-      // analyze project, determine jlink strategy and run jlink
-      JlinkResolver.Result result = runJlink();
+      // analyze project, determine jlink strategy
+      JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
+      // and run jlink
+      createImage(result);
 
       // copy artifacts not covered by jlink to modulepath and classpath subdirectories
       copyArtifacts(result);
 
       // copy resources such as backend.properties or logging config to the conf subdirectory
-      int resCount = copyResources(resourcesDirectory, new File(imageDirectory, "conf"));
+      int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
       if (resCount > 0) {
         result.setConfAddedToClasspath(true);
       }
@@ -305,45 +190,21 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   }
 
   /**
-   * Runs the jlink tool.
+   * Creates the application image.
    *
-   * @return the resolver info
+   * @param result the resolver info
    * @throws MojoExecutionException if building the JPMS info failed
    * @throws MojoFailureException if jlink returned an error code
    */
-  private JlinkResolver.Result runJlink() throws MojoExecutionException, MojoFailureException {
-    JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
-    getLog().info("generating image for a " + (result.isModular() ? "modular" : "classpath") + " application");
-    getLog().debug(result.toString());
+  abstract protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException;
 
-    ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
-    if (saveOpts != null) {
-      jlinkRunner.arg("--save-opts").arg(saveOpts);
-    }
-    jlinkRunner.arg("--output").arg(imageDirectory);
-    if (stripDebug) {
-      jlinkRunner.arg("--strip-debug");
-    }
-    if (compress != null) {
-      jlinkRunner.arg("--compress=" + compress);
-    }
-    if (ignoreSigningInformation) {
-      jlinkRunner.arg("--ignore-signing-information");
-    }
-    if (noHeaderFiles) {
-      jlinkRunner.arg("--no-header-files");
-    }
-    if (noManPages) {
-      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
-    }
-    result.generateJlinkModulePath(jlinkRunner);
-    result.generateJlinkModules(jlinkRunner);
-
-    int errCode = jlinkRunner.run().getErrCode();
-    if (errCode != 0) {
-      throw new MojoFailureException("jlink failed: " + errCode + "\n" + jlinkRunner.getOutputAsString());
-    }
-    return result;
+  /**
+   * Gets the application directory.
+   *
+   * @return the destination base directory for the application
+   */
+  protected File getApplicationDirectory() {
+    return getImageDirectory();
   }
 
   /**
@@ -352,11 +213,11 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @param result the resolver info
    * @throws MojoExecutionException if copy failed
    */
-  private void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
+  protected void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
     try {
       // module path, if any
       if (result.isModular() && !result.getModulePath().isEmpty()) {
-        File mpDir = new File(imageDirectory, "mp");
+        File mpDir = new File(getApplicationDirectory(), "mp");
         mpDir.mkdir();
         for (ModularArtifact artifact : result.getModulePath()) {
           File dest = new File(mpDir, artifact.getFileName());
@@ -366,7 +227,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       }
       // classpath, if any
       if (!result.getClassPath().isEmpty()) {
-        File cpDir = new File(imageDirectory, "cp");
+        File cpDir = new File(getApplicationDirectory(), "cp");
         cpDir.mkdir();
         for (Artifact artifact : result.getClassPath()) {
           File dest = new File(cpDir, artifact.getFile().getName());
@@ -423,10 +284,6 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("jdeps tool not found");
       }
       getLog().debug("using " + jdepsTool);
-      if (jlinkTool == null) {
-        throw new MojoExecutionException("jlink tool not found");
-      }
-      getLog().debug("using " + jlinkTool);
 
       if (templateDir.exists()) {
         if (!templateDir.isDirectory()) {

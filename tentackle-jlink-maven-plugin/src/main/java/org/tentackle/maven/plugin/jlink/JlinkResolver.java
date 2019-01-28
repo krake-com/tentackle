@@ -54,6 +54,7 @@ public class JlinkResolver {
     private final List<Artifact> classPath;
     private boolean confAddedToClasspath;
     private boolean modular;
+    private boolean isPlainModular;
 
     public Result() {
       jlinkModules = new ArrayList<>();
@@ -113,9 +114,27 @@ public class JlinkResolver {
      * Returns whether this is a modular application.
      *
      * @return true if modular
+     * @see #isPlainModular()
      */
     public boolean isModular() {
       return modular;
+    }
+
+    private void setPlainModular(boolean plainModular) {
+      isPlainModular = plainModular;
+    }
+
+    /**
+     * Returns whether this is a plain modular application.<br>
+     * Plain modular means that all requirements are met by real modules.
+     * If not plain, the jlink tool is used to build a runtime image only
+     * and the application modules are placed on the module-path explicitly.
+     *
+     * @return true if plain modular, else mixed modular or classpath application
+     * @see #isModular()
+     */
+    public boolean isPlainModular() {
+      return isPlainModular;
     }
 
     @Override
@@ -134,7 +153,8 @@ public class JlinkResolver {
           buf.append(name);
         }
       }
-      else {
+
+      if (!jlinkModules.isEmpty()) {
         buf.append("application modules passed to jlink: ");
         boolean needComma = false;
         for (ModularArtifact artifact: jlinkModules) {
@@ -399,6 +419,7 @@ public class JlinkResolver {
       if (unresolvedModules.isEmpty()) {
         mojo.getLog().debug("YEAH! can build a full modular application!");
         result.addJlinkModules(modules.values());
+        result.setPlainModular(true);
       }
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {

@@ -70,6 +70,22 @@ public class ToolRunner {
     return this;
   }
 
+  @Override
+  public String toString() {
+    StringBuilder buf = new StringBuilder();
+    boolean needSep = false;
+    for (String arg: command) {
+      if (needSep) {
+        buf.append(' ');
+      }
+      else {
+        needSep = true;
+      }
+      buf.append(arg);
+    }
+    return buf.toString();
+  }
+
   /**
    * Runs the tool.
    *

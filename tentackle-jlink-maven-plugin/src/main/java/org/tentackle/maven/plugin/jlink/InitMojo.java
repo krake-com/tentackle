@@ -21,6 +21,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
+import java.io.File;
+
 /**
  * Initializes the templates.<br>
  * Copies the default templates to the configured templateDir.<br>
@@ -30,9 +32,19 @@ import org.apache.maven.plugins.annotations.Mojo;
 public class InitMojo extends AbstractJlinkMojo {
 
   @Override
+  public File getImageDirectory() {
+    return null;
+  }
+
+  @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
-    super.execute();
+    validate();
     installTemplates();
+  }
+
+  @Override
+  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+    // nothing to do
   }
 
 }
