@@ -53,6 +53,7 @@ public class JlinkResolver {
     private final List<ModularArtifact> modulePath;
     private final List<Artifact> classPath;
     private boolean confAddedToClasspath;
+    private boolean modular;
 
     public Result() {
       jlinkModules = new ArrayList<>();
@@ -102,6 +103,19 @@ public class JlinkResolver {
 
     private void addToClassPath(Artifact artifact) {
       classPath.add(artifact);
+    }
+
+    private void setModular(boolean modular) {
+      this.modular = modular;
+    }
+
+    /**
+     * Returns whether this is a modular application.
+     *
+     * @return true if modular
+     */
+    public boolean isModular() {
+      return modular;
     }
 
     @Override
@@ -244,15 +258,17 @@ public class JlinkResolver {
      */
     public String generateModulePath() {
       StringBuilder buf = new StringBuilder();
-      boolean needSep = false;
-      for (ModularArtifact artifact : modulePath) {
-        if (needSep) {
-          buf.append(File.pathSeparatorChar);
+      if (modular) {
+        boolean needSep = false;
+        for (ModularArtifact artifact : modulePath) {
+          if (needSep) {
+            buf.append(File.pathSeparatorChar);
+          }
+          else {
+            needSep = true;
+          }
+          buf.append("mp").append(File.separatorChar).append(artifact.getFileName());
         }
-        else {
-          needSep = true;
-        }
-        buf.append("mp").append(File.separatorChar).append(artifact.getFileName());
       }
       return buf.toString();
     }
@@ -363,8 +379,9 @@ public class JlinkResolver {
     }
 
 
+    result.setModular(isModularApplication());
 
-    if (isModularApplication()) {
+    if (result.isModular()) {
       mojo.getLog().debug("building a modular application");
       // check if all requirements are met by real modules.
       // this is the only way to use jlink for application modules.
@@ -449,7 +466,7 @@ public class JlinkResolver {
       if (modules.get(mojo.getMainModule()) != null) {
         return true;
       }
-      throw new MojoExecutionException("no such module: " + mojo.getMainModule());
+      throw new MojoExecutionException("no such main module: " + mojo.getMainModule());
     }
     return false;
   }
@@ -466,6 +483,11 @@ public class JlinkResolver {
   }
 
   private void addRequired(String moduleName) {
+    // remove optional package name, if any
+    int ndx = moduleName.indexOf('/');
+    if (ndx > 0) {
+      moduleName = moduleName.substring(0, ndx);
+    }
     if (moduleName.startsWith("java.") || moduleName.startsWith("jdk.")) {
       runtimeModules.add(moduleName);
     }
@@ -475,7 +497,7 @@ public class JlinkResolver {
   }
 
   private void addToModuleOrClasspath(ModularArtifact artifact, Result result) {
-    if (mojo.isClasspathDependency(artifact.getArtifact())) {
+    if (mojo.isClasspathDependency(artifact.getArtifact()) || !result.isModular()) {
       result.addToClassPath(artifact.getArtifact());
     }
     else {
