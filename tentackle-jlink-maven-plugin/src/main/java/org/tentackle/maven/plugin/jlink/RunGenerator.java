@@ -65,7 +65,7 @@ public class RunGenerator extends AbstractGenerator {
       Configuration cfg = createFreemarkerConfiguration();
       RunTemplateModel model = new RunTemplateModel(mojo, result);
       determineTemplateName();
-      File scriptFile = new File(new File(mojo.getImageDirectory(), "bin"), scriptName);
+      File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), scriptName);
       GeneratedFile generatedFile = new GeneratedFile(cfg, model, templateName, scriptFile);
       generatedFile.generate();
       scriptFile.setExecutable(true);

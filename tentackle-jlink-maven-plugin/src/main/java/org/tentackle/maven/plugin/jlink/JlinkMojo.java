@@ -28,6 +28,8 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
+import org.tentackle.maven.ToolRunner;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -72,6 +74,54 @@ import java.io.IOException;
 public class JlinkMojo extends AbstractJlinkMojo {
 
   /**
+   * File of the jlink tool.
+   */
+  @Parameter
+  private File jlinkTool;
+
+  /**
+   * The optional file holding the jlink options.<br>
+   * Corresponds to the <code>jlink</code> option <code>--save-opts</code>.
+   */
+  @Parameter
+  private File saveOpts;
+
+  /**
+   * Strip debug information.<br>
+   * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
+   */
+  @Parameter( defaultValue = "false" )
+  private boolean stripDebug;
+
+  /**
+   * Compression of resources.<br>
+   * Corresponds to the <code>jlink</code> option <code>--compress</code>.
+   */
+  @Parameter
+  private Integer compress;
+
+  /**
+   * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
+   * Corresponds to the <code>jlink</code> option <code>--ignore-signing-information</code>
+   */
+  @Parameter( defaultValue = "false" )
+  private boolean ignoreSigningInformation;
+
+  /**
+   * Suppress the <code>includes</code> directory.<br>
+   * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
+   */
+  @Parameter( defaultValue = "false" )
+  private boolean noHeaderFiles;
+
+  /**
+   * Suppress the <code>man</code> directory.<br>
+   * Corresponds to the <code>jlink</code> option <code>--no-man-pages</code>
+   */
+  @Parameter( defaultValue = "false" )
+  private boolean noManPages;
+
+  /**
    * The archiver to zip the image.
    */
   @Component(role = Archiver.class, hint = "zip")
@@ -89,12 +139,88 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Parameter(defaultValue = "${project.build.finalName}", required = true)
   private String finalName;
 
+  /**
+   * The directory created by jlink holding the image.
+   */
+  @Parameter(defaultValue = "${project.build.directory}/jlink", required = true)
+  private File imageDirectory;
+
+  /**
+   * Gets the directory created by jlink holding the image.
+   *
+   * @return the image dir, never null
+   */
+  public File getImageDirectory() {
+    return imageDirectory;
+  }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
+    if (jlinkTool == null) {
+      jlinkTool = getToolFinder().find("jlink");
+    }
+
     super.execute();
+
     File zipFile = createZipFile();
     getMavenProject().getArtifact().setFile(zipFile);
+  }
+
+  /**
+   * Creates the jlink image.
+   *
+   * @param result the resolver info
+   * @throws MojoExecutionException if building the JPMS info failed
+   * @throws MojoFailureException if jlink returned an error code
+   */
+  protected void createImage(JlinkResolver.Result result) throws MojoExecutionException, MojoFailureException {
+    getLog().info("creating jlink image for a " +
+                      (result.isPlainModular() ? "plain " : "") +
+                      (result.isModular() ? "modular" : "classpath") + " application");
+    getLog().debug(result.toString());
+
+    ToolRunner jlinkRunner = new ToolRunner(jlinkTool);
+    if (saveOpts != null) {
+      jlinkRunner.arg("--save-opts").arg(saveOpts);
+    }
+    jlinkRunner.arg("--output").arg(getImageDirectory());
+    if (stripDebug) {
+      jlinkRunner.arg("--strip-debug");
+    }
+    if (compress != null) {
+      jlinkRunner.arg("--compress=" + compress);
+    }
+    if (ignoreSigningInformation) {
+      jlinkRunner.arg("--ignore-signing-information");
+    }
+    if (noHeaderFiles) {
+      jlinkRunner.arg("--no-header-files");
+    }
+    if (noManPages) {
+      jlinkRunner.arg("--no-man-pages");    // is this implemented in jlink at all???
+    }
+    result.generateJlinkModulePath(jlinkRunner);
+    result.generateJlinkModules(jlinkRunner);
+
+    getLog().debug(jlinkRunner.toString());
+
+    int errCode = jlinkRunner.run().getErrCode();
+    if (errCode != 0) {
+      throw new MojoFailureException("jlink failed: " + errCode + "\n" + jlinkRunner.getErrorsAsString() +
+                                         "\n" + jlinkRunner.getOutputAsString());
+    }
+  }
+
+  @Override
+  protected boolean validate() throws MojoExecutionException {
+    if (super.validate()) {
+      if (jlinkTool == null) {
+        throw new MojoExecutionException("jlink tool not found");
+      }
+      getLog().debug("using " + jlinkTool);
+      return true;
+    }
+    return false;
   }
 
   private File createZipFile() throws MojoExecutionException {
