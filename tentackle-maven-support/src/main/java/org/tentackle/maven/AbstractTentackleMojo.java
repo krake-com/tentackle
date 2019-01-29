@@ -73,11 +73,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   @Component
   private ToolchainManager toolchainManager;
 
-  /**
-   * The optional toolchain.
-   */
-  private Toolchain toolChain;
-
 
   /**
    * The verbosity.<br>
@@ -150,6 +145,10 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    * @return the toolchain, null if none
    */
   public Toolchain getToolChain() {
+    Toolchain toolChain = toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
+    if (toolChain != null) {
+      getLog().debug("using toolchain " + toolChain);
+    }
     return toolChain;
   }
 
@@ -288,10 +287,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       getLog().info("skipped");
       return false;
     }
-    toolChain = toolchainManager.getToolchainFromBuildContext("jdk", mavenSession);
-    if (toolChain != null) {
-      getLog().debug("using toolchain " + toolChain);
-    }
     return true;
   }
 
@@ -303,7 +298,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public ToolFinder getToolFinder() {
     if (toolFinder == null) {
-      toolFinder = new ToolFinder(toolChain);
+      toolFinder = new ToolFinder(getToolChain());
     }
     return toolFinder;
   }
