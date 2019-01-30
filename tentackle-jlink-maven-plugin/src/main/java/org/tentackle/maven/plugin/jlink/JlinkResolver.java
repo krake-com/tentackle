@@ -169,7 +169,7 @@ public class JlinkResolver {
       }
 
       if (!modulePath.isEmpty()) {
-        buf.append("\nmodule path: ");
+        buf.append("\nmodulepath passed to bin/java: ");
         boolean needComma = false;
         for (ModularArtifact artifact: modulePath) {
           if (needComma) {
@@ -183,7 +183,7 @@ public class JlinkResolver {
       }
 
       if (!classPath.isEmpty()) {
-        buf.append("\nclass path: ");
+        buf.append("\nclasspath passed to bin/java: ");
         boolean needComma = false;
         for (Artifact artifact: classPath) {
           if (needComma) {
@@ -320,8 +320,8 @@ public class JlinkResolver {
 
 
 
-  private final Set<Artifact> artifacts;
-  private final AbstractJlinkMojo mojo;
+  private final Set<Artifact> artifacts;                            // project's dependencies (maven artifacts)
+  private final AbstractJlinkMojo mojo;                             // the jlink mojo
 
   private final Map<String, ModularArtifact> automaticModules;      // <module-name>:<artifact>
   private final Map<String, ModularArtifact> modules;               // <module-name>:<artifact>
@@ -361,7 +361,7 @@ public class JlinkResolver {
       if (moduleDescriptor == null) {
         mojo.getLog().info(artifact + " neither module nor automatic module -> added to classpath");
         result.addToClassPath(artifact);  // cannot be used on module path -> put to classpath
-        jdeps(artifact);
+        runJdeps(artifact);
       }
       else {
         String moduleName = moduleDescriptor.name();
@@ -397,7 +397,6 @@ public class JlinkResolver {
         requiredModules.add(moduleName);
       }
     }
-
 
     result.setModular(isModularApplication());
 
@@ -464,14 +463,14 @@ public class JlinkResolver {
     for (Artifact artifact: artifacts) {
       File artifactFile = artifact.getFile();
       artifactMap.put(artifactFile, artifact);
-      jdeps(artifact);
+      runJdeps(artifact);
     }
     ResolvePathsRequest<File> request = ResolvePathsRequest.ofFiles(artifactMap.keySet());
     if (mojo.getToolChain() instanceof DefaultJavaToolChain) {
       request.setJdkHome(new File(((DefaultJavaToolChain) mojo.getToolChain()).getJavaHome()));
     }
     try {
-      Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();
+      Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();    // keep order
       for (Map.Entry<File, JavaModuleDescriptor> entry: mojo.getLocationManager().resolvePaths(request).getPathElements().entrySet()) {
         artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), entry.getValue());
       }
@@ -492,7 +491,7 @@ public class JlinkResolver {
     return false;
   }
 
-  private void jdeps(Artifact artifact) throws MojoExecutionException {
+  private void runJdeps(Artifact artifact) throws MojoExecutionException {
     mojo.getLog().info("analyzing " + artifact);
     for (String line: new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg(artifact.getFile()).run().getOutput()) {
       line = line.trim();
@@ -510,6 +509,8 @@ public class JlinkResolver {
       moduleName = moduleName.substring(0, ndx);
     }
     if (moduleName.startsWith("java.") || moduleName.startsWith("jdk.")) {
+      // this is only a first guess.
+      // if it turns out later that this is a dependency, it will be moved back to application artifacts
       runtimeModules.add(moduleName);
     }
     else {
