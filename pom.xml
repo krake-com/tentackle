@@ -80,7 +80,7 @@
     <javac.version.src>11</javac.version.src>
     <javac.version.target>11</javac.version.target>
     <java.version>11</java.version>
-    <javafx.version>11.0.1</javafx.version>
+    <javafx.version>11.0.2</javafx.version>
     <ow2.asm.version>7.0</ow2.asm.version>
     <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.5</postgresql.version>
