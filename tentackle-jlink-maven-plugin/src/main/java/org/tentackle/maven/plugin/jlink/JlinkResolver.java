@@ -358,31 +358,24 @@ public class JlinkResolver {
       Artifact artifact = entry.getKey();
       File artifactFile = artifact.getFile();
       JavaModuleDescriptor moduleDescriptor = entry.getValue();
-      if (moduleDescriptor == null) {
-        mojo.getLog().info(artifact + " neither module nor automatic module -> added to classpath");
-        result.addToClassPath(artifact);  // cannot be used on module path -> put to classpath
-        runJdeps(artifact);
-      }
-      else {
-        String moduleName = moduleDescriptor.name();
+      String moduleName = moduleDescriptor.name();
 
-        if (moduleDescriptor.isAutomatic()) {
-          if (moduleName.startsWith("javafx.") && moduleName.endsWith("Empty")) {
-            mojo.getLog().debug(moduleName + " is an automatic dummy javafx module -> skipped");
-          }
-          else {
-            mojo.getLog().debug(moduleName + " is an automatic module");
-            automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
-          }
+      if (moduleDescriptor.isAutomatic()) {
+        if (moduleName.startsWith("javafx.") && moduleName.endsWith("Empty")) {
+          mojo.getLog().debug(moduleName + " is an automatic dummy javafx module -> skipped");
         }
         else {
-          mojo.getLog().debug(moduleName + " is a full-blown module");
-          modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
+          mojo.getLog().debug(moduleName + " is an automatic module");
+          automaticModules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
+        }
+      }
+      else {
+        mojo.getLog().debug(moduleName + " is a full-blown module");
+        modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
 
-          for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
-            addRequired(requires.name());
-            mojo.getLog().debug(moduleName + " requires " + requires.name());
-          }
+        for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
+          addRequired(requires.name());
+          mojo.getLog().debug(moduleName + " requires " + requires.name());
         }
       }
     }
