@@ -160,6 +160,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
       jlinkTool = getToolFinder().find("jlink");
     }
 
+    getMavenProject().getProperties().setProperty("goal", "jlink");    // property for run template
     super.execute();
 
     File zipFile = createZipFile();

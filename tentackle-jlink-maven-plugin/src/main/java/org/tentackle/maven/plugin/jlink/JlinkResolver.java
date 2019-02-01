@@ -376,13 +376,13 @@ public class JlinkResolver {
           }
         }
         else {
-          mojo.getLog().debug(moduleName + " is a real module");
+          mojo.getLog().debug(moduleName + " is a full-blown module");
           modules.put(moduleName, new ModularArtifact(artifact, moduleDescriptor));
-        }
 
-        for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
-          addRequired(requires.name());
-          mojo.getLog().debug(moduleName + " requires " + requires.name());
+          for (JavaModuleDescriptor.JavaRequires requires : moduleDescriptor.requires()) {
+            addRequired(requires.name());
+            mojo.getLog().debug(moduleName + " requires " + requires.name());
+          }
         }
       }
     }
@@ -416,16 +416,16 @@ public class JlinkResolver {
       }
 
       if (unresolvedModules.isEmpty()) {
-        mojo.getLog().debug("YEAH! can build a full modular application!");
+        mojo.getLog().debug("YEAH! can build a full-blown modular application!");
         result.addJlinkModules(modules.values());
         result.setPlainModular(true);
       }
       else {
         for (ModularArtifact unresolvedModule: unresolvedModules) {
-          mojo.getLog().info("required " + unresolvedModule + " is not a module");
+          mojo.getLog().info("required " + unresolvedModule + " is not a full-blown module");
           result.addToModulePath(unresolvedModule);   // must go to modulepath!
         }
-        mojo.getLog().info("all dependencies moved to --module-path");
+        mojo.getLog().info("all dependencies moved to module-path for bin/java");
         result.addRuntimeModuleNames(runtimeModules);
         for (ModularArtifact artifact: modules.values()) {
           addToModuleOrClasspath(artifact, result);
@@ -459,26 +459,54 @@ public class JlinkResolver {
 
 
   private Map<Artifact, JavaModuleDescriptor> loadArtifacts() throws MojoExecutionException {
+    // build file to artifact map
     Map<File, Artifact> artifactMap = new LinkedHashMap<>();  // keep order
     for (Artifact artifact: artifacts) {
       File artifactFile = artifact.getFile();
       artifactMap.put(artifactFile, artifact);
-      runJdeps(artifact);
     }
+
+    // resolve modules and automatic modules
     ResolvePathsRequest<File> request = ResolvePathsRequest.ofFiles(artifactMap.keySet());
     if (mojo.getToolChain() instanceof DefaultJavaToolChain) {
       request.setJdkHome(new File(((DefaultJavaToolChain) mojo.getToolChain()).getJavaHome()));
     }
+    Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();    // keep order
+    int maxNameLength = 0;
     try {
-      Map<Artifact, JavaModuleDescriptor> artifactJavaModuleDescriptorMap = new LinkedHashMap<>();    // keep order
       for (Map.Entry<File, JavaModuleDescriptor> entry: mojo.getLocationManager().resolvePaths(request).getPathElements().entrySet()) {
-        artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), entry.getValue());
+        JavaModuleDescriptor descriptor = entry.getValue();
+        if (descriptor.name().length() > maxNameLength) {
+          maxNameLength = descriptor.name().length();
+        }
+        artifactJavaModuleDescriptorMap.put(artifactMap.get(entry.getKey()), descriptor);
       }
-      return artifactJavaModuleDescriptorMap;
     }
     catch (IOException e) {
       throw new MojoExecutionException("cannot resolve paths", e);
     }
+
+    // run jdeps on non-JPMS modules
+    for (Artifact artifact: artifacts) {
+      JavaModuleDescriptor moduleDescriptor = artifactJavaModuleDescriptorMap.get(artifact);
+      String msg;
+      if (moduleDescriptor != null) {
+        if (moduleDescriptor.isAutomatic()) {
+          msg = String.format("automatic module   %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact);
+          runJdeps(artifact);
+        }
+        else {
+          msg = String.format("full-blown module  %-" + maxNameLength + "s  %s", moduleDescriptor.name(), artifact);
+        }
+      }
+      else {
+        msg = String.format("artifact           %-" + maxNameLength + "s  %s", "", artifact);
+        runJdeps(artifact);
+      }
+      mojo.getLog().info(msg);
+    }
+
+    return artifactJavaModuleDescriptorMap;
   }
 
   private boolean isModularApplication() throws MojoExecutionException {
@@ -492,7 +520,6 @@ public class JlinkResolver {
   }
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
-    mojo.getLog().info("analyzing " + artifact);
     for (String line: new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg(artifact.getFile()).run().getOutput()) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)

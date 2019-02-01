@@ -34,7 +34,7 @@ import java.io.IOException;
 
 /**
  * Mojo to create an application installer package.<br>
- * Still WIP...
+ * Still WIP. Will be cont'd when Java 13 RC is out.
  */
 @Mojo(name = "jpackage",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
@@ -109,6 +109,7 @@ public class JpackageMojo extends AbstractJlinkMojo {
     }
 
     // this creates only the image and copies artifacts, resources and the run script
+    getMavenProject().getProperties().setProperty("goal", "jpackage");    // property for run template
     super.execute();
 
     // create the installer from the image
@@ -178,18 +179,11 @@ public class JpackageMojo extends AbstractJlinkMojo {
   @Override
   protected void copyArtifacts(JlinkResolver.Result result) throws MojoExecutionException {
     // all artifacts are in the app-folder
-    // TODO create symbolic links to cp and mp when package is installed (post installer??)
-    //   the code below works only in target and building the package fails with an error
-//    try {
-//      Path appPath = Paths.get(imageDirectory.getPath(), "app");
-//      Path cpPath = Paths.get(getApplicationDirectory().getPath(), "cp");
-//      Files.createSymbolicLink(cpPath, appPath);
-//      Path mpPath = Paths.get(getApplicationDirectory().getPath(), "mp");
-//      Files.createSymbolicLink(mpPath, appPath);
-//    }
-//    catch (IOException ex) {
-//      throw new MojoExecutionException("creating symbolic link failed", ex);
-//    }
+    super.copyArtifacts(result);
+    // TODO
+    //   jpackage stores artifacts in the app folder. We copy non-modules to runtime/cp and runtime/mp,
+    //   i.e. some are stored twice in the package.
+    //   Create symbolic links in the generated run-script?
   }
 
   @Override
