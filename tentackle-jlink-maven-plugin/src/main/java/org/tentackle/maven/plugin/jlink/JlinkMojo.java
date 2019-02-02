@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Creates self-contained java application zip-file with <code>jlink</code>.<br>
+ * Creates a self-contained java application zip-file with <code>jlink</code>.<br>
  * This mojo works for modular, non-modular and even mixed applications.
  * It does so by analyzing the dependencies and finding the best strategy to invoke <code>jlink</code>, which
  * creates a directory containing an application-specific <code>jimage</code> module.<br>
