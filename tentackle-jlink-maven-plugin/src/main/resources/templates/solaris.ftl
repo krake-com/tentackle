@@ -1,3 +1,4 @@
+#!/bin/sh
 
 cd $(dirname $(dirname $(readlink -f "$0")))
 
