@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 cd $(dirname $(dirname $(readlink -f "$0")))
 

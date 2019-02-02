@@ -33,7 +33,7 @@ import java.io.IOException;
 public class RunGenerator extends AbstractGenerator {
 
   private static final String RUN_UNIXES = "run.sh";
-  private static final String RUN_WINDOZES = "run.bat";
+  private static final String RUN_WINDOZES = "run.cmd";
 
 
   private final AbstractJlinkMojo mojo;
