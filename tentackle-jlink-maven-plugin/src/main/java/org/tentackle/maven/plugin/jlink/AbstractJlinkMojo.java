@@ -83,9 +83,14 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private File jdepsTool;
 
   /**
-   * The directory holding extra resources that go to conf.
+   * The directory holding extra resources, such as logger configurations or database
+   * credentials, that will be copied to the <code>conf</code> directory.<br>
+   * Defaults to the maven-resources-plugin's destination directory, usually <code>target/classes</code>.<br>
+   * If no resources must be copied, for example in server-images for production, set this to any
+   * non-existent directory, for example <code>"none"</code>. This will also add <code>"."</code> to
+   * the classpath, which is not overridden when the image is unzipped.
    */
-  @Parameter(defaultValue = "${project.build.directory}/classes", required = true)
+  @Parameter(defaultValue = "${project.build.directory}/classes")
   private File resourcesDirectory;
 
   /**
@@ -179,9 +184,14 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       copyArtifacts(result);
 
       // copy resources such as backend.properties or logging config to the conf subdirectory
-      int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
-      if (resCount > 0) {
-        result.setConfAddedToClasspath(true);
+      if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
+        int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
+        if (resCount > 0) {
+          result.addToClasspath("conf");
+        }
+      }
+      else {
+        result.addToClasspath(".");
       }
 
       // generate the script to run the application in the bin subdirectory
