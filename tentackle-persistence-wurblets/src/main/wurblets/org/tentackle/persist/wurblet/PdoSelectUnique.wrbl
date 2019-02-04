@@ -120,6 +120,7 @@ For more options, see {\@link DbModelWurblet}.
   public @(returnType)@ @(methodName)@(@(pcs(params, returnType + " obj"))@) throws RemoteException {
     try {
       obj.setSession(getSession());
+      obj.setOverloadable(true);
       return obj.@(methodName)@(@(iparms)@);
     }
     catch (RuntimeException e) {
