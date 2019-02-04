@@ -150,6 +150,65 @@ For more options, see {\@link DbModelWurblet}.
       RemoteIncludes genInc = new RemoteIncludes(this);
       PrintStream implOut   = genInc.getImplStream();
       PrintStream remoteOut = genInc.getRemoteStream();
+
+      if (isPdoProvidingArguments()) {
+]@
+    if (getSession().isRemote())  {
+      try {
+@[
+      if (cursor != null) {
+]@
+@{to remoteOut}@
+  RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public RemoteResultSetCursor @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException {
+    try {
+      obj.setSession(getSession());
+      obj.assertRootEntity();
+      return createRemoteResultSetCursorDelegate(obj.@(methodName)@(@(iparms)@));
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+        return new ResultSetCursor<>(getSession(), getRemoteDelegate().
+            @(methodName)@(@(pcs(iparms, "me()"))@));
+@[
+      } // end if cursor
+      else {
+]@
+@{to remoteOut}@
+  @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException;
+@{to implOut}@
+
+  \@Override
+  public @(rmiListType)@ @(methodName)@(@(pcs(params, pdoType + " obj"))@) throws RemoteException {
+    try {
+      obj.setSession(getSession());
+      return obj.@(methodName)@(@(iparms)@);
+    }
+    catch (RuntimeException e) {
+      throw createException(e);
+    }
+  }
+@{to}@
+        @(listType)@ list = getRemoteDelegate().@(methodName)@(@(pcs(iparms, "me()"))@);
+        configureRemoteObjects(getDomainContext(), list);
+        return list;
+@[
+      }
+]@
+      }
+      catch (RemoteException e) {
+        throw PersistenceException.createFromRemoteException(this, e);
+      }
+    }
+@[
+      }
+      else {
 ]@
     if (getSession().isRemote())  {
       try {
@@ -205,6 +264,7 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 @[
+      }
     } // end if remote
 
     if (isWithJoins()) {
