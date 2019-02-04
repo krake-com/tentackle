@@ -757,6 +757,24 @@ public class DbModelWurblet extends ModelWurblet {
 
 
   /**
+   * Determines whether one the wurblet arguments refer to a value returned by a PDO's method.
+   *
+   * @return true if at least one argument is something like "getBlah()"
+   */
+  public boolean isPdoProvidingArguments() {
+    for (WurbletArgument key: getMethodArguments())  {
+      if (!key.isMethodArgument() && !key.isValueLiterally()) {
+        String arg = key.getValue();
+        if (arg != null && arg.endsWith("()")) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+
+  /**
    * Builds the string of invocation parameters.
    *
    * @return the invocation parameters
