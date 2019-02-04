@@ -47,7 +47,6 @@ public class RunGenerator extends AbstractGenerator {
    *
    * @param mojo the jlink mojo
    * @param result the resolver results
-   * @param addConfToClasspath true if add conf subdirectory to the classpath
    */
   public RunGenerator(AbstractJlinkMojo mojo, JlinkResolver.Result result) {
     this.mojo = mojo;

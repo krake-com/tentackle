@@ -52,7 +52,7 @@ public class JlinkResolver {
     private final List<String> runtimeModuleNames;
     private final List<ModularArtifact> modulePath;
     private final List<Artifact> classPath;
-    private boolean confAddedToClasspath;
+    private final List<String> extraClassPathElements;
     private boolean modular;
     private boolean isPlainModular;
 
@@ -61,6 +61,7 @@ public class JlinkResolver {
       runtimeModuleNames = new ArrayList<>();
       modulePath = new ArrayList<>();
       classPath = new ArrayList<>();
+      extraClassPathElements = new ArrayList<>();
     }
 
     /**
@@ -199,21 +200,12 @@ public class JlinkResolver {
     }
 
     /**
-     * Gets whether the conf directory should be added to the classpath.
-     *
-     * @return true to add
-     */
-    public boolean isConfAddedToClasspath() {
-      return confAddedToClasspath;
-    }
-
-    /**
      * Sets whether the conf directory should be added to the classpath.
      *
-     * @param confAddedToClasspath true to add
+     * @param element the classpath element to add
      */
-    public void setConfAddedToClasspath(boolean confAddedToClasspath) {
-      this.confAddedToClasspath = confAddedToClasspath;
+    public void addToClasspath(String element) {
+      extraClassPathElements.add(element);
     }
 
     /**
@@ -301,9 +293,14 @@ public class JlinkResolver {
     public String generateClassPath() {
       StringBuilder buf = new StringBuilder();
       boolean needSep = false;
-      if (confAddedToClasspath) {
-        buf.append("conf");
-        needSep = true;
+      for (String element : extraClassPathElements) {
+        if (needSep) {
+          buf.append(File.pathSeparatorChar);
+        }
+        else {
+          needSep = true;
+        }
+        buf.append(element);
       }
       for (Artifact artifact : classPath) {
         if (needSep) {
