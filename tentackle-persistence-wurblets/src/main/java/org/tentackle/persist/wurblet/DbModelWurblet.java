@@ -18,10 +18,8 @@
 
 package org.tentackle.persist.wurblet;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import org.wurbelizer.wurbel.WurbelException;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
@@ -36,7 +34,11 @@ import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
 import org.tentackle.wurblet.ModelWurblet;
-import org.wurbelizer.wurbel.WurbelException;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -749,6 +751,24 @@ public class DbModelWurblet extends ModelWurblet {
     }
 
     return params.toString();
+  }
+
+
+  /**
+   * Determines whether one the wurblet arguments refer to a value returned by a PDO's method.
+   *
+   * @return true if at least one argument is something like "getBlah()"
+   */
+  public boolean isPdoProvidingArguments() {
+    for (WurbletArgument key: getMethodArguments())  {
+      if (!key.isMethodArgument() && !key.isValueLiterally()) {
+        String arg = key.getValue();
+        if (arg != null && arg.endsWith("()")) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
 
