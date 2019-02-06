@@ -19,14 +19,15 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SavepointHandle;
+
 import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.SavepointHandle;
 
 /**
  * Holder for transaction local data.
@@ -273,6 +274,25 @@ public class DbTransaction {
    */
   public Savepoint getSavepoint(SavepointHandle handle) {
     return savepoints == null ? null : savepoints.get(handle);
+  }
+
+  /**
+   * Removes a savepoint.
+   *
+   * @param handle the handle
+   * @return the removed savepoint, null if no such handle
+   */
+  public Savepoint removeSavepoint(SavepointHandle handle) {
+    return savepoints == null ? null : savepoints.remove(handle);
+  }
+
+  /**
+   * Returns whether this transaction has active savepoints.
+   *
+   * @return true if savepoints are active
+   */
+  public boolean isWithSavepoints() {
+    return savepoints != null && !savepoints.isEmpty();
   }
 
 

@@ -260,9 +260,12 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   protected void cleanupDbAfterException(Throwable cause) {
     Db db = delegate.getSession();
-    if (db != null && !db.isCrashed()) {
+    if (db != null && !db.isCrashed() &&
+        !db.isTxWithSavepoints()) {   // if savepoints are used, the client application handles everything on its own
       try {
-        // rollback any pending transaction and/or force detaching the db
+        // rollback any pending transaction and/or force detaching the db.
+        // this improves stability in case the client is misbehaving, waits at a user prompt, or whatever.
+        // if it behaves as expected, subsequent rollbacks will just decrememt a counter.
         db.rollbackImmediately(cause);
       }
       catch (RuntimeException ex) {
