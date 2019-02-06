@@ -470,7 +470,6 @@ public class Db implements Session, Cloneable {
   private List<ModificationLog> modificationLogList;      // in-memory modification-log for current transaction
   private DbTransaction transaction;                      // the running transaction
   private int immediatelyRolledBack;                      // txLevel > 0 if a transaction has been rolled back by rollbackImmediately (only for local Db)
-  private int immediatelyCommitted;                       // txLevel > 0 if a transaction has been committed by commitImmediately (only for local Db)
   private volatile boolean alive;                         // true = connection is still in use, false = connection has timed out
   private long keepAliveInterval;                         // the auto keep alive interval in ms, 0 = no keep alive
   private volatile Thread ownerThread;                    // the exclusive owner thread
@@ -1330,15 +1329,6 @@ public class Db implements Session, Cloneable {
     return immediatelyRolledBack;
   }
 
-  /**
-   * Gets the pending txLevel after an immediate commit.
-   *
-   * @return &gt; 0 if there was an immediate commit
-   */
-  public int getImmediateCommitTxLevel() {
-    return immediatelyCommitted;
-  }
-
 
   /**
    * Sets the optional transaction object.<br>
@@ -1480,7 +1470,6 @@ public class Db implements Session, Cloneable {
       alive = true;
 
       immediatelyRolledBack = 0;  // the first begin clears all pending immediate rollbacks() ...
-      immediatelyCommitted  = 0;  // ... and commits()
 
       if (setAutoCommit(false)) {
         // new transaction
@@ -1581,7 +1570,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = transaction.getSavepoint(handle);
+      Savepoint savepoint = transaction.removeSavepoint(handle);
       if (savepoint == null) {
         throw new PersistenceException(this, "no such savepoint to rollback: " + handle);
       }
@@ -1599,7 +1588,7 @@ public class Db implements Session, Cloneable {
   public void releaseSavepoint(SavepointHandle handle) {
     if (isRemote()) {
       try {
-        resources.rdel.rollback(handle);
+        resources.rdel.releaseSavepoint(handle);
       }
       catch (RemoteException e)  {
         throw PersistenceException.createFromRemoteException(this, e);
@@ -1607,7 +1596,7 @@ public class Db implements Session, Cloneable {
     }
     else {
       assertTxRunning();
-      Savepoint savepoint = transaction.getSavepoint(handle);
+      Savepoint savepoint = transaction.removeSavepoint(handle);
       if (savepoint == null) {
         throw new PersistenceException(this, "no such savepoint to release: " + handle);
       }
@@ -1615,6 +1604,14 @@ public class Db implements Session, Cloneable {
     }
   }
 
+  /**
+   * Returns whethe a transaction with savepoints is currently running.
+   *
+   * @return true if savepoints present
+   */
+  public boolean isTxWithSavepoints() {
+    return transaction != null && transaction.isWithSavepoints();
+  }
 
   /**
    * Checks whether current transaction was initiated by a remote client.
@@ -1908,16 +1905,6 @@ public class Db implements Session, Cloneable {
 
       alive = true;
 
-      // allow pending rollbacks after commitImmediately
-      if (immediatelyCommitted > 0) {
-        assertNoTxRunning();
-        immediatelyCommitted--;
-        if (immediatelyCommitted < 0) {
-          LOGGER.warning(this + ": too many commits after commitImmediately, ignored");
-        }
-        return true;
-      }
-
       assertTxRunning();
 
       if (txVoucher != 0) {
@@ -1953,42 +1940,6 @@ public class Db implements Session, Cloneable {
     return committed;
   }
 
-
-
-  /**
-   * Commits the current transaction, if pending.
-   * <p>
-   * Only applicable to local sessions.
-   * <p>
-   * Applications should use {@link #commit(long)}.
-   * Invocations of this method will be logged as a warning.
-   *
-   * @return true if committed
-   */
-  public boolean commitImmediately() {
-
-    assertNotRemote();
-
-    if (transaction != null) {
-      LOGGER.warning("*** immediate commit for " + this + " ***");
-      int currentTxLevel = transaction.getTxLevel();
-      immediatelyCommitted = 0;
-      immediatelyRolledBack = 0;
-      transaction.invalidateTxLevel();    // avoid misleading warnings
-      if (!commit(transaction.getTxVoucher())) {
-        throw new PersistenceException(this, transaction + " not committed despite valid voucher");
-      }
-      transaction = null;
-      if (!isRemote()) {
-        // keep the txLevel for pending commit()s, if any will arrive from the application
-        immediatelyCommitted = currentTxLevel;
-      }
-      return true;
-    }
-    else  {
-      return false;
-    }
-  }
 
 
   @Override
@@ -2040,18 +1991,19 @@ public class Db implements Session, Cloneable {
 
       alive = true;
 
-      // allow pending rollbacks after rollbackImmediately
-      if (immediatelyRolledBack > 0) {
-        assertNoTxRunning();
-        immediatelyRolledBack--;
-        if (immediatelyRolledBack < 0) {
-          LOGGER.warning(this + ": too many rollbacks after rollbackImmediately, ignored");
+      if (transaction == null) {
+        // allow pending rollbacks after rollbackImmediately
+        if (immediatelyRolledBack > 0) {
+          immediatelyRolledBack--;
+          LOGGER.fine("pending immediate rollback counter decremented -> no physical rollback");
         }
-        LOGGER.fine("pending immediate rollback counter decremented -> no physical rollback");
-        return true;
+        else {
+          LOGGER.fine("{0}: no transaction running -> no physical rollback", this);
+        }
+        rolledBack = txVoucher != 0;
       }
 
-      if (transaction != null) {
+      else {
         if (txVoucher != 0) {
           // matching begin() started a new tx
           if (!autoCommit) {
@@ -2089,9 +2041,6 @@ public class Db implements Session, Cloneable {
           transaction.decrementTxLevel();
         }
       }
-      else {
-        LOGGER.fine("{0}: no transaction running -> no physical rollback", this);
-      }
     }
 
     return rolledBack;
@@ -2123,7 +2072,6 @@ public class Db implements Session, Cloneable {
       if (transaction != null) {
         LOGGER.warning("*** immediate rollback for {0} ***", this);
         int currentTxLevel = transaction.getTxLevel();
-        immediatelyCommitted = 0;
         immediatelyRolledBack = 0;
         transaction.invalidateTxLevel();    // avoid misleading warnings
         // log statements only if the root-cause is a persistence exception
