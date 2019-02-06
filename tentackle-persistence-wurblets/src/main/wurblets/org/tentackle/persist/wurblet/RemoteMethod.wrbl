@@ -155,13 +155,14 @@ For more options, see {\@link DbModelWurblet}.
 
 
       if (returningObject) {
+        String poType = isGenerified() ? "P" : getClassName();
 ]@
 @{to remoteOut}@
-  @(className)@ @(methodName)@(@(dparms)@) throws RemoteException;
+  @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
 @{to implOut}@
 
   \@Override
-  public @(className)@ @(methodName)@(@(dparms)@) throws RemoteException {
+  public @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException {
     try {
 @[
         if (firstIsDomainContext) {
@@ -171,6 +172,7 @@ For more options, see {\@link DbModelWurblet}.
         }
         if (addThis) {
 ]@
+      ((@(poType)@) obj.getPersistenceDelegate()).setOverloadable(true);
       obj.setSession(getSession());
 @[
         }
@@ -187,14 +189,14 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-        @(className)@ obj = @(imethod)@.@(methodName)@(@(iparms)@);
+        @(returnType)@ obj = @(imethod)@.@(methodName)@(@(iparms)@);
         @(apply)@;
         return obj;
 @[
       }
 
 
-      if (returningCollection) {
+      else if (returningCollection) {
 ]@
 @{to remoteOut}@
   @(returnType)@ @(methodName)@(@(dparms)@) throws RemoteException;
