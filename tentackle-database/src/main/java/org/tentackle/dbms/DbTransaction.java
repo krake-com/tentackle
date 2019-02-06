@@ -305,6 +305,25 @@ public class DbTransaction {
     return savepoints == null ? null : savepoints.get(handle);
   }
 
+  /**
+   * Removes a savepoint.
+   *
+   * @param handle the handle
+   * @return the removed savepoint, null if no such handle
+   */
+  public Savepoint removeSavepoint(SavepointHandle handle) {
+    return savepoints == null ? null : savepoints.remove(handle);
+  }
+
+  /**
+   * Returns whether this transaction has active savepoints.
+   *
+   * @return true if savepoints are active
+   */
+  public boolean isWithSavepoints() {
+    return savepoints != null && !savepoints.isEmpty();
+  }
+
 
   @Override
   public String toString() {

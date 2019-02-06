@@ -19,6 +19,18 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.StringHelper;
+import org.tentackle.dbms.Db;
+import org.tentackle.log.Loggable;
+import org.tentackle.log.Logger;
+import org.tentackle.log.Logger.Level;
+import org.tentackle.log.MappedDiagnosticContext;
+import org.tentackle.misc.Duration;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.Session;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -26,17 +38,6 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.regex.Pattern;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.log.Loggable;
-import org.tentackle.log.Logger;
-import org.tentackle.log.Logger.Level;
-import org.tentackle.log.MappedDiagnosticContext;
-import org.tentackle.misc.Duration;
-import org.tentackle.common.StringHelper;
-import org.tentackle.dbms.Db;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.Session;
 
 
 /**
@@ -382,9 +383,12 @@ public class RemoteDelegateInvocationHandler implements InvocationHandler {
    */
   protected void cleanupDbAfterException(Throwable cause) {
     Db db = delegate.getSession();
-    if (db != null && !db.isCrashed()) {
+    if (db != null && !db.isCrashed() &&
+        !db.isTxWithSavepoints()) {   // if savepoints are used, the client application handles everything on its own
       try {
-        // rollback any pending transaction and/or force detaching the db
+        // rollback any pending transaction and/or force detaching the db.
+        // this improves stability in case the client is misbehaving, waits at a user prompt, or whatever.
+        // if it behaves as expected, subsequent rollbacks will just decrememt a counter.
         db.rollbackImmediately(cause);
       }
       catch (RuntimeException ex) {
