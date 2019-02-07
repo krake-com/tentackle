@@ -330,10 +330,10 @@ public class FxUtilities {
    * @param message the message
    */
   public void showInfoDialog(String message) {
-    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
     alert.setTitle(FxFxBundle.getString("INFORMATION"));
     setAlertMessage(alert, message);
-    alert.showAndWait();
+    alert.show();
   }
 
   /**
@@ -364,7 +364,7 @@ public class FxUtilities {
    * @param t optional throwable
    */
   public void showErrorDialog(String message, Throwable t) {
-    Alert alert = new Alert(Alert.AlertType.ERROR);
+    Alert alert = new Alert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
     alert.setTitle(FxFxBundle.getString("ERROR"));
     setAlertMessage(alert, message);
 
@@ -394,7 +394,7 @@ public class FxUtilities {
       }));
     }
 
-    alert.showAndWait();
+    alert.show();
   }
 
 

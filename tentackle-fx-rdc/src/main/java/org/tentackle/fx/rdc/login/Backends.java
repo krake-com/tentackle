@@ -80,7 +80,7 @@ public class Backends extends AbstractFxController {
       }
     });
     stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> controller.persist());
-    stage.showAndWait();
+    stage.show();
   }
 
 
