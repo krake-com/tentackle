@@ -90,7 +90,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
         e.consume();
       }
     });
-    stage.showAndWait();
+    stage.show();
   }
 
   @FXML
