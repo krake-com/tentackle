@@ -329,7 +329,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * Registers a handler for uncaught exceptions.
    */
   public void registerUncaughtExceptionHandler() {
-    Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());
+    Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
+    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // fx thread
   }
 
 
@@ -343,11 +344,10 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
       LOGGER.severe("unhandled exception detected", e);
       Platform.runLater(() -> {
         try {
-          Fx.error(AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"), e);
+          Fx.error(e.getLocalizedMessage(), e, AppFxRdcBundle.getString("UNEXPECTED EXCEPTION"));
         }
         catch (Throwable x) {
-          LOGGER.severe("cannot show error dialog", x);
-          System.exit(99);    // there is something severe wrong -> terminate application immediately
+          stop(99, x);    // there is something severe wrong -> terminate application immediately
         }
       });
     };

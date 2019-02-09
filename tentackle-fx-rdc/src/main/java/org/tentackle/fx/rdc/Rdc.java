@@ -75,6 +75,19 @@ public class Rdc {
     return RdcFactory.getInstance().createTreeCell();
   }
 
+
+  /**
+   * CRUD of a PDO in a non-modal separate window.
+   *
+   * @param <T> the pdo type
+   * @param pdo the pdo
+   * @param editable true if user may edit the pdo, false if to view only
+   * @param owner the owner, null if none
+   */
+  public static <T extends PersistentDomainObject<T>> void displayCrudStage(T pdo, boolean editable, Window owner) {
+    displayCrudStage(pdo, null, editable, Modality.NONE, owner, null, null);
+  }
+
   /**
    * CRUD of a PDO in a separate window.
    *
@@ -83,11 +96,11 @@ public class Rdc {
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
    * @param owner the owner, null if none
-   * @return the possibly changed pdo if modal
+   * @param updatedPdo the consumer for the possibly changed pdo if modal
    */
-  public static <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, boolean editable, Modality modality, Window owner) {
-    return RdcUtilities.getInstance().displayCrudStage(pdo, editable, modality, owner);
+  public static <T extends PersistentDomainObject<T>> void displayCrudStage(
+          T pdo, boolean editable, Modality modality, Window owner, Consumer<T> updatedPdo) {
+    displayCrudStage(pdo, null, editable, modality, owner, updatedPdo, null);
   }
 
   /**
@@ -99,12 +112,12 @@ public class Rdc {
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
    * @param owner the owner, null if none
+   * @param updatedPdo the consumer for the possibly changed pdo if modal
    * @param configurator optional crud configurator
-   * @return the possibly changed pdo if modal
    */
-  public static <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<PdoCrud<T>> configurator) {
-    return RdcUtilities.getInstance().displayCrudStage(pdo, pdoList, editable, modality, owner, configurator);
+  public static <T extends PersistentDomainObject<T>> void displayCrudStage(
+          T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner, Consumer<T> updatedPdo, Consumer<PdoCrud<T>> configurator) {
+    RdcUtilities.getInstance().displayCrudStage(pdo, pdoList, editable, modality, owner, updatedPdo, configurator);
   }
 
   /**
@@ -125,19 +138,18 @@ public class Rdc {
     return RdcUtilities.getInstance().getCrud(pdo, pdoList, editable, modality, owner);
   }
 
+
   /**
-   * Searches for PDOs in a separate window.
+   * Searches for PDOs in a non-modal separate window.
    *
    * @param <T> the pdo type
    * @param pdo the pdo as a template
-   * @param modality the modality
    * @param owner the owner, null if none
    * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
-   * @return the selected PDOs if modal, null if not modal
    */
-  public static <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
-                    T pdo, Modality modality, Window owner, boolean createPdoAllowed) {
-    return RdcUtilities.getInstance().displaySearchStage(pdo, modality, owner, createPdoAllowed);
+  public static <T extends PersistentDomainObject<T>> void displaySearchStage(
+      T pdo, Window owner, boolean createPdoAllowed) {
+    displaySearchStage(pdo, Modality.NONE, owner, createPdoAllowed, null, null);
   }
 
   /**
@@ -148,12 +160,29 @@ public class Rdc {
    * @param modality the modality
    * @param owner the owner, null if none
    * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
-   * @param configurator the optional configurator for the PdoSearch
-   * @return the selected PDOs if modal, null if not modal
+   * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
    */
-  public static <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
-                    T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<PdoSearch<T>> configurator) {
-    return RdcUtilities.getInstance().displaySearchStage(pdo, modality, owner, createPdoAllowed, configurator);
+  public static <T extends PersistentDomainObject<T>> void displaySearchStage(
+                    T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<ObservableList<T>> selectedItems) {
+    displaySearchStage(pdo, modality, owner, createPdoAllowed, selectedItems, null);
+  }
+
+  /**
+   * Searches for PDOs in a separate window.
+   *
+   * @param <T> the pdo type
+   * @param pdo the pdo as a template
+   * @param modality the modality
+   * @param owner the owner, null if none
+   * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
+   * @param configurator the optional configurator for the PdoSearch
+   */
+  public static <T extends PersistentDomainObject<T>> void displaySearchStage(
+                    T pdo, Modality modality, Window owner, boolean createPdoAllowed,
+                    Consumer<ObservableList<T>> selectedItems,
+                    Consumer<PdoSearch<T>> configurator) {
+    RdcUtilities.getInstance().displaySearchStage(pdo, modality, owner, createPdoAllowed, selectedItems, configurator);
   }
 
   /**
@@ -173,10 +202,10 @@ public class Rdc {
   /**
    * Shows a question dialog whether to save, discard or cancel editing of a PDO.
    *
-   * @return true to save, false to discard changes, null to cancel and do nothing
+   * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
-  public static Boolean showSaveDiscardCancelDialog() {
-    return RdcUtilities.getInstance().showSaveDiscardCancelDialog();
+  public static void showSaveDiscardCancelDialog(Consumer<Boolean> doIt) {
+    RdcUtilities.getInstance().showSaveDiscardCancelDialog(doIt);
   }
 
   /**

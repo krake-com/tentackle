@@ -204,15 +204,19 @@ public class SecurityEditor extends PdoEditor<Security> {
 
 
   private void selectGrantee() {
-    sec.setGrantee(SecurityDialogFactory.getInstance().selectGrantee(getStage(), getDomainContext()));
-    secGranteeField.updateView();
-    getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+    SecurityDialogFactory.getInstance().selectGrantee(getStage(), getDomainContext(), grantee -> {
+      sec.setGrantee(grantee);
+      secGranteeField.updateView();
+      getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+    });
   }
 
   private void selectContext() {
-    sec.setDomainContextObject(SecurityDialogFactory.getInstance().selectDomainContextObject(getStage(), getDomainContext()));
-    secDomainContextObjectField.updateView();
-    getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+    SecurityDialogFactory.getInstance().selectDomainContextObject(getStage(), getDomainContext(), contextPdo -> {
+      sec.setDomainContextObject(contextPdo);
+      secDomainContextObjectField.updateView();
+      getContainer().getDelegate().fireViewToModelListeners();  // SecurityRulesView listens
+    });
   }
 
 

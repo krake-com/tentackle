@@ -82,9 +82,9 @@ import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 interface FxUtilitiesHolder {
   FxUtilities INSTANCE = ServiceFactory.createService(FxUtilities.class, FxUtilities.class);
@@ -328,24 +328,42 @@ public class FxUtilities {
    * Shows an info dialog.
    *
    * @param message the message
+   * @param title optional title
    */
-  public void showInfoDialog(String message) {
+  public void showInfoDialog(String message, String title) {
     Alert alert = new Alert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
-    alert.setTitle(FxFxBundle.getString("INFORMATION"));
+    alert.setTitle(title == null ? FxFxBundle.getString("INFORMATION") : title);
     setAlertMessage(alert, message);
     alert.show();
   }
 
   /**
-   * Shows a question dialog.
+   * Shows a warning dialog.
+   *
+   * @param message the message
+   * @param title optional title
+   */
+  public void showWarningDialog(String message, String title) {
+    Alert alert = new Alert(Alert.AlertType.WARNING);   // Alert is APPLICATION_MODAL
+    alert.setTitle(title == null ? FxFxBundle.getString("WARNING") : title);
+    setAlertMessage(alert, message);
+    alert.show();
+  }
+
+  /**
+   * Shows a question dialog.<br>
+   * To avoid showAndWait, the method returns void and the result is provided via a Consumer.
    *
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @return true if yes, false if no
+   * @param title optional title
+   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @see Consumer
+   * @see org.tentackle.misc.Holder
    */
-  public boolean showQuestionDialog(String message, boolean defaultYes) {
+  public void showQuestionDialog(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(FxFxBundle.getString("QUESTION"));
+    alert.setTitle(title == null ? FxFxBundle.getString("QUESTION") : title);
     setAlertMessage(alert, message);
     alert.getButtonTypes().clear();
     alert.getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
@@ -353,8 +371,8 @@ public class FxUtilities {
     Button yesButton = (Button) alert.getDialogPane().lookupButton(ButtonType.YES);
     noButton.setDefaultButton(!defaultYes);
     yesButton.setDefaultButton(defaultYes);
-    Optional<ButtonType> result = alert.showAndWait();
-    return result.isPresent() && result.get() == ButtonType.YES;
+    alert.setOnHidden(e -> answer.accept(alert.getResult() == ButtonType.YES));
+    alert.show();
   }
 
   /**
@@ -362,10 +380,11 @@ public class FxUtilities {
    *
    * @param message the message
    * @param t optional throwable
+   * @param title optional title
    */
-  public void showErrorDialog(String message, Throwable t) {
+  public void showErrorDialog(String message, Throwable t, String title) {
     Alert alert = new Alert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
-    alert.setTitle(FxFxBundle.getString("ERROR"));
+    alert.setTitle(title == null ? FxFxBundle.getString("ERROR") : title);
     setAlertMessage(alert, message);
 
     if (t != null) {

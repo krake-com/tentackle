@@ -72,6 +72,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 /**
  * CRUD controller for PDOs.
@@ -410,14 +411,18 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Navigates to the previous PDO in the list.
    */
   public void previous() {
-    if (pdoListIndex > 0 && releasePdo()) {
-      T prevPdo = pdoList.get(--pdoListIndex);
-      if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
-        prevPdo = prevPdo.reload();
-      }
-      setPdo(prevPdo);
-      updatePrevNextButtons();
-      eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+    if (pdoListIndex > 0) {
+      releasePdo(released -> {
+        if (released) {
+          T prevPdo = pdoList.get(--pdoListIndex);
+          if (prevPdo.isImmutable() && editable && prevPdo.isEditAllowed()) {
+            prevPdo = prevPdo.reload();
+          }
+          setPdo(prevPdo);
+          updatePrevNextButtons();
+          eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+        }
+      });
     }
   }
 
@@ -425,14 +430,18 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Navigates to the next PDO in the list.
    */
   public void next() {
-    if (pdoListIndex < pdoList.size() - 1 && releasePdo()) {
-      T nextPdo = pdoList.get(++pdoListIndex);
-      if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
-        nextPdo = nextPdo.reload();
-      }
-      setPdo(nextPdo);
-      updatePrevNextButtons();
-      eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+    if (pdoListIndex < pdoList.size() - 1) {
+      releasePdo(released -> {
+        if (released) {
+          T nextPdo = pdoList.get(++pdoListIndex);
+          if (nextPdo.isImmutable() && editable && nextPdo.isEditAllowed()) {
+            nextPdo = nextPdo.reload();
+          }
+          setPdo(nextPdo);
+          updatePrevNextButtons();
+          eventProxy.fireEvent(new PdoEvent(getPdo(), getView(), PdoEvent.READ));
+        }
+      });
     }
   }
 
@@ -449,10 +458,12 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Discards the current PDO and edits a new one.
    */
   public void newPdo() {
-    if (releasePdo()) {
-      setPdo(on());
-      getEditor().requestInitialFocus();
-    }
+    releasePdo(released -> {
+      if (released) {
+        setPdo(on());
+        getEditor().requestInitialFocus();
+      }
+    });
   }
 
   /**
@@ -524,51 +535,58 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    * Closes this CRUD.
    */
   public void cancel() {
-    if (releasePdo()) {
-      Stage stage = Fx.getStage(getView());
-      if (stage != null) {
-        stage.close();
+    releasePdo(released -> {
+      if (released) {
+        Stage stage = Fx.getStage(getView());
+        if (stage != null) {
+          stage.close();
+        }
       }
-    }
+    });
   }
 
   /**
    * Searches for a PDO.
    */
   public void find() {
-    if (releasePdo()) {
-      ObservableList<T> items = Rdc.displaySearchStage(
-              getPdo(), Modality.APPLICATION_MODAL, Fx.getStage(getView()), false);
-      if (!items.isEmpty()) {
-        setPdo(items.get(0).reload());    // reload because may be cached
-        getEditor().requestInitialFocus();
+    releasePdo(released -> {
+      if (released) {
+        Rdc.displaySearchStage(getPdo(), Modality.APPLICATION_MODAL, Fx.getStage(getView()), false, items -> {
+          if (!items.isEmpty()) {
+            setPdo(items.get(0).reload());    // reload because may be cached
+            getEditor().requestInitialFocus();
+          }
+        });
       }
-    }
+    });
   }
 
 
   /**
    * Releases the current PDO.
    *
-   * @return true if released
+   * @param released invoked with true if released, false if not (user answered CANCEL)
    */
-  public boolean releasePdo() {
+  public void releasePdo(Consumer<Boolean> released) {
     T oldPdo = getPdo();
     if (oldPdo != null && isEditing()) {
       if (getContainer().isViewModified()) {
-        Boolean answer = Rdc.showSaveDiscardCancelDialog();
-        if (Boolean.TRUE.equals(answer)) {
-          save();   // this also removes the token lock
-        }
-        else if (Boolean.FALSE.equals(answer)) {
-          if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
-            oldPdo.releaseTokenLock();
+        Rdc.showSaveDiscardCancelDialog(answer -> {
+          if (Boolean.TRUE.equals(answer)) {    // save
+            save();   // this also removes the token lock
+            released.accept(Boolean.TRUE);
           }
-          setPdo(on());
-        }
-        else {
-          return false;
-        }
+          else if (Boolean.FALSE.equals(answer)) {    // discard changes
+            if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
+              oldPdo.releaseTokenLock();
+            }
+            setPdo(on());
+            released.accept(Boolean.TRUE);
+          }
+          else {  // cancel
+            released.accept(Boolean.FALSE);
+          }
+        });
       }
       else {
         if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
@@ -581,9 +599,12 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
             LOGGER.info("token unlock failed (ignored): " + lex.getLocalizedMessage());
           }
         }
+        released.accept(Boolean.TRUE);
       }
     }
-    return true;
+    else {
+      released.accept(Boolean.TRUE);
+    }
   }
 
 

@@ -22,6 +22,7 @@ package org.tentackle.fx.rdc.security;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
@@ -56,6 +57,7 @@ import org.tentackle.validate.ValidationFailedException;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 /**
  * CRUD controller for PDOs.
@@ -87,9 +89,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     Scene scene = new Scene(controller.getView());
     stage.setScene(scene);
     stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-      if (controller.cancel()) {
-        e.consume();
-      }
+      controller.cancel(e);
     });
     stage.show();
   }
@@ -188,7 +188,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     saveButton.setOnAction(e -> save());
 
     cancelButton.setGraphic(Fx.createImageView("cancel"));
-    cancelButton.setOnAction(e -> cancel());
+    cancelButton.setOnAction(e -> cancel(null));
   }
 
 
@@ -471,15 +471,28 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     getStage().hide();
   }
 
-  private boolean cancel() {
-    if ((trackedClassRules == null || !trackedClassRules.isModified() && !trackedClassRules.isElementModified()) &&
-        (trackedPdoRules == null || !trackedPdoRules.isModified() && !trackedPdoRules.isElementModified()) ||
-        Fx.question(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false)) {
+  private void cancel(Event e) {
+    boolean modified = (trackedClassRules == null || !trackedClassRules.isModified() && !trackedClassRules.isElementModified()) &&
+                       (trackedPdoRules == null || !trackedPdoRules.isModified() && !trackedPdoRules.isElementModified());
 
-      getStage().hide();
-      return true;
+    Consumer<Boolean> discardIt = new Consumer<>() {
+      @Override
+      public void accept(Boolean ok) {
+        if (ok) {
+          getStage().hide();
+          if (e != null) {
+            e.consume();
+          }
+        }
+      }
+    };
+
+    if (modified) {
+      Fx.question(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
     }
-    return false;
+    else {
+      discardIt.accept(true);
+    }
   }
 
 }

@@ -609,9 +609,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Terminates the application.
    *
    * @param exitValue the stop value for System.exit()
-   * @param ex an exception causing the termination, null if none
+   * @param t an exception causing the termination, null if none
    */
-  public void stop(int exitValue, Exception ex) {
+  public void stop(int exitValue, Throwable t) {
 
     synchronized(this) {
       if (stopping) {
@@ -621,8 +621,8 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     }
 
     LOGGER.info("terminating {0} with exit value {1} ...", getName(), exitValue);
-    if (ex != null) {
-      LOGGER.logStacktrace(ex);
+    if (t != null) {
+      LOGGER.logStacktrace(t);
     }
 
     try {
@@ -671,7 +671,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
   /**
    * Cleans up resources.<br>
-   * Invoked from {@link #stop(int, java.lang.Exception)}
+   * Invoked from {@link #stop(int, java.lang.Throwable)}
    */
   protected void cleanup() {
     Pdo.terminateHelperThreads();
