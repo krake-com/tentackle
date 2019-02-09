@@ -34,7 +34,6 @@ import javafx.stage.Modality;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.pdo.DomainContext;
@@ -42,6 +41,7 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -153,9 +153,13 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
         inSearchOrEdit = true;
         ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
         pdoList.add(pdo);
-        pdo = RdcUtilities.getInstance().displayCrudStage(pdo, pdoList, !pdo.isImmutable(),
-                                                          Modality.APPLICATION_MODAL, Fx.getStage((Node) component), null);
-        inSearchOrEdit = false;
+        RdcUtilities.getInstance().displayCrudStage(
+            pdo, pdoList, !pdo.isImmutable(), Modality.APPLICATION_MODAL, Fx.getStage((Node) component),
+            p -> {
+              pdo = p;
+              inSearchOrEdit = false;
+            },
+            null);
       }
     }
   }
@@ -166,13 +170,14 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
   public void search() {
     if (!inSearchOrEdit) {
       inSearchOrEdit = true;
-      T found = searchPdo(createPdo());
-      if (found != null && component.isChangeable()) {
-        pdo = found;
-        component.setViewValue(pdo);
-        component.updateModel();
-      }
-      inSearchOrEdit = false;
+      searchPdo(createPdo(), found -> {
+        if (found != null && component.isChangeable()) {
+          pdo = found;
+          component.setViewValue(pdo);
+          component.updateModel();
+        }
+        inSearchOrEdit = false;
+      });
     }
   }
 
@@ -205,15 +210,12 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    * Modal search of the pdo.
    *
    * @param proxy the proxy pdo (possibly presetted with partial search criteria)
-   * @return the selected pdo, null if none
+   * @param selectedItem the consumer for the selected pdo, invoked with null if no pdo found
    */
-  public T searchPdo(T proxy) {
-    ObservableList<T> list = RdcUtilities.getInstance().displaySearchStage(
-        proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true);
-    if (!list.isEmpty()) {
-      return list.get(0);
-    }
-    return null;
+  public void searchPdo(T proxy, Consumer<T> selectedItem) {
+    RdcUtilities.getInstance().displaySearchStage(proxy, Modality.APPLICATION_MODAL, Fx.getStage((Node) component), true, list -> {
+      selectedItem.accept(list.isEmpty() ? null : list.get(0));
+    });
   }
 
   /**

@@ -40,6 +40,7 @@ import org.tentackle.validate.ValidationUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Controller for the operation wizard.
@@ -129,27 +130,36 @@ public class OperationWizard extends AbstractFxController {
     cancel.setOnAction(e -> close());
 
     generate.setOnAction(e -> {
-      if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null &&
-          !Fx.question("do you really don't want a domain implementation?", false)) {
-        return;
-      }
-      if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null &&
-               !Fx.question("do you really don't want a persistence implementation?", false)) {
-        return;
-      }
 
-      try {
-        List<ValidationResult> results = gen.generate();
-        if (results.isEmpty()) {
-          Fx.info("files generated!");
-          close();
+      Consumer<Boolean> generateIt = new Consumer<Boolean>() {
+        @Override
+        public void accept(Boolean ok) {
+          if (ok) {
+            try {
+              List<ValidationResult> results = gen.generate();
+              if (results.isEmpty()) {
+                Fx.info("files generated!");
+                close();
+              }
+              else {
+                Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
+              }
+            }
+            catch (IOException | TemplateException ex) {
+              Fx.error("code generation failed", ex);
+            }
+          }
         }
-        else {
-          Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
-        }
+      };
+
+      if (gen.getDomainInterface() != null && gen.getDomainImplementation() == null) {
+        Fx.question("do you really don't want a domain implementation?", false, generateIt);
       }
-      catch (IOException | TemplateException ex) {
-        Fx.error("code generation failed", ex);
+      else if (gen.getPersistenceInterface() != null && gen.getPersistenceImplementation() == null) {
+        Fx.question("do you really don't want a persistence implementation?", false, generateIt);
+      }
+      else {
+        generateIt.accept(true);
       }
     });
   }

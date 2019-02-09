@@ -32,6 +32,20 @@ public class Holder<T> implements Consumer<T>, Supplier<T> {
 
   private T object;
 
+  /**
+   * Creates a holder without an initial value.
+   */
+  public Holder() {}
+
+  /**
+   * Creates a holder with an initial value.
+   *
+   * @param t the initial value
+   */
+  public Holder(T t) {
+    object = t;
+  }
+
   @Override
   public void accept(T t) {
     object = t;

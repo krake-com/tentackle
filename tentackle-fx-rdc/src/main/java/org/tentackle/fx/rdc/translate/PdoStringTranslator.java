@@ -145,7 +145,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
             if (pdoAddon.getPdo() == null) {
               // no such pdo: try interactive search
               proxy.setUniqueDomainKey(udk);
-              pdoAddon.setPdo(pdoAddon.searchPdo(proxy));
+              pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
               Platform.runLater(() -> ((Node) getComponent()).requestFocus());
             }
           }
@@ -164,7 +164,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                   // this usually means that the input is malformed, incomplete, whatever.
                   // in such cases get the PDO from the search dialog
                   presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                  pdoAddon.setPdo(pdoAddon.searchPdo(proxy));
+                  pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
                   Platform.runLater(() -> ((Node) getComponent()).requestFocus());
                   return pdoAddon.getPdo();
                 }
@@ -178,7 +178,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
               if (pdoAddon.getPdo() == null) {
                 // no such pdo: try search
                 presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                pdoAddon.setPdo(pdoAddon.searchPdo(proxy));
+                pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
                 Platform.runLater(() -> ((Node) getComponent()).requestFocus());
               }
             }

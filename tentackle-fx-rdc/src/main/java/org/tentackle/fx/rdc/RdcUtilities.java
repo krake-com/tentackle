@@ -46,7 +46,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -88,30 +87,16 @@ public class RdcUtilities {
    *
    * @param <T> the pdo type
    * @param pdo the pdo
-   * @param editable true if user may edit the pdo, false if to view only
-   * @param modality the modality
-   * @param owner the owner, null if none
-   * @return the possibly changed pdo if modal
-   */
-  public <T extends PersistentDomainObject<T>> T displayCrudStage(
-          T pdo, boolean editable, Modality modality, Window owner) {
-    return displayCrudStage(pdo, null, editable, modality, owner, null);
-  }
-
-  /**
-   * CRUD of a PDO in a separate window.
-   *
-   * @param <T> the pdo type
-   * @param pdo the pdo
    * @param pdoList the optional list of PDOs to navigate in the list
    * @param editable true if user may edit the pdo, false if to view only
    * @param modality the modality
    * @param owner the owner, null if none
+   * @param updatedPdo the consumer for the possibly changed pdo if modal, null if no consumer
    * @param configurator optional crud configurator
-   * @return the possibly changed pdo if modal
    */
-  public <T extends PersistentDomainObject<T>> T displayCrudStage(
+  public <T extends PersistentDomainObject<T>> void displayCrudStage(
           T pdo, ObservableList<T> pdoList, boolean editable, Modality modality, Window owner,
+          Consumer<T> updatedPdo,
           Consumer<PdoCrud<T>> configurator) {
 
     PdoCrud<T> crud = getCrud(pdo, pdoList, editable, modality, owner);
@@ -134,9 +119,11 @@ public class RdcUtilities {
           crud.getEditor().requestInitialFocus();
         }));
         stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-          if (!crud.releasePdo()) {
-            e.consume();    // don't close
-          }
+          crud.releasePdo(released -> {
+            if (!released) {
+              e.consume();    // don't close
+            }
+          });
         });
         stage.addEventFilter(WindowEvent.WINDOW_HIDDEN, e -> {
           // clear all references to avoid memleaks and side effects
@@ -153,15 +140,14 @@ public class RdcUtilities {
         throw new FxRuntimeException("misconfigured crud stage");
       }
 
-      if (modality != Modality.NONE) {
-        stage.showAndWait();
-        pdo = crud.getPdo();
+      if (modality != Modality.NONE && updatedPdo != null) {
+        stage.setOnHidden(event -> updatedPdo.accept(crud.getPdo()));
       }
       else {
-        stage.show();
+        stage.setOnHidden(null);
       }
+      stage.show();
     }
-    return pdo;
   }
 
 
@@ -226,11 +212,11 @@ public class RdcUtilities {
    * @param modality the modality
    * @param owner the owner, null if none
    * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
-   * @return the selected PDOs if modal, null if not modal
+   * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
    */
-  public <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
-                    T pdo, Modality modality, Window owner, boolean createPdoAllowed) {
-    return displaySearchStage(pdo, modality, owner, createPdoAllowed, null);
+  public <T extends PersistentDomainObject<T>> void displaySearchStage(
+                    T pdo, Modality modality, Window owner, boolean createPdoAllowed, Consumer<ObservableList<T>> selectedItems) {
+    displaySearchStage(pdo, modality, owner, createPdoAllowed, selectedItems, null);
   }
 
 
@@ -242,11 +228,12 @@ public class RdcUtilities {
    * @param modality the modality
    * @param owner the owner, null if none
    * @param createPdoAllowed true if allow to create a new PDO from within the search dialog
+   * @param selectedItems the consumer for the selected PDOs if modal, null if not modal
    * @param configurator the optional configurator for the PdoSearch
-   * @return the selected PDOs if modal, null if not modal
    */
-  public <T extends PersistentDomainObject<T>> ObservableList<T> displaySearchStage(
+  public <T extends PersistentDomainObject<T>> void displaySearchStage(
                     T pdo, Modality modality, Window owner, boolean createPdoAllowed,
+                    Consumer<ObservableList<T>> selectedItems,
                     Consumer<PdoSearch<T>> configurator) {
 
     PdoSearch<T> search = getSearch(pdo, modality, owner);
@@ -282,14 +269,13 @@ public class RdcUtilities {
       throw new FxRuntimeException("misconfigured search stage");
     }
 
-    if (modality != Modality.NONE) {
-      stage.showAndWait();
-      return search.getSelectedItems();
+    if (modality != Modality.NONE && selectedItems != null) {
+      stage.setOnHidden(event -> selectedItems.accept(search.getSelectedItems()));
     }
     else {
-      stage.show();
-      return null;
+      stage.setOnHidden(null);
     }
+    stage.show();
   }
 
 
@@ -334,9 +320,9 @@ public class RdcUtilities {
   /**
    * Shows a question dialog whether to save, discard or cancel editing of a PDO.
    *
-   * @return true to save, false to discard changes, null to cancel and do nothing
+   * @param doIt consumer invoked with true to save, false to discard changes, null to cancel and do nothing
    */
-  public Boolean showSaveDiscardCancelDialog() {
+  public void showSaveDiscardCancelDialog(Consumer<Boolean> doIt) {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(RdcFxRdcBundle.getString("QUESTION"));
     alert.setHeaderText(null);
@@ -347,16 +333,19 @@ public class RdcUtilities {
     alert.getButtonTypes().setAll(saveButtonType, discardButtonType, cancelButtonType);
     Button cancelButton = (Button) alert.getDialogPane().lookupButton(cancelButtonType);
     cancelButton.setDefaultButton(true);
-    Optional<ButtonType> result = alert.showAndWait();
-    if (result.isPresent()) {
-      if (result.get() == saveButtonType) {
-        return Boolean.TRUE;
+    alert.setOnHidden(event -> {
+      ButtonType result = alert.getResult();
+      if (result == saveButtonType) {
+        doIt.accept(Boolean.TRUE);
       }
-      if (result.get() == discardButtonType) {
-        return Boolean.FALSE;
+      else if (result == discardButtonType) {
+        doIt.accept(Boolean.FALSE);
       }
-    }
-    return null;
+      else {
+        doIt.accept(null);
+      }
+    });
+    alert.show();
   }
 
 }

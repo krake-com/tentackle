@@ -29,6 +29,7 @@ import javafx.stage.StageStyle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 /**
  * Often used factory and helper methods for FX-related stuff.
@@ -121,9 +122,38 @@ public class Fx {
    * Shows an info dialog.
    *
    * @param message the message
+   * @param title optional title
+   */
+  public static void info(String message, String title) {
+    FxUtilities.getInstance().showInfoDialog(message, title);
+  }
+
+  /**
+   * Shows an info dialog.
+   *
+   * @param message the message
    */
   public static void info(String message) {
-    FxUtilities.getInstance().showInfoDialog(message);
+    FxUtilities.getInstance().showInfoDialog(message, null);
+  }
+
+  /**
+   * Shows a warning dialog.
+   *
+   * @param message the message
+   * @param title optional title
+   */
+  public static void warning(String message, String title) {
+    FxUtilities.getInstance().showWarningDialog(message, title);
+  }
+
+  /**
+   * Shows a warning dialog.
+   *
+   * @param message the message
+   */
+  public static void warning(String message) {
+    FxUtilities.getInstance().showWarningDialog(message, null);
   }
 
   /**
@@ -131,10 +161,65 @@ public class Fx {
    *
    * @param message the message
    * @param defaultYes true if yes is the default button
-   * @return true if yes, false if no
+   * @param title optional title
+   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
    */
-  public static boolean question(String message, boolean defaultYes) {
-    return FxUtilities.getInstance().showQuestionDialog(message, defaultYes);
+  public static void question(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
+    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, title, answer);
+  }
+
+  /**
+   * Shows a question dialog.
+   *
+   * @param message the message
+   * @param defaultYes true if yes is the default button
+   * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   */
+  public static void question(String message, boolean defaultYes, Consumer<Boolean> answer) {
+    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer);
+  }
+
+  /**
+   * Shows a question dialog.<br>
+   * Short for {@link #question(String, boolean, Consumer)} if answer is only checked for yes.
+   *
+   * @param message the message
+   * @param defaultYes true if yes is the default button
+   * @param yes invoked if user answers with yes
+   */
+  public static void yes(String message, boolean defaultYes, Runnable yes) {
+    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
+      if (answer) {
+        yes.run();
+      }
+    });
+  }
+
+  /**
+   * Shows a question dialog.<br>
+   * Short for {@link #question(String, boolean, Consumer)} if answer is only checked for no.
+   *
+   * @param message the message
+   * @param defaultYes true if yes is the default button
+   * @param no invoked if user answers with no
+   */
+  public static void no(String message, boolean defaultYes, Runnable no) {
+    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
+      if (!answer) {
+        no.run();
+      }
+    });
+  }
+
+  /**
+   * Shows an error dialog.
+   *
+   * @param message the message
+   * @param t optional throwable
+   * @param title optional title
+   */
+  public static void error(String message, Throwable t, String title) {
+    FxUtilities.getInstance().showErrorDialog(message, t, title);
   }
 
   /**
@@ -144,7 +229,7 @@ public class Fx {
    * @param t optional throwable
    */
   public static void error(String message, Throwable t) {
-    FxUtilities.getInstance().showErrorDialog(message, t);
+    FxUtilities.getInstance().showErrorDialog(message, t, null);
   }
 
   /**
@@ -153,7 +238,7 @@ public class Fx {
    * @param message the message
    */
   public static void error(String message) {
-    FxUtilities.getInstance().showErrorDialog(message, null);
+    FxUtilities.getInstance().showErrorDialog(message, null, null);
   }
 
 

@@ -20,7 +20,6 @@
 package org.tentackle.fx.rdc.contextmenu;
 
 import javafx.scene.control.MenuItem;
-import javafx.stage.Modality;
 
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.PdoTreeCell;
@@ -49,7 +48,7 @@ public class ViewItem<T extends PersistentDomainObject<T>> extends MenuItem impl
     T pdo = cell.getItem();
     if (cell.getPdoTreeItem().getGuiProvider().editorExists() && pdo.isViewAllowed()) {
       T pDo = pdo.isImmutable() ? pdo.reload() : pdo;   // from cache?
-      setOnAction(e -> Rdc.displayCrudStage(pDo, false, Modality.NONE, Fx.getStage(cell)));
+      setOnAction(e -> Rdc.displayCrudStage(pDo, false, Fx.getStage(cell)));
     }
     else {
       setDisable(true);

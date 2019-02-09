@@ -28,6 +28,8 @@ import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.SessionUtilities;
 
+import java.util.function.Consumer;
+
 /**
  * Default implementation of the {@link SecurityDialogFactory}.
  *
@@ -42,7 +44,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
    * This needs to be implemented by the application!
    */
   @Override
-  public <T extends PersistentDomainObject<T>> T selectGrantee(Window owner, DomainContext context) {
+  public void selectGrantee(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee) {
     throw new RdcRuntimeException("grantee selection not implemented for this application");
   }
 
@@ -52,7 +54,7 @@ public class DefaultSecurityDialogFactory implements SecurityDialogFactory {
   }
 
   @Override
-  public <T extends PersistentDomainObject<T>> T selectDomainContextObject(Window owner, DomainContext context) {
+  public void selectDomainContextObject(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> contextPdo) {
     throw new RdcRuntimeException("context selection not implemented for this application");
   }
 

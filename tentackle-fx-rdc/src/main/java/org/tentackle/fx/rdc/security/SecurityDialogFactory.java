@@ -30,6 +30,8 @@ import org.tentackle.security.pdo.Security;
 import org.tentackle.security.permissions.EditPermission;
 import org.tentackle.session.SessionUtilities;
 
+import java.util.function.Consumer;
+
 interface SecurityDialogFactoryHolder {
   SecurityDialogFactory INSTANCE = ServiceFactory.createService(SecurityDialogFactory.class);
 }
@@ -68,12 +70,11 @@ public interface SecurityDialogFactory {
    * Selects a grantee.<br>
    * This is usually a search dialog for users and/or usergroups.
    *
-   * @param <T> the PDO type
    * @param owner the owner window
    * @param context the domain context
-   * @return the grantee, null if none selected
+   * @param grantee the grantee consumer, invoked with null if none selected
    */
-  <T extends PersistentDomainObject<T>> T selectGrantee(Window owner, DomainContext context);
+  void selectGrantee(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> grantee);
 
   /**
    * Returns whether the domain context is used in security rules.<br>
@@ -87,12 +88,11 @@ public interface SecurityDialogFactory {
    * Selects a domain context PDO.<br>
    * This is usually a search dialog for PDOs describing a domain context.
    *
-   * @param <T> the PDO type
    * @param owner the owner window
    * @param context the domain context
-   * @return the context PDO, null if none selected
+   * @param contextPdo the consumer of the context PDO, invoked with null if none selected
    */
-  <T extends PersistentDomainObject<T>> T selectDomainContextObject(Window owner, DomainContext context);
+  void selectDomainContextObject(Window owner, DomainContext context, Consumer<PersistentDomainObject<?>> contextPdo);
 
   /**
    * Shows a dialog to edit security rule sets for a PDO.<br>

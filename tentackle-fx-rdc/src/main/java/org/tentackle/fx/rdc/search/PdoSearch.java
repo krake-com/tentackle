@@ -246,7 +246,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
               doubleClickHandler.accept(firstPdo);
             }
             else if (GuiProviderFactory.getInstance().createGuiProvider(firstPdo).editorExists() && !isCrudShown()) {
-              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), crud -> {
+              Rdc.displayCrudStage(firstPdo.reload(), items, true, Modality.NONE, getStage(), null, crud -> {
                 pdoCrud = crud;
                 // event filter will removed when stage is hidden (see RdcUtilities)
                 crud.addPdoEventFilter(PdoEvent.ANY, e -> {
@@ -710,11 +710,12 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
     if (getPdo().isUniqueDomainKeyProvided()) {
       nPdo.setUniqueDomainKey(getPdo().getUniqueDomainKey());
     }
-    nPdo = Rdc.displayCrudStage(nPdo, true, Modality.APPLICATION_MODAL, getStage());
-    if (nPdo != null && !nPdo.isNew()) {
-      createdPdo = nPdo;
-      close();
-    }
+    Rdc.displayCrudStage(nPdo, true, Modality.APPLICATION_MODAL, getStage(), updatedPdo -> {
+      if (updatedPdo != null && !updatedPdo.isNew()) {
+        createdPdo = updatedPdo;
+        close();
+      }
+    });
   }
 
 
