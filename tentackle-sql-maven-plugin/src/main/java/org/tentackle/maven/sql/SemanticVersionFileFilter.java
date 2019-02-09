@@ -48,18 +48,20 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
         name = name.substring(0, ndx);
       }
       // split version major/minor/hotfix
-      StringTokenizer filterTokenizer = new StringTokenizer(version, ".");
-      StringTokenizer nameTokenizer = new StringTokenizer(name, ".");
-      while (filterTokenizer.hasMoreTokens() && nameTokenizer.hasMoreTokens()) {
-        String filterToken = filterTokenizer.nextToken();
-        String nameToken = nameTokenizer.nextToken();
+      StringTokenizer versionTokenizer = new StringTokenizer(version, ".");
+      StringTokenizer hintTokenizer = new StringTokenizer(name, ".");
+      boolean allEqual = true;
+      while (versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens()) {
+        String versionToken = versionTokenizer.nextToken();
+        String hintToken = hintTokenizer.nextToken();
         try {
-          int filterNumber = Integer.parseInt(filterToken);
+          int versionNumber = Integer.parseInt(versionToken);
           try {
-            int nameNumber = Integer.parseInt(nameToken);
-            if (filterNumber > nameNumber) {
+            int hintNumber = Integer.parseInt(hintToken);
+            if (versionNumber > hintNumber) {
               return false;
             }
+            allEqual &= versionNumber == hintNumber;
           }
           catch (NumberFormatException nfx) {
             // not a number
@@ -68,11 +70,12 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
         }
         catch (NumberFormatException nfx) {
           // not a number: compare as strings
-          if (filterToken.compareTo(nameToken) > 0) {
+          if (versionToken.compareTo(hintToken) > 0) {
             return false;
           }
         }
       }
+      return !allEqual || !versionTokenizer.hasMoreTokens();    // 3.2.0 is newer than 3.2-SNAPSHOT
     }
     return true;
   }
