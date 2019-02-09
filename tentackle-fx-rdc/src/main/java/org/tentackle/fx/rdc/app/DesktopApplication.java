@@ -333,7 +333,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    * Registers a handler for uncaught exceptions.
    */
   public void registerUncaughtExceptionHandler() {
-    Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());
+    Thread.setDefaultUncaughtExceptionHandler(getUncaughtExceptionHandler());             // all threads
+    Thread.currentThread().setUncaughtExceptionHandler(getUncaughtExceptionHandler());    // fx thread
   }
 
 
