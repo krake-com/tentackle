@@ -71,7 +71,7 @@ public class TablePopup<S> {
   private final FxTableView<S> table;           // the table
   private final String preferencesSuffix;       // suffix for the preferences
   private final boolean noViewSize;             // true if don't set the table view's size
-  private final String title;                   // the title of the printed table
+  private String title;                         // the title of the printed table
   private boolean columnMenuEnabled = true;     // true if user is allowed to hide/show columns (default)
 
 
@@ -114,6 +114,15 @@ public class TablePopup<S> {
    */
   public String getTitle() {
     return title;
+  }
+
+  /**
+   * Sets the printed title.
+   *
+   * @param title the title for printings
+   */
+  public void setTitle(String title) {
+    this.title = title;
   }
 
   /**
