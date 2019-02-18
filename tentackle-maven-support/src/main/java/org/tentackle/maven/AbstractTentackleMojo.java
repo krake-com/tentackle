@@ -23,6 +23,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -152,10 +153,54 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return toolChain;
   }
 
+
+  @Override
+  public final void execute() throws MojoExecutionException, MojoFailureException {
+    prepareExecute();
+    if (validate()) {
+      executeImpl();
+      finishExecute();
+    }
+  }
+
+  /**
+   * Prepares the execution.<br>
+   * Invoked before validate().
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
+   */
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
+
+  /**
+   * Implements the execution.<br>
+   * TT-mojos must override this method instead of {@link #execute()}. This method
+   * is only invoked if validation succeeds.
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs
+   * @throws MojoFailureException if an expected problem (such as a compilation failure) occurs
+   * @see #prepareExecute()
+   */
+  public abstract void executeImpl() throws MojoExecutionException, MojoFailureException;
+
+  /**
+   * Finishes the execution.<br>
+   * The method is invoked after {@link #executeImpl()}.
+   *
+   * @throws MojoExecutionException if an unexpected problem occurs.
+   * @throws MojoFailureException if an expected problem occurs.
+   */
+  public void finishExecute() throws MojoExecutionException, MojoFailureException {
+    // default does nothing
+  }
+
+
   /**
    * Determines the encode charset.
    */
-  protected void determineEncoding() {
+  public void determineEncoding() {
     if (charset != null) {
       Charset cs = Charset.forName(charset);
       Settings.setEncodingCharset(cs);
@@ -167,7 +212,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * sets the verbosity.
    */
-  protected void determineVerbosity() {
+  public void determineVerbosity() {
     if (verbosity != null) {
       try {
         verbosityLevel = Verbosity.valueOf(verbosity.toUpperCase());
@@ -219,7 +264,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * Finds all resource directories.
    */
-  protected void findResourceDirs() {
+  public void findResourceDirs() {
     resourceDirs = new ArrayList<>();
     for (Object resource : mavenProject.getBuild().getResources()) {
       if (resource instanceof Resource) {

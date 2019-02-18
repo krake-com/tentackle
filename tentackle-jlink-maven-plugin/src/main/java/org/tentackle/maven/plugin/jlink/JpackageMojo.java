@@ -103,14 +103,20 @@ public class JpackageMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+    super.prepareExecute();
     if (jpackageTool == null) {
       jpackageTool = getToolFinder().find("jpackage");
     }
+  }
+
+  @Override
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
     // this creates only the image and copies artifacts, resources and the run script
     getMavenProject().getProperties().setProperty("goal", "jpackage");    // property for run template
-    super.execute();
+
+    super.executeImpl();
 
     // create the installer from the image
     ToolRunner jpackageRunner = new ToolRunner(jpackageTool);

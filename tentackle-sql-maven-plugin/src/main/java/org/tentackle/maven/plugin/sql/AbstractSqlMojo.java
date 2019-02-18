@@ -459,99 +459,95 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
-    // validate configuration
-    if (validate()) {
+    totalErrors = 0;
 
-      totalErrors = 0;
-
-      for (BackendInfo backendInfo : getBackendInfosToExecute()) {
-        getLog().debug("processing " + backendInfo);
-        openResources(backendInfo);
-        try {
-          // process files
-          if (filesets != null && !filesets.isEmpty()) {
-            // explicit filesets given instead of model dir
-            for (FileSet fileSet : filesets) {
-              processFileSet(backendInfo, fileSet);
-            }
+    for (BackendInfo backendInfo : getBackendInfosToExecute()) {
+      getLog().debug("processing " + backendInfo);
+      openResources(backendInfo);
+      try {
+        // process files
+        if (filesets != null && !filesets.isEmpty()) {
+          // explicit filesets given instead of model dir
+          for (FileSet fileSet : filesets) {
+            processFileSet(backendInfo, fileSet);
+          }
+        }
+        else {
+          // all from model dir
+          String[] files = modelDir.isDirectory() ? modelDir.list() : null;
+          if (files != null && files.length > 0) {
+            final FileSet fs = new FileSet();
+            fs.setDirectory(modelDir.getPath());
+            processFileSet(backendInfo, fs);
           }
           else {
-            // all from model dir
-            String[] files = modelDir.isDirectory() ? modelDir.list() : null;
-            if (files != null && files.length > 0) {
-              final FileSet fs = new FileSet();
-              fs.setDirectory(modelDir.getPath());
-              processFileSet(backendInfo, fs);
-            }
-            else {
-              getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
-            }
-          }
-
-          if (totalErrors > 0) {
-            throw new MojoFailureException(totalErrors + " model errors");
+            getLog().warn((modelDir.exists() ? "empty modelDir " : "no modelDir ") + modelDir.getAbsolutePath());
           }
         }
-        finally {
-          closeResources(backendInfo);
+
+        if (totalErrors > 0) {
+          throw new MojoFailureException(totalErrors + " model errors");
         }
       }
+      finally {
+        closeResources(backendInfo);
+      }
+    }
 
-      if (dumpDir != null) {
-        dumpDir.mkdirs();
-        try {
-          ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
-          List<String> optionAnnotations = new ArrayList<>();
-          if (dumpAnnotationsAsOptions != null) {
-            StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
-            while (stok.hasMoreTokens()) {
-              optionAnnotations.add(stok.nextToken());
-            }
-          }
-          PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
-          optionAnnotations, dumpColumnGap);
-          for (Entity entity : Model.getInstance().getAllEntitites()) {
-            File dumpFile = new File(dumpDir, entity.getName() + ".txt");
-            try (BufferedWriter writer =
-                 new BufferedWriter(
-                 new OutputStreamWriter(
-                 new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
-              writer.write(new EntityPrinter(entity, configuration).print());
-            }
+    if (dumpDir != null) {
+      dumpDir.mkdirs();
+      try {
+        ModelDefaults defaults = modelDefaults == null ? null : new ModelDefaults(modelDefaults);
+        List<String> optionAnnotations = new ArrayList<>();
+        if (dumpAnnotationsAsOptions != null) {
+          StringTokenizer stok = new StringTokenizer(dumpAnnotationsAsOptions, " ,");
+          while (stok.hasMoreTokens()) {
+            optionAnnotations.add(stok.nextToken());
           }
         }
-        catch (IOException | ModelException ex) {
-          throw new MojoFailureException("creating model dump failed", ex);
+        PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
+        optionAnnotations, dumpColumnGap);
+        for (Entity entity : Model.getInstance().getAllEntitites()) {
+          File dumpFile = new File(dumpDir, entity.getName() + ".txt");
+          try (BufferedWriter writer =
+               new BufferedWriter(
+               new OutputStreamWriter(
+               new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+            writer.write(new EntityPrinter(entity, configuration).print());
+          }
         }
       }
+      catch (IOException | ModelException ex) {
+        throw new MojoFailureException("creating model dump failed", ex);
+      }
+    }
 
-      if (bundleDir != null) {
-        bundleDir.mkdirs();
-        try {
-          for (Entity entity : Model.getInstance().getAllEntitites()) {
-            File dumpFile = new File(bundleDir, entity.getName() + ".properties");
-            try (BufferedWriter writer =
-                     new BufferedWriter(
-                         new OutputStreamWriter(
-                             new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
-              writer.write("# attributes\n");
-              for (Attribute attribute: entity.getAttributesIncludingInherited()) {
-                if (!attribute.isImplicit()) {
-                  writer.write(attribute.getName() + "=" + attribute.getOptions().getComment() + "\n");
-                }
+    if (bundleDir != null) {
+      bundleDir.mkdirs();
+      try {
+        for (Entity entity : Model.getInstance().getAllEntitites()) {
+          File dumpFile = new File(bundleDir, entity.getName() + ".properties");
+          try (BufferedWriter writer =
+                   new BufferedWriter(
+                       new OutputStreamWriter(
+                           new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+            writer.write("# attributes\n");
+            for (Attribute attribute: entity.getAttributesIncludingInherited()) {
+              if (!attribute.isImplicit()) {
+                writer.write(attribute.getName() + "=" + attribute.getOptions().getComment() + "\n");
               }
-              writer.write("# relations\n");
-              for (Relation relation: entity.getRelationsIncludingInherited()) {
-                writer.write(StringHelper.firstToLower(relation.getName()) + "=" + relation.getComment() + "\n");
-              }
+            }
+            writer.write("# relations\n");
+            for (Relation relation: entity.getRelationsIncludingInherited()) {
+              writer.write(StringHelper.firstToLower(relation.getName()) + "=" + relation.getComment() + "\n");
             }
           }
         }
-        catch (IOException | ModelException ex) {
-          throw new MojoFailureException("creating model dump failed", ex);
-        }
+      }
+      catch (IOException | ModelException ex) {
+        throw new MojoFailureException("creating model dump failed", ex);
       }
     }
   }

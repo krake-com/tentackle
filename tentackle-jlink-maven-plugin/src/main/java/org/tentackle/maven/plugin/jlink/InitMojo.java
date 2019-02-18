@@ -37,8 +37,7 @@ public class InitMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    validate();
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
     installTemplates();
   }
 
