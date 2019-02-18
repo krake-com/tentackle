@@ -85,45 +85,45 @@ public class AbstractCheckMojo extends AbstractTentackleAnnotationProcessingMojo
 
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
-    if (skipTests) {
-      getLog().info("tests are skipped");
-    }
-    else {
-      super.execute();
+  public void prepareExecute() throws MojoFailureException {
+    if (!skipTests) {
+      setMojoParameters(sourceDir, classpathElements);
+
+      // grab the locales
+      bundleLocales = new ArrayList<>();
+      if (locales != null) {
+        StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
+        while (stok.hasMoreTokens()) {
+          String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
+          Locale bundleLocale = Locale.forLanguageTag(localeName);
+          if (bundleLocale != null && !bundleLocale.toString().isEmpty()) {
+            bundleLocales.add(bundleLocale);
+          }
+          else {
+            getLog().warn("no such locale: " + localeName);
+          }
+        }
+      }
+      if (bundleLocales.isEmpty()) {
+        Locale bundleLocale = Locale.getDefault();
+        getLog().warn("fallback to default locale " + bundleLocale);
+        bundleLocales.add(bundleLocale);
+      }
+
+      BundleFactory.getInstance().setClassLoader(getProcessingClassloader());
+
+      if (scriptingLanguage != null) {
+        ScriptFactory.getInstance().setDefaultLanguage(scriptingLanguage);
+      }
     }
   }
 
   @Override
-  public void prepareExecute() throws MojoFailureException {
-    setMojoParameters(sourceDir, classpathElements);
-
-    // grab the locales
-    bundleLocales = new ArrayList<>();
-    if (locales != null) {
-      StringTokenizer stok = new StringTokenizer(locales, ",; \n\r\t");
-      while (stok.hasMoreTokens()) {
-        String localeName = stok.nextToken().replace('_', '-');   // transform en_US to en-US
-        Locale bundleLocale = Locale.forLanguageTag(localeName);
-        if (bundleLocale != null && !bundleLocale.toString().isEmpty()) {
-          bundleLocales.add(bundleLocale);
-        }
-        else {
-          getLog().warn("no such locale: " + localeName);
-        }
-      }
+  protected boolean validate() throws MojoExecutionException {
+    if (skipTests) {
+      getLog().info("tests are skipped");
+      return false;
     }
-    if (bundleLocales.isEmpty()) {
-      Locale bundleLocale = Locale.getDefault();
-      getLog().warn("fallback to default locale " + bundleLocale);
-      bundleLocales.add(bundleLocale);
-    }
-
-    BundleFactory.getInstance().setClassLoader(getProcessingClassloader());
-
-    if (scriptingLanguage != null) {
-      ScriptFactory.getInstance().setDefaultLanguage(scriptingLanguage);
-    }
+    return super.validate();
   }
-
 }

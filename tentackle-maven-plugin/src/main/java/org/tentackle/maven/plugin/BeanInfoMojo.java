@@ -86,55 +86,51 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
 
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
-    // validate configuration
-    if (validate()) {
+    totalErrors = 0;
 
-      totalErrors = 0;
+    File manifestDir = new File(manifestDirectory, "META-INF");
+    manifestDir.mkdirs();
 
-      File manifestDir = new File(manifestDirectory, "META-INF");
-      manifestDir.mkdirs();
+    File manifestFile = new File(manifestDir, MANIFEST_FILENAME);
 
-      File manifestFile = new File(manifestDir, MANIFEST_FILENAME);
+    try {
+      try (PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(manifestFile)))) {
+        ps.println("Manifest-Version: 1.0");
+        ps.println("Archiver-Version: Plexus Archiver");
+        ps.println("Created-By: Apache Maven");
+        ps.println("Built-By: " + System.getProperty("user.name"));
+        ps.println("Build-Jdk: " + System.getProperty("java.version"));
 
-      try {
-        try (PrintStream ps = new PrintStream(new BufferedOutputStream(new FileOutputStream(manifestFile)))) {
-          ps.println("Manifest-Version: 1.0");
-          ps.println("Archiver-Version: Plexus Archiver");
-          ps.println("Created-By: Apache Maven");
-          ps.println("Built-By: " + System.getProperty("user.name"));
-          ps.println("Build-Jdk: " + System.getProperty("java.version"));
-
-          // process files
-          if (filesets != null && !filesets.isEmpty()) {
-            // explicit filesets given instead of source dir
-            for (FileSet fileSet : filesets) {
-              processFileSet(fileSet, ps);
-            }
+        // process files
+        if (filesets != null && !filesets.isEmpty()) {
+          // explicit filesets given instead of source dir
+          for (FileSet fileSet : filesets) {
+            processFileSet(fileSet, ps);
           }
-          else {
-            // all from source dir with default java-extension
-            String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
-            if (files != null && files.length > 0) {
-              final FileSet fs = new FileSet();
-              fs.setDirectory(sourceDir.getPath());
-              fs.addInclude("**/*BeanInfo" + Constants.JAVA_SOURCE_EXTENSION);
-              processFileSet(fs, ps);
-            }
-            else if (sourceDir.exists()) {
-              getLog().warn((sourceDir.exists() ? "empty sourceDir " : "no sourceDir ") + sourceDir.getAbsolutePath());
-            }
+        }
+        else {
+          // all from source dir with default java-extension
+          String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+          if (files != null && files.length > 0) {
+            final FileSet fs = new FileSet();
+            fs.setDirectory(sourceDir.getPath());
+            fs.addInclude("**/*BeanInfo" + Constants.JAVA_SOURCE_EXTENSION);
+            processFileSet(fs, ps);
+          }
+          else if (sourceDir.exists()) {
+            getLog().warn((sourceDir.exists() ? "empty sourceDir " : "no sourceDir ") + sourceDir.getAbsolutePath());
           }
         }
       }
-      catch (IOException iox) {
-        throw new MojoExecutionException("failed to create manifest-file " + manifestFile.getAbsolutePath(), iox);
-      }
+    }
+    catch (IOException iox) {
+      throw new MojoExecutionException("failed to create manifest-file " + manifestFile.getAbsolutePath(), iox);
+    }
 
-      if (totalErrors > 0) {
-        throw new MojoFailureException(totalErrors + " wurbel errors");
-      }
+    if (totalErrors > 0) {
+      throw new MojoFailureException(totalErrors + " wurbel errors");
     }
   }
 

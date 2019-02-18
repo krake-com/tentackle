@@ -168,28 +168,6 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
     // nothing by default
   }
 
-
-  /**
-   * Prepares the execution.<br>
-   * Invoked before validate().
-   *
-   * @throws MojoExecutionException if an unexpected problem occurs.
-   * @throws MojoFailureException if an expected problem occurs.
-   */
-  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
-    // default does nothing
-  }
-
-  /**
-   * Finishes the execution.
-   *
-   * @throws MojoExecutionException if an unexpected problem occurs.
-   * @throws MojoFailureException if an expected problem occurs.
-   */
-  public void finishExecute() throws MojoExecutionException, MojoFailureException {
-    // default does nothing
-  }
-
   /**
    * Gets the number of compile errors.
    * @return 0 if analyze phase completed, &gt; 0 if analyze info may be incomplete due to errors
@@ -218,64 +196,55 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
 
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
 
-    // sets up parameters etc...
-    prepareExecute();
+    // create any missing directories
+    createMissingDirs();
 
-    // validate configuration
-    if (validate()) {
+    totalErrors = 0;
+    totalCompileErrors = 0;
+    compileErrorLog = new StringBuilder();
 
-      // create any missing directories
-      createMissingDirs();
-
-      totalErrors = 0;
-      totalCompileErrors = 0;
-      compileErrorLog = new StringBuilder();
-
-      // wurbel
-      if (filesets != null && !filesets.isEmpty()) {
-        // explicit filesets given instead of source dir
-        for (FileSet fileSet : filesets) {
-          processFileSet(fileSet);
-        }
+    // wurbel
+    if (filesets != null && !filesets.isEmpty()) {
+      // explicit filesets given instead of source dir
+      for (FileSet fileSet : filesets) {
+        processFileSet(fileSet);
+      }
+    }
+    else {
+      // all from source dir with default java-extension
+      if (sourceDir == null) {
+        getLog().warn("no sourceDir configured");
       }
       else {
-        // all from source dir with default java-extension
-        if (sourceDir == null) {
-          getLog().warn("no sourceDir configured");
+        String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
+        if (files != null && files.length > 0) {
+          final FileSet fs = new FileSet();
+          fs.setDirectory(sourceDir.getPath());
+          fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
+          processFileSet(fs);
         }
         else {
-          String[] files = sourceDir.isDirectory() ? sourceDir.list() : null;
-          if (files != null && files.length > 0) {
-            final FileSet fs = new FileSet();
-            fs.setDirectory(sourceDir.getPath());
-            fs.addInclude("**/*" + Constants.JAVA_SOURCE_EXTENSION);
-            processFileSet(fs);
-          }
-          else {
-            getLog().warn((sourceDir.exists() ? "empty sourceDir " : "no sourceDir ") + sourceDir.getAbsolutePath());
-          }
+          getLog().warn((sourceDir.exists() ? "empty sourceDir " : "no sourceDir ") + sourceDir.getAbsolutePath());
         }
       }
+    }
 
-      finishExecute();
-
-      if (processors != null) {
-        for (AbstractTentackleProcessor processor : processors) {
-          try {
-            processor.cleanup();
-          }
-          catch (IOException ex) {
-            getLog().error("annotation processor cleanup failed", ex);
-            totalErrors++;
-          }
+    if (processors != null) {
+      for (AbstractTentackleProcessor processor : processors) {
+        try {
+          processor.cleanup();
+        }
+        catch (IOException ex) {
+          getLog().error("annotation processor cleanup failed", ex);
+          totalErrors++;
         }
       }
+    }
 
-      if (totalErrors > 0) {
-        throw new MojoFailureException(totalErrors + " analyze errors");
-      }
+    if (totalErrors > 0) {
+      throw new MojoFailureException(totalErrors + " analyze errors");
     }
   }
 

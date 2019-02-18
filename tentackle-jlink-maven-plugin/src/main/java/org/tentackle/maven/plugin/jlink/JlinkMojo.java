@@ -177,13 +177,18 @@ public class JlinkMojo extends AbstractJlinkMojo {
   }
 
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
+    super.prepareExecute();
     if (jlinkTool == null) {
       jlinkTool = getToolFinder().find("jlink");
     }
+  }
 
+  @Override
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
     getMavenProject().getProperties().setProperty("goal", "jlink");    // property for run template
-    super.execute();
+
+    super.executeImpl();
 
     File zipFile = createZipFile();
     getMavenProject().getArtifact().setFile(zipFile);

@@ -168,35 +168,36 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   }
 
 
-
   @Override
-  public void execute() throws MojoExecutionException, MojoFailureException {
+  public void prepareExecute() throws MojoExecutionException, MojoFailureException {
     if (jdepsTool == null) {
       jdepsTool = getToolFinder().find("jdeps");
     }
-    if (validate()) {
-      // analyze project, determine jlink strategy
-      JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
-      // and run jlink
-      createImage(result);
+  }
 
-      // copy artifacts not covered by jlink to modulepath and classpath subdirectories
-      copyArtifacts(result);
+  @Override
+  public void executeImpl() throws MojoExecutionException, MojoFailureException {
+    // analyze project, determine jlink strategy
+    JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
+    // and run jlink
+    createImage(result);
 
-      // copy resources such as backend.properties or logging config to the conf subdirectory
-      if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
-        int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
-        if (resCount > 0) {
-          result.addToClasspath("conf");
-        }
+    // copy artifacts not covered by jlink to modulepath and classpath subdirectories
+    copyArtifacts(result);
+
+    // copy resources such as backend.properties or logging config to the conf subdirectory
+    if (resourcesDirectory != null && resourcesDirectory.isDirectory()) {
+      int resCount = copyResources(resourcesDirectory, new File(getApplicationDirectory(), "conf"));
+      if (resCount > 0) {
+        result.addToClasspath("conf");
       }
-      else {
-        result.addToClasspath(".");
-      }
-
-      // generate the script to run the application in the bin subdirectory
-      new RunGenerator(this, result).generate();
     }
+    else {
+      result.addToClasspath(".");
+    }
+
+    // generate the script to run the application in the bin subdirectory
+    new RunGenerator(this, result).generate();
   }
 
   /**
