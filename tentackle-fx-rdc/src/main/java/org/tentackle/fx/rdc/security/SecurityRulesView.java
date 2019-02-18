@@ -57,7 +57,6 @@ import org.tentackle.validate.ValidationFailedException;
 
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.util.function.Consumer;
 
 /**
  * CRUD controller for PDOs.
@@ -472,26 +471,21 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
   }
 
   private void cancel(Event e) {
-    boolean modified = (trackedClassRules == null || !trackedClassRules.isModified() && !trackedClassRules.isElementModified()) &&
-                       (trackedPdoRules == null || !trackedPdoRules.isModified() && !trackedPdoRules.isElementModified());
+    boolean modified = trackedClassRules != null && (trackedClassRules.isModified() || trackedClassRules.isElementModified()) ||
+                       trackedPdoRules != null && (trackedPdoRules.isModified() || trackedPdoRules.isElementModified());
 
-    Consumer<Boolean> discardIt = new Consumer<>() {
-      @Override
-      public void accept(Boolean ok) {
-        if (ok) {
-          getStage().hide();
-          if (e != null) {
-            e.consume();
-          }
-        }
+    Runnable discardIt = () -> {
+      getStage().hide();
+      if (e != null) {
+        e.consume();
       }
     };
 
     if (modified) {
-      Fx.question(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
+      Fx.yes(RdcFxRdcBundle.getString("Rules were modified. Really discard all changes?"), false, discardIt);
     }
     else {
-      discardIt.accept(true);
+      discardIt.run();
     }
   }
 
