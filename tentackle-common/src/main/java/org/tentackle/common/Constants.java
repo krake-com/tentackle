@@ -172,6 +172,10 @@ public class Constants {
   /** bind option UNSIGNED. */
   public static final String BIND_UNSIGNED = "UNSIGNED";
 
+  /** bind option digits only. */
+  public static final String BIND_DIGITS = "DIGITS";
+
+
   /** bind option uppercase. */
   public static final String BIND_UC = "UC";
 
@@ -213,6 +217,12 @@ public class Constants {
    * Same as in wurbelizer's Constants.
    */
   public static final String ORIGIN_INFO_LEAD = "#@";
+
+
+  /**
+   * All digits in a string.
+   */
+  public static final String DIGITS = "0123456789";
 
 
   /**

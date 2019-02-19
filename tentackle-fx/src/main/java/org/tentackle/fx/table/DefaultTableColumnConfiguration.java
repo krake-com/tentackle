@@ -123,6 +123,16 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   private Boolean unsigned;
 
   /**
+   * Valid input characters.
+   */
+  private String validChars;
+
+  /**
+   * Invalid input characters.
+   */
+  private String invalidChars;
+
+  /**
    * Autoselect cell contents when editing starts.
    */
   private Boolean autoSelect;
@@ -298,6 +308,26 @@ public class DefaultTableColumnConfiguration<S,T> implements TableColumnConfigur
   @Override
   public void setUnsigned(Boolean unsigned) {
     this.unsigned = unsigned;
+  }
+
+  @Override
+  public String getValidChars() {
+    return validChars;
+  }
+
+  @Override
+  public void setValidChars(String validChars) {
+    this.validChars = validChars;
+  }
+
+  @Override
+  public String getInvalidChars() {
+    return invalidChars;
+  }
+
+  @Override
+  public void setInvalidChars(String invalidChars) {
+    this.invalidChars = invalidChars;
   }
 
   @Override

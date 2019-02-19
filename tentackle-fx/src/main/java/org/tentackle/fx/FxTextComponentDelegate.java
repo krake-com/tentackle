@@ -330,7 +330,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
       StringBuilder buf = new StringBuilder();
       for (int i=0; i < text.length(); i++) {
         char c = text.charAt(i);
-        if (validChars.indexOf(c) >= 0) {
+        if (c == filler || validChars.indexOf(c) >= 0) {
           buf.append(c);
         }
       }

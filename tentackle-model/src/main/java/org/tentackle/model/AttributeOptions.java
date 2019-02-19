@@ -98,6 +98,14 @@ public interface AttributeOptions extends CommonOptions {
   boolean isUnsigned();
 
   /**
+   * Returns whether only digits are allowed as input.<br>
+   * Applies only to strings. Number types provide their own rules.
+   *
+   * @return true if allow only digits
+   */
+  boolean isDigitsOnly();
+
+  /**
    * Returns whether the attribute is not declared in the interface.
    *
    * @return true if implemented only, no public interface definition

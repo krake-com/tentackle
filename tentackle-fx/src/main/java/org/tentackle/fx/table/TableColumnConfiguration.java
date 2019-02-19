@@ -170,6 +170,34 @@ public interface TableColumnConfiguration<S,T> {
   Boolean isUnsigned();
 
   /**
+   * Sets allowed characters.
+   *
+   * @param validChars the valid characters, null if use default from editor
+   */
+  void setValidChars(String validChars);
+
+  /**
+   * Gets allowed characters.
+   *
+   * @return the valid characters, null if use default from editor
+   */
+  String getValidChars();
+
+  /**
+   * Sets invalid characters.
+   *
+   * @param invalidChars the invalid characters, null if use default from editor
+   */
+  void setInvalidChars(String invalidChars);
+
+  /**
+   * Gets invalid characters.
+   *
+   * @return the invalid characters, null if use default from editor
+   */
+  String getInvalidChars();
+
+  /**
    * Gets the autoselect flag.
    *
    * @return true if autoselect, false if not, null if use default from editor

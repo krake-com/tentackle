@@ -18,8 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.common.Constants;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeOptions;
@@ -27,6 +25,9 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -67,6 +68,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean utc;
   private boolean withTimezone;
   private boolean unsigned;
+  private boolean digitsOnly;
   private boolean hidden;
   private boolean shallow;
 
@@ -183,6 +185,11 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
         processBindOption(uco, on);
         applied = true;
       }
+      else if (uco.equals(Constants.BIND_DIGITS)) {
+        setDigitsOnly(on);
+        processBindOption(uco, on);
+        applied = true;
+      }
     }
     return applied;
   }
@@ -258,6 +265,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   public void setUnsigned(boolean unsigned) {
     this.unsigned = unsigned;
+  }
+
+  @Override
+  public boolean isDigitsOnly() {
+    return digitsOnly;
+  }
+
+  public void setDigitsOnly(boolean digitsOnly) {
+    this.digitsOnly = digitsOnly;
   }
 
   @Override
