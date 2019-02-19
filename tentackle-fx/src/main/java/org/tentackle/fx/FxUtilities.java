@@ -779,16 +779,6 @@ public class FxUtilities {
       comp.setUnsigned(false);
       processed = true;
     }
-    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
-      try {
-        comp.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
-        processed = true;
-      }
-      catch (NumberFormatException ex) {
-        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
-                                   option + "\") in " + member, ex);
-      }
-    }
     else if (option.startsWith(Constants.BIND_COLS + "=")) {
       try {
         comp.setColumns(Integer.parseInt(option.substring(Constants.BIND_COLS.length() + 1)));
@@ -796,6 +786,16 @@ public class FxUtilities {
       }
       catch (NumberFormatException ex) {
         throw new BindingException("invalid " + Constants.BIND_COLS + " @Bindable option \"" +
+                                       option + "\") in " + member, ex);
+      }
+    }
+    else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
+      try {
+        comp.setMaxColumns(Integer.parseInt(option.substring(Constants.BIND_MAXCOLS.length() + 1)));
+        processed = true;
+      }
+      catch (NumberFormatException ex) {
+        throw new BindingException("invalid " + Constants.BIND_MAXCOLS + " @Bindable option \"" +
                                    option + "\") in " + member, ex);
       }
     }

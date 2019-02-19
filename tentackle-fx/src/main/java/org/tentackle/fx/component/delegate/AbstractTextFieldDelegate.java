@@ -16,7 +16,7 @@ import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
 
 /**
- * Delegate for FxTextField.
+ * Delegate for text input fields.
  *
  * @author harald
  * @param <T> the text component type

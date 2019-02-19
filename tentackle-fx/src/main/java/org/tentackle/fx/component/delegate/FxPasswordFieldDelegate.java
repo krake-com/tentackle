@@ -17,6 +17,8 @@ import org.tentackle.fx.component.FxPasswordField;
  */
 public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswordField> {
 
+  private boolean setColumnsInvoked;
+
   /**
    * Creates the delegate.
    *
@@ -29,11 +31,20 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
   @Override
   public void setColumns(int columns) {
     getComponent().setPrefColumnCount(columns);
+    setColumnsInvoked = true;
   }
 
   @Override
   public int getColumns() {
     return getComponent().getPrefColumnCount();
+  }
+
+  @Override
+  public void setMaxColumns(int maxColumns) {
+    super.setMaxColumns(maxColumns);
+    if (!setColumnsInvoked) {
+      getComponent().setPrefColumnCount(maxColumns);
+    }
   }
 
   @Override
