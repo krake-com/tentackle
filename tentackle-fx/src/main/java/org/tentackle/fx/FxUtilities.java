@@ -779,6 +779,10 @@ public class FxUtilities {
       comp.setUnsigned(false);
       processed = true;
     }
+    else if (Constants.BIND_DIGITS.equals(option)) {
+      comp.setValidChars(Constants.DIGITS);
+      processed = true;
+    }
     else if (option.startsWith(Constants.BIND_COLS + "=")) {
       try {
         comp.setColumns(Integer.parseInt(option.substring(Constants.BIND_COLS.length() + 1)));
@@ -864,6 +868,10 @@ public class FxUtilities {
     }
     else if (("-" + Constants.BIND_UNSIGNED).equals(option)) {
       columnConfiguration.setUnsigned(false);
+      processed = true;
+    }
+    else if (Constants.BIND_DIGITS.equals(option)) {
+      columnConfiguration.setValidChars(Constants.DIGITS);
       processed = true;
     }
     else if (option.startsWith(Constants.BIND_MAXCOLS + "=")) {
