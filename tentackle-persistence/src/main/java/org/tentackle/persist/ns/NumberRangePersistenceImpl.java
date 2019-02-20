@@ -198,7 +198,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   @Override
   public boolean attributesModified() {
-    return differsPersisted();
+    return isForcedModified() || differsPersisted();
   }
 
   @Override
