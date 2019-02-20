@@ -240,7 +240,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   @Override
   public boolean attributesModified() {
-    return differsPersisted();
+    return isForcedModified() || differsPersisted();
   }
 
   @Override

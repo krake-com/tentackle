@@ -41,7 +41,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static org.tentackle.sql.Backend.*;
+import static org.tentackle.sql.Backend.SQL_ALLSTAR;
+import static org.tentackle.sql.Backend.SQL_AND;
+import static org.tentackle.sql.Backend.SQL_COMMA;
+import static org.tentackle.sql.Backend.SQL_DELETE;
+import static org.tentackle.sql.Backend.SQL_EQUAL;
+import static org.tentackle.sql.Backend.SQL_EQUAL_PAR;
+import static org.tentackle.sql.Backend.SQL_FROM;
+import static org.tentackle.sql.Backend.SQL_ORDERBY;
+import static org.tentackle.sql.Backend.SQL_SELECT;
+import static org.tentackle.sql.Backend.SQL_SET;
+import static org.tentackle.sql.Backend.SQL_UPDATE;
+import static org.tentackle.sql.Backend.SQL_WHERE;
+import static org.tentackle.sql.Backend.SQL_WHEREALL;
 
 
 /**
@@ -916,6 +928,18 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return true if this object
    */
   public boolean attributesModified() {
+    return modified;
+  }
+
+
+  /**
+   * Returns the modified flag.<br>
+   * Necessary for fulltracked PDOs only, since attributedModified will be overridden with differsPersisted
+   * and setModified(true) invoked by the application would not have any effect.
+   *
+   * @return the modified flag
+   */
+  public boolean isForcedModified() {
     return modified;
   }
 

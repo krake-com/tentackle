@@ -249,7 +249,7 @@ For more options, see {\@link DbModelWurblet}.
 
   \@Override
   public boolean attributesModified() {
-    return differsPersisted();
+    return isForcedModified() || differsPersisted();
   }
 @[
     }
