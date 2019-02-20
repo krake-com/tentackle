@@ -119,4 +119,11 @@ public interface AttributeOptions extends CommonOptions {
    */
   boolean isShallow();
 
+  /**
+   * Returns whether the attribute becomes part of the normtext.
+   *
+   * @return true if add to normtext
+   */
+  boolean isPartOfNormText();
+
 }

@@ -408,6 +408,43 @@ public class ModelImpl implements Model {
       }
     }
 
+    // check for normtext provided
+    for (ModelEntity modelEntity: mapByEntityName.values()) {
+      Entity entity = modelEntity.getEntity();
+      boolean normTextProvided = entity.getOptions().isNormTextProvided();
+      if (!normTextProvided) {
+        for (Attribute attribute: entity.getAttributes()) {
+          if (attribute.getOptions().isPartOfNormText()) {
+            normTextProvided = true;
+            break;
+          }
+        }
+        if (!normTextProvided) {
+          for (Relation relation: entity.getRelations()) {
+            if (relation.isPartOfNormText()) {
+              normTextProvided = true;
+              break;
+            }
+          }
+        }
+
+        if (normTextProvided) {
+          // find topmost super entity not providing normtext
+          Entity superEntity = entity.getSuperEntity();
+          while (superEntity != null) {
+            entity = superEntity;
+            if (superEntity.getOptions().isNormTextProvided()) {
+              normTextProvided = false;
+              break;
+            }
+            superEntity = superEntity.getSuperEntity();
+          }
+          if (normTextProvided) {
+            ((EntityOptionsImpl) entity.getOptions()).setNormTextProvided(true);
+          }
+        }
+      }
+    }
 
     // update relations
     for (ModelEntity modelEntity: mapByEntityName.values()) {

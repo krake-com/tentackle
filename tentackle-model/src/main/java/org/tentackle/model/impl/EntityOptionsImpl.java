@@ -18,8 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.common.Constants;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
@@ -28,6 +26,9 @@ import org.tentackle.model.EntityOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.TrackType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Entity options.
@@ -137,90 +138,22 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         case OPTION_TABLESERIAL:
           setTableSerialProvided(on);
-          if (on) {
-            AttributeImpl tableSerialAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            tableSerialAttribute.setDataType(DataType.LONG_PRIMITIVE);
-            tableSerialAttribute.setColumnName(Constants.CN_TABLESERIAL);
-            tableSerialAttribute.setName(Constants.AN_TABLESERIAL);
-            tableSerialAttribute.getOptions().setComment("table serial");
-            tableSerialAttribute.getOptions().setFromSuper(true);
-            tableSerialAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(tableSerialAttribute);
-          }
           break;
 
         case OPTION_ROOTID:
           setRootIdProvided(on);
-          if (on) {
-            AttributeImpl rootIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            rootIdAttribute.setDataType(DataType.LONG_PRIMITIVE);
-            rootIdAttribute.setColumnName(Constants.CN_ROOTID);
-            rootIdAttribute.setName(Constants.AN_ROOTID);
-            rootIdAttribute.getOptions().setComment("root entity id");
-            rootIdAttribute.getOptions().setFromSuper(true);
-            rootIdAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(0, rootIdAttribute);
-          }
           break;
 
         case OPTION_ROOTCLASSID:
           setRootClassIdProvided(on);
-          if (on) {
-            AttributeImpl rootClassIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            rootClassIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
-            rootClassIdAttribute.setColumnName(Constants.CN_ROOTCLASSID);
-            rootClassIdAttribute.setName(Constants.AN_ROOTCLASSID);
-            rootClassIdAttribute.getOptions().setComment("root entity class id");
-            rootClassIdAttribute.getOptions().setFromSuper(true);
-            rootClassIdAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(0, rootClassIdAttribute);
-          }
           break;
 
         case OPTION_TOKENLOCK:
           setEditedByProvided(on);
-          if (on) {
-            AttributeImpl editedByAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            editedByAttribute.setDataType(DataType.LONG_PRIMITIVE);
-            editedByAttribute.setColumnName(Constants.CN_EDITEDBY);
-            editedByAttribute.setName(Constants.AN_EDITEDBY);
-            editedByAttribute.getOptions().setComment("being edited by user id");
-            editedByAttribute.getOptions().setFromSuper(true);
-            editedByAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(editedByAttribute);
-
-            AttributeImpl editedSinceAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            editedSinceAttribute.setDataType(DataType.TIMESTAMP);
-            editedSinceAttribute.setColumnName(Constants.CN_EDITEDSINCE);
-            editedSinceAttribute.setName(Constants.AN_EDITEDSINCE);
-            editedSinceAttribute.getOptions().setComment("being edited since");
-            editedSinceAttribute.getOptions().setFromSuper(true);
-            editedSinceAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(editedSinceAttribute);
-
-            AttributeImpl editedExpiryAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            editedExpiryAttribute.setDataType(DataType.TIMESTAMP);
-            editedExpiryAttribute.setColumnName(Constants.CN_EDITEDEXPIRY);
-            editedExpiryAttribute.setName(Constants.AN_EDITEDEXPIRY);
-            editedExpiryAttribute.getOptions().setComment("editing lock expiration");
-            editedExpiryAttribute.getOptions().setFromSuper(true);
-            editedExpiryAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(editedExpiryAttribute);
-          }
           break;
 
         case OPTION_NORMTEXT:
           setNormTextProvided(on);
-          if (on) {
-            AttributeImpl normTextAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
-            normTextAttribute.setDataType(DataType.STRING);
-            normTextAttribute.setColumnName(Constants.CN_NORMTEXT);
-            normTextAttribute.setName(Constants.AN_NORMTEXT);
-            normTextAttribute.getOptions().setComment("normalized text");
-            normTextAttribute.getOptions().setFromSuper(true);
-            normTextAttribute.getOptions().setSetGet(true);
-            entity.getAttributes().add(normTextAttribute);
-          }
           break;
 
         default:
@@ -340,10 +273,72 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
   public void setEditedByProvided(boolean tokenLockProvided) {
     this.tokenLockProvided = tokenLockProvided;
+    AttributeImpl editedByAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDBY, false);
+    AttributeImpl editedSinceAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDSINCE, false);
+    AttributeImpl editedExpiryAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_EDITEDEXPIRY, false);
+    if (tokenLockProvided) {
+      if (editedExpiryAttribute == null) {
+        editedExpiryAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        editedExpiryAttribute.setDataType(DataType.TIMESTAMP);
+        editedExpiryAttribute.setColumnName(Constants.CN_EDITEDEXPIRY);
+        editedExpiryAttribute.setName(Constants.AN_EDITEDEXPIRY);
+        editedExpiryAttribute.getOptions().setComment("editing lock expiration");
+        editedExpiryAttribute.getOptions().setFromSuper(true);
+        editedExpiryAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, editedExpiryAttribute);
+      }
+      if (editedSinceAttribute == null) {
+        editedSinceAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        editedSinceAttribute.setDataType(DataType.TIMESTAMP);
+        editedSinceAttribute.setColumnName(Constants.CN_EDITEDSINCE);
+        editedSinceAttribute.setName(Constants.AN_EDITEDSINCE);
+        editedSinceAttribute.getOptions().setComment("being edited since");
+        editedSinceAttribute.getOptions().setFromSuper(true);
+        editedSinceAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, editedSinceAttribute);
+      }
+      if (editedByAttribute == null) {
+        editedByAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        editedByAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        editedByAttribute.setColumnName(Constants.CN_EDITEDBY);
+        editedByAttribute.setName(Constants.AN_EDITEDBY);
+        editedByAttribute.getOptions().setComment("being edited by user id");
+        editedByAttribute.getOptions().setFromSuper(true);
+        editedByAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, editedByAttribute);
+      }
+    }
+    else {
+      if (editedByAttribute != null) {
+        entity.getAttributes().remove(editedByAttribute);
+      }
+      if (editedSinceAttribute != null) {
+        entity.getAttributes().remove(editedSinceAttribute);
+      }
+      if (editedExpiryAttribute != null) {
+        entity.getAttributes().remove(editedExpiryAttribute);
+      }
+    }
   }
 
   public void setNormTextProvided(boolean normText) {
     this.normTextProvided = normText;
+    AttributeImpl normTextAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_NORMTEXT, false);
+    if (normText) {
+      if (normTextAttribute == null) {
+        normTextAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        normTextAttribute.setDataType(DataType.STRING);
+        normTextAttribute.setColumnName(Constants.CN_NORMTEXT);
+        normTextAttribute.setName(Constants.AN_NORMTEXT);
+        normTextAttribute.getOptions().setComment("normalized text");
+        normTextAttribute.getOptions().setFromSuper(true);
+        normTextAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, normTextAttribute);
+      }
+    }
+    else if (normTextAttribute != null) {
+      entity.getAttributes().remove(normTextAttribute);
+    }
   }
 
   public void setNoPrimaryKey(boolean noPrimary) {
@@ -352,6 +347,22 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
   public void setTableSerialProvided(boolean tableSerial) {
     this.tableSerialProvided = tableSerial;
+    AttributeImpl tableSerialAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_TABLESERIAL, false);
+    if (tableSerial) {
+      if (tableSerialAttribute == null) {
+        tableSerialAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        tableSerialAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        tableSerialAttribute.setColumnName(Constants.CN_TABLESERIAL);
+        tableSerialAttribute.setName(Constants.AN_TABLESERIAL);
+        tableSerialAttribute.getOptions().setComment("table serial");
+        tableSerialAttribute.getOptions().setFromSuper(true);
+        tableSerialAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, tableSerialAttribute);
+      }
+    }
+    else if (tableSerialAttribute != null) {
+      entity.getAttributes().remove(tableSerialAttribute);
+    }
   }
 
   public void setRootEntity(boolean rootEntity) {
@@ -360,10 +371,42 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
   public void setRootIdProvided(boolean rootId) {
     this.rootIdProvided = rootId;
+    AttributeImpl rootIdAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_ROOTID, false);
+    if (rootId) {
+      if (rootIdAttribute == null) {
+        rootIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        rootIdAttribute.setDataType(DataType.LONG_PRIMITIVE);
+        rootIdAttribute.setColumnName(Constants.CN_ROOTID);
+        rootIdAttribute.setName(Constants.AN_ROOTID);
+        rootIdAttribute.getOptions().setComment("root entity id");
+        rootIdAttribute.getOptions().setFromSuper(true);
+        rootIdAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, rootIdAttribute);
+      }
+    }
+    else if (rootIdAttribute != null) {
+      entity.getAttributes().remove(rootIdAttribute);
+    }
   }
 
   public void setRootClassIdProvided(boolean rootClassId) {
     this.rootClassIdProvided = rootClassId;
+    AttributeImpl rootClassIdAttribute = (AttributeImpl) entity.getAttributeByJavaName(Constants.AN_ROOTCLASSID, false);
+    if (rootClassId) {
+      if (rootClassIdAttribute == null) {
+        rootClassIdAttribute = (AttributeImpl) factory.createAttribute(entity, getSourceInfo(), true);
+        rootClassIdAttribute.setDataType(DataType.INTEGER_PRIMITIVE);
+        rootClassIdAttribute.setColumnName(Constants.CN_ROOTCLASSID);
+        rootClassIdAttribute.setName(Constants.AN_ROOTCLASSID);
+        rootClassIdAttribute.getOptions().setComment("root entity class id");
+        rootClassIdAttribute.getOptions().setFromSuper(true);
+        rootClassIdAttribute.getOptions().setSetGet(true);
+        entity.getAttributes().add(0, rootClassIdAttribute);
+      }
+    }
+    else if (rootClassIdAttribute != null) {
+      entity.getAttributes().remove(rootClassIdAttribute);
+    }
   }
 
   public void setRemote(boolean remote) {

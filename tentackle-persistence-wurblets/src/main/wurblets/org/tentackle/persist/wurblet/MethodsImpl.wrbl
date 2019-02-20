@@ -46,6 +46,14 @@ For more options, see {\@link DbModelWurblet}.
       }
     }
 
+    boolean generateCreateNormText = false;
+    for (Attribute attr: getEntity().getAttributes())  {
+      if (attr.getOptions().isPartOfNormText())  {
+        generateCreateNormText = true;
+        break;
+      }
+    }
+
     if (isRemote()) {
       new RemoteIncludes(this);   // create RMI-files if they don't exist yet
       String delegateType = (isPdo() ? pdoClass : mainClass) + "RemoteDelegate";
@@ -996,6 +1004,29 @@ For more options, see {\@link DbModelWurblet}.
   }
 @[
       }
+    }
+
+    if (generateCreateNormText) {
+]@
+
+  \@Override
+  public StringBuilder createAttributesNormText() {
+    StringBuilder buf = super.createAttributesNormText();
+    if (buf == null) {
+      buf = new StringBuilder();
+    }
+@[
+      for (Attribute attr: getEntity().getAttributes())  {
+        if (attr.getOptions().isPartOfNormText())  {
+]@
+    buf.append(@(attr.getGetterName())@()).append(',');
+@[
+        }
+      }
+]@
+    return buf;
+  }
+@[
     }
 
     if (generateSelectByUDK) {

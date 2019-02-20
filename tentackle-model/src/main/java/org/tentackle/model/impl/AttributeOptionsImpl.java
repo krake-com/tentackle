@@ -56,6 +56,9 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   /** shallow attribute (ignored in snapshots and copies). */
   public static final String OPTION_SHALLOW = "SHALLOW";
 
+  /** add toString value to the partOfNormText. */
+  public static final String OPTION_NORMTEXT = "NORMTEXT";
+
 
 
   private final AttributeImpl attribute;    // associated attribute (only for diagnostics)
@@ -71,6 +74,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
   private boolean digitsOnly;
   private boolean hidden;
   private boolean shallow;
+  private boolean partOfNormText;
 
 
   /**
@@ -173,6 +177,10 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
       }
       else if (uco.equals(OPTION_SHALLOW)) {
         setShallow(true);
+        applied = true;
+      }
+      else if (uco.equals(OPTION_NORMTEXT)) {
+        setPartOfNormText(true);
         applied = true;
       }
       else if (uco.equals(Constants.BIND_UTC)) {
@@ -292,6 +300,15 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
 
   public void setShallow(boolean shallow) {
     this.shallow = shallow;
+  }
+
+  @Override
+  public boolean isPartOfNormText() {
+    return partOfNormText;
+  }
+
+  public void setPartOfNormText(boolean partOfNormText) {
+    this.partOfNormText = partOfNormText;
   }
 
   @Override
