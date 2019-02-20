@@ -98,7 +98,8 @@ public class AttributeOptionsPrinter {
     printBool(buf, AttributeOptionsImpl.OPTION_DOMAINKEY, options.isDomainKey());
     printBool(buf, AttributeOptionsImpl.OPTION_TZ, options.isWithTimezone());
     printBool(buf, AttributeOptionsImpl.OPTION_HIDDEN, options.isHidden());
-    printBool(buf, AttributeOptionsImpl.OPTION_SHALLOW, options.isHidden());
+    printBool(buf, AttributeOptionsImpl.OPTION_SHALLOW, options.isShallow());
+    printBool(buf, AttributeOptionsImpl.OPTION_NORMTEXT, options.isPartOfNormText());
 
     if (options.getDefaultValue() != null) {
       buf.append(AttributeOptionsImpl.OPTION_DEFAULT).append(' ');

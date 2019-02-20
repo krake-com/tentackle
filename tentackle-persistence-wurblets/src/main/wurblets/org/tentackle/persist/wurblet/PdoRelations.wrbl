@@ -60,6 +60,7 @@ For more options, see {\@link DbModelWurblet}.
     boolean generateSnapshot                        = false;
     boolean generateClearOnRemoteSave               = false;
     boolean generateAlignComponents                 = false;
+    boolean generateCreateNormText                  = false;
 
     for (Relation rel: getEntity().getReferencingRelations()) {
       if (!rel.isComposite() && rel.getRelationType() == RelationType.OBJECT &&
@@ -111,6 +112,9 @@ For more options, see {\@link DbModelWurblet}.
         if (!rel.isSelectionCached()) {
           generateSetSession = true;
         }
+      }
+      if (rel.isPartOfNormText()) {
+        generateCreateNormText = true;
       }
       if (rel.isComposite()) {
         generateIsComposite         = true;
@@ -1557,6 +1561,38 @@ For more options, see {\@link DbModelWurblet}.
 @[
     }
 
+    if (generateCreateNormText) {
+]@
+
+  \@Override
+  public StringBuilder createRelationsNormText() {
+    StringBuilder buf = super.createRelationsNormText();
+    if (buf == null) {
+      buf = new StringBuilder();
+    }
+@[
+      for (Relation rel: getEntity().getRelations())  {
+
+        if (rel.isPartOfNormText())  {
+          if (rel.getRelationType() == RelationType.OBJECT) {
+]@
+    buf.append(@(rel.getGetterName())@()).append(',');
+@[
+          }
+          else {
+]@
+    for (@(rel.getClassName())@ obj: @(rel.getGetterName())@()) {
+      buf.append(obj).append(',');
+    }
+@[
+          }
+        }
+      }
+]@
+    return buf;
+  }
+@[
+    }
 
     if (generateIsReferencing && isEntityPersistable()) {
       for (Relation rel: getEntity().getTableRelations()) {

@@ -122,6 +122,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** sets the relation to immutable after loading. */
   public static final String IMMUTABLE = "immutable";
 
+  /** add toString value to the partOfNormText. */
+  public static final String PART_OF_NORMTEXT = "normtext";
+
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
@@ -152,6 +155,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean reversed;
   private boolean shallow;
   private boolean immutable;
+  private boolean partOfNormText;
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionCached;
@@ -350,6 +354,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
               case IMMUTABLE:
                 setImmutable(true);
+                break;
+
+              case PART_OF_NORMTEXT:
+                setPartOfNormText(true);
                 break;
 
               default:
@@ -876,6 +884,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setImmutable(boolean immutable) {
     this.immutable = immutable;
+  }
+
+  @Override
+  public boolean isPartOfNormText() {
+    return partOfNormText;
+  }
+
+  public void setPartOfNormText(boolean partOfNormText) {
+    this.partOfNormText = partOfNormText;
   }
 
   @Override

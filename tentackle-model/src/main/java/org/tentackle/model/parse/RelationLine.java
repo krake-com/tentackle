@@ -18,9 +18,10 @@
 
 package org.tentackle.model.parse;
 
+import org.tentackle.model.ModelException;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.tentackle.model.ModelException;
 
 /**
  * Describes the relation to other entities.
@@ -33,7 +34,7 @@ import org.tentackle.model.ModelException;
  * Properties:<p>
  *
  * relation = &lt;object|list|reversed&gt; [composite] [tracked] [referenced] [processed] [readonly|writeonly|nomethod]
- *            [serialized] [remoteclear] [reversed] [shallow] [immutable]
+ *            [serialized] [remoteclear] [reversed] [shallow] [immutable] [normtext]
  * <ul>
  *    <li>object: single object association [1:1]. This is the default.</li>
  *    <li>reversed: non-composite list relation that contains max. one object (reversed 1:1 object relation)</li>
@@ -49,6 +50,7 @@ import org.tentackle.model.ModelException;
  *    <li>remoteclear: clear serialized relation before save (i.e. sending to server)</li>
  *    <li>shallow: exclude this relation in snapshots or copies</li>
  *    <li>immutable: set this relation immutable after initial load</li>
+ *    <li>normtext: add the toString value of this relation to the normtext. If this is a list, add toStrings of all PDOs.</li>
  * </ul>
  * If the relation is associated to an attribute the readonly and writeonly flags are overwritten
  * by the attribute.

@@ -18,8 +18,6 @@
 
 package org.tentackle.model.print;
 
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.MethodArgument;
@@ -27,6 +25,9 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.impl.RelationImpl;
+
+import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -96,6 +97,15 @@ public class RelationPrinter {
       }
       if (relation.isClearOnRemoteSave()) {
         buf.append(' ').append(RelationImpl.REMOTECLEAR);
+      }
+      if (relation.isImmutable()) {
+        buf.append(' ').append(RelationImpl.IMMUTABLE);
+      }
+      if (relation.isShallow()) {
+        buf.append(' ').append(RelationImpl.SHALLOW);
+      }
+      if (relation.isPartOfNormText()) {
+        buf.append(' ').append(RelationImpl.PART_OF_NORMTEXT);
       }
       if (relation.isReversed()) {
         buf.append(' ').append(RelationImpl.REVERSED);

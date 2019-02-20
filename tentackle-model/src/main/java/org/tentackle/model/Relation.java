@@ -197,6 +197,13 @@ public interface Relation extends ModelElement {
   boolean isImmutable();
 
   /**
+   * Returns whether the relation becomes part of the normtext.
+   *
+   * @return true if add to normtext
+   */
+  boolean isPartOfNormText();
+
+  /**
    * Returns the attribute that holds the number of elements of a 1:N relation.<br>
    * Applies only to composite non-reversed list relations.<br>
    * If set, this column gets the number of elements in the list when the PDO is persisted.
