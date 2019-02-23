@@ -77,6 +77,19 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private File templateDir;
 
   /**
+   * The name of the template to generate the name of the runner script.<br>
+   * For *nixes this is usually {@code run.sh}, for windozes {@code run.cmd} or {@code run.bat}.
+   */
+  @Parameter(defaultValue = "name.ftl")
+  private String nameTemplate;
+
+  /**
+   * The name of the runner script template.
+   */
+  @Parameter(defaultValue = "run.ftl")
+  private String runTemplate;
+
+  /**
    * File of the jdeps tool.
    */
   @Parameter
@@ -156,6 +169,25 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   public File getJdepsTool() {
     return jdepsTool;
+  }
+
+
+  /**
+   * Gets the name of the name template.
+   *
+   * @return the template to generate the name of the runner script
+   */
+  public String getNameTemplate() {
+    return nameTemplate;
+  }
+
+  /**
+   * Gets the name of the runner template.
+   *
+   * @return the template to generate the runner script
+   */
+  public String getRunTemplate() {
+    return runTemplate;
   }
 
   /**
@@ -309,6 +341,15 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
       if (mainClass == null) {
         throw new MojoExecutionException("mainClass missing");
       }
+
+      if (nameTemplate == null) {
+        throw new MojoExecutionException("nameTemplate missing");
+      }
+
+      if (runTemplate == null) {
+        throw new MojoExecutionException("runTemplate missing");
+      }
+
       return true;
     }
     return false;
@@ -343,10 +384,8 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @throws MojoExecutionException if failed
    */
   protected void installTemplates() throws MojoExecutionException {
-    installTemplate(Constants.PLATFORM_LINUX + Constants.TEMPLATE_EXTENSION);
-    installTemplate(Constants.PLATFORM_WINDOWS + Constants.TEMPLATE_EXTENSION);
-    installTemplate(Constants.PLATFORM_MACOS + Constants.TEMPLATE_EXTENSION);
-    installTemplate(Constants.PLATFORM_SOLARIS + Constants.TEMPLATE_EXTENSION);
+    installTemplate(nameTemplate);
+    installTemplate(runTemplate);
   }
 
   private void installTemplate(String template) throws MojoExecutionException {

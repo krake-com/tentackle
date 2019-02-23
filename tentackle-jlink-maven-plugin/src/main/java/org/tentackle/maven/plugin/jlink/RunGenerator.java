@@ -23,24 +23,19 @@ import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.maven.AbstractGenerator;
 import org.tentackle.maven.GeneratedFile;
+import org.tentackle.maven.GeneratedString;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.StringTokenizer;
 
 /**
  * Generator for the run script.
  */
 public class RunGenerator extends AbstractGenerator {
 
-  private static final String RUN_UNIXES = "run.sh";
-  private static final String RUN_WINDOZES = "run.cmd";
-
-
   private final AbstractJlinkMojo mojo;
   private final JlinkResolver.Result result;
-
-  private String templateName;
-  private String scriptName;
 
   /**
    * Creates the generator.
@@ -63,44 +58,21 @@ public class RunGenerator extends AbstractGenerator {
     try {
       Configuration cfg = createFreemarkerConfiguration();
       RunTemplateModel model = new RunTemplateModel(mojo, result);
-      determineTemplateName();
-      File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), scriptName);
-      GeneratedFile generatedFile = new GeneratedFile(cfg, model, templateName, scriptFile);
-      generatedFile.generate();
-      scriptFile.setExecutable(true);
+      String output = new GeneratedString(cfg, model, mojo.getNameTemplate()).generate();
+      StringTokenizer stok = new StringTokenizer(output);
+      if (stok.hasMoreTokens()) {
+        File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), stok.nextToken());
+        GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getRunTemplate(), scriptFile);
+        generatedFile.generate();
+        scriptFile.setExecutable(true);
+      }
+      else {
+        throw new MojoExecutionException("no valid name for runner script");
+      }
     }
     catch (IOException | TemplateException e) {
       throw new MojoExecutionException("generating run script failed", e);
     }
   }
 
-
-  private void determineTemplateName() throws MojoExecutionException {
-    String osName = System.getProperty("os.name");
-    if (osName == null) {
-      throw new MojoExecutionException("cannot determine platform");
-    }
-    mojo.getLog().debug("platform is " + osName);
-    osName = osName.toUpperCase();
-    if (osName.contains("WIN")) {
-      templateName = Constants.PLATFORM_WINDOWS + Constants.TEMPLATE_EXTENSION;
-      scriptName = RUN_WINDOZES;
-    }
-    else if (osName.contains("LIN")) {
-      templateName = Constants.PLATFORM_LINUX + Constants.TEMPLATE_EXTENSION;
-      scriptName = RUN_UNIXES;
-    }
-    else if (osName.contains("SUN") || osName.contains("SOL")) {
-      templateName = Constants.PLATFORM_SOLARIS + Constants.TEMPLATE_EXTENSION;
-      scriptName = RUN_UNIXES;
-    }
-    else if (osName.contains("MAC")) {
-      templateName = Constants.PLATFORM_MACOS + Constants.TEMPLATE_EXTENSION;
-      scriptName = RUN_UNIXES;
-    }
-    else {
-      throw new MojoExecutionException("unsupported platform " + System.getProperty("os.name"));
-    }
-    mojo.getLog().debug("using template " + templateName + " to generate " + scriptName);
-  }
 }
