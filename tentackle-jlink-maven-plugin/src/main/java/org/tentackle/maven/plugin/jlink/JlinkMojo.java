@@ -67,7 +67,7 @@ import java.io.IOException;
  *       &lt;/plugin&gt;
  * </pre>
  *
- * The platform specific script templates (freemarker) are copied to the project's template folder, if it does not exist, i.e.
+ * The freemarker templates are copied to the project's template folder, if it does not exist, i.e.
  * when the goal is invoked the first time.
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
  * The template model provides the following variables:
@@ -78,7 +78,8 @@ import java.io.IOException;
  *   <li><code>modulePath</code>: the module path.</li>
  *   <li><code>classPath</code>: the class path</li>
  *   <li><code>goal</code>: the plugin goal (jlink or jpackage)</li>
- *   <li>and all maven properties</li>
+ *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
+ *   <li>all maven properties (translated to camelCase as well)</li>
  * </ul>
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder

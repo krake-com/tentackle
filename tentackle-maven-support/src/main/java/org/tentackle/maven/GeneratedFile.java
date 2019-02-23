@@ -37,7 +37,7 @@ public class GeneratedFile {
   private final File outputFile;
 
   /**
-   * Creates a file to be generated.
+   * Creates a file generator.
    *
    * @param cfg the freemarker configuration
    * @param model the freemarker model
