@@ -96,6 +96,8 @@ import java.io.IOException;
 
 public class JlinkMojo extends AbstractJlinkMojo {
 
+  private static final String ZIP_EXTENSION = "zip";
+
   /**
    * File of the jlink tool.
    */
@@ -147,7 +149,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * The archiver to zip the image.
    */
-  @Component(role = Archiver.class, hint = "zip")
+  @Component(role = Archiver.class, hint = ZIP_EXTENSION)
   private ZipArchiver zipArchiver;
 
   /**
@@ -159,7 +161,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * The generated ZIP file name.
    */
-  @Parameter(defaultValue = "${project.build.finalName}", required = true)
+  @Parameter(defaultValue = "${project.build.finalName}", required = true, readonly = true)
   private String finalName;
 
   /**
@@ -191,8 +193,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
 
     super.executeImpl();
 
-    File zipFile = createZipFile();
-    getMavenProject().getArtifact().setFile(zipFile);
+    getProjectHelper().attachArtifact(getMavenProject(), ZIP_EXTENSION, getClassifier(), createZipFile());
   }
 
   /**
@@ -253,7 +254,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
   }
 
   private File createZipFile() throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, finalName + ".zip");
+    File zipFile = new File(zipDirectory, finalName + "." + ZIP_EXTENSION);
     zipArchiver.addDirectory(getImageDirectory());
     zipArchiver.setDestFile(zipFile);
     try {
@@ -263,5 +264,37 @@ public class JlinkMojo extends AbstractJlinkMojo {
       throw new MojoExecutionException(e.getMessage(), e);
     }
     return zipFile;
+  }
+
+  /**
+   * The zip file will be installed and deployed with an additional classifier
+   * showing the operating system and the platform.
+   *
+   * @return the classifier
+   * @throws MojoExecutionException if no os.name
+   */
+  private String getClassifier() throws MojoExecutionException {
+    String osName = System.getProperty("os.name");
+    if (osName == null) {
+      throw new MojoExecutionException("missing system property 'os.name'");
+    }
+    osName = osName.trim().toLowerCase();
+    StringBuilder buf = new StringBuilder();
+    boolean isWindows = osName.contains("win");
+    for (int i=0; i < osName.length(); i++) {
+      char c = osName.charAt(i);
+      if (Character.isLetter(c)) {
+        buf.append(c);
+      }
+      else if (isWindows) {
+        break;    // cut xp, 7, 10, whatever
+      }
+    }
+    String osArch = System.getProperty("os.arch");
+    if (osArch == null) {
+      throw new MojoExecutionException("missing system property 'os.arch'");
+    }
+    buf.append('-').append(osArch.toLowerCase());
+    return buf.toString();
   }
 }
