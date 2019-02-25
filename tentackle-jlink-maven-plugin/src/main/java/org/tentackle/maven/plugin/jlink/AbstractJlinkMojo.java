@@ -24,6 +24,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
@@ -69,6 +70,12 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   @Component
   private LocationManager locationManager;
+
+  /**
+   * To attach artifacts with classifier.
+   */
+  @Component
+  private MavenProjectHelper projectHelper;
 
   /**
    * The directory holding the script templates.
@@ -163,6 +170,15 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   }
 
   /**
+   * Gets the project helper to attach artifacts.
+   *
+   * @return the project helper
+   */
+  public MavenProjectHelper getProjectHelper() {
+    return projectHelper;
+  }
+
+  /**
    * Gets the jdeps tool.
    *
    * @return the file, never null
@@ -211,6 +227,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
     // analyze project, determine jlink strategy
     JlinkResolver.Result result = new JlinkResolver(this, getMavenProject().getArtifacts()).resolve();
+
     // and run jlink
     createImage(result);
 
