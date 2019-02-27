@@ -1,0 +1,42 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.fx.translate;
+
+import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.misc.CharArray;
+
+/**
+ * Identity CharArray translator.
+ *
+ * @author harald
+ */
+@ValueTranslatorService(modelClass = CharArray.class, viewClass = CharArray.class)
+public class CharArrayCharArrayTranslator extends IdentityTranslator<CharArray> {
+
+  /**
+   * Creates an enum translator.
+   *
+   * @param component the component
+   */
+  public CharArrayCharArrayTranslator(FxComponent component) {
+    super(component);
+  }
+
+}

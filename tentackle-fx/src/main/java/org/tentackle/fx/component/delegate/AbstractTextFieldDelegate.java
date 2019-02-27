@@ -10,7 +10,6 @@ import javafx.application.Platform;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
 
-import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxTextComponent;
 import org.tentackle.fx.FxTextComponentDelegate;
 import org.tentackle.fx.ValueTranslator;
@@ -38,18 +37,6 @@ public abstract class AbstractTextFieldDelegate<T extends TextInputControl & FxT
   @Override
   public T getComponent() {
     return component;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public String getViewObject() {
-    String text = component.getText();
-    return StringHelper.isAllWhitespace(text) ? null : text;
-  }
-
-  @Override
-  public void setViewObject(Object viewObject) {
-    component.setText((String) viewObject);
   }
 
   @Override

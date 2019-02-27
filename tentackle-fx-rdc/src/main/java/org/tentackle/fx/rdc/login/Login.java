@@ -19,6 +19,7 @@
 
 package org.tentackle.fx.rdc.login;
 
+import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -40,10 +41,9 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
+import org.tentackle.misc.CharArray;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
-
-import java.util.ResourceBundle;
 
 /**
  * Login controller.
@@ -206,8 +206,8 @@ public class Login extends AbstractFxController {
   private void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());
-      String pwd = passwordField.getText();
-      sessionInfo.setPassword(pwd == null ? null : pwd.toCharArray());
+      CharArray pwd = passwordField.getPassword();   // this clears the buffer in the password field!
+      sessionInfo.setPassword(pwd == null ? null : pwd.getCharacters());
       BackendConfiguration backendConfiguration = backendField.getValue();
       if (backendConfiguration != null) {
         String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO) + ":" + backendConfiguration;

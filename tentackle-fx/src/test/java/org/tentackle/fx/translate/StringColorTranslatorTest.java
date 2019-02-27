@@ -17,12 +17,10 @@
  *
  */
 
-package org.tentackle.fx.convert;
+package org.tentackle.fx.translate;
 
 import javafx.scene.paint.Color;
 import org.testng.annotations.Test;
-
-import org.tentackle.fx.translate.StringColorTranslator;
 
 import static org.testng.Assert.assertEquals;
 

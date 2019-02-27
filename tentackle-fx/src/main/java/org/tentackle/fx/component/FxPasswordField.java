@@ -19,11 +19,15 @@
 
 package org.tentackle.fx.component;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.function.Function;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.PasswordField;
 
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
 import org.tentackle.fx.FxTextComponent;
@@ -33,22 +37,54 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxPasswordFieldDelegate;
 import org.tentackle.fx.table.FxTableCell;
-
-import java.lang.reflect.Type;
-import java.util.function.Function;
+import org.tentackle.misc.CharArray;
 
 /**
- * Extended PasswordField.
+ * Extended PasswordField.<br>
+ * The StringBuilder holding the text input is replaced with blanks when getPassword() is invoked.
+ * The application is responsible to clear the returned char-array as well.<br>
+ * Needs "--add-opens javafx.controls/javafx.scene.control=org.tentackle.fx" if application is modular.
+ * <p>
+ * Important: if you use the password character array methods, you must not use standard FX bindings,
+ * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
+ * maxColumns, filtering, etc... will be disabled.<br>
  *
  * @author harald
  */
 public class FxPasswordField extends PasswordField implements FxTextComponent {
 
   /**
-   * Creates a default PasswordField instance.
+   * Gets the password as a character array and clears the contents in memory.
+   *
+   * @return the character array wrapper (never empty), null if empty
    */
-  public FxPasswordField() {
-    super();
+  public CharArray getPassword() {
+    Content content = getContent();
+    try {
+      Field field = content.getClass().getDeclaredField("characters");
+      field.setAccessible(true);
+      StringBuilder characters = (StringBuilder) field.get(content);
+      char[] result = new char[characters.length()];
+      characters.getChars(0, characters.length(), result, 0);
+      // scratch in memory
+      for (int i=0; i < characters.length(); i++) {
+        characters.setCharAt(i, ' ');
+      }
+      characters.setLength(0);
+      return result.length == 0 ? null : new CharArray(result);
+    }
+    catch (IllegalAccessException | NoSuchFieldException e) {
+      throw new TentackleRuntimeException("cannot extract password", e);
+    }
+  }
+
+  /**
+   * Sets the password.
+   *
+   * @param password the password character array, null to clear
+   */
+  public void setPassword(CharArray password) {
+    setText(password == null || password.getCharacters() == null ? null : String.valueOf(password.getCharacters()));
   }
 
   // @wurblet delegate Include $currentDir/fxtextcomponent.include
