@@ -22,8 +22,10 @@ package org.tentackle.test.pdo.mock;
 import java.util.Collections;
 import java.util.List;
 import org.tentackle.common.Timestamp;
+import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.IdentifiableMap;
+import org.tentackle.misc.ImmutableException;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainDelegate;
@@ -55,6 +57,7 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   private transient Session session;              // the session
   private transient boolean sessionImmutable;     // true if session is immutable
   private boolean immutable;                      // true if all attributes are immutable
+  private boolean finallyImmutable;               // true if object cannot be made mutable again
   private long id;                                // unique Object ID
   private long serial;                            // serial-nummer (version to detect simultaneous updates)
   private long tableSerial;                       // last table serial from countModification (only if isTableSerialValid() == true)
@@ -497,12 +500,36 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
 
   @Override
   public void setImmutable(boolean immutable) {
+    if (!immutable && finallyImmutable) {
+      throw new ImmutableException("object is finally immutable");
+    }
     this.immutable = immutable;
+  }
+
+  @Override
+  public void setFinallyImmutable() {
+    setImmutable(true);
+    finallyImmutable = true;
   }
 
   @Override
   public boolean isImmutable() {
     return immutable;
+  }
+
+  @Override
+  public boolean isFinallyImmutable() {
+    return finallyImmutable;
+  }
+
+  @Override
+  public void setImmutableLoggingLevel(Logger.Level immutableLoggingLevel) {
+
+  }
+
+  @Override
+  public Logger.Level getImmutableLoggingLevel() {
+    return null;
   }
 
   @Override

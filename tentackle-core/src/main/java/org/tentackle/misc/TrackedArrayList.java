@@ -381,12 +381,23 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   @Override
   public void setImmutable(boolean immutable, boolean withElements) {
-    if (immutable && removedObjects != null && !removedObjects.isEmpty()) {
-      throw new ImmutableException("list already contains removed objects, cannot make it immutable");
+    if (immutable) {
+      assertNotSomeRemoved();
     }
     super.setImmutable(immutable, withElements);
   }
 
+  @Override
+  public void setFinallyImmutable(boolean withElements) {
+    assertNotSomeRemoved();
+    super.setFinallyImmutable(withElements);
+  }
+
+  private void assertNotSomeRemoved() {
+    if (removedObjects != null && !removedObjects.isEmpty()) {
+      throw new ImmutableException("list already contains removed objects, cannot make it immutable");
+    }
+  }
 
   /**
    * Returns whether some object has been removed.

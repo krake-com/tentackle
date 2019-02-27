@@ -384,7 +384,7 @@ public abstract class PdoCacheIndex<T extends PersistentDomainObject<T>, C exten
       pdo.getPersistenceDelegate().setDomainContext(processedContext);
     }
     if (isReadOnly()) {
-      pdo.getPersistenceDelegate().setImmutable(true);
+      pdo.getPersistenceDelegate().setFinallyImmutable();
       pdo.getPersistenceDelegate().setDomainContextImmutable(true);
       pdo.getPersistenceDelegate().setSessionImmutable(true);
     }

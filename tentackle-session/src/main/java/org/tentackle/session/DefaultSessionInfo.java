@@ -19,12 +19,6 @@
 
 package org.tentackle.session;
 
-import org.tentackle.common.Constants;
-import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.ImmutableException;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
@@ -32,6 +26,11 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
+import org.tentackle.common.Constants;
+import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.ImmutableException;
 
 /**
  * The default implementation for a session info.
@@ -56,6 +55,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   private String propertiesName;                // filename of backend properties
   private Properties properties;                // db properties (send over via RMI)
   private boolean immutable;                    // true if session info is immutable
+  private boolean finallyImmutable;             // true if finally immutable
   private Logger.Level immutableLoggingLevel;   // optional logging for immutable violations instead of exception
   private Locale locale;                        // the user's locale
   private String vmInfo;                        // info about the JVM
@@ -142,7 +142,21 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   @Override
   public void setImmutable(boolean immutable) {
+    if (!immutable && finallyImmutable) {
+      throw new ImmutableException("session info is finally immutable");
+    }
     this.immutable = immutable;
+  }
+
+  @Override
+  public void setFinallyImmutable() {
+    setImmutable(true);
+    finallyImmutable = true;
+  }
+
+  @Override
+  public boolean isFinallyImmutable() {
+    return finallyImmutable;
   }
 
   @Override

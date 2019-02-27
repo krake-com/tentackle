@@ -19,11 +19,13 @@
 
 package org.tentackle.pdo;
 
+import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.misc.Identifiable;
 import org.tentackle.misc.IdentifiableMap;
+import org.tentackle.misc.Immutable;
 import org.tentackle.misc.Modifiable;
 import org.tentackle.misc.ScrollableResource;
 import org.tentackle.misc.SerialNumbered;
@@ -37,8 +39,6 @@ import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationFailedException;
 
-import java.util.List;
-
 /**
  * Interface for the persistent part of a PDO.
  *
@@ -47,7 +47,7 @@ import java.util.List;
  */
 public interface PersistentObject<T extends PersistentDomainObject<T>>
        extends PersistenceDelegate<T>, PdoHolder<T>, Snapshotable<T>, Identifiable, Modifiable, SerialNumbered,
-               Validateable, ScopeConfigurator, DomainContextDependable, SessionDependable {
+               Validateable, Immutable, ScopeConfigurator, DomainContextDependable, SessionDependable {
 
   /**
    * Gets the identification number.
@@ -120,28 +120,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the id string
    */
   String toIdString();
-
-  /**
-   * Defines whether attributes of the object may be changed.
-   * <p>
-   * Any attempt to invoke a setter on an immutable object
-   * results in a {@link PersistenceException}.
-   * All generated methods check this. Note that even lazy loading of
-   * an immutable object isn't allowed as well because the
-   * reference to the lazily loaded object must be changed.
-   *
-   * @param immutable true if object is immutable
-   */
-  void setImmutable(boolean immutable);
-
-  /**
-   * Returns whether object is immutable.
-   * <p>
-   * By default objects are mutable.
-   *
-   * @return true if immutable
-   */
-  boolean isImmutable();
 
   /**
    * Returns whether this object is a root entity.

@@ -1077,7 +1077,7 @@ public class PdoCache<T extends PersistentDomainObject<T>> {
         if (isReadOnly()) {
           // make lists immutable (elements are already immutable)
           for (ImmutableArrayList<T> list: lists.values()) {
-            list.setImmutable(true, false);
+            list.setFinallyImmutable(false);
           }
         }
       }
