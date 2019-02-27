@@ -19,6 +19,8 @@
 
 package org.tentackle.fx;
 
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Pos;
 import javafx.scene.control.TextFormatter;
@@ -26,9 +28,6 @@ import javafx.scene.control.TextInputControl;
 
 import org.tentackle.fx.translate.ValueStringTranslator;
 import org.tentackle.reflect.ReflectionHelper;
-
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 /**
  * Delegate implementing FxComponent.
@@ -379,7 +378,7 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
     // since the translator may need to know the type
     super.setType(type);
     if (getValueTranslator() == null) {    // if not already set by application
-      setValueTranslator(FxFactory.getInstance().createValueTranslator(type, String.class, getComponent()));
+      setValueTranslator(createValueTranslator(type));
     }
 
     if (type.isPrimitive()) {
@@ -391,6 +390,10 @@ public abstract class FxTextComponentDelegate extends FxComponentDelegate
         setTextAlignment(Pos.CENTER_RIGHT);
       }
     }
+  }
+
+  protected ValueTranslator<?,?> createValueTranslator(Class<?> type) {
+    return FxFactory.getInstance().createValueTranslator(type, String.class, getComponent());
   }
 
 

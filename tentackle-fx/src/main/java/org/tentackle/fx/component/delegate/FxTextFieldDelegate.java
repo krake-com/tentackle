@@ -8,6 +8,7 @@ package org.tentackle.fx.component.delegate;
 
 import javafx.geometry.Pos;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.component.FxTextField;
 
 /**
@@ -26,6 +27,18 @@ public class FxTextFieldDelegate extends AbstractTextFieldDelegate<FxTextField> 
    */
   public FxTextFieldDelegate(FxTextField component) {
     super(component);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public String getViewObject() {
+    String text = getComponent().getText();
+    return StringHelper.isAllWhitespace(text) ? null : text;
+  }
+
+  @Override
+  public void setViewObject(Object viewObject) {
+    getComponent().setText((String) viewObject);
   }
 
   @Override
