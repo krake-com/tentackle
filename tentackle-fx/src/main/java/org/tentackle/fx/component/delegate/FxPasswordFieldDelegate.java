@@ -97,8 +97,19 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
     }
   }
 
+  @Override
+  public void updateModel() {
+    if (isCharArray() && getBinding() != null) {
+      Object oldModelValue = getBinding().getModelValue();
+      if (oldModelValue instanceof CharArray) {
+        ((CharArray) oldModelValue).clear();
+      }
+    }
+    super.updateModel();
+  }
+
   private boolean isCharArray() {
-    return CharArray.class.isAssignableFrom(getType());
+    return getType() == null ? false : CharArray.class.isAssignableFrom(getType());
   }
 
 }
