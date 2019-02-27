@@ -49,6 +49,7 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
 
   protected boolean simpleEqualsAndHashCode;          // true if equals and hashcode refer to list instance, not its contents
   protected boolean immutable;                        // true if list is immutable
+  protected boolean finallyImmutable;                 // true if list is finally immutable
   protected Level immutableLoggingLevel;              // optional logging for immutable violations instead of exception
 
 
@@ -122,6 +123,9 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
    */
   @Override
   public void setImmutable(boolean immutable, boolean withElements) {
+    if (!immutable && finallyImmutable) {
+      throw new ImmutableException("list is finally immutable");
+    }
     this.immutable = immutable;
 
     if (withElements) {
@@ -134,13 +138,37 @@ public class ImmutableArrayList<E> extends ArrayList<E> implements ImmutableColl
   }
 
   @Override
+  public void setFinallyImmutable(boolean withElements) {
+    immutable = true;
+    finallyImmutable = true;
+
+    if (withElements) {
+      for (Object obj: this) {
+        if (obj instanceof Immutable) {
+          ((Immutable) obj).setFinallyImmutable();
+        }
+      }
+    }
+  }
+
+  @Override
   public void setImmutable(boolean immutable) {
     setImmutable(immutable, true);
   }
 
   @Override
+  public void setFinallyImmutable() {
+    setFinallyImmutable(true);
+  }
+
+  @Override
   public boolean isImmutable() {
     return immutable;
+  }
+
+  @Override
+  public boolean isFinallyImmutable() {
+    return finallyImmutable;
   }
 
   @Override

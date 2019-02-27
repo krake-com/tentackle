@@ -29,6 +29,9 @@ import org.tentackle.log.Logger.Level;
  * An immutable object can be made mutable again and vice versa. The (im)mutable property
  * applies to all components as well (provided they implement {@link Immutable}).
  * <p>
+ * If an oject is finally immutable, any attempt to make it mutable again results
+ * in an {@link ImmutableException}.
+ * <p>
  * Notice the semantic differences between {@link Immutable} and {@link org.tentackle.common.Freezable}.
  *
  * @author harald
@@ -40,10 +43,18 @@ public interface Immutable {
    * <p>
    * Any attempt to modify an immutable object
    * results in an {@link ImmutableException}, if logging level is null.
+   * <p>
+   * Throws {@link ImmutableException} if argument is false and object is finally immutable.
    *
    * @param immutable true if object is immutable
    */
   void setImmutable(boolean immutable);
+
+  /**
+   * Makes this object finally immutable.<br>
+   * Any attempt to make it mutable again results in an {@link ImmutableException}.
+   */
+  void setFinallyImmutable();
 
   /**
    * Returns whether object is immutable.
@@ -53,6 +64,13 @@ public interface Immutable {
    * @return true if immutable
    */
   boolean isImmutable();
+
+  /**
+   * Returns whether object is finally immutable.
+   *
+   * @return true if finally immutable
+   */
+  boolean isFinallyImmutable();
 
   /**
    * Sets the optional logging level.<br>

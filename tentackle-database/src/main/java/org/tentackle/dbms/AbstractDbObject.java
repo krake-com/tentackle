@@ -19,6 +19,11 @@
 
 package org.tentackle.dbms;
 
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.log.Logger;
@@ -34,12 +39,6 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
-
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -200,6 +199,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   private boolean modified;          // true if object is modified and not written to db yet
 
   private boolean immutable;            // true if object is immutable
+  private boolean finallyImmutable;     // trye if object is finally immutable
   private Level immutableLoggingLevel;  // optional logging for immutable violations instead of exception
 
   // transient (not transferred to/from the application server)
@@ -357,6 +357,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
     // id, serial, tableSerial are not reverted because they can only be changed by a persistence operation
     modified = snapshot.modified;
     immutable = snapshot.immutable;
+    finallyImmutable = snapshot.finallyImmutable;
     session = snapshot.session;
     sessionImmutable = snapshot.sessionImmutable;
     sessionHolder = snapshot.sessionHolder;
@@ -856,10 +857,22 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @Override
   public void setImmutable(boolean immutable) {
-    if (immutable && attributesModified()) {
-      throw new PersistenceException(this, new ImmutableException("object is already modified"));
+    if (immutable) {
+      if (attributesModified()) {
+        // wrapped in PersistenceException due to "this" argument
+        throw new PersistenceException(this, new ImmutableException("object is already modified"));
+      }
+    }
+    else if (finallyImmutable) {
+      throw new PersistenceException(this, new ImmutableException("object is finally immutable"));
     }
     this.immutable = immutable;
+  }
+
+  @Override
+  public void setFinallyImmutable() {
+    setImmutable(true);
+    finallyImmutable = true;
   }
 
   /**
@@ -872,6 +885,11 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   @Override
   public boolean isImmutable() {
     return immutable;
+  }
+
+  @Override
+  public boolean isFinallyImmutable() {
+    return finallyImmutable;
   }
 
   @Override

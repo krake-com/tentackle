@@ -19,6 +19,15 @@
 
 package org.tentackle.persist;
 
+import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
@@ -68,16 +77,6 @@ import org.tentackle.validate.ValidationUtilities;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
 import org.tentackle.validate.scope.PersistenceScope;
-
-import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -1763,7 +1762,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
           po.getRootClassId() != 0 && po.getRootClassId() != context.getRootClassId()) {
         // component not loaded from within its root entity context: make it immutable to
         // prevent modifying the wrong object within the RE's component tree
-        po.setImmutable(true);
+        po.setFinallyImmutable();
         // explicitly check the root-entity's security rules (if any)
         if (po.getRootId() != 0 && po.getRootClassId() != 0) {
           // po provides both the rootClassId and the rootId -> check that explicitly

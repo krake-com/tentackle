@@ -39,6 +39,14 @@ public interface ImmutableCollection<E> extends Collection<E>, Immutable {
   void setImmutable(boolean immutable, boolean withElements);
 
   /**
+   * Makes this collection finally immutable.<br>
+   * Any attempt to make it mutable again results in an {@link ImmutableException}.
+   *
+   * @param withElements true if set elements as well if they implement {@link Immutable}
+   */
+  void setFinallyImmutable(boolean withElements);
+
+  /**
    * Sets whether the equals() and hashCode() methods should refer to the list instance alone.
    *
    * @param simpleEqualsAndHashCode true if instance alone, false if check list contents as well
