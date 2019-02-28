@@ -97,6 +97,8 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
         Field field = content.getClass().getDeclaredField("characters");
         field.setAccessible(true);
         characterBuffer = (StringBuilder) field.get(content);
+        setTextFormatter(null);
+        setPromptText(null);
       }
       catch (IllegalAccessException | NoSuchFieldException e) {
         throw new TentackleRuntimeException("cannot access character buffer", e);
