@@ -47,11 +47,14 @@ import org.tentackle.misc.CharArray;
  * <p>
  * Important: if you use the password character array methods, you must not use standard FX bindings,
  * listeners, etc... as they all work with regular strings. Furthermore, all text processing like
- * maxColumns, filtering, etc... will be disabled.<br>
+ * maxColumns, filtering, etc... will be disabled and the internal character buffer is accessed
+ * directly bypassing the string-based operations.<br>
  *
  * @author harald
  */
 public class FxPasswordField extends PasswordField implements FxTextComponent {
+
+  private StringBuilder characterBuffer;
 
   /**
    * Gets the password as a character array and clears the contents in memory.
@@ -59,23 +62,15 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    * @return the character array wrapper (never empty), null if empty
    */
   public CharArray getPassword() {
-    Content content = getContent();
-    try {
-      Field field = content.getClass().getDeclaredField("characters");
-      field.setAccessible(true);
-      StringBuilder characters = (StringBuilder) field.get(content);
-      char[] result = new char[characters.length()];
-      characters.getChars(0, characters.length(), result, 0);
-      // scratch in memory
-      for (int i=0; i < characters.length(); i++) {
-        characters.setCharAt(i, ' ');
-      }
-      characters.setLength(0);
-      return result.length == 0 ? null : new CharArray(result);
+    StringBuilder buf = getCharacterBuffer();
+    char[] result = new char[buf.length()];
+    buf.getChars(0, buf.length(), result, 0);
+    // scratch in memory
+    for (int i=0; i < buf.length(); i++) {
+      buf.setCharAt(i, ' ');
     }
-    catch (IllegalAccessException | NoSuchFieldException e) {
-      throw new TentackleRuntimeException("cannot extract password", e);
-    }
+    buf.setLength(0);
+    return result.length == 0 ? null : new CharArray(result);
   }
 
   /**
@@ -84,7 +79,30 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    * @param password the password character array, null to clear
    */
   public void setPassword(CharArray password) {
-    setText(password == null || password.getCharacters() == null ? null : String.valueOf(password.getCharacters()));
+    StringBuilder buf = getCharacterBuffer();
+    buf.setLength(0);
+    if (password != null) {
+      char[] pwd = password.getCharacters();
+      if (pwd != null) {
+        buf.append(pwd);
+      }
+    }
+  }
+
+
+  private StringBuilder getCharacterBuffer() {
+    if (characterBuffer == null) {
+      Content content = getContent();
+      try {
+        Field field = content.getClass().getDeclaredField("characters");
+        field.setAccessible(true);
+        characterBuffer = (StringBuilder) field.get(content);
+      }
+      catch (IllegalAccessException | NoSuchFieldException e) {
+        throw new TentackleRuntimeException("cannot access character buffer", e);
+      }
+    }
+    return characterBuffer;
   }
 
   // @wurblet delegate Include $currentDir/fxtextcomponent.include
