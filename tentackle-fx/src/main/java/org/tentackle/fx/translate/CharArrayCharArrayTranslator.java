@@ -20,15 +20,14 @@ package org.tentackle.fx.translate;
 
 import org.tentackle.fx.FxComponent;
 import org.tentackle.fx.ValueTranslatorService;
-import org.tentackle.misc.CharArray;
 
 /**
  * Identity CharArray translator.
  *
  * @author harald
  */
-@ValueTranslatorService(modelClass = CharArray.class, viewClass = CharArray.class)
-public class CharArrayCharArrayTranslator extends IdentityTranslator<CharArray> {
+@ValueTranslatorService(modelClass = char[].class, viewClass = char[].class)
+public class CharArrayCharArrayTranslator extends IdentityTranslator<char[]> {
 
   /**
    * Creates an enum translator.

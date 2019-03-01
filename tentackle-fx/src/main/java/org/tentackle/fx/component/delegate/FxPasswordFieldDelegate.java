@@ -13,7 +13,7 @@ import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxPasswordField;
-import org.tentackle.misc.CharArray;
+
 
 /**
  * Delegate for FxPasswordField.
@@ -35,8 +35,8 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
 
   @Override
   protected ValueTranslator<?, ?> createValueTranslator(Class<?> type) {
-    return CharArray.class.isAssignableFrom(type) ?
-           FxFactory.getInstance().createValueTranslator(type, CharArray.class, getComponent()) :
+    return char[].class == type ?
+           FxFactory.getInstance().createValueTranslator(type, char[].class, getComponent()) :
            super.createValueTranslator(type);
   }
 
@@ -60,8 +60,8 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
 
   @Override
   public void setViewObject(Object viewObject) {
-    if (viewObject instanceof CharArray) {
-      getComponent().setPassword((CharArray) viewObject);
+    if (viewObject instanceof char[]) {
+      getComponent().setPassword((char[]) viewObject);
     }
     else {
       getComponent().setText((String) viewObject);
@@ -101,15 +101,18 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
   public void updateModel() {
     if (isCharArray() && getBinding() != null) {
       Object oldModelValue = getBinding().getModelValue();
-      if (oldModelValue instanceof CharArray) {
-        ((CharArray) oldModelValue).clear();
+      if (oldModelValue instanceof char[]) {
+        char[] chars = (char[]) oldModelValue;
+        for (int i=0; i < chars.length; i++) {
+          chars[i] = ' ';
+        }
       }
     }
     super.updateModel();
   }
 
   private boolean isCharArray() {
-    return getType() == null ? false : CharArray.class.isAssignableFrom(getType());
+    return getType() == null ? false : (char[].class == getType());
   }
 
 }

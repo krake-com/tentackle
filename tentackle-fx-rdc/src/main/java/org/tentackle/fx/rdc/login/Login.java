@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc.login;
 
-import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,9 +40,10 @@ import org.tentackle.fx.component.FxTextField;
 import org.tentackle.fx.rdc.app.DesktopApplication;
 import org.tentackle.fx.rdc.app.LoginApplication;
 import org.tentackle.log.Logger;
-import org.tentackle.misc.CharArray;
 import org.tentackle.session.BackendConfiguration;
 import org.tentackle.session.SessionInfo;
+
+import java.util.ResourceBundle;
 
 /**
  * Login controller.
@@ -58,6 +58,7 @@ public class Login extends AbstractFxController {
   private SessionInfo sessionInfo;            // the session info
   private boolean autoLogin;                  // true if login immediately
   private boolean backendFromSystemPrefs;     // if select backend from system preferences
+  private char[] password;                    // password buffer
 
   @FXML
   private ResourceBundle resources;           // localization bundle
@@ -99,6 +100,9 @@ public class Login extends AbstractFxController {
     usernameField.setAutoSelect(true);
     passwordField.setOnAction(e -> login());
     passwordField.setAutoSelect(true);
+    // password needs listeners since it wouldn't work in unbound mode with character buffers
+    passwordField.addViewToModelListener(() -> password = passwordField.getPassword());   // this clears the password in the component!
+    passwordField.addModelToViewListener(() -> passwordField.setPassword(password));
     backendButton.setGraphic(Fx.createImageView("edit"));
     backendButton.setOnAction(e -> {
       Backends.editBackends(sessionInfo.getApplicationName(), backendFromSystemPrefs);
@@ -113,7 +117,12 @@ public class Login extends AbstractFxController {
         // copy the user and password from the backend config
         // (for jdbc/jndi the user/pw is used to connect to the database only)
         usernameField.setText(backendConfiguration.getUser());
-        passwordField.setText(backendConfiguration.getPassword());
+        if (backendConfiguration.getPassword() != null) {
+          passwordField.setPassword(backendConfiguration.getPassword().toCharArray());
+        }
+        else {
+          passwordField.setPassword(null);
+        }
       }
     });
   }
@@ -145,7 +154,7 @@ public class Login extends AbstractFxController {
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
     usernameField.setText(sessionInfo.getUserName());
-    passwordField.setText(sessionInfo.getPasswordAsString());
+    passwordField.setPassword(sessionInfo.getPassword());
     String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO);
     boolean backendVisible = false;
     if (Constants.BACKEND_INFO_USER.equals(backendInfo)) {
@@ -177,7 +186,12 @@ public class Login extends AbstractFxController {
               backendConfiguration.getUser() != null) {
             // preset user/pw if fixed backend config is remote and user set
             usernameField.setText(backendConfiguration.getUser());
-            passwordField.setText(backendConfiguration.getPassword());
+            if (backendConfiguration.getPassword() != null) {
+              passwordField.setPassword(backendConfiguration.getPassword().toCharArray());
+            }
+            else {
+              passwordField.setPassword(null);
+            }
           }
         }
         else {
@@ -206,8 +220,7 @@ public class Login extends AbstractFxController {
   private void login() {
     if (progressBar.getProgress() <= 0.0) {
       sessionInfo.setUserName(usernameField.getText());
-      CharArray pwd = passwordField.getPassword();   // this clears the buffer in the password field!
-      sessionInfo.setPassword(pwd == null ? null : pwd.getCharacters());
+      sessionInfo.setPassword(password);
       BackendConfiguration backendConfiguration = backendField.getValue();
       if (backendConfiguration != null) {
         String backendInfo = sessionInfo.getProperties().getProperty(Constants.BACKEND_INFO) + ":" + backendConfiguration;
