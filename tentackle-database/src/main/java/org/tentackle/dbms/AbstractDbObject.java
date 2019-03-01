@@ -19,11 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.lang.reflect.InvocationTargetException;
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.log.Logger;
@@ -39,6 +34,12 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
+
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -342,10 +343,13 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   @SuppressWarnings("rawtypes")
   protected void createAttributesInSnapshot(AbstractDbObject snapshot) {
-    snapshot.id = id;   // was cleared in clone()
-    snapshot.serial = serial;
+    // nothing to do
   }
 
+
+  public boolean isCopy() {
+    return false;   // implemented in AbstractPO!
+  }
 
   /**
    * Copies all attributes from a snapshot object back to this object.
@@ -355,15 +359,17 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
   @SuppressWarnings("rawtypes")
   protected void revertAttributesToSnapshot(AbstractDbObject snapshot) {
     // id, serial, tableSerial are not reverted because they can only be changed by a persistence operation
-    modified = snapshot.modified;
-    immutable = snapshot.immutable;
-    finallyImmutable = snapshot.finallyImmutable;
+    if (!isCopy()) {    // copies are always mutable and new
+      modified = snapshot.modified;
+      immutable = snapshot.immutable;
+      finallyImmutable = snapshot.finallyImmutable;
+      overloadable = snapshot.overloadable;
+      modlog = snapshot.modlog;
+      changeSupport = snapshot.changeSupport;
+      sessionImmutable = snapshot.sessionImmutable;
+    }
     session = snapshot.session;
-    sessionImmutable = snapshot.sessionImmutable;
     sessionHolder = snapshot.sessionHolder;
-    overloadable = snapshot.overloadable;
-    modlog = snapshot.modlog;
-    changeSupport = snapshot.changeSupport;
   }
 
 

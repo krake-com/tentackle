@@ -19,16 +19,6 @@
 
 package org.tentackle.test.pdo;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
 import org.testng.Reporter;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -38,7 +28,19 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
 
-import static org.testng.Assert.*;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+
+import static org.testng.Assert.fail;
 
 /**
  * Base class for tests on PDO level.
@@ -63,7 +65,7 @@ public abstract class AbstractPdoTest implements DomainContextProvider {
 
 
   private static Session session;           // session for all methods in all test classes
-  private DomainContext context;            // domain context for all methods in all test classes
+  private static DomainContext context;     // domain context for all methods in all test classes
 
   private final TransactionType txType;     // transaction handling
   private final boolean commit;             // true if commit transaction, else rollback (default)
