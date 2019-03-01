@@ -115,9 +115,11 @@ public class LoginApplication extends FxApplication {
     if (username == null) {   // if not overridden by command line
       sessionInfo.setUserName(props.getProperty(Constants.BACKEND_USER, sessionInfo.getUserName()));
     }
-    if (password == null) {   // if not overridden by command line
-      sessionInfo.setPassword(StringHelper.toCharArray(
-              props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPasswordAsString())));
+    if (password == null) {   // if not overridden by command line: get from properties, if set
+      String propsPassword = props.getProperty(Constants.BACKEND_PASSWORD);
+      if (propsPassword != null) {
+        sessionInfo.setPassword(propsPassword.toCharArray());
+      }
     }
 
     if (sessionInfo.getApplicationName() == null) {

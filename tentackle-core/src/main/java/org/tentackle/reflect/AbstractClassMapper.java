@@ -19,9 +19,10 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.log.Logger;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.log.Logger;
 
 /**
  * A generic class mapper.<br>
@@ -124,7 +125,7 @@ public abstract class AbstractClassMapper<S> {
    */
   private S mapName(String className, boolean lenient) throws ClassNotFoundException {
     if (lenient) {
-      Class<?> clazz = null;             // class corresponding to initial className, null if not loaded yet
+      Class<?> clazz = null;          // class corresponding to initial className, null if not loaded yet
       boolean isInterface = false;    // true if className corresponds to an interface
       while (className != null) {
         S value = getNameMap().get(className);
@@ -168,7 +169,7 @@ public abstract class AbstractClassMapper<S> {
    * @throws java.lang.ClassNotFoundException if {@code className} is not a valid classname
    */
   private S mapNameWithPackages(String className, boolean lenient) throws ClassNotFoundException {
-    if (className.indexOf('.') < 0) {
+    if (!className.startsWith("[") && className.indexOf('.') < 0) {   // not array type and not FQCN
       String[] packageNames = getPackageNames();
       if (packageNames != null) {
         for (String packageName: packageNames) {

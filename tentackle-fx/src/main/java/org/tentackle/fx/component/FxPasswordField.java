@@ -19,9 +19,6 @@
 
 package org.tentackle.fx.component;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Type;
-import java.util.function.Function;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
@@ -37,7 +34,11 @@ import org.tentackle.fx.ViewToModelListener;
 import org.tentackle.fx.bind.FxComponentBinding;
 import org.tentackle.fx.component.delegate.FxPasswordFieldDelegate;
 import org.tentackle.fx.table.FxTableCell;
-import org.tentackle.misc.CharArray;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.function.Function;
+
 
 /**
  * Extended PasswordField.<br>
@@ -61,7 +62,7 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    *
    * @return the character array wrapper (never empty), null if empty
    */
-  public CharArray getPassword() {
+  public char[] getPassword() {
     StringBuilder buf = getCharacterBuffer();
     char[] result = new char[buf.length()];
     buf.getChars(0, buf.length(), result, 0);
@@ -70,7 +71,7 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
       buf.setCharAt(i, ' ');
     }
     buf.setLength(0);
-    return result.length == 0 ? null : new CharArray(result);
+    return result.length == 0 ? null : result;
   }
 
   /**
@@ -78,14 +79,11 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    *
    * @param password the password character array, null to clear
    */
-  public void setPassword(CharArray password) {
+  public void setPassword(char[] password) {
     StringBuilder buf = getCharacterBuffer();
     buf.setLength(0);
     if (password != null) {
-      char[] pwd = password.getCharacters();
-      if (pwd != null) {
-        buf.append(pwd);
-      }
+      buf.append(password);
     }
   }
 
@@ -99,6 +97,9 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
         characterBuffer = (StringBuilder) field.get(content);
         setTextFormatter(null);
         setPromptText(null);
+        if (getType() == null) {
+          setType(char[].class);
+        }
       }
       catch (IllegalAccessException | NoSuchFieldException e) {
         throw new TentackleRuntimeException("cannot access character buffer", e);
