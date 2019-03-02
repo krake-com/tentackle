@@ -14,6 +14,8 @@ import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.ValueTranslator;
 import org.tentackle.fx.component.FxPasswordField;
 
+import java.util.Arrays;
+
 
 /**
  * Delegate for FxPasswordField.
@@ -102,10 +104,7 @@ public class FxPasswordFieldDelegate extends AbstractTextFieldDelegate<FxPasswor
     if (isCharArray() && getBinding() != null) {
       Object oldModelValue = getBinding().getModelValue();
       if (oldModelValue instanceof char[]) {
-        char[] chars = (char[]) oldModelValue;
-        for (int i=0; i < chars.length; i++) {
-          chars[i] = ' ';
-        }
+        Arrays.fill((char[]) oldModelValue, ' ');
       }
     }
     super.updateModel();
