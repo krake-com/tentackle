@@ -1394,6 +1394,17 @@ public final class StringHelper {
     }
   }
 
+  /**
+   * Null-safe char array filler.<br>
+   * Fills with blanks.
+   *
+   * @param buf the char buff, may be null
+   * @see #fill(char[], char)
+   */
+  public static void blank(char[] buf) {
+    fill(buf,' ');
+  }
+
 
   /**
    * Converts a multiline string to an HTML-string that
