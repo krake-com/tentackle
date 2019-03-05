@@ -20,6 +20,10 @@ package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.building.SettingsProblem;
+import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.shared.model.fileset.FileSet;
 
 import org.tentackle.sql.BackendInfo;
@@ -75,6 +79,9 @@ public class BackendInfoParameter {
   /** the password. */
   public String password;
 
+  /** server ID from settings.xml. */
+  public String serverId;
+
   /** allowed schemas. */
   public List<String> schemas;
 
@@ -101,10 +108,11 @@ public class BackendInfoParameter {
   /**
    * Creates a backend info from this parameter.
    *
-   * @param logger the maven logger
+   * @param mojo the sql mojo
    * @return the backend info
+   * @throws MojoExecutionException if credentials could not be determined from server ID
    */
-  public BackendInfo createBackendInfo(Log logger) {
+  public BackendInfo createBackendInfo(AbstractSqlMojo mojo) throws MojoExecutionException {
     if (schemaNames != null) {
       schemas = new ArrayList<>();
       StringTokenizer stok = new StringTokenizer(schemaNames, ",");
@@ -112,11 +120,41 @@ public class BackendInfoParameter {
         schemas.add(stok.nextToken().trim());
       }
     }
-    char[] passwd = password == null ? null : password.toCharArray();
     String[] schemaArray = null;
     if (schemas != null && !schemas.isEmpty()) {
       schemaArray = schemas.toArray(new String[0]);
     }
+
+    char[] passwd = password == null ? null : password.toCharArray();
+
+    if (serverId != null) {
+      Server server = mojo.getSettings().getServer(serverId);
+      if (server != null) {
+        if (user != null || passwd != null) {
+          mojo.getLog().warn("replacing user/password from pom.xml by settings.xml for server id '" + serverId + "'");
+        }
+        user = server.getUsername();
+        SettingsDecryptionResult result = mojo.getSettingsDecrypter().decrypt(new DefaultSettingsDecryptionRequest(server));
+        for (SettingsProblem problem : result.getProblems()) {
+          StringBuilder msg = new StringBuilder();
+          msg.append(problem.getMessage());
+          if (!problem.getSource().isEmpty()) {
+            msg.append(" at ").append(problem.getSource());
+            if (problem.getLineNumber() > 0) {
+              msg.append(':').append(problem.getLineNumber());
+            }
+          }
+          if (problem.getSeverity() == SettingsProblem.Severity.ERROR || problem.getSeverity() == SettingsProblem.Severity.FATAL) {
+            throw new MojoExecutionException("unable to decrypt password: " + msg);
+          }
+          else {
+            mojo.getLog().warn(msg.toString());
+          }
+        }
+        password = result.getServer().getPassword();
+      }
+    }
+
     return new BackendInfo(url, user, passwd, schemaArray);
   }
 

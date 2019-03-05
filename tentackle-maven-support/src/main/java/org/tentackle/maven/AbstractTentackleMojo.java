@@ -27,6 +27,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.wurbelizer.misc.Verbosity;
@@ -58,6 +59,16 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
              readonly = true,
              required = true)
   private MavenProject mavenProject;
+
+  /**
+   * The settings.<br>
+   * From settings.xml.
+   */
+  @Parameter(defaultValue = "${settings}", readonly = true)
+  private org.apache.maven.settings.Settings settings;
+
+  @Component
+  private SettingsDecrypter settingsDecrypter;
 
   /**
    * The current build session instance.<br>
@@ -120,6 +131,24 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public MavenProject getMavenProject() {
     return mavenProject;
+  }
+
+  /**
+   * Gets the maven settings.
+   *
+   * @return the settings from settings.xml
+   */
+  public org.apache.maven.settings.Settings getSettings() {
+    return settings;
+  }
+
+  /**
+   * Decrypter for credentials in settings.xml.
+   *
+   * @return the settings decrypter
+   */
+  public SettingsDecrypter getSettingsDecrypter() {
+    return settingsDecrypter;
   }
 
   /**

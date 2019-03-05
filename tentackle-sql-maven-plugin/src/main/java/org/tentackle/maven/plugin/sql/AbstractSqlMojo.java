@@ -431,7 +431,7 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
       if (backends != null && !backends.isEmpty()) {
         for (BackendInfoParameter backendParameter : backends) {
-          BackendInfo backendInfo = backendParameter.createBackendInfo(getLog());
+          BackendInfo backendInfo = backendParameter.createBackendInfo(this);
           backendInfos.put(backendInfo.getBackend().getName(), backendInfo);
           if (backendInfo.isConnectable()) {
             connectableBackendInfos.put(backendInfo.getUrl(), backendInfo);
