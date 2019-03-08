@@ -42,6 +42,7 @@ import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObject;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -212,6 +213,7 @@ public class TableUtilities {
 
       StreamResult streamResult = new StreamResult(out);
       SAXTransformerFactory tf = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+      tf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
       // SAX2.0 ContentHandler.
       TransformerHandler hd = tf.newTransformerHandler();
       Transformer serializer = hd.getTransformer();
