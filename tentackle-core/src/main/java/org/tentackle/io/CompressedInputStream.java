@@ -46,7 +46,7 @@ public class CompressedInputStream extends FilterInputStream {
 
   private final Inflater inflater;      // zip inflater
   private final byte[] byteBuf;         // single byte buffer for read()
-  
+
   private byte[] infBuf;                // buffer holding compressed data for the inflater (size is dynamically adapted)
   private boolean compressed;           // true if current packet is compressed and inf... is valid
   private int readPending;              // number of bytes pending to read from underlying stream
@@ -112,7 +112,7 @@ public class CompressedInputStream extends FilterInputStream {
   @Override
   public int read() throws IOException {
     int num = read(byteBuf, 0, 1);
-    return num < 0 ? num : byteBuf[0];
+    return num < 0 ? num : (byteBuf[0] & 0xff);
   }
 
 

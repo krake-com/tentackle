@@ -51,7 +51,7 @@ public class RemoteInputStream extends InputStream {
       buf = delegate.read();
     }
     // data is available
-    return buf[pos++];
+    return buf[pos++] & 0xff;
   }
 
 }
