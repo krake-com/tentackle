@@ -69,7 +69,7 @@ public class BlockingByteArrayInputStream extends InputStream {
           out.reset();
         }
         else  {
-          return buf[pos++];
+          return buf[pos++] & 0xff;
         }
       }
     }

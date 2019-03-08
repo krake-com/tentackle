@@ -20,13 +20,14 @@
 
 package org.tentackle.io;
 
+import org.tentackle.log.Logger;
+
 import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-import org.tentackle.log.Logger;
 
 
 
@@ -104,7 +105,7 @@ public class CompressedInputStream extends FilterInputStream {
   @Override
   public int read() throws IOException {
     int num = read(byteBuf, 0, 1);
-    return num < 0 ? num : byteBuf[0];
+    return num < 0 ? num : (byteBuf[0] & 0xff);
   }
 
 
