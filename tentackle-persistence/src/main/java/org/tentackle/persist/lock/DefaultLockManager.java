@@ -337,7 +337,7 @@ public class DefaultLockManager implements LockManager {
         // add removed locks
         Map<PdoKey, DbTokenLock> removedLocks = removedLocksInFlight.get(txKey);
         if (removedLocks != null) {
-          for (Map.Entry<PdoKey, DbTokenLock> entry : updatedLocks.entrySet()) {
+          for (Map.Entry<PdoKey, DbTokenLock> entry : removedLocks.entrySet()) {
             lockMap.put(entry.getKey(), entry.getValue());
           }
         }
