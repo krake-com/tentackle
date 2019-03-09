@@ -42,14 +42,14 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
     // directory holds the version
     File dir = hintFile.getParentFile();
     if (dir != null && version != null) {
-      String name = dir.getName();
-      int ndx = name.indexOf('-');    // cut -SNAPSHOT and things like that
+      String dirName = dir.getName();
+      int ndx = dirName.indexOf('-');    // cut -SNAPSHOT and things like that
       if (ndx > 0) {
-        name = name.substring(0, ndx);
+        dirName = dirName.substring(0, ndx);
       }
       // split version major/minor/hotfix
       StringTokenizer versionTokenizer = new StringTokenizer(version, ".");
-      StringTokenizer hintTokenizer = new StringTokenizer(name, ".");
+      StringTokenizer hintTokenizer = new StringTokenizer(dirName, "._");    // allows directory names M_X_Y as well as M.X.Y
       boolean allEqual = true;
       while (versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens()) {
         String versionToken = versionTokenizer.nextToken();
