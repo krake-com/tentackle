@@ -127,7 +127,7 @@ public class BackendInfoParameter {
 
     char[] passwd = password == null ? null : password.toCharArray();
 
-    if (serverId != null) {
+    if (serverId != null && !serverId.isEmpty()) {
       Server server = mojo.getSettings().getServer(serverId);
       if (server != null) {
         if (user != null || passwd != null) {
@@ -152,6 +152,9 @@ public class BackendInfoParameter {
           }
         }
         password = result.getServer().getPassword();
+      }
+      else {
+        throw new MojoExecutionException("no such server id in settings.xml: " + serverId);
       }
     }
 
