@@ -75,6 +75,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   private String sqlFileName;
 
   /**
+   * Optionally, the generated migration file is passed to freemarker as a template.
+   */
+  @Parameter(defaultValue = "false",
+             property = "tentackle.migrateSqlAsTemplate")
+  private boolean asTemplate;
+
+  /**
    * The generated SQL file can be splitted into one file per entity.<br>
    * This is especially useful if the migrations are processed any further,
    * for example by shell scripts.
@@ -122,12 +129,17 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   /**
    * Map of splitted migrations.
    */
-  private Map<String, String> splittedMigrations = new LinkedHashMap<>();   // <tablename:SQL-code>
+  private Map<String, String> splittedMigrations;   // <tablename:SQL-code>
 
   /**
    * Migration hints per jdbc-Url.
    */
   private Map<String, MigrationHints> migrationHints;
+
+  /**
+   * Map of all entities, migrated or not.
+   */
+  private Map<String, Boolean> migratedEntitiesMap;   // <entity-name>:TRUE|FALSE
 
 
   @Override
@@ -144,6 +156,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
       sqlCode = new StringBuilder();
+      splittedMigrations = new LinkedHashMap<>();
+      migratedEntitiesMap = new HashMap<>();
     }
     else  {
       getLog().debug("no connection parameters available for " + backendInfo + " -> skipped");
@@ -159,6 +173,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
                .append(", skipped=")
                .append(Integer.toString(skippedEntites)).append("\n");
 
+      if (!split) {
+        String sql = backendMigrationHints.getAlwaysBefore();
+        if (!sql.isEmpty()) {
+          sqlWriter.append("\n-- always before\n").append(sql).append("\n\n--\n");
+        }
+      }
+
       if (sqlCode.length() > 0 || !splittedMigrations.isEmpty()) {
         if (split) {
           sqlWriter.append("-- migrated entities in subfolders: ").append(String.valueOf(splittedMigrations.size())).append("\n");
@@ -166,19 +187,26 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         else {
           String sql = backendMigrationHints.getBeforeAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n-- before all:\n").append(sql).append("\n\n");
+            sqlWriter.append("\n-- before all\n").append(sql).append("\n\n--\n");
           }
 
           sqlWriter.append(sqlCode.toString());
 
           sql = backendMigrationHints.getAfterAll();
           if (!sql.isEmpty()) {
-            sqlWriter.append("\n\n-- after all:\n").append(sql).append('\n');
+            sqlWriter.append("\n\n-- after all\n").append(sql).append("\n\n--\n");
           }
         }
       }
       else {
         sqlWriter.append("-- relational model matches object model -> no migration necessary\n");
+      }
+
+      if (!split) {
+        String sql = backendMigrationHints.getAlwaysAfter();
+        if (!sql.isEmpty()) {
+          sqlWriter.append("\n\n-- always after\n").append(sql).append("\n\n--\n");
+        }
       }
     }
     catch (IOException iox) {
@@ -201,6 +229,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
       }
     }
+
+    if (asTemplate) {
+      new MigrateGenerator(this, sqlFile, backendInfo, migratedEntitiesMap).generate(sqlFileName);
+    }
   }
 
   @Override
@@ -218,6 +250,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected String getSqlFileName() {
+    if (asTemplate) {
+      // generate into ftl file first
+      return sqlFileName.replace('.', '-') + ".ftl";    // e.g. migratemodel-sql.ftl
+    }
     return sqlFileName;
   }
 
@@ -332,6 +368,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               // table will have to be migrated?
               boolean migrated = !migrationResult.getTableSql().isEmpty();
 
+              migratedEntitiesMap.put(entity.getName(), migrated);
+
               if (migrated) {
                 // check if explicit migration code is available
                 String sql = backendMigrationHints.getMigrateTable(tableName);
@@ -423,13 +461,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
 
       if (split) {
-        writeSplittedMigrations();
+        writeSplittedMigrations(backendInfo);
       }
 
       getLog().info(getPathRelativeToBasedir(modelDirName) + ": " +
                     fileNames.length + " files processed, " +
                     errorCount + " errors, " +
-                    getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFile.getName() + " created");
+                    getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFileName + " created");
 
       totalErrors += errorCount;
     }
@@ -456,30 +494,43 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   /**
    * Creates the splitted migrations.
    *
+   * @param backendInfo the backend info
    * @throws MojoExecutionException if IO error
    */
-  private void writeSplittedMigrations() throws MojoExecutionException {
+  private void writeSplittedMigrations(BackendInfo backendInfo) throws MojoExecutionException {
+
+    int digits = 1;
+
+    String sql = backendMigrationHints.getAlwaysBefore();
+    if (!sql.isEmpty()) {
+      writeSplittedMigration(0, digits, "always_before.sql", sql, backendInfo);
+    }
+
     if (!splittedMigrations.isEmpty()) {
-      String sql = backendMigrationHints.getAfterAll();
+      sql = backendMigrationHints.getAfterAll();
       if (!sql.isEmpty()) {
         splittedMigrations.put("after_all.sql", sql);
       }
 
-      int tableCount = splittedMigrations.size();
-      int digits = 1;
+      int tableCount = splittedMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
       while ((tableCount /= 10) > 0) {
         digits++;
       }
 
       int splitCounter = 1;
       for (Map.Entry<String, String> entry : splittedMigrations.entrySet()) {
-        writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue());
+        writeSplittedMigration(splitCounter++, digits, entry.getKey(), entry.getValue(), backendInfo);
       }
 
       sql = backendMigrationHints.getBeforeAll();
       if (!sql.isEmpty()) {
-        writeSplittedMigration(0, digits, "before_all.sql", sql);
+        writeSplittedMigration(0, digits, "before_all.sql", sql, backendInfo);
       }
+    }
+
+    sql = backendMigrationHints.getAlwaysAfter();
+    if (!sql.isEmpty()) {
+      writeSplittedMigration(splittedMigrations.size(), digits, "always_after.sql", sql, backendInfo);
     }
   }
 
@@ -490,23 +541,30 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
    * @param digits the number of digits for the folder name
    * @param fileName the sql filename in the folder
    * @param sql the SQL code
+   * @param backendInfo the backend info
    * @throws MojoExecutionException if IO error
    */
-  private void writeSplittedMigration(int subDirCount, int digits, String fileName, String sql) throws MojoExecutionException {
+  private void writeSplittedMigration(int subDirCount, int digits, String fileName, String sql, BackendInfo backendInfo) throws MojoExecutionException {
     StringBuilder subDirName = new StringBuilder(Integer.toString(subDirCount));
     while (subDirName.length() < digits) {
       subDirName.insert(0, '0');
     }
     File dir = new File(sqlFile.getParent(), subDirName.toString());
     dir.mkdirs();
-    File file = new File(dir, fileName);
+
+    File file = new File(dir, asTemplate ? fileName.replace('.', '-') + ".ftl" : fileName);
     try (Writer writer = Files.newBufferedWriter(file.toPath(), Settings.getEncodingCharset(),
                                                                 StandardOpenOption.CREATE,
                                                                 StandardOpenOption.TRUNCATE_EXISTING)) {
       writer.write(sql);
     }
     catch (IOException e) {
-      throw new MojoExecutionException("writing to " + file.getPath() + " failed", e);
+      throw new MojoExecutionException("writing to " + file + " failed", e);
+    }
+    getLog().debug(file + " created");
+
+    if (asTemplate) {
+      new MigrateGenerator(this, file, backendInfo, migratedEntitiesMap).generate(fileName);
     }
   }
 
