@@ -43,6 +43,9 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
     File dir = hintFile.getParentFile();
     if (dir != null && version != null) {
       String dirName = dir.getName();
+      if (!Character.isDigit(dirName.charAt(0))) {    // permanent if not starting with a digit
+        return true;
+      }
       int ndx = dirName.indexOf('-');    // cut -SNAPSHOT and things like that
       if (ndx > 0) {
         dirName = dirName.substring(0, ndx);

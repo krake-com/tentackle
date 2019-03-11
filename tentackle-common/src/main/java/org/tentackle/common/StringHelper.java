@@ -970,6 +970,34 @@ public final class StringHelper {
 
 
   /**
+   * Converts a dotted path to camelCase.<br>
+   * Example:<br>
+   * {@code "alpha.beta.gamma"} is converted to {@code "alphaBetaGamma"}.
+   *
+   * @param str the dotted path
+   * @return the camel case path
+   */
+  public static String toCamelCase(String str) {
+    StringBuilder buf = new StringBuilder();
+    boolean lastWasDot = false;
+    for (int i=0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if (c == '.') {
+        lastWasDot = true;
+      }
+      else if (lastWasDot) {
+        buf.append(Character.toUpperCase(c));
+        lastWasDot = false;
+      }
+      else {
+        buf.append(c);
+      }
+    }
+    return buf.toString();
+  }
+
+
+  /**
    * Checks if a string contains only digits or whitespaces, i.e.
    * no illegal char in a number string.
    *

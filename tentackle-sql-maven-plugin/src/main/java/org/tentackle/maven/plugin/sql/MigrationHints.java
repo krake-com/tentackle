@@ -62,8 +62,10 @@ import java.util.regex.PatternSyntaxException;
  * Valid keywords are:
  *
  * <ul>
- * <li>before all: SQL code to be executed before everything else</li>
- * <li>after all: SQL code to be executed after everything else</li>
+ * <li>always before: SQL code to be executed before everything else (even if nothing changed at all)</li>
+ * <li>always after: SQL code to be executed after everything else (even if nothing changed at all)</li>
+ * <li>before all: SQL code to be executed before everything else (if anything changed at all)</li>
+ * <li>after all: SQL code to be executed after everything else (if anything changed at all)</li>
  * <li>before &lt;tablename&gt;: SQL code to be executed before the migration of given table</li>
  * <li>after &lt;tablename&gt;: SQL code to be executed after the migration of given table</li>
  * <li>migrate &lt;tablename&gt;: explicit SQL code to migrate given table</li>
@@ -81,6 +83,8 @@ public class MigrationHints {
 
   // keywords
 
+  private static final String ALWAYS_BEFORE = "always before";
+  private static final String ALWAYS_AFTER = "always after";
   private static final String BEFORE_ALL = "before all";
   private static final String AFTER_ALL = "after all";
   private static final String BEFORE = "before";
@@ -125,8 +129,10 @@ public class MigrationHints {
   }
 
 
-  private final StringBuilder beforeAll;                          // SQL to execute at the very beginning, null if none
-  private final StringBuilder afterAll;                           // SQL to execute at the very end, null if none
+  private final StringBuilder alwaysBefore;                       // SQL to execute at the very beginning (unconditionally)
+  private final StringBuilder alwaysAfter;                        // SQL to execute at the very end (unconditionally)
+  private final StringBuilder beforeAll;                          // SQL to execute at the very beginning
+  private final StringBuilder afterAll;                           // SQL to execute at the very end
   private final Map<String,String> beforeTable;                   // SQL to execute before automatic table migration <tablename:sql>
   private final Map<String,String> afterTable;                    // SQL to execute after automatic table migration <tablename:sql>
   private final Map<String,String> migrateTable;                  // SQL to execute instead automatic table migration <tablename:sql>
@@ -160,6 +166,20 @@ public class MigrationHints {
      */
     private void finish() throws MojoExecutionException {
       switch(keyword) {
+        case ALWAYS_BEFORE:
+          if (alwaysBefore.length() > 0) {
+            alwaysBefore.append('\n');
+          }
+          alwaysBefore.append(text);
+          break;
+
+        case ALWAYS_AFTER:
+          if (alwaysAfter.length() > 0) {
+            alwaysAfter.append('\n');
+          }
+          alwaysAfter.append(text);
+          break;
+
         case BEFORE_ALL:
           if(beforeAll.length() > 0) {
             beforeAll.append('\n');
@@ -244,6 +264,8 @@ public class MigrationHints {
    * Creates the migration hints for a backend.
    */
   public MigrationHints() {
+    alwaysBefore = new StringBuilder();
+    alwaysAfter = new StringBuilder();
     beforeAll = new StringBuilder();
     afterAll = new StringBuilder();
     beforeTable = new HashMap<>();
@@ -252,6 +274,25 @@ public class MigrationHints {
     migrateColumns = new HashMap<>();
     hints = new HashMap<>();
     dependencies = new HashMap<>();
+  }
+
+
+  /**
+   * Gets the sql code to be executed before anything else, unconditionally.
+   *
+   * @return the sql code, never null
+   */
+  public String getAlwaysBefore() {
+    return alwaysBefore.toString();
+  }
+
+  /**
+   * Gets the sql code to be executed after anything else, unconditionally.
+   *
+   * @return the sql code, never null
+   */
+  public String getAlwaysAfter() {
+    return alwaysAfter.toString();
   }
 
   /**
@@ -366,12 +407,12 @@ public class MigrationHints {
           hintDirNames = new ArrayList<>();
           hintDirNames.add(fileset.getDirectory());   // use given directory
         }
-        for (String propertiesDirName: hintDirNames) {
-          fileset.setDirectory(propertiesDirName);
+        for (String hintDirName: hintDirNames) {
+          fileset.setDirectory(hintDirName);
           String[] fileNames = fileSetManager.getIncludedFiles(fileset);
           if (fileNames.length > 0) {
             for (String filename : fileNames) {
-              File hintFile = new File(new File(propertiesDirName), filename);
+              File hintFile = new File(new File(hintDirName), filename);
               if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
                 logger.debug("loading migration hints from " + hintFile);
                 StringBuilder buf = new StringBuilder();
@@ -446,7 +487,13 @@ public class MigrationHints {
   private Section nextSection(String line) throws MojoExecutionException {
     Section section = null;
 
-    if (line.startsWith(BEFORE_ALL)) {
+    if (line.startsWith(ALWAYS_BEFORE)) {
+      section = new Section(ALWAYS_BEFORE);
+    }
+    else if (line.startsWith(ALWAYS_AFTER)) {
+      section = new Section(ALWAYS_AFTER);
+    }
+    else if (line.startsWith(BEFORE_ALL)) {
       section = new Section(BEFORE_ALL);
     }
     else if (line.startsWith(AFTER_ALL)) {
@@ -502,6 +549,8 @@ public class MigrationHints {
             }
             break;
 
+          case ALWAYS_BEFORE:
+          case ALWAYS_AFTER:
           case BEFORE_ALL:
           case AFTER_ALL:
             if (!section.tableName.isEmpty()) {

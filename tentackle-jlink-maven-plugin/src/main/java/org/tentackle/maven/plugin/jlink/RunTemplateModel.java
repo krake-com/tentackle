@@ -20,6 +20,8 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.tentackle.common.StringHelper;
+
 import java.util.HashMap;
 
 /**
@@ -48,12 +50,12 @@ public class RunTemplateModel extends HashMap<String, String> {
 
     // all system properties in camelCase, e.g. "os.name" converts to "osName"
     for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-      putValue(toCamelCase(entry.getKey().toString()), entry.getValue().toString());
+      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
     }
 
     // dto. for all maven properties
     for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
-      putValue(toCamelCase(entry.getKey().toString()), entry.getValue().toString());
+      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
     }
   }
 
@@ -63,22 +65,4 @@ public class RunTemplateModel extends HashMap<String, String> {
     mojo.getLog().debug("script variable " + key + " = \"" + val + "\"");
   }
 
-  private String toCamelCase(String systemProperty) {
-    StringBuilder buf = new StringBuilder();
-    boolean lastWasDot = false;
-    for (int i=0; i < systemProperty.length(); i++) {
-      char c = systemProperty.charAt(i);
-      if (c == '.') {
-        lastWasDot = true;
-      }
-      else if (lastWasDot) {
-        buf.append(Character.toUpperCase(c));
-        lastWasDot = false;
-      }
-      else {
-        buf.append(c);
-      }
-    }
-    return buf.toString();
-  }
 }
