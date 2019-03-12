@@ -107,6 +107,26 @@ public class PdoTreeItem<T extends PersistentDomainObject<T>> extends TreeItem<T
 
 
   /**
+   * Gets the parent item's pdo.
+   *
+   * @param <P> the parent PDO type
+   * @param parentPdoClass the entity class of the parent PDO
+   * @return the parent pdo, null if no parent or parent is no PdoTreeItem or not pointing to an instance of {@code parentPdoClass}
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <P extends PersistentDomainObject<P>> P getParentPdo(Class<P> parentPdoClass) {
+    TreeItem<?> parent = getParent();
+    if (parent instanceof PdoTreeItem) {
+      PersistentDomainObject parentPdo = ((PdoTreeItem) parent).getPdo();
+      if (parentPdo != null && parentPdoClass.isAssignableFrom(parentPdo.getClass())) {
+        return (P) parentPdo;
+      }
+    }
+    return null;
+  }
+
+
+  /**
    * Lazily gets the GUI provider for the PDO.
    *
    * @return the provider, never null
