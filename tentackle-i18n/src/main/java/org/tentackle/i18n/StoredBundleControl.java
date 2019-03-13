@@ -18,11 +18,6 @@
 
 package org.tentackle.i18n;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import org.tentackle.common.BundleFactory;
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.log.Logger;
@@ -33,6 +28,12 @@ import org.tentackle.pdo.PdoListener;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Bundle control to use stored bundles.<br>
@@ -152,31 +153,28 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
    */
   protected StoredResourceBundle loadStoredBundle(StoredBundle.StoredBundleUDK key) {
     synchronized (this) {
-      if (context == null) {
-        Session session = Session.getCurrentSession();
-        if (session != null) {    // thread-local session must be set!
-          context = Pdo.createDomainContext();    // thread-local domain context
+      if (context == null && Session.getCurrentSession() != null) {
+        context = Pdo.createDomainContext();    // thread-local domain context
 
-          if (!listenerRegistered) {
-            // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
-            // application start
-            ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
-              @Override
-              public void dataChanged(ModificationEvent ev) {
-                BundleFactory.getInstance().clearCache();
-                // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
-                // only the changed or added bundles are effectively reloaded from the database.
-              }
-            });
-            listenerRegistered = true;
-            LOGGER.info("bundle factory modification listener registered");
-          }
+        if (!listenerRegistered) {
+          // we cannot do that in the constructor of StoredBundleFactory because the modtracker isnt running at
+          // application start
+          ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
+            @Override
+            public void dataChanged(ModificationEvent ev) {
+              BundleFactory.getInstance().clearCache();
+              // the PdoCache in StoredBundlePersistenceImpl is a non-preloading cache, i.e.
+              // only the changed or added bundles are effectively reloaded from the database.
+            }
+          });
+          listenerRegistered = true;
+          LOGGER.info("bundle factory modification listener registered");
         }
       }
       // try again later...
     }
 
-    if (context != null) {
+    if (context != null && Session.getCurrentSession() != null) {
       StoredBundle bundle = on(StoredBundle.class).selectCachedByUniqueDomainKey(key);
       if (bundle != null) {
         LOGGER.info("stored bundle {0} loaded", bundle);
