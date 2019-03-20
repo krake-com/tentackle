@@ -510,7 +510,7 @@ public class JlinkResolver {
   }
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
-    for (String line: new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg(artifact.getFile()).run().getOutput()) {
+    for (String line: new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg("--ignore-missing-deps").arg(artifact.getFile()).run().getOutput()) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
         mojo.getLog().debug(artifact + " (non-module): " + line);
