@@ -19,11 +19,12 @@
 
 package org.tentackle.apt;
 
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import org.tentackle.common.AnnotationProcessor;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+
+import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Processor for all interception annotations in the core package.<br>
@@ -35,7 +36,7 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
 @SupportedAnnotationTypes({
   "org.tentackle.log.Log"
 })
-@SupportedSourceVersion(RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class AllInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 

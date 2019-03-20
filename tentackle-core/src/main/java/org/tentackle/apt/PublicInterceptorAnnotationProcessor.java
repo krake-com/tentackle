@@ -19,11 +19,12 @@
 
 package org.tentackle.apt;
 
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import org.tentackle.common.AnnotationProcessor;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+
+import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Processor for the public interception annotations in the core package.<br>
@@ -36,7 +37,7 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
   "org.tentackle.pdo.NoTransaction",
   "org.tentackle.security.Secured"
 })
-@SupportedSourceVersion(RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class PublicInterceptorAnnotationProcessor extends AbstractInterceptorAnnotationProcessor {
 

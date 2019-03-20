@@ -36,7 +36,7 @@ import javax.tools.Diagnostic;
 import java.util.List;
 import java.util.Set;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Annotation processor for the {@code @PdoTreeContextMenuItemService} annotation.<br>
@@ -49,7 +49,7 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.rdc.PdoTreeContextMenuItemService")
-@SupportedSourceVersion(RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class PdoTreeContextMenuItemServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

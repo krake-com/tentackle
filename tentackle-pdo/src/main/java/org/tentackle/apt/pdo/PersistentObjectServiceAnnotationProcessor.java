@@ -19,8 +19,13 @@
 
 package org.tentackle.apt.pdo;
 
-import java.util.List;
-import java.util.Set;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
+import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
+import org.tentackle.common.AnnotationProcessor;
+import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.Session;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -31,14 +36,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractServiceAnnotationProcessor;
-import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
-import org.tentackle.common.AnnotationProcessor;
-import org.tentackle.pdo.DomainContext;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.session.Session;
+import java.util.List;
+import java.util.Set;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Annotation processor for the {@code @PersistentObjectService} annotation.<br>
@@ -54,7 +55,7 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.PersistentObjectService")
-@SupportedSourceVersion(RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class PersistentObjectServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

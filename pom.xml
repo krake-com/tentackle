@@ -77,11 +77,11 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
-    <javac.version.src>11</javac.version.src>
-    <javac.version.target>11</javac.version.target>
-    <java.version>11</java.version>
+    <javac.version.src>12</javac.version.src>
+    <javac.version.target>12</javac.version.target>
+    <java.version>12</java.version>
     <javafx.version>12</javafx.version>
-    <ow2.asm.version>7.0</ow2.asm.version>
+    <ow2.asm.version>7.1</ow2.asm.version>
     <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.5</postgresql.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>

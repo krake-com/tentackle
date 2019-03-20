@@ -26,7 +26,6 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -41,13 +40,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static javax.lang.model.SourceVersion.RELEASE_12;
+
 
 /**
  * Validations checker processor.
  *
  * @author harald
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 @SupportedOptions("verbosity")
 @SupportedAnnotationTypes("*")
 public class CheckValidationsProcessor extends AbstractTentackleProcessor {
