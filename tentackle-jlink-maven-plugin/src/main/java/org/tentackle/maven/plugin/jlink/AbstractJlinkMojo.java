@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -127,6 +127,19 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private List<String> addModules;
 
   /**
+   * Modules to exclude.<br>
+   * Necessary only if a dependency refers to removed api even if not used at all at runtime.
+   *
+   * <pre>
+   * &lt;excludeModules&gt;
+   *   &lt;excludeModule&gt;jdk8internals&lt;/excludeModule&gt;
+   * &lt;/excludeModules&gt;
+   * </pre>
+   */
+  @Parameter
+  private List<String> excludeModules;
+
+  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -212,7 +225,16 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    * @return extra module names, never null
    */
   public List<String> getAddModules() {
-    return addModules == null ? new ArrayList<>() : addModules;
+    return addModules == null ? Collections.emptyList() : addModules;
+  }
+
+  /**
+   * Gets modules to exclude.
+   *
+   * @return excluded module names, never null
+   */
+  public List<String> getExcludeModules() {
+    return excludeModules == null ? Collections.emptyList() : excludeModules;
   }
 
 

@@ -525,13 +525,19 @@ public class JlinkResolver {
     if (ndx > 0) {
       moduleName = moduleName.substring(0, ndx);
     }
-    if (moduleName.startsWith("java.") || moduleName.startsWith("jdk.")) {
-      // this is only a first guess.
-      // if it turns out later that this is a dependency, it will be moved back to application artifacts
-      runtimeModules.add(moduleName);
+
+    if (mojo.getExcludeModules().contains(moduleName)) {
+      mojo.getLog().debug("module " + moduleName + " excluded");
     }
     else {
-      requiredModules.add(moduleName);
+      if (moduleName.startsWith("java.") || moduleName.startsWith("jdk.")) {
+        // this is only a first guess.
+        // if it turns out later that this is a dependency, it will be moved back to application artifacts
+        runtimeModules.add(moduleName);
+      }
+      else {
+        requiredModules.add(moduleName);
+      }
     }
   }
 
