@@ -325,13 +325,16 @@ public class JlinkResolver {
   private final Set<String> requiredModules;                        // all required application modules
   private final Set<String> runtimeModules;                         // all required java runtime modules
 
+  private final boolean jdeps12AndNewer;                            // true if jdeps since java 12, requires --ignore-missing-deps
+
   /**
    * Creates a resolver.
    *
    * @param mojo the base mojo
    * @param artifacts the maven artifacts
+   * @throws MojoExecutionException if jdeps version could not be determined
    */
-  public JlinkResolver(AbstractJlinkMojo mojo, Set<Artifact> artifacts) {
+  public JlinkResolver(AbstractJlinkMojo mojo, Set<Artifact> artifacts) throws MojoExecutionException {
     this.artifacts = artifacts;
     this.mojo = mojo;
 
@@ -339,6 +342,9 @@ public class JlinkResolver {
     modules = new LinkedHashMap<>();
     requiredModules = new HashSet<>();
     runtimeModules = new HashSet<>();
+
+    // we use at least java 11. But TT works with 12 and above as well...
+    jdeps12AndNewer = !new ToolRunner(mojo.getJdepsTool()).arg("--version").run().getOutputAsString().startsWith("11");
   }
 
   /**
@@ -510,7 +516,14 @@ public class JlinkResolver {
   }
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
-    for (String line: new ToolRunner(mojo.getJdepsTool()).arg("--list-deps").arg(artifact.getFile()).run().getOutput()) {
+    ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
+    if (jdeps12AndNewer) {
+      // necessary since java 12
+      jdepsRunner.arg("--ignore-missing-deps");
+    }
+    jdepsRunner.arg(artifact.getFile());
+
+    for (String line: jdepsRunner.run().getOutput()) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
         mojo.getLog().debug(artifact + " (non-module): " + line);
