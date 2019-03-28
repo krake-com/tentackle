@@ -96,6 +96,16 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
+  public boolean isEditAllowed() {
+    return editorExists() && pdo.isEditAllowed();
+  }
+
+  @Override
+  public boolean isViewAllowed() {
+    return editorExists() && pdo.isViewAllowed();
+  }
+
+  @Override
   public PdoEditor<T> createEditor() {
     throw new FxRuntimeException("no controller for " + pdo.toGenericString());
   }
