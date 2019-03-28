@@ -111,6 +111,16 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
   }
 
   @Override
+  public boolean isEditAllowed() {
+    return editorExists() && pdo.isEditAllowed();
+  }
+
+  @Override
+  public boolean isViewAllowed() {
+    return editorExists() && pdo.isViewAllowed();
+  }
+
+  @Override
   public PdoEditor<T> createEditor() {
     if (editorExists()) {
       return new DefaultPdoEditor<>(getPdo().getEffectiveClass(), isBundleProvided() ? getBundle() : null);
