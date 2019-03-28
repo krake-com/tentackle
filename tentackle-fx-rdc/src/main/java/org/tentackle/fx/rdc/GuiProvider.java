@@ -78,6 +78,20 @@ public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHol
   boolean editorExists();
 
   /**
+   * Returns whether the editor allows editing of the current pdo.
+   *
+   * @return true if editing allowed, always false if !editorExists
+   */
+  boolean isEditAllowed();
+
+  /**
+   * Returns whether the editor allows viewing of the current pdo.
+   *
+   * @return true if viewing allowed, always false if !editorExists
+   */
+  boolean isViewAllowed();
+
+  /**
    * Creates a controller to edit or view this object.
    *
    * @return the controller
