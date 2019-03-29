@@ -267,6 +267,7 @@ of the superclass'es builder.
      * Sets @(property.getComment())@.
      *
      * \@param @(property.getName())@ @(property.getComment())@
+     * \@return the builder
      */
     public Builder @(property.getName())@(@(property.getType())@ @(property.getName())@) {
       this.@(property.getName())@ = @(property.getName())@;
