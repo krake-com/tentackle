@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>11.3.0.0</version>
+    <version>11.3.0.1-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle.session.osgi</artifactId>
-  <version>11.3.0.0</version>
+  <version>11.3.0.1-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <name>Tentackle Session OSGi Bundle</name>

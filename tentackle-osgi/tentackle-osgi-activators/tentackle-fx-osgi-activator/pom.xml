@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>11.3.0.0</version>
+    <version>11.3.0.1-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-fx-osgi-activator</artifactId>
-  <version>11.3.0.0</version>
+  <version>11.3.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Tentackle FX OSGi Bundle Activator</name>

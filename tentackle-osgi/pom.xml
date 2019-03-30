@@ -8,14 +8,14 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>11.3.0.0</version>
+    <version>11.3.0.1-SNAPSHOT</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
-  <version>11.3.0.0</version>
+  <version>11.3.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Tentackle OSGi Parent</name>
