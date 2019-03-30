@@ -19,15 +19,17 @@
 
 package org.tentackle.wurblet;
 
+import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelHelper;
+import org.wurbelizer.wurblet.AbstractJavaWurblet;
+
+import org.tentackle.common.StringHelper;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.tentackle.common.StringHelper;
-import org.wurbelizer.wurbel.WurbelException;
-import org.wurbelizer.wurbel.WurbelHelper;
-import org.wurbelizer.wurblet.AbstractWurblet;
 
 
 /**
@@ -37,19 +39,19 @@ import org.wurbelizer.wurblet.AbstractWurblet;
  *
  * @author harald
  */
-public class DTOWurblet extends AbstractWurblet {
+public class DTOWurblet extends AbstractJavaWurblet {
 
   /**
    * DTO property.
    */
-  protected static class Property {
+  protected class Property {
 
     private final String type;                // the java type
     private final String name;                // the property name
     private final String comment;             // the comment
     private final boolean inherited;          // true if inherited
     private final boolean mutable;            // true if with setter instead of final
-    private final String[] annotations;       // optional annotations for getters and setters
+    private final List<String> annotations;   // optional annotations for getters and setters
 
     public Property(String type, String name, String comment) {
       if (type.startsWith("^")) {
@@ -69,7 +71,7 @@ public class DTOWurblet extends AbstractWurblet {
       }
       this.name = name;
       StringBuilder buf = new StringBuilder(comment == null || comment.isEmpty() ? "the " + name + " property" : comment);
-      this.annotations = parseComment(buf);
+      this.annotations = parseAnnotations(buf);
       this.comment = buf.toString().trim();
     }
 
@@ -101,58 +103,37 @@ public class DTOWurblet extends AbstractWurblet {
       return "set" + StringHelper.firstToUpper(name);
     }
 
-    public String[] getAnnotations() {
+    public List<String> getAnnotations() {
       return annotations;
     }
 
-    public boolean isBindableAnnotationPresent() {
-      for (String anno: annotations) {
-        if (anno.startsWith("@Bindable")) {
-          return true;
+    public void addGlobalAnnotation(String globalAnnotation) {
+      for (String annotation: annotations) {
+        StringBuilder annoName = new StringBuilder();
+        for (int i=0; i < annotation.length(); i++) {
+          char c = annotation.charAt(i);
+          if (c == '(') {
+            break;
+          }
+          if (!Character.isWhitespace(c)) {
+            annoName.append(c);
+          }
+        }
+        if (annoName.toString().equals(globalAnnotation)) {
+          return;
         }
       }
-      return false;
-    }
-
-    private String[] parseComment(StringBuilder commentBuf) {
-      List<String> annos = new ArrayList<>();
-      String cmt = commentBuf.toString();
-      commentBuf.setLength(0);
-      StringBuilder anno = null;
-      for (int i=0; i < cmt.length(); i++) {
-        char c = cmt.charAt(i);
-        if (anno == null) {
-          if (c == '[') {
-            anno = new StringBuilder();
-          }
-          else {
-            commentBuf.append(c);
-          }
-        }
-        else {
-          if (c == ']') {
-            String an = anno.toString().trim();
-            if (!an.isEmpty()) {
-              annos.add(an);
-            }
-            anno = null;
-          }
-          else {
-            anno.append(c);
-          }
-        }
-      }
-      return annos.toArray(new String[0]);
+      annotations.add(globalAnnotation);
     }
   }
 
 
 
   protected String filename;            // filename of the here-doc holding the model (usually given as "$> .$filename")
+  protected List<String> annotations;   // global annotations
   protected List<Property> properties;  // the DTO properties
   protected boolean needConstructor;    // true if constructor necessary
   protected boolean withBuilder;        // use the builder pattern
-  protected boolean withBindable;       // add @Bindable annotation
   protected String extendsWithBuilder;  // only if builder pattern: super classname (must be with builder as well)
 
 
@@ -167,9 +148,6 @@ public class DTOWurblet extends AbstractWurblet {
     for (String arg: getContainer().getArgs()) {
       if ("--builder".equals(arg)) {
         withBuilder = true;
-      }
-      else if ("--bindable".equals(arg)) {
-        withBindable = true;
       }
       else if (filename == null && !arg.startsWith("--")) {
         filename = arg;
@@ -190,11 +168,17 @@ public class DTOWurblet extends AbstractWurblet {
     }
 
     properties = new ArrayList<>();
+    annotations = new ArrayList<>();
 
     try (BufferedReader reader = new BufferedReader(WurbelHelper.openReader(filename))) {
       String line;
       while ((line = reader.readLine()) != null) {
-        if (!StringHelper.isAllWhitespace(line) && !line.startsWith("#")) {
+        line = line.trim();
+        if (line.startsWith("[")) {
+          // global annotations
+          annotations.addAll(parseAnnotations(new StringBuilder(line)));
+        }
+        else if (!line.startsWith("#")) {
           StringTokenizer stok = new StringTokenizer(line);
           String type = null;
           String name = null;
@@ -224,10 +208,56 @@ public class DTOWurblet extends AbstractWurblet {
           properties.add(property);
         }
       }
+
+      // apply global annotations but only if not already used in properties
+      // for example @Bindable overridden in property line with @Bindable(MAXCOLS=50)
+      for (String annotation: annotations) {
+        for (Property property : properties) {
+          property.addGlobalAnnotation(annotation);
+        }
+      }
     }
     catch (IOException ex) {
       throw new WurbelException("reading model " + filename + " failed", ex);
     }
+  }
+
+
+  /**
+   * Extracts the annotations in square brackets from a comment string.
+   *
+   * @param commentBuf the updated comment string buffer
+   * @return the annotations, never null
+   */
+  private List<String> parseAnnotations(StringBuilder commentBuf) {
+    List<String> annos = new ArrayList<>();
+    String cmt = commentBuf.toString();
+    commentBuf.setLength(0);
+    StringBuilder anno = null;
+    for (int i=0; i < cmt.length(); i++) {
+      char c = cmt.charAt(i);
+      if (anno == null) {
+        if (c == '[') {
+          anno = new StringBuilder();
+        }
+        else {
+          commentBuf.append(c);
+        }
+      }
+      else {
+        if (c == ']') {
+          String an = anno.toString().trim();
+          if (!an.isEmpty() && an.startsWith("@")) {
+            annos.add(an);
+          }
+          anno = null;
+        }
+        else {
+          anno.append(c);
+        }
+      }
+    }
+    return annos;
   }
 
 }

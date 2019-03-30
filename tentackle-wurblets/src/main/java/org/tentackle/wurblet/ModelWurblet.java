@@ -19,15 +19,13 @@
 
 package org.tentackle.wurblet;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.wurbelizer.wurbel.JavaSourceType;
+import org.wurbelizer.wurbel.WurbelException;
+import org.wurbelizer.wurbel.WurbelTerminationException;
+import org.wurbelizer.wurbel.Wurbler;
+import org.wurbelizer.wurblet.AbstractJavaWurblet;
+import org.wurbelizer.wurblet.AbstractWurblet;
+
 import org.tentackle.common.Constants;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
@@ -41,16 +39,21 @@ import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
-import org.wurbelizer.wurbel.JavaSourceType;
-import org.wurbelizer.wurbel.WurbelException;
-import org.wurbelizer.wurbel.WurbelTerminationException;
-import org.wurbelizer.wurbel.Wurbler;
-import org.wurbelizer.wurblet.AbstractWurblet;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 
 /**
- * Extended {@link AbstractWurblet} providing basic functionality for the persistent object model.
+ * Extended {@link AbstractJavaWurblet} providing basic functionality for the persistent object model.
  * <p>
  * The following wurblet options are parsed:
  * <ul>
@@ -62,7 +65,7 @@ import org.wurbelizer.wurblet.AbstractWurblet;
  * For the general form of a wurblet-anchor, see {@link AbstractWurblet}.
  * @author  harald
  */
-public class ModelWurblet extends AbstractWurblet {
+public class ModelWurblet extends AbstractJavaWurblet {
 
   private static final Pattern ANNOTATION_PATTERN = Pattern.compile("\\s*([\\w\\.]+)\\.class");  // only 1-line annos for now
 
