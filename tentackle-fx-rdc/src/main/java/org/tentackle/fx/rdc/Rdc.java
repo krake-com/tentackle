@@ -32,6 +32,7 @@ import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Collected factory methods for FX-RDC-related stuff.<br>
@@ -216,6 +217,44 @@ public class Rdc {
   public static void closeStageHierarchy(Node node) {
     FxUtilities.getInstance().closeStageHierarchy(node, DesktopApplication.getDesktopApplication().getMainStage());
   }
+
+
+  /**
+   * Runs some code in another thread and optionally updates the UI.<br>
+   * The method is provided to hide the concrete implementation and make it replaceable.<br>
+   * Use this method whenever some lengthy operation (database I/O, for example) would otherwise
+   * block the event queue.
+   * <p>
+   * Example:
+   * <pre>
+   *   Rdc.bg(() -&gt; {
+   *              on(MyPdo.class).findWhateverItTakes()...
+   *              ...
+   *              return "Done";
+   *          },
+   *          s -&gt; Fx.info(s));
+   * </pre>
+   *
+   * @param runner the code running in another thread in parallel to the FX thread
+   * @param updateUI optional UI updater invoked from within the FX event queue
+   * @param <V> the type returned by the runner
+   * @see RdcUtilities#runInBackground(Supplier, Consumer)
+   */
+  public static <V> void bg(Supplier<V> runner, Consumer<V> updateUI) {
+    RdcUtilities.getInstance().runInBackground(runner, updateUI);
+  }
+
+  /**
+   * Runs some code in another thread.<br>
+   *
+   * @param runner the code running in another thread in parallel to the FX thread
+   * @param <V> the type returned by the runner
+   * @see #bg(Supplier, Consumer)
+   */
+  public static <V> void bg(Supplier<V> runner) {
+    bg(runner, null);
+  }
+
 
   private Rdc() {}
 }

@@ -40,6 +40,8 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
 import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.AbstractSessionTask;
+import org.tentackle.session.ModificationTracker;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 interface RdcUtilitiesHolder {
   RdcUtilities INSTANCE = ServiceFactory.createService(RdcUtilities.class);
@@ -346,6 +349,39 @@ public class RdcUtilities {
       }
     });
     alert.show();
+  }
+
+
+  /**
+   * Runs some code in another thread and optionally updates the UI.<br>
+   * The method is provided to hide the concrete implementation and make it replaceable.<br>
+   * Use this method whenever some lengthy operation (database I/O, for example) would otherwise
+   * block the event queue.
+   * <p>
+   * The default implementation creates a {@link org.tentackle.task.Task} and runs it
+   * on behalf of the {@link ModificationTracker}. The result is then passed to {@code updateUI}
+   * and executed via {@link Platform#runLater(Runnable)}.
+   *
+   * @param runner the code running in another thread in parallel to the FX thread
+   * @param updateUI optional UI updater invoked from within the FX event queue, null if none
+   * @param <V> the type returned by the runner
+   * @see Rdc#bg(Supplier, Consumer)
+   */
+  public <V> void runInBackground(Supplier<V> runner, Consumer<V> updateUI) {
+    ModificationTracker.getInstance().addTask(new AbstractSessionTask() {
+      @Override
+      public void run() {
+        try {
+          V value = runner.get();
+          if (updateUI != null) {
+            Platform.runLater(() -> updateUI.accept(value));
+          }
+        }
+        catch (RuntimeException rx) {
+          Platform.runLater(() -> Fx.error(rx.getLocalizedMessage(), rx));
+        }
+      }
+    });
   }
 
 }
