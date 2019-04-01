@@ -245,14 +245,16 @@ public class Rdc {
   }
 
   /**
-   * Runs some code in another thread.<br>
+   * Runs some code in another thread.
    *
    * @param runner the code running in another thread in parallel to the FX thread
-   * @param <V> the type returned by the runner
    * @see #bg(Supplier, Consumer)
    */
-  public static <V> void bg(Supplier<V> runner) {
-    bg(runner, null);
+  public static void bg(Runnable runner) {
+    bg(() -> {
+      runner.run();
+      return null;
+    }, null);
   }
 
 
