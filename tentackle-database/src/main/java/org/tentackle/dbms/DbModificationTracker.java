@@ -343,6 +343,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   private long delayedSleepInterval;                                // != 0 if this is the next max. sleep interval
   private DbModification masterModification;                        // po to access the master serial
   private boolean localClientMode;                                  // true if local session and not a server
+  private long lastPollTime;                                        // last polling time
 
 
   /**
@@ -670,31 +671,38 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   @Override
   @SuppressWarnings("unchecked")
   protected void lockInternal() {
-    try {
-      poll();
-      invokeDelayedListeners();
-    }
-    catch (Throwable t) {
-      if (!ExceptionHelper.handleException(true, t,
-              new ExceptionHelper.Handler<ReconnectedException>(ReconnectedException.class, rx -> {
-                // reconnected: just log and start over.
-                // requires Db.enableReconnection(true, >0) on the tracker's session
-                LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
-              }),
-              new ExceptionHelper.Handler<SessionClosedException>(SessionClosedException.class, sx -> {
-                // if remote: session has been closed by the server (deadlock, timeout, whatever)
-                // if local: database server has closed the session
-                // reopen once and treat as if polling was ok
-                // if the session could not be re-opened: the process will terminate
-                if (getSession().getSessionGroupId() == 0) {    // only if ungrouped (else rich client)
-                  LOGGER.severe("session " + getSession() + " closed unexpectedly -> try to re-open ...", sx);
-                  getSession().reOpen();
-                }
-                else {
-                  throw sx;
-                }
-              }))) {
-        throw t;  // all other exceptions will be thrown as is
+    long currentTime = System.currentTimeMillis();
+    if (currentTime - lastPollTime > getSleepInterval() / 2) {
+      // don't poll too often, at most each half sleep interval
+      lastPollTime = currentTime;
+
+      try {
+        poll();
+        invokeDelayedListeners();
+      }
+      catch (Throwable t) {
+        if (!ExceptionHelper.handleException(
+            true, t,
+            new ExceptionHelper.Handler<ReconnectedException>(ReconnectedException.class, rx -> {
+              // reconnected: just log and start over.
+              // requires Db.enableReconnection(true, >0) on the tracker's session
+              LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
+            }),
+            new ExceptionHelper.Handler<SessionClosedException>(SessionClosedException.class, sx -> {
+              // if remote: session has been closed by the server (deadlock, timeout, whatever)
+              // if local: database server has closed the session
+              // reopen once and treat as if polling was ok
+              // if the session could not be re-opened: the process will terminate
+              if (getSession().getSessionGroupId() == 0) {    // only if ungrouped (else rich client)
+                LOGGER.severe("session " + getSession() + " closed unexpectedly -> try to re-open ...", sx);
+                getSession().reOpen();
+              }
+              else {
+                throw sx;
+              }
+            }))) {
+          throw t;  // all other exceptions will be thrown as is
+        }
       }
     }
 
