@@ -19,6 +19,10 @@
 
 package org.tentackle.task;
 
+import org.tentackle.daemon.Supervisable;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.NamedCounter;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,9 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.tentackle.daemon.Supervisable;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.NamedCounter;
 
 
 /**
@@ -520,11 +521,14 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
   /**
    * Releases a lock after having executed a task from the queue (or none).
    *
-   * @param sleepMs milliseconds to sleep after unlock, 0 if no sleep
+   * @param sleepMs milliseconds to sleep after unlock, 0 if no sleep, limited to {@link #getSleepInterval()}
    */
   protected void unlockInternal(long sleepMs) {
     unlockImpl(null);
     if (sleepMs > 0 && !wasInterrupted) {
+      if (sleepMs > sleepInterval) {
+        sleepMs = sleepInterval;
+      }
       sleepForInterval(sleepMs);
     }
     wasInterrupted = false;
