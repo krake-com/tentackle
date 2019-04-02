@@ -383,29 +383,24 @@ For more options, see {\@link DbModelWurblet}.
           suffix += "ForCache";
         }
 ]@
-
       @(name)@Index = new PdoCacheIndex<>("@(pdoName)@:@(name)@") {
-
-          \@Override
-          public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
-            return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(name)@);
-          }
-
-          \@Override
-          public @(type)@ extract(@(pdoName)@ pdo) {
-            return pdo.get@(suffix)@();
-          }
-        };
+        \@Override
+        public @(pdoName)@ select(DomainContext context, @(type)@ @(name)@) {
+          return Pdo.create(@(pdoName)@.class, context).selectBy@(suffix)@(@(name)@);
+        }
+        \@Override
+        public @(type)@ extract(@(pdoName)@ pdo) {
+          return pdo.get@(suffix)@();
+        }
+      };
 @[
       }
 
       if (genudk) {
 ]@
-
       udkIndex = new PdoCacheIndex<>("@(pdoName)@:UDK") {
-
-          \@Override
-          public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
+        \@Override
+        public @(pdoName)@ select(DomainContext context, @(udkType)@ @(udkName)@) {
 @[
         if (isRemote()) {
           RemoteIncludes genInc = new RemoteIncludes(this);
@@ -426,45 +421,35 @@ For more options, see {\@link DbModelWurblet}.
     }
   }
 @{to}@
-            return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKeyForCache(@(udkName)@);
+          return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKeyForCache(@(udkName)@);
 @[
         }
         else {
 ]@
-            return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKey(@(udkName)@);
+          return Pdo.create(@(pdoName)@.class, context).findByUniqueDomainKey(@(udkName)@);
 @[
         }
 ]@
-          }
-
-          \@Override
-          public @(udkType)@ extract(@(pdoName)@ pdo) {
-            return pdo.get@(udkSuffix)@();
-          }
-        };
+        }
+        \@Override
+        public @(udkType)@ extract(@(pdoName)@ pdo) {
+          return pdo.get@(udkSuffix)@();
+        }
+      };
 @[
       }
 
-]@
-
-      ModificationTracker.getInstance().addModificationListener(new PdoListener(@(pdoName)@.class) {
-
-        \@Override
-        public void dataChanged(ModificationEvent ev) {
-@[
       if (delayed)  {
 ]@
-          cache.expire(ev.getSerial()); // delayed expiration
+      Pdo.listen(ev -> cache.expire(ev.getSerial()), @(pdoName)@.class);
 @[
       }
       else {
 ]@
-          cache.expire(ev.getSession(), ev.getSerial()); // immediate expiration
+      Pdo.listen(ev -> cache.expire(ev.getSession(), ev.getSerial()), @(pdoName)@.class);
 @[
       }
 ]@
-        }
-      });
     }
     return cache;
   }

@@ -29,13 +29,10 @@ import org.tentackle.ns.pdo.NumberRangePersistence;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.persist.ns.rmi.NumberRangeRemoteDelegate;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
@@ -445,14 +442,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
   private static synchronized PdoCache<NumberRange> createCache() {
     if (cache == null) {
       cache = Pdo.createPdoCache(NumberRange.class, true, true, false);
-
-      ModificationTracker.getInstance().addModificationListener(new PdoListener(NumberRange.class) {
-
-        @Override
-        public void dataChanged(ModificationEvent ev) {
-          cache.expire(ev.getSerial()); // delayed expiration
-        }
-      });
+      Pdo.listen(ev -> cache.expire(ev.getSerial()), NumberRange.class);
     }
     return cache;
   }

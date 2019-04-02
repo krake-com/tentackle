@@ -27,7 +27,6 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
-import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
@@ -35,8 +34,6 @@ import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityPersistence;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
@@ -355,14 +352,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
   private static synchronized PdoCache<Security> createCache() {
     if (cache == null) {
       cache = Pdo.createPdoCache(Security.class, true, true, false);
-
-      ModificationTracker.getInstance().addModificationListener(new PdoListener(Security.class) {
-
-        @Override
-        public void dataChanged(ModificationEvent ev) {
-          cache.expire(ev.getSerial()); // delayed expiration
-        }
-      });
+      Pdo.listen(ev -> cache.expire(ev.getSerial()), Security.class);
     }
     return cache;
   }
