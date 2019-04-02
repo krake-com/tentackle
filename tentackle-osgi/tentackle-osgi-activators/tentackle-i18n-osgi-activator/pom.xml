@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>11.3.1.0-SNAPSHOT</version>
+    <version>3.1.0-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-i18n-osgi-activator</artifactId>
-  <version>11.3.1.0-SNAPSHOT</version>
+  <version>3.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Tentackle I18N OSGi Bundle Activator</name>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-common</artifactId>
-      <version>${project.version}</version>
+      <version>${tentackle.version}</version>
     </dependency>
   </dependencies>
 
