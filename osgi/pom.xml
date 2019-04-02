@@ -8,13 +8,18 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.2.0</version>
+    <version>8.2.3.1-SNAPSHOT</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
-  <version>8.2.2.0</version>
+  <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. 8. must be omitted -->
+  <version>2.3.1-SNAPSHOT</version>
   <packaging>pom</packaging>
+
+  <properties>
+    <tentackle.version>8.2.3.1-SNAPSHOT</tentackle.version>
+  </properties>
 
   <name>Tentackle OSGi Parent</name>
   <description>OSGi Parent pom.xml for the Tentackle modules.</description>
