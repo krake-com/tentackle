@@ -30,15 +30,12 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoCacheIndex;
-import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.pdo.PersistentObjectService;
 import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.persist.Join;
 import org.tentackle.persist.JoinedSelect;
 import org.tentackle.persist.PersistentObjectClassVariables;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
@@ -515,27 +512,17 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   private static synchronized PdoCache<StoredBundle> createCache() {
     if (cache == null) {
       cache = Pdo.createPdoCache(StoredBundle.class, false, true, false);
-
       udkIndex = new PdoCacheIndex<>("StoredBundle:UDK") {
-
-          @Override
-          public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
-            return Pdo.create(StoredBundle.class, context).findByUniqueDomainKeyForCache(udk);
-          }
-
-          @Override
-          public StoredBundle.StoredBundleUDK extract(StoredBundle pdo) {
-            return pdo.getUniqueDomainKey();
-          }
-        };
-
-      ModificationTracker.getInstance().addModificationListener(new PdoListener(StoredBundle.class) {
-
         @Override
-        public void dataChanged(ModificationEvent ev) {
-          cache.expire(ev.getSerial()); // delayed expiration
+        public StoredBundle select(DomainContext context, StoredBundle.StoredBundleUDK udk) {
+          return Pdo.create(StoredBundle.class, context).findByUniqueDomainKeyForCache(udk);
         }
-      });
+        @Override
+        public StoredBundle.StoredBundleUDK extract(StoredBundle pdo) {
+          return pdo.getUniqueDomainKey();
+        }
+      };
+      Pdo.listen(ev -> cache.expire(ev.getSerial()), StoredBundle.class);
     }
     return cache;
   }
