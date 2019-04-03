@@ -28,8 +28,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
@@ -606,17 +606,30 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
 
 
   /**
-   * Determines the next task to execute.
+   * Determines the next task to execute.<br>
+   * If the only tasks left are scheduled for the future, the task with the minimum scheduled
+   * time will be returned.
    *
    * @return the task, null if no more tasks
    */
   protected Task nextTask() {
-    try {
-      return queue.first();
+    Task executableTask = null;
+    long minScheduled = Long.MAX_VALUE;
+    // the queue is sorted fifo, not the optional scheduled time
+    for (Iterator<Task> iterator = queue.iterator(); iterator.hasNext(); ) {
+      Task task = iterator.next();
+      long scheduled = task.getScheduledEpochalTime();    // 0 for most tasks, otherwise some calculated or fixed value
+      if (scheduled <= lastMillis) {
+        executableTask = task;
+        break;    // ready to execute
+      }
+      // not ready for execution yet: remember the earliest task
+      if (scheduled < minScheduled) {
+        minScheduled = scheduled;
+        executableTask = task;
+      }
     }
-    catch (NoSuchElementException nse) {
-      return null;
-    }
+    return executableTask;
   }
 
   /**
