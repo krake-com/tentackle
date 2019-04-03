@@ -689,14 +689,7 @@ public class Pdo {
    * @return the registered PDO listener
    */
   public static PdoListener listen(Consumer<ModificationEvent> handler, Class<?>... classes) {
-    PdoListener listener = new PdoListener(classes) {
-      @Override
-      public void dataChanged(ModificationEvent ev) {
-        handler.accept(ev);
-      }
-    };
-    ModificationTracker.getInstance().addModificationListener(listener);
-    return listener;
+    return PdoUtilities.getInstance().listen(handler, classes);
   }
 
   /**
@@ -710,14 +703,7 @@ public class Pdo {
    * @return the registered PDO listener
    */
   public static PdoListener listen(Runnable handler, Class<?>... classes) {
-    PdoListener listener = new PdoListener(classes) {
-      @Override
-      public void dataChanged(ModificationEvent ev) {
-        handler.run();
-      }
-    };
-    ModificationTracker.getInstance().addModificationListener(listener);
-    return listener;
+    return PdoUtilities.getInstance().listen(handler, classes);
   }
 
   /**
@@ -726,7 +712,7 @@ public class Pdo {
    * @param listener the listener to remove
    */
   public static void unlisten(PdoListener listener) {
-    ModificationTracker.getInstance().removeModificationListener(listener);
+    PdoUtilities.getInstance().unlisten(listener);
   }
 
 
