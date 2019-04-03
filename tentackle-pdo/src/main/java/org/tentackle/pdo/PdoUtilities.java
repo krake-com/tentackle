@@ -24,6 +24,8 @@ import org.tentackle.common.ServiceFinder;
 import org.tentackle.common.StringHelper;
 import org.tentackle.misc.IdentifiableKey;
 import org.tentackle.misc.TrackedList;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 
 interface PdoUtilitiesHolder {
@@ -608,6 +611,56 @@ public class PdoUtilities {
     }
 
     return attributes;
+  }
+
+
+  /**
+   * Adds a listener for a modification on given PDO classes.<br>
+   * This is just a convenience wrapper for {@link PdoListener} to make use of lambdas.
+   *
+   * @param handler the handler of the {@link ModificationEvent}
+   * @param classes the PDO classes
+   * @return the registered PDO listener
+   */
+  public PdoListener listen(Consumer<ModificationEvent> handler, Class<?>... classes) {
+    PdoListener listener = new PdoListener(classes) {
+      @Override
+      public void dataChanged(ModificationEvent ev) {
+        handler.accept(ev);
+      }
+    };
+    ModificationTracker.getInstance().addModificationListener(listener);
+    return listener;
+  }
+
+  /**
+   * Adds a listener for a modification on given PDO classes.<br>
+   * This is just a convenience wrapper for {@link PdoListener} to make use of lambdas.<br>
+   * Same as {@link #listen(Consumer, Class[])}, but for handlers that don't need to refer to the
+   * {@link ModificationEvent}.
+   *
+   * @param handler the handler to be invoked
+   * @param classes the PDO classes
+   * @return the registered PDO listener
+   */
+  public PdoListener listen(Runnable handler, Class<?>... classes) {
+    PdoListener listener = new PdoListener(classes) {
+      @Override
+      public void dataChanged(ModificationEvent ev) {
+        handler.run();
+      }
+    };
+    ModificationTracker.getInstance().addModificationListener(listener);
+    return listener;
+  }
+
+  /**
+   * Unregisters a registered PDO listener.
+   *
+   * @param listener the listener to remove
+   */
+  public void unlisten(PdoListener listener) {
+    ModificationTracker.getInstance().removeModificationListener(listener);
   }
 
 }
