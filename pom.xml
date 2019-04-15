@@ -170,7 +170,7 @@
       <dependency>
         <groupId>org.apache.poi</groupId>
         <artifactId>poi</artifactId>
-        <version>4.0.1</version>
+        <version>4.1.0</version>
       </dependency>
 
       <dependency>
@@ -200,7 +200,7 @@
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.6.0</version>
+        <version>9.2.7.0</version>
       </dependency>
 
       <dependency>
@@ -270,7 +270,12 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-java</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.plexus</groupId>
+        <artifactId>plexus-archiver</artifactId>
+        <version>4.1.0</version>
       </dependency>
 
     </dependencies>
@@ -313,7 +318,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-help-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.1.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -336,7 +341,7 @@
             <dependency>
               <groupId>org.apache.maven.wagon</groupId>
               <artifactId>wagon-ssh</artifactId>
-              <version>3.2.0</version>
+              <version>3.3.2</version>
             </dependency>
             <dependency>
               <groupId>org.ow2.asm</groupId>
@@ -404,6 +409,8 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
+          <!-- need to stick with 3.0.1 since 3.1.0 cannot doc a non-module referencing a module
+               (such as buildsupport which deps on common) -->
           <version>3.0.1</version>
           <dependencies>
             <dependency>
@@ -416,7 +423,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.1.1</version>
           <configuration>
             <archive>
               <manifest>
@@ -457,7 +464,7 @@
         <plugin>
           <groupId>org.owasp</groupId>
           <artifactId>dependency-check-maven</artifactId>
-          <version>3.3.2</version>
+          <version>4.0.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
