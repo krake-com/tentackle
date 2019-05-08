@@ -111,4 +111,13 @@ public interface EntityOptions extends CommonOptions {
    */
   boolean isRemote();
 
+  /**
+   * Returns whether the DDL of this entity is maintained by another application.<br>
+   * Provided entities are ignored by the tentackle-sql maven plugin and no SQL-code will be generated at all,
+   * neither for create nor any migration.
+   *
+   * @return true if provided
+   */
+  boolean isProvided();
+
 }
