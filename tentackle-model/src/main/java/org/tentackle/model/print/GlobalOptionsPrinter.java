@@ -18,7 +18,6 @@
 
 package org.tentackle.model.print;
 
-import java.util.Objects;
 import org.tentackle.common.Constants;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Entity;
@@ -27,6 +26,8 @@ import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.TrackType;
 import org.tentackle.model.impl.CommonOptionsImpl;
 import org.tentackle.model.impl.EntityOptionsImpl;
+
+import java.util.Objects;
 
 /**
  * Prints the global options.
@@ -155,6 +156,9 @@ public class GlobalOptionsPrinter {
       }
       if (options.isRemote()) {
         buf.append(EntityOptionsImpl.OPTION_REMOTE).append(',');
+      }
+      if (options.isProvided()) {
+        buf.append(EntityOptionsImpl.OPTION_PROVIDED).append(',');
       }
     }
     else {

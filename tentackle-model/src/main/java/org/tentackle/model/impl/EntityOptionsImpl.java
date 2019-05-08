@@ -64,6 +64,9 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   /** enable remoting. */
   public static final String OPTION_REMOTE = "REMOTE";
 
+  /** entity provided by externally. */
+  public static final String OPTION_PROVIDED = "PROVIDED";
+
 
 
 
@@ -81,6 +84,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   private boolean rootIdProvided;
   private boolean rootClassIdProvided;
   private boolean remote;
+  private boolean provided;
   private List<String> sorting;   // != null if '|' found
 
 
@@ -134,6 +138,10 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         case OPTION_REMOTE:
           setRemote(on);
+          break;
+
+        case OPTION_PROVIDED:
+          setProvided(on);
           break;
 
         case OPTION_TABLESERIAL:
@@ -255,6 +263,11 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   @Override
   public boolean isRemote() {
     return remote;
+  }
+
+  @Override
+  public boolean isProvided() {
+    return provided;
   }
 
   @Override
@@ -413,4 +426,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
     this.remote = remote;
   }
 
+  public void setProvided(boolean provided) {
+    this.provided = provided;
+  }
 }

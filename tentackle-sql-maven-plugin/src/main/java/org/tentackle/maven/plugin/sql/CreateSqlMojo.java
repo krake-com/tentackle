@@ -113,7 +113,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             if (entity == null) {
               throw new MojoExecutionException("no entity for path " + modelFile.getPath());
             }
-            if (entity.getTableProvidingEntity() == entity) {
+            if (entity.getTableProvidingEntity() == entity && !entity.getOptions().isProvided()) {
               // create table
               sqlWriter.append('\n');
               sqlWriter.append(entity.sqlCreateTable(backendInfo.getBackend()));
