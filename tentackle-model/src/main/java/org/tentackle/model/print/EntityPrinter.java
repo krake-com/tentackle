@@ -18,13 +18,14 @@
 
 package org.tentackle.model.print;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Relation;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Prints the model of an entity.
@@ -58,7 +59,7 @@ public class EntityPrinter {
     buf.setLength(0);
 
     if (configuration.isPrintingAsComment()) {
-      buf.append("/**\n");
+      buf.append("/*\n");
       if (configuration.isUsingVariables()) {
         buf.append(" * @> $mapping\n");
       }
