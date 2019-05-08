@@ -18,18 +18,20 @@
 
 package org.tentackle.model.print;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.testng.annotations.Test;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Entity;
 import org.tentackle.model.Index;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.impl.IndexImpl;
-import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.tentackle.model.impl.ModelTest.MODEL_FILENAME;
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  *
@@ -38,7 +40,7 @@ import static org.testng.Assert.*;
 public class EntityPrinterTest {
 
   private static final String EXPECTED =
-"/**\n" +
+"/*\n" +
 " * @> $mapping\n" +
 " * \n" +
 " * # the invoice header\n" +
