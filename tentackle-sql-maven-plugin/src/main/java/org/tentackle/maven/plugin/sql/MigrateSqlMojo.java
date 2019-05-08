@@ -320,7 +320,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             }
             try {
               Entity entity = Model.getInstance().loadByFileName(modelFile.getPath(), defaults, aliases);
-              if (entity.getTableProvidingEntity() != entity) {
+              if (entity.getTableProvidingEntity() != entity || entity.getOptions().isProvided()) {
                 continue;   // skip
               }
 

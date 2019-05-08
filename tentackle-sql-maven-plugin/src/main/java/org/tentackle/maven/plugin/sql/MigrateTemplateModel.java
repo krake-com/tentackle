@@ -53,7 +53,7 @@ public class MigrateTemplateModel extends HashMap<String, Object> {
    *
    * @param mojo the migrate mojo
    * @param backendInfo the backend info
-   * @param migratedTables set of migrated tables
+   * @param migratedEntitiesMap set of migrated tables
    * @throws MojoExecutionException if module path could not generated
    */
   public MigrateTemplateModel(MigrateSqlMojo mojo, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) throws MojoExecutionException {
