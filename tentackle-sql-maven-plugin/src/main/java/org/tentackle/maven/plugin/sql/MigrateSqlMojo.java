@@ -503,13 +503,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
     String sql = backendMigrationHints.getAlwaysBefore();
     if (!sql.isEmpty()) {
-      writeSplittedMigration(0, digits, "always_before.sql", sql, backendInfo);
+      writeSplittedMigration(0, digits, "_always_before.sql", sql, backendInfo);
     }
 
     if (!splittedMigrations.isEmpty()) {
       sql = backendMigrationHints.getAfterAll();
       if (!sql.isEmpty()) {
-        splittedMigrations.put("after_all.sql", sql);
+        splittedMigrations.put("_after_all.sql", sql);
       }
 
       int tableCount = splittedMigrations.size() + (backendMigrationHints.getAlwaysAfter().isEmpty() ? 0 : 1);
@@ -524,13 +524,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
       sql = backendMigrationHints.getBeforeAll();
       if (!sql.isEmpty()) {
-        writeSplittedMigration(0, digits, "before_all.sql", sql, backendInfo);
+        writeSplittedMigration(0, digits, "_before_all.sql", sql, backendInfo);
       }
     }
 
     sql = backendMigrationHints.getAlwaysAfter();
     if (!sql.isEmpty()) {
-      writeSplittedMigration(splittedMigrations.size(), digits, "always_after.sql", sql, backendInfo);
+      writeSplittedMigration(splittedMigrations.size() + 1, digits, "_always_after.sql", sql, backendInfo);
     }
   }
 
