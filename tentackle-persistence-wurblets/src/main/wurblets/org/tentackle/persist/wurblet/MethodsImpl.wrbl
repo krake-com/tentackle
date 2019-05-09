@@ -94,6 +94,22 @@ For more options, see {\@link DbModelWurblet}.
 
     boolean multiInheritance = getEntity().getHierarchyInheritanceType() == InheritanceType.MULTI;
 
+    boolean readOnly = getEntity().getOptions().isReadOnly();
+    if (readOnly) {
+]@
+
+  \@Override
+  public boolean isImmutable() {
+    return true;    // entity is readonly
+  }
+
+  \@Override
+  public boolean isFinallyImmutable() {
+    return true;    // cannot be made mutable again
+  }
+@[
+    }
+
     if (getEntity().getSuperEntity() == null) {
 
       if (generateIsRoot && getEntity().getOptions().isRoot()) {
@@ -380,7 +396,8 @@ For more options, see {\@link DbModelWurblet}.
 ]@
   }
 @[
-      if (multiInheritance) {
+      if (!readOnly) {
+        if (multiInheritance) {
 ]@
 
   /**
@@ -392,83 +409,86 @@ For more options, see {\@link DbModelWurblet}.
   public int setFields@(pdoClass)@(PreparedStatementWrapper st) {
     int ndx = 0;
 @[
-      }
-      else  {
+        }
+        else  {
 ]@
 
   \@Override
   public int setFields(PreparedStatementWrapper st) {
     int ndx = super.setFields(st);
 @[
-      }
+        }
 
-      for (Attribute attr: getEntity().getMappedAttributes()) {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
-          String setterName = createJdbcSetterName(attr);
+        for (Attribute attr: getEntity().getMappedAttributes()) {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly())  {
+            String setterName = createJdbcSetterName(attr);
 
-          String modelCode;
-          if (isSetGetRequired(attr)) {
-            modelCode = attr.getGetterName() + "()";
-          }
-          else {
-            modelCode = attr.getName();
-          }
+            String modelCode;
+            if (isSetGetRequired(attr)) {
+              modelCode = attr.getGetterName() + "()";
+            }
+            else {
+              modelCode = attr.getName();
+            }
 
-          String jdbcCode = getJdbcCode(attr, modelCode);
+            String jdbcCode = getJdbcCode(attr, modelCode);
 
-          if (attr.getOptions().isTrimWrite()) {
-            jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
-          }
+            if (attr.getOptions().isTrimWrite()) {
+              jdbcCode = "StringHelper.trim(" + jdbcCode + ", " + attr.getSizeWithDefault() + ")";
+            }
 
-          jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
-          if (attr.getOptions().isWithTimezone()) {
-            jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
-          }
-          if (attr.getOptions().isMapNull()) {
-            jdbcCode += ", true)";
-          }
-          else  {
-            jdbcCode += ")";
-          }
+            jdbcCode = "st." + setterName + "(++ndx, " + jdbcCode;
+            if (attr.getOptions().isWithTimezone()) {
+              jdbcCode += ", get" + attr.getMethodNameSuffix() + "TimezoneConfig()";
+            }
+            if (attr.getOptions().isMapNull()) {
+              jdbcCode += ", true)";
+            }
+            else  {
+              jdbcCode += ")";
+            }
 ]@
     @(jdbcCode)@;
 @[
 
-          // for multi column types, such as BMoney/DMoney
-          for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
+            // for multi column types, such as BMoney/DMoney
+            for (int p = 1; p < attr.getDataType().getSqlTypes().length; p++) {
 ]@
     ++ndx;
 @[
+            }
           }
         }
-      }
 
-      if (multiInheritance && getEntity().getSuperEntity() != null) {
+        if (multiInheritance && getEntity().getSuperEntity() != null) {
 ]@
     st.setLong(++ndx, getId());
 @[
-      }
+        }
 ]@
     return ndx;
   }
 @[
+      }
     }
 
     if (getEntity().getInheritanceType().isMappingToOwnTable()) {
 
-      List<String> names = new ArrayList<>();
       List<Attribute> attributes = multiInheritance ?
                                       getEntity().getTableAttributes() : getEntity().getAttributesIncludingInherited();
-      for (Attribute attr: attributes)  {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
-          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getName().toUpperCase() + sp.getPostfix();
-            names.add(name);
+      List<String> names = new ArrayList<>();
+
+      if (!readOnly) {
+        for (Attribute attr: attributes)  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly()) {
+            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+              String name = attr.getName().toUpperCase() + sp.getPostfix();
+              names.add(name);
+            }
           }
         }
-      }
 
-      if (multiInheritance) {
+        if (multiInheritance) {
 ]@
 
   /**
@@ -478,50 +498,50 @@ For more options, see {\@link DbModelWurblet}.
    */
   public String createInsertSql@(pdoClass)@() {
 @[
-      }
-      else  {
+        }
+        else  {
 ]@
 
   \@Override
   public String createInsertSql() {
 @[
-      }
+        }
 ]@
     return Backend.SQL_INSERT_INTO + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_LEFT_PARENTHESIS +
 @[
 
-      int count = 0;
-      for (String name: names) {
-        String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
+        int count = 0;
+        for (String name: names) {
+          String lineSep = count == names.size() - 1 ? " +" : " + Backend.SQL_COMMA +";
 ]@
            CN_@(name)@@(lineSep)@
 @[
-        count++;
-      }
+          count++;
+        }
 ]@
            Backend.SQL_INSERT_VALUES +
 @[
-      while (--count > 0)	{
+        while (--count > 0)	{
 ]@
            Backend.SQL_PAR_COMMA +
 @[
-      }
+        }
 ]@
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 @[
 
-      names.clear();
-      for (Attribute attr: attributes)  {
-        if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
-          for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
-            String name = attr.getName().toUpperCase() + sp.getPostfix();
-            names.add(name);
+        names.clear();
+        for (Attribute attr: attributes)  {
+          if (!attr.getOptions().isDerived() && !attr.getOptions().isReadOnly() && !isIdOrSerialAttribute(attr)) {
+            for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {
+              String name = attr.getName().toUpperCase() + sp.getPostfix();
+              names.add(name);
+            }
           }
         }
-      }
 
-      if (multiInheritance) {
+        if (multiInheritance) {
 ]@
 
   /**
@@ -531,55 +551,56 @@ For more options, see {\@link DbModelWurblet}.
    */
   public String createUpdateSql@(pdoClass)@() {
 @[
-      }
-      else  {
+        }
+        else  {
 ]@
 
   \@Override
   public String createUpdateSql() {
 @[
-      }
+        }
 ]@
     return Backend.SQL_UPDATE + @(multiInheritance ? "CLASSVARIABLES." : "")@getTableName() + Backend.SQL_SET +
 @[
-      boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
-      int ncnt = 0;
-      for (String name: names) {
-        ncnt++;
-        if (!checkSerial && ncnt == names.size()) {
+        boolean checkSerial = !multiInheritance || getEntity().getSuperEntity() == null;
+        int ncnt = 0;
+        for (String name: names) {
+          ncnt++;
+          if (!checkSerial && ncnt == names.size()) {
 ]@
            CN_@(name)@ + Backend.SQL_EQUAL_PAR +
 @[
-        }
-        else {
+          }
+          else {
 ]@
            CN_@(name)@ + Backend.SQL_EQUAL_PAR_COMMA +
 @[
+          }
         }
-      }
 
-      if (ncnt == 0 && !checkSerial) {
-        // special case: no attributes and no checkserial
+        if (ncnt == 0 && !checkSerial) {
+          // special case: no attributes and no checkserial
 ]@
            CN_ID + Backend.SQL_EQUAL + CN_ID +
 @[
-      }
+        }
 
-      if (checkSerial) {
+        if (checkSerial) {
 ]@
            CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL + Backend.SQL_PLUS_ONE +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-      }
-      else  {
+        }
+        else  {
 ]@
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
-      }
+        }
 ]@
   }
 @[
+      }
     }
 
     if (multiInheritance) {
@@ -588,6 +609,8 @@ For more options, see {\@link DbModelWurblet}.
       List<Entity> chain = topEntity.getInheritanceChain(getEntity());
       List<Entity> subs = orderByInheritanceLevelAndClassId(getEntity().getAllSubEntities());
       String topImplClass = deriveClassNameForEntity(topEntity);
+
+      if (!readOnly) {
 ]@
 
   /**
@@ -597,21 +620,24 @@ For more options, see {\@link DbModelWurblet}.
    */
   public String createDeleteSql@(pdoClass)@() {
 @[
-      if (getEntity().isRootOfInheritanceHierarchy()) {
+        if (getEntity().isRootOfInheritanceHierarchy()) {
 ]@
     return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR +
            Backend.SQL_AND + CN_SERIAL + Backend.SQL_EQUAL_PAR;
 @[
-      }
-      else  {
+        }
+        else  {
 ]@
     return Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.getTableName() +
            Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR;
 @[
-      }
+        }
 ]@
   }
+@[
+      }
+]@
 
   \@Override
   public StringBuilder createSelectAllInnerSql() {
