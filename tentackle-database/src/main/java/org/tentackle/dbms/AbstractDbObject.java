@@ -898,9 +898,8 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * <p>
    * Any attempt to invoke a setter on an immutable object
    * results in a {@link PersistenceException}.
-   * All generated methods check this. Note that even lazy loading of
-   * an immutable object isn't allowed as well because the
-   * reference to the lazily loaded object must be changed.
+   * All generated methods check this. Notice that lazy loading
+   * is still allowed.
    *
    * @param immutable true if object is immutable
    */
