@@ -19,13 +19,14 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -202,4 +203,8 @@ public class MsSql extends AbstractSql2003Backend {
     return super.extractWhereClause(sql, whereOffset);
   }
 
+  @Override
+  protected boolean isDropIfExistsSupported() {
+    return true;
+  }
 }

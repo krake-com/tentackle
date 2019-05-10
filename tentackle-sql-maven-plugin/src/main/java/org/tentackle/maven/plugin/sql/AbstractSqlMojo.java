@@ -172,6 +172,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   @Parameter
   protected File bundleDir;
 
+  /**
+   * Use IF EXISTS for drop index, constraint and column if the backend supports it.<br>
+   * If not supported, a warning will be logged.
+   */
+  @Parameter
+  protected boolean useDropIfExists;
+
 
   /**
    * total number of errors.

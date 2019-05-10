@@ -19,6 +19,9 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -31,8 +34,6 @@ import java.sql.Types;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
-import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -398,7 +399,7 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " ADD (" +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ");\n";
@@ -406,7 +407,7 @@ public class Oracle extends AbstractSql2003Backend {
 
   @Override
   public String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
     buf.append(" MODIFY (");
     buf.append(columnName);
@@ -423,7 +424,7 @@ public class Oracle extends AbstractSql2003Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " MODIFY (" +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, true, null, false, false) +
             ");\n";
@@ -431,9 +432,9 @@ public class Oracle extends AbstractSql2003Backend {
 
   @Override
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
+    buf.append(SQL_ALTER_COLUMN);
     buf.append(columnName);
     buf.append(" MODIFY ");
     if (defaultValue == null) {

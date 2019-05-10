@@ -19,15 +19,16 @@
 
 package org.tentackle.sql;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.util.Set;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.ModelMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * A database backend.<br>
@@ -202,6 +203,14 @@ public interface Backend {
   /** SQL EXISTS clause with SELECT 1 and opening left parenthesis. */
   String SQL_EXISTS = "EXISTS (SELECT 1 FROM ";
 
+  /** SQL ALTER TABLE intro. */
+  String SQL_ALTER_TABLE = "ALTER TABLE ";
+
+  /** SQL ALTER COLUMN fragment. */
+  String SQL_ALTER_COLUMN = " ALTER COLUMN ";
+
+  /** SQL IF EXISTS fragment. */
+  String SQL_IF_EXISTS = "IF EXISTS ";
 
 
   /**
@@ -948,4 +957,21 @@ public interface Backend {
    */
   boolean isFilteredIndexSupported();
 
+  /**
+   * Some database support drop index/constraint/column IF EXISTS.<br>
+   * This may be useful if migration scripts are generated against non-production databases
+   * that contain test indexes etc...<br>
+   * Notice, that those temporary DDL changes should better use the temporary prefix (see {@link #isTemporaryName(String)} in
+   * order to be ignored by the migrator.
+   *
+   * @param dropIfExists true if use IF EXISTS if the backend supports it
+   */
+  void setDropIfExistsEnabled(boolean dropIfExists);
+
+  /**
+   * Returns whether backend should add IF EXISTS for generated DROPs.
+   *
+   * @return true if IF EXISTS is turned on and supported, false if not supported or turned off
+   */
+  boolean isDropIfExistsEnabled();
 }
