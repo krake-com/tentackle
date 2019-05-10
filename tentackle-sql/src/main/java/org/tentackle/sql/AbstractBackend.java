@@ -91,6 +91,9 @@ public abstract class AbstractBackend implements Backend {
   /** the empty string. */
   public static final String EMPTY_STRING = "";
 
+  /** use DROP IF EXISTS if supported. */
+  private boolean dropIfExistsEnabled;
+
 
   @Override
   public boolean isMatchingName(String name) {
@@ -542,7 +545,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " RENAME COLUMN " +
             oldColumnName +
             " TO " +
@@ -561,7 +564,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " ADD COLUMN " +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ";\n";
@@ -569,17 +572,20 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlDropColumn(String tableName, String columnName) {
-    return  "ALTER TABLE " + tableName +
-            " DROP COLUMN " +
-            columnName +
-            ";\n";
+    StringBuilder buf = new StringBuilder();
+    buf.append(SQL_ALTER_TABLE).append(tableName).append(" DROP COLUMN ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
+    buf.append(columnName).append(";\n");
+    return buf.toString();
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
-            " ALTER COLUMN " +
+    return  SQL_ALTER_TABLE + tableName +
+            SQL_ALTER_COLUMN +
             columnName +
             " " +
             columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue) +
@@ -598,16 +604,16 @@ public abstract class AbstractBackend implements Backend {
             columnName +
             "=" +
             valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
-            " WHERE " +
+            SQL_WHERE +
             columnName +
             " IS NULL;\n";
   }
 
   @Override
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
+    buf.append(SQL_ALTER_COLUMN);
     buf.append(columnName);
     buf.append(" ");
     if (defaultValue == null) {
@@ -698,7 +704,7 @@ public abstract class AbstractBackend implements Backend {
     buf.append(')');
     if (filterCondition != null) {
       // isFilteredIndexSupported already checked in model (IndexImpl)
-      buf.append(" WHERE ").append(filterCondition);
+      buf.append(SQL_WHERE).append(filterCondition);
     }
     buf.append(";\n");
     return buf.toString();
@@ -707,6 +713,9 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName) {
     StringBuilder buf = new StringBuilder("DROP INDEX ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
     if (schemaName != null) {
       buf.append(schemaName);
       buf.append(".");
@@ -966,6 +975,28 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public boolean isFilteredIndexSupported() {
+    return false;
+  }
+
+
+  @Override
+  public void setDropIfExistsEnabled(boolean dropIfExistsEnabled) {
+    this.dropIfExistsEnabled = dropIfExistsEnabled;
+  }
+
+  @Override
+  public boolean isDropIfExistsEnabled() {
+    return dropIfExistsEnabled && isDropIfExistsSupported();
+  }
+
+  /**
+   * Adds "IF EXISTS" to drop clauses, if supported by the backend.<br>
+   * Makes migration a little more robust in case the same SQL scripts are
+   * applied to different databases than those used to generate the migration scripts for.
+   *
+   * @return true if supported
+   */
+  protected boolean isDropIfExistsSupported() {
     return false;
   }
 
