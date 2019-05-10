@@ -19,9 +19,10 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+
 import java.sql.Connection;
 import java.sql.Types;
-import org.tentackle.common.Service;
 
 
 /**
@@ -203,4 +204,8 @@ public class Ingres extends AbstractSql2003Backend {
     return super.extractWhereClause(sql, whereOffset);
   }
 
+  @Override
+  protected boolean isDropIfExistsSupported() {
+    return true;
+  }
 }

@@ -33,6 +33,7 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.migrate.TableMigrator;
+import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendException;
 import org.tentackle.sql.BackendInfo;
 import org.tentackle.sql.metadata.ModelMetaData;
@@ -144,6 +145,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
       sqlCode = new StringBuilder();
+      if (useDropIfExists) {
+        Backend backend = backendInfo.getBackend();
+        backend.setDropIfExistsEnabled(true);
+        if (!backend.isDropIfExistsEnabled()) {
+          getLog().warn("backend " + backend + " does not support DROP IF EXISTS");
+        }
+      }
     }
     else  {
       getLog().debug("no connection parameters available for " + backendInfo + " -> skipped");

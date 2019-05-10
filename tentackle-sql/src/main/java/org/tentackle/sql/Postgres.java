@@ -19,6 +19,14 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.IndexMetaData;
+import org.tentackle.sql.metadata.PostgresColumnMetaData;
+import org.tentackle.sql.metadata.PostgresIndexMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,13 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.sql.metadata.ColumnMetaData;
-import org.tentackle.sql.metadata.IndexMetaData;
-import org.tentackle.sql.metadata.PostgresColumnMetaData;
-import org.tentackle.sql.metadata.PostgresIndexMetaData;
-import org.tentackle.sql.metadata.TableMetaData;
 
 
 /**
@@ -279,8 +280,8 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
-            " ALTER COLUMN " +
+    return  SQL_ALTER_TABLE + tableName +
+            SQL_ALTER_COLUMN +
             columnName +
             " TYPE " +
             // nullable = true -> Postgres needs separate SET NOT NULL
@@ -290,9 +291,9 @@ public class Postgres extends AbstractSql92Backend {
 
   @Override
   public String sqlAlterColumnNullConstraint(String tableName, String columnName, boolean nullable) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
+    buf.append(SQL_ALTER_COLUMN);
     buf.append(columnName);
     if (nullable) {
       buf.append(" DROP");
@@ -351,6 +352,11 @@ public class Postgres extends AbstractSql92Backend {
       sql = sql.substring(0, ndx);
     }
     return sql;
+  }
+
+  @Override
+  protected boolean isDropIfExistsSupported() {
+    return true;
   }
 
 }

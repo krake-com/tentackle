@@ -19,11 +19,12 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Types;
-import org.tentackle.common.Service;
 
 /**
  * Backend for Informix.
@@ -47,7 +48,6 @@ public class Informix extends AbstractSql92Backend {
 
   /** SKIP string. */
   public static final String SQL_SKIP_PAR = SQL_SKIP + "? ";
-
 
 
   @Override
@@ -222,7 +222,7 @@ public class Informix extends AbstractSql92Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " ADD (" +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ");\n";
@@ -230,7 +230,7 @@ public class Informix extends AbstractSql92Backend {
 
   @Override
   public String sqlDropColumn(String tableName, String columnName) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " DROP (" +
             columnName +
             ");\n";
@@ -239,7 +239,7 @@ public class Informix extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " MODIFY (" +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ");\n";
@@ -247,7 +247,7 @@ public class Informix extends AbstractSql92Backend {
 
   @Override
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
     buf.append(" MODIFY (");
     buf.append(columnName);
@@ -276,4 +276,8 @@ public class Informix extends AbstractSql92Backend {
     return super.extractWhereClause(sql, whereOffset);
   }
 
+  @Override
+  protected boolean isDropIfExistsSupported() {
+    return true;
+  }
 }

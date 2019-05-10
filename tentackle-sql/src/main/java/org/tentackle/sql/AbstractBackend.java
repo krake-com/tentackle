@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -89,6 +89,9 @@ public abstract class AbstractBackend implements Backend {
 
   /** the empty string. */
   public static final String EMPTY_STRING = "";
+
+  /** use DROP IF EXISTS if supported. */
+  private boolean dropIfExistsEnabled;
 
 
   @Override
@@ -323,7 +326,7 @@ public abstract class AbstractBackend implements Backend {
               found = true;
               break;
             }
-            catch (Exception ex3) {
+            catch (BackendException ex3) {
               // no such table
             }
           }
@@ -533,14 +536,14 @@ public abstract class AbstractBackend implements Backend {
       strategies.add(MigrationStrategy.COMMENT);
     }
 
-    return strategies.toArray(new MigrationStrategy[strategies.size()]);
+    return strategies.toArray(new MigrationStrategy[0]);
   }
 
 
 
   @Override
   public String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " RENAME COLUMN " +
             oldColumnName +
             " TO " +
@@ -559,7 +562,7 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " ADD COLUMN " +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ";\n";
@@ -567,17 +570,20 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String sqlDropColumn(String tableName, String columnName) {
-    return  "ALTER TABLE " + tableName +
-            " DROP COLUMN " +
-            columnName +
-            ";\n";
+    StringBuilder buf = new StringBuilder();
+    buf.append(SQL_ALTER_TABLE).append(tableName).append(" DROP COLUMN ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
+    buf.append(columnName).append(";\n");
+    return buf.toString();
   }
 
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
-            " ALTER COLUMN " +
+    return  SQL_ALTER_TABLE + tableName +
+            SQL_ALTER_COLUMN +
             columnName +
             " " +
             columnTypeNullDefaultToString(columnName, sqlType, size, scale, nullable, defaultValue) +
@@ -596,16 +602,16 @@ public abstract class AbstractBackend implements Backend {
             columnName +
             "=" +
             valueToLiteral(sqlType, defaultValue != null ? defaultValue : sqlType.getDefaultValue()) +
-            " WHERE " +
+            SQL_WHERE +
             columnName +
             " IS NULL;\n";
   }
 
   @Override
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
-    buf.append(" ALTER COLUMN ");
+    buf.append(SQL_ALTER_COLUMN);
     buf.append(columnName);
     buf.append(" ");
     if (defaultValue == null) {
@@ -704,6 +710,9 @@ public abstract class AbstractBackend implements Backend {
   @Override
   public String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName) {
     StringBuilder buf = new StringBuilder("DROP INDEX ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
     if (schemaName != null) {
       buf.append(schemaName);
       buf.append(".");
@@ -770,7 +779,7 @@ public abstract class AbstractBackend implements Backend {
       if (joinFromNdx < 0) {
         throw new BackendException("missing FROM in '" + joinSelect + "'");
       }
-      buf.append(joinSelect.substring(0, joinFromNdx)).
+      buf.append(joinSelect, 0, joinFromNdx).
           append(",").append(joinSelectIdAlias).append(joinSelect.substring(joinFromNdx));
     }
     else  {
@@ -951,6 +960,26 @@ public abstract class AbstractBackend implements Backend {
     return false;
   }
 
+  @Override
+  public void setDropIfExistsEnabled(boolean dropIfExistsEnabled) {
+    this.dropIfExistsEnabled = dropIfExistsEnabled;
+  }
+
+  @Override
+  public boolean isDropIfExistsEnabled() {
+    return dropIfExistsEnabled && isDropIfExistsSupported();
+  }
+
+  /**
+   * Adds "IF EXISTS" to drop clauses, if supported by the backend.<br>
+   * Makes migration a little more robust in case the same SQL scripts are
+   * applied to different databases than those used to generate the migration scripts for.
+   *
+   * @return true if supported
+   */
+  protected boolean isDropIfExistsSupported() {
+    return false;
+  }
 
   /**
    * Checks if the exception's state starts with a given string.

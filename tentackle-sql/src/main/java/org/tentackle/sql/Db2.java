@@ -19,13 +19,14 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
 
 
 /**
@@ -183,7 +184,7 @@ public class Db2 extends AbstractSql2003Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
+    return  SQL_ALTER_TABLE + tableName +
             " ADD (" +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ");\n";
@@ -192,12 +193,17 @@ public class Db2 extends AbstractSql2003Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
-            " ALTER COLUMN " +
+    return  SQL_ALTER_TABLE + tableName +
+            SQL_ALTER_COLUMN +
             columnName +
             " DATA TYPE " +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ";\n";
+  }
+
+  @Override
+  protected boolean isDropIfExistsSupported() {
+    return true;
   }
 
   /**

@@ -122,7 +122,7 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
   @Override
   public String sqlCreateForeignKey(String referencingTableName, String referencingColumnName, String referencedTableName,
           String referencedColumnName, String foreignKeyName, boolean composite) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(referencingTableName);
     buf.append(" ADD CONSTRAINT ");
     buf.append(foreignKeyName);
@@ -142,10 +142,13 @@ public abstract class AbstractSql92Backend extends AbstractBackend {
 
   @Override
   public String sqlDropForeignKey(String referencingTableName, String foreignKeyName) {
-    return  "ALTER TABLE " + referencingTableName +
-            " DROP CONSTRAINT " +
-            foreignKeyName +
-            ";\n";
+    StringBuilder buf = new StringBuilder();
+    buf.append(SQL_ALTER_TABLE).append(referencingTableName).append(" DROP CONSTRAINT ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
+    buf.append(foreignKeyName).append(";\n");
+    return buf.toString();
   }
 
   @Override

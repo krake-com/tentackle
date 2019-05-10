@@ -19,6 +19,26 @@
 
 package org.tentackle.maven.sql;
 
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.wurbelizer.misc.Settings;
+
+import org.tentackle.maven.AbstractTentackleMojo;
+import org.tentackle.model.Entity;
+import org.tentackle.model.EntityAliases;
+import org.tentackle.model.Model;
+import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelException;
+import org.tentackle.model.print.EntityPrinter;
+import org.tentackle.model.print.PrintConfiguration;
+import org.tentackle.sql.Backend;
+import org.tentackle.sql.BackendFactory;
+import org.tentackle.sql.BackendInfo;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,24 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.maven.AbstractTentackleMojo;
-import org.tentackle.model.Entity;
-import org.tentackle.model.EntityAliases;
-import org.tentackle.model.Model;
-import org.tentackle.model.ModelDefaults;
-import org.tentackle.model.ModelException;
-import org.tentackle.model.print.EntityPrinter;
-import org.tentackle.model.print.PrintConfiguration;
-import org.tentackle.sql.Backend;
-import org.tentackle.sql.BackendFactory;
-import org.tentackle.sql.BackendInfo;
-import org.wurbelizer.misc.Settings;
 
 
 /**
@@ -160,6 +162,13 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    */
   @Parameter
   protected String dumpAnnotationsAsOptions;
+
+  /**
+   * Use IF EXISTS for drop index, constraint and column if the backend supports it.<br>
+   * If not supported, a warning will be logged.
+   */
+  @Parameter
+  protected boolean useDropIfExists;
 
 
   /**

@@ -19,6 +19,12 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Service;
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.MySqlColumnMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -28,11 +34,6 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.common.Service;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.sql.metadata.ColumnMetaData;
-import org.tentackle.sql.metadata.MySqlColumnMetaData;
-import org.tentackle.sql.metadata.TableMetaData;
 
 
 /**
@@ -291,7 +292,7 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
     buf.append(" ADD COLUMN ");
     buf.append(sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false));
@@ -311,7 +312,7 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlRenameAndAlterColumnType(String tableName, String oldColumnName, String newColumnName, String comment,
           SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
-    StringBuilder buf = new StringBuilder("ALTER TABLE ");
+    StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
     buf.append(" CHANGE ");
     buf.append(oldColumnName);
@@ -328,8 +329,8 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlAlterColumnType(String tableName, String columnName, String comment, SqlType sqlType,
                                    int size, int scale, boolean nullable, Object defaultValue) {
-    return  "ALTER TABLE " + tableName +
-            " ALTER COLUMN " +
+    return  SQL_ALTER_TABLE + tableName +
+            SQL_ALTER_COLUMN +
             sqlCreateTableAttributeWithoutComment(columnName, sqlType, size, scale, nullable, defaultValue, false, false) +
             ";\n";
   }
@@ -342,6 +343,9 @@ public class MySql extends AbstractSql92Backend {
   @Override
   public String sqlDropIndex(String schemaName, String tableNameWithoutSchema, String indexName) {
     StringBuilder buf = new StringBuilder("DROP INDEX ");
+    if (isDropIfExistsEnabled()) {
+      buf.append(SQL_IF_EXISTS);
+    }
     buf.append(indexName);
     buf.append(" ON ");
     if (schemaName != null) {

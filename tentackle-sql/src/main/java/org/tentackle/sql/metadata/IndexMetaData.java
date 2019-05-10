@@ -18,13 +18,15 @@
 
 package org.tentackle.sql.metadata;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
+import org.tentackle.sql.Backend;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.tentackle.common.StringHelper;
-import org.tentackle.common.Constants;
 
 /**
  * Meta data for an index.
@@ -198,7 +200,7 @@ public class IndexMetaData {
     }
     buf.append(")");
     if (getFilterCondition() != null) {
-      buf.append(" WHERE ").append(getFilterCondition());
+      buf.append(Backend.SQL_WHERE).append(getFilterCondition());
     }
     return buf.toString();
   }
