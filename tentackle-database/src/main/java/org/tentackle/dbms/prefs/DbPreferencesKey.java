@@ -20,7 +20,6 @@
 
 package org.tentackle.dbms.prefs;
 
-import java.util.Objects;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
@@ -28,8 +27,12 @@ import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.TrackedArrayList;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
+
+import java.util.Objects;
 
 
 
@@ -64,17 +67,15 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
+@ClassId(/**/4/**/)               // @wurblet < Inject $classid
+@TableName(/**/"prefkey"/**/)     // @wurblet < Inject --string $tablename
 public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
 
   private static final long serialVersionUID = 5733105489734329678L;
 
-  /** the database tablename. */
-  public static final String TABLENAME = /**/"prefkey"/**/;  // @wurblet < Inject --string $tablename
-
-  private static final DbObjectClassVariables<DbPreferencesKey> CLASSVARIABLES =
-    new DbObjectClassVariables<>(DbPreferencesKey.class,
-                                 /**/4/**/,  // @wurblet < Inject $classid
-                                 TABLENAME);
+  /** Variables common to all instances of {@link DbPreferencesKey}. */
+  public static final DbObjectClassVariables<DbPreferencesKey> CLASSVARIABLES =
+      DbObjectClassVariables.create(DbPreferencesKey.class);
 
 
   private boolean removed;                        // true if marked deleted (used by factory)
@@ -83,7 +84,7 @@ public class DbPreferencesKey extends AbstractDbObject<DbPreferencesKey> {
   /**
    * Creates a preferences key.
    *
-   * @param db the db connection
+   * @param db the session
    */
   public DbPreferencesKey (Db db)    {
     super(db);

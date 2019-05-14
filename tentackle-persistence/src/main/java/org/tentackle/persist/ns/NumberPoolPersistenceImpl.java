@@ -64,7 +64,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   /** Variables common to all instances of NumberPoolPersistenceImpl. */
   public static final PersistentObjectClassVariables<NumberPool, NumberPoolPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     NumberPool.class,
                     NumberPoolPersistenceImpl.class,
                     "npool",

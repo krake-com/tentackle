@@ -24,10 +24,8 @@ For more options, see {\@link DbModelWurblet}.
     }
     else  {
       String cvType = "PersistentObjectClassVariables";
-      String cvImpliedType = cvType;
       if (!getEntity().isAbstract()) {
         cvType += "<" + pdoName + ", " + className + ">";
-        cvImpliedType += "<>";
       }
       String alias = getEntity().getTableAlias();
       String strAlias = alias != null ? "\"" + alias + "\"" : "null";
@@ -56,7 +54,7 @@ For more options, see {\@link DbModelWurblet}.
       }
 ]@
   public static final @(cvType)@ CLASSVARIABLES =
-            new @(cvImpliedType)@(
+            PersistentObjectClassVariables.create(
                     @(pdoName)@.class,
                     @(className)@.class,
                     @(strAlias)@,

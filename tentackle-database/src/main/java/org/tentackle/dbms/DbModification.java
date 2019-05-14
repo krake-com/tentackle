@@ -22,7 +22,9 @@ package org.tentackle.dbms;
 
 import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.TableName;
 import org.tentackle.session.ThreadLocalSessionHolder;
 import org.tentackle.sql.Backend;
 
@@ -51,19 +53,18 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
+@ClassId(/**/1/**/)                   // @wurblet < Inject $classid
+@TableName(/**/"modification"/**/)    // @wurblet < Inject --string $tablename
 public class DbModification extends AbstractDbObject<DbModification> {
-
-  /** the database tablename. */
-  public static final String TABLENAME = /**/"modification"/**/;  // @wurblet < Inject --string $tablename
-
-  private static final DbObjectClassVariables<DbModification> CLASSVARIABLES =
-    new DbObjectClassVariables<>(DbModification.class,
-                                 /**/1/**/,  // @wurblet < Inject $classid
-                                 TABLENAME);
 
   private static final long serialVersionUID = -1723181864077614924L;
 
   private static final Logger LOGGER = Logger.get(DbModification.class);
+
+
+  /** Variables common to all instances of {@link DbModification}. */
+  public static final DbObjectClassVariables<DbModification> CLASSVARIABLES =
+      DbObjectClassVariables.create(DbModification.class);
 
 
   /**
@@ -75,9 +76,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
     LOGGER.info("initializing modification table");
     long txVoucher = db.begin("initialize");
     try {
-      db.createStatement().executeUpdate(Backend.SQL_DELETE + Backend.SQL_FROM + TABLENAME);
+      db.createStatement().executeUpdate(Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.tableName);
 
-      db.createStatement().executeUpdate(Backend.SQL_INSERT_INTO + TABLENAME + Backend.SQL_LEFT_PARENTHESIS +
+      db.createStatement().executeUpdate(Backend.SQL_INSERT_INTO + CLASSVARIABLES.tableName + Backend.SQL_LEFT_PARENTHESIS +
                                          CN_ID + Backend.SQL_COMMA + AbstractDbObject.CN_SERIAL +
                                          Backend.SQL_INSERT_VALUES + "0,1)");
 
@@ -252,8 +253,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
   public int countModification(long count) {
     assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(COUNT_MODIFICATION_ID,
-      () -> Backend.SQL_UPDATE + TABLENAME + Backend.SQL_SET + CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL +
-            "+?" + Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR + Backend.SQL_OR + CN_ID + Backend.SQL_EQUAL_PAR
+                                                       () -> Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET + CN_SERIAL + Backend.SQL_EQUAL + CN_SERIAL +
+                                                             "+?" + Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR + Backend.SQL_OR + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setLong(1, count);
     st.setString(2, trackedName);
@@ -280,56 +281,56 @@ public class DbModification extends AbstractDbObject<DbModification> {
       if (tableExists) {
         count = st.executeUpdate (
             getBackend().allowsExpressionsReferringToTablesBeingUpdated() ?
-              // ordinary dbms
-              (
-               "INSERT INTO " + TABLENAME + " (" + CN_TRACKEDNAME + "," +
-               CN_ID + "," + CN_SERIAL +
-               ") VALUES ('" +
-               trackedName +
-               "',(SELECT MAX(" + CN_ID + ")+1 FROM " + TABLENAME + ")," +
-               (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
-               "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1" ) +
-               ")"
-              )
+            // ordinary dbms
+            (
+                "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
+                CN_ID + "," + CN_SERIAL +
+                ") VALUES ('" +
+                trackedName +
+                "',(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + ")," +
+                (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
+                                                 "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1") +
+                ")"
+            )
 
-              :
+                                                                          :
 
-              // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
-              // This does the trick though ;-)
-              (
-               "INSERT INTO " + TABLENAME + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
-               CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
-               TABLENAME + ") AS x), " + CN_SERIAL + "=" +
-               (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
-               "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1" )
-              )
+            // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
+            // This does the trick though ;-)
+            (
+                "INSERT INTO " + getTableName() + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
+                CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
+                getTableName() + ") AS x), " + CN_SERIAL + "=" +
+                (tableSerialTableName != null ? ("(SELECT " + getBackend().getCoalesceKeyword() +
+                                                 "(MAX(" + CN_TABLESERIAL + "),0) FROM " + tableSerialTableName + ")") : "1")
+            )
 
-             );
+        );
       }
       else  {
         // just a name, not related to any PDO or database table
         count = st.executeUpdate (
             getSession().getBackend().allowsExpressionsReferringToTablesBeingUpdated() ?
-              // ordinary dbms
-              (
-               "INSERT INTO " + TABLENAME + " (" + CN_TRACKEDNAME + "," +
-               CN_ID + "," + CN_SERIAL +
-               ") VALUES ('" +
-               trackedName +
-               "',(SELECT MAX(" + CN_ID + ")+1 FROM " + TABLENAME + "),0)"
-              )
+            // ordinary dbms
+            (
+                "INSERT INTO " + getTableName() + " (" + CN_TRACKEDNAME + "," +
+                CN_ID + "," + CN_SERIAL +
+                ") VALUES ('" +
+                trackedName +
+                "',(SELECT MAX(" + CN_ID + ")+1 FROM " + getTableName() + "),0)"
+            )
 
-              :
+                                                                                       :
 
-              // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
-              // This does the trick though ;-)
-              (
-               "INSERT INTO " + TABLENAME + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
-               CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
-               TABLENAME + ") AS x), " + CN_SERIAL + "=0"
-              )
+            // some databases such as MySQL do not allow updates with expressions referring to the table being updated.
+            // This does the trick though ;-)
+            (
+                "INSERT INTO " + getTableName() + " SET " + CN_TRACKEDNAME + "='" + trackedName + "', " +
+                CN_ID + "=(SELECT * FROM (SELECT MAX(" + CN_ID + ")+1 FROM " +
+                getTableName() + ") AS x), " + CN_SERIAL + "=0"
+            )
 
-             );
+        );
       }
 
       if (count != 1) {
@@ -348,8 +349,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
   public long refresh() {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_MODIFICATION_ID,
-      () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL + Backend.SQL_FROM + TABLENAME +
-             Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
+                                                       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL + Backend.SQL_FROM + getTableName() +
+                                                             Backend.SQL_WHERE + CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setString(1, trackedName);
@@ -379,9 +380,9 @@ public class DbModification extends AbstractDbObject<DbModification> {
   public IdSerialTuple selectIdSerial(String tableName) {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_ID_ID,
-      () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL +
-             Backend.SQL_FROM + TABLENAME + Backend.SQL_WHERE +
-             CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
+                                                       () -> Backend.SQL_SELECT + CN_ID + Backend.SQL_COMMA + CN_SERIAL +
+                                                             Backend.SQL_FROM + getTableName() + Backend.SQL_WHERE +
+                                                             CN_TRACKEDNAME + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setString(1, tableName);
@@ -406,8 +407,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
   public String selectTableNameForId(long id) {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_TABLENAME_ID,
-            () -> Backend.SQL_SELECT + CN_TRACKEDNAME + Backend.SQL_FROM + TABLENAME +
-                   Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+                                                       () -> Backend.SQL_SELECT + CN_TRACKEDNAME + Backend.SQL_FROM + getTableName() +
+                                                             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setLong(1, id);
@@ -431,8 +432,8 @@ public class DbModification extends AbstractDbObject<DbModification> {
   public long selectMasterSerial() {
     getSession().assertNotRemote();
     PreparedStatementWrapper st = getPreparedStatement(SELECT_MASTERSERIAL_ID,
-      () -> Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + TABLENAME +
-             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
+                                                       () -> Backend.SQL_SELECT + CN_SERIAL + Backend.SQL_FROM + getTableName() +
+                                                             Backend.SQL_WHERE + CN_ID + Backend.SQL_EQUAL_PAR
     );
     st.setParallelOk(true);
     st.setLong(1, 0);   // ID=0 is the master
@@ -441,7 +442,7 @@ public class DbModification extends AbstractDbObject<DbModification> {
         return rs.getLong(1);
       }
       else  {
-        throw new PersistenceException(getSession(), "can't read master serial from " + TABLENAME);
+        throw new PersistenceException(getSession(), "can't read master serial from " + getTableName());
       }
     }
   }

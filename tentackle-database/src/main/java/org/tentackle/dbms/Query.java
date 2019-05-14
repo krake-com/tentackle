@@ -19,6 +19,13 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Binary;
+import org.tentackle.common.DMoney;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.Convertible;
+import org.tentackle.session.PersistenceException;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -29,12 +36,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.Binary;
-import org.tentackle.common.DMoney;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.Convertible;
-import org.tentackle.session.PersistenceException;
 
 
 
@@ -311,7 +312,7 @@ public class Query {
    * Applications may use this in conjunction with limit and offset for pagination
    * (in web pages, for example).
    *
-   * @param db the db connection
+   * @param db the session
    * @return the number of rows for this query
    */
   public int getRowCount(Db db) {
@@ -449,7 +450,7 @@ public class Query {
    * Creates the SQL-String of this query.<br>
    * Optionally modifies the sql query according to limit and offset.
    *
-   * @param db the db connection
+   * @param db the session
    * @return the sql string
    */
   public String createSql(Db db) {

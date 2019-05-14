@@ -64,7 +64,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   /** Variables common to all instances of SecurityPersistenceImpl. */
   public static final PersistentObjectClassVariables<Security, SecurityPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     Security.class,
                     SecurityPersistenceImpl.class,
                     "scrty",

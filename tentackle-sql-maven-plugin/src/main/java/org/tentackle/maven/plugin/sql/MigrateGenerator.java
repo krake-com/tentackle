@@ -44,7 +44,7 @@ public class MigrateGenerator extends AbstractGenerator {
    *
    * @param mojo the migrate mojo
    * @param templateFile the sql template file
-   * @param migratedTables set of migrated tables
+   * @param migratedEntitiesMap set of migrated tables
    */
   public MigrateGenerator(MigrateSqlMojo mojo, File templateFile, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) {
     this.mojo = mojo;

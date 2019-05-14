@@ -59,7 +59,7 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
 
   /** Variables common to all instances of NumberRangePersistenceImpl. */
   public static final PersistentObjectClassVariables<NumberRange, NumberRangePersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     NumberRange.class,
                     NumberRangePersistenceImpl.class,
                     "nrange",
