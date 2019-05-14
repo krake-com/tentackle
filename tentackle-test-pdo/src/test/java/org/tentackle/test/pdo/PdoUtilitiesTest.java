@@ -18,11 +18,14 @@
 
 package org.tentackle.test.pdo;
 
-import java.util.MissingResourceException;
-import org.tentackle.pdo.PdoUtilities;
-import org.tentackle.session.SessionUtilities;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import org.tentackle.pdo.PdoUtilities;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.session.SessionUtilities;
+
+import java.util.MissingResourceException;
 
 /**
  * Tests the pdo utilities.<br>
@@ -38,10 +41,12 @@ public class PdoUtilitiesTest {
     for (String pdoName: SessionUtilities.getInstance().getClassNames()) {
       try {
         Class<?> clazz = Class.forName(pdoName);
-        String name = PdoUtilities.getInstance().getSingular(clazz);
-        Assert.assertNotNull(name, "no @Singular for " + clazz.getName());
-        name = PdoUtilities.getInstance().getPlural(clazz);
-        Assert.assertNotNull(name, "no @Plural for " + clazz.getName());
+        if (PersistentDomainObject.class.isAssignableFrom(clazz)) {   // singular/plural does not apply to AbstractDbObjects
+          String name = PdoUtilities.getInstance().getSingular(clazz);
+          Assert.assertNotNull(name, "no @Singular for " + clazz.getName());
+          name = PdoUtilities.getInstance().getPlural(clazz);
+          Assert.assertNotNull(name, "no @Plural for " + clazz.getName());
+        }
       }
       catch (MissingResourceException mx) {
         Assert.fail("in PDO class " + pdoName + ": " + mx.getMessage());
