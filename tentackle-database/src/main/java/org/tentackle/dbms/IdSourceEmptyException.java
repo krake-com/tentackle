@@ -35,7 +35,7 @@ public class IdSourceEmptyException extends IdSourceException {
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param db the db connection
+   * @param db the session
    */
   public IdSourceEmptyException(Db db) {
     super(db);

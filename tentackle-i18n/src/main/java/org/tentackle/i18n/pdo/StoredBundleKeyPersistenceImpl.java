@@ -19,21 +19,22 @@
 
 package org.tentackle.i18n.pdo;
 
-import java.rmi.RemoteException;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
-import org.tentackle.misc.TrackedList;
 import org.tentackle.i18n.pdo.rmi.StoredBundleKeyRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.misc.TrackedList;
 import org.tentackle.pdo.DomainContext;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.Objects;
 
 
 
@@ -54,7 +55,7 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
   /** Variables common to all instances of StoredBundleKeyPersistenceImpl. */
   public static final PersistentObjectClassVariables<StoredBundleKey, StoredBundleKeyPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     StoredBundleKey.class,
                     StoredBundleKeyPersistenceImpl.class,
                     "bkey",

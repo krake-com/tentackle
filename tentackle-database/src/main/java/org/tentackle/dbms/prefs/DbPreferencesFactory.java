@@ -19,6 +19,21 @@
 
 package org.tentackle.dbms.prefs;
 
+import org.tentackle.common.Service;
+import org.tentackle.dbms.Db;
+import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.misc.IdSerialTuple;
+import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.session.ModificationEvent;
+import org.tentackle.session.ModificationEventDetail;
+import org.tentackle.session.ModificationListenerAdapter;
+import org.tentackle.session.ModificationTracker;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
+import org.tentackle.session.SessionUtilities;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,20 +50,6 @@ import java.util.prefs.NodeChangeListener;
 import java.util.prefs.PreferenceChangeEvent;
 import java.util.prefs.PreferenceChangeListener;
 import java.util.prefs.Preferences;
-import org.tentackle.common.Service;
-import org.tentackle.dbms.Db;
-import org.tentackle.dbms.prefs.DbPreferencesOperation.RefreshInfo;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.misc.IdSerialTuple;
-import org.tentackle.prefs.PersistedPreferencesFactory;
-import org.tentackle.session.ModificationEvent;
-import org.tentackle.session.ModificationEventDetail;
-import org.tentackle.session.ModificationListenerAdapter;
-import org.tentackle.session.ModificationTracker;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.session.Session;
-import org.tentackle.session.SessionUtilities;
 
 
 /**
@@ -199,20 +200,18 @@ public class DbPreferencesFactory implements PersistedPreferencesFactory {
         nodeTableSerial = new DbPreferencesNode(db).getModificationCount();
         keyTableSerial = new DbPreferencesKey(db).getModificationCount();
         ModificationTracker.getInstance().addModificationListener(
-                new ModificationListenerAdapter(DbPreferencesNode.TABLENAME, DbPreferencesKey.TABLENAME) {
+                new ModificationListenerAdapter(DbPreferencesNode.CLASSVARIABLES.tableName, DbPreferencesKey.CLASSVARIABLES.tableName) {
 
           @Override
           public void dataChanged(ModificationEvent ev) {
             long nodeMaxSerial = 0;
             long keyMaxSerial = 0;
             for (ModificationEventDetail detail : ev.getDetails()) {
-              switch (detail.getName()) {
-                case DbPreferencesNode.TABLENAME:
-                  nodeMaxSerial = detail.getSerial();
-                  break;
-                case DbPreferencesKey.TABLENAME:
-                  keyMaxSerial = detail.getSerial();
-                  break;
+              if (DbPreferencesNode.CLASSVARIABLES.tableName.equals(detail.getName())) {
+                nodeMaxSerial = detail.getSerial();
+              }
+              else if (DbPreferencesKey.CLASSVARIABLES.tableName.equals(detail.getName())) {
+                keyMaxSerial = detail.getSerial();
               }
             }
             if (isAutoSync()) {

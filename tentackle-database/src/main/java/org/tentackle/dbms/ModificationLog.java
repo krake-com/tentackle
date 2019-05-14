@@ -20,11 +20,6 @@
 
 package org.tentackle.dbms;
 
-import java.io.Serializable;
-import java.rmi.RemoteException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.common.Freezable;
 import org.tentackle.common.StringHelper;
 import org.tentackle.common.Timestamp;
@@ -34,11 +29,19 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.Canonicalizer;
 import org.tentackle.misc.DateHelper;
 import org.tentackle.misc.ParameterString;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
+import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -89,6 +92,8 @@ import org.tentackle.sql.Backend;
  * In such cases the txid is necessary to separate the modlog sequences into
  * discrete transactions. (see the PoolKeeper project)
  */
+@ClassId(/**/2/**/)               // @wurblet < Inject $classid
+@TableName(/**/"modlog"/**/)      // @wurblet < Inject --string $tablename
 public class ModificationLog extends AbstractDbObject<ModificationLog> {
 
   private static final long serialVersionUID = 7997968053729155282L;
@@ -98,13 +103,9 @@ public class ModificationLog extends AbstractDbObject<ModificationLog> {
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(ModificationLog.class);
 
-  /** the database tablename. */
-  public static final String TABLENAME = /**/"modlog"/**/;  // @wurblet < Inject --string $tablename
-
-  private static final DbObjectClassVariables<ModificationLog> CLASSVARIABLES =
-    new DbObjectClassVariables<>(ModificationLog.class,
-                                 /**/2/**/,  // @wurblet < Inject $classid
-                                 TABLENAME);
+  /** Variables common to all instances of {@link ModificationLog}. */
+  public static final DbObjectClassVariables<ModificationLog> CLASSVARIABLES =
+      DbObjectClassVariables.create(ModificationLog.class);
 
 
 

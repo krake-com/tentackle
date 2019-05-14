@@ -20,6 +20,14 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.common.FileHelper;
+import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.session.SessionUtilities;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -29,12 +37,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import org.tentackle.common.FileHelper;
-import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
-import org.tentackle.log.Logger;
-import org.tentackle.log.LoggerFactory;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.PersistenceException;
 
 /**
  * Holds static class variables for classes derived from DbObject.
@@ -55,6 +57,30 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   // all classes register here:
   private static final Map<String,DbObjectClassVariables<? extends AbstractDbObject<?>>> CLASSMAP = new HashMap<>();
 
+
+
+  /**
+   * Creates a classvariable for a db object.
+   *
+   * @param clazz is the class of the derived AbstractDbObject
+   * @param classId the unique class id, 0 if abstract
+   * @param tableName is the SQL tablename
+   * @param <P> the persistence type
+   */
+  public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz, int classId, String tableName) {
+    return DbClassVariablesFactory.getInstance().dbPoCv(clazz, classId, tableName);
+  }
+
+  /**
+   * Creates a classvariable for a db object.<br>
+   * Classid and tablename are derived from mapped services in META-INF.
+   *
+   * @param clazz is the class of the derived AbstractDbObject
+   * @param <P> the persistence type
+   */
+  public static <P extends AbstractDbObject<P>> DbObjectClassVariables<P> create(Class<P> clazz) {
+    return DbClassVariablesFactory.getInstance().dbPoCv(clazz);
+  }
 
   /**
    * Gets the classvariables for a given tablename.
@@ -298,7 +324,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
 
   /**
-   * constructs a classvariable.
+   * constructs a classvariable.<br>
    * Throws IllegalStateException if already constructed.
    *
    * @param clazz is the class of the derived DbObject
@@ -316,6 +342,20 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
     // register and check extension hierarchy
     putVariables(this);
+  }
+
+
+  /**
+   * constructs a classvariable.<br>
+   * Throws IllegalStateException if already constructed.
+   * Classid and tablename are derived from META-INF.
+   *
+   * @param clazz is the class of the derived DbObject
+   */
+  public DbObjectClassVariables(Class<P> clazz) {
+    this(clazz,
+         SessionUtilities.getInstance().determineClassId(clazz),
+         SessionUtilities.getInstance().determineTablename(clazz));
   }
 
 
@@ -365,7 +405,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
    * similar to that in Db.properties.<br>
    * If there is no such file, the source from the db will be used.
    *
-   * @param db the db connection
+   * @param db the session
    * @return the idSource
    */
   public synchronized IdSource getIdSource(Db db) {
@@ -526,7 +566,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
 
   /**
    * Gets the RemoteDelegate for the class and db.
-   * @param db the db connection
+   * @param db the session
    * @return the delegate
    */
   @SuppressWarnings("unchecked")

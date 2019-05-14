@@ -33,6 +33,16 @@ import org.tentackle.dbms.rmi.AbstractDbOperationRemoteDelegate;
 public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
   /**
+   * Creates a classvariable for a db operation.
+   *
+   * @param clazz is the class of the derived AbstractDbOperation
+   * @param <P> the persistent operation class
+   */
+  public static <P extends AbstractDbOperation<P>> DbOperationClassVariables<P> create(Class<P> clazz) {
+    return DbClassVariablesFactory.getInstance().dbOpCv(clazz);
+  }
+
+  /**
    * the class.
    */
   public final Class<P> clazz;
@@ -66,7 +76,7 @@ public class DbOperationClassVariables<P extends AbstractDbOperation<P>> {
 
   /**
    * Gets the RemoteDelegate for the class and db.
-   * @param db the db connection
+   * @param db the session
    * @return the delegate
    */
   @SuppressWarnings("unchecked")

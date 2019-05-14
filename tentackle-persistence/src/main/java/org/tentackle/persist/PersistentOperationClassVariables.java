@@ -19,9 +19,9 @@
 
 package org.tentackle.persist;
 
-import org.tentackle.pdo.Operation;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.DbOperationClassVariables;
+import org.tentackle.pdo.Operation;
 
 
 
@@ -34,6 +34,20 @@ import org.tentackle.dbms.DbOperationClassVariables;
  */
 public class PersistentOperationClassVariables<T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> extends DbOperationClassVariables<P> {
 
+  /**
+   * Creates an operation classvariable.
+   *
+   * @param operationClass the operation's class (i.e. interface)
+   * @param clazz the class of the derived operation
+   * @param <T> the operation class type
+   * @param <P> the persistence class type
+   */
+  public static <T extends Operation<T>, P extends AbstractPersistentOperation<T,P>> PersistentOperationClassVariables<T,P> create(
+      Class<T> operationClass, Class<P> clazz)  {
+    return PersistentClassVariablesFactory.getInstance().opCv(operationClass, clazz);
+  }
+
+
 
   /**
    * The associated operation class (i.e. the interface)
@@ -45,7 +59,7 @@ public class PersistentOperationClassVariables<T extends Operation<T>, P extends
    * Constructs a classvariable.
    *
    * @param operationClass the operation's class (i.e. interface)
-   * @param clazz the class of the derived DbObject
+   * @param clazz the class of the derived operation
    */
   public PersistentOperationClassVariables(Class<T> operationClass, Class<P> clazz)  {
     super(clazz);

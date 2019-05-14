@@ -20,7 +20,6 @@
 
 package org.tentackle.dbms.prefs;
 
-import java.util.Objects;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DbObjectClassVariables;
@@ -28,8 +27,12 @@ import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.misc.TrackedArrayList;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
+
+import java.util.Objects;
 
 
 
@@ -64,18 +67,15 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
+@ClassId(/**/3/**/)               // @wurblet < Inject $classid
+@TableName(/**/"prefnode"/**/)    // @wurblet < Inject --string $tablename
 public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
 
   private static final long serialVersionUID = 4677525106428955014L;
 
-  /** the database tablename. */
-  public static final String TABLENAME = /**/"prefnode"/**/;  // @wurblet < Inject --string $tablename
-
-
-  private static final DbObjectClassVariables<DbPreferencesNode> CLASSVARIABLES =
-    new DbObjectClassVariables<>(DbPreferencesNode.class,
-                                 /**/3/**/,  // @wurblet < Inject $classid
-                                 TABLENAME);
+  /** Variables common to all instances of {@link DbPreferencesNode}. */
+  public static final DbObjectClassVariables<DbPreferencesNode> CLASSVARIABLES =
+      DbObjectClassVariables.create(DbPreferencesNode.class);
 
 
   private boolean removed;                        // true if marked deleted (used by factory)
@@ -84,7 +84,7 @@ public class DbPreferencesNode extends AbstractDbObject<DbPreferencesNode> {
   /**
    * Creates a node.
    *
-   * @param db the db connection
+   * @param db the session
    */
   public DbPreferencesNode (Db db)    {
     super(db);

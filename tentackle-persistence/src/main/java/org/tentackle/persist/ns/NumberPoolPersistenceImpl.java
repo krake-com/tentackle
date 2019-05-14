@@ -19,9 +19,6 @@
 
 package org.tentackle.persist.ns;
 
-import java.rmi.RemoteException;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
@@ -33,12 +30,12 @@ import org.tentackle.misc.TrackedList;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberPoolPersistence;
 import org.tentackle.ns.pdo.NumberRange;
-import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.ns.rmi.NumberPoolRemoteDelegate;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
@@ -46,6 +43,10 @@ import org.tentackle.sql.Backend;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationUtilities;
+
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -71,7 +72,7 @@ public class NumberPoolPersistenceImpl extends AbstractPersistentObject<NumberPo
 
   /** Variables common to all instances of NumberPoolPersistenceImpl. */
   public static final PersistentObjectClassVariables<NumberPool, NumberPoolPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     NumberPool.class,
                     NumberPoolPersistenceImpl.class,
                     "npool",

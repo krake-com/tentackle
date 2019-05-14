@@ -19,26 +19,23 @@
 
 package org.tentackle.persist.security;
 
-import java.rmi.RemoteException;
-import java.util.List;
-import java.util.Objects;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.dbms.StatementId;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.TrackedList;
-import org.tentackle.persist.AbstractPersistentObject;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoListener;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.persist.PersistentObjectClassVariables;
 import org.tentackle.pdo.PersistentObjectService;
+import org.tentackle.persist.AbstractPersistentObject;
+import org.tentackle.persist.PersistentObjectClassVariables;
+import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
 import org.tentackle.security.pdo.Security;
 import org.tentackle.security.pdo.SecurityPersistence;
-import org.tentackle.persist.security.rmi.SecurityRemoteDelegate;
 import org.tentackle.session.ModificationEvent;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
@@ -46,6 +43,10 @@ import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionUtilities;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.List;
+import java.util.Objects;
 
 
 
@@ -71,7 +72,7 @@ public class SecurityPersistenceImpl extends AbstractPersistentObject<Security, 
 
   /** Variables common to all instances of SecurityPersistenceImpl. */
   public static final PersistentObjectClassVariables<Security, SecurityPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     Security.class,
                     SecurityPersistenceImpl.class,
                     "scrty",
