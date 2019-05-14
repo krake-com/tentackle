@@ -38,7 +38,7 @@ public class IdSourceException extends PersistenceException {
    * The cause is not initialized, and may subsequently be
    * initialized by a call to {@link #initCause}.
    *
-   * @param db the db connection
+   * @param db the session
    */
   public IdSourceException(Db db) {
     super(db);

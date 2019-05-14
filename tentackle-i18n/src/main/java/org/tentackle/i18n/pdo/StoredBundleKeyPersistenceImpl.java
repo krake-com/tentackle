@@ -54,7 +54,7 @@ public class StoredBundleKeyPersistenceImpl extends AbstractPersistentObject<Sto
 
   /** Variables common to all instances of StoredBundleKeyPersistenceImpl. */
   public static final PersistentObjectClassVariables<StoredBundleKey, StoredBundleKeyPersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     StoredBundleKey.class,
                     StoredBundleKeyPersistenceImpl.class,
                     "bkey",

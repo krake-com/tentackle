@@ -50,7 +50,7 @@ public interface IdSourceConfigurator {
   /**
    * Connect to the ID-Source.
    *
-   * @param db the db connection
+   * @param db the session
    * @param idConfig the configuration
    * @return the connected IdSource
    */

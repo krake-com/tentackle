@@ -58,6 +58,44 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
 
 
   /**
+   * Creates a PDO classvariable.
+   *
+   * @param pdoClass the PDO's class (i.e. interface)
+   * @param poClass the class of the persistence implementation
+   * @param tableAlias the table alias to be used in joined selects
+   * @param superClassVariables the class variables of the superclass, null if not inherited
+   * @param eagerJoins the optional eager joins, null of empty if none
+   * @param <T> the PDO class type
+   * @param <P> the persistence class type
+   */
+  @SuppressWarnings("unchecked")
+  public static <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>> PersistentObjectClassVariables<T,P> create(
+      Class<T> pdoClass, Class<P> poClass, String tableAlias,
+      PersistentObjectClassVariables<? super T, ? super P> superClassVariables,
+      List<Join<T,?>> eagerJoins)  {
+
+    return PersistentClassVariablesFactory.getInstance().pdoCv(pdoClass, poClass, tableAlias,
+                                                               // cast below avoids compile(r?) error
+                                                               (PersistentObjectClassVariables) superClassVariables,
+                                                               eagerJoins);
+  }
+
+  /**
+   * Creates a PDO classvariable.
+   *
+   * @param pdoClass the PDO's class (i.e. interface)
+   * @param poClass the class of the persistence implementation
+   * @param tableAlias the table alias to be used in joined selects
+   * @param <T> the PDO class type
+   * @param <P> the persistence class type
+   */
+  public static <T extends PersistentDomainObject<T>, P extends AbstractPersistentObject<T,P>>  PersistentObjectClassVariables<T,P> create(
+      Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
+    return PersistentClassVariablesFactory.getInstance().pdoCv(pdoClass, poClass, tableAlias);
+  }
+
+
+  /**
    * The associated PDO class (i.e. the interface)
    */
   public final Class<T> pdoClass;
@@ -197,6 +235,7 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
     super(poClass,
           SessionUtilities.getInstance().determineClassId(pdoClass),
           SessionUtilities.getInstance().determineTablename(pdoClass));
+
     this.pdoClass = pdoClass;
     this.methodCache = new PdoMethodCache<>(pdoClass);
     this.tableAlias = tableAlias;
@@ -210,10 +249,10 @@ public class PersistentObjectClassVariables<T extends PersistentDomainObject<T>,
    *
    * @param pdoClass the PDO's class (i.e. interface)
    * @param poClass the class of the persistence implementation
-   * @param alias the table alias to be used in joined selects
+   * @param tableAlias the table alias to be used in joined selects
    */
-  public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String alias)  {
-    this(pdoClass, poClass, alias, null, null);
+  public PersistentObjectClassVariables(Class<T> pdoClass, Class<P> poClass, String tableAlias)  {
+    this(pdoClass, poClass, tableAlias, null, null);
   }
 
   /**

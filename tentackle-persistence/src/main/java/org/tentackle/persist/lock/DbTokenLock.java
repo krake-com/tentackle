@@ -28,7 +28,9 @@ import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
 import org.tentackle.persist.TokenLock;
+import org.tentackle.session.ClassId;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.TableName;
 import org.tentackle.sql.Backend;
 
 
@@ -72,18 +74,15 @@ import org.tentackle.sql.Backend;
  *
  * @author harald
  */
+@ClassId(/**/10/**/)                // @wurblet < Inject $classid
+@TableName(/**/"tokenlock"/**/)     // @wurblet < Inject --string $tablename
 public class DbTokenLock extends AbstractDbObject<DbTokenLock> implements TokenLock {
-
-  /** the database tablename. */
-  public static final String TABLENAME = /**/"tokenlock"/**/;  // @wurblet < Inject --string $tablename
-
-  private static final DbObjectClassVariables<DbTokenLock> CLASSVARIABLES =
-    new DbObjectClassVariables<>(DbTokenLock.class,
-                                 /**/10/**/,  // @wurblet < Inject $classid
-                                 TABLENAME);
 
   private static final long serialVersionUID = -1723181864077614924L;
 
+  /** Variables common to all instances of {@link DbTokenLock}. */
+  public static final DbObjectClassVariables<DbTokenLock> CLASSVARIABLES =
+      DbObjectClassVariables.create(DbTokenLock.class);
 
 
   // @wurblet fieldnames ColumnNames --model=$mapfile

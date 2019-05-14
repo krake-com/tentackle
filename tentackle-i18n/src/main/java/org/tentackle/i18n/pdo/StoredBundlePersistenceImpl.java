@@ -69,7 +69,7 @@ public class StoredBundlePersistenceImpl extends AbstractPersistentObject<Stored
   /** Variables common to all instances of StoredBundlePersistenceImpl. */
   @SuppressWarnings("unchecked")
   public static final PersistentObjectClassVariables<StoredBundle, StoredBundlePersistenceImpl> CLASSVARIABLES =
-            new PersistentObjectClassVariables<>(
+            PersistentObjectClassVariables.create(
                     StoredBundle.class,
                     StoredBundlePersistenceImpl.class,
                     "bndl",
