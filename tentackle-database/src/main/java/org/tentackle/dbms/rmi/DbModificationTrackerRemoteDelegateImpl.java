@@ -19,12 +19,13 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
-import org.tentackle.dbms.MasterSerial;
 import org.tentackle.dbms.DbModificationTracker;
+import org.tentackle.dbms.MasterSerial;
 import org.tentackle.misc.IdSerialTuple;
 import org.tentackle.session.ModificationTracker;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * Remote delegate implementation for {@link DbModificationTracker}.
@@ -48,6 +49,7 @@ public class DbModificationTrackerRemoteDelegateImpl<T extends DbModificationTra
    *
    * @param serial the long master serial
    * @return the master serial object
+   * @see DbModificationTracker#extractMasterSerial(MasterSerial)
    */
   protected MasterSerial createMasterSerial(long serial) {
     MasterSerial ms = new MasterSerial();

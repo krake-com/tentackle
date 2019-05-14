@@ -757,11 +757,11 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       performPendingCounts();
     }
 
-    long serial = selectMasterSerial();
+    Long serial = getModifiedMasterSerial();
 
-    if (serial != getMasterSerial()) {
+    if (serial != null) {   // changed!
 
-      if (serial < getMasterSerial()) {
+      if (serial < masterEntry.serial) {
         // new serial is less than current serial: force complete re-initialization
         invalidate();
       }
@@ -881,21 +881,35 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   /**
    * Extracts the master serial from the master serial object.
    * <p>
-   * Application can override this method to process the optional
-   * application data.
+   * Application can override this method to process optional application data.
    *
    * @param masterSerial the master serial object
    * @return the long serial
+   * @see org.tentackle.dbms.rmi.DbModificationTrackerRemoteDelegateImpl#createMasterSerial(long)
    */
   protected long extractMasterSerial(MasterSerial masterSerial) {
     return masterSerial.serial;
   }
 
   /**
+   * Returns the new master serial if modified.<br>
+   * The method is provided to allow extensions, for example listening for other events on other tables.
+   *
+   * @return the updated master serial, null if unchanged
+   */
+  protected Long getModifiedMasterSerial() {
+    long serial = selectMasterSerial();
+    if (serial != getMasterSerial()) {
+      return serial;
+    }
+    return null;
+  }
+
+  /**
    * Reads the master-serial from the database.
    * @return the master serial
    */
-  private long selectMasterSerial() {
+  protected long selectMasterSerial() {
    if (getSession().isRemote())  {
       try {
         return extractMasterSerial(((DbModificationTrackerRemoteDelegate) getSession().
@@ -912,11 +926,13 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
 
 
   /**
-   * Selects id/serial for all monitored tables.
+   * Selects id/serial for all monitored tables.<br>
+   * Override this method to listen on other modification tables as well (from other apps, for example),
+   * see {@link #getModifiedMasterSerial()}.
    *
    * @return the tuples
    */
-  private List<IdSerialTuple> selectAllIdSerials() {
+  protected List<IdSerialTuple> selectAllIdSerials() {
     if (getSession().isRemote())  {
       try {
         return ((DbModificationTrackerRemoteDelegate) getSession().getRemoteDelegate(getRemoteDelegateId())).selectAllSerials();
@@ -937,7 +953,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
    * @param tableName the table to lookup
    * @return the id/serial pair for the tablename, null table not configured so far
    */
-  private IdSerialTuple selectIdSerialForName(String tableName) {
+  protected IdSerialTuple selectIdSerialForName(String tableName) {
 
     if (getSession().isRemote())  {
       try {
