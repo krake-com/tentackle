@@ -32,6 +32,7 @@ import org.tentackle.sql.Backend;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 /**
@@ -355,6 +356,37 @@ public class IndexImpl implements Index {
   @Override
   public String sqlCreateIndex(Backend backend, Entity entity) {
     return CodeFactory.getInstance().createSqlIndex(backend, entity, this);
+  }
+
+
+  /**
+   * Checks whether other index is logically equal to this index.
+   *
+   * @param otherIndex the other index
+   * @return true if equal
+   */
+  public boolean isLogicallyEqualTo(Index otherIndex) {
+    boolean logicallyEqual = true;
+    if (Objects.equals(getFilterCondition(), otherIndex.getFilterCondition())) {
+      if (getAttributes().size() == otherIndex.getAttributes().size()) {
+        for (int position = 0; position < getAttributes().size(); position++) {
+          IndexAttribute indexAttribute = getAttributes().get(position);
+          IndexAttribute otherAttribute = otherIndex.getAttributes().get(position);
+          if (!indexAttribute.isDescending() == otherAttribute.isDescending() ||
+              !indexAttribute.getAttribute().getColumnName().equals(otherAttribute.getAttribute().getColumnName())) {
+            logicallyEqual = false;
+            break;
+          }
+        }
+      }
+      else {
+        logicallyEqual = false;
+      }
+    }
+    else {
+      logicallyEqual = false;
+    }
+    return logicallyEqual;
   }
 
 }

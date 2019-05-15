@@ -18,16 +18,6 @@
 
 package org.tentackle.model.migrate;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.regex.Pattern;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
@@ -41,6 +31,17 @@ import org.tentackle.sql.metadata.ForeignKeyAction;
 import org.tentackle.sql.metadata.ForeignKeyMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Handles the migration of tables.
@@ -534,15 +535,31 @@ public class TableMigrator {
 
     Collection<IndexMetaData> existingIndexes = table.getIndexes();
     List<Index> tableIndexes = entity.getTableIndexes();
+    List<IndexMetaData> renamedIndexes = new ArrayList<>();
 
     for (Index index: tableIndexes) {
       boolean found = false;
       for (IndexMetaData existingIndex: existingIndexes) {
-        if (existingIndex.getIndexName().equals(index.createDatabaseIndexName(entity))) {
-          // found -> migrate
+        String indexName = index.createDatabaseIndexName(entity);
+        if (existingIndex.getIndexName().equals(indexName)) {
+          // found -> migrate, if necessary
           result = result.sum(new IndexMigrator(entity, index, backend, existingIndex).migrate());
           found = true;
           break;
+        }
+        else if (!IndexMigrator.isLogicallyDifferent(index, existingIndex)) {
+          // different name, but logically equivalent: rename if backend supports that
+          String existingName = entity.getSchemaName() == null ?
+                                existingIndex.getIndexName() :
+                                (entity.getSchemaName() + "." + existingIndex.getIndexName());
+          String sql = backend.sqlRenameIndex(entity.getTableName(), existingName, indexName);
+          if (sql != null) {
+            result = result.sum(new IndexMigrator.Result(sql, ""));
+            found = true;
+            renamedIndexes.add(existingIndex);
+            break;
+          }
+          // else: drop and create
         }
       }
       if (!found) {
@@ -552,7 +569,7 @@ public class TableMigrator {
     }
 
     for (IndexMetaData existingIndex: existingIndexes) {
-      if (!existingIndex.isPrimaryIdKey()) {
+      if (!existingIndex.isPrimaryIdKey() && !renamedIndexes.contains(existingIndex)) {
         boolean found = false;
         for (Index index: tableIndexes) {
           if (index.createDatabaseIndexName(entity).equals(existingIndex.getIndexName())) {
