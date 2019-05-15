@@ -188,6 +188,11 @@ public class MsSql extends AbstractSql2003Backend {
   }
 
   @Override
+  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
+    return null;    // not supported via SQL -> drop and create
+  }
+
+  @Override
   protected String extractWhereClause(String sql, int whereOffset) {
     int ndx = sql.indexOf(SQL_TOP);
     if (ndx >= 0) {

@@ -1328,6 +1328,18 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
     }
 
+    for (Index index: getIndexes()) {
+      IndexImpl indexImpl = (IndexImpl) index;
+      if (indexImpl.isParsed()) {
+        for (Index otherIndex : getIndexes()) {
+          IndexImpl otherIndexImpl = (IndexImpl) otherIndex;
+          if (otherIndex != index && otherIndexImpl.isParsed() && indexImpl.isLogicallyEqualTo(otherIndexImpl)) {
+            throw new ModelException("index '" + index.getName() + "' is logically identical to '" + otherIndex.getName() + "'", this);
+          }
+        }
+      }
+    }
+
     Set<String> relationNames = new HashSet<>();
     for (Relation relation: getRelations()) {
       relation.validate();

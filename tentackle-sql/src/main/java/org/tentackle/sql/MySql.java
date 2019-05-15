@@ -310,6 +310,21 @@ public class MySql extends AbstractSql92Backend {
   }
 
   @Override
+  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
+    int ndx = oldIndexName.indexOf('.');
+    if (ndx >= 0) {
+      // cut schema
+      oldIndexName = oldIndexName.substring(ndx + 1);
+    }
+    return  SQL_ALTER_TABLE + tableName +
+            " RENAME INDEX " +
+            oldIndexName +
+            " TO " +
+            newIndexName +
+            ";\n";
+  }
+
+  @Override
   public String sqlRenameAndAlterColumnType(String tableName, String oldColumnName, String newColumnName, String comment,
           SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
     StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);

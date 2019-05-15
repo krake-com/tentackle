@@ -44,7 +44,7 @@ public class IndexMigrator {
     /**
      * Creates the migration result.
      *
-     * @param dropSql the sql code to drop indexes
+     * @param dropSql the sql code to drop or rename indexes
      * @param createSql the sql code to create indexes
      */
     public Result(String dropSql, String createSql) {
@@ -53,7 +53,7 @@ public class IndexMigrator {
     }
 
     /**
-     * Gets the sql code to drop indexex.
+     * Gets the sql code to drop or rename indexes.
      *
      * @return the sql code, empty string if nothing to migrate
      */
@@ -147,44 +147,7 @@ public class IndexMigrator {
     }
     else {
       // check if index has changed in its configuration. If so -> drop and re-create
-      boolean changed = index.isUnique() != indexMetaData.isUnique();
-      if (!changed) {
-        // check filter condition
-        String modelFilter = index.getFilterCondition();
-        if (StringHelper.isAllWhitespace(modelFilter)) {
-          modelFilter = "";
-        }
-        else {
-          modelFilter = modelFilter.toUpperCase().replace(" ", "");
-        }
-        String currentFilter = indexMetaData.getFilterCondition();
-        if (StringHelper.isAllWhitespace(currentFilter)) {
-          currentFilter = "";
-        }
-        else {
-          currentFilter = currentFilter.toUpperCase().replace(" ", "");
-        }
-        changed = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
-      }
-      if (!changed) {
-        // check index columns
-        if (index.getAttributes().size() == indexMetaData.getColumns().size()) {
-          for (int position=0; position < index.getAttributes().size(); position++) {
-            IndexAttribute indexAttribute = index.getAttributes().get(position);
-            IndexColumnMetaData indexColumn = indexMetaData.getColumns().get(position);
-            if (indexAttribute.isDescending() != indexColumn.isDescending() ||
-                !indexAttribute.getAttribute().getColumnName().equals(indexColumn.getColumnName())) {
-              changed = true;
-              break;
-            }
-          }
-        }
-        else  {
-          changed = true;
-        }
-      }
-
-      if (changed) {
+      if (isLogicallyDifferent(index, indexMetaData)) {
         dropSql.append(dropIndex());
         createSql.append(createIndex());
       }
@@ -193,6 +156,53 @@ public class IndexMigrator {
     return new Result(dropSql.toString(), createSql.toString());
   }
 
+
+  /**
+   * Compares an model index with an existing database index.
+   *
+   * @param modelIndex the index as defined in the model
+   * @param dbIndex the index existing in the database
+   * @return true if they are different, false if logically equal
+   */
+  public static boolean isLogicallyDifferent(Index modelIndex, IndexMetaData dbIndex) {
+    boolean different = modelIndex.isUnique() != dbIndex.isUnique();
+    if (!different) {
+      // check filter condition
+      String modelFilter = modelIndex.getFilterCondition();
+      if (StringHelper.isAllWhitespace(modelFilter)) {
+        modelFilter = "";
+      }
+      else {
+        modelFilter = modelFilter.toUpperCase().replace(" ", "");
+      }
+      String currentFilter = dbIndex.getFilterCondition();
+      if (StringHelper.isAllWhitespace(currentFilter)) {
+        currentFilter = "";
+      }
+      else {
+        currentFilter = currentFilter.toUpperCase().replace(" ", "");
+      }
+      different = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
+    }
+    if (!different) {
+      // check index columns
+      if (modelIndex.getAttributes().size() == dbIndex.getColumns().size()) {
+        for (int position=0; position < modelIndex.getAttributes().size(); position++) {
+          IndexAttribute indexAttribute = modelIndex.getAttributes().get(position);
+          IndexColumnMetaData indexColumn = dbIndex.getColumns().get(position);
+          if (indexAttribute.isDescending() != indexColumn.isDescending() ||
+              !indexAttribute.getAttribute().getColumnName().equals(indexColumn.getColumnName())) {
+            different = true;
+            break;
+          }
+        }
+      }
+      else  {
+        different = true;
+      }
+    }
+    return different;
+  }
 
   /**
    * Creates the index.
@@ -223,7 +233,7 @@ public class IndexMigrator {
    * @param s2 the second string
    * @return true if s1 equals s2
    */
-  private boolean equalsIgnoreMatchingParenthesis(String s1, String s2) {
+  private static boolean equalsIgnoreMatchingParenthesis(String s1, String s2) {
     int ndx1 = 0;
     int ndx2 = 0;
     int pending1 = 0;   // > 0 pending open parenthesis in s1

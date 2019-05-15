@@ -552,6 +552,14 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
+    return  SQL_ALTER_INDEX + oldIndexName +
+            " RENAME TO " +
+            newIndexName +
+            ";\n";
+  }
+
+  @Override
   public String sqlRenameAndAlterColumnType(String tableName, String oldColumnName, String newColumnName, String comment,
           SqlType sqlType, int size, int scale, boolean nullable, Object defaultValue) {
     throw new BackendException("backend supports rename column without full declaration");
