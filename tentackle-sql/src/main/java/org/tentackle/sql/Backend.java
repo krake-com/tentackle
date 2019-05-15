@@ -206,6 +206,9 @@ public interface Backend {
   /** SQL ALTER TABLE intro. */
   String SQL_ALTER_TABLE = "ALTER TABLE ";
 
+  /** SQL ALTER INDEX intro. */
+  String SQL_ALTER_INDEX = "ALTER INDEX ";
+
   /** SQL ALTER COLUMN fragment. */
   String SQL_ALTER_COLUMN = " ALTER COLUMN ";
 
@@ -706,6 +709,16 @@ public interface Backend {
    * @return the SQL code, null if need full spec sqlRenameAndAlterColumnType below
    */
   String sqlRenameColumn(String tableName, String oldColumnName, String newColumnName);
+
+  /**
+   * Generates sql code to rename an index.
+   *
+   * @param tableName the tablename
+   * @param oldIndexName the old column name
+   * @param newIndexName the new column name
+   * @return the SQL code, null if not supported by the backend and we need to drop and create
+   */
+  String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName);
 
   /**
    * Generates sql code to rename a column.

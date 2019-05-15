@@ -205,6 +205,14 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
+    return  "RENAME INDEX " + oldIndexName +
+            " TO " +
+            newIndexName +
+            ";\n";
+  }
+
+  @Override
   protected boolean isDropIfExistsSupported() {
     return true;
   }

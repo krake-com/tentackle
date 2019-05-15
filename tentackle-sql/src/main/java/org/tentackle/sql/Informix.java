@@ -223,6 +223,14 @@ public class Informix extends AbstractSql92Backend {
   }
 
   @Override
+  public String sqlRenameIndex(String tableName, String oldIndexName, String newIndexName) {
+    return  "RENAME INDEX " + oldIndexName +
+            " TO " +
+            newIndexName +
+            ";\n";
+  }
+
+  @Override
   public String sqlAddColumn(String tableName, String columnName, String comment, SqlType sqlType, int size, int scale,
           boolean nullable, Object defaultValue) {
     return  SQL_ALTER_TABLE + tableName +
