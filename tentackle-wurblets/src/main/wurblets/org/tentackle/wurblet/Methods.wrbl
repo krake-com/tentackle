@@ -18,7 +18,7 @@ For more options, see {\@link ModelWurblet}.
 
     for (Attribute attr: getEntity().getAttributes())  {
 
-      if (attr.isHidden()) {
+      if (attr.isHidden() || attr.getOptions().isMute()) {
         continue; // skip
       }
 
@@ -55,7 +55,7 @@ For more options, see {\@link ModelWurblet}.
   @(annotation)@
 @[
           }
-          if (attr.getOptions().isBind()) {
+          if (attr.getOptions().isBindable()) {
 ]@
   @(attr.getBindableAnnotation())@
 @[
@@ -88,7 +88,7 @@ For more options, see {\@link ModelWurblet}.
    * \@param @(attr.getName())@ @(attr.getOptions().getComment())@
    */
 @[
-            if (attr.getOptions().isBind()) {
+            if (attr.getOptions().isBindable()) {
 ]@
   \@Bindable
 @[

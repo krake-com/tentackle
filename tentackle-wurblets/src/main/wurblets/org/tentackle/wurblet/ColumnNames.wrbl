@@ -10,7 +10,7 @@ For more options, see {\@link ModelWurblet}.
 @[
   private void wurbel() {
     for (Attribute attr: getEntity().getAttributes())  {
-      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper()) {
+      if (!attr.getOptions().isNoConstant() && !attr.getOptions().isFromSuper() && !attr.getOptions().isMute()) {
         String name = attr.getName().toUpperCase();
         if (!attr.getOptions().isNoDeclare() || attr.getOptions().isFromSuper())    {
           for (DataType.SqlTypeWithPostfix sp: attr.getDataType().getSqlTypesWithPostfix()) {

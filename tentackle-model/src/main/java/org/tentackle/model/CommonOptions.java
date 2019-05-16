@@ -41,82 +41,88 @@ public interface CommonOptions {
   String getBindOptions();
 
   /**
-   * true if [NODECLARE]-option set.
-   * @return the NoDeclare
+   * No declaration code.
+   *
+   * @return true if don't generate declaration
    */
   boolean isNoDeclare();
 
   /**
-   * true if [NOMETHOD]-option set.
-   * @return the NoMethod
+   * No getter and setter methods.
+   *
+   * @return true if don't generate accessor methods
    */
   boolean isNoMethod();
 
   /**
-   * true if [NOCONSTANT]-option set.
-   * @return the NoConstant
+   * No constant strings.
+   *
+   * @return true if don't generate constants for names
    */
   boolean isNoConstant();
 
   /**
-   * true if [DERIVED]-option set.
-   * @return the Derived
+   * Element is mute and only provided for external system.
+   *
+   * @return true if unused by application
    */
-  boolean isDerived();
+  boolean isMute();
 
   /**
-   * true if [SUPER]-option set.
-   * @return the FromSuper
+   * Declared in super class.
+   *
+   * @return true if element is derived from the super class
    */
   boolean isFromSuper();
 
   /**
-   * true if [READONLY]-option set.
-   * @return the ReadOnly
+   * Element is readonly.
+   *
+   * @return true if cannot be modified
    */
   boolean isReadOnly();
 
   /**
-   * true if [WRITEONLY]-option set.
-   * @return the WriteOnly
+   * Element is writeonly.
+   *
+   * @return true if cannot be read by application
    */
   boolean isWriteOnly();
 
   /**
    * The access scope.
-   * @return the AccessPackage
+   *
+   * @return the scope
    */
   AccessScope getAccessScope();
 
   /**
-   * true if [TRIMREAD]-option set.
-   * @return the TrimRead
+   * Trim on read from database.
+   *
+   * @return true if string is trimmed when read
    */
   boolean isTrimRead();
 
   /**
-   * true if [TRIMWRITE]-option set.
-   * @return the TrimWrite
+   * Trim on write to database.
+   *
+   * @return true if string is trimmed on write
    */
   boolean isTrimWrite();
 
   /**
-   * true if [MAPNULL]-option set.
-   * @return the MapNull
+   * Map null values to constant in database.
+   *
+   * @return true if map null to non-null value
    */
   boolean isMapNull();
 
   /**
-   * true if [SETGET]-option set.
-   * @return the SetGet
+   * Generate bindable annotation.
+   *
+   * @return true if bindable element
    */
-  boolean isSetGet();
-
-  /**
-   * true if [BIND]-option set.
-   * @return the Bind
-   */
-  boolean isBind();
+  boolean isBindable();
 
   /**
    * Returns whether autoselect should be turned on.

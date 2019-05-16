@@ -77,7 +77,7 @@ public class CodeFactory {
    * @return the java code, null if no binding
    */
   public String createBindableAnnotation(Attribute attribute) {
-    if (attribute.getOptions().isBind()) {
+    if (attribute.getOptions().isBindable()) {
       String bindOptions = attribute.getOptions().getBindOptions();
       if (StringHelper.isAllWhitespace(bindOptions)) {
         return "@Bindable";
@@ -224,7 +224,7 @@ public class CodeFactory {
     int attributeCount = 1;
 
     for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isDerived()) {
+      if (!attribute.getOptions().isMute()) {
         DataType dataType = attribute.getEffectiveType();
         int multiColumnIndex = 1;
         int multiColumnSize = dataType.getSqlTypes().length;
@@ -260,7 +260,7 @@ public class CodeFactory {
     buf.append(backend.sqlCreateTableClosing(entity.getTableName(), entity.getOptions().getComment()));
     buf.append(backend.sqlCreateTableComment(entity.getTableName(), entity.getOptions().getComment()));
     for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isDerived()) {
+      if (!attribute.getOptions().isMute()) {
         buf.append(backend.sqlCreateColumnComment(entity.getTableName(), attribute.getColumnName(), attribute.getOptions().getComment()));
       }
     }
