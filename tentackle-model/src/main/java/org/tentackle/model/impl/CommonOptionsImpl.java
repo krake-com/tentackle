@@ -45,7 +45,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   /** don't generate static constants. */
   public static final String OPTION_NOCONSTANT = "NOCONSTANT";
 
-  /** element is mute (not used by application). */
+  /** element is mute (not part of PDO). */
   public static final String OPTION_MUTE = "MUTE";
 
   /** element is derived from superclass. */
