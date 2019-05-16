@@ -62,9 +62,9 @@ public interface CommonOptions {
   boolean isNoConstant();
 
   /**
-   * Element is mute and only provided for external system.
+   * Element is mute.
    *
-   * @return true if unused by application
+   * @return true if not part of the pdo
    */
   boolean isMute();
 
