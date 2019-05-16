@@ -296,7 +296,7 @@ public class TableMigrator {
 
     // first guess by column name.
     for (Attribute attribute: entity.getTableAttributes()) {
-      if (!attribute.getOptions().isDerived()) {
+      if (!attribute.getOptions().isMute()) {
         Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
         for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
           ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());

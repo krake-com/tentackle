@@ -106,7 +106,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     setNoDeclare(options.isNoDeclare());
     setNoMethod(options.isNoMethod());
     setNoConstant(options.isNoConstant());
-    setDerived(options.isDerived());
+    setMute(options.isMute());
     setFromSuper(options.isFromSuper());
     setReadOnly(options.isReadOnly());
     setWriteOnly(options.isWriteOnly());
@@ -114,8 +114,7 @@ public class AttributeOptionsImpl extends CommonOptionsImpl implements Attribute
     setTrimRead(options.isTrimRead());
     setTrimWrite(options.isTrimWrite());
     setMapNull(options.isMapNull());
-    setSetGet(options.isSetGet());
-    setBind(options.isBind());
+    setBindable(options.isBindable());
     setUpperCase(options.isUpperCase());
     setLowerCase(options.isLowerCase());
     setMaxCol(options.isMaxCol());

@@ -747,21 +747,10 @@ public class ModelWurblet extends AbstractJavaWurblet {
    * @return true if derived from superclass
    */
   public boolean isAttributeDerived(Attribute attribute) {
-    return attribute.getOptions().isDerived() || attribute.getEntity() != entity;
+    return attribute.getOptions().isFromSuper() || attribute.getEntity() != entity;
   }
 
   /**
-   * Determines whether setter/getter need to be used to access an attribute.
-   *
-   * @param attribute the attribute
-   * @return true if use set/get
-   */
-  public boolean isSetGetRequired(Attribute attribute) {
-    return attribute.getOptions().isSetGet() || isAttributeDerived(attribute);
-  }
-
-
-    /**
    * Adds a string to a comma separated list.
    *
    * @param builder the string builder

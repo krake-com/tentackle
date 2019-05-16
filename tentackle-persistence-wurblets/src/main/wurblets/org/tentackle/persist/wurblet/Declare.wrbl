@@ -30,7 +30,7 @@ For more options, see {\@link DbModelWurblet}.
     }
 
     for (Attribute attr: getEntity().getAttributes()) {
-      if (!attr.getOptions().isNoDeclare())    {
+      if (!attr.getOptions().isNoDeclare() && !attr.getOptions().isMute())    {
 ]@
 
   /** @(attr.getOptions().getComment())@. */

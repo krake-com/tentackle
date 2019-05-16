@@ -24,7 +24,10 @@ import org.tentackle.model.CommonOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 
-import static org.tentackle.common.Constants.*;
+import static org.tentackle.common.Constants.BIND_COLS;
+import static org.tentackle.common.Constants.BIND_LINES;
+import static org.tentackle.common.Constants.BIND_MAXCOLS;
+import static org.tentackle.common.Constants.BIND_SCALE;
 
 /**
  * Implementation of common options.
@@ -42,10 +45,10 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   /** don't generate static constants. */
   public static final String OPTION_NOCONSTANT = "NOCONSTANT";
 
-  /** attribute is derived (table per class). */
-  public static final String OPTION_DERIVED = "DERIVED";
+  /** element is mute (not used by application). */
+  public static final String OPTION_MUTE = "MUTE";
 
-  /** attribute is derived (table per concrete class). */
+  /** element is derived from superclass. */
   public static final String OPTION_SUPER = "SUPER";
 
   /** don't generate a set-method. */
@@ -66,9 +69,6 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   /** map null to non-null value. */
   public static final String OPTION_MAPNULL = "MAPNULL";
 
-  /** always use set/get, don't use attributes directly in read/write. */
-  public static final String OPTION_SETGET = "SETGET";
-
   /** add binding information. */
   public static final String OPTION_BIND = "BIND";
 
@@ -87,7 +87,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   private boolean noDeclare;
   private boolean noMethod;
   private boolean noConstant;
-  private boolean derived;
+  private boolean mute;
   private boolean fromSuper;
   private boolean readOnly;
   private boolean writeOnly;
@@ -95,7 +95,6 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   private boolean trimRead;
   private boolean trimWrite;
   private boolean mapNull;
-  private boolean setGet;
   private boolean bind;
   private boolean upperCase;
   private boolean lowerCase;
@@ -161,8 +160,8 @@ public abstract class CommonOptionsImpl implements CommonOptions {
         setNoConstant(on);
         break;
 
-      case OPTION_DERIVED:
-        setDerived(on);
+      case OPTION_MUTE:
+        setMute(on);
         break;
 
       case OPTION_SUPER:
@@ -194,12 +193,8 @@ public abstract class CommonOptionsImpl implements CommonOptions {
         setMapNull(on);
         break;
 
-      case OPTION_SETGET:
-        setSetGet(on);
-        break;
-
       case OPTION_BIND:
-        setBind(on);
+        setBindable(on);
         break;
 
       case Constants.BIND_UC:
@@ -286,7 +281,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    */
   public void processBindOption(String option, boolean on) {
     if (on) {
-      setBind(true);
+      setBindable(true);
       addBindOption(option);
     }
     else {
@@ -363,8 +358,8 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   }
 
   @Override
-  public boolean isDerived() {
-    return derived;
+  public boolean isMute() {
+    return mute;
   }
 
   @Override
@@ -403,12 +398,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   }
 
   @Override
-  public boolean isSetGet() {
-    return setGet;
-  }
-
-  @Override
-  public boolean isBind() {
+  public boolean isBindable() {
     return bind;
   }
 
@@ -416,12 +406,12 @@ public abstract class CommonOptionsImpl implements CommonOptions {
     this.accessScope = accessScope;
   }
 
-  public void setBind(boolean bind) {
+  public void setBindable(boolean bind) {
     this.bind = bind;
   }
 
-  public void setDerived(boolean derived) {
-    this.derived = derived;
+  public void setMute(boolean mute) {
+    this.mute = mute;
   }
 
   public void setFromSuper(boolean fromSuper) {
@@ -450,10 +440,6 @@ public abstract class CommonOptionsImpl implements CommonOptions {
 
   public void setReadOnly(boolean readOnly) {
     this.readOnly = readOnly;
-  }
-
-  public void setSetGet(boolean setGet) {
-    this.setGet = setGet;
   }
 
   public void setTrimRead(boolean trimRead) {

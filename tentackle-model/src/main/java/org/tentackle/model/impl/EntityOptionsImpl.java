@@ -297,7 +297,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         editedExpiryAttribute.setName(Constants.AN_EDITEDEXPIRY);
         editedExpiryAttribute.getOptions().setComment("editing lock expiration");
         editedExpiryAttribute.getOptions().setFromSuper(true);
-        editedExpiryAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, editedExpiryAttribute);
       }
       if (editedSinceAttribute == null) {
@@ -307,7 +306,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         editedSinceAttribute.setName(Constants.AN_EDITEDSINCE);
         editedSinceAttribute.getOptions().setComment("being edited since");
         editedSinceAttribute.getOptions().setFromSuper(true);
-        editedSinceAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, editedSinceAttribute);
       }
       if (editedByAttribute == null) {
@@ -317,7 +315,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         editedByAttribute.setName(Constants.AN_EDITEDBY);
         editedByAttribute.getOptions().setComment("being edited by user id");
         editedByAttribute.getOptions().setFromSuper(true);
-        editedByAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, editedByAttribute);
       }
     }
@@ -345,7 +342,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         normTextAttribute.setName(Constants.AN_NORMTEXT);
         normTextAttribute.getOptions().setComment("normalized text");
         normTextAttribute.getOptions().setFromSuper(true);
-        normTextAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, normTextAttribute);
       }
     }
@@ -369,7 +365,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         tableSerialAttribute.setName(Constants.AN_TABLESERIAL);
         tableSerialAttribute.getOptions().setComment("table serial");
         tableSerialAttribute.getOptions().setFromSuper(true);
-        tableSerialAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, tableSerialAttribute);
       }
     }
@@ -393,7 +388,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         rootIdAttribute.setName(Constants.AN_ROOTID);
         rootIdAttribute.getOptions().setComment("root entity id");
         rootIdAttribute.getOptions().setFromSuper(true);
-        rootIdAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, rootIdAttribute);
       }
     }
@@ -413,7 +407,6 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         rootClassIdAttribute.setName(Constants.AN_ROOTCLASSID);
         rootClassIdAttribute.getOptions().setComment("root entity class id");
         rootClassIdAttribute.getOptions().setFromSuper(true);
-        rootClassIdAttribute.getOptions().setSetGet(true);
         entity.getAttributes().add(0, rootClassIdAttribute);
       }
     }

@@ -70,16 +70,15 @@ public class AttributeOptionsPrinter {
     if (attribute.getDataType().isNumeric() || attribute.getDataType().isDateOrTime()) {
       printBool(buf, Constants.BIND_AUTOSELECT, options.isAutoSelect(), entityOptions.isAutoSelect());
     }
-    printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), entityOptions.isBind());
+    printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBindable(), entityOptions.isBindable());
     printBool(buf, CommonOptionsImpl.OPTION_NODECLARE, options.isNoDeclare(), entityOptions.isNoDeclare());
     printBool(buf, CommonOptionsImpl.OPTION_NOMETHOD, options.isNoMethod(), entityOptions.isNoMethod());
     printBool(buf, CommonOptionsImpl.OPTION_NOCONSTANT, options.isNoConstant(), entityOptions.isNoConstant());
-    printBool(buf, CommonOptionsImpl.OPTION_DERIVED, options.isDerived(), entityOptions.isDerived());
+    printBool(buf, CommonOptionsImpl.OPTION_MUTE, options.isMute(), entityOptions.isMute());
     printBool(buf, CommonOptionsImpl.OPTION_SUPER, options.isFromSuper(), entityOptions.isFromSuper());
     printBool(buf, CommonOptionsImpl.OPTION_READONLY, options.isReadOnly(), entityOptions.isReadOnly());
     printBool(buf, CommonOptionsImpl.OPTION_WRITEONLY, options.isWriteOnly(), entityOptions.isWriteOnly());
     printBool(buf, CommonOptionsImpl.OPTION_MAPNULL, options.isMapNull(), entityOptions.isMapNull());
-    printBool(buf, CommonOptionsImpl.OPTION_SETGET, options.isSetGet(), entityOptions.isSetGet());
 
     if (options.isTrimRead() == options.isTrimWrite() &&
         entityOptions.isTrimRead() == entityOptions.isTrimWrite()) {

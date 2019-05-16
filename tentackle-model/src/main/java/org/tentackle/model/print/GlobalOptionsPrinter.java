@@ -75,8 +75,8 @@ public class GlobalOptionsPrinter {
     if (options.isNoConstant()) {
       buf.append(CommonOptionsImpl.OPTION_NOCONSTANT).append(',');
     }
-    if (options.isDerived()) {
-      buf.append(CommonOptionsImpl.OPTION_DERIVED).append(',');
+    if (options.isMute()) {
+      buf.append(CommonOptionsImpl.OPTION_MUTE).append(',');
     }
     if (options.isFromSuper()) {
       buf.append(CommonOptionsImpl.OPTION_SUPER).append(',');
@@ -101,9 +101,6 @@ public class GlobalOptionsPrinter {
     }
     if (options.isMapNull()) {
       buf.append(CommonOptionsImpl.OPTION_MAPNULL).append(',');
-    }
-    if (options.isSetGet()) {
-      buf.append(CommonOptionsImpl.OPTION_SETGET).append(',');
     }
 
     if (options.isNoPrimaryKey()) {
@@ -133,7 +130,7 @@ public class GlobalOptionsPrinter {
       if (options.isMaxCol()) {
         buf.append(CommonOptionsImpl.BIND_SIZE).append(',');
       }
-      if (options.isBind()) {
+      if (options.isBindable()) {
         buf.append(CommonOptionsImpl.OPTION_BIND).append(',');
       }
       if (options.getTrackType() != TrackType.NONE) {
@@ -163,7 +160,7 @@ public class GlobalOptionsPrinter {
     }
     else {
       printBool(buf, CommonOptionsImpl.BIND_SIZE, options.isMaxCol(), modelDefaults.getSize());
-      printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBind(), modelDefaults.getBind());
+      printBool(buf, CommonOptionsImpl.OPTION_BIND, options.isBindable(), modelDefaults.getBind());
 
       if (modelDefaults.getTrackType() == null && options.getTrackType() != TrackType.NONE ||
           !Objects.equals(modelDefaults.getTrackType(), options.getTrackType())) {

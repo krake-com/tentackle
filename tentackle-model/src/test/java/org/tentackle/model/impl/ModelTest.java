@@ -18,9 +18,8 @@
 
 package org.tentackle.model.impl;
 
-import java.io.IOException;
-import java.sql.Timestamp;
-import java.util.TimeZone;
+import org.testng.annotations.Test;
+
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.AccessScope;
 import org.tentackle.model.Attribute;
@@ -36,9 +35,19 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.SortType;
 import org.tentackle.model.TrackType;
-import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.util.TimeZone;
+
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 /**
  * Data Model Test.
@@ -68,7 +77,7 @@ public class ModelTest {
       assertEquals(entity.getIntegrity(), Integrity.RELATED);
       assertEquals(entity.getOptions().getAccessScope(), AccessScope.PUBLIC);
 
-      assertTrue(entity.getOptions().isBind());
+      assertTrue(entity.getOptions().isBindable());
       assertTrue(entity.getOptions().isMaxCol());
       assertTrue(entity.getOptions().isAutoSelect());
       assertEquals(entity.getOptions().getTrackType(), TrackType.TRACKED);
@@ -76,7 +85,7 @@ public class ModelTest {
       assertTrue(entity.getOptions().isTableSerialProvided());
 
       assertNotEquals(entity.getOptions().getTrackType(), TrackType.ATTRACKED);
-      assertFalse(entity.getOptions().isDerived());
+      assertFalse(entity.getOptions().isMute());
       assertFalse(entity.getOptions().isFromSuper());
       assertNotEquals(entity.getOptions().getTrackType(), TrackType.FULLTRACKED);
       assertFalse(entity.getOptions().isLowerCase());
@@ -86,7 +95,6 @@ public class ModelTest {
       assertFalse(entity.getOptions().isNoMethod());
       assertFalse(entity.getOptions().isNoPrimaryKey());
       assertFalse(entity.getOptions().isReadOnly());
-      assertFalse(entity.getOptions().isSetGet());
       assertFalse(entity.getOptions().isTrimRead());
       assertFalse(entity.getOptions().isTrimWrite());
       assertFalse(entity.getOptions().isUpperCase());

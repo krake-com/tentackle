@@ -18,11 +18,8 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
@@ -45,6 +42,10 @@ import org.tentackle.model.parse.Line;
 import org.tentackle.model.parse.OptionLine;
 import org.tentackle.model.parse.RelationLine;
 import org.tentackle.sql.Backend;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 /**
@@ -139,7 +140,6 @@ public class EntityFactoryImpl implements EntityFactory {
     idAttribute.setName(Constants.AN_ID);
     idAttribute.getOptions().setComment("object id");
     idAttribute.getOptions().setFromSuper(true);
-    idAttribute.getOptions().setSetGet(true);
     entity.getAttributes().add(idAttribute);
 
     AttributeImpl serialAttribute = createAttribute(entity, document.getSourceInfo(), true);
@@ -148,7 +148,6 @@ public class EntityFactoryImpl implements EntityFactory {
     serialAttribute.setName(Constants.AN_SERIAL);
     serialAttribute.getOptions().setComment("object serial");
     serialAttribute.getOptions().setFromSuper(true);
-    serialAttribute.getOptions().setSetGet(true);
     entity.getAttributes().add(serialAttribute);
 
     // process the lines
@@ -266,7 +265,6 @@ public class EntityFactoryImpl implements EntityFactory {
       classIdAttribute.setName(Constants.AN_CLASSID);
       classIdAttribute.getOptions().setComment("class id");
       classIdAttribute.getOptions().setFromSuper(true);
-      classIdAttribute.getOptions().setSetGet(true);
       entity.getAttributes().add(0, classIdAttribute);    // comes first
     }
 
