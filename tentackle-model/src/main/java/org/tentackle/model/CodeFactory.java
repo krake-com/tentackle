@@ -224,45 +224,41 @@ public class CodeFactory {
     int attributeCount = 1;
 
     for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isMute()) {
-        DataType dataType = attribute.getEffectiveType();
-        int multiColumnIndex = 1;
-        int multiColumnSize = dataType.getSqlTypes().length;
-        for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
-          buf.append("    ");
-          String columnName = attribute.getColumnName() + sp.getPostfix();
-          int size = attribute.getSizeWithDefault();
-          int scale = attribute.getScaleWithDefault();
-          Object defaultValue = attribute.getOptions().getDefaultValue();
-          String comment = attribute.getOptions().getComment();
-          if (multiColumnIndex > 1) {
-            comment = null;
-            if (defaultValue != null) {
-              defaultValue = sp.getSqlType().getDefaultValue();
-            }
+      DataType dataType = attribute.getEffectiveType();
+      int multiColumnIndex = 1;
+      int multiColumnSize = dataType.getSqlTypes().length;
+      for (DataType.SqlTypeWithPostfix sp: dataType.getSqlTypesWithPostfix()) {
+        buf.append("    ");
+        String columnName = attribute.getColumnName() + sp.getPostfix();
+        int size = attribute.getSizeWithDefault();
+        int scale = attribute.getScaleWithDefault();
+        Object defaultValue = attribute.getOptions().getDefaultValue();
+        String comment = attribute.getOptions().getComment();
+        if (multiColumnIndex > 1) {
+          comment = null;
+          if (defaultValue != null) {
+            defaultValue = sp.getSqlType().getDefaultValue();
           }
-          if (dataType.isScaleInSecondColumn()) {
-            if (multiColumnIndex == 2) {
-              size = 0;
-            }
-            scale = 0;
-          }
-          buf.append(backend.sqlCreateColumn(
-              columnName, comment, sp.getSqlType(), size, scale,
-              attribute.isNullable(), defaultValue,
-              attribute.getName().equals(Constants.AN_ID) && !entity.getOptions().isNoPrimaryKey(),
-              attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
-          multiColumnIndex++;
         }
-        attributeCount++;
+        if (dataType.isScaleInSecondColumn()) {
+          if (multiColumnIndex == 2) {
+            size = 0;
+          }
+          scale = 0;
+        }
+        buf.append(backend.sqlCreateColumn(
+            columnName, comment, sp.getSqlType(), size, scale,
+            attribute.isNullable(), defaultValue,
+            attribute.getName().equals(Constants.AN_ID) && !entity.getOptions().isNoPrimaryKey(),
+            attributeCount < attributeNum || multiColumnIndex < multiColumnSize));
+        multiColumnIndex++;
       }
+      attributeCount++;
     }
     buf.append(backend.sqlCreateTableClosing(entity.getTableName(), entity.getOptions().getComment()));
     buf.append(backend.sqlCreateTableComment(entity.getTableName(), entity.getOptions().getComment()));
     for (Attribute attribute: tableAttributes) {
-      if (!attribute.getOptions().isMute()) {
-        buf.append(backend.sqlCreateColumnComment(entity.getTableName(), attribute.getColumnName(), attribute.getOptions().getComment()));
-      }
+      buf.append(backend.sqlCreateColumnComment(entity.getTableName(), attribute.getColumnName(), attribute.getOptions().getComment()));
     }
     return buf.toString();
   }
