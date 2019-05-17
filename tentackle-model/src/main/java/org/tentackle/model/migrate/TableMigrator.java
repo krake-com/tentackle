@@ -296,23 +296,21 @@ public class TableMigrator {
 
     // first guess by column name.
     for (Attribute attribute: entity.getTableAttributes()) {
-      if (!attribute.getOptions().isMute()) {
-        Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
-        for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
-          ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());
-          if (column != null) {
-            matchingColumns.add(column);
-          }
+      Collection<ColumnMetaData> matchingColumns = new ArrayList<>();
+      for (DataType.SqlTypeWithPostfix sp: attribute.getDataType().getSqlTypesWithPostfix()) {
+        ColumnMetaData column = table.getColumnByName(attribute.getColumnName() + sp.getPostfix());
+        if (column != null) {
+          matchingColumns.add(column);
         }
-        if (matchingColumns.isEmpty()) {
-          attributesToAdd.add(attribute);
+      }
+      if (matchingColumns.isEmpty()) {
+        attributesToAdd.add(attribute);
+      }
+      else  {
+        for (ColumnMetaData matchingColumn: matchingColumns) {
+          columnsToDrop.remove(matchingColumn.getColumnName());
         }
-        else  {
-          for (ColumnMetaData matchingColumn: matchingColumns) {
-            columnsToDrop.remove(matchingColumn.getColumnName());
-          }
-          attributesToMigrate.put(attribute, matchingColumns);
-        }
+        attributesToMigrate.put(attribute, matchingColumns);
       }
     }
 
