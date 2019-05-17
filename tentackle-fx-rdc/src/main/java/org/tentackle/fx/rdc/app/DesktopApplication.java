@@ -413,6 +413,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
     super.finishStartup();
     // tentackle styles and PDO textfields
     FxUtilities.getInstance().addStyleSheets();
+    showApplicationStatus(AppFxRdcBundle.getString("SUCCESSFULLY LOGGED IN"), 1.0);
   }
 
 }

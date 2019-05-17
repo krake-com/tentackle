@@ -27,8 +27,10 @@ import org.tentackle.misc.CommandLine;
 import org.tentackle.misc.DiagnosticUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
+import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
+import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.security.SecurityFactory;
@@ -568,8 +570,28 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     else  {
       PdoCache.setAllEnabled(false);    // disable caching globally
     }
+
+    if (getProperties().containsKey("statistics")) {
+      activateStatistics();
+    }
   }
 
+  /**
+   * Activate statistics.<br>
+   * Recommended during development.
+   */
+  protected void activateStatistics() {
+    PdoInvocationHandler.INVOKER.setCollectingStatistics(true);
+    OperationInvocationHandler.INVOKER.setCollectingStatistics(true);
+
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+        OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+      }
+    });
+  }
 
 
   /**
