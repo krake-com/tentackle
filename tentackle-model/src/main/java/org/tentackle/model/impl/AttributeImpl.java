@@ -485,8 +485,8 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
       }
     }
 
-    if (getOptions().isMute() && (dataType.isPrimitive() || getOptions().isMapNull())) {
-      throw createModelException("MUTE only applicable to nullable column");
+    if (getOptions().isMute() && dataType.isPrimitive() && getOptions().getDefaultValue() == null) {
+      throw createModelException("MUTE only applicable to nullable columns or columns with a default value");
     }
   }
 
