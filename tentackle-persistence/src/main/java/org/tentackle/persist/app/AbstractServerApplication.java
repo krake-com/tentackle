@@ -25,8 +25,13 @@ import org.tentackle.dbms.ConnectionManager;
 import org.tentackle.dbms.ConnectionManagerProvider;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.DefaultDbPool;
+import org.tentackle.dbms.ManagedConnection;
 import org.tentackle.dbms.MpxConnectionManager;
+import org.tentackle.dbms.StatementStatistics;
+import org.tentackle.dbms.rmi.RemoteDelegateInvocationHandler;
 import org.tentackle.log.Logger;
+import org.tentackle.pdo.OperationInvocationHandler;
+import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.PersistenceException;
@@ -312,4 +317,22 @@ public abstract class AbstractServerApplication extends AbstractApplication
     }
   }
 
+  @Override
+  protected void activateStatistics() {
+    PdoInvocationHandler.INVOKER.setCollectingStatistics(true);
+    OperationInvocationHandler.INVOKER.setCollectingStatistics(true);
+    RemoteDelegateInvocationHandler.setCollectingStatistics(true);
+    ManagedConnection.setCollectingStatistics(true);
+    ManagedConnection.setLogLevelForParallelOpenResultSets(Logger.Level.INFO);
+
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        LOGGER.warning("*** server killed ***");
+        PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
+        OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
+        StatementStatistics.log(LOGGER, Logger.Level.INFO, false);
+      }
+    });
+  }
 }
