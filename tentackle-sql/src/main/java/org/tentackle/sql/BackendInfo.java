@@ -18,15 +18,16 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Constants;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
-import org.tentackle.common.Constants;
 
 /**
  * Configuration info for a backend.
@@ -70,7 +71,7 @@ public class BackendInfo {
 
   /**
    * Creates a backend info.<br>
-   * The info is able to create a connection.
+   * This info is able to create a connection.
    *
    * @param url the backend url
    * @param user the username
@@ -86,10 +87,16 @@ public class BackendInfo {
     this.password = password;
     this.schemas = schemas;
 
+    // cut the optional backend type
+    String backendType = null;
+    int ndx = url.indexOf('|');
+    if (ndx >= 0) {
+      backendType = url.substring(ndx + 1);
+      url = url.substring(0, ndx);
+    }
+
     if (url.startsWith(Constants.BACKEND_JNDI_URL_INTRO)) {
-      int cndx = url.lastIndexOf(':');
-      // jndi:name[:database-type]
-      String jndiName = cndx < 6 ? url.substring(5) : url.substring(5, cndx);
+      String jndiName = url.substring(5);
       try {
         jndiDataSource = (DataSource) new InitialContext().lookup(jndiName);
       }
@@ -97,20 +104,20 @@ public class BackendInfo {
         throw new BackendException("lookup failed for " + jndiName, nex);
       }
 
-      if (cndx < 6) {
-        // database type not given: open temporary connection to get the URL
+      if (backendType == null) {
+        // backend type not given: open temporary connection to get the URL
         try (Connection tempCon = jndiDataSource.getConnection()) {
           DatabaseMetaData metaData = tempCon.getMetaData();
           if (metaData == null) {
             throw new BackendException(
                     "Metadata of JNDI-connection cannot be determined. Please add the backend type: " +
-                            url + ":<backend-type>");
+                            url + "|<backend-type>");
           }
           String jndiURL = metaData.getURL();
           if (jndiURL == null) {
             throw new BackendException(
                     "URL of JNDI-connection cannot be determined. Please add the backend type: " +
-                            url + ":<backend-type>");
+                            url + "|<backend-type>");
           }
           backend = BackendFactory.getInstance().getBackendByUrl(jndiURL);
         }
@@ -121,7 +128,7 @@ public class BackendInfo {
         // ignore closing exception
       }
       else  {
-        backend = BackendFactory.getInstance().getBackendByUrl(url);
+        backend = BackendFactory.getInstance().getBackendByName(backendType);
       }
     }
     else if (url.startsWith(Constants.BACKEND_RMI_URL_INTRO)) {
@@ -133,7 +140,9 @@ public class BackendInfo {
       if (!url.startsWith(Constants.BACKEND_JDBC_URL_INTRO)) {
         url = Constants.BACKEND_JDBC_URL_INTRO + url;
       }
-      backend = BackendFactory.getInstance().getBackendByUrl(url);
+      backend = backendType == null ?
+                BackendFactory.getInstance().getBackendByUrl(url) :
+                BackendFactory.getInstance().getBackendByName(backendType);
       jndiDataSource = null;
     }
 

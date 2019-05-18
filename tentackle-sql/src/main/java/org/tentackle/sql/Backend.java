@@ -217,7 +217,9 @@ public interface Backend {
 
 
   /**
-   * Checks whether the backend belongs to the given jdbc url.
+   * Checks whether the backend belongs to the given jdbc url.<br>
+   * If multiple backend implementations are provided for the same database type,
+   * only one backend should match the URL. The others must be selected via name.
    *
    * @param url the jdbc url
    * @return true if matches
