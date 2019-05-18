@@ -119,18 +119,21 @@ import java.util.function.Supplier;
  * For local sessions via JDBC the file contains at least the following properties:
  *
  * <pre>
- * url=jdbc-url
+ * url=jdbc-url[|backend-type]
  *
  * Example:
  * url=jdbc:postgresql://gonzo.krake.local/erp
  * </pre>
  *
+ * The backend type is optional and overrides the default resolution via URL.
+ * <p>
+ * <br>
  * Local sessions via JNDI need only the url. The url starts with
  * "<tt>jndi:</tt>" and is followed by the JNDI-name. The optional database backend type is
  * only necessary if it cannot be determined from the connection's metadata.
  *
  * <pre>
- * url=jndi:name[:database-type]
+ * url=jndi:name[|backend-type]
  *
  * Example:
  * url=jndi:jdbc/erpPool
