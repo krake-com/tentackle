@@ -89,6 +89,15 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   @Parameter
   protected boolean split;
 
+  /**
+   * Fail if the model differs from the database meta data.<br>
+   * Useful to validate that no migrations are necessary.
+   * <p>
+   * Same as {@code validate} goal.
+   */
+  @Parameter
+  protected boolean validate;
+
 
   /**
    * The database meta data retrieved from the backend.
@@ -160,6 +169,9 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
+
+    boolean migrationNecessary = false;
+
     try {
       sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema()));
       sqlWriter.append("-- entities in model: processed=")
@@ -188,9 +200,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
             sqlWriter.append('\n');
           }
         }
+        migrationNecessary = true;
       }
       else {
-        sqlWriter.append("-- relational model matches object model -> no migration necessary\n");
+        sqlWriter.append("-- database meta data matches object model -> no migration necessary\n");
       }
     }
     catch (IOException iox) {
@@ -212,6 +225,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
           getLog().warn("could not close connection " + con, sqx);
         }
       }
+    }
+
+    if (validate) {
+      if (migrationNecessary) {
+        throw new MojoExecutionException("database meta data differs from object model");
+      }
+      getLog().info("database meta data matches object model");
     }
   }
 
