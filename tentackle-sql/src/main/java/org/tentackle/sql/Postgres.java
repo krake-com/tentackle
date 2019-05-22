@@ -306,7 +306,8 @@ public class Postgres extends AbstractSql92Backend {
             columnName +
             " TYPE " +
             // nullable = true -> Postgres needs separate SET NOT NULL
-            columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, defaultValue) +
+            // default = null -> Postgres needs separate SET DEFAULT
+            columnTypeNullDefaultToString(columnName, sqlType, size, scale, true, null) +
             ";\n";
   }
 
