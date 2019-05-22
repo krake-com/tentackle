@@ -433,14 +433,17 @@ public class Oracle extends AbstractSql2003Backend {
   public String sqlAlterColumnDefault(String tableName, String columnName, SqlType sqlType, Object defaultValue) {
     StringBuilder buf = new StringBuilder(SQL_ALTER_TABLE);
     buf.append(tableName);
-    buf.append(SQL_ALTER_COLUMN);
-    buf.append(columnName);
     buf.append(" MODIFY ");
+    buf.append(columnName);
     if (defaultValue == null) {
-      buf.append("DROP DEFAULT");
+      // functionally equivalent to DROP DEFAULT, but not on the DDL level,
+      // To get rid of the default NULL the column must be added, copied, renamed, dropped
+      // or the table renamed, re-created, copied, dropped.
+      // Oracle...
+      buf.append(" DEFAULT NULL");
     }
     else  {
-      buf.append("SET DEFAULT ");
+      buf.append(" DEFAULT ");
       buf.append(valueToLiteral(sqlType, defaultValue));
     }
     buf.append(";\n");
