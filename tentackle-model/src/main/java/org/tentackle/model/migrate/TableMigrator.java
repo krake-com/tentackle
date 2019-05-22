@@ -556,7 +556,7 @@ public class TableMigrator {
             }
           }
           if (count == 1) {
-            String existingName = entity.getSchemaName() == null ?
+            String existingName = entity.getSchemaName() == null || Model.getInstance().isSchemaNameMapped() ?
                                   existingIndex.getIndexName() :
                                   (entity.getSchemaName() + "." + existingIndex.getIndexName());
             String sql = backend.sqlRenameIndex(entity.getTableName(), existingName, indexName);
