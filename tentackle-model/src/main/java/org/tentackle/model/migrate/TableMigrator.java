@@ -550,16 +550,26 @@ public class TableMigrator {
           break;
         }
         else if (!IndexMigrator.isLogicallyDifferent(index, existingIndex)) {
-          // different name, but logically equivalent: rename if backend supports that
-          String existingName = entity.getSchemaName() == null ?
-                                existingIndex.getIndexName() :
-                                (entity.getSchemaName() + "." + existingIndex.getIndexName());
-          String sql = backend.sqlRenameIndex(entity.getTableName(), existingName, indexName);
-          if (sql != null) {
-            result = result.sum(new IndexMigrator.Result(sql, ""));
-            found = true;
-            renamedIndexes.add(existingIndex);
-            break;
+          // different name, but logically equivalent: rename if backend supports that.
+          // however, check that this is the only equivalent (special case if
+          // duplicate indexes already exist in the database)
+          int count = 0;
+          for (IndexMetaData exNdx: existingIndexes) {
+            if (!IndexMigrator.isLogicallyDifferent(index, exNdx)) {
+              count++;
+            }
+          }
+          if (count == 1) {
+            String existingName = entity.getSchemaName() == null ?
+                                  existingIndex.getIndexName() :
+                                  (entity.getSchemaName() + "." + existingIndex.getIndexName());
+            String sql = backend.sqlRenameIndex(entity.getTableName(), existingName, indexName);
+            if (sql != null) {
+              result = result.sum(new IndexMigrator.Result(sql, ""));
+              found = true;
+              renamedIndexes.add(existingIndex);
+              break;
+            }
           }
           // else: drop and create
         }
