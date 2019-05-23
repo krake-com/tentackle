@@ -191,6 +191,7 @@ public abstract class AbstractServerApplication extends AbstractApplication
     }
 
     sessionInfo.applyProperties();
+    applyProperties(sessionInfo.getProperties());
   }
 
 

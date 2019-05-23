@@ -19,13 +19,14 @@
 
 package org.tentackle.app;
 
-import java.util.Properties;
 import org.tentackle.common.Constants;
-import org.tentackle.log.Logger;
 import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.util.Properties;
 
 
 
@@ -115,6 +116,7 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
     if (sessionInfo.getApplicationName() == null) {
       sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(getClass()));
     }
+    applyProperties(sessionInfo.getProperties());
   }
 
 
