@@ -98,7 +98,7 @@ public class LoginApplication extends FxApplication {
 
 
   /**
-   * Creates the session info to be passed to the doLogin controller.
+   * Creates the session info to be passed to the login controller.
    *
    * @return the session info
    */
@@ -125,6 +125,8 @@ public class LoginApplication extends FxApplication {
     if (sessionInfo.getApplicationName() == null) {
       sessionInfo.setApplicationName(ReflectionHelper.getClassBaseName(application.getClass()));
     }
+
+    AbstractApplication.getRunningApplication().applyProperties(sessionInfo.getProperties());
 
     return sessionInfo;
   }
