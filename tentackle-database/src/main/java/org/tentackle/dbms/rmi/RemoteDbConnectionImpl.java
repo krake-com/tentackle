@@ -218,11 +218,4 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
     return session;
   }
 
-
-  @Override
-  public void logout(RemoteDbSession session) throws RemoteException {
-    session.close();
-  }
-
-
 }
