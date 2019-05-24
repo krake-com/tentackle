@@ -19,6 +19,12 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.ExceptionHelper;
+import org.tentackle.io.ServerSocketConfigurator;
+import org.tentackle.io.ServerSocketConfiguratorHolder;
+import org.tentackle.log.Logger;
+import org.tentackle.session.SessionInfo;
+
 import java.io.Serializable;
 import java.net.BindException;
 import java.rmi.Remote;
@@ -26,12 +32,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
-import org.tentackle.common.ExceptionHelper;
-import org.tentackle.io.ServerSocketConfigurator;
-import org.tentackle.io.ServerSocketConfiguratorHolder;
-import org.tentackle.log.Logger;
-import org.tentackle.session.Session;
-import org.tentackle.session.SessionInfo;
 
 
 
@@ -94,53 +94,6 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
   }
 
 
-  /**
-   * Gets the session timeout count.
-   *
-   * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
-   * @return the timeout
-   */
-  public int getSessionTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
-    return getRmiServer().getSessionTimeout();
-  }
-
-  /**
-   * Gets the tcp port for this connection.
-   *
-   * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
-   * @return the tcp-port for this connection, 0 = system default
-   */
-  public int getPort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
-    return getRMIPort();
-  }
-
-  /**
-   * Gets the client socket factory according to the userinfos.
-   *
-   * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
-   * @return the client socket factory for this connection, null = system default
-   */
-  public RMIClientSocketFactory getClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
-    return getRMICsf();
-  }
-
-  /**
-   * Gets the rmiServer socket factory.
-   *
-   * @param session the session attached to the {@link RemoteDbSession}
-   * @param clientInfo the UserInfo from the client
-   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
-   * @return the rmiServer socket factory for this connection, null = system default
-   */
-  public RMIServerSocketFactory getServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
-    return getRMISsf();
-  }
 
 
   /**
@@ -210,6 +163,7 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
     int maxPort = port + portRange;
     for (int p = port; p < maxPort; p++) {
       try {
+        LOGGER.fine("exporting at port={0}, csf={1}, ssf={2}: {3}", p, csf, ssf, remoteObject);
         UnicastRemoteObject.exportObject(remoteObject, p, csf, ssf);
         effectivePort = p;
         break;
@@ -226,8 +180,6 @@ public abstract class RemoteDbConnectionImpl extends RemoteServerObject implemen
       // export failed for all ports in range
       throw lastEx;
     }
-
-    LOGGER.fine("{0} exported on port {1}", remoteObject, effectivePort);
 
     return effectivePort;
   }

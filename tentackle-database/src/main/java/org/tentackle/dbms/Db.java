@@ -1232,6 +1232,7 @@ public class Db implements Session, Cloneable {
 
   @Override
   public void close() {
+    LOGGER.fine("closing session {0}", this);
     resources.me = this;    // programmatic close
     cleanable.clean();
   }
