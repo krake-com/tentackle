@@ -1102,7 +1102,7 @@ public class Db implements Session, Cloneable {
             // don't rcon.logout if crashed, because connection may block.
             // remote side must timeout anyway. (or has already timed out)
             if (!crashed) {
-              rcon.logout(rses);
+              rses.close();
             }
             LOGGER.info("remote session {0} closed", this);
           }

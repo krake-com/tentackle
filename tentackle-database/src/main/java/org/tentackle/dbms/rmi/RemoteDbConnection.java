@@ -20,10 +20,11 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.session.SessionInfo;
+
 import java.io.Serializable;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import org.tentackle.session.SessionInfo;
 
 
 /**
@@ -55,16 +56,8 @@ public interface RemoteDbConnection extends Remote {
    * @param clientInfo the user information
    * @return the session
    * @throws RemoteException if some error, for example wrong passord
+   * @see RemoteDbSession#close()
    */
   RemoteDbSession login(SessionInfo clientInfo) throws RemoteException;
-
-
-  /**
-   * Logout from remote RMI-Server.
-   *
-   * @param session to be closed
-   * @throws RemoteException if some error
-   */
-  void logout(RemoteDbSession session) throws RemoteException;
 
 }

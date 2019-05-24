@@ -19,13 +19,6 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.io.Serializable;
-import java.net.BindException;
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
-import java.rmi.server.UnicastRemoteObject;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.io.ServerSocketConfigurator;
 import org.tentackle.io.ServerSocketConfiguratorHolder;
@@ -34,6 +27,14 @@ import org.tentackle.log.LoggerFactory;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.VersionInfoIncompatibleException;
+
+import java.io.Serializable;
+import java.net.BindException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.UnicastRemoteObject;
 
 
 
@@ -287,12 +288,5 @@ abstract public class RemoteDbConnectionImpl extends RemoteServerObject implemen
     }
     return session;
   }
-
-
-  @Override
-  public void logout(RemoteDbSession session) throws RemoteException {
-    session.close();
-  }
-
 
 }
