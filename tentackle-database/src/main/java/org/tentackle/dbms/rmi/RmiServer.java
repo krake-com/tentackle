@@ -19,10 +19,13 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.util.Objects;
-
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.io.RMISocketFactoryFactory;
 import org.tentackle.io.RMISocketFactoryType;
+import org.tentackle.log.Logger;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.SessionInfo;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -37,12 +40,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.log.Logger;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.SessionInfo;
 
 import static org.tentackle.dbms.Db.SOCKET_FACTORY;
 
@@ -86,7 +86,7 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *
  * <li>
  * <tt>port=port</tt>: for the connection object.
- *  default is 0, i.e. system default (or from fixed ports)
+ *  default is 0, i.e. system default (or from url or fixed ports)
  * </li>
  *
  * <li>
@@ -209,12 +209,13 @@ public class RmiServer {
   private RemoteDbConnectionImpl connectionObject;        // the connection object (and to keep the object referenced!)
   private int sessionTimeout;                             // default session timeout in seconds
   private long sessionTimeoutCheckInterval;               // check interval for session timeout in milliseconds, 0 = none
-  private int port;                                       // port of connection object
+  private int port;                                       // port for the delegates
+  private int loginPort;                                  // port for the registry and login phase
   private Registry registry;                              // local registry, if createRegistry = true
   private RMIClientSocketFactory loginCsf;                // client socket factory for the registry and login phase
   private RMIServerSocketFactory loginSsf;                // server socket factory for the registry and login phase
-  private RMIClientSocketFactory csf;                     // client socket factory for the connection object
-  private RMIServerSocketFactory ssf;                     // server socket factory for the connection object
+  private RMIClientSocketFactory csf;                     // client socket factory for the delegates
+  private RMIServerSocketFactory ssf;                     // server socket factory for the delegates
 
 
   // fixed ports. 0 = no limitation
@@ -257,25 +258,20 @@ public class RmiServer {
     // set the default ports, if not the REGISTRY_PORT.
     try {
       URI uri = new URI(service);
-      int servicePort = uri.getPort();
-      if (servicePort != Registry.REGISTRY_PORT)  {
-        plainPort         = servicePort;
-        compressedPort    = servicePort + 1;
-        sslPort           = servicePort + 2;
-        compressedSslPort = servicePort + 3;
-      }
+      port = uri.getPort();
     }
     catch (URISyntaxException ex) {
       throw new TentackleRuntimeException("malformed service url", ex);
     }
 
+    RMISocketFactoryType loginFactoryType = null;
     val = props.getProperty(CREATE_REGISTRY);
     if (val != null) {
       createRegistry = true;
       if (!val.isEmpty()) {
-        RMISocketFactoryType factoryType = RMISocketFactoryType.parse(val);
-        loginCsf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
-        loginSsf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
+        loginFactoryType = RMISocketFactoryType.parse(val);
+        loginCsf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, loginFactoryType);
+        loginSsf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, loginFactoryType);
       }
     }
 
@@ -380,6 +376,23 @@ public class RmiServer {
 
     // verify port agains fixed ports for sure
     port = getPort(port, factoryType);
+
+    if (loginFactoryType == null || loginFactoryType == factoryType) {
+      loginCsf = csf;
+      loginSsf = ssf;
+      loginPort = port;
+    }
+    else {
+      loginPort = getPort(0, loginFactoryType);
+      if (loginPort == 0 && port != 0) {
+        // no ports=... defined: re-arrange
+        loginPort = port;
+        port++;
+      }
+      else if (loginPort != 0 && loginPort == port) {
+        new TentackleRuntimeException("ports=... misconfigured: login port is the same as the delegates port, but socket factories differ");
+      }
+    }
   }
 
 
@@ -498,7 +511,8 @@ public class RmiServer {
 
 
   /**
-   * Gets the port the server is listening on
+   * Gets the port the delegates.
+   *
    * @return the port
    */
   public int getPort() {
@@ -506,7 +520,17 @@ public class RmiServer {
   }
 
   /**
-   * Gets the server's csf
+   * Gets the port for the login phase.
+   *
+   * @return the port
+   */
+  public int getLoginPort() {
+    return loginPort;
+  }
+
+  /**
+   * Gets the server's csf for the delegates.
+   *
    * @return the client socket factory
    */
   public RMIClientSocketFactory getClientSocketFactory() {
@@ -514,7 +538,8 @@ public class RmiServer {
   }
 
   /**
-   * Gets the server's ssf
+   * Gets the server's ssf for the delegates.
+   *
    * @return the server socket factory
    */
   public RMIServerSocketFactory getServerSocketFactory() {
@@ -588,36 +613,79 @@ public class RmiServer {
     try {
 
       int registryPort = 0;
-      boolean useRegSF = false;
       if (createRegistry) {
-        URI uri = new URI(service);
-        registryPort = uri.getPort();
+        registryPort = getLoginPort();
         if (registryPort <= 0)  {
           registryPort = Registry.REGISTRY_PORT;  // default port (1099)
         }
-        if (loginCsf != null && loginSsf != null) {
-          registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
-          useRegSF = true;
-        }
-        else {
-          registry = LocateRegistry.createRegistry(registryPort);
-        }
+        registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
       }
 
       // instantiate connection object
-      Constructor<? extends RemoteDbConnectionImpl> constructor = this.connectionClass.getConstructor(RmiServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
-      connectionObject = constructor.newInstance(this, port, useRegSF ? loginCsf: csf, useRegSF ? loginSsf: ssf);
+      Constructor<? extends RemoteDbConnectionImpl> constructor = connectionClass.getConstructor(
+          RmiServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
+      connectionObject = constructor.newInstance(this, loginPort, loginCsf, loginSsf);
 
       // log
-      LOGGER.info("\nTentackle RMI-server " + getClass().getName() +
-                  "\ndefault client socket factory = " + (csf == null ? SYSTEM_DEFAULT : csf.getClass().getName()) +
-                  "\ndefault server socket factory = " + (ssf == null ? SYSTEM_DEFAULT : ssf.getClass().getName()) +
-                  "\nservice = " + service + (createRegistry ? (", registry created on port " + registryPort) +
-                    "\nlogin client socket factory = " + (loginCsf == null ? SYSTEM_DEFAULT : loginCsf.getClass().getName()) +
-                    "\nlogin server socket factory = " + (loginSsf == null ? SYSTEM_DEFAULT : loginSsf.getClass().getName())
-                    : "") +
-                  "\nlogin port = " + (port == 0 ? SYSTEM_DEFAULT : port) +
-                  ", session timeout = " + sessionTimeout + "*" + sessionTimeoutCheckInterval + "ms");
+      StringBuilder buf = new StringBuilder();
+      buf.append("\nTentackle RMI-server ").append(getClass().getName()).append(" started");
+      buf.append("\nservice = ").append(service);
+      if (createRegistry) {
+        buf.append(", registry created on port ").append(registryPort);
+      }
+      else {
+        buf.append(", using existing registry at default port ").append(Registry.REGISTRY_PORT);
+      }
+      buf.append(", session timeout = ").append(sessionTimeout).append("*").append(sessionTimeoutCheckInterval).append("ms");
+      if (loginCsf != csf) {
+        buf.append("\nlogin client socket factory = ");
+        if (loginCsf == null) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(loginCsf.getClass().getName());
+        }
+        buf.append(", server socket factory = ");
+        if (loginSsf == null) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(loginSsf.getClass().getName());
+        }
+        buf.append(", port = ");
+        if (loginPort == 0) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(loginPort);
+        }
+        buf.append("\ndefault ");
+      }
+      else {
+        buf.append('\n');
+      }
+      buf.append("client socket factory = ");
+      if (csf == null) {
+        buf.append(SYSTEM_DEFAULT);
+      }
+      else {
+        buf.append(csf.getClass().getName());
+      }
+      buf.append(", server socket factory = ");
+      if (ssf == null) {
+        buf.append(SYSTEM_DEFAULT);
+      }
+      else {
+        buf.append(ssf.getClass().getName());
+      }
+      buf.append(", port = ");
+      if (port == 0) {
+        buf.append(SYSTEM_DEFAULT);
+      }
+      else {
+        buf.append(port);
+      }
+      LOGGER.info(buf.toString());
 
       // bind to service
       if (createRegistry) {

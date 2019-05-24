@@ -34,6 +34,7 @@ import org.tentackle.misc.Duration;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.PersistenceException;
+import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 
@@ -344,11 +345,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
 
-    // config from connection
-    port = con.getPort(db, clientInfo, serverInfo);
-    csf = con.getClientSocketFactory(db, clientInfo, serverInfo);
-    ssf = con.getServerSocketFactory(db, clientInfo, serverInfo);
-    timeout = con.getSessionTimeout(db, clientInfo, serverInfo);
+    // config for delegates
+    port = getPort(db, clientInfo, serverInfo);
+    csf = getClientSocketFactory(db, clientInfo, serverInfo);
+    ssf = getServerSocketFactory(db, clientInfo, serverInfo);
+    timeout = getSessionTimeout(db, clientInfo, serverInfo);
 
     resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
@@ -357,7 +358,10 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @Override
   public void exportMe() throws RemoteException {
-    port = resources.con.exportRemoteObject(this, port, csf, ssf);
+    resources.con.exportRemoteObject(this,
+                                     resources.con.getRmiServer().getLoginPort(),
+                                     resources.con.getRmiServer().getLoginClientSocketFactory(),
+                                     resources.con.getRmiServer().getLoginServerSocketFactory());
     LOGGER.info("begin {0}", this);
   }
 
@@ -563,6 +567,55 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   public void countMethodInvocation(Method method, Class<?> servicedClass, Duration duration) {
     resources.methodStats.countMethodInvocation(method, servicedClass, duration);
+  }
+
+
+  /**
+   * Gets the tcp port for this connection.
+   *
+   * @param session the session attached to the {@link RemoteDbSession}
+   * @param clientInfo the UserInfo from the client
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @return the tcp-port for this connection, 0 = system default
+   */
+  protected int getPort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+    return resources.con.getRmiServer().getPort();
+  }
+
+  /**
+   * Gets the client socket factory according to the userinfos.
+   *
+   * @param session the session attached to the {@link RemoteDbSession}
+   * @param clientInfo the UserInfo from the client
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @return the client socket factory for this connection, null = system default
+   */
+  protected RMIClientSocketFactory getClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+    return resources.con.getRmiServer().getClientSocketFactory();
+  }
+
+  /**
+   * Gets the rmiServer socket factory.
+   *
+   * @param session the session attached to the {@link RemoteDbSession}
+   * @param clientInfo the UserInfo from the client
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @return the rmiServer socket factory for this connection, null = system default
+   */
+  protected RMIServerSocketFactory getServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+    return resources.con.getRmiServer().getServerSocketFactory();
+  }
+
+  /**
+   * Gets the session timeout count.
+   *
+   * @param session the session attached to the {@link RemoteDbSession}
+   * @param clientInfo the UserInfo from the client
+   * @param serverInfo the UserInfo to establish the connection to the database rmiServer
+   * @return the timeout
+   */
+  protected int getSessionTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+    return resources.con.getRmiServer().getSessionTimeout();
   }
 
 
