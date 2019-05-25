@@ -60,7 +60,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-
 /**
  * User session within the application server.
  *
@@ -88,7 +87,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
   private static RemoteDbSessionCleanupThread cleanupThread;
 
 
-
   /**
    * Starts the optional cleanup thread that will
    * monitor the sessions for db-activity.
@@ -114,8 +112,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   // each session gets a unique number (only for identification in log files)
   private static final AtomicLong LAST_SESSION_NUMBER = new AtomicLong();
-
-
 
 
   /**
@@ -150,7 +146,6 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
     return null;
   }
-
 
 
   /**
@@ -343,13 +338,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       throw new PersistenceException("could not setup remote session", ex);
     }
 
-
-
     // config for delegates
-    port = getPort(db, clientInfo, serverInfo);
-    csf = getClientSocketFactory(db, clientInfo, serverInfo);
-    ssf = getServerSocketFactory(db, clientInfo, serverInfo);
-    timeout = getSessionTimeout(db, clientInfo, serverInfo);
+    port = determinePort(db, clientInfo, serverInfo);
+    csf = determineClientSocketFactory(db, clientInfo, serverInfo);
+    ssf = determineServerSocketFactory(db, clientInfo, serverInfo);
+    timeout = determineTimeout(db, clientInfo, serverInfo);
 
     resources.name = toString();    // chicken egg...
     cleanable = CLEANER.register(this, resources);
@@ -358,10 +351,11 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
   @Override
   public void exportMe() throws RemoteException {
+    RmiServer rmiServer = resources.con.getRmiServer();
     resources.con.exportRemoteObject(this,
-                                     resources.con.getRmiServer().getLoginPort(),
-                                     resources.con.getRmiServer().getLoginClientSocketFactory(),
-                                     resources.con.getRmiServer().getLoginServerSocketFactory());
+                                     rmiServer.getLoginPort(),
+                                     rmiServer.getLoginClientSocketFactory(),
+                                     rmiServer.getLoginServerSocketFactory());
     LOGGER.info("begin {0}", this);
   }
 
@@ -380,7 +374,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    * @throws RemoteException if export failed
    */
   public void exportRemoteDelegate(RemoteDelegate delegate) throws RemoteException {
-    resources.con.exportRemoteObject(delegate, port, csf, ssf);
+    resources.con.exportRemoteObject(delegate, getPort(), getClientSocketFactory(), getServerSocketFactory());
     resources.exportedDelegates.add(new WeakReference<>(delegate));
   }
 
@@ -571,50 +565,54 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
 
 
   /**
-   * Gets the tcp port for this connection.
+   * Determines the tcp port for the delegates.<br>
+   * The default implementation returns {@link RmiServer#getPort()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
    * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the tcp-port for this connection, 0 = system default
    */
-  protected int getPort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+  protected int determinePort(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
     return resources.con.getRmiServer().getPort();
   }
 
   /**
-   * Gets the client socket factory according to the userinfos.
+   * Determines the client socket factory for the delegates.<br>
+   * The default implementation returns {@link RmiServer#getClientSocketFactory()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
    * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the client socket factory for this connection, null = system default
    */
-  protected RMIClientSocketFactory getClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+  protected RMIClientSocketFactory determineClientSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
     return resources.con.getRmiServer().getClientSocketFactory();
   }
 
   /**
-   * Gets the rmiServer socket factory.
+   * Determines the server socket factory for the delegates.<br>
+   * The default implementation returns {@link RmiServer#getServerSocketFactory()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
    * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the rmiServer socket factory for this connection, null = system default
    */
-  protected RMIServerSocketFactory getServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+  protected RMIServerSocketFactory determineServerSocketFactory(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
     return resources.con.getRmiServer().getServerSocketFactory();
   }
 
   /**
-   * Gets the session timeout count.
+   * Determines the session timeout count.<br>
+   * The default implementation returns {@link RmiServer#getSessionTimeout()}.
    *
    * @param session the session attached to the {@link RemoteDbSession}
    * @param clientInfo the UserInfo from the client
    * @param serverInfo the UserInfo to establish the connection to the database rmiServer
    * @return the timeout
    */
-  protected int getSessionTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
+  protected int determineTimeout(Session session, SessionInfo clientInfo, SessionInfo serverInfo) {
     return resources.con.getRmiServer().getSessionTimeout();
   }
 

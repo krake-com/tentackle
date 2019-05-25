@@ -148,7 +148,10 @@ import java.util.function.Supplier;
  * url=rmi://gonzo.krake.local:28004/ErpServer
  * </pre>
  *
- * The port is optional and defaults to 1099 (the default RMI registry).
+ * The port is optional and defaults to 1099 (the default RMI registry).<br>
+ * The initial socket factory type must correspond to the server's configuration (see {@link org.tentackle.dbms.rmi.RmiServer}).
+ * If this is not the system's default (plain, unencrypted, uncompressed), it must be set via {@code socketfactory}.
+ * Optionally, {@code ciphersuites} and {@code protocols} can be set (again, see {@link org.tentackle.dbms.rmi.RmiServer}).
  * <p>
  * Optionally, the following properties can be defined:
  * <p>
@@ -200,7 +203,7 @@ public class Db implements Session, Cloneable {
   /**
    * property key for IdSource.
    */
-  public static final String PROPERTY_IDSOURCE = "idsource";
+  public static final String IDSOURCE = "idsource";
 
   /**
    * The property key for the socket factory.
@@ -557,7 +560,7 @@ public class Db implements Session, Cloneable {
         }
       }
 
-      String val = sessionProperties.getProperty(PROPERTY_IDSOURCE);
+      String val = sessionProperties.getProperty(IDSOURCE);
       if (val != null) {
         idConfig = val;
       }
