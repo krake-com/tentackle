@@ -471,7 +471,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
           String val = properties.getProperty(propName);
           if (val != null) {
             System.setProperty(key, val);
-            LOGGER.info("set {0}={1}", key, val);
+            LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
           }
         }
       }
@@ -481,6 +481,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       if (secman != null && !secman.isEmpty()) {
         try {
           System.setSecurityManager((java.lang.SecurityManager) (Class.forName(secman).getDeclaredConstructor().newInstance()));
+          LOGGER.info("security manager {0} installed", secman);
         }
         catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
                    NoSuchMethodException | SecurityException | InvocationTargetException ex) {
@@ -512,6 +513,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         }
 
         Locale locale = null;
+
         if (variant != null) {
           locale = new Locale(language, country, variant);
         }
@@ -521,8 +523,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
         else if (language != null) {
           locale = new Locale(language);
         }
+
         if (locale != null) {
           Locale.setDefault(locale);
+          LOGGER.info("default locale set to {0}", locale);
         }
       }
     }
