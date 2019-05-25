@@ -20,6 +20,7 @@
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.dbms.Db;
 import org.tentackle.io.RMISocketFactoryFactory;
 import org.tentackle.io.RMISocketFactoryType;
 import org.tentackle.log.Logger;
@@ -44,33 +45,31 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-import static org.tentackle.dbms.Db.SOCKET_FACTORY;
-
 
 /**
  * A generic RMI server.<br>
  *
- * The db properties file is parsed for the following keywords:
+ * The backend properties file is parsed for the following keywords:
  * <ul>
  * <li>
- * <tt>service=service-name</tt>:
- *  defaults to the basename of the RMI-server class instance, i.e. -&gt; rmi://localhost:1099/&lt;Basename&gt;
+ * <tt>service=service-URL</tt>:
+ *  defaults to the basename of the RMI-server class instance at the default registry port on localhost,
+ *  i.e. {@code rmi://localhost:1099/RmiServer}.
  * </li>
  *
  * <li>
  * <tt>createregistry[=default|plain|ssl|compressed]</tt>:
- *  creates a local registry (on the port according to service, defaulting to 1099).
+ *  creates a local registry (on the port according to the service URL, default is 1099).
  *  By default, the created registry uses the system-default socket factories.
- *  However, it may be forced to use another one, for example ssl. (see socketfactory=... below).
+ *  However, it may be forced to use another one, for example ssl.
  *  If set, the connection and session object will use the same factories as the registry.
  *  All other delegates will be created using the factories given by socketfactory=.. or the systen default.
  * </li>
  *
  * <li>
- * <tt>connectionclass=connection-class</tt>:
- *  defaults to org.tentackle.persist.rmi.RemoteDbConnectionImpl
+ * <tt>connectionclass=connection-class</tt>: the connection class is usually provided programmatically, but
+ *  can be configured as a property as well. Defaults to org.tentackle.persist.rmi.RemoteDbConnectionImpl.
  * </li>
- *
  *
  * <li>
  * <tt>timeoutinterval=timeout-polling-interval-in-milliseconds</tt>:
@@ -86,11 +85,11 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *
  * <li>
  * <tt>port=port</tt>: for the connection object.
- *  default is 0, i.e. system default (or from url or fixed ports)
+ *  Default is from service URL.
  * </li>
  *
  * <li>
- * Fixed ports:<br>
+ * Configure factories at fixed ports:<br>
  * <tt>ports=28000</tt>: plain=28000, compressed=28001, ssl=28002, compressed+ssl=28003<br>
  *  is the same as:<br>
  * <tt>ports=28000,28001,28002,28003</tt><br>
@@ -115,6 +114,11 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  *  If both <tt>ssl</tt> and <tt>compressed</tt> is given, the factories used are
  *              {@link org.tentackle.io.CompressedSslClientSocketFactory} and
  *              {@link org.tentackle.io.CompressedSslServerSocketFactory}.
+ *
+ *  Notice that {@code createregistry=...} can be used to define a different socket factory exclusively for the login phase,
+ *  and that the server may select a different factory type programmatically after the login phase (for each delegate).
+ *  If {@code ports=...} is missing, the login port defaults to the one defined by the service url and an optionally
+ *  different factory for the remaining delegates gets a port number increased by 1.
  * </li>
  *
  * For SSL only:
@@ -130,8 +134,41 @@ import static org.tentackle.dbms.Db.SOCKET_FACTORY;
  * <tt>clientauth</tt>: set if server requires client authentication
  * </li>
  *
- *
  * </ul>
+ *
+ * Examples:
+ * <p>
+ * Creates a registry at 33000, encrypts the login phase, the rest is transferred unencrypted, 30s session timeout.
+ * <pre>
+ * service=rmi://localhost:33000/MyServer
+ * createregistry=ssl
+ * timeout=30
+ * </pre>
+ *
+ * Creates a registry at 33000, encrypts and compresses all traffic, 30s session timeout
+ * <pre>
+ * service=rmi://localhost/MyServer
+ * createregistry
+ * socketfactory=ssl compressed
+ * timeout=30
+ * </pre>
+ *
+ * Creates a registry at 33000, encrypts the login phase, the rest is transferred compressed at 33001, 30s session timeout.
+ * <pre>
+ * service=rmi://localhost/MyServer
+ * createregistry=ssl
+ * socketfactory=compressed
+ * timeout=30
+ * </pre>
+ *
+ * Creates a registry at 33000, encrypts the login phase, the rest is transferred unencrypted, 30s session timeout,
+ * Plain traffic at 33002, ssl at 33000 (must match the URL), no compression available.
+ * <pre>
+ * service=rmi://localhost:33000/MyServer
+ * createregistry=ssl
+ * ports=33002,-1,33000,-1
+ * timeout=30
+ * </pre>
  *
  * @author harald
  */
@@ -171,16 +208,6 @@ public class RmiServer {
    * The property key for the single RMI port.
    */
   public static final String PORT = "port";
-
-  /**
-   * The property key for the SSL cipher suites.
-   */
-  public static final String CIPHER_SUITES = "ciphersuites";
-
-  /**
-   * The property key for the SSL protocols.
-   */
-  public static final String PROTOCOLS = "protocols";
 
   /**
    * The property key for the SSL client authentication.
@@ -336,7 +363,7 @@ public class RmiServer {
     }
 
     // more server side ssl properties
-    val = props.getProperty(CIPHER_SUITES);
+    val = props.getProperty(Db.CIPHER_SUITES);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       RMISocketFactoryFactory.getInstance().setEnabledCipherSuites(new String[stok.countTokens()]);
@@ -346,7 +373,7 @@ public class RmiServer {
       }
     }
 
-    val = props.getProperty(PROTOCOLS);
+    val = props.getProperty(Db.PROTOCOLS);
     if (val != null) {
       StringTokenizer stok = new StringTokenizer(val, " \t,;");
       RMISocketFactoryFactory.getInstance().setEnabledProtocols(new String[stok.countTokens()]);
@@ -363,7 +390,7 @@ public class RmiServer {
 
 
     // switch socket factories
-    RMISocketFactoryType factoryType = RMISocketFactoryType.parse(sessionInfo.getProperties().getProperty(SOCKET_FACTORY));
+    RMISocketFactoryType factoryType = RMISocketFactoryType.parse(sessionInfo.getProperties().getProperty(Db.SOCKET_FACTORY));
     csf = RMISocketFactoryFactory.getInstance().createClientSocketFactory(null, factoryType);
     ssf = RMISocketFactoryFactory.getInstance().createServerSocketFactory(null, factoryType);
 
@@ -612,100 +639,96 @@ public class RmiServer {
   public void start() {
     try {
 
-      int registryPort = 0;
-      if (createRegistry) {
-        registryPort = getLoginPort();
-        if (registryPort <= 0)  {
-          registryPort = Registry.REGISTRY_PORT;  // default port (1099)
-        }
-        registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
-      }
-
-      // instantiate connection object
+      // create connection object
       Constructor<? extends RemoteDbConnectionImpl> constructor = connectionClass.getConstructor(
           RmiServer.class, Integer.TYPE, RMIClientSocketFactory.class, RMIServerSocketFactory.class);
       connectionObject = constructor.newInstance(this, loginPort, loginCsf, loginSsf);
 
-      // log
-      StringBuilder buf = new StringBuilder();
-      buf.append("\nTentackle RMI-server ").append(getClass().getName()).append(" started");
-      buf.append("\nservice = ").append(service);
-      if (createRegistry) {
-        buf.append(", registry created on port ").append(registryPort);
-      }
-      else {
-        buf.append(", using existing registry at default port ").append(Registry.REGISTRY_PORT);
-      }
-      buf.append(", session timeout = ").append(sessionTimeout).append("*").append(sessionTimeoutCheckInterval).append("ms");
-      if (loginCsf != csf) {
-        buf.append("\nlogin client socket factory = ");
-        if (loginCsf == null) {
-          buf.append(SYSTEM_DEFAULT);
-        }
-        else {
-          buf.append(loginCsf.getClass().getName());
-        }
-        buf.append(", server socket factory = ");
-        if (loginSsf == null) {
-          buf.append(SYSTEM_DEFAULT);
-        }
-        else {
-          buf.append(loginSsf.getClass().getName());
-        }
-        buf.append(", port = ");
-        if (loginPort == 0) {
-          buf.append(SYSTEM_DEFAULT);
-        }
-        else {
-          buf.append(loginPort);
-        }
-        buf.append("\ndefault ");
-      }
-      else {
-        buf.append('\n');
-      }
-      buf.append("client socket factory = ");
-      if (csf == null) {
-        buf.append(SYSTEM_DEFAULT);
-      }
-      else {
-        buf.append(csf.getClass().getName());
-      }
-      buf.append(", server socket factory = ");
-      if (ssf == null) {
-        buf.append(SYSTEM_DEFAULT);
-      }
-      else {
-        buf.append(ssf.getClass().getName());
-      }
-      buf.append(", port = ");
-      if (port == 0) {
-        buf.append(SYSTEM_DEFAULT);
-      }
-      else {
-        buf.append(port);
-      }
-      LOGGER.info(buf.toString());
+      final int registryPort;
+      final String serviceName;
 
-      // bind to service
       if (createRegistry) {
         URI uri = new URI(service);
-        String path = uri.getPath();
-        if (path.startsWith("/")) {
-          path = path.substring(1);
-        }
-        // must be new
-        registry.bind(path, connectionObject);
+        String uriPath = uri.getPath();
+        serviceName = uriPath.startsWith("/") ? uriPath.substring(1) : uriPath;
+        int uriPort = uri.getPort();
+        registryPort = uriPort <= 0 ? Registry.REGISTRY_PORT : uriPort;
+        registry = LocateRegistry.createRegistry(registryPort, loginCsf, loginSsf);
+        registry.bind(serviceName, connectionObject);
       }
       else  {
         // rebind if already bound
         Naming.rebind(service, connectionObject);
+        registryPort = 0;
+        serviceName = null;
       }
 
       // start cleanup thread
       if (sessionTimeoutCheckInterval > 0) {
         RemoteDbSessionImpl.startCleanupThread(sessionTimeoutCheckInterval);
       }
+
+      LOGGER.info(() -> {
+        StringBuilder buf = new StringBuilder();
+        buf.append("\nTentackle RMI-server ").append(getClass().getName()).append(" started");
+        buf.append("\nservice = ").append(service);
+        if (createRegistry) {
+          buf.append(", registry created at port ").append(registryPort);
+        }
+        else {
+          buf.append(", using existing registry");
+        }
+        buf.append(", session timeout = ").append(sessionTimeout).append("*").append(sessionTimeoutCheckInterval).append("ms");
+        if (loginCsf != csf) {
+          buf.append("\nlogin client socket factory = ");
+          if (loginCsf == null) {
+            buf.append(SYSTEM_DEFAULT);
+          }
+          else {
+            buf.append(loginCsf.getClass().getName());
+          }
+          buf.append(", server socket factory = ");
+          if (loginSsf == null) {
+            buf.append(SYSTEM_DEFAULT);
+          }
+          else {
+            buf.append(loginSsf.getClass().getName());
+          }
+          buf.append(", port = ");
+          if (loginPort == 0) {
+            buf.append(SYSTEM_DEFAULT);
+          }
+          else {
+            buf.append(loginPort);
+          }
+          buf.append("\ndefault ");
+        }
+        else {
+          buf.append('\n');
+        }
+        buf.append("client socket factory = ");
+        if (csf == null) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(csf.getClass().getName());
+        }
+        buf.append(", server socket factory = ");
+        if (ssf == null) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(ssf.getClass().getName());
+        }
+        buf.append(", port = ");
+        if (port == 0) {
+          buf.append(SYSTEM_DEFAULT);
+        }
+        else {
+          buf.append(port);
+        }
+        return buf.toString();
+      });
     }
     catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
            SecurityException | InvocationTargetException | MalformedURLException | URISyntaxException |

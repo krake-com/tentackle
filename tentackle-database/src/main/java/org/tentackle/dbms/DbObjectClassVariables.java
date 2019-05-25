@@ -410,7 +410,7 @@ public class DbObjectClassVariables<P extends AbstractDbObject<P>> {
   public synchronized IdSource getIdSource(Db db) {
     if (idSource == null) {  // setup IdSource once for this class
       // check property "idsource = ..."
-      String idConfig = getProperty(Db.PROPERTY_IDSOURCE);
+      String idConfig = getProperty(Db.IDSOURCE);
       if (idConfig == null) {
         // no such property: use default id source from Db
         idSource = db.getDefaultIdSource();
