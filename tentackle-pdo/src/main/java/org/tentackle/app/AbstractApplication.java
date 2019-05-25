@@ -19,19 +19,7 @@
 
 package org.tentackle.app;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Properties;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
@@ -47,6 +35,21 @@ import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionProvider;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.TimeZone;
 
 
 
@@ -522,81 +525,102 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   }
 
 
-
   /**
-   * Initializes the application.
+   * Applies the given properties.
    * <p>
-   * This is the first step when an application is launched.
+   * The default implementation first parses the properties for system properties. System properties start with
+   * {@code SYSTEM_} or {@code ^} followed by the property name.
    * <p>
-   * The default implementation first parses the properties for system properties.
-   * System properties start with {@literal "SYSTEM_"} followed by the original property name.<br>
-   * Then the Java security manager is installed if the property {@literal "secman=...."} is given.
-   * Overrides should invoke super.doInitialize() and perform any other
-   * necessary steps before construction of the GUI.
+   * {@code secman=...} installs the Java security manager given by its FQCN.
+   * <p>
+   * {@code locale=...} sets the default locale.
    *
-   * @throws ApplicationException if initialization failes
+   * @param properties the properties, null if none
    */
-  protected void doInitialize() throws ApplicationException {
-    // set system properties
-    if (props != null) {
-      for (String key: props.stringPropertyNames()) {
-        if (key.startsWith("SYSTEM_")) {
-          System.setProperty(key.substring(7), props.getProperty(key));
-        }
-      }
-    }
+  public void applyProperties(Properties properties) {
+    if (properties != null) {
 
-    // install optional security manager
-    String secman = getProperty("secman");   // NOI18N
-    if (secman != null && !secman.isEmpty()) {
-      try {
-        System.setSecurityManager((java.lang.SecurityManager)(Class.forName(secman).newInstance()));
-      }
-      catch (Exception ex) {
-        throw new ApplicationException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
-      }
-    }
-
-    // switch locale
-    String localeStr = getProperty("locale");
-    if (localeStr != null && !localeStr.isEmpty()) {
-      String language = null;
-      String country = null;
-      String variant = null;
-      StringTokenizer stok = new StringTokenizer(localeStr, "_");
-      while (stok.hasMoreTokens()) {
-        String token = stok.nextToken();
-        if (language == null) {
-          language = token;
+      // set system properties
+      for (String propName : properties.stringPropertyNames()) {
+        String key = null;
+        if (propName.startsWith("SYSTEM_")) {
+          key = propName.substring(7);
         }
-        else if (country == null) {
-          country = token;
+        else if (propName.startsWith("^")) {
+          key = propName.substring(1);
         }
-        else if (variant == null) {
-          variant = token;
-        }
-        else {
-          break;
+        if (key != null) {
+          System.setProperty(key, properties.getProperty(propName));
+          LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
         }
       }
 
-      Locale locale = null;
-      if (variant != null) {
-        locale = new Locale(language, country, variant);
+      // install optional security manager
+      String secman = getProperty("secman");   // NOI18N
+      if (secman != null && !secman.isEmpty()) {
+        try {
+          System.setSecurityManager((java.lang.SecurityManager) (Class.forName(secman).getDeclaredConstructor().newInstance()));
+          LOGGER.info("security manager {0} installed", secman);
+        }
+        catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+            NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+          throw new TentackleRuntimeException(AppCoreBundle.getString("CAN'T INSTALL JAVA RUNTIME SECURITY MANAGER"), ex);
+        }
       }
-      else if (country != null) {
-        locale = new Locale(language, country);
-      }
-      else if (language != null) {
-        locale = new Locale(language);
-      }
-      if (locale != null) {
-        Locale.setDefault(locale);
+
+      // set default locale
+      String localeStr = getProperty("locale");
+      if (localeStr != null && !localeStr.isEmpty()) {
+        String language = null;
+        String country = null;
+        String variant = null;
+        StringTokenizer stok = new StringTokenizer(localeStr, "_");
+        while (stok.hasMoreTokens()) {
+          String token = stok.nextToken();
+          if (language == null) {
+            language = token;
+          }
+          else if (country == null) {
+            country = token;
+          }
+          else if (variant == null) {
+            variant = token;
+          }
+          else {
+            break;
+          }
+        }
+
+        Locale locale = null;
+
+        if (variant != null) {
+          locale = new Locale(language, country, variant);
+        }
+        else if (country != null) {
+          locale = new Locale(language, country);
+        }
+        else if (language != null) {
+          locale = new Locale(language);
+        }
+
+        if (locale != null) {
+          Locale.setDefault(locale);
+          LOGGER.info("default locale set to {0}", locale);
+        }
       }
     }
   }
 
 
+  /**
+   * Initializes the application.<br>
+   * This is the first step when an application is launched.
+   *
+   * @throws ApplicationException if initialization failes
+   */
+  protected void doInitialize() throws ApplicationException {
+    applyProperties(props);
+  }
 
 
   /**
@@ -611,8 +635,6 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     configurePreferences();
     configureSecurityManager();
   }
-
-
 
 
   /**
@@ -632,6 +654,5 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
       PdoCache.setAllEnabled(false);    // disable caching globally
     }
   }
-
 
 }
