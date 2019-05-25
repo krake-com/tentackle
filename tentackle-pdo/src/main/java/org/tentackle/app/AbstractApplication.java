@@ -453,7 +453,7 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Applies the given properties.
    * <p>
    * The default implementation first parses the properties for system properties. System properties start with
-   * {@code "SYSTEM_"} followed by the original property name.
+   * {@code SYSTEM_} or {@code ^} followed by the property name.
    * <p>
    * {@code secman=...} installs the Java security manager given by its FQCN.
    * <p>
@@ -466,13 +466,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
       // set system properties
       for (String propName : properties.stringPropertyNames()) {
+        String key = null;
         if (propName.startsWith("SYSTEM_")) {
-          String key = propName.substring(7);
-          String val = properties.getProperty(propName);
-          if (val != null) {
-            System.setProperty(key, val);
-            LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
-          }
+          key = propName.substring(7);
+        }
+        else if (propName.startsWith("^")) {
+          key = propName.substring(1);
+        }
+        if (key != null) {
+          System.setProperty(key, properties.getProperty(propName));
+          LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
         }
       }
 
