@@ -75,9 +75,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @param propertiesName name of the session's properties file, null if {@code "backend"}
    */
   public DefaultSessionInfo(String username, char[] password, String propertiesName)  {
-    this.userName       = username == null ? System.getProperty("user.name") : username;
-    this.password       = password;
-    this.propertiesName = propertiesName == null ? Constants.BACKEND_PROPS : propertiesName;
+    setUserName(username == null ? System.getProperty("user.name") : username);
+    setPassword(password);
+    setPropertiesName(propertiesName == null ? Constants.BACKEND_PROPS : propertiesName);
   }
 
   /**
@@ -103,12 +103,12 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @param properties the properties
    */
   public DefaultSessionInfo(Properties properties)  {
-    this.propertiesName = "<internal>";
-    this.properties = properties;
-    this.userName = properties.getProperty(Constants.BACKEND_USER);
+    setPropertiesName("<internal>");
+    setProperties(properties);
+    setUserName(properties.getProperty(Constants.BACKEND_USER));
     String pass = properties.getProperty(Constants.BACKEND_PASSWORD);
     if (pass != null && !pass.isEmpty()) {
-      this.password = pass.toCharArray();
+      setPassword(pass.toCharArray());
     }
   }
 
