@@ -19,8 +19,9 @@
 
 package org.tentackle.script;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
+
+import java.util.Set;
 
 
 interface ScriptFactoryHolder {
@@ -47,27 +48,37 @@ public interface ScriptFactory {
 
   /**
    * Sets the default language.
+   * <p>
+   * Throws ScriptRuntimeException if no such language.
    *
    * @param abbreviation the abbreviation for the default language
-   * @throws ScriptRuntimeException if no such language
    */
   void setDefaultLanguage(String abbreviation);
 
 
   /**
+   * Sets the default language.
+   *
+   * @param language the language
+   */
+  void setDefaultLanguage(ScriptingLanguage language);
+
+
+  /**
    * Gets the default language.
    *
-   * @return the the default language
+   * @return the default language, null if none
    */
   ScriptingLanguage getDefaultLanguage();
 
 
   /**
    * Gets the scripting language.
+   * <p>
+   * Throws  ScriptRuntimeException if no such language.
    *
    * @param abbreviation one of the abbreviations for that language, null or empty string if default language
    * @return the language, never null
-   * @throws ScriptRuntimeException if no such language
    */
   ScriptingLanguage getLanguage(String abbreviation);
 
@@ -77,7 +88,7 @@ public interface ScriptFactory {
    *
    * @return the languages
    */
-  Collection<ScriptingLanguage> getLanguages();
+  Set<ScriptingLanguage> getLanguages();
 
 
   /**
@@ -85,7 +96,7 @@ public interface ScriptFactory {
    * <p>
    * Implementations of the {@link ScriptFactory} must implement this method.
    * <p>
-   * Throws {@link ScriptRuntimeException} if creating the script failed
+   * Throws {@link ScriptRuntimeException} if creating the script failed.
    *
    * @param abbreviation the scripting language, null or empty for default
    * @param code the scripting code
