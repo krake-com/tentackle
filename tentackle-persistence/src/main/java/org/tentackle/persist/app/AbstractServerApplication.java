@@ -34,6 +34,7 @@ import org.tentackle.pdo.OperationInvocationHandler;
 import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.prefs.PersistedPreferencesFactory;
 import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
@@ -104,6 +105,12 @@ public abstract class AbstractServerApplication extends AbstractApplication
   protected void configurePreferences() {
     super.configurePreferences();
     PersistedPreferencesFactory.getInstance().setSystemOnly(true);
+  }
+
+  @Override
+  protected void configureModificationTracker() {
+    super.configureModificationTracker();
+    ModificationTracker.getInstance().setSleepInterval(1000);
   }
 
   @Override
