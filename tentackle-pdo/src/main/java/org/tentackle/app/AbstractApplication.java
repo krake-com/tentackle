@@ -33,6 +33,8 @@ import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PdoInvocationHandler;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.prefs.PersistedPreferencesFactory;
+import org.tentackle.script.ScriptFactory;
+import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.security.SecurityFactory;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
@@ -46,6 +48,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
@@ -455,6 +458,8 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * The default implementation first parses the properties for system properties. System properties start with
    * {@code SYSTEM_} or {@code ^} followed by the property name.
    * <p>
+   * {@code scripting=...} sets the default scripting language
+   * <p>
    * {@code secman=...} installs the Java security manager given by its FQCN.
    * <p>
    * {@code locale=...} sets the default locale.
@@ -477,6 +482,11 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
           System.setProperty(key, properties.getProperty(propName));
           LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
         }
+      }
+
+      String scripting = getProperty("scripting");
+      if (scripting != null) {
+        ScriptFactory.getInstance().setDefaultLanguage(scripting);
       }
 
       // install optional security manager
@@ -541,7 +551,16 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * This is the first step when an application is launched.
    */
   protected void initialize() {
+
     applyProperties(props);
+
+    // set the default scripting language, if not already set and exactly one provided
+    if (ScriptFactory.getInstance().getDefaultLanguage() == null) {
+      Set<ScriptingLanguage> languages = ScriptFactory.getInstance().getLanguages();
+      if (languages.size() == 1) {
+        ScriptFactory.getInstance().setDefaultLanguage(languages.iterator().next());
+      }
+    }
 
     // log module order
     List<ModuleInfo> infos = ModuleSorter.INSTANCE.getModuleInfos();
