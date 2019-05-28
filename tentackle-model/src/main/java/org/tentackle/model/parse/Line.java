@@ -169,7 +169,7 @@ public abstract class Line {
    * @return the exception
    */
   public ModelException createModelException(String message, Throwable cause) {
-    return new ModelException(message + " @ " + getSourceInfo(), cause);
+    return new ModelException(message + ModelException.AT_ELEMENT + getSourceInfo(), cause);
   }
 
   /**
@@ -178,7 +178,7 @@ public abstract class Line {
    * @return the exception
    */
   public ModelException createModelException(String message) {
-    return new ModelException(message + " @ " + getSourceInfo());
+    return new ModelException(message + ModelException.AT_ELEMENT + getSourceInfo());
   }
 
 }

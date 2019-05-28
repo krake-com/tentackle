@@ -31,6 +31,9 @@ public class ModelException extends Exception {
 
   private final transient ModelElement element;   // the related model element
 
+  /** string prepended to the source location. */
+  public static final String AT_ELEMENT = " @ ";
+
 
   /**
    * Creates a model exception.
@@ -94,6 +97,15 @@ public class ModelException extends Exception {
    */
   public ModelElement getElement() {
     return element;
+  }
+
+  @Override
+  public String getMessage() {
+    String message = super.getMessage();
+    if (element != null && (message == null || !message.contains(AT_ELEMENT)) && element.getSourceInfo() != null) {
+      return message + AT_ELEMENT + element.getSourceInfo();
+    }
+    return message;
   }
 
   /**

@@ -30,10 +30,12 @@ import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.SqlNameType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -188,9 +190,6 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
         if (str.indexOf('.') >= 0) {
           throw line.createModelException("entity name must not contain package name");
         }
-        if (!StringHelper.isValidJavaClassName(str)) {
-          throw line.createModelException("'" + str + "' is not a valid Java class name");
-        }
         setName(str);
         break;
 
@@ -321,7 +320,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       tableNameWithoutSchema = null;
     }
     else  {
-      this.tableName = tableName.toLowerCase();
+      this.tableName = tableName;
       int ndx = tableName.indexOf('.');
       if (ndx > 0) {
         schemaName = tableName.substring(0, ndx);
@@ -1258,6 +1257,22 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     if (StringHelper.isAllWhitespace(getName())) {
       throw new ModelException("configuration 'name = ...' missing", this);
     }
+    String diag = NameVerifier.getInstance().verifyEntityName(getName());
+    if (diag != null) {
+      throw new ModelException(diag, this);
+    }
+    if (getTableName() != null) {
+      diag = NameVerifier.getInstance().verifyTableName(getTableName());
+      if (diag != null) {
+        throw new ModelException(diag, this);
+      }
+    }
+    if (getTableAlias() != null) {
+      diag = NameVerifier.getInstance().verifyTableAlias(getTableAlias());
+      if (diag != null) {
+        throw new ModelException(diag, this);
+      }
+    }
 
     if (!isAbstract()) {
       if (getClassId() == 0) {
@@ -1359,8 +1374,8 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
       }
       for (Backend backend: factory.getBackends()) {
         try {
-          backend.assertValidName("table name", getTableName());
-          backend.assertValidName("table alias", getTableAlias());
+          backend.assertValidName(SqlNameType.TABLE_NAME, getTableName());
+          backend.assertValidName(SqlNameType.TABLE_ALIAS, getTableAlias());
         }
         catch (RuntimeException rex) {
           throw new ModelException(rex.getMessage(), this, rex);

@@ -28,10 +28,12 @@ import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.Relation;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.AttributeLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.SqlNameType;
 
 import java.util.Objects;
 
@@ -436,13 +438,21 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (StringHelper.isReservedWord(getName())) {
       throw createModelException("'" + getName() + "' is a reserved Java keyword");
     }
+    String diag = NameVerifier.getInstance().verifyAttributeName(getName());
+    if (diag != null) {
+      throw createModelException(diag);
+    }
     if (StringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
+    }
+    diag = NameVerifier.getInstance().verifyColumnName(getColumnName());
+    if (diag != null) {
+      throw createModelException(diag);
     }
 
     for (Backend backend: factory.getBackends()) {
       try {
-        backend.assertValidName("column name", getColumnName());
+        backend.assertValidName(SqlNameType.COLUMN_NAME, getColumnName());
       }
       catch (RuntimeException rex) {
         throw new ModelException(rex.getMessage(), this, rex);

@@ -40,6 +40,7 @@ import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.SqlNameType;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -830,7 +831,7 @@ public class ModelImpl implements Model {
           boolean aliasValid = true;
           for (Backend backend: getEntityFactory().getBackends()) {
             try {
-              backend.assertValidName("table alias", alias);
+              backend.assertValidName(SqlNameType.TABLE_ALIAS, alias);
             }
             catch (RuntimeException rex) {
               aliasValid = false;
