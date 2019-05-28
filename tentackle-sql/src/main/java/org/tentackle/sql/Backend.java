@@ -522,7 +522,7 @@ public interface Backend {
    * @param name the name
    * @throws BackendException if invalid name
    */
-  void assertValidName(String nameType, String name);
+  void assertValidName(SqlNameType nameType, String name);
 
 
   /**

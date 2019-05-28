@@ -18,22 +18,6 @@
 
 package org.tentackle.model.impl;
 
-import org.tentackle.model.ModelError;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
 import org.tentackle.common.Constants;
 import org.tentackle.common.ExceptionHelper;
 import org.tentackle.common.Service;
@@ -49,12 +33,30 @@ import org.tentackle.model.InheritanceType;
 import org.tentackle.model.Integrity;
 import org.tentackle.model.Model;
 import org.tentackle.model.ModelDefaults;
+import org.tentackle.model.ModelError;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.Relation;
 import org.tentackle.model.RelationType;
 import org.tentackle.model.SelectionType;
 import org.tentackle.model.TrackType;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.SqlNameType;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Model implementation.
@@ -803,7 +805,7 @@ public class ModelImpl implements Model {
           boolean aliasValid = true;
           for (Backend backend: getEntityFactory().getBackends()) {
             try {
-              backend.assertValidName("table alias", alias);
+              backend.assertValidName(SqlNameType.TABLE_ALIAS, alias);
             }
             catch (RuntimeException rex) {
               aliasValid = false;
