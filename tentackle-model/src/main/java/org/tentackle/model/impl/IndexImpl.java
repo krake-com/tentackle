@@ -26,9 +26,11 @@ import org.tentackle.model.Index;
 import org.tentackle.model.IndexAttribute;
 import org.tentackle.model.ModelElement;
 import org.tentackle.model.ModelException;
+import org.tentackle.model.NameVerifier;
 import org.tentackle.model.SourceInfo;
 import org.tentackle.model.parse.ConfigurationLine;
 import org.tentackle.sql.Backend;
+import org.tentackle.sql.SqlNameType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -297,11 +299,15 @@ public class IndexImpl implements Index {
     if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
+    String diag = NameVerifier.getInstance().verifyIndexName(getName());
+    if (diag != null) {
+      throw createModelException(diag);
+    }
     // leading underscore is ok, because index name gets the tablename prepended
 
     for (Backend backend: factory.getBackends()) {
       try {
-        backend.assertValidName("index name", createDatabaseIndexName(entity));
+        backend.assertValidName(SqlNameType.INDEX_NAME, createDatabaseIndexName(entity));
         if (filterCondition != null && !backend.isFilteredIndexSupported()) {
           throw createModelException("filtered/partial index not supported by " + backend);
         }

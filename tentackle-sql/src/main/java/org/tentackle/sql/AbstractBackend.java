@@ -88,9 +88,6 @@ public abstract class AbstractBackend implements Backend {
   protected static final String TYPE_VARCHAR = "VARCHAR";
 
 
-  /** the empty string. */
-  public static final String EMPTY_STRING = "";
-
   /** use DROP IF EXISTS if supported. */
   private boolean dropIfExistsEnabled;
 
@@ -132,7 +129,7 @@ public abstract class AbstractBackend implements Backend {
 
   @Override
   public String getEmptyString() {
-    return EMPTY_STRING;
+    return "";
   }
 
   @Override
@@ -835,7 +832,7 @@ public abstract class AbstractBackend implements Backend {
 
 
   @Override
-  public void assertValidName(String nameType, String name) {
+  public void assertValidName(SqlNameType nameType, String name) {
     if (name != null) {
       if (getReservedWords().contains(name.toUpperCase())) {
         throw new BackendException(nameType + " '" + name + "' is a reserved word for backend " + this);

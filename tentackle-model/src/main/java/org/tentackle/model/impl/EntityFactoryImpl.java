@@ -195,7 +195,7 @@ public class EntityFactoryImpl implements EntityFactory {
           processRelationOption(entity, (OptionLine) line);
           break;
 
-        default: throw new ModelException("unknown linetype " + line.getLineType() + " @ " +
+        default: throw new ModelException("unknown linetype " + line.getLineType() + ModelException.AT_ELEMENT +
                                           document.getSourceInfo().add(line.getLineNumber() - 1, 0));
       }
     }

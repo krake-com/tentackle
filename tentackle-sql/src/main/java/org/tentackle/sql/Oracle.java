@@ -227,7 +227,7 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
-  public void assertValidName(String nameType, String name) {
+  public void assertValidName(SqlNameType nameType, String name) {
     super.assertValidName(nameType, name);
     assertNameLength(nameType, name);
     if (name != null && name.startsWith("_")) {
@@ -461,7 +461,7 @@ public class Oracle extends AbstractSql2003Backend {
     return sql;
   }
 
-  private void assertNameLength(String nameType, String name) {
+  private void assertNameLength(SqlNameType nameType, String name) {
     if (name != null && name.length() > MAX_NAME_LENGTH) {
       throw new BackendException(nameType + " name " + name + " is too long (" + name.length() + "). " +
                                  this + " allows only " + MAX_NAME_LENGTH);
