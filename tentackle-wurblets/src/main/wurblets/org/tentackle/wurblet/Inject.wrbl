@@ -3,6 +3,7 @@
 @{import java.io.*}@
 @{import org.wurbelizer.wurbel.*}@
 @{import org.wurbelizer.wurblet.*}@
+@{import org.tentackle.common.StringHelper}@
 @{args}@
 @{comment
 <strong>({\@code \@wurblet})</strong> Injects code from the argument list.
@@ -39,12 +40,12 @@ Example:
         text.append(arg);
       }
     }
+
     if (asString) {
-      out.print('"');
+      out.print(StringHelper.toDoubleQuotes(text.toString()));
     }
-    out.print(text);
-    if (asString) {
-      out.print('"');
+    else {
+      out.print(text);
     }
   }
 ]@

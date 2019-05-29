@@ -28,6 +28,8 @@ import org.tentackle.model.NameVerifier;
 @Service(NameVerifier.class)
 public class NameVerifierImpl implements NameVerifier {
 
+  private static final String MIXED_UC_LC = "' contains mixed upper- and lowercase characters";
+
   @Override
   public String verifyEntityName(String name) {
     return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
@@ -35,12 +37,12 @@ public class NameVerifierImpl implements NameVerifier {
 
   @Override
   public String verifyTableName(String name) {
-    return name.equals(name.toLowerCase()) ? null : "table name '" + name + "' contains uppercase characters";
+    return isAllUpperOrLowerCase(name) ? null : "table name '" + name + MIXED_UC_LC;
   }
 
   @Override
   public String verifyTableAlias(String name) {
-    return name.equals(name.toLowerCase()) ? null : "table alias '" + name + "' contains uppercase characters";
+    return isAllUpperOrLowerCase(name) ? null : "table alias '" + name + MIXED_UC_LC;
   }
 
   @Override
@@ -50,12 +52,26 @@ public class NameVerifierImpl implements NameVerifier {
 
   @Override
   public String verifyColumnName(String name) {
-    return name.equals(name.toLowerCase()) ? null : "column name '" + name + "' contains uppercase characters";
+    return isAllUpperOrLowerCase(name) ? null : "column name '" + name + MIXED_UC_LC;
   }
 
   @Override
   public String verifyIndexName(String name) {
-    return name.equals(name.toLowerCase()) ? null : "index name '" + name + "' contains uppercase characters";
+    return isAllUpperOrLowerCase(name) ? null : "index name '" + name + MIXED_UC_LC;
+  }
+
+
+  /**
+   * Checks whether the given name is all upper- or all lowercase.<br>
+   * The backends are usually not case-sensitive (unless the SQL names are quoted),
+   * but it is good style to either use all upper- or all lowercase.
+   * Mixing the case pretends that the case is important, but in fact it's not.
+   *
+   * @param name the name
+   * @return true if ok, false if mixed
+   */
+  protected boolean isAllUpperOrLowerCase(String name) {
+    return name == null || name.equals(name.toLowerCase()) || name.equals(name.toUpperCase());
   }
 
 }

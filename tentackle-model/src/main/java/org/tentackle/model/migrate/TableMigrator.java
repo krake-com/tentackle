@@ -18,6 +18,7 @@
 
 package org.tentackle.model.migrate;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.DataType;
 import org.tentackle.model.Entity;
@@ -230,7 +231,7 @@ public class TableMigrator {
   private ColumnMigration getColumnMigrationForColumn(String columName, Collection<ColumnMigration> columnMigrations) {
     if (columnMigrations != null && columName != null) {
       for (ColumnMigration migration: columnMigrations) {
-        if (Objects.equals(columName, migration.getColumnName())) {
+        if (StringHelper.equalsIgnoreCase(columName, migration.getColumnName())) {
           return migration;
         }
       }
@@ -248,7 +249,7 @@ public class TableMigrator {
   private ColumnMigration getColumnMigrationForNewColumn(String newColumName, Collection<ColumnMigration> columnMigrations) {
     if (columnMigrations != null && newColumName != null) {
       for (ColumnMigration migration: columnMigrations) {
-        if (Objects.equals(newColumName, migration.getNewColumnName())) {
+        if (StringHelper.equalsIgnoreCase(newColumName, migration.getNewColumnName())) {
           return migration;
         }
       }
@@ -539,7 +540,7 @@ public class TableMigrator {
       boolean found = false;
       for (IndexMetaData existingIndex: existingIndexes) {
         String indexName = index.createDatabaseIndexName(entity);
-        if (existingIndex.getIndexName().equals(indexName)) {
+        if (existingIndex.getIndexName().equalsIgnoreCase(indexName)) {
           // found -> migrate, if necessary
           result = result.sum(new IndexMigrator(entity, index, backend, existingIndex).migrate());
           found = true;
@@ -580,7 +581,7 @@ public class TableMigrator {
       if (!existingIndex.isPrimaryIdKey() && !renamedIndexes.contains(existingIndex)) {
         boolean found = false;
         for (Index index: tableIndexes) {
-          if (index.createDatabaseIndexName(entity).equals(existingIndex.getIndexName())) {
+          if (index.createDatabaseIndexName(entity).equalsIgnoreCase(existingIndex.getIndexName())) {
             found = true;
             break;
           }
@@ -654,15 +655,14 @@ public class TableMigrator {
 
            (existingForeignKey.getDeleteRule() == ForeignKeyAction.CASCADE) == foreignKey.isComposite() &&
 
-           foreignKey.getReferencingAttribute().getColumnName().equals(existingForeignKey.getForeignKeyColumns().get(
+           foreignKey.getReferencingAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(
             0).getForeignKeyColumn()) &&
-           (mapSchemas || Objects.equals(referencingTableProvidingEntity.getSchemaName(), existingForeignKey.getForeignKeySchema())) &&
-           referencingTableProvidingEntity.getTableNameWithoutSchema().equals(existingForeignKey.getForeignKeyTable()) &&
+           (mapSchemas || StringHelper.equalsIgnoreCase(referencingTableProvidingEntity.getSchemaName(), existingForeignKey.getForeignKeySchema())) &&
+           referencingTableProvidingEntity.getTableNameWithoutSchema().equalsIgnoreCase(existingForeignKey.getForeignKeyTable()) &&
 
-           foreignKey.getReferencedAttribute().getColumnName().equals(existingForeignKey.getForeignKeyColumns().get(
-            0).getPrimaryKeyColumn()) &&
-           (mapSchemas || Objects.equals(referencedTableProvidingEntity.getSchemaName(), existingForeignKey.getPrimaryKeySchema())) &&
-           referencedTableProvidingEntity.getTableNameWithoutSchema().equals(existingForeignKey.getPrimaryKeyTable());
+           foreignKey.getReferencedAttribute().getColumnName().equalsIgnoreCase(existingForeignKey.getForeignKeyColumns().get(0).getPrimaryKeyColumn()) &&
+           (mapSchemas || StringHelper.equalsIgnoreCase(referencedTableProvidingEntity.getSchemaName(), existingForeignKey.getPrimaryKeySchema())) &&
+           referencedTableProvidingEntity.getTableNameWithoutSchema().equalsIgnoreCase(existingForeignKey.getPrimaryKeyTable());
   }
 
 }

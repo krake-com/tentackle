@@ -111,18 +111,21 @@ public class IndexImpl implements Index {
     boolean uniqueFound = false;
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
-      switch(token.toLowerCase()) {
+      switch (token.toLowerCase()) {
+
         case "index":
           setUnique(uniqueFound);
           indexFound = true;
           uniqueFound = false;
           break;
+
         case "unique":
           if (indexFound) {
             throw sourceLine.createModelException("keyword 'unique' not allowed after 'index'");
           }
           uniqueFound = true;
           break;
+
         default:
           if (!indexFound) {
             throw sourceLine.createModelException("unknown configuration keyword: " + token);
@@ -247,7 +250,7 @@ public class IndexImpl implements Index {
 
 
   public void setName(String name) {
-    this.name = StringHelper.toLower(name);
+    this.name = name;
   }
 
   public void setComment(String comment) {
