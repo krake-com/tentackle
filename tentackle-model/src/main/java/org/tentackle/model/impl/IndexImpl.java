@@ -293,7 +293,7 @@ public class IndexImpl implements Index {
     if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
-    String diag = NameVerifier.getInstance().verifyIndexName(getName());
+    String diag = NameVerifier.getInstance().verifyIndexName(this);
     if (diag != null) {
       throw createModelException(diag);
     }

@@ -40,51 +40,51 @@ public interface NameVerifier {
   }
 
   /**
-   * Verifies a name of an entity.
+   * Verifies the Java name of an entity.
    *
-   * @param name the name
+   * @param entity the entity
    * @return null if ok, else a diagnostic message
    */
-  String verifyEntityName(String name);
+  String verifyEntityName(Entity entity);
 
   /**
-   * Verifies a table name.
+   * Verifies the table name of an entity.
    *
-   * @param name the name
+   * @param entity the entity
    * @return null if ok, else a diagnostic message
    */
-  String verifyTableName(String name);
+  String verifyTableName(Entity entity);
 
   /**
-   * Verifies a table alias.
+   * Verifies the table alias of an entity.
    *
    * @param name the name
    * @return null if ok, else a diagnostic message
    */
-  String verifyTableAlias(String name);
+  String verifyTableAlias(Entity entity);
 
   /**
-   * Verifies a name of an attribute.
+   * Verifies the Java name of an attribute.
    *
-   * @param name the name
+   * @param attribute the attribute
    * @return null if ok, else a diagnostic message
    */
-  String verifyAttributeName(String name);
+  String verifyAttributeName(Attribute attribute);
 
   /**
-   * Verifies a column name.
+   * Verifies the column name of an attribute.
    *
-   * @param name the name
+   * @param attribute the attribute
    * @return null if ok, else a diagnostic message
    */
-  String verifyColumnName(String name);
+  String verifyColumnName(Attribute attribute);
 
   /**
-   * Verifies an index name.
+   * Verifies the name of an index.
    *
-   * @param name the name
+   * @param index the index
    * @return null if ok, else a diagnostic message
    */
-  String verifyIndexName(String name);
+  String verifyIndexName(Index index);
 
 }

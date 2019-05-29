@@ -1260,21 +1260,17 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
     if (StringHelper.isAllWhitespace(getName())) {
       throw new ModelException("configuration 'name = ...' missing", this);
     }
-    String diag = NameVerifier.getInstance().verifyEntityName(getName());
+    String diag = NameVerifier.getInstance().verifyEntityName(this);
     if (diag != null) {
       throw new ModelException(diag, this);
     }
-    if (getTableName() != null) {
-      diag = NameVerifier.getInstance().verifyTableName(getTableName());
-      if (diag != null) {
-        throw new ModelException(diag, this);
-      }
+    diag = NameVerifier.getInstance().verifyTableName(this);
+    if (diag != null) {
+      throw new ModelException(diag, this);
     }
-    if (getTableAlias() != null) {
-      diag = NameVerifier.getInstance().verifyTableAlias(getTableAlias());
-      if (diag != null) {
-        throw new ModelException(diag, this);
-      }
+    diag = NameVerifier.getInstance().verifyTableAlias(this);
+    if (diag != null) {
+      throw new ModelException(diag, this);
     }
 
     if (!isAbstract()) {
