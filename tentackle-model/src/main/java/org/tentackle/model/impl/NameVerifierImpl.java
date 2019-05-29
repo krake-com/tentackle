@@ -31,7 +31,12 @@ import org.tentackle.model.NameVerifier;
 @Service(NameVerifier.class)
 public class NameVerifierImpl implements NameVerifier {
 
+  private static final String TABLE_NAME = "table name '";
+  private static final String TABLE_ALIAS = "table alias '";
+  private static final String COLUMN_NAME = "column name '";
+
   private static final String MIXED_UC_LC = "' contains mixed upper- and lowercase characters";
+  private static final String QUOTED = "' is quoted, which is only allowed for [PROVIDED] entities";
 
   @Override
   public String verifyEntityName(Entity entity) {
@@ -42,13 +47,19 @@ public class NameVerifierImpl implements NameVerifier {
   @Override
   public String verifyTableName(Entity entity) {
     String name = entity.getTableName();
-    return isAllUpperOrLowerCase(name) ? null : "table name '" + name + MIXED_UC_LC;
+    if (isNotQuotedOrProvided(name, entity)) {
+      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_NAME + name + MIXED_UC_LC;
+    }
+    return TABLE_NAME + name + QUOTED;
   }
 
   @Override
   public String verifyTableAlias(Entity entity) {
     String name = entity.getTableAlias();
-    return isAllUpperOrLowerCase(name) ? null : "table alias '" + name + MIXED_UC_LC;
+    if (isNotQuotedOrProvided(name, entity)) {
+      return isAllUpperOrLowerCase(name, entity) ? null : TABLE_ALIAS + name + MIXED_UC_LC;
+    }
+    return TABLE_ALIAS + name + QUOTED;
   }
 
   @Override
@@ -60,13 +71,16 @@ public class NameVerifierImpl implements NameVerifier {
   @Override
   public String verifyColumnName(Attribute attribute) {
     String name = attribute.getColumnName();
-    return isAllUpperOrLowerCase(name) ? null : "column name '" + name + MIXED_UC_LC;
+    if (isNotQuotedOrProvided(name, attribute.getEntity())) {
+      return isAllUpperOrLowerCase(name, attribute.getEntity()) ? null : COLUMN_NAME + name + MIXED_UC_LC;
+    }
+    return COLUMN_NAME + name + QUOTED;
   }
 
   @Override
   public String verifyIndexName(Index index) {
-    String name = index.getName();
-    return isAllUpperOrLowerCase(name) ? null : "index name '" + name + MIXED_UC_LC;
+    String name = index.getName();  // index not allowed for [PROVIDED] entities
+    return isAllUpperOrLowerCase(name, index.getEntity()) ? null : "index name '" + name + MIXED_UC_LC;
   }
 
 
@@ -75,12 +89,25 @@ public class NameVerifierImpl implements NameVerifier {
    * The backends are usually not case-sensitive (unless the SQL names are quoted),
    * but it is good style to either use all upper- or all lowercase.
    * Mixing the case pretends that the case is important, but in fact it's not.
+   * This is only allowed for provided entities.
    *
    * @param name the name
+   * @param entity the entity
    * @return true if ok, false if mixed
    */
-  protected boolean isAllUpperOrLowerCase(String name) {
-    return name == null || name.equals(name.toLowerCase()) || name.equals(name.toUpperCase());
+  protected boolean isAllUpperOrLowerCase(String name, Entity entity) {
+    return name == null || entity.getOptions().isProvided() || name.equals(name.toLowerCase()) || name.equals(name.toUpperCase());
+  }
+
+  /**
+   * Checks whether the name is quoted.
+   *
+   * @param name the name
+   * @param entity the entity
+   * @return true if not quoted or entity is provided by another application
+   */
+  protected boolean isNotQuotedOrProvided(String name, Entity entity) {
+    return name == null || !name.startsWith("\"") || entity.getOptions().isProvided();
   }
 
 }

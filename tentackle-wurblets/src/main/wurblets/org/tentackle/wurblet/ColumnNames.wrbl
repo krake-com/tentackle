@@ -17,7 +17,7 @@ For more options, see {\@link ModelWurblet}.
 ]@
 
   /** database column name for '@(attr)@'. */
-  public static final String CN_@(name)@@(sp.getPostfix())@ = "@(attr.getColumnName())@@(sp.getPostfix())@";
+  public static final String CN_@(name)@@(sp.getPostfix())@ = @(StringHelper.toDoubleQuotes(attr.getColumnName() + sp.getPostfix()))@;
 @[
           }
         }
