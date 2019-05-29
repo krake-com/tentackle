@@ -18,11 +18,8 @@
 
 package org.tentackle.model.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import org.tentackle.common.StringHelper;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
 import org.tentackle.model.AttributeSorting;
 import org.tentackle.model.DataType;
@@ -45,6 +42,10 @@ import org.tentackle.model.parse.Line;
 import org.tentackle.model.parse.OptionLine;
 import org.tentackle.model.parse.RelationLine;
 import org.tentackle.sql.Backend;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 
 /**
