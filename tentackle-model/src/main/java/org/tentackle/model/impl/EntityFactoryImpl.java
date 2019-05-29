@@ -203,8 +203,8 @@ public class EntityFactoryImpl implements EntityFactory {
     }
 
     for (Attribute attribute: entity.getAttributes()) {
-      if (Constants.AN_TABLESERIAL.equals(attribute.getName()) ||
-          Constants.CN_TABLESERIAL.equals(attribute.getColumnName())) {
+      if (Constants.AN_TABLESERIAL.equalsIgnoreCase(attribute.getName()) ||
+          Constants.CN_TABLESERIAL.equalsIgnoreCase(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [TABLESERIAL] option instead of explicit attribute", entity);
         }
@@ -213,8 +213,8 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_NORMTEXT.equals(attribute.getName()) ||
-          Constants.CN_NORMTEXT.equals(attribute.getColumnName())) {
+      if (Constants.AN_NORMTEXT.equalsIgnoreCase(attribute.getName()) ||
+          Constants.CN_NORMTEXT.equalsIgnoreCase(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [NORMTEXT] option instead of explicit attribute", entity);
         }
@@ -223,12 +223,12 @@ public class EntityFactoryImpl implements EntityFactory {
         }
       }
 
-      if (Constants.AN_EDITEDBY.equals(attribute.getName()) ||
-          Constants.CN_EDITEDBY.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDSINCE.equals(attribute.getName()) ||
-          Constants.CN_EDITEDSINCE.equals(attribute.getColumnName()) ||
-          Constants.AN_EDITEDEXPIRY.equals(attribute.getName()) ||
-          Constants.CN_EDITEDEXPIRY.equals(attribute.getColumnName())) {
+      if (Constants.AN_EDITEDBY.equalsIgnoreCase(attribute.getName()) ||
+          Constants.CN_EDITEDBY.equalsIgnoreCase(attribute.getColumnName()) ||
+          Constants.AN_EDITEDSINCE.equalsIgnoreCase(attribute.getName()) ||
+          Constants.CN_EDITEDSINCE.equalsIgnoreCase(attribute.getColumnName()) ||
+          Constants.AN_EDITEDEXPIRY.equalsIgnoreCase(attribute.getName()) ||
+          Constants.CN_EDITEDEXPIRY.equalsIgnoreCase(attribute.getColumnName())) {
         if (!attribute.isImplicit()) {
           throw new ModelException("use [EDITEDBY] option instead of explicit attribute", entity);
         }

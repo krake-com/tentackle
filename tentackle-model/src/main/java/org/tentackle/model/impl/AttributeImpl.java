@@ -359,7 +359,7 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
 
 
   public void setColumnName(String columnName) {
-    this.columnName = StringHelper.toLower(columnName);
+    this.columnName = columnName;
   }
 
   public void setDataType(DataType dataType) {
