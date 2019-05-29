@@ -961,7 +961,7 @@ public class ModelImpl implements Model {
             }
 
             for (Entity refingEnt: referencingEntities) {
-              if (referencingAttribute != null && referencedAttribute != null &&
+              if (!refingEnt.getOptions().isProvided() && referencingAttribute != null && referencedAttribute != null &&
                   (!composite && referencedAttribute.getEntity().getIntegrity().isRelatedCheckedByDatabase() ||
                    composite && referencedAttribute.getEntity().getIntegrity().isCompositesCheckedByDatabase())) {
                 ForeignKey foreignKey = new ForeignKeyImpl(refingEnt, referencingAttribute, referencedEntity,
@@ -982,7 +982,7 @@ public class ModelImpl implements Model {
           }
 
           // add constraints for MULTI table inheritance
-          if (entity.getSuperEntity() != null && entity.getHierarchyInheritanceType().isMappingToOwnTable()) {
+          if (!entity.getOptions().isProvided() && entity.getSuperEntity() != null && entity.getHierarchyInheritanceType().isMappingToOwnTable()) {
             // is a subclass
             Entity topEntity = entity.getTopSuperEntity();
             Attribute idAttribute = topEntity.getAttributeByJavaName(Constants.AN_ID, false);

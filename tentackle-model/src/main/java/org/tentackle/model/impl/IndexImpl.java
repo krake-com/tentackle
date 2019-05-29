@@ -290,6 +290,9 @@ public class IndexImpl implements Index {
 
   @Override
   public void validate() throws ModelException {
+    if (getEntity().getOptions().isProvided()) {
+      throw createModelException("[PROVIDED] entities cannot have index definitions");
+    }
     if (StringHelper.isAllWhitespace(getName())) {
       throw createModelException("missing index name");
     }
