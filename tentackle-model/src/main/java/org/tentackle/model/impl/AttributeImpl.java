@@ -438,14 +438,14 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     if (StringHelper.isReservedWord(getName())) {
       throw createModelException("'" + getName() + "' is a reserved Java keyword");
     }
-    String diag = NameVerifier.getInstance().verifyAttributeName(getName());
+    String diag = NameVerifier.getInstance().verifyAttributeName(this);
     if (diag != null) {
       throw createModelException(diag);
     }
     if (StringHelper.isAllWhitespace(getColumnName())) {
       throw createModelException("missing column name");
     }
-    diag = NameVerifier.getInstance().verifyColumnName(getColumnName());
+    diag = NameVerifier.getInstance().verifyColumnName(this);
     if (diag != null) {
       throw createModelException(diag);
     }

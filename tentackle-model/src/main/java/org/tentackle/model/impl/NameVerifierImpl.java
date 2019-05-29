@@ -20,6 +20,9 @@ package org.tentackle.model.impl;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.StringHelper;
+import org.tentackle.model.Attribute;
+import org.tentackle.model.Entity;
+import org.tentackle.model.Index;
 import org.tentackle.model.NameVerifier;
 
 /**
@@ -31,32 +34,38 @@ public class NameVerifierImpl implements NameVerifier {
   private static final String MIXED_UC_LC = "' contains mixed upper- and lowercase characters";
 
   @Override
-  public String verifyEntityName(String name) {
+  public String verifyEntityName(Entity entity) {
+    String name = entity.getName();
     return StringHelper.isValidJavaClassName(name) ? null : "'" + name + "' is not a valid Java class name";
   }
 
   @Override
-  public String verifyTableName(String name) {
+  public String verifyTableName(Entity entity) {
+    String name = entity.getTableName();
     return isAllUpperOrLowerCase(name) ? null : "table name '" + name + MIXED_UC_LC;
   }
 
   @Override
-  public String verifyTableAlias(String name) {
+  public String verifyTableAlias(Entity entity) {
+    String name = entity.getTableAlias();
     return isAllUpperOrLowerCase(name) ? null : "table alias '" + name + MIXED_UC_LC;
   }
 
   @Override
-  public String verifyAttributeName(String name) {
+  public String verifyAttributeName(Attribute attribute) {
+    String name = attribute.getName();
     return StringHelper.isValidJavaIdentifier(name) ? null : "'" + name + "' is not a valid Java identifier name";
   }
 
   @Override
-  public String verifyColumnName(String name) {
+  public String verifyColumnName(Attribute attribute) {
+    String name = attribute.getColumnName();
     return isAllUpperOrLowerCase(name) ? null : "column name '" + name + MIXED_UC_LC;
   }
 
   @Override
-  public String verifyIndexName(String name) {
+  public String verifyIndexName(Index index) {
+    String name = index.getName();
     return isAllUpperOrLowerCase(name) ? null : "index name '" + name + MIXED_UC_LC;
   }
 
