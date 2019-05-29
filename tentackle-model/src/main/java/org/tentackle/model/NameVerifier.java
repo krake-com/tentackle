@@ -58,7 +58,7 @@ public interface NameVerifier {
   /**
    * Verifies the table alias of an entity.
    *
-   * @param name the name
+   * @param entity the entity
    * @return null if ok, else a diagnostic message
    */
   String verifyTableAlias(Entity entity);
