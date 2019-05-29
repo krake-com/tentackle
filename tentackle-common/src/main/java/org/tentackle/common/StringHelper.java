@@ -80,6 +80,18 @@ public final class StringHelper {
 
 
   /**
+   * Null safe {@link String#equalsIgnoreCase(String)}.
+   *
+   * @param a first string, may be null
+   * @param b second string, may be null
+   * @return true if equal ignoring the case or both are null
+   */
+  public static boolean equalsIgnoreCase(String a, String b) {
+    return (a == b) || (a != null && a.equalsIgnoreCase(b));
+  }
+
+
+  /**
    * Converts a string to uppercase allowing null values.
    *
    * @param str the string

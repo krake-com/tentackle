@@ -1067,11 +1067,10 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
   @Override
   public Attribute getAttributeByColumnName(String columnName, boolean all) {
     if (columnName != null) {
-      columnName = columnName.toLowerCase();
       Entity entity = this;
       while (entity != null) {
         for (Attribute attribute: entity.getAttributes()) {
-          if (columnName.equals(attribute.getColumnName())) {
+          if (columnName.equalsIgnoreCase(attribute.getColumnName())) {
             return attribute;
           }
         }
