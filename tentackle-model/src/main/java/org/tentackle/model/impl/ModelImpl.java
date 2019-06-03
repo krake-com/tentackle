@@ -435,6 +435,9 @@ public class ModelImpl implements Model {
           }
         }
         else  {
+          if (entity.getOptions().isProvided() && !foreignEntity.getOptions().isProvided()) {
+            errors.add(new ModelError(relation,"provided entities cannot have relations to managed entities"));
+          }
           ((RelationImpl) relation).setForeignEntity(foreignEntity);
           if (relation.getRelationType() == RelationType.LIST) {
             String attributeName;
