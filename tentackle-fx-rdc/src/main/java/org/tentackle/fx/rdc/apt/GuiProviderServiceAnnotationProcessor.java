@@ -25,7 +25,6 @@ import org.tentackle.pdo.PersistentDomainObject;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
@@ -35,8 +34,6 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
 import java.util.List;
 import java.util.Set;
-
-import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Annotation processor for the {@code @GuiProviderService} annotation.<br>
@@ -49,7 +46,6 @@ import static javax.lang.model.SourceVersion.RELEASE_12;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.rdc.GuiProviderService")
-@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class GuiProviderServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

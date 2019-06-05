@@ -26,7 +26,6 @@ import org.tentackle.common.TentackleRuntimeException;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
@@ -39,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static javax.lang.model.SourceVersion.RELEASE_12;
-
 
 /**
  * Annotation Processor for all annotations annotated with {@link Analyze}.
@@ -48,7 +45,6 @@ import static javax.lang.model.SourceVersion.RELEASE_12;
  * @author harald
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(RELEASE_12)
 @SupportedOptions("verbosity")
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 

@@ -25,7 +25,7 @@ import org.tentackle.reflect.Interception;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -36,8 +36,6 @@ import javax.tools.Diagnostic.Kind;
 import java.util.Map;
 import java.util.Set;
 
-import static javax.lang.model.SourceVersion.RELEASE_12;
-
 
 /**
  * Processor for the {@code @Interception} annotation.<br>
@@ -46,7 +44,6 @@ import static javax.lang.model.SourceVersion.RELEASE_12;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.reflect.Interception")
-@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class InterceptionAnnotationProcessor extends AbstractProcessor {
 
@@ -61,6 +58,10 @@ public class InterceptionAnnotationProcessor extends AbstractProcessor {
     return true;    // claimed
   }
 
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latest();
+  }
 
   private void processAnnotation(TypeElement annotationType, RoundEnvironment roundEnv) {
 

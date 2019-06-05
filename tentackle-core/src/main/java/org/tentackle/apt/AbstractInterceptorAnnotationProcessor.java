@@ -19,10 +19,13 @@
 
 package org.tentackle.apt;
 
-import java.util.Set;
+import org.tentackle.apt.visitor.SuperTypeVisitor;
+import org.tentackle.reflect.Interceptable;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
@@ -30,8 +33,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
-import org.tentackle.apt.visitor.SuperTypeVisitor;
-import org.tentackle.reflect.Interceptable;
+import java.util.Set;
 
 
 
@@ -71,7 +73,10 @@ public abstract class AbstractInterceptorAnnotationProcessor extends AbstractPro
     this.type = type;
   }
 
-
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latest();
+  }
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {

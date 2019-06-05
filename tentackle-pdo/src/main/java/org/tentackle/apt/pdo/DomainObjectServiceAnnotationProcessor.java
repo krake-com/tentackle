@@ -24,11 +24,8 @@ import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
-
-import static javax.lang.model.SourceVersion.RELEASE_12;
 
 /**
  * Annotation processor for the {@code @DomainObjectService} annotation.<br>
@@ -42,7 +39,6 @@ import static javax.lang.model.SourceVersion.RELEASE_12;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.DomainObjectService")
-@SupportedSourceVersion(RELEASE_12)
 @AnnotationProcessor
 public class DomainObjectServiceAnnotationProcessor extends AbstractDomainServiceAnnotationProcessor {
 
