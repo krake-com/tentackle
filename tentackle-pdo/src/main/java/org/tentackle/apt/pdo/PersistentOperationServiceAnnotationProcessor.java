@@ -19,18 +19,6 @@
 
 package org.tentackle.apt.pdo;
 
-import java.util.List;
-import java.util.Set;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVisitor;
-import javax.lang.model.util.SimpleTypeVisitor8;
-import javax.tools.Diagnostic;
 import org.tentackle.apt.AbstractServiceAnnotationProcessor;
 import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
@@ -38,7 +26,17 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Operation;
 import org.tentackle.session.Session;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.util.SimpleTypeVisitor8;
+import javax.tools.Diagnostic;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Annotation processor for the {@code @PersistentOperationService} annotation.<br>
@@ -54,7 +52,6 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.PersistentOperationService")
-@SupportedSourceVersion(RELEASE_11)
 @AnnotationProcessor
 public class PersistentOperationServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 

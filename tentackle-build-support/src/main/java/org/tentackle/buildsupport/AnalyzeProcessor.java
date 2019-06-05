@@ -20,25 +20,23 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.Analyze;
+import org.tentackle.common.TentackleRuntimeException;
+
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedOptions;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic.Kind;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
-import org.tentackle.common.Analyze;
-import org.tentackle.common.TentackleRuntimeException;
-
-import static javax.lang.model.SourceVersion.RELEASE_11;
 
 
 /**
@@ -47,7 +45,6 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(RELEASE_11)
 @SupportedOptions("verbosity")
 public class AnalyzeProcessor extends AbstractTentackleProcessor {
 

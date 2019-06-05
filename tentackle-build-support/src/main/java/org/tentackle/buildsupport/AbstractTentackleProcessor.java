@@ -19,13 +19,14 @@
 
 package org.tentackle.buildsupport;
 
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.SourceVersion;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
 
 /**
  * Abstract tentackle annotation processor.
@@ -51,6 +52,10 @@ public abstract class AbstractTentackleProcessor extends AbstractProcessor {
     resourceManagers = new HashMap<>();
   }
 
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latest();
+  }
 
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {

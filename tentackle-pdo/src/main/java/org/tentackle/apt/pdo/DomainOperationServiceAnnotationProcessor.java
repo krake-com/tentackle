@@ -19,15 +19,13 @@
 
 package org.tentackle.apt.pdo;
 
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.element.Element;
-import javax.tools.Diagnostic;
 import org.tentackle.apt.visitor.ClassArgConstructorVisitor;
 import org.tentackle.common.AnnotationProcessor;
 import org.tentackle.pdo.Operation;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.element.Element;
+import javax.tools.Diagnostic;
 
 /**
  * Annotation processor for the {@code @DomainOperationService} annotation.<br>
@@ -41,7 +39,6 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.pdo.DomainOperationService")
-@SupportedSourceVersion(RELEASE_11)
 @AnnotationProcessor
 public class DomainOperationServiceAnnotationProcessor extends AbstractDomainServiceAnnotationProcessor {
 

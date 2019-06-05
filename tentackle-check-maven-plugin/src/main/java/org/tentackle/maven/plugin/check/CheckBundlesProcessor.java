@@ -26,8 +26,6 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import java.util.Set;
@@ -38,7 +36,6 @@ import java.util.Set;
  * 
  * @author harald
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @SupportedOptions("verbosity")
 @SupportedAnnotationTypes("*")
 public class CheckBundlesProcessor extends AbstractTentackleProcessor {

@@ -24,13 +24,10 @@ import org.tentackle.common.AnnotationProcessor;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.util.Set;
-
-import static javax.lang.model.SourceVersion.RELEASE_11;
 
 /**
  * Annotation processor for the {@code @FxControllerService} annotation.<br>
@@ -38,7 +35,6 @@ import static javax.lang.model.SourceVersion.RELEASE_11;
  * @author harald
  */
 @SupportedAnnotationTypes("org.tentackle.fx.FxControllerService")
-@SupportedSourceVersion(RELEASE_11)
 @AnnotationProcessor
 public class FxControllerServiceAnnotationProcessor extends AbstractServiceAnnotationProcessor {
 
