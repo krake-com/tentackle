@@ -546,13 +546,13 @@ public class TableMigrator {
           found = true;
           break;
         }
-        else if (!IndexMigrator.isLogicallyDifferent(index, existingIndex)) {
+        else if (!IndexMigrator.isLogicallyDifferent(index, existingIndex, null)) {
           // different name, but logically equivalent: rename if backend supports that.
           // however, check that this is the only equivalent (special case if
           // duplicate indexes already exist in the database)
           int count = 0;
           for (IndexMetaData exNdx: existingIndexes) {
-            if (!IndexMigrator.isLogicallyDifferent(index, exNdx)) {
+            if (!IndexMigrator.isLogicallyDifferent(index, exNdx, null)) {
               count++;
             }
           }

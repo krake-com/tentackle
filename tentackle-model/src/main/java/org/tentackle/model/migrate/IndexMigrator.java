@@ -147,7 +147,9 @@ public class IndexMigrator {
     }
     else {
       // check if index has changed in its configuration. If so -> drop and re-create
-      if (isLogicallyDifferent(index, indexMetaData)) {
+      StringBuilder buf = new StringBuilder();
+      if (isLogicallyDifferent(index, indexMetaData, buf)) {
+        dropSql.append(buf);
         dropSql.append(dropIndex());
         createSql.append(createIndex());
       }
@@ -162,9 +164,10 @@ public class IndexMigrator {
    *
    * @param modelIndex the index as defined in the model
    * @param dbIndex the index existing in the database
+   * @param commentBuf comment buffer to show the difference, null if none
    * @return true if they are different, false if logically equal
    */
-  public static boolean isLogicallyDifferent(Index modelIndex, IndexMetaData dbIndex) {
+  public static boolean isLogicallyDifferent(Index modelIndex, IndexMetaData dbIndex, StringBuilder commentBuf) {
     boolean different = modelIndex.isUnique() != dbIndex.isUnique();
     if (!different) {
       // check filter condition
@@ -183,6 +186,14 @@ public class IndexMigrator {
         currentFilter = currentFilter.toUpperCase().replace(" ", "");
       }
       different = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
+      if (different && commentBuf != null) {
+        if (currentFilter.startsWith("(") && currentFilter.endsWith(")") && !modelFilter.startsWith("(")) {
+          // don't confuse the user if packed within parantheses
+          currentFilter = currentFilter.substring(1, currentFilter.length() - 1);
+        }
+        commentBuf.append("-- filter in db = '").append(currentFilter).append("' != '")
+                  .append(modelFilter).append("' in model\n");
+      }
     }
     if (!different) {
       // check index columns

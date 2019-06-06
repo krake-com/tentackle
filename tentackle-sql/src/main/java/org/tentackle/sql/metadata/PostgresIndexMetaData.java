@@ -26,6 +26,13 @@ package org.tentackle.sql.metadata;
  */
 public class PostgresIndexMetaData extends IndexMetaData {
 
+  public static final String[] CASTS = {
+      "::timestamp without time zone",
+      "::timestamp with time zone",
+      "::time without time zone",
+      "::time with time zone",
+  };
+
   /**
    * Creates an index meta data object.
    *
@@ -40,7 +47,13 @@ public class PostgresIndexMetaData extends IndexMetaData {
     super.validate();
     if (getFilterCondition() != null) {
       // postgres appends ::<type> to all values which must be removed
-      setFilterCondition(getFilterCondition().replaceAll("::[a-z|A-Z]*", ""));
+      // check for some special types that come in more than one word
+      String condition = getFilterCondition();
+      for (String cast: CASTS) {
+        condition = condition.replace(cast, "");
+      }
+      // other simple casts such as ::long
+      setFilterCondition(condition.replaceAll("::[a-z|A-Z]*", ""));
     }
   }
 
