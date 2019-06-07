@@ -74,7 +74,7 @@ public class DefaultServiceFinder implements ServiceFinder {
     else  {
       while (servicePath.startsWith("/")) {
         // cut leading slashes, if any
-        servicePath = servicePath.substring(1, servicePath.length());
+        servicePath = servicePath.substring(1);
       }
       if (!servicePath.endsWith("/")) {
         // add trailing slash if missing

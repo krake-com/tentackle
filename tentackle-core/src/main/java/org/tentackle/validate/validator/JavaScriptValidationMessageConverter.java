@@ -42,7 +42,7 @@ public class JavaScriptValidationMessageConverter implements ScriptConverter {
       return code.substring(0, ndx) + VALIDATION_UTILITIES_NAME + ".getInstance().format(" +
               language.createLocalVariableReference(CompoundValue.VAR_OBJECT) +
               "," +
-              code.substring(ndx + 2, code.length());
+              code.substring(ndx + 2);
     }
     return code;
   }
