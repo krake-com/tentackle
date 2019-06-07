@@ -22,6 +22,7 @@ package org.tentackle.script.ruby;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.builtin.IRubyObject;
+
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.AbstractScript;
@@ -183,6 +184,7 @@ public class RubyScript extends AbstractScript {
 
 
 
+  @SuppressWarnings("unchecked")
   private Object executeImpl(CompiledScript script, ScriptVariable... variables) {
     if (variables != null) {
       for (ScriptVariable variable: variables) {

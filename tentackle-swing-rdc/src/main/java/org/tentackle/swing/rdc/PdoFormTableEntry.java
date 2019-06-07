@@ -19,8 +19,6 @@
 
 package org.tentackle.swing.rdc;
 
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PdoCache;
 import org.tentackle.pdo.PersistentDomainObject;
@@ -28,6 +26,9 @@ import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.swing.FormFieldComponentCellEditor;
 import org.tentackle.swing.FormTableEntry;
 import org.tentackle.swing.bind.FormTableBinding;
+
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 
 /**
  * A {@link FormTableEntry} aware of PDOs.
@@ -38,6 +39,7 @@ import org.tentackle.swing.bind.FormTableBinding;
 public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> extends FormTableEntry<T> {
 
   @Override
+  @SuppressWarnings("unchecked")
   public TableCellEditor getCellEditor(int mColumn) {
     TableCellEditor cellEditor = super.getCellEditor(mColumn);
     if (cellEditor == null) {
@@ -46,14 +48,12 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
         final Class<?> clazz  = binding.getMember().getType();
         if (PersistentDomainObject.class.isAssignableFrom(clazz)) {
           // is a PDO
-          @SuppressWarnings("unchecked")
           final Class<T> pdoClass = (Class<T>) clazz;
           PdoCache<T> cache = Pdo.getPdoCache(pdoClass);
           if (cache != null && cache.isPreloading()) {
             cellEditor = new FormFieldComponentCellEditor(new PdoComboBox() {
               private static final long serialVersionUID = 8971057555239907788L;
               @Override
-              @SuppressWarnings("unchecked")
               protected void setup() {
                 super.setup();
                 setPdoClass(pdoClass);
@@ -65,7 +65,6 @@ public abstract class PdoFormTableEntry<T extends PersistentDomainObject<T>> ext
             cellEditor = new FormFieldComponentCellEditor(new PdoFieldPanel() {
               private static final long serialVersionUID = 8971057555239907788L;
               @Override
-              @SuppressWarnings("unchecked")
               protected void setup() {
                 super.setup();
                 setEditButtonVisible(false);
