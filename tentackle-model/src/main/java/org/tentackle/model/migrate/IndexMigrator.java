@@ -176,23 +176,20 @@ public class IndexMigrator {
         modelFilter = "";
       }
       else {
-        modelFilter = modelFilter.toUpperCase().replace(" ", "");
+        modelFilter = modelFilter.toUpperCase();
       }
       String currentFilter = dbIndex.getFilterCondition();
       if (StringHelper.isAllWhitespace(currentFilter)) {
         currentFilter = "";
       }
       else {
-        currentFilter = currentFilter.toUpperCase().replace(" ", "");
+        currentFilter = currentFilter.toUpperCase();
       }
       different = !equalsIgnoreMatchingParenthesis(modelFilter, currentFilter);
       if (different && commentBuf != null) {
-        if (currentFilter.startsWith("(") && currentFilter.endsWith(")") && !modelFilter.startsWith("(")) {
-          // don't confuse the user if packed within parantheses
-          currentFilter = currentFilter.substring(1, currentFilter.length() - 1);
-        }
-        commentBuf.append("-- filter in db = '").append(currentFilter).append("' != '")
-                  .append(modelFilter).append("' in model\n");
+        commentBuf.append("-- filter in database = ").append(encloseInParenthesis(currentFilter))
+                  .append("\n--        in model    = ")
+                  .append(encloseInParenthesis(modelFilter)).append("\n");
       }
     }
     if (!different) {
@@ -245,6 +242,8 @@ public class IndexMigrator {
    * @return true if s1 equals s2
    */
   private static boolean equalsIgnoreMatchingParenthesis(String s1, String s2) {
+    s1 = s1.replace(" ", "");
+    s2 = s2.replace(" ", "");
     int ndx1 = 0;
     int ndx2 = 0;
     int pending1 = 0;   // > 0 pending open parenthesis in s1
@@ -294,6 +293,16 @@ public class IndexMigrator {
     }
 
     return ndx1 == s1.length() && ndx2 == s2.length() && pending1 == 0 && pending2 == 0;
+  }
+
+  /**
+   * Encloses a given string in parenthesis if not already enclosed.
+   *
+   * @param s the string
+   * @return the enclosed string
+   */
+  private static String encloseInParenthesis(String s) {
+    return !s.startsWith("(") || !s.endsWith(")") ? "(" + s + ")" : s;
   }
 
 }
