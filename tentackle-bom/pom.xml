@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.5.0</version>
+    <version>8.2.5.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-bom</artifactId>
-  <version>8.2.5.0</version>
+  <version>8.2.5.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Tentackle BOM</name>
   <description>Tentackle Bill Of Materials</description>

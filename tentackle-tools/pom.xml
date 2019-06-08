@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.5.0</version>
+    <version>8.2.5.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-tools</artifactId>
-  <version>8.2.5.0</version>
+  <version>8.2.5.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Tentackle Tools</name>
   <description>Tools for the Tentackle Framework</description>
