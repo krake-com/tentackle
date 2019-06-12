@@ -59,7 +59,13 @@ public class RunTemplateModel extends HashMap<String, String> {
     }
   }
 
-  private void putValue(String key, Object value) {
+  /**
+   * Adds a key-value pair to the model.
+   *
+   * @param key the key
+   * @param value the value
+   */
+  public void putValue(String key, Object value) {
     String val = value == null ? "" : value.toString();
     put(key, val);
     mojo.getLog().debug("script variable " + key + " = \"" + val + "\"");
