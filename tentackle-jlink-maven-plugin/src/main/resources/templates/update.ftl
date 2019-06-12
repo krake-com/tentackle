@@ -15,6 +15,7 @@ if exist update\bin (if exist update\conf (if exist update\include (if exist upd
       if exist update\%%d move /y update\%%d .
     )
     rmdir update /s /q
+    REM bin\${runScript}
   ) else (
     echo this is not the correct update script
     exit /b 2
@@ -31,6 +32,7 @@ if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d upda
     rm -fr bin conf include legal lib mp cp
     mv update/* .
     rm -fr update
+    # bin/${runScript}
   else
     echo this is not the correct update script
     exit 2

@@ -69,6 +69,7 @@ public class RunGenerator extends AbstractGenerator {
         scriptFile.setExecutable(true);
 
         // generate update script with the same extension as the run script
+        model.putValue("runScript", fileName);    // if update script also restarts the application
         String fileExtension = "";
         int ndx = fileName.lastIndexOf('.');
         if (ndx >= 0) {
