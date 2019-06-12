@@ -61,8 +61,26 @@ public class RunGenerator extends AbstractGenerator {
       String output = new GeneratedString(cfg, model, mojo.getNameTemplate()).generate();
       StringTokenizer stok = new StringTokenizer(output);
       if (stok.hasMoreTokens()) {
-        File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), stok.nextToken());
+        // generate run script
+        String fileName = stok.nextToken();
+        File scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName);
         GeneratedFile generatedFile = new GeneratedFile(cfg, model, mojo.getRunTemplate(), scriptFile);
+        generatedFile.generate();
+        scriptFile.setExecutable(true);
+
+        // generate update script with the same extension as the run script
+        String fileExtension = "";
+        int ndx = fileName.lastIndexOf('.');
+        if (ndx >= 0) {
+          fileExtension = fileName.substring(ndx);
+        }
+        fileName = mojo.getUpdateTemplate();
+        ndx = fileName.lastIndexOf('.');
+        if (ndx >= 0) {
+          fileName = fileName.substring(0, ndx);
+        }
+        scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName + fileExtension);
+        generatedFile = new GeneratedFile(cfg, model, mojo.getUpdateTemplate(), scriptFile);
         generatedFile.generate();
         scriptFile.setExecutable(true);
       }

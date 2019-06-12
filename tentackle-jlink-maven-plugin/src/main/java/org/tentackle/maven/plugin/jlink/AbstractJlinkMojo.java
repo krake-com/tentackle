@@ -97,6 +97,12 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String runTemplate;
 
   /**
+   * The name of the update script template.
+   */
+  @Parameter(defaultValue = "update.ftl")
+  private String updateTemplate;
+
+  /**
    * File of the jdeps tool.
    */
   @Parameter
@@ -217,6 +223,15 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
    */
   public String getRunTemplate() {
     return runTemplate;
+  }
+
+  /**
+   * Gets the name of the update template.
+   *
+   * @return the template to generate the update script
+   */
+  public String getUpdateTemplate() {
+    return updateTemplate;
   }
 
   /**
@@ -389,6 +404,10 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("runTemplate missing");
       }
 
+      if (updateTemplate == null) {
+        throw new MojoExecutionException("updateTemplate missing");
+      }
+
       return true;
     }
     return false;
@@ -425,6 +444,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   protected void installTemplates() throws MojoExecutionException {
     installTemplate(nameTemplate);
     installTemplate(runTemplate);
+    installTemplate(updateTemplate);
   }
 
   private void installTemplate(String template) throws MojoExecutionException {
