@@ -1,5 +1,6 @@
 <#-- template to create the runner script -->
 <#if osName?upper_case?contains("WIN")>
+@echo off
 pushd %~dp0
 set script_dir=%CD%
 popd
