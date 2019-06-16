@@ -67,9 +67,10 @@ public abstract class AbstractServerApplication extends AbstractApplication
    * Creates a server.
    *
    * @param name the server's name
+   * @param version the application version
    */
-  public AbstractServerApplication(String name) {
-    super(name);
+  public AbstractServerApplication(String name, String version) {
+    super(name, version);
     detectContainer();
   }
 

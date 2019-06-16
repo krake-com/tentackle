@@ -54,10 +54,11 @@ public abstract class ServerApplication extends AbstractServerApplication {
    * Creates an instance of an application server.
    *
    * @param name the application name
+   * @param version the application version
    * @param connectionClass the class of the connection object to instantiate, null = default or from serverInfo's properties file
    */
-  public ServerApplication(String name, Class<? extends RemoteDbConnectionImpl> connectionClass) {
-    super(name);
+  public ServerApplication(String name, String version, Class<? extends RemoteDbConnectionImpl> connectionClass) {
+    super(name, version);
     this.connectionClass = connectionClass;
   }
 

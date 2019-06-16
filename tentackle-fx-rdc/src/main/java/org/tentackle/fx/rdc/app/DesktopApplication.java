@@ -31,6 +31,7 @@ import javafx.stage.WindowEvent;
 
 import org.tentackle.app.AbstractClientApplication;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
@@ -38,12 +39,12 @@ import org.tentackle.fx.FxUtilities;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
 
 import java.text.MessageFormat;
+import java.util.Objects;
 
 /**
  * Java FX tentackle desktop application.
@@ -52,6 +53,10 @@ import java.text.MessageFormat;
  * @param <C> the main controller type
  */
 public abstract class DesktopApplication<C extends FxController> extends AbstractClientApplication {
+
+  /** minimum milliseconds a status message should be visible to the user. */
+  private static final long MESSAGE_MIN_MILLIS = 100;
+
 
   /**
    * Gets the running desktop application.<br>
@@ -69,14 +74,17 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
   private C mainController;                   // the main controller
   private LoginFailedHandler lfh;             // the login failed handler
   private Stage mainStage;                    // the main stage
+  private String lastStatusMessage;           // last status message
+  private long lastStatusMillis;              // last epochal millis the status message has changed
 
   /**
    * Creates an FX desktop application.
    *
    * @param name the application name
+   * @param version the application version
    */
-  public DesktopApplication(String name) {
-    super(name);
+  public DesktopApplication(String name, String version) {
+    super(name, version);
   }
 
   @Override
@@ -175,6 +183,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               showApplicationStatus(AppFxRdcBundle.getString("CONNECTING TO SERVER..."), 0.05);
               // connect to server/backend
               Session session;
+
               try {
                 session = createSession(sessionInfo);
                 // success!
@@ -190,19 +199,14 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 setDomainContext(context);
                 updateSessionInfoAfterLogin();
               }
-              catch (LoginFailedException lfx) {
+              catch (Exception ex) {
                 if (lfh == null) {
                   lfh = createLoginFailedHandler(view, sessionInfo);
                 }
-                lfh.handle(lfx);
-                return null;
-              }
-              catch (RuntimeException rex) {
-                LOGGER.severe("login failed", rex);
-                Platform.runLater(() -> {
-                  Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), rex);
-                  view.getScene().getWindow().hide();
-                });
+                Runnable runnable = lfh.handle(ex);
+                if (runnable != null) {
+                  runnable.run();
+                }
                 return null;
               }
 
@@ -250,12 +254,12 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 }
               });
             }
-            catch (RuntimeException rex) {
+            catch (Throwable t) {
               // if anything else fails: log that
-              LOGGER.severe("login task failed", rex);
+              LOGGER.severe("login task failed", t);
               Platform.runLater(() -> {
-                Fx.error(rex.getLocalizedMessage(), rex);
-                Platform.exit();
+                Fx.error(t.getLocalizedMessage(), t);
+                view.getScene().getWindow().hide();
               });
             }
 
@@ -307,21 +311,52 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
    *
    * @param msg the status message
    * @param progress the progress, 0 to disable, negative if infinite, 1.0 if done
+   * @param minMillis minimum milliseconds the previous message must have been visible
    */
-  public void showApplicationStatus(String msg, double progress) {
+  public void showApplicationStatus(String msg, double progress, long minMillis) {
     if (fxApplication != null) {
+      if (lastStatusMillis == 0) {
+        lastStatusMillis = System.currentTimeMillis();
+      }
+
+      // make sure last message was displayed at least minMillis
+      if (!Objects.equals(msg, lastStatusMessage)) {
+        long now = System.currentTimeMillis();
+        long remainingMillis = lastStatusMillis + minMillis - now;
+        if (minMillis > 0 && !StringHelper.isAllWhitespace(lastStatusMessage) && remainingMillis > 0) {
+          try {
+            // show last message at least minMillis
+            Thread.sleep(remainingMillis);
+          }
+          catch (InterruptedException ix) {
+            Thread.currentThread().interrupt();
+            throw new TentackleRuntimeException(ix);
+          }
+          lastStatusMillis = now + remainingMillis;
+        }
+        else {
+          lastStatusMillis = now;
+        }
+        lastStatusMessage = msg;
+      }
+
       Platform.runLater(() -> fxApplication.showApplicationStatus(msg, progress));
-      try {
-        // wait some time to show...
-        Thread.sleep(50);
-      }
-      catch (InterruptedException ix) {
-        // ignore
-      }
     }
     else {
       LOGGER.info(msg);
     }
+  }
+
+
+  /**
+   * Displays a message during login.<br>
+   * Makes sure that the message is shown at least 100ms.
+   *
+   * @param msg the status message
+   * @param progress the progress, 0 to disable, negative if infinite, 1.0 if done
+   */
+  public void showApplicationStatus(String msg, double progress) {
+    showApplicationStatus(msg, progress, MESSAGE_MIN_MILLIS);
   }
 
 

@@ -80,13 +80,15 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
 
-  private String name;                        // the application's name
+  private final String name;                  // the application's name
+  private final String version;               // the application's version
+  private final long creationTime;            // creation time in epochal milliseconds
+
   private Properties props;                   // the application's properties
   private CommandLine cmdLine;                // command line
   private DomainContext context;              // the server's connection context
   private SessionInfo sessionInfo;            // server's user info
   private boolean stopping;                   // true if application is stopping
-  private final long creationTime;            // creation time in epochal milliseconds
 
 
   /**
@@ -94,9 +96,11 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
    * Detects whether application is running within a container or deployed by JNLP (webstart).
    *
    * @param name the application name
+   * @param version the application version
    */
-  public AbstractApplication(String name) {
-    setName(name);
+  public AbstractApplication(String name, String version) {
+    this.name = name;
+    this.version = version;
     creationTime = System.currentTimeMillis();
   }
 
@@ -104,20 +108,21 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   /**
    * Gets the application name.
    *
-   * @return the application name
+   * @return the name
    */
   public String getName() {
     return name;
   }
 
   /**
-   * Sets the application name.
+   * Gets the application version.
    *
-   * @param name the name
+   * @return the version
    */
-  protected void setName(String name) {
-    this.name = name;
+  public String getVersion() {
+    return version;
   }
+
 
   /**
    * Gets the creation time in epochal milliseconds.
@@ -453,7 +458,9 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
 
 
   /**
-   * Applies the given properties.
+   * Applies the given properties.<br>
+   * If the given properties are different from the application properties, they will be copied to
+   * the application properties.
    * <p>
    * The default implementation first parses the properties for system properties. System properties start with
    * {@code SYSTEM_} or {@code ^} followed by the property name.
@@ -469,18 +476,22 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
   public void applyProperties(Properties properties) {
     if (properties != null) {
 
-      // set system properties
+      // set system properties and copy the rest
       for (String propName : properties.stringPropertyNames()) {
-        String key = null;
+        String propValue = properties.getProperty(propName);
+        String sysKey = null;
         if (propName.startsWith("SYSTEM_")) {
-          key = propName.substring(7);
+          sysKey = propName.substring(7);
         }
         else if (propName.startsWith("^")) {
-          key = propName.substring(1);
+          sysKey = propName.substring(1);
         }
-        if (key != null) {
-          System.setProperty(key, properties.getProperty(propName));
-          LOGGER.info("system property {0} set", key);  // don't log the value, could be a password...
+        if (sysKey != null) {
+          System.setProperty(sysKey, propValue);
+          LOGGER.info("system property {0} set", sysKey);  // don't log the value, could be a password...
+        }
+        else if (props != properties && !props.containsKey(propName)) { // cmd props take precedence
+          props.setProperty(propName, propValue);
         }
       }
 

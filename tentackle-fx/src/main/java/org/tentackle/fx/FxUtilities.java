@@ -329,12 +329,14 @@ public class FxUtilities {
    *
    * @param message the message
    * @param title optional title
+   * @return the alert dialog
    */
-  public void showInfoDialog(String message, String title) {
+  public Alert showInfoDialog(String message, String title) {
     Alert alert = new Alert(Alert.AlertType.INFORMATION);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("INFORMATION") : title);
     setAlertMessage(alert, message);
     alert.show();
+    return alert;
   }
 
   /**
@@ -342,12 +344,14 @@ public class FxUtilities {
    *
    * @param message the message
    * @param title optional title
+   * @return the alert dialog
    */
-  public void showWarningDialog(String message, String title) {
+  public Alert showWarningDialog(String message, String title) {
     Alert alert = new Alert(Alert.AlertType.WARNING);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("WARNING") : title);
     setAlertMessage(alert, message);
     alert.show();
+    return alert;
   }
 
   /**
@@ -358,10 +362,11 @@ public class FxUtilities {
    * @param defaultYes true if yes is the default button
    * @param title optional title
    * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @return the alert dialog
    * @see Consumer
    * @see org.tentackle.misc.Holder
    */
-  public void showQuestionDialog(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
+  public Alert showQuestionDialog(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
     alert.setTitle(title == null ? FxFxBundle.getString("QUESTION") : title);
     setAlertMessage(alert, message);
@@ -373,6 +378,7 @@ public class FxUtilities {
     yesButton.setDefaultButton(defaultYes);
     alert.setOnHidden(e -> answer.accept(alert.getResult() == ButtonType.YES));
     alert.show();
+    return alert;
   }
 
   /**
@@ -381,8 +387,9 @@ public class FxUtilities {
    * @param message the message
    * @param t optional throwable
    * @param title optional title
+   * @return the alert dialog
    */
-  public void showErrorDialog(String message, Throwable t, String title) {
+  public Alert showErrorDialog(String message, Throwable t, String title) {
     Alert alert = new Alert(Alert.AlertType.ERROR);   // Alert is APPLICATION_MODAL
     alert.setTitle(title == null ? FxFxBundle.getString("ERROR") : title);
     setAlertMessage(alert, message);
@@ -414,6 +421,7 @@ public class FxUtilities {
     }
 
     alert.show();
+    return alert;
   }
 
 

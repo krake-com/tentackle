@@ -1519,6 +1519,47 @@ public final class StringHelper {
   }
 
 
+  /**
+   * Gets the name of the operating system from the system properties.
+   *
+   * @return the normalized platform name
+   */
+  public static String getPlatform() {
+    String osName = System.getProperty("os.name");
+    if (osName == null) {
+      throw new TentackleRuntimeException("missing system property 'os.name'");
+    }
+    osName = osName.trim().toLowerCase();
+    StringBuilder buf = new StringBuilder();
+    boolean isWindows = osName.contains("win");
+    for (int i = 0; i < osName.length(); i++) {
+      char c = osName.charAt(i);
+      if (Character.isLetter(c)) {
+        buf.append(c);
+      }
+      else if (isWindows) {
+        break;    // cut xp, 7, 10, whatever
+      }
+    }
+    return buf.toString();
+
+  }
+
+
+  /**
+   * Gets the name of the architecture from the system properties.
+   *
+   * @return the normalized architecture name
+   */
+  public static String getArchitecture() {
+    String osArch = System.getProperty("os.arch");
+    if (osArch == null) {
+      throw new TentackleRuntimeException("missing system property 'os.arch'");
+    }
+    return osArch.trim().toLowerCase();
+  }
+
+
 
   /**
    * prevent instantiation.

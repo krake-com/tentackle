@@ -45,9 +45,10 @@ public abstract class TestApplication extends AbstractApplication {
    * Creates a test application.
    *
    * @param name the application name
+   * @param version the application version
    */
-  public TestApplication(String name) {
-    super(name);
+  public TestApplication(String name, String version) {
+    super(name, version);
   }
 
   @BeforeClass(alwaysRun = true)

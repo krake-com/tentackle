@@ -21,6 +21,7 @@ package org.tentackle.fx;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -123,18 +124,20 @@ public class Fx {
    *
    * @param message the message
    * @param title optional title
+   * @return the alert dialog
    */
-  public static void info(String message, String title) {
-    FxUtilities.getInstance().showInfoDialog(message, title);
+  public static Alert info(String message, String title) {
+    return FxUtilities.getInstance().showInfoDialog(message, title);
   }
 
   /**
    * Shows an info dialog.
    *
    * @param message the message
+   * @return the alert dialog
    */
-  public static void info(String message) {
-    FxUtilities.getInstance().showInfoDialog(message, null);
+  public static Alert info(String message) {
+    return FxUtilities.getInstance().showInfoDialog(message, null);
   }
 
   /**
@@ -142,18 +145,20 @@ public class Fx {
    *
    * @param message the message
    * @param title optional title
+   * @return the alert dialog
    */
-  public static void warning(String message, String title) {
-    FxUtilities.getInstance().showWarningDialog(message, title);
+  public static Alert warning(String message, String title) {
+    return FxUtilities.getInstance().showWarningDialog(message, title);
   }
 
   /**
    * Shows a warning dialog.
    *
    * @param message the message
+   * @return the alert dialog
    */
-  public static void warning(String message) {
-    FxUtilities.getInstance().showWarningDialog(message, null);
+  public static Alert warning(String message) {
+    return FxUtilities.getInstance().showWarningDialog(message, null);
   }
 
   /**
@@ -163,9 +168,10 @@ public class Fx {
    * @param defaultYes true if yes is the default button
    * @param title optional title
    * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @return the alert dialog
    */
-  public static void question(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
-    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, title, answer);
+  public static Alert question(String message, boolean defaultYes, String title, Consumer<Boolean> answer) {
+    return FxUtilities.getInstance().showQuestionDialog(message, defaultYes, title, answer);
   }
 
   /**
@@ -174,9 +180,10 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param answer the user's answer (invoked with Boolean.TRUE or Boolean.FALSE, never null)
+   * @return the alert dialog
    */
-  public static void question(String message, boolean defaultYes, Consumer<Boolean> answer) {
-    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer);
+  public static Alert question(String message, boolean defaultYes, Consumer<Boolean> answer) {
+    return FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer);
   }
 
   /**
@@ -186,9 +193,10 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param yes invoked if user answers with yes
+   * @return the alert dialog
    */
-  public static void yes(String message, boolean defaultYes, Runnable yes) {
-    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
+  public static Alert yes(String message, boolean defaultYes, Runnable yes) {
+    return FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
       if (answer) {
         yes.run();
       }
@@ -202,9 +210,10 @@ public class Fx {
    * @param message the message
    * @param defaultYes true if yes is the default button
    * @param no invoked if user answers with no
+   * @return the alert dialog
    */
-  public static void no(String message, boolean defaultYes, Runnable no) {
-    FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
+  public static Alert no(String message, boolean defaultYes, Runnable no) {
+    return FxUtilities.getInstance().showQuestionDialog(message, defaultYes, null, answer -> {
       if (!answer) {
         no.run();
       }
@@ -217,9 +226,10 @@ public class Fx {
    * @param message the message
    * @param t optional throwable
    * @param title optional title
+   * @return the alert dialog
    */
-  public static void error(String message, Throwable t, String title) {
-    FxUtilities.getInstance().showErrorDialog(message, t, title);
+  public static Alert error(String message, Throwable t, String title) {
+    return FxUtilities.getInstance().showErrorDialog(message, t, title);
   }
 
   /**
@@ -227,18 +237,20 @@ public class Fx {
    *
    * @param message the message
    * @param t optional throwable
+   * @return the alert dialog
    */
-  public static void error(String message, Throwable t) {
-    FxUtilities.getInstance().showErrorDialog(message, t, null);
+  public static Alert error(String message, Throwable t) {
+    return FxUtilities.getInstance().showErrorDialog(message, t, null);
   }
 
   /**
    * Shows an error dialog.
    *
    * @param message the message
+   * @return the alert dialog
    */
-  public static void error(String message) {
-    FxUtilities.getInstance().showErrorDialog(message, null, null);
+  public static Alert error(String message) {
+    return FxUtilities.getInstance().showErrorDialog(message, null, null);
   }
 
 

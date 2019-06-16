@@ -14,14 +14,16 @@
 package org.tentackle.test.fx.rdc;
 
 import org.reflections.Reflections;
+import org.testng.Assert;
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
+import org.tentackle.common.Version;
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
 /**
  * Tests whether GUI-providers could be loaded and bound.<br>
@@ -44,7 +46,7 @@ public abstract class GuiProviderTest extends FxRdcTestApplication {
   private final String packagePrefix;
 
   public GuiProviderTest(String packagePrefix) {
-    super("fx-rdc-provider-test");
+    super("fx-rdc-provider-test", Version.RELEASE);
     this.packagePrefix = packagePrefix;
   }
 

@@ -24,6 +24,11 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-update</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-sql</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -100,6 +105,11 @@
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-fx-rdc-poi</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-fx-rdc-update</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

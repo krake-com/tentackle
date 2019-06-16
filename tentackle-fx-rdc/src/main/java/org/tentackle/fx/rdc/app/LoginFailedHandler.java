@@ -91,8 +91,9 @@ public class LoginFailedHandler {
    * Handles the login failed exception.
    *
    * @param ex the login failed exception
+   * @return null if retry login, else a runnable to be executed within the login task
    */
-  public void handle(LoginFailedException ex) {
+  public Runnable handle(Exception ex) {
     LOGGER.severe(ex.getMessage(), ex);
 
     if (ex instanceof AlreadyLoggedInException) {
@@ -107,7 +108,7 @@ public class LoginFailedHandler {
         view.getScene().getWindow().hide();
       });
     }
-    else {
+    else if (ex instanceof LoginFailedException){
       if (LoginApplication.isAutoLogin(sessionInfo)) {
         loginCount = 3;
       }
@@ -130,6 +131,15 @@ public class LoginFailedHandler {
           });
       }
     }
+    else {
+      LOGGER.severe("login failed", ex);
+      Platform.runLater(() -> {
+        Fx.error(AppFxRdcBundle.getString("LOGIN FAILED!"), ex);
+        view.getScene().getWindow().hide();
+      });
+    }
+
+    return null;
   }
 
 }
