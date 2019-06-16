@@ -65,9 +65,10 @@ public abstract class ConsoleApplication extends AbstractClientApplication {
    * Creates the console application.
    *
    * @param name the application's name
+   * @param version the application version
    */
-  public ConsoleApplication(String name) {
-    super(name);
+  public ConsoleApplication(String name, String version) {
+    super(name, version);
   }
 
 

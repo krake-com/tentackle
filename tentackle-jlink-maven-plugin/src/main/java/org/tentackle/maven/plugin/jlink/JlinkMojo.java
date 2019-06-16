@@ -28,6 +28,7 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.ArchiverException;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.ToolRunner;
 
 import java.io.File;
@@ -274,27 +275,11 @@ public class JlinkMojo extends AbstractJlinkMojo {
    * @throws MojoExecutionException if no os.name
    */
   private String getClassifier() throws MojoExecutionException {
-    String osName = System.getProperty("os.name");
-    if (osName == null) {
-      throw new MojoExecutionException("missing system property 'os.name'");
+    try {
+      return StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
     }
-    osName = osName.trim().toLowerCase();
-    StringBuilder buf = new StringBuilder();
-    boolean isWindows = osName.contains("win");
-    for (int i=0; i < osName.length(); i++) {
-      char c = osName.charAt(i);
-      if (Character.isLetter(c)) {
-        buf.append(c);
-      }
-      else if (isWindows) {
-        break;    // cut xp, 7, 10, whatever
-      }
+    catch (RuntimeException ex) {
+      throw new MojoExecutionException(ex.getMessage());
     }
-    String osArch = System.getProperty("os.arch");
-    if (osArch == null) {
-      throw new MojoExecutionException("missing system property 'os.arch'");
-    }
-    buf.append('-').append(osArch.toLowerCase());
-    return buf.toString();
   }
 }

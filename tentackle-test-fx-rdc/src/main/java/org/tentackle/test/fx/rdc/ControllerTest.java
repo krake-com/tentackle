@@ -13,13 +13,15 @@
 
 package org.tentackle.test.fx.rdc;
 
+import org.testng.Assert;
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
+import org.tentackle.common.Version;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxControllerService;
 import org.tentackle.fx.FxFactory;
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
 /**
  * Tests whether controllers could be loaded and bound.<br>
@@ -36,7 +38,7 @@ import org.testng.annotations.Test;
 public abstract class ControllerTest extends FxRdcTestApplication {
 
   public ControllerTest() {
-    super("fx-rdc-conroller-test");
+    super("fx-rdc-conroller-test", Version.RELEASE);
   }
 
   @Test(alwaysRun = true)

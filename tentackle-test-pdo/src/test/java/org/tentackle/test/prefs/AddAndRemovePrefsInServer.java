@@ -18,11 +18,8 @@
 
 package org.tentackle.test.prefs;
 
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
-import java.util.prefs.BackingStoreException;
 import org.tentackle.common.Timestamp;
+import org.tentackle.common.Version;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
 import org.tentackle.dbms.prefs.DbPreferencesNode;
@@ -39,6 +36,11 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
+
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
+import java.util.prefs.BackingStoreException;
 
 /**
  *
@@ -86,7 +88,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
    * The server.
    */
   public AddAndRemovePrefsInServer() {
-    super("TestServer", ConnectionImpl.class);
+    super("TestServer", Version.RELEASE, ConnectionImpl.class);
   }
 
   @Override

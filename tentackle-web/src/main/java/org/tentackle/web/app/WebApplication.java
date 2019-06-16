@@ -18,12 +18,13 @@
 
 package org.tentackle.web.app;
 
-import java.util.Collection;
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.dbms.Db;
 import org.tentackle.persist.app.AbstractServerApplication;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionInfo;
+
+import java.util.Collection;
 
 /**
  * Web Server Application.
@@ -54,10 +55,12 @@ public abstract class WebApplication<T> extends AbstractServerApplication {
 
   /**
    * Creates an instance of a web application.
+   *
    * @param name the application name
+   * @param version the application version
    */
-  public WebApplication(String name) {
-    super(name);
+  public WebApplication(String name, String version) {
+    super(name, version);
   }
 
 

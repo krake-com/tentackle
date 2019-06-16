@@ -288,7 +288,7 @@ public class RmiServer {
       port = uri.getPort();
     }
     catch (URISyntaxException ex) {
-      throw new TentackleRuntimeException("malformed service url", ex);
+      throw new TentackleRuntimeException("malformed service URL '" + service + "'", ex);
     }
 
     RMISocketFactoryType loginFactoryType = null;

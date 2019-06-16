@@ -18,9 +18,7 @@
 
 package org.tentackle.test.pdo;
 
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
+import org.tentackle.common.Version;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
@@ -30,6 +28,10 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.persist.app.ServerApplication;
 import org.tentackle.session.SessionInfo;
+
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
 
 /**
  * Server to run client transactions.
@@ -77,7 +79,7 @@ public class TestServer extends ServerApplication {
    * The server.
    */
   public TestServer() {
-    super("TestServer", ConnectionImpl.class);
+    super("TestServer", Version.RELEASE, ConnectionImpl.class);
   }
 
   @Override

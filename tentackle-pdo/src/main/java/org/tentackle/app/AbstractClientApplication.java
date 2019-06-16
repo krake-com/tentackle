@@ -36,9 +36,10 @@ public abstract class AbstractClientApplication extends AbstractApplication {
    * Creates a client application.
    *
    * @param name the application's name
+   * @param version the application version
    */
-  public AbstractClientApplication(String name) {
-    super(name);
+  public AbstractClientApplication(String name, String version) {
+    super(name, version);
   }
 
 

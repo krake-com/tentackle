@@ -37,6 +37,7 @@
 
   <modules>
     <module>tentackle-common</module>
+    <module>tentackle-update</module>
     <module>tentackle-build-support</module>
     <module>tentackle-sql</module>
     <module>tentackle-model</module>
@@ -63,6 +64,7 @@
     <module>tentackle-wizard-maven-plugin</module>
     <module>tentackle-fx-rdc</module>
     <module>tentackle-fx-rdc-poi</module>
+    <module>tentackle-fx-rdc-update</module>
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>

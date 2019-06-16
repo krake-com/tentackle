@@ -32,6 +32,7 @@ if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d upda
     rm -fr bin conf include legal lib mp cp
     mv update/* .
     rm -fr update
+    chmod +x bin/* lib/jexec lib/jspawnhelper
     # bin/${runScript}
   else
     echo this is not the correct update script

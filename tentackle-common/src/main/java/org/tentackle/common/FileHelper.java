@@ -20,14 +20,26 @@
 package org.tentackle.common;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.channels.FileChannel;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * Helper methods for file handling.
@@ -129,6 +141,92 @@ public class FileHelper {
     }
   }
 
+
+  /**
+   * Downloads data from a URL into memory.
+   *
+   * @param url the URL
+   * @return the data as bytes
+   * @throws IOException if failed
+   */
+  public static byte[] download(URL url) throws IOException {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    try (BufferedInputStream in = new BufferedInputStream(url.openStream())){
+      byte dataBuffer[] = new byte[1024];
+      int bytesRead;
+      while ((bytesRead = in.read(dataBuffer, 0, 1024)) != -1) {
+        outputStream.write(dataBuffer, 0, bytesRead);
+      }
+      return outputStream.toByteArray();
+    }
+  }
+
+
+  /**
+   * Removes a directory and all its contents recursively.
+   *
+   * @param name the directory name
+   * @throws IOException if failed
+   */
+  public static void removeDirectory(String name) throws IOException {
+    java.nio.file.Path path = Paths.get(name);
+    Files.walkFileTree(path, new SimpleFileVisitor<java.nio.file.Path>() {
+
+      @Override
+      public FileVisitResult visitFile(java.nio.file.Path file, BasicFileAttributes attrs) throws IOException {
+        Files.delete(file);
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult postVisitDirectory(java.nio.file.Path dir, IOException exc) throws IOException {
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
+      }
+    });
+  }
+
+
+  /**
+   * Unzips a zip file.
+   *
+   * @param zipFile the zip file
+   * @param destDir the destination directory
+   * @param fileConsumer optional consumer to receive the file being unzipped
+   * @throws IOException if failed
+   */
+  public static void unzip(File zipFile, File destDir, Consumer<File> fileConsumer) throws IOException {
+    byte[] buffer = new byte[1024];
+    Set<File> createdDirs = new HashSet<>();
+
+    try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(zipFile))) {
+      ZipEntry zipEntry;
+      while ((zipEntry = zipStream.getNextEntry()) != null) {
+        File destFile = new File(destDir, zipEntry.getName());
+        if (fileConsumer != null) {
+          fileConsumer.accept(destFile);
+        }
+        if (destFile.getCanonicalPath().startsWith(destDir.getCanonicalPath())) {   // prevent zip slip!
+          if (!zipEntry.isDirectory()) {
+            File dir = destFile.getParentFile();
+            if (!createdDirs.contains(dir)) {
+              dir.mkdirs();
+              createdDirs.add(dir);
+            }
+            try (FileOutputStream outputStream = new FileOutputStream(destFile)) {
+              int len;
+              while ((len = zipStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, len);
+              }
+            }
+          }
+        }
+        else {
+          throw new IOException("zip slip detected for " + zipEntry.getName());
+        }
+      }
+    }
+  }
 
   private FileHelper() {}
 

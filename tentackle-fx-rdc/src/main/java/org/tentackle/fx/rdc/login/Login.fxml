@@ -11,8 +11,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.control.ChoiceBox?>
-<GridPane xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.login.Login">
+<GridPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.tentackle.fx.rdc.login.Login">
   <columnConstraints>
     <ColumnConstraints />
   </columnConstraints>
@@ -23,7 +22,7 @@
     <RowConstraints minHeight="20.0" vgrow="NEVER" />
   </rowConstraints>
   <children>
-    <GridPane hgap="5.0" vgap="5.0" GridPane.rowIndex="1">
+    <GridPane fx:id="loginPane" hgap="5.0" vgap="5.0" GridPane.rowIndex="1">
       <columnConstraints>
         <ColumnConstraints hgrow="ALWAYS" maxWidth="1.7976931348623157E308" minWidth="10.0" />
         <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />

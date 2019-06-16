@@ -37,8 +37,8 @@ public abstract class FxRdcTestApplication extends TestApplication {
   private static final String HEADLESS_MSG = "JVM is headless -> no FX tests";
 
 
-  public FxRdcTestApplication(String name) {
-    super(name);
+  public FxRdcTestApplication(String name, String version) {
+    super(name, version);
   }
 
   @BeforeSuite(alwaysRun = true)

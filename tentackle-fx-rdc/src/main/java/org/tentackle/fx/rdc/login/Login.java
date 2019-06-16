@@ -26,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.GridPane;
 
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
@@ -62,6 +63,9 @@ public class Login extends AbstractFxController {
 
   @FXML
   private ResourceBundle resources;           // localization bundle
+
+  @FXML
+  private GridPane loginPane;
 
   @FXML
   private FxLabel backendLabel;
@@ -261,6 +265,9 @@ public class Login extends AbstractFxController {
       usernameField.setChangeable(false);
       passwordField.setChangeable(false);
     }
+    boolean visible = value < 1.0;
+    loginPane.setVisible(visible);
+    progressBar.setVisible(visible);
   }
 
   /**

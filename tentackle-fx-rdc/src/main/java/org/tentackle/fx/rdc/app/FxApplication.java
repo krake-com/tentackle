@@ -77,7 +77,7 @@ public abstract class FxApplication extends Application {
   public abstract void startApplication(Stage primaryStage);
 
   /**
-   * Updates the status in the main application scene.
+   * Shows the initialization status during application startup.
    *
    * @param msg the message shown in the view
    * @param progress the progress, 0 to disable, negative if infinite, 1.0 if done

@@ -1,0 +1,186 @@
+/*
+ * Copyright (C) 2017 by:
+ *
+ * Fr. Meyer's Sohn (GmbH & Co) KG
+ * Grüner Deich 19
+ * 20097 Hamburg
+ * Germany
+ * Tel. +49 40 2393 0
+ * http://www.fms-logistics.com
+ *
+ * All Rights Reserved.
+ */
+
+package org.tentackle.update;
+
+import org.tentackle.common.FileHelper;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.OptionalLong;
+import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+
+
+/**
+ * Server side update service implementation.
+ */
+public abstract class AbstractUpdateServiceImpl extends UnicastRemoteObject implements UpdateService {
+
+  private static final long serialVersionUID = 1L;
+
+  private final Map<URL, Long> downloadSizes = new ConcurrentHashMap<>();
+  private final Map<URL, String> shaHashes = new ConcurrentHashMap<>();
+
+  private String updateURL;
+
+  /**
+   * Creates an update service object.
+   *
+   * @param port the tcp-port, 0 = system default
+   * @param updateURL the http url where to download the updates from
+   * @throws RemoteException if failed to export object
+   */
+  public AbstractUpdateServiceImpl(int port, String updateURL) throws RemoteException {
+    super(port);
+    setUpdateURL(updateURL);
+  }
+
+  /**
+   * Creates an update service object.
+   *
+   * @param port the tcp-port, 0 = system default
+   * @param updateURL the http url where to download the updates from
+   * @param csf the client socket factory
+   * @param ssf the server socket factory
+   * @throws RemoteException if failed to export object
+   */
+  public AbstractUpdateServiceImpl(int port, String updateURL, RMIClientSocketFactory csf, RMIServerSocketFactory ssf) throws RemoteException {
+    super(port, csf, ssf);
+    setUpdateURL(updateURL);
+  }
+
+  /**
+   * Gets the update base URL.
+   *
+   * @return the url
+   */
+  public String getUpdateURL() {
+    return updateURL;
+  }
+
+  /**
+   * Sets the update base URL.
+   *
+   * @param updateURL the url
+   */
+  public void setUpdateURL(String updateURL) {
+    this.updateURL = updateURL.endsWith("/") ? updateURL : updateURL + "/";
+  }
+
+  @Override
+  public UpdateInfo getInfo(ClientInfo clientInfo) throws RemoteException {
+    try {
+      URL zipURL = createZipURL(clientInfo);
+      URL shaURL = createShaURL(clientInfo);
+      String shaHash = determineShaHash(shaURL);
+      long size = determineDownloadSize(zipURL);
+      String updateExecutor = createUpdateExecutor(clientInfo);
+      UpdateInfo updateInfo = new UpdateInfo(createServerVersion(), zipURL, shaHash, size, updateExecutor);
+      return updateInfo;
+    }
+    catch (IOException ex) {
+      throw new RemoteException("cannot create update info", ex);
+    }
+  }
+
+  /**
+   * Gets the server version.
+   *
+   * @return the version
+   */
+  protected abstract String createServerVersion();
+
+  /**
+   * Creates the name of the update executor.
+   *
+   * @param clientInfo the client info
+   * @return the executor name
+   */
+  protected abstract String createUpdateExecutor(ClientInfo clientInfo);
+
+  /**
+   * Creates the URL for the ZIP file.
+   *
+   * @param clientInfo the client info
+   * @return the URL
+   */
+  protected abstract URL createZipURL(ClientInfo clientInfo);
+
+  /**
+   * Creates the URL for the SHA256 file.
+   *
+   * @param clientInfo the client info
+   * @return the URL
+   */
+  protected abstract URL createShaURL(ClientInfo clientInfo);
+
+
+  /**
+   * Determines the SHA hash.
+   *
+   * @param shaURL the SHA file URL
+   * @return the hash value
+   * @throws IOException if failed
+   */
+  protected String determineShaHash(URL shaURL) throws IOException {
+    String shaHash = shaHashes.get(shaURL);
+    if (shaHash == null) {
+      shaHash = new StringTokenizer(new String(FileHelper.download(shaURL))).nextToken();
+      shaHashes.put(shaURL, shaHash);
+    }
+    return shaHash;
+  }
+
+  /**
+   * Determines the download size of the ZIP file.
+   *
+   * @param zipURL the download URL
+   * @return the size in bytes, -1 if content-length in header response
+   * @throws IOException if failed
+   */
+  protected long determineDownloadSize(URL zipURL) throws IOException {
+    Long size = downloadSizes.get(zipURL);
+    if (size == null) {
+      try {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(zipURL.toURI())
+            .method("HEAD", HttpRequest.BodyPublishers.noBody())
+            .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        OptionalLong contentLength = response.headers().firstValueAsLong("content-length");
+        size = contentLength.orElse(-1);
+        downloadSizes.put(zipURL, size);
+      }
+      catch (IOException iox) {
+        throw iox;
+      }
+      catch (InterruptedException | URISyntaxException ex) {
+        throw new IOException("cannot determine expected download size of " + zipURL, ex);
+      }
+    }
+    return size;
+  }
+
+}
