@@ -14,6 +14,7 @@ if exist update\bin (if exist update\conf (if exist update\include (if exist upd
       if exist %%d rmdir %%d /s /q
       if exist update\%%d move /y update\%%d .
     )
+    copy /y update\release .
     rmdir update /s /q
     REM bin\${runScript}
   ) else (
@@ -30,7 +31,7 @@ cd $(dirname $(dirname $(dirname $(readlink -f "$0"))))
 if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d update/legal ] && [ -d update/lib ]; then
   if [ -f update/bin/`basename $0` ]; then
     rm -fr bin conf include legal lib mp cp
-    mv update/* .
+    mv -f update/* .
     rm -fr update
     chmod +x bin/* lib/jexec lib/jspawnhelper
     # bin/${runScript}

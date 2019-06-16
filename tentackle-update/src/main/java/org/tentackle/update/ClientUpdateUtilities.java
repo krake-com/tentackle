@@ -63,7 +63,7 @@ public class ClientUpdateUtilities {
     return ClientUpdateUtilitiesHolder.INSTANCE;
   }
 
-  private static final String[] DIR_NAMES = { "bin", "conf", "include", "legal", "lib", "release"};
+  private static final String[] DIR_NAMES = { ".", "bin", "conf", "include", "legal", "lib" };
 
 
   /**

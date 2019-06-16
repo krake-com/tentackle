@@ -64,33 +64,44 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   @Override
   @SuppressWarnings("unchecked")
   public Runnable handle(Exception ex) {
-    if ((ex instanceof VersionInfoIncompatibleException ||
-         // or SSL certificate changed due to new server version
-         ExceptionHelper.extractException(true, ex, SSLHandshakeException.class) != null) &&
-        ClientUpdateUtilities.getInstance().isApplicationUpdatable()) {
+    if (ex instanceof VersionInfoIncompatibleException ||
+        // or SSL certificate changed due to new server version
+        ExceptionHelper.extractException(true, ex, SSLHandshakeException.class) != null) {
 
-      UpdateService service = createUpdateService();
-      try {
-        ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion());
-        UpdateInfo updateInfo = service.getInfo(clientInfo);
-        return () -> {
-          BlockingHolder<Boolean> holder = new BlockingHolder<>();
-          Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
-                                                                   clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
-                                              false,
-                                              answer -> holder.accept(answer)));
-          Boolean answer = holder.get();
-          if (answer) {
-            update(updateInfo);
+      if (ClientUpdateUtilities.getInstance().isApplicationUpdatable()) {
+        UpdateService service = createUpdateService();
+        if (service != null) {
+          try {
+            ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion());
+            UpdateInfo updateInfo = service.getInfo(clientInfo);
+            if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
+              return () -> {
+                BlockingHolder<Boolean> holder = new BlockingHolder<>();
+                Platform.runLater(() -> Fx.question(MessageFormat.format(UpdateFxRdcBundle.getString("{0}_{1}_OUTDATED_INSTALL_{2}"),
+                                                                         clientInfo.getApplication(), clientInfo.getVersion(), updateInfo.getVersion()),
+                                                    false,
+                                                    answer -> holder.accept(answer)));
+                Boolean answer = holder.get();
+                if (answer) {
+                  update(updateInfo);
+                }
+                else {
+                  terminate(null, null);
+                }
+              };
+            }
+            // else: version is okay, but TLS handshake didn't work
           }
-          else {
-            terminate(null, null);
+          catch (Exception rx) {
+            LOGGER.warning("getting update info failed", rx);
           }
-        };
+        }
+        else {
+          LOGGER.info("no update service configured");
+        }
       }
-      catch (Exception rx) {
-        LOGGER.warning("getting update info failed", rx);
-        // fall through
+      else {
+        LOGGER.info("client not running within an updatable directory");
       }
     }
 
@@ -100,11 +111,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
   /**
    * Creates the remote update service.
    *
-   * @return the service object
+   * @return the service object, null if no service configured
    */
   protected UpdateService createUpdateService() {
     String serviceUrl = getApplication().getProperty("updateService");
-    return ClientUpdateUtilities.getInstance().getUpdateService(serviceUrl, null);
+    return serviceUrl == null ? null : ClientUpdateUtilities.getInstance().getUpdateService(serviceUrl, null);
   }
 
   /**
@@ -131,7 +142,9 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
       FileHelper.unzip(zipFile, updateDir,
                        file -> getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20));
 
-      new ProcessBuilder(new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor()).getPath()).start();
+      File updateScript = new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor());
+      updateScript.setExecutable(true);
+      new ProcessBuilder(updateScript.getPath()).start();
     }
     catch (IOException iox) {
       terminate(UpdateFxRdcBundle.getString("UPDATE_FAILED"), iox);
@@ -152,9 +165,11 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     Platform.runLater(() -> {
       if (msg != null) {
         if (t != null) {
+          LOGGER.severe(msg, t);
           Fx.error(msg, t);
         }
         else {
+          LOGGER.info(msg);
           Fx.info(msg);
         }
       }
