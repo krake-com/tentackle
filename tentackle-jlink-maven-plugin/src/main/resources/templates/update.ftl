@@ -1,5 +1,6 @@
 <#-- template to update the application -->
 <#-- assumed to be unzipped into a folder named "update", where this script is located in subfolder "bin" -->
+<#-- invoked with the PID of the running client as the only argument (necessary for windows to wait for termination) -->
 <#if osName?upper_case?contains("WIN")>
 @echo off
 set script_file=%~nx0
@@ -8,6 +9,12 @@ set script_dir=%CD%
 popd
 cd %script_dir%
 cd ..\..
+:loop
+tasklist | find " %1 " >nul
+if not errorlevel 1 (
+  timeout /t 1 >nul
+  goto :loop
+)
 if exist update\bin (if exist update\conf (if exist update\include (if exist update\legal (if exist update\lib (
   if exist update\bin\%script_file% (
     for %%d in (bin, conf, include, legal, lib, mp, cp) do (

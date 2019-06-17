@@ -222,7 +222,8 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
               showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
               final C mainCtrlr = Fx.load(getMainControllerClass());
 
-              showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 1.0);
+              showApplicationStatus(AppFxRdcBundle.getString("LAUNCH MAIN WINDOW..."), 0.99);
+              showApplicationStatus("", 1.0);   // time to read last message
               Platform.runLater(() -> {
                 try {
                   session.makeCurrent();
