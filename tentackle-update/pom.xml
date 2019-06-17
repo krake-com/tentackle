@@ -20,7 +20,7 @@
   <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Update</name>
-  <description>Tentackle-2 Application Update Service</description>
+  <description>Tentackle Application Update Service</description>
   <url>https://tentackle.org</url>
 
   <properties>
