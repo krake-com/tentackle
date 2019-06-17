@@ -141,6 +141,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     try {
       FileHelper.unzip(zipFile, updateDir,
                        file -> getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20));
+      zipFile.delete();
 
       File updateScript = new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor());
       updateScript.setExecutable(true);
