@@ -74,6 +74,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
           try {
             ClientInfo clientInfo = new ClientInfo(getApplication().getName(), getApplication().getVersion());
             UpdateInfo updateInfo = service.getInfo(clientInfo);
+            LOGGER.info("application update {0} -> {1}", clientInfo, updateInfo);
             if (!updateInfo.getVersion().equals(clientInfo.getVersion())) {
               return () -> {
                 BlockingHolder<Boolean> holder = new BlockingHolder<>();
@@ -134,20 +135,30 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
    */
   protected void update(UpdateInfo updateInfo) {
     File updateDir = createUpdateDirectory();
+    LOGGER.info("using update directory {0}", updateDir);
 
     File zipFile = ClientUpdateUtilities.getInstance().dowloadZip(updateInfo, updateDir,
                    progress -> getApplication().showApplicationStatus(UpdateFxRdcBundle.getString("DOWNLOADING"), progress));
 
+    LOGGER.info("download successful: {0}", zipFile);
+
     try {
-      FileHelper.unzip(zipFile, updateDir,
-                       file -> getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20));
+      FileHelper.unzip(zipFile, updateDir,file -> {
+        getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20);
+        LOGGER.info("{0} unzipped", file);
+      });
       zipFile.delete();
 
       File updateScript = new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor());
+      if (!updateScript.exists()) {
+        throw new IOException("no such update script: " + updateScript);
+      }
       updateScript.setExecutable(true);
       // windows needs ths pid to wait for this client to finish before overriding its files (not necessary for *nixes)
       long pid = ProcessHandle.current().pid();
-      new ProcessBuilder(updateScript.getPath(), Long.toString(pid)).start();
+      ProcessBuilder builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid));
+      Process process = builder.start();
+      LOGGER.info("executing {0} {1} (pid = {2})", updateScript, pid, process.pid());
     }
     catch (IOException iox) {
       terminate(UpdateFxRdcBundle.getString("UPDATE_FAILED"), iox);
@@ -160,7 +171,8 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     catch (InterruptedException ix) {
       // we terminate anyway...
     }
-    terminate(null, null);
+
+    System.exit(0);   // terminate in any case...
   }
 
 
