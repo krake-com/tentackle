@@ -145,7 +145,9 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
 
       File updateScript = new File(new File(updateDir, "bin"), updateInfo.getUpdateExecutor());
       updateScript.setExecutable(true);
-      new ProcessBuilder(updateScript.getPath()).start();
+      // windows needs ths pid to wait for this client to finish before overriding its files (not necessary for *nixes)
+      long pid = ProcessHandle.current().pid();
+      new ProcessBuilder(updateScript.getPath(), Long.toString(pid)).start();
     }
     catch (IOException iox) {
       terminate(UpdateFxRdcBundle.getString("UPDATE_FAILED"), iox);
