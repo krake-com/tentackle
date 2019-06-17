@@ -19,16 +19,17 @@
 
 package org.tentackle.dbms;
 
+import org.tentackle.log.Logger;
+import org.tentackle.misc.FormatHelper;
+import org.tentackle.session.PersistenceException;
+import org.tentackle.sql.BackendInfo;
+
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Random;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.FormatHelper;
-import org.tentackle.session.PersistenceException;
-import org.tentackle.sql.BackendInfo;
 
 
 /**
@@ -552,7 +553,7 @@ public class DefaultConnectionManager implements ConnectionManager {
       con = new ManagedConnection(this, backendInfo.getBackend(), backendInfo.connect());
     }
     catch (SQLException e) {
-      throw new PersistenceException(this + ": creating connection failed", e);
+      throw new PersistenceException(this + ": connection to '" + backendInfo + "' failed", e);
     }
 
     if (!con.getAutoCommit()) {
