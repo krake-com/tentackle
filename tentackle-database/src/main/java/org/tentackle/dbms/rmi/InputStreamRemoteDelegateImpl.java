@@ -18,19 +18,17 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.common.InterruptedRuntimeException;
+import org.tentackle.io.NotifyingByteArrayOutputStream;
+
 import java.io.OutputStream;
 import java.rmi.RemoteException;
-import org.tentackle.io.NotifyingByteArrayOutputStream;
-import org.tentackle.log.Logger;
 
 /**
  *
  * @author harald
  */
 public class InputStreamRemoteDelegateImpl extends RemoteDelegateImpl<OutputStream> implements InputStreamRemoteDelegate {
-
-  private static final Logger LOGGER = Logger.get(InputStreamRemoteDelegateImpl.class);
-
 
   private final NotifyingByteArrayOutputStream out;              // current buffer to write to
 
@@ -61,7 +59,7 @@ public class InputStreamRemoteDelegateImpl extends RemoteDelegateImpl<OutputStre
             out.wait();   // wait until data is available
           }
           catch (InterruptedException iex) {
-            LOGGER.warning("interrupted -> ignored");
+            throw new InterruptedRuntimeException("read interrupted", iex);
           }
         }
         else  {

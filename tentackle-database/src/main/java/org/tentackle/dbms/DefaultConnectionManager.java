@@ -378,6 +378,7 @@ public class DefaultConnectionManager implements ConnectionManager {
         t.join();   // wait until thread terminates
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via shutdown()!
         LOGGER.warning(this + ": stopping the timeout thread failed", ex);
       }
     }
@@ -628,7 +629,7 @@ public class DefaultConnectionManager implements ConnectionManager {
           sleep(attachTimeout);
         }
         catch (InterruptedException iex) {
-          // sleep interrupted -> check termination conditions
+          // sleep interrupted -> check termination conditions below (mgr == null)
         }
 
         DefaultConnectionManager mgr = cmRef.get();

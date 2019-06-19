@@ -19,12 +19,13 @@
 
 package org.tentackle.daemon;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.log.Logger;
 
 /**
  * A supervisor controlling the life cycle of daemons.
@@ -452,6 +453,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         break;
       }
       catch (InterruptedException e)  {
+        // daemon thread is terminated via requestTermination!
         LOGGER.warning("termination interrupted -> ignored");
       }
     }
@@ -727,6 +729,7 @@ public abstract class DaemonSupervisor extends Thread implements Scavenger {
         sleep(checkInterval);
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via requestTermination!
         LOGGER.warning("interrupted -> ignored");
       }
 

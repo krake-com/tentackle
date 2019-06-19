@@ -343,6 +343,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
         }
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via requestTermination!
         LOGGER.warning("interrupted -> ignored");
       }
     }
@@ -713,6 +714,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       sleep(sleepMs);
     }
     catch (InterruptedException ex) {
+      // daemon thread is terminated via requestTermination!
       LOGGER.fine("interrupted!");
     }
   }
@@ -788,7 +790,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
             break;
           }
           catch (InterruptedException ie) {
-            // ignore -> continue
+            // daemon thread is terminated via requestTermination!
           }
           catch (RuntimeException re) {
             throw new TaskException("mutex lock failed", re);
@@ -878,7 +880,7 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
           wait(sleepInterval); // release monitor on this and wait for notify
         }
         catch (InterruptedException ie) {
-          // nothing to do
+          // daemon thread is terminated via requestTermination!
         }
         return false; // try again...
       }

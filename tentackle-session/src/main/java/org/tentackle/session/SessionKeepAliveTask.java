@@ -19,13 +19,14 @@
 
 package org.tentackle.session;
 
+import org.tentackle.log.Logger;
+import org.tentackle.task.AbstractTask;
+
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.tentackle.log.Logger;
-import org.tentackle.task.AbstractTask;
 
 /**
  * The task to keep a session alive.<br>
@@ -98,6 +99,7 @@ public class SessionKeepAliveTask extends AbstractTask {
             }
           }
           catch (InterruptedException iex) {
+            // the task repeats anyway
             LOGGER.warning("interrupted -> ignored", iex);
           }
         }

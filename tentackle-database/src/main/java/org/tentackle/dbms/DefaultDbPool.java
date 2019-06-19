@@ -277,6 +277,7 @@ public class DefaultDbPool implements SessionPool {
         timeoutThread.join();
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via shutdown()!
         LOGGER.warning("shutdown " + timeoutThread + " for " + this + " failed", ex);
         // continue and close all Db instances
       }
@@ -542,7 +543,7 @@ public class DefaultDbPool implements SessionPool {
             sleep(SLEEP_INTERVAL); // wait for a few seconds
           }
           catch (InterruptedException ex) {
-            // just continue
+            // check termination condition below (pool == null)
           }
 
           DefaultDbPool pool = poolRef.get();
