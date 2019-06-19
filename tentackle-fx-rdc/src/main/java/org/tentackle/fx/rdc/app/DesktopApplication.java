@@ -30,8 +30,8 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import org.tentackle.app.AbstractClientApplication;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.StringHelper;
-import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
@@ -330,8 +330,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
             Thread.sleep(remainingMillis);
           }
           catch (InterruptedException ix) {
-            Thread.currentThread().interrupt();
-            throw new TentackleRuntimeException(ix);
+            throw new InterruptedRuntimeException(ix);
           }
           lastStatusMillis = now + remainingMillis;
         }

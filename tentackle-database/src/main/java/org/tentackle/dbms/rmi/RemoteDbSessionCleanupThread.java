@@ -19,17 +19,16 @@
 
 package org.tentackle.dbms.rmi;
 
+import org.tentackle.daemon.Scavenger;
+import org.tentackle.dbms.Db;
+import org.tentackle.log.Logger;
+
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import org.tentackle.daemon.Scavenger;
-import org.tentackle.dbms.Db;
-import org.tentackle.log.Logger;
-
-import static java.lang.Thread.sleep;
 
 
 /**
@@ -97,7 +96,7 @@ public class RemoteDbSessionCleanupThread extends Thread implements Scavenger {
         verifySessions();
       }
       catch (InterruptedException ix) {
-        // ignore
+        // daemon thread is terminated via requestTermination()
       }
       catch (RuntimeException ex) {
         LOGGER.severe("cleanup sessions failed", ex);

@@ -25,6 +25,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.maven.plugin.wizard.fx.PdoWizard;
@@ -84,7 +85,7 @@ public class PdoMojo extends AbstractWizardMojo {
       latch.await();
     }
     catch (InterruptedException e) {
-      getLog().error(e);
+      throw new InterruptedRuntimeException(e);
     }
   }
 

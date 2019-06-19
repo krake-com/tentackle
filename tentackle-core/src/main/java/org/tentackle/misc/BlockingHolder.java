@@ -17,7 +17,7 @@
  */
 package org.tentackle.misc;
 
-import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.common.InterruptedRuntimeException;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -49,9 +49,8 @@ public class BlockingHolder<T> extends Holder<T> {
     try {
       latch.await();
     }
-    catch (InterruptedException ix) {
-      Thread.currentThread().interrupt();
-      throw new TentackleRuntimeException(ix);
+    catch (InterruptedException ex) {
+      throw new InterruptedRuntimeException(ex);
     }
     return super.get();
   }

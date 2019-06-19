@@ -18,6 +18,7 @@
 
 package org.tentackle.test.prefs;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.common.Version;
 import org.tentackle.dbms.Db;
@@ -108,6 +109,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       Thread.sleep(millis);
     }
     catch (InterruptedException ix) {
+      throw new InterruptedRuntimeException(ix);
     }
   }
 

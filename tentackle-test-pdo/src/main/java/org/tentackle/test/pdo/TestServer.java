@@ -18,6 +18,7 @@
 
 package org.tentackle.test.pdo;
 
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Version;
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
 import org.tentackle.dbms.rmi.RemoteDbSession;
@@ -93,6 +94,7 @@ public class TestServer extends ServerApplication {
       Thread.sleep(millis);
     }
     catch (InterruptedException ix) {
+      throw new InterruptedRuntimeException(ix);
     }
   }
 

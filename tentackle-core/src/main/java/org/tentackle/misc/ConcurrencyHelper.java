@@ -18,10 +18,12 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.InterruptedRuntimeException;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
-import org.tentackle.common.TentackleRuntimeException;
 
 /**
  * Methods related to concurrency and multithreading.
@@ -63,7 +65,7 @@ public class ConcurrencyHelper {
           break;
         }
         catch (InterruptedException ix) {
-          // interrupted: next round will catch result
+          throw new InterruptedRuntimeException(ix);
         }
         catch (ExecutionException ex) {
           throw new TentackleRuntimeException("blocking execution failed", ex);

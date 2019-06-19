@@ -163,6 +163,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
         connectThread.join();   // wait until connect thread terminates
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via shutdown()!
         LOGGER.warning(this + ": stopping the connect thread failed", ex);
       }
     }
@@ -389,7 +390,7 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           Thread.sleep(ms);
         }
         catch (InterruptedException ex) {
-          // just start over and try again
+          // daemon thread is terminated via shutdown()!
         }
       }
       else {
@@ -405,7 +406,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           try {
             doneMtx.wait(DONE_MUTEX_MS);
           }
-          catch (InterruptedException ex) {}
+          catch (InterruptedException ex) {
+            // daemon thread is terminated via shutdown()!
+          }
         }
       }
     }
@@ -661,7 +664,9 @@ public class MpxConnectionManager extends DefaultConnectionManager {
           try {
             requestMtx.wait(REQ_MUTEX_MS);
           }
-          catch (InterruptedException ex) {}
+          catch (InterruptedException ex) {
+            // check termination condition below (mgr == null)
+          }
 
           MpxConnectionManager mgr = cmRef.get();
           if (mgr == null || mgr.shutdownRequested) {
