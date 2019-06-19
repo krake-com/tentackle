@@ -28,6 +28,7 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.languages.java.jpms.LocationManager;
 
 import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
 import org.tentackle.maven.AbstractTentackleMojo;
 
 import java.io.File;
@@ -97,7 +98,8 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private String runTemplate;
 
   /**
-   * The name of the update script template.
+   * The name of the update script template.<br>
+   * Empty to disable.
    */
   @Parameter(defaultValue = "update.ftl")
   private String updateTemplate;
@@ -228,10 +230,10 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   /**
    * Gets the name of the update template.
    *
-   * @return the template to generate the update script
+   * @return the template to generate the update script, null if none
    */
   public String getUpdateTemplate() {
-    return updateTemplate;
+    return StringHelper.isAllWhitespace(updateTemplate) ? null : updateTemplate;
   }
 
   /**
@@ -404,10 +406,6 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
         throw new MojoExecutionException("runTemplate missing");
       }
 
-      if (updateTemplate == null) {
-        throw new MojoExecutionException("updateTemplate missing");
-      }
-
       return true;
     }
     return false;
@@ -444,7 +442,9 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   protected void installTemplates() throws MojoExecutionException {
     installTemplate(nameTemplate);
     installTemplate(runTemplate);
-    installTemplate(updateTemplate);
+    if (getUpdateTemplate() != null) {
+      installTemplate(updateTemplate);
+    }
   }
 
   private void installTemplate(String template) throws MojoExecutionException {

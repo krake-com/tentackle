@@ -9,11 +9,13 @@ set script_dir=%CD%
 popd
 cd %script_dir%
 cd ..\..
-:loop
-tasklist | find " %1 " >nul
-if not errorlevel 1 (
-  timeout /t 1 >nul
-  goto :loop
+if "%1" neq "" (
+  :loop
+  tasklist | find " %1 " >nul
+  if not errorlevel 1 (
+    timeout /t 1 >nul
+    goto :loop
+  )
 )
 if exist update\bin (if exist update\conf (if exist update\include (if exist update\legal (if exist update\lib (
   if exist update\bin\%script_file% (

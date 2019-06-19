@@ -76,14 +76,16 @@ public class RunGenerator extends AbstractGenerator {
           fileExtension = fileName.substring(ndx);
         }
         fileName = mojo.getUpdateTemplate();
-        ndx = fileName.lastIndexOf('.');
-        if (ndx >= 0) {
-          fileName = fileName.substring(0, ndx);
+        if (fileName != null) {
+          ndx = fileName.lastIndexOf('.');
+          if (ndx >= 0) {
+            fileName = fileName.substring(0, ndx);
+          }
+          scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName + fileExtension);
+          generatedFile = new GeneratedFile(cfg, model, mojo.getUpdateTemplate(), scriptFile);
+          generatedFile.generate();
+          scriptFile.setExecutable(true);
         }
-        scriptFile = new File(new File(mojo.getApplicationDirectory(), "bin"), fileName + fileExtension);
-        generatedFile = new GeneratedFile(cfg, model, mojo.getUpdateTemplate(), scriptFile);
-        generatedFile.generate();
-        scriptFile.setExecutable(true);
       }
       else {
         throw new MojoExecutionException("no valid name for runner script");
