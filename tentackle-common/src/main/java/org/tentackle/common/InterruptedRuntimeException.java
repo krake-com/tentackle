@@ -23,10 +23,10 @@ package org.tentackle.common;
 public class InterruptedRuntimeException extends RuntimeException {
 
   /**
-   * Constructs a new runtime exception with the specified detail message and
+   * Constructs a new interrupt exception with the specified detail message and
    * cause.  <p>Note that the detail message associated with
    * {@code cause} is <i>not</i> automatically incorporated in
-   * this runtime exception's detail message.
+   * this interrupt exception's detail message.
    *
    * @param message the detail message (which is saved for later retrieval
    *                by the {@link #getMessage()} method).
@@ -34,7 +34,6 @@ public class InterruptedRuntimeException extends RuntimeException {
    *                {@link #getCause()} method).  (A {@code null} value is
    *                permitted, and indicates that the cause is nonexistent or
    *                unknown.)
-   * @since 1.4
    */
   public InterruptedRuntimeException(String message, Throwable cause) {
     super(message, cause);
@@ -42,7 +41,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   }
 
   /**
-   * Constructs a new runtime exception with the specified cause and a
+   * Constructs a new interrupt exception with the specified cause and a
    * detail message of {@code (cause==null ? null : cause.toString())}
    * (which typically contains the class and detail message of
    * {@code cause}).  This constructor is useful for runtime exceptions
@@ -52,7 +51,6 @@ public class InterruptedRuntimeException extends RuntimeException {
    *              {@link #getCause()} method).  (A {@code null} value is
    *              permitted, and indicates that the cause is nonexistent or
    *              unknown.)
-   * @since 1.4
    */
   public InterruptedRuntimeException(Throwable cause) {
     super(cause);
@@ -60,7 +58,7 @@ public class InterruptedRuntimeException extends RuntimeException {
   }
 
   /**
-   * Constructs a new runtime exception with the specified detail
+   * Constructs a new interrupt exception with the specified detail
    * message, cause, suppression enabled or disabled, and writable
    * stack trace enabled or disabled.
    *
@@ -71,7 +69,6 @@ public class InterruptedRuntimeException extends RuntimeException {
    *                           or disabled
    * @param writableStackTrace whether or not the stack trace should
    *                           be writable
-   * @since 1.7
    */
   public InterruptedRuntimeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
