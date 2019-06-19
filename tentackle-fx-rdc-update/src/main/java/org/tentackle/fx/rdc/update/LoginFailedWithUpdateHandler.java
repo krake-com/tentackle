@@ -143,7 +143,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
     LOGGER.info("download successful: {0}", zipFile);
 
     try {
-      FileHelper.unzip(zipFile, updateDir,file -> {
+      FileHelper.unzip(zipFile, updateDir, file -> {
         getApplication().showApplicationStatus(MessageFormat.format(UpdateFxRdcBundle.getString("INSTALLING_{0}"), file), 1.0, 20);
         LOGGER.info("{0} unzipped", file);
       });
@@ -154,7 +154,7 @@ public class LoginFailedWithUpdateHandler extends LoginFailedHandler {
         throw new IOException("no such update script: " + updateScript);
       }
       updateScript.setExecutable(true);
-      // windows needs ths pid to wait for this client to finish before overriding its files (not necessary for *nixes)
+      // windows needs the pid to wait for this client to finish before overriding its files (not necessary for *nixes)
       long pid = ProcessHandle.current().pid();
       ProcessBuilder builder = new ProcessBuilder(updateScript.getPath(), Long.toString(pid));
       Process process = builder.start();
