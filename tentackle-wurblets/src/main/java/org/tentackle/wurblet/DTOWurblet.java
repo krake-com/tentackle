@@ -178,7 +178,7 @@ public class DTOWurblet extends AbstractJavaWurblet {
           // global annotations
           annotations.addAll(parseAnnotations(new StringBuilder(line)));
         }
-        else if (!line.startsWith("#")) {
+        else if (!line.isEmpty() && !line.startsWith("#")) {
           StringTokenizer stok = new StringTokenizer(line);
           String type = null;
           String name = null;
