@@ -35,7 +35,7 @@ public class EnumI18nTest {
 
   @Test
   public void testEnums() {
-    Reflections reflections = new Reflections("com.hydro");
+    Reflections reflections = new Reflections("org.tentackle");
     reflections.getSubTypesOf(Enum.class).forEach(c -> {
       Reporter.log("enum " + c.getName() + "<br>");
       for (Object constant: c.getEnumConstants()) {
