@@ -1,7 +1,7 @@
 
 This is the Java 8 branch.
-TT 2.1.x builds against Java 8, but runs on 8 and 9 thanks to
+TT 8.x.y.z builds against Java 8, but runs on 8, 9 and 10 thanks to
 multirelease jars.
 
-The gitflow branches develop and master are for Java 9 and above.
+The branches develop and master are for Java 11 and above.
 
