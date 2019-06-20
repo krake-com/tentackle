@@ -1,27 +1,33 @@
 /*
- * Copyright (C) 2015 by:
+ * Tentackle - http://www.tentackle.org
  *
- * Hydro Aluminium Rolled Products GmbH
- * Koblenzer Strasse 122
- * D-41468 Neuss
- * Germany
- * Tel. +49 2131 382 0
- * http://www.hydro.com/Deutschland
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * All Rights Reserved.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the DFree Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 package org.tentackle.test.fx.rdc;
 
 import org.reflections.Reflections;
+import org.testng.Assert;
+import org.testng.Reporter;
+import org.testng.annotations.Test;
+
 import org.tentackle.fx.rdc.GuiProvider;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.pdo.PdoFactory;
 import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
-import org.testng.Assert;
-import org.testng.Reporter;
-import org.testng.annotations.Test;
 
 /**
  * Tests whether GUI-providers could be loaded and bound.<br>

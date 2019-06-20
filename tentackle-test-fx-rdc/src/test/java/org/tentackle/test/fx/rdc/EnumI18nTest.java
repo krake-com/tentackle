@@ -18,11 +18,12 @@
 
 package org.tentackle.test.fx.rdc;
 
-import java.util.MissingResourceException;
 import org.reflections.Reflections;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.Test;
+
+import java.util.MissingResourceException;
 
 /**
  * Tests the translations for enums.<br>
@@ -35,7 +36,7 @@ public class EnumI18nTest {
 
   @Test
   public void testEnums() {
-    Reflections reflections = new Reflections("com.hydro");
+    Reflections reflections = new Reflections("org.tentackle");
     reflections.getSubTypesOf(Enum.class).forEach(c -> {
       Reporter.log("enum " + c.getName() + "<br>");
       for (Object constant: c.getEnumConstants()) {
