@@ -19,11 +19,12 @@
 
 package org.tentackle.task;
 
-import java.util.concurrent.ConcurrentHashMap;
 import org.testng.Assert;
 import org.testng.Reporter;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tests the task dispatcher.
@@ -36,7 +37,6 @@ public class TaskDispatcherTest {
   private static final long TEST_DURATION = 5000;   // in ms
   private static final long LOCK_DURATION = 2;      // in ms
   private static final long SLEEP_INTERVAL = 10;    // in ms
-  private static final int POOL_SIZE = 4;           // pooled dispatcher size
 
   private TaskDispatcher dispatcher;
   private volatile int lockCount;
@@ -64,8 +64,6 @@ public class TaskDispatcherTest {
   public void testMutexLocking() {
     dispatcher = new DefaultTaskDispatcher("mutex", true, SLEEP_INTERVAL, 0);
     runMutexLocking(true);
-    dispatcher = new PooledTaskDispatcher(POOL_SIZE, "mutexpool", true, SLEEP_INTERVAL, true, SLEEP_INTERVAL * 1000);
-    runMutexLocking(false);
   }
 
   /**
@@ -76,8 +74,6 @@ public class TaskDispatcherTest {
   public void testCounterLocking() {
     dispatcher = new DefaultTaskDispatcher("counter", false, SLEEP_INTERVAL, 0);
     runCounterLocking(true);
-    dispatcher = new PooledTaskDispatcher(POOL_SIZE, "counterpool", false, SLEEP_INTERVAL, true, SLEEP_INTERVAL * 1000);
-    runCounterLocking(false);
   }
 
 
