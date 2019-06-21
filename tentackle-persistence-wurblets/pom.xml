@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-persistence-wurblets</artifactId>
-  <version>12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Persistence Wurblets</name>
   <description>Wurblets for the Tentackle persistence layer</description>

@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-model</artifactId>
-  <version>12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Data Model</name>
   <description>Data Model for Tentackle</description>

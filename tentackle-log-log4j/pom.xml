@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-log-log4j</artifactId>
-  <version>12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Logging Log4J</name>
   <description>Log4J Logging Adapter for Tentackle</description>

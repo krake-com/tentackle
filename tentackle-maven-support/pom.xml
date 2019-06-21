@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-maven-support</artifactId>
-  <version>12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Maven Support</name>
   <description>Support for Tentackle Maven Plugins</description>

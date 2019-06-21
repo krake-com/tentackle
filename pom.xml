@@ -70,6 +70,7 @@
     <module>tentackle-test-fx-rdc</module>
     <module>tentackle-jlink-maven-plugin</module>
     <module>tentackle-bom</module>
+<!--    <module>tentackle-project-archetype</module>-->
   </modules>
 
   <properties>

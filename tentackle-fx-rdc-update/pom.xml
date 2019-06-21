@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-fx-rdc-update</artifactId>
-  <version>12.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle FX RDC Update Extension</name>
   <description>Update Extension for FX Rich Desktop Client</description>
