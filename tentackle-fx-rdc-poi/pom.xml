@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-fx-rdc-poi</artifactId>
-  <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle FX RDC POI Extension</name>
   <description>POI Extension for FX Rich Desktop Client</description>

@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-i18n</artifactId>
-  <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle I18N via persistence layer</name>
   <description>I18N provider to use StoredBundle instead of ResourceBundle</description>

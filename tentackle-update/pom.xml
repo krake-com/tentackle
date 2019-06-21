@@ -17,7 +17,6 @@
   </parent>
 
   <artifactId>tentackle-update</artifactId>
-  <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Update</name>
   <description>Tentackle Application Update Service</description>

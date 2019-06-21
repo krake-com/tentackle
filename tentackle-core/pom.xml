@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-core</artifactId>
-  <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Core</name>
   <description>The Core of the Tentackle Framework</description>

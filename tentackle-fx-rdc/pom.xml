@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-fx-rdc</artifactId>
-  <version>11.4.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle FX Rich Desktop Client</name>
   <description>Rich Desktop Client based on FX</description>

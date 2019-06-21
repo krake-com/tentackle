@@ -12,7 +12,6 @@
   <packaging>maven-plugin</packaging>
   <name>Tentackle I18N Maven Plugin</name>
   <description>Maven Plugin for Localization Tooling</description>
-  <version>11.4.0.0-SNAPSHOT</version>
   <url>https://tentackle.org</url>
 
   <dependencies>
