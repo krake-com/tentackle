@@ -113,12 +113,6 @@
         <include>**/*.ftl</include>
       </includes>
     </fileSet>
-    <fileSet encoding="UTF-8">
-      <directory>jlink/target</directory>
-      <includes>
-        <include>**/*.cer</include>
-      </includes>
-    </fileSet>
   </fileSets>
   <modules>
     <module id="common" dir="common" name="common">
@@ -251,7 +245,7 @@
             <include>module-info.java</include>
           </includes>
         </fileSet>
-        <fileSet packaged="true" encoding="UTF-8">
+        <fileSet packaged="true" filtered="true" encoding="UTF-8">
           <directory>src/main/java</directory>
           <includes>
             <include>**/*.fxml</include>
@@ -308,7 +302,7 @@
             <include>module-info.java</include>
           </includes>
         </fileSet>
-        <fileSet encoding="UTF-8">
+        <fileSet filtered="true" encoding="UTF-8">
           <directory>src/main/resources</directory>
           <includes>
             <include>**/*.css</include>

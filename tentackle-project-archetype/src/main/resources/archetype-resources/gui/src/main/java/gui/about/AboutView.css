@@ -1,5 +1,5 @@
 .root {
-  -fx-background-image: url("/com/example/gui/images/login-and-about.png");
+  -fx-background-image: url("/${packageInPathFormat}/gui/images/login-and-about.png");
   -fx-background-repeat: stretch;
   -fx-background-size: 550 300;
   -fx-background-position: center center;
