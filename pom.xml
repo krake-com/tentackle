@@ -70,6 +70,7 @@
     <module>tentackle-test-fx-rdc</module>
     <module>tentackle-jlink-maven-plugin</module>
     <module>tentackle-bom</module>
+    <module>tentackle-project-archetype</module>
   </modules>
 
   <properties>
@@ -91,6 +92,7 @@
     <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
     <maven.install.plugin.version>2.5.2</maven.install.plugin.version>
     <maven.deploy.plugin.version>2.8.2</maven.deploy.plugin.version>
+    <maven.archetype.plugin.version>3.1.1</maven.archetype.plugin.version>
 
     <tentackle.serviceDir>${project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
@@ -297,8 +299,24 @@
   </dependencies>
 
   <build>
+
+    <extensions>
+      <extension>
+        <groupId>org.apache.maven.archetype</groupId>
+        <artifactId>archetype-packaging</artifactId>
+        <version>${maven.archetype.plugin.version}</version>
+      </extension>
+    </extensions>
+
     <pluginManagement>
       <plugins>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-archetype-plugin</artifactId>
+          <version>${maven.archetype.plugin.version}</version>
+        </plugin>
+
         <plugin>
           <groupId>org.wurbelizer</groupId>
           <artifactId>wurbelizer-maven-plugin</artifactId>

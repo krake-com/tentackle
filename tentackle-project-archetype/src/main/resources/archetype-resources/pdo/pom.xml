@@ -1,0 +1,47 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>${rootArtifactId}</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>${artifactId}</artifactId>
+  <packaging>jar</packaging>
+  <name>${application} PDO</name>
+  <description>PDO Layer for ${pplication}</description>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>common</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+
+    <!-- tests only -->
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

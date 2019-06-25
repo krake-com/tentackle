@@ -1,0 +1,88 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+  <!-- =============================================================== -->
+  <!-- -->
+  <!-- Maven2 Project Object Model -->
+  <!-- -->
+  <!-- =============================================================== -->
+  <!--
+		| For more configuration information see the Maven website
+	-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>jlink</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>jlink-server</artifactId>
+  <packaging>jlink</packaging>
+  <name>JLink Server Image</name>
+  <description>Server JLink Module for ${application}</description>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>server</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>keytool-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>clean</goal>
+              <goal>generateKeyPair</goal>
+              <goal>exportCertificate</goal>
+            </goals>
+            <phase>generate-resources</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <keystore>${symbol_dollar}{cert.dir}/keystore.jks</keystore>
+          <file>${symbol_dollar}{cert.file}</file>
+          <storepass>${symbol_dollar}{cert.password}</storepass>
+          <alias>${symbol_dollar}{cert.alias}</alias>
+          <dname>${symbol_dollar}{cert.dname}</dname>
+          <keyalg>RSA</keyalg>
+          <keysize>2048</keysize>
+          <validity>3650</validity>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-jlink-maven-plugin</artifactId>
+        <configuration>
+          <mainModule>${package}.server</mainModule>
+          <mainClass>${package}.server.${application}Server</mainClass>
+          <addModules>
+            <addModule>jdk.jcmd</addModule>
+          </addModules>
+          <excludeModules>
+            <!-- slf4j: unsupported reference since java 12 -->
+            <excludeModule>jdk8internals</excludeModule>
+          </excludeModules>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,16 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="ci-init suite">
+  <test name="initialize CI database">
+    <groups>
+      <run>
+        <include name="ci-init" />
+      </run>
+    </groups>
+    <packages>
+      <package name="${package}.server" />
+    </packages>
+  </test>
+</suite>

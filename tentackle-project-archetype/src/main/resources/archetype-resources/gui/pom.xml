@@ -1,0 +1,108 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>${rootArtifactId}</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>${artifactId}</artifactId>
+  <packaging>jar</packaging>
+  <name>${application} GUI</name>
+  <description>FX GUI Layer for ${application}</description>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>pdo</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-fx-rdc</artifactId>
+    </dependency>
+
+    <!-- tests only -->
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-test-fx-rdc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>persistence</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>domain</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <!-- workaround:
+        SceneBuilder cannot locate the controller if the fxml file is not in the same
+        directory as the java file. Hence, we change the convention
+        as follows:
+        1. each controller and its related fxml, resource-properties and css files go into the same physical folder.
+        2. there is only one such folder/package per controller
+      -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>target/generated-resources/services</directory>
+      </resource>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.fxml</include>
+          <include>**/*.css</include>
+          <include>**/*.properties</include>
+        </includes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-Duser.language=en -Duser.region=US
+            --add-exports
+            javafx.graphics/com.sun.javafx.css=org.tentackle.fx
+            --add-exports
+            javafx.graphics/com.sun.javafx.scene=org.tentackle.fx
+            --add-exports
+            javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx
+            --add-exports
+            javafx.fxml/com.sun.javafx.fxml=org.tentackle.fx
+            --add-exports
+            javafx.graphics/com.sun.javafx.application=org.tentackle.fx.rdc</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
