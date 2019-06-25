@@ -6,7 +6,7 @@
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.layout.BorderPane?>
 
-<BorderPane fx:id="borderPane" style="-fx-background-color: WHITE;" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.gui.main.MainController">
+<BorderPane fx:id="borderPane" style="-fx-background-color: WHITE;" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="${package}.gui.main.MainController">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>

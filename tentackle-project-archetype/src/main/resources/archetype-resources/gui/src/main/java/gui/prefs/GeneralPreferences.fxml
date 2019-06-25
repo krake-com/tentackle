@@ -3,7 +3,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.*?>
-<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.gui.prefs.GeneralPreferences">
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="${package}.gui.prefs.GeneralPreferences">
   <columnConstraints>
     <ColumnConstraints hgrow="NEVER" minWidth="10.0" />
     <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
