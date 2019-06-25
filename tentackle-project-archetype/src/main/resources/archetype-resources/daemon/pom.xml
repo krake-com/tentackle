@@ -1,0 +1,89 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>${rootArtifactId}</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>${artifactId}</artifactId>
+  <packaging>jar</packaging>
+  <name>${application} Daemon</name>
+  <description>Daemon Console Application for ${application}</description>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
+    <timestamp>${symbol_dollar}{maven.build.timestamp}</timestamp>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+  </properties>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>persistence</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>domain</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-script-groovy</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-log-slf4j</artifactId>
+    </dependency>
+
+    <!-- runtime only -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <inherited>true</inherited>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+            <manifestEntries>
+              <Application-Name>${application} Daemon</Application-Name>
+              <Permissions>all-permissions</Permissions>
+              <mainClass>${package}.daemon.${application}Daemon</mainClass>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>${package}.daemon.${application}Daemon</mainClass>
+          <arguments>
+            <argument>--statistics</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

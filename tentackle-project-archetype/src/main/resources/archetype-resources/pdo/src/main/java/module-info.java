@@ -1,0 +1,18 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+
+module ${package}.pdo {
+  exports ${package}.pdo;
+  exports ${package}.pdo.md;
+  exports ${package}.pdo.md.domain;
+  exports ${package}.pdo.md.persist;
+  exports ${package}.pdo.security;
+  exports ${package}.pdo.td;
+  exports ${package}.pdo.td.domain;
+  exports ${package}.pdo.td.persist;
+
+  requires transitive ${package}.common;
+
+  provides org.tentackle.common.ModuleHook with ${package}.pdo.service.Hook;
+}

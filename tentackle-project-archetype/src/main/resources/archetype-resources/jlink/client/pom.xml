@@ -1,0 +1,80 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+  <!-- =============================================================== -->
+  <!-- -->
+  <!-- Maven2 Project Object Model -->
+  <!-- -->
+  <!-- =============================================================== -->
+  <!--
+		| For more configuration information see the Maven website
+	-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>jlink</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>jlink-client</artifactId>
+  <packaging>jlink</packaging>
+  <name>JLink Client Image</name>
+  <description>Client JLink Module for ${application}</description>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.parent.basedir}</rootBasedir>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>client</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>keytool-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>clean</goal>
+              <goal>importCertificate</goal>
+            </goals>
+            <phase>generate-resources</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <keystore>${symbol_dollar}{cert.dir}/truststore.jks</keystore>
+          <file>${symbol_dollar}{cert.file}</file>
+          <storepass>${symbol_dollar}{cert.password}</storepass>
+          <alias>${symbol_dollar}{cert.alias}</alias>
+          <noprompt>true</noprompt>
+          <trustcacerts>true</trustcacerts>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-jlink-maven-plugin</artifactId>
+        <configuration>
+          <mainModule>${package}.client</mainModule>
+          <mainClass>${package}.client.${application}FxClient</mainClass>
+          <addModules>
+            <addModule>jdk.jcmd</addModule>
+          </addModules>
+          <excludeModules>
+            <!-- slf4j: unsupported reference since java 12 -->
+            <excludeModule>jdk8internals</excludeModule>
+          </excludeModules>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

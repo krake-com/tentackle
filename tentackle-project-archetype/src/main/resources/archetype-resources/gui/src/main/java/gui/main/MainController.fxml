@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.layout.BorderPane?>
+
+<BorderPane fx:id="borderPane" style="-fx-background-color: WHITE;" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.gui.main.MainController">
+   <top>
+      <MenuBar BorderPane.alignment="CENTER">
+        <menus>
+          <Menu text="%System">
+            <items>
+              <MenuItem fx:id="securityManagerItem" mnemonicParsing="false" text="%Security Manager" />
+              <MenuItem fx:id="sessionsItem" mnemonicParsing="false" text="%Sessions" />
+              <MenuItem fx:id="preferencesItem" mnemonicParsing="false" text="%Preferences" />
+              <MenuItem fx:id="passwordItem" mnemonicParsing="false" text="%Change Password" />
+              <MenuItem fx:id="exitItem" text="%Exit" />
+            </items>
+          </Menu>
+            <Menu text="%Edit">
+              <items>
+                <MenuItem fx:id="editUserItem" mnemonicParsing="false" text="%Users" />
+                <MenuItem fx:id="editUserGroupItem" mnemonicParsing="false" text="%User Groups" />
+              </items>
+            </Menu>
+            <Menu text="%Search">
+              <items>
+                <MenuItem fx:id="searchUserItem" mnemonicParsing="false" text="%Users" />
+                <MenuItem fx:id="searchUserGroupItem" mnemonicParsing="false" text="%User Groups" />
+                <SeparatorMenuItem mnemonicParsing="false" />
+                <MenuItem fx:id="searchMessageItem" mnemonicParsing="false" text="%Messages" />
+              </items>
+            </Menu>
+          <Menu text="%Help">
+            <items>
+              <MenuItem fx:id="helpItem" mnemonicParsing="false" text="%Online Manual" />
+              <MenuItem fx:id="aboutItem" mnemonicParsing="false" text="%About" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+   </top>
+</BorderPane>

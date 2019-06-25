@@ -1,0 +1,81 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+<?xml version="1.0" encoding="UTF-8"?>
+  <!-- =============================================================== -->
+  <!-- -->
+  <!-- Maven2 Project Object Model -->
+  <!-- -->
+  <!-- =============================================================== -->
+  <!--
+		| For more configuration information see the Maven website
+	-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>${groupId}</groupId>
+    <artifactId>${artifactId}</artifactId>
+    <version>${version}</version>
+  </parent>
+
+  <artifactId>jlink</artifactId>
+  <packaging>pom</packaging>
+  <name>${application} JLink Images</name>
+  <description>Parent for the JLink Modules</description>
+
+  <profiles>
+    <profile>
+      <id>jlink</id>
+      <modules>
+        <module>server</module>
+        <module>client</module>
+        <module>daemon</module>
+      </modules>
+    </profile>
+  </profiles>
+
+  <properties>
+    <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
+    <cert.dname>cn=${application}Server, ou=Sample, o=Example, c=US</cert.dname>
+    <cert.password>didoedeldu</cert.password>
+    <cert.dir>${symbol_dollar}{project.build.directory}/jks</cert.dir>
+    <cert.file>${symbol_dollar}{project.parent.basedir}/target/server.cer</cert.file>
+    <cert.alias>server</cert.alias>
+  </properties>
+
+  <build>
+
+    <resources>
+      <resource>
+        <directory>${symbol_dollar}{project.basedir}/src/main/resources</directory>
+      </resource>
+      <resource>
+        <directory>${symbol_dollar}{project.basedir}/src/main/filtered-resources</directory>
+        <filtering>true</filtering>
+      </resource>
+      <!--  additional resource directory for generated key- and truststores -->
+      <resource>
+        <directory>${symbol_dollar}{project.build.directory}/jks</directory>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

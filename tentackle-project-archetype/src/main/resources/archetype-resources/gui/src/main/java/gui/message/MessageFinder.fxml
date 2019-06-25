@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.*?>
+<GridPane hgap="5.0" vgap="5.0" xmlns="http://javafx.com/javafx/9" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.gui.message.MessageFinder">
+   <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" />
+      <ColumnConstraints hgrow="ALWAYS" />
+      <ColumnConstraints hgrow="ALWAYS" />
+      <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" />
+   </columnConstraints>
+   <rowConstraints>
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+   </rowConstraints>
+   <children>
+      <Label text="%number" GridPane.halignment="RIGHT" />
+      <Label text="%from" GridPane.halignment="RIGHT" GridPane.rowIndex="1" />
+      <TextField fx:id="numberField" maxWidth="-Infinity" GridPane.columnIndex="1">
+      </TextField>
+      <DatePicker fx:id="fromField" maxWidth="-Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+      <DatePicker fx:id="untilField" maxWidth="-Infinity" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+      <ChoiceBox fx:id="typeField" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+      <ComboBox fx:id="userField" editable="true" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+      <Label text="%pattern" GridPane.halignment="RIGHT" GridPane.rowIndex="4" />
+      <TextField fx:id="patternField" maxWidth="400.0" GridPane.columnIndex="1" GridPane.columnSpan="2147483647" GridPane.rowIndex="4" />
+      <Label text="%type" GridPane.halignment="RIGHT" GridPane.rowIndex="2" />
+      <Label text="%user" GridPane.halignment="RIGHT" GridPane.rowIndex="3" />
+      <Label text="%until" GridPane.columnIndex="2" GridPane.halignment="RIGHT" GridPane.rowIndex="1">
+         <GridPane.margin>
+            <Insets left="20.0" />
+         </GridPane.margin>
+      </Label>
+   </children>
+</GridPane>
