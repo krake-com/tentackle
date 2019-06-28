@@ -19,16 +19,17 @@
 
 package org.tentackle.dbms;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Random;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.FormatHelper;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.sql.BackendInfo;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Random;
 
 
 /**
@@ -365,6 +366,7 @@ public class DefaultConnectionManager implements ConnectionManager {
         t.join();   // wait until thread terminates
       }
       catch (InterruptedException ex) {
+        // daemon thread is terminated via shutdown()!
         LOGGER.warning(this + ": stopping the timeout thread failed", ex);
       }
     }
@@ -624,7 +626,7 @@ public class DefaultConnectionManager implements ConnectionManager {
           }
         }
         catch (InterruptedException iex) {
-          // sleep interrupted -> check termination conditions above
+          // sleep interrupted -> check termination conditions below (mgr == null)
         }
       }
 

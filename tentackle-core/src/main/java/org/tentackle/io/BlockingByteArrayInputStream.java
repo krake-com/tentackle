@@ -18,6 +18,8 @@
 
 package org.tentackle.io;
 
+import org.tentackle.common.InterruptedRuntimeException;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -61,7 +63,7 @@ public class BlockingByteArrayInputStream extends InputStream {
               out.wait();   // wait until more data available
             }
             catch (InterruptedException ex) {
-              continue;     // start over
+              throw new InterruptedRuntimeException("read interrupted", ex);
             }
           }
           buf = out.toByteArray();

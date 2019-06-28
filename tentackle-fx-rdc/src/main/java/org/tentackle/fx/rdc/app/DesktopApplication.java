@@ -30,6 +30,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 import org.tentackle.app.AbstractApplication;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
@@ -320,7 +321,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
         Thread.sleep(50);
       }
       catch (InterruptedException ix) {
-        // ignore
+        throw new InterruptedRuntimeException(ix);
       }
     }
     else {

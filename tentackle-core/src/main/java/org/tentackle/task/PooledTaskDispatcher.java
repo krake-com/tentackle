@@ -331,7 +331,7 @@ public class PooledTaskDispatcher extends AbstractPooledTaskDispatcher {
         Thread.sleep(getSleepInterval());
       }
       catch (InterruptedException iex) {
-        // start over
+        // daemon thread is terminated via requestTermination!
       }
     }
   }

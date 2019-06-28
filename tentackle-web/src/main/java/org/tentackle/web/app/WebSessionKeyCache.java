@@ -19,14 +19,15 @@
 
 package org.tentackle.web.app;
 
+import org.tentackle.misc.ApplicationException;
+import org.tentackle.session.SessionInfo;
+
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.tentackle.misc.ApplicationException;
-import org.tentackle.session.SessionInfo;
 
 /**
  * A cache mapping user session infos to the web container's session keys.
@@ -121,7 +122,7 @@ public class WebSessionKeyCache<T> {
           cleanupThread.join();
         }
         catch (InterruptedException ex) {
-          // nothing we can do...
+          // we're already terminating...
         }
       }
       cleanupThread = null;

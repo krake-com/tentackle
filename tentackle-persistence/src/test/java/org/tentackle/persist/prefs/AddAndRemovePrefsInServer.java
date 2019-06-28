@@ -19,9 +19,7 @@
 
 package org.tentackle.persist.prefs;
 
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClientSocketFactory;
-import java.rmi.server.RMIServerSocketFactory;
+import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.Timestamp;
 import org.tentackle.dbms.Db;
 import org.tentackle.dbms.prefs.DbPreferencesKey;
@@ -40,6 +38,10 @@ import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.LoginFailedException;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.session.SessionInfo;
+
+import java.rmi.RemoteException;
+import java.rmi.server.RMIClientSocketFactory;
+import java.rmi.server.RMIServerSocketFactory;
 
 /**
  *
@@ -111,6 +113,7 @@ public class AddAndRemovePrefsInServer extends ServerApplication {
       Thread.sleep(millis);
     }
     catch (InterruptedException ix) {
+      throw new InterruptedRuntimeException(ix);
     }
   }
 
