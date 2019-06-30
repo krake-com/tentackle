@@ -18,6 +18,7 @@
 package org.tentackle.session;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.common.Cryptor;
 import org.tentackle.log.Logger;
 import org.tentackle.validate.validator.NotNull;
 
@@ -39,6 +40,8 @@ import java.util.prefs.Preferences;
  * Other application types may enforce their own rules.
  * <p>
  * Notice that the implementation does not depend on the tentackle-database or tentackle-sql module!
+ * <p>
+ * Passwords are stored encrypted if a {@link Cryptor} is configured for the application.
  */
 public class BackendConfiguration extends AbstractSessionConfiguration {
 
@@ -166,7 +169,7 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
   private String options;                 // other options (multiline!)
   private DriverConfiguration driver;     // the driver, null if remote
   private String user;                    // the user name
-  private String password;                // the user's password
+  private String password;                // the user's password (encrypted if a Cryptor is available)
 
   /**
    * Creates a backend configuration.
@@ -299,6 +302,10 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
    */
   @Bindable
   public String getPassword() {
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      return cryptor.decrypt64(password);
+    }
     return password;
   }
 
@@ -309,7 +316,13 @@ public class BackendConfiguration extends AbstractSessionConfiguration {
    */
   @Bindable
   public void setPassword(String password) {
-    this.password = password;
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      this.password = cryptor.encrypt64(password);
+    }
+    else {
+      this.password = password;
+    }
   }
 
   /**

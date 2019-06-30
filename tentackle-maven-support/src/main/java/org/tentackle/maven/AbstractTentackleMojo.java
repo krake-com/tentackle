@@ -89,7 +89,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * The verbosity.<br>
    * One of "default", "info" or "debug".
-   * Debus is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
+   * Debug is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
    */
   @Parameter(defaultValue = "${tentackle.verbosity}")
   protected String verbosity;

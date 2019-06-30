@@ -19,6 +19,13 @@
 
 package org.tentackle.session;
 
+import org.tentackle.common.Constants;
+import org.tentackle.common.Cryptor;
+import org.tentackle.common.FileHelper;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.misc.ImmutableException;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
@@ -26,14 +33,11 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
-import org.tentackle.common.Constants;
-import org.tentackle.common.FileHelper;
-import org.tentackle.common.StringHelper;
-import org.tentackle.log.Logger;
-import org.tentackle.misc.ImmutableException;
 
 /**
  * The default implementation for a session info.
+ * <p>
+ * The password is encrypted if a {@link Cryptor} is configured.
  *
  * @author harald
  */
@@ -43,9 +47,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   private static final Logger LOGGER = Logger.get(DefaultSessionInfo.class);
 
-
   private String userName;                      // name of the user
   private char[] password;                      // user's password
+  private String encryptedPassword;             // base64 encrypted password if a Cryptor is available
   private long userId;                          // the user id
   private int userClassId;                      // the user class id
   private String applicationName;               // an optional application name
@@ -224,7 +228,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @return the username
    */
   @Override
-  public String getUserName ()  {
+  public String getUserName()  {
     return userName;
   }
 
@@ -236,9 +240,17 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @param password the password
    */
   @Override
-  public void setPassword (char[] password)  {
+  public void setPassword(char[] password)  {
     assertMutable();
-    this.password = password;
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      encryptedPassword = password == null ? null : cryptor.encrypt64(password);
+      this.password = null;
+    }
+    else {
+      this.password = password;
+      this.encryptedPassword = null;
+    }
   }
 
 
@@ -251,13 +263,9 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * Sadly enough, the JDBC api requires passwords as strings :-(
    */
   @Override
-  public void clearPassword ()  {
-    if (password != null) {
-      for (int i=0; i < password.length; ++i) {
-        password[i] = 0;
-      }
-      password = null;
-    }
+  public void clearPassword() {
+    StringHelper.blank(password);
+    encryptedPassword = null;
   }
 
 
@@ -267,21 +275,11 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    * @return the password
    */
   @Override
-  public char[] getPassword ()  {
+  public char[] getPassword() {
+    if (encryptedPassword != null) {
+      return Cryptor.getInstance().decrypt64ToChars(encryptedPassword);
+    }
     return password;
-  }
-
-  /**
-   * Gets the password as a string.
-   * The password is stored as a character array.
-   * If the password is null the empty string will be returned
-   * bevaise some dbms drivers will nullp otherwise.
-   *
-   * @return the password, never null
-   */
-  @Override
-  public String getPasswordAsString ()  {
-    return password == null ? "" : new String(password);
   }
 
 

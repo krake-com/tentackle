@@ -97,13 +97,6 @@ public interface SessionInfo extends Immutable, Serializable {
   void clearPassword();
 
   /**
-   * Gets the password as a string.
-   *
-   * @return the password, never null
-   */
-  String getPasswordAsString();
-
-  /**
    * Gets the epochal time since when logged in.
    *
    * @return logged in since, null if not logged in

@@ -130,7 +130,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
     }
 
     if (totalErrors > 0) {
-      throw new MojoFailureException(totalErrors + " wurbel errors");
+      throw new MojoFailureException(totalErrors + " beaninfo errors");
     }
   }
 

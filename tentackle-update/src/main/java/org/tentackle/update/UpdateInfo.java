@@ -18,7 +18,11 @@
 
 package org.tentackle.update;
 
+import org.tentackle.common.Cryptor;
+import org.tentackle.common.TentackleRuntimeException;
+
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -28,14 +32,17 @@ public class UpdateInfo implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
+  // transfer as strings because it may be encrypted
   private final String version;
-  private final URL url;
+  private final String url;
   private final String shaHash;
-  private final long size;
+  private final String size;
   private final String updateExecutor;
+  private final boolean encrypted;
 
   /**
-   * Creates the update info.
+   * Creates the update info.<br>
+   * The internal state is encrypted if a {@link Cryptor} is configured.
    *
    * @param version the new application version
    * @param url the URL of the ZIP file the client must download
@@ -44,11 +51,23 @@ public class UpdateInfo implements Serializable {
    * @param updateExecutor the filename to execute to perform the update
    */
   public UpdateInfo(String version, URL url, String shaHash, long size, String updateExecutor) {
-    this.version = version;
-    this.url = url;
-    this.shaHash = shaHash;
-    this.size = size;
-    this.updateExecutor = updateExecutor;
+    Cryptor cryptor = Cryptor.getInstance();
+    if (cryptor != null) {
+      this.version = cryptor.encrypt64(version);
+      this.url = cryptor.encrypt64(url.toExternalForm());
+      this.shaHash = cryptor.encrypt64(shaHash);
+      this.size = cryptor.encrypt64(Long.toString(size));
+      this.updateExecutor = cryptor.encrypt64(updateExecutor);
+      encrypted = true;
+    }
+    else {
+      this.version = version;
+      this.url = url.toExternalForm();
+      this.shaHash = shaHash;
+      this.size = Long.toString(size);
+      this.updateExecutor = updateExecutor;
+      encrypted = false;
+    }
   }
 
   /**
@@ -58,7 +77,7 @@ public class UpdateInfo implements Serializable {
    * @return the new version
    */
   public String getVersion() {
-    return version;
+    return encrypted ? Cryptor.getInstance().decrypt64(version) : version;
   }
 
   /**
@@ -67,7 +86,12 @@ public class UpdateInfo implements Serializable {
    * @return the URL pointing to the ZIP file, usually via http or https
    */
   public URL getUrl() {
-    return url;
+    try {
+      return new URL(encrypted ? Cryptor.getInstance().decrypt64(url) : url);
+    }
+    catch (MalformedURLException mx) {
+      throw new TentackleRuntimeException(mx);
+    }
   }
 
   /**
@@ -76,7 +100,7 @@ public class UpdateInfo implements Serializable {
    * @return the hash
    */
   public String getShaHash() {
-    return shaHash;
+    return encrypted ? Cryptor.getInstance().decrypt64(shaHash) : shaHash;
   }
 
   /**
@@ -85,7 +109,7 @@ public class UpdateInfo implements Serializable {
    * @return the size
    */
   public long getSize() {
-    return size;
+    return Long.valueOf(encrypted ? Cryptor.getInstance().decrypt64(size) : size);
   }
 
   /**
@@ -94,17 +118,17 @@ public class UpdateInfo implements Serializable {
    * @return the updater, usually {@code "update.sh"} or {@code "update.cmd"}, depending on the platform
    */
   public String getUpdateExecutor() {
-    return updateExecutor;
+    return encrypted ? Cryptor.getInstance().decrypt64(updateExecutor) : updateExecutor;
   }
 
   @Override
   public String toString() {
     return "UpdateInfo{" +
-           "version='" + version + '\'' +
-           ", url=" + url +
-           ", shaHash='" + shaHash + '\'' +
-           ", size=" + size +
-           ", updateExecutor='" + updateExecutor + '\'' +
+           "version='" + getVersion() + '\'' +
+           ", url=" + getUrl() +
+           ", shaHash='" + getShaHash() + '\'' +
+           ", size=" + getSize() +
+           ", updateExecutor='" + getUpdateExecutor() + '\'' +
            '}';
   }
 }
