@@ -32,6 +32,7 @@ import javafx.stage.WindowEvent;
 import org.tentackle.app.AbstractClientApplication;
 import org.tentackle.common.InterruptedRuntimeException;
 import org.tentackle.common.StringHelper;
+import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.FxController;
 import org.tentackle.fx.FxFactory;
@@ -215,8 +216,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                 configure();
               }
               catch (RuntimeException ex) {
-                LOGGER.severe("configure application failed", ex);
-                return null;
+                throw new TentackleRuntimeException("configure application failed", ex);
               }
 
               showApplicationStatus(AppFxRdcBundle.getString("LOADING GUI..."), 0.5);
@@ -239,7 +239,7 @@ public abstract class DesktopApplication<C extends FxController> extends Abstrac
                       view.getScene().getWindow().hide();
                     }
                     catch (RuntimeException ex) {
-                      LOGGER.severe("finish startup failed", ex);
+                      throw new TentackleRuntimeException("finish startup failed", ex);
                     }
                   });
                   stage.show();
