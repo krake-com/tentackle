@@ -44,6 +44,35 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>properties</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <verbosity>info</verbosity>
+          <propertyDescriptors>
+            <propertyDescriptor>
+              <input>${dbPasswd}</input>
+              <converter>@org.tentackle.common.Cryptor</converter>
+              <property>encryptedPasswd</property>
+            </propertyDescriptor>
+          </propertyDescriptors>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>${groupId}</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>keytool-maven-plugin</artifactId>
         <executions>
