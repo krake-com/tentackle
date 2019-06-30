@@ -24,6 +24,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.PasswordField;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.fx.CaseConversion;
 import org.tentackle.fx.FxContainer;
@@ -81,9 +82,13 @@ public class FxPasswordField extends PasswordField implements FxTextComponent {
    */
   public void setPassword(char[] password) {
     StringBuilder buf = getCharacterBuffer();
-    buf.setLength(0);
     if (password != null) {
+      setText(StringHelper.fillRight("", password.length, ' '));    // fake length
+      buf.setLength(0);
       buf.append(password);
+    }
+    else {
+      setText(null);
     }
   }
 
