@@ -114,7 +114,7 @@ public class Login extends AbstractFxController {
   public void setSessionInfo(SessionInfo sessionInfo) {
     this.sessionInfo = sessionInfo;
     usernameField.setText(sessionInfo.getUserName());
-    passwordField.setText(sessionInfo.getPasswordAsString());
+    passwordField.setText(sessionInfo.getPassword() == null ? null : new String(sessionInfo.getPassword()));
   }
 
 

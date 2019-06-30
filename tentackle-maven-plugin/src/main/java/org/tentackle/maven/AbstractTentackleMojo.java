@@ -19,19 +19,21 @@
 
 package org.tentackle.maven;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
-import org.tentackle.common.Settings;
 import org.wurbelizer.misc.Verbosity;
+
+import org.tentackle.common.Settings;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -59,7 +61,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
   /**
    * The verbosity.<br>
    * One of "default", "info" or "debug".
-   * Debus is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
+   * Debug is also turned on (if not set explicitly) by Maven's global debug flag (see command line switch <code>-X</code>).
    */
   @Parameter(defaultValue = "${tentackle.verbosity}")
   protected String verbosity;
@@ -81,6 +83,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   protected List<String> resourceDirs;
 
+
+  /**
+   * Gets the maven project.
+   *
+   * @return the project, never null
+   */
+  public MavenProject getMavenProject() {
+    return mavenProject;
+  }
 
   /**
    * Determines the encode charset.

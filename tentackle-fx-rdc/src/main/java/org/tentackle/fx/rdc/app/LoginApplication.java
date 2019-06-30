@@ -19,20 +19,22 @@
 
 package org.tentackle.fx.rdc.app;
 
-import java.util.Properties;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
 import org.tentackle.app.AbstractApplication;
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.Fx;
 import org.tentackle.fx.rdc.login.Login;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.misc.ApplicationException;
-import org.tentackle.common.StringHelper;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.SessionInfo;
+
+import java.util.Properties;
 
 /**
  * The doLogin FX application.
@@ -120,7 +122,7 @@ public class LoginApplication extends FxApplication {
     }
     if (password == null) {   // if not overridden by command line
       sessionInfo.setPassword(StringHelper.toCharArray(
-              props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPasswordAsString())));
+              props.getProperty(Constants.BACKEND_PASSWORD, sessionInfo.getPassword() == null ? "" : new String(sessionInfo.getPassword()))));
     }
 
     if (sessionInfo.getApplicationName() == null) {

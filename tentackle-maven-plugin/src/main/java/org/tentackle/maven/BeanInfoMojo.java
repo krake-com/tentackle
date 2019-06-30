@@ -19,11 +19,6 @@
 
 package org.tentackle.maven;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -33,6 +28,12 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 import org.wurbelizer.misc.Constants;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * A mojo to find all BeanInfo-files and create a manifest from.
@@ -123,7 +124,7 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
     }
 
     if (totalErrors > 0) {
-      throw new MojoFailureException(totalErrors + " wurbel errors");
+      throw new MojoFailureException(totalErrors + " beaninfo errors");
     }
   }
 

@@ -19,11 +19,12 @@
 
 package org.tentackle.session;
 
+import org.tentackle.misc.Immutable;
+
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.TimeZone;
-import org.tentackle.misc.Immutable;
 
 /**
  * Session information.
@@ -94,13 +95,6 @@ public interface SessionInfo extends Immutable {
    * element in the character array.
    */
   void clearPassword();
-
-  /**
-   * Gets the password as a string.
-   *
-   * @return the password, never null
-   */
-  String getPasswordAsString();
 
   /**
    * Gets the epochal time since when logged in.

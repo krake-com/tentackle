@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -1381,6 +1382,29 @@ public final class StringHelper {
     return str == null ? null : str.toCharArray();
   }
 
+  /**
+   * Null-safe char array filler.
+   *
+   * @param buf the char buffer, may be null
+   * @param val the value to fill
+   * @see Arrays#fill(char[], char)
+   */
+  public static void fill(char[] buf, char val) {
+    if (buf != null) {
+      Arrays.fill(buf, val);
+    }
+  }
+
+  /**
+   * Null-safe char array filler.<br>
+   * Fills with blanks.
+   *
+   * @param buf the char buff, may be null
+   * @see #fill(char[], char)
+   */
+  public static void blank(char[] buf) {
+    fill(buf,' ');
+  }
 
 
   /**

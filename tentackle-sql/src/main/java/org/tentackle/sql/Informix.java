@@ -78,7 +78,7 @@ public class Informix extends AbstractSql92Backend {
     return DriverManager.getConnection (
                 url +
                 ";user=" + username +
-                ";password=" + (password == null ? "" : new String(password)));
+                ";password=" + createPassword(password));
   }
 
   @Override
