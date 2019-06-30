@@ -19,6 +19,7 @@
 
 package org.tentackle.sql;
 
+import org.tentackle.common.Cryptor;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.metadata.ColumnMetaData;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
@@ -112,7 +113,37 @@ public abstract class AbstractBackend implements Backend {
     catch (ClassNotFoundException e) {
       // no logger available, will fail below anyway...
     }
-    return DriverManager.getConnection (url, username, (password == null ? "" : new String(password)));
+
+    return DriverManager.getConnection(url, username, createPassword(password));
+  }
+
+  /**
+   * Creates a password string from a password char array.<br>
+   * Unfortunately, {@link DriverManager#getConnection(String, String, String)} requires the password as a string.
+   * This method creates a string from a char array and optionally decrypts it.
+   * Encrypted passwords are detected by a leading {@code ~}. If an unencrypted password must begin
+   * with a {@code ~}, a double {@code ~~} must be used.
+   *
+   * @param password the probably encrypted password
+   * @return the cleartext password
+   */
+  protected String createPassword(char[] password) {
+    String pw;
+    if (password != null) {
+      // encrypted passwords start with a ~.
+      // if a non-encrypted password must start with ~, ~~ must be used
+      if (password.length > 1 && password[0] == '~' && password[1] != '~') {
+        // password is encrypted
+        pw = Cryptor.getInstance().decrypt64(new String(password, 1, password.length - 1));
+      }
+      else {
+        pw = new String(password);
+      }
+    }
+    else {
+      pw = "";
+    }
+    return pw;
   }
 
   @Override

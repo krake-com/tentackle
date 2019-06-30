@@ -22,8 +22,6 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Tests driver preferences config.
@@ -54,6 +52,7 @@ public class BackendDriverConfigurationTest {
     Assert.assertEquals(backends.size(), 2);
     backend = backends.iterator().next();
     Assert.assertEquals(backend.getDriver().getName(), DRIVER_NAME_2);
+    Assert.assertEquals(backend.getPassword(), "none");
 
     driver.remove(false);
   }

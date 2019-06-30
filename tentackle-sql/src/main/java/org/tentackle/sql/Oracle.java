@@ -180,7 +180,7 @@ public class Oracle extends AbstractSql2003Backend {
     Properties props = new Properties();
     props.put("user", username);
     if (password != null) {
-      props.put("password", new String(password));
+      props.put("password", createPassword(password));
     }
     props.put("remarksReporting","true");   // for migator
 
