@@ -18,6 +18,35 @@
 
 package org.tentackle.fx.rdc.table;
 
+import javafx.print.PrinterJob;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFDataFormat;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFRichTextString;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import org.tentackle.common.BMoney;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.fx.Fx;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.bind.FxTableBinding;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.rdc.RdcFxRdcBundle;
+import org.tentackle.fx.table.TableColumnConfiguration;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,32 +57,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import javafx.print.PrinterJob;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFDataFormat;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFRichTextString;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.tentackle.common.BMoney;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.fx.Fx;
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.bind.FxTableBinding;
-import org.tentackle.fx.component.FxTableView;
-import org.tentackle.fx.table.TableColumnConfiguration;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 interface TableUtilities$Singleton {
   TableUtilities INSTANCE = ServiceFactory.createService(TableUtilities.class);
@@ -258,9 +261,14 @@ public class TableUtilities {
    * @param title the optional title, null if take from table's configuration
    */
   public void print(FxTableView<?> table, String title) {
-    final PrinterJob job = PrinterJob.createPrinterJob();
-    if (job != null && job.showPrintDialog(Fx.getStage(table))) {
-      TablePrinter.print(table, title, job);
+    PrinterJob job = PrinterJob.createPrinterJob();
+    if (job != null) {
+      if (job.showPrintDialog(Fx.getStage(table))) {
+        TablePrinter.print(table, title, job);
+      }
+    }
+    else {
+      Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
   }
 
