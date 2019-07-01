@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.5.1-SNAPSHOT</version>
+    <version>8.2.6.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>tentackle-swing-substance</artifactId>
-  <version>8.2.5.1-SNAPSHOT</version>
+  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Swing Substance Look And Feel</name>
   <description>Substance Look And Feel extended for Tentackle-Swing</description>
