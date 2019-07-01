@@ -382,7 +382,7 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    *
    * @param path the path to the resource file
    * @return the contents
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if no such resource
    */
   public String loadResourceFileIntoString(String path) throws MojoExecutionException {
     InputStream inputStream = getClass().getResourceAsStream(path);

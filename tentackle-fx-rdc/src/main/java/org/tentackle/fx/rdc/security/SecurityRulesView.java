@@ -87,9 +87,7 @@ public class SecurityRulesView extends AbstractFxController implements DomainCon
     }
     Scene scene = new Scene(controller.getView());
     stage.setScene(scene);
-    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-      controller.cancel(e);
-    });
+    stage.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST, controller::cancel);
     stage.show();
   }
 

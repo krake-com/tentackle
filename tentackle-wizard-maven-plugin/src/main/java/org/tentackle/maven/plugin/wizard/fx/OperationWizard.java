@@ -131,23 +131,20 @@ public class OperationWizard extends AbstractFxController {
 
     generate.setOnAction(e -> {
 
-      Consumer<Boolean> generateIt = new Consumer<Boolean>() {
-        @Override
-        public void accept(Boolean ok) {
-          if (ok) {
-            try {
-              List<ValidationResult> results = gen.generate();
-              if (results.isEmpty()) {
-                Fx.info("files generated!");
-                close();
-              }
-              else {
-                Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
-              }
+      Consumer<Boolean> generateIt = ok -> {
+        if (ok) {
+          try {
+            List<ValidationResult> results = gen.generate();
+            if (results.isEmpty()) {
+              Fx.info("files generated!");
+              close();
             }
-            catch (IOException | TemplateException ex) {
-              Fx.error("code generation failed", ex);
+            else {
+              Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
             }
+          }
+          catch (IOException | TemplateException ex) {
+            Fx.error("code generation failed", ex);
           }
         }
       };

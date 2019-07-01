@@ -672,12 +672,12 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
       catch (Throwable t) {
         if (!ExceptionHelper.handleException(
             true, t,
-            new ExceptionHelper.Handler<ReconnectedException>(ReconnectedException.class, rx -> {
+            new ExceptionHelper.Handler<>(ReconnectedException.class, rx -> {
               // reconnected: just log and start over.
               // requires Db.enableReconnection(true, >0) on the tracker's session
               LOGGER.warning("reconnection successful -> resuming normal operation ...", rx);
             }),
-            new ExceptionHelper.Handler<SessionClosedException>(SessionClosedException.class, sx -> {
+            new ExceptionHelper.Handler<>(SessionClosedException.class, sx -> {
               // if remote: session has been closed by the server (deadlock, timeout, whatever)
               // if local: database server has closed the session
               // reopen once and treat as if polling was ok
