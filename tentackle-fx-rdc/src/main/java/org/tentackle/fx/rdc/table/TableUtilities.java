@@ -262,7 +262,7 @@ public class TableUtilities {
    * @param title the optional title, null if take from table's configuration
    */
   public void print(FxTableView<?> table, String title) {
-    final PrinterJob job = PrinterJob.createPrinterJob();
+    PrinterJob job = PrinterJob.createPrinterJob();
     if (job != null) {
       if (job.showPrintDialog(Fx.getStage(table))) {
         TablePrinter.print(table, title, job);
