@@ -232,6 +232,20 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     return super.executeUpdate(null);
   }
 
+  /**
+   * Method must not be invoked on a {@link PreparedStatementWrapper}.
+   *
+   * @param sql must be null, any non-null results in a {@link PersistenceException}
+   * @return the row count
+   */
+  @Override
+  public int executeUpdate(String sql) {
+    if (sql != null) {
+      throw new PersistenceException(getSession(), "invocation not allowed for prepared statements");
+    }
+    return super.executeUpdate(sql);
+  }
+
 
   /**
    * {@inheritDoc}
