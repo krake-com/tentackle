@@ -69,6 +69,8 @@ public class PropertiesMojo extends AbstractTentackleMojo {
   @Override
   @SuppressWarnings("unchecked")
   public void execute() throws MojoExecutionException, MojoFailureException {
+    validate();
+
     if (propertyDescriptors != null) {
       for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
         String property = propertyDescriptor.getProperty();
