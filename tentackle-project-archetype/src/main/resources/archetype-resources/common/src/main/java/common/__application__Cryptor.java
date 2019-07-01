@@ -26,6 +26,8 @@ public class ${application}Cryptor extends Cryptor {
     return salt;
   }
 
+  // IMPORTANT: the passphrase should *NOT* be part of the application!
+  // get it from manual input, mounted USB-stick, whatever...
   private static char[] getPassphrase() {
     char[] passphrase = new char[10];
     passphrase[1] = 'i';
