@@ -38,21 +38,28 @@ import java.util.function.Function;
 
 /**
  * A simple en- and decryptor.<br>
- * Each application should provide a concrete instance with a confidential salt and passphase.
+ * Each application should provide a concrete instance with a confidential salt and passphase
+ * and a no-arg constructor. If provided, it is used to encrypt passwords in memory, transmission during client/server login,
+ * or decrypt passwords stored in backend.properties for database connections.
+ * <br>
  * Example:
  * <pre>
  *    &#64;Service(Cryptor.class)
  *    public class MyCryptor extends Cryptor {
  *
  *      public MyCryptor() {
- *        super("cage", "wave rod");
+ *        ...
  *      }
  *    }
  * </pre>
- * To enhance security, salt and passphrase should be computed as arrays and then passed to the constructor,
- * since strings can easily be extracted from the jars.<br>
+ *
  * Cryptor also implements a {@link Function}{@code <String,String>} to encrypt strings like passwords to base64
  * and thus can directly be used by the tentackle-maven-plugin to generate properties for filtered resources.
+ * <p>
+ * IMPORTANT: at least the passphrase should *NOT* be part of the application! If an attacker gets access to the
+ * jars, it's a no-brainer to write a small java program that happily decrypts all your data. Instead, provide the
+ * passphrase via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.<br>
+ * For a secure client/server communication, it's better to use TLS/SSL anyway.
  */
 public class Cryptor implements Function<String, String> {
 

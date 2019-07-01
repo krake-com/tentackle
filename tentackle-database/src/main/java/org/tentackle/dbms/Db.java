@@ -167,6 +167,9 @@ import java.util.function.Supplier;
  *  user=fixed-user
  *  password=fixed-password
  *  </pre>
+ *  If the password begins with a {@code ~} <em>and</em> the application provides a {@link org.tentackle.common.Cryptor},
+ *  the string following the {@code ~} is considered to be encrypted. If an unencrypted password must begin with a {@code ~},
+ *  use {@code ~~} instead.
  *  </li>
  *  <li>
  *  By default the credentials used to connect to the backend are the same as the ones in the session info.
