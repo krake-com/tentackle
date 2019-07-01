@@ -179,6 +179,12 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
   @Parameter
   protected boolean useDropIfExists;
 
+  /**
+   * Create a header comment.
+   */
+  @Parameter(defaultValue = "true")
+  protected boolean generateHeaderComment;
+
 
   /**
    * total number of errors.
@@ -576,21 +582,23 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    * @throws MojoExecutionException if writing to SQL file failed
    */
   protected void writeModelIntroComment(BackendInfo backendInfo, String modelDirName) throws MojoExecutionException {
-    try {
-      sqlWriter.append("\n-- created from ");
-      sqlWriter.append(getPathRelativeToBasedir(modelDirName));
-      sqlWriter.append(" at ");
-      sqlWriter.append(new Date().toString());
-      sqlWriter.append(" by ");
-      sqlWriter.append(System.getProperty("user.name"));
-      sqlWriter.append(" on ");
-      sqlWriter.append(getHostName());
-      sqlWriter.append("\n-- backend is ");
-      sqlWriter.append(backendInfo.toString());
-      sqlWriter.append('\n');
-    }
-    catch (IOException iox) {
-      throw new MojoExecutionException("cannot write to sql file " + sqlFile.getAbsolutePath(), iox);
+    if (generateHeaderComment) {
+      try {
+        sqlWriter.append("\n-- created from ");
+        sqlWriter.append(getPathRelativeToBasedir(modelDirName));
+        sqlWriter.append(" at ");
+        sqlWriter.append(new Date().toString());
+        sqlWriter.append(" by ");
+        sqlWriter.append(System.getProperty("user.name"));
+        sqlWriter.append(" on ");
+        sqlWriter.append(getHostName());
+        sqlWriter.append("\n-- backend is ");
+        sqlWriter.append(backendInfo.toString());
+        sqlWriter.append('\n');
+      }
+      catch (IOException iox) {
+        throw new MojoExecutionException("cannot write to sql file " + sqlFile.getAbsolutePath(), iox);
+      }
     }
   }
 

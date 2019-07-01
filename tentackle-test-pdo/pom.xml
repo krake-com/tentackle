@@ -91,6 +91,7 @@
         </executions>
         <configuration>
           <verbosity>info</verbosity>
+          <generateHeaderComment>false</generateHeaderComment>
           <backendNames>all</backendNames>
           <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
           <backends>
