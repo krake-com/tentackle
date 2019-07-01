@@ -636,13 +636,10 @@ public abstract class AbstractApplication implements SessionProvider, DomainCont
     PdoInvocationHandler.INVOKER.setCollectingStatistics(true);
     OperationInvocationHandler.INVOKER.setCollectingStatistics(true);
 
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
-        OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+      OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, true);
+    }));
   }
 
 

@@ -334,14 +334,11 @@ public abstract class AbstractServerApplication extends AbstractApplication
     ManagedConnection.setCollectingStatistics(true);
     ManagedConnection.setLogLevelForParallelOpenResultSets(Logger.Level.INFO);
 
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      @Override
-      public void run() {
-        LOGGER.warning("*** server killed ***");
-        PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
-        OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
-        StatementStatistics.log(LOGGER, Logger.Level.INFO, false);
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+      LOGGER.warning("*** server killed ***");
+      PdoInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
+      OperationInvocationHandler.INVOKER.logStatistics(Logger.Level.INFO, false);
+      StatementStatistics.log(LOGGER, Logger.Level.INFO, false);
+    }));
   }
 }

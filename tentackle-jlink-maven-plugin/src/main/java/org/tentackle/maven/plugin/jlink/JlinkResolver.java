@@ -345,7 +345,7 @@ public class JlinkResolver {
    * Resolves the maven artifacts for passing to jlink.
    *
    * @return the resolver result
-   * @throws MojoExecutionException
+   * @throws MojoExecutionException if loading artifacts failed
    */
   public Result resolve() throws MojoExecutionException {
 
