@@ -635,7 +635,7 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
   @Override
   public void invalidate() {
     @SuppressWarnings("serial")
-    Task task = new AbstractSessionTask() {
+    AbstractSessionTask task = new AbstractSessionTask() {
       @Override
       public void run() {
         countersByName.clear();
@@ -643,12 +643,13 @@ public class DbModificationTracker extends DefaultSessionTaskDispatcher implemen
         if (masterEntry != null) {
           masterEntry.serial = 1;
         }
-        DbModification.initializeModificationTable(DbModificationTracker.this.getSession());
+        DbModification.initializeModificationTable((Db) getSession());
         refreshTableEntries();
       }
     };
 
     if (isTaskDispatcherThread() || !isAlive()) {
+      task.setSession(getSession());
       task.run();
     }
     else  {

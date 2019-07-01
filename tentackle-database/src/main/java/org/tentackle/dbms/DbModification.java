@@ -76,12 +76,14 @@ public class DbModification extends AbstractDbObject<DbModification> {
     LOGGER.info("initializing modification table");
     long txVoucher = db.begin("initialize");
     try {
-      db.createStatement().executeUpdate(Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.tableName);
-
-      db.createStatement().executeUpdate(Backend.SQL_INSERT_INTO + CLASSVARIABLES.tableName + Backend.SQL_LEFT_PARENTHESIS +
-                                         CN_ID + Backend.SQL_COMMA + AbstractDbObject.CN_SERIAL +
-                                         Backend.SQL_INSERT_VALUES + "0,1)");
-
+      try (StatementWrapper st = db.createStatement()) {    // non-prepared statements can only be used once!
+        st.executeUpdate(Backend.SQL_DELETE + Backend.SQL_FROM + CLASSVARIABLES.tableName);
+      }
+      try (StatementWrapper st = db.createStatement()) {
+        st.executeUpdate(Backend.SQL_INSERT_INTO + CLASSVARIABLES.tableName + Backend.SQL_LEFT_PARENTHESIS +
+                         CN_ID + Backend.SQL_COMMA + AbstractDbObject.CN_SERIAL +
+                         Backend.SQL_INSERT_VALUES + "0,1)");
+      }
       db.commit(txVoucher);
     }
     catch (RuntimeException ex) {
