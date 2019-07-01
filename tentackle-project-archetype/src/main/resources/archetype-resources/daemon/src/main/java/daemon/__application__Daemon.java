@@ -20,7 +20,7 @@ import org.tentackle.session.SessionInfo;
 
 
 /**
- * A sample console application.
+ * Console application for ${application}.
  */
 @SuppressWarnings("unchecked")    // due to getUser below
 public class ${application}Daemon extends ConsoleApplication {
@@ -36,7 +36,7 @@ public class ${application}Daemon extends ConsoleApplication {
    * Creates the server.
    */
   public ${application}Daemon() {
-    super("SAMPLE-DAEMON", Version.RELEASE);
+    super("${application}Daemon", Version.RELEASE);
   }
 
   @Override

@@ -17,8 +17,8 @@ import org.tentackle.fx.ImageProviderService;
 public class ${application}ImageProvider extends DefaultImageProvider {
 
   /**
-   * The sample application's image realm.
+   * The application's image realm.
    */
-  public static final String REALM = "sample";
+  public static final String REALM = "${application}";
 
 }

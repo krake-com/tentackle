@@ -19,7 +19,7 @@ interface ${application}PreferencesHolder {
 }
 
 /**
- * Preferences for the sample application.
+ * Preferences for ${application}.
  */
 @Service(${application}Preferences.class)    // defaults to self
 public class ${application}Preferences extends CompositePreferences {

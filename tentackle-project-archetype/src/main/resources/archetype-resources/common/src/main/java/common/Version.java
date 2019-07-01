@@ -41,7 +41,7 @@ public class Version {
    * @param args command line args (ignored)
    */
   public static void main(String[] args) {
-    System.out.println("Sample Tentackle Application Version " + RELEASE + " (" + DATE + ")");
+    System.out.println("${application} Version " + RELEASE + " (" + DATE + ")");
   }
 
   private Version() {
