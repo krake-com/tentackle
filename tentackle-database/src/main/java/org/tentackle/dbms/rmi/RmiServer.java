@@ -417,7 +417,7 @@ public class RmiServer {
         port++;
       }
       else if (loginPort != 0 && loginPort == port) {
-        new TentackleRuntimeException("ports=... misconfigured: login port is the same as the delegates port, but socket factories differ");
+        throw new TentackleRuntimeException("ports=... misconfigured: login port is the same as the delegates port, but socket factories differ");
       }
     }
   }
