@@ -263,8 +263,13 @@ public class TableUtilities {
    */
   public void print(FxTableView<?> table, String title) {
     final PrinterJob job = PrinterJob.createPrinterJob();
-    if (job != null && job.showPrintDialog(Fx.getStage(table))) {
-      TablePrinter.print(table, title, job);
+    if (job != null) {
+      if (job.showPrintDialog(Fx.getStage(table))) {
+        TablePrinter.print(table, title, job);
+      }
+    }
+    else {
+      Fx.error(RdcFxRdcBundle.getString("NO PRINTERS FOUND"));
     }
   }
 

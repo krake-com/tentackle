@@ -58,6 +58,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A controller to print a table.
@@ -130,12 +131,12 @@ public class TablePrinter extends AbstractFxController {
   private FxLabel pageLabel;
 
 
-  private int pageCount;                            // number of pages
-  private Duration jobDuration;                     // for logging only
-  private int rowCount;                             // number of rows to print (incl. totals)
-  private int totalsRowCount;                       // number of total rows, 0 = none
-  private volatile int rowOffset;                   // offset in model
-  private volatile boolean terminationRequested;    // true if user closed the printing dialog
+  private int pageCount;                                    // number of pages
+  private Duration jobDuration;                             // for logging only
+  private int rowCount;                                     // number of rows to print (incl. totals)
+  private int totalsRowCount;                               // number of total rows, 0 = none
+  private AtomicInteger rowOffset = new AtomicInteger();    // offset in model
+  private volatile boolean terminationRequested;            // true if user closed the printing dialog
 
 
   /**
@@ -182,7 +183,7 @@ public class TablePrinter extends AbstractFxController {
         cell = new FxTableCell<>(columnConfig) {
           @Override
           protected void updateItem(T item, boolean empty) {
-            int index = rowOffset + getIndex();
+            int index = rowOffset.get() + getIndex();
             if (index >= rowCount - totalsRowCount) {
               if (columnConfig.isSummable() && index < rowCount) {
                 if (!getStyleClass().contains(STYLE_TOTALS)) {
@@ -340,11 +341,11 @@ public class TablePrinter extends AbstractFxController {
       // calculate the page contents and number of pages
       List<PageInfo> pages = new ArrayList<>();
       int size  = items.size();
-      rowOffset = 0;
-      while (rowOffset < size && !terminationRequested) {
+      rowOffset.set(0);
+      while (rowOffset.get() < size && !terminationRequested) {
         FxUtilities.getInstance().runAndWait(() -> {
           // apply remaining items (works with varying row heights)
-          tableView.setItems(FXCollections.observableList(items.subList(rowOffset, size)));
+          tableView.setItems(FXCollections.observableList(items.subList(rowOffset.get(), size)));
           getView().layout();   // this does the trick to make getVisibleRowCount below work!
         });
         FxUtilities.getInstance().runAndWait(() -> setPrintableRows(getVisibleRowCount()));
@@ -357,10 +358,10 @@ public class TablePrinter extends AbstractFxController {
           });
           return;
         }
-        PageInfo page = new PageInfo(rowOffset, printableRows);
+        PageInfo page = new PageInfo(rowOffset.get(), printableRows);
         pages.add(page);
         Platform.runLater(() -> stage.setTitle(MessageFormat.format(resources.getString("preparing page {0}"), pages.size())));
-        rowOffset += printableRows;
+        rowOffset.addAndGet(printableRows);
         LOGGER.fine("page {0}: {1}", pages.size(), page);
         getSession().setAlive(true);
       }
@@ -379,8 +380,8 @@ public class TablePrinter extends AbstractFxController {
           else {
             int pageNo = 1;
             for (PageInfo page : pages) {
-              rowOffset = page.rowStart;
-              tableView.setItems(FXCollections.observableList(items.subList(rowOffset, rowOffset + page.rowCount)));
+              rowOffset.set(page.rowStart);
+              tableView.setItems(FXCollections.observableList(items.subList(page.rowStart, page.rowStart + page.rowCount)));
               tableView.getSelectionModel().clearSelection();
               stage.setTitle(MessageFormat.format(resources.getString("printing page {0}/{1}"),
                                                   pageNo, pages.size()));
