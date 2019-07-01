@@ -13,9 +13,9 @@ package ${package}.common;
 public class Constants {
 
   /**
-   * Number pool realm of the sample application.
+   * Number pool realm of ${application}.
    */
-  public static final String POOL_REALM = "SAMPLE";
+  public static final String POOL_REALM = "${application}";
 
   private Constants() {}
 }

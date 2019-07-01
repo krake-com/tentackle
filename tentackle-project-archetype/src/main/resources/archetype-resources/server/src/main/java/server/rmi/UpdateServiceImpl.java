@@ -67,7 +67,7 @@ public class UpdateServiceImpl extends AbstractUpdateServiceImpl {
   }
 
   private String getBaseUrlName(ClientInfo clientInfo) {
-    return getUpdateURL() + "sample-jlink-client-" + Version.RELEASE +
+    return getUpdateURL() + "jlink-client-" + Version.RELEASE +
            "-" + clientInfo.getPlatform() + "-" + clientInfo.getArchitecture();
   }
 }

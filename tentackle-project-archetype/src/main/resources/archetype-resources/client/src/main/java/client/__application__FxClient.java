@@ -49,7 +49,7 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
   public void configureMainStage(Stage mainStage) {
     showApplicationStatus(GuiBundle.getString("initialize GUI..."), 0.9);
     super.configureMainStage(mainStage);
-    mainStage.setTitle("Sample Tentackle Application");
+    mainStage.setTitle("${application}");
     mainStage.setOnCloseRequest((WindowEvent ev) -> {
       ev.consume();
       getMainController().exit();

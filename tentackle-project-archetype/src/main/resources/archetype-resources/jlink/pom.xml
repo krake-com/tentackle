@@ -37,7 +37,7 @@
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
-    <cert.dname>cn=${application}Server, ou=Sample, o=Example, c=US</cert.dname>
+    <cert.dname>cn=${application}Server, ou=${application}, o=Example, c=US</cert.dname>
     <cert.password>didoedeldu</cert.password>
     <cert.dir>${symbol_dollar}{project.build.directory}/jks</cert.dir>
     <cert.file>${symbol_dollar}{project.parent.basedir}/target/server.cer</cert.file>
