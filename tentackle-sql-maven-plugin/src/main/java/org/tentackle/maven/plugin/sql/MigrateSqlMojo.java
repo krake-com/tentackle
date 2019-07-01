@@ -187,11 +187,13 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
     boolean migrationNecessary = false;
 
     try {
-      sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema()));
-      sqlWriter.append("-- entities in model: processed=")
-               .append(Integer.toString(processedEntites))
-               .append(", skipped=")
-               .append(Integer.toString(skippedEntites)).append("\n");
+      if (generateHeaderComment) {
+        sqlWriter.append(printTableStats(backendInfo.getBackend().getDefaultSchema()));
+        sqlWriter.append("-- entities in model: processed=")
+            .append(Integer.toString(processedEntites))
+            .append(", skipped=")
+            .append(Integer.toString(skippedEntites)).append("\n");
+      }
 
       if (!split) {
         String sql = backendMigrationHints.getAlwaysBefore();
@@ -219,7 +221,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         }
         migrationNecessary = true;
       }
-      else {
+      else if (generateHeaderComment) {
         sqlWriter.append("-- database meta data matches object model -> no migration necessary\n");
       }
 
