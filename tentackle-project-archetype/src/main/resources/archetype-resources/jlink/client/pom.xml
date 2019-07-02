@@ -21,7 +21,7 @@
 
   <artifactId>${rootArtifactId}-jlink-client</artifactId>
   <packaging>jlink</packaging>
-  <name>JLink Client Image</name>
+  <name>${application} JLink Client Image</name>
   <description>Client JLink Module for ${application}</description>
 
   <properties>

@@ -15,101 +15,57 @@
         <include>**/*.txt</include>
       </includes>
     </fileSet>
-    <fileSet encoding="UTF-8">
+    <fileSet filtered="true" encoding="UTF-8">
       <directory>src/main/migrate</directory>
       <includes>
         <include>**/*.sql</include>
       </includes>
     </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>jlink/client</directory>
-      <includes>
-        <include>**/*.txt</include>
-        <include>**/*.xml</include>
-        <include>**/*.properties</include>
-      </includes>
-    </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>jlink/daemon</directory>
-      <includes>
-        <include>**/*.txt</include>
-        <include>**/*.xml</include>
-        <include>**/*.properties</include>
-      </includes>
-    </fileSet>
-    <fileSet filtered="true" encoding="UTF-8">
-      <directory>jlink/server</directory>
-      <includes>
-        <include>**/*.txt</include>
-        <include>**/*.xml</include>
-        <include>**/*.properties</include>
-      </includes>
-    </fileSet>
+
     <fileSet filtered="true" encoding="UTF-8">
       <directory>jlink</directory>
       <includes>
         <include>**/*.xml</include>
       </includes>
     </fileSet>
+
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory>jlink/client</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+      </includes>
+    </fileSet>
     <fileSet encoding="UTF-8">
       <directory>jlink/client</directory>
       <includes>
-        <include>**/*.</include>
-        <include>**/*.template</include>
-        <include>**/*.zip</include>
-        <include>**/*.cfg</include>
-        <include>**/*.h</include>
-        <include>**/*.certs</include>
-        <include>**/*.security</include>
-        <include>**/*.jks</include>
-        <include>**/*.sh</include>
-        <include>**/*.dat</include>
-        <include>**/*.md</include>
-        <include>**/*.ja</include>
-        <include>**/*.jar</include>
-        <include>**/*.so</include>
-        <include>**/*.policy</include>
         <include>**/*.ftl</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory>jlink/daemon</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
       </includes>
     </fileSet>
     <fileSet encoding="UTF-8">
       <directory>jlink/daemon</directory>
       <includes>
-        <include>**/*.</include>
-        <include>**/*.template</include>
-        <include>**/*.zip</include>
-        <include>**/*.cfg</include>
-        <include>**/*.h</include>
-        <include>**/*.certs</include>
-        <include>**/*.security</include>
-        <include>**/*.jks</include>
-        <include>**/*.sh</include>
-        <include>**/*.dat</include>
-        <include>**/*.md</include>
-        <include>**/*.jar</include>
-        <include>**/*.so</include>
-        <include>**/*.policy</include>
         <include>**/*.ftl</include>
+      </includes>
+    </fileSet>
+    <fileSet filtered="true" encoding="UTF-8">
+      <directory>jlink/server</directory>
+      <includes>
+        <include>**/*.xml</include>
+        <include>**/*.properties</include>
+        <include>**/*.sql</include>
       </includes>
     </fileSet>
     <fileSet encoding="UTF-8">
       <directory>jlink/server</directory>
       <includes>
-        <include>**/*.zip</include>
-        <include>**/*.</include>
-        <include>**/*.template</include>
-        <include>**/*.log</include>
-        <include>**/*.cfg</include>
-        <include>**/*.h</include>
-        <include>**/*.certs</include>
-        <include>**/*.security</include>
-        <include>**/*.jks</include>
-        <include>**/*.sh</include>
-        <include>**/*.dat</include>
-        <include>**/*.md</include>
-        <include>**/*.jar</include>
-        <include>**/*.so</include>
-        <include>**/*.policy</include>
         <include>**/*.ftl</include>
       </includes>
     </fileSet>

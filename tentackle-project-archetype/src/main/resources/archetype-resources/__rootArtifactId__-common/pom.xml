@@ -49,7 +49,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>${package}.${artifactId}.Version</mainClass>
+              <mainClass>${package}.common.Version</mainClass>
             </manifest>
           </archive>
         </configuration>

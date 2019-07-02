@@ -94,6 +94,7 @@
           <generateHeaderComment>false</generateHeaderComment>
           <backendNames>all</backendNames>
           <sqlDir>${project.build.directory}/generated-resources/sql</sqlDir>
+          <sqlFileName>createttmodel.sql</sqlFileName>
           <backends>
             <!-- for migration only -->
             <backend>
@@ -102,6 +103,14 @@
               <password>${dbPasswd}</password>
             </backend>
           </backends>
+          <prependFilesets>
+            <prependFileset>
+              <directory>${project.basedir}/src/sql</directory>
+              <includes>
+                <include>*.sql</include>
+              </includes>
+            </prependFileset>
+          </prependFilesets>
         </configuration>
         <dependencies>
           <dependency>
