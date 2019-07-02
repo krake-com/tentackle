@@ -23,7 +23,7 @@
   <dependencies>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>pdo</artifactId>
+      <artifactId>${rootArtifactId}-pdo</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
 

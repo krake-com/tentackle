@@ -14,14 +14,14 @@
   <description>Parent Project for ${application}</description>
 
   <modules>
-    <module>common</module>
-    <module>pdo</module>
-    <module>domain</module>
-    <module>persistence</module>
-    <module>gui</module>
-    <module>client</module>
-    <module>server</module>
-    <module>daemon</module>
+    <module>${rootArtifactId}-common</module>
+    <module>${rootArtifactId}-pdo</module>
+    <module>${rootArtifactId}-domain</module>
+    <module>${rootArtifactId}-persistence</module>
+    <module>${rootArtifactId}-gui</module>
+    <module>${rootArtifactId}-client</module>
+    <module>${rootArtifactId}-server</module>
+    <module>${rootArtifactId}-daemon</module>
     <!-- jlink images are built with profile "jlink" only, see jlink/pom.xml -->
     <module>jlink</module>
   </modules>

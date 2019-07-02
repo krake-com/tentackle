@@ -19,7 +19,7 @@
     <version>${version}</version>
   </parent>
 
-  <artifactId>jlink-client</artifactId>
+  <artifactId>${rootArtifactId}-jlink-client</artifactId>
   <packaging>jlink</packaging>
   <name>JLink Client Image</name>
   <description>Client JLink Module for ${application}</description>
@@ -31,7 +31,7 @@
   <dependencies>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>client</artifactId>
+      <artifactId>${rootArtifactId}-client</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
   </dependencies>

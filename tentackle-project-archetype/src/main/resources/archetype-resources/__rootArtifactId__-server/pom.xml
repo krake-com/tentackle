@@ -13,28 +13,30 @@
 
   <artifactId>${artifactId}</artifactId>
   <packaging>jar</packaging>
-  <name>${application} Daemon</name>
-  <description>Daemon Console Application for ${application}</description>
+  <name>${application} Server</name>
+  <description>Middle Tier Server for ${application}</description>
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
-    <timestamp>${symbol_dollar}{maven.build.timestamp}</timestamp>
-    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
   </properties>
 
   <dependencies>
 
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>persistence</artifactId>
+      <artifactId>${rootArtifactId}-persistence</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>domain</artifactId>
+      <artifactId>${rootArtifactId}-domain</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-update</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-script-groovy</artifactId>
@@ -48,6 +50,21 @@
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
+    </dependency>
+
+    <!-- tests only -->
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-test-pdo</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
     </dependency>
 
   </dependencies>
@@ -65,9 +82,9 @@
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Application-Name>${application} Daemon</Application-Name>
+              <Application-Name>Application Server</Application-Name>
               <Permissions>all-permissions</Permissions>
-              <mainClass>${package}.daemon.${application}Daemon</mainClass>
+              <mainClass>${package}.server.${application}Server</mainClass>
             </manifestEntries>
           </archive>
         </configuration>
@@ -77,7 +94,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <configuration>
-          <mainClass>${package}.daemon.${application}Daemon</mainClass>
+          <mainClass>${package}.server.${application}Server</mainClass>
           <arguments>
             <argument>--statistics</argument>
           </arguments>
@@ -85,5 +102,24 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!-- profile to initialize the CI database -->
+      <id>ci-init</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <suiteXmlFiles>
+                <suiteXmlFile>src/test/resources/ci-init-testng.xml</suiteXmlFile>
+              </suiteXmlFiles>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

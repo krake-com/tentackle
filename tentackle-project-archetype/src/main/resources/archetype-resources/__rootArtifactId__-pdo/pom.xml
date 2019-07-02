@@ -13,24 +13,35 @@
 
   <artifactId>${artifactId}</artifactId>
   <packaging>jar</packaging>
-  <name>${application} Persistence</name>
-  <description>Persistence Layer for ${application}</description>
+  <name>${application} PDO</name>
+  <description>PDO Layer for ${pplication}</description>
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
   </properties>
 
   <dependencies>
+
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>pdo</artifactId>
+      <artifactId>${rootArtifactId}-common</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
 
+    <!-- tests only -->
     <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-persistence</artifactId>
+      <groupId>org.reflections</groupId>
+      <artifactId>reflections</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

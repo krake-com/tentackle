@@ -13,39 +13,28 @@
 
   <artifactId>${artifactId}</artifactId>
   <packaging>jar</packaging>
-  <name>${application} FX Client</name>
-  <description>FX Rich Desktop Client for ${application}</description>
+  <name>${application} Daemon</name>
+  <description>Daemon Console Application for ${application}</description>
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
+    <timestamp>${symbol_dollar}{maven.build.timestamp}</timestamp>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
   </properties>
 
   <dependencies>
 
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>gui</artifactId>
+      <artifactId>${rootArtifactId}-persistence</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>persistence</artifactId>
-      <version>${symbol_dollar}{project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${groupId}</groupId>
-      <artifactId>domain</artifactId>
+      <artifactId>${rootArtifactId}-domain</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-fx-rdc-update</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-fx-rdc-poi</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.tentackle</groupId>
       <artifactId>tentackle-script-groovy</artifactId>
@@ -60,6 +49,7 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
+
   </dependencies>
 
   <build>
@@ -75,9 +65,9 @@
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Application-Name>${application} FX Client</Application-Name>
+              <Application-Name>${application} Daemon</Application-Name>
               <Permissions>all-permissions</Permissions>
-              <mainClass>${package}.client.${application}FxClient</mainClass>
+              <mainClass>${package}.daemon.${application}Daemon</mainClass>
             </manifestEntries>
           </archive>
         </configuration>
@@ -87,7 +77,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <configuration>
-          <mainClass>${package}.client.${application}FxClient</mainClass>
+          <mainClass>${package}.daemon.${application}Daemon</mainClass>
           <arguments>
             <argument>--statistics</argument>
           </arguments>
