@@ -13,8 +13,8 @@
 
   <artifactId>${artifactId}</artifactId>
   <packaging>jar</packaging>
-  <name>${application} Server</name>
-  <description>Middle Tier Server for ${application}</description>
+  <name>${application} FX Client</name>
+  <description>FX Rich Desktop Client for ${application}</description>
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.parent.basedir}</rootBasedir>
@@ -24,18 +24,27 @@
 
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>persistence</artifactId>
+      <artifactId>${rootArtifactId}-gui</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>domain</artifactId>
+      <artifactId>${rootArtifactId}-persistence</artifactId>
+      <version>${symbol_dollar}{project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${groupId}</groupId>
+      <artifactId>${rootArtifactId}-domain</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-update</artifactId>
+      <artifactId>tentackle-fx-rdc-update</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.tentackle</groupId>
+      <artifactId>tentackle-fx-rdc-poi</artifactId>
     </dependency>
     <dependency>
       <groupId>org.tentackle</groupId>
@@ -51,22 +60,6 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
     </dependency>
-
-    <!-- tests only -->
-    <dependency>
-      <groupId>org.tentackle</groupId>
-      <artifactId>tentackle-test-pdo</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.reflections</groupId>
-      <artifactId>reflections</artifactId>
-    </dependency>
-
   </dependencies>
 
   <build>
@@ -82,9 +75,9 @@
               <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Application-Name>Application Server</Application-Name>
+              <Application-Name>${application} FX Client</Application-Name>
               <Permissions>all-permissions</Permissions>
-              <mainClass>${package}.server.${application}Server</mainClass>
+              <mainClass>${package}.client.${application}FxClient</mainClass>
             </manifestEntries>
           </archive>
         </configuration>
@@ -94,7 +87,7 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <configuration>
-          <mainClass>${package}.server.${application}Server</mainClass>
+          <mainClass>${package}.client.${application}FxClient</mainClass>
           <arguments>
             <argument>--statistics</argument>
           </arguments>
@@ -102,24 +95,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <!-- profile to initialize the CI database -->
-      <id>ci-init</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <suiteXmlFiles>
-                <suiteXmlFile>src/test/resources/ci-init-testng.xml</suiteXmlFile>
-              </suiteXmlFiles>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>

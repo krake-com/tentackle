@@ -114,8 +114,9 @@
       </includes>
     </fileSet>
   </fileSets>
+
   <modules>
-    <module id="common" dir="common" name="common">
+    <module id="${rootArtifactId}-common" dir="__rootArtifactId__-common" name="${rootArtifactId}-common">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -146,7 +147,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="pdo" dir="pdo" name="pdo">
+    <module id="${rootArtifactId}-pdo" dir="__rootArtifactId__-pdo" name="${rootArtifactId}-pdo">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -177,7 +178,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="domain" dir="domain" name="domain">
+    <module id="${rootArtifactId}-domain" dir="__rootArtifactId__-domain" name="${rootArtifactId}-domain">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -202,7 +203,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="persistence" dir="persistence" name="persistence">
+    <module id="${rootArtifactId}-persistence" dir="__rootArtifactId__-persistence" name="${rootArtifactId}-persistence">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -227,7 +228,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="gui" dir="gui" name="gui">
+    <module id="${rootArtifactId}-gui" dir="__rootArtifactId__-gui" name="${rootArtifactId}-gui">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -285,7 +286,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="client" dir="client" name="client">
+    <module id="${rootArtifactId}-client" dir="__rootArtifactId__-client" name="${rootArtifactId}-client">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -322,7 +323,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="server" dir="server" name="server">
+    <module id="${rootArtifactId}-server" dir="__rootArtifactId__-server" name="${rootArtifactId}-server">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>
@@ -365,7 +366,7 @@
         </fileSet>
       </fileSets>
     </module>
-    <module id="daemon" dir="daemon" name="daemon">
+    <module id="${rootArtifactId}-daemon" dir="__rootArtifactId__-daemon" name="${rootArtifactId}-daemon">
       <fileSets>
         <fileSet filtered="true" packaged="true" encoding="UTF-8">
           <directory>src/main/java</directory>

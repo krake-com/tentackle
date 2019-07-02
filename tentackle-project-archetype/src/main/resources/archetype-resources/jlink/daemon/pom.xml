@@ -19,7 +19,7 @@
     <version>${version}</version>
   </parent>
 
-  <artifactId>jlink-daemon</artifactId>
+  <artifactId>${rootArtifactId}-jlink-daemon</artifactId>
   <packaging>jlink</packaging>
   <name>JLink Daemon Image</name>
   <description>Daemon JLink Module for ${application}</description>
@@ -31,7 +31,7 @@
   <dependencies>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>daemon</artifactId>
+      <artifactId>${rootArtifactId}-daemon</artifactId>
       <version>${symbol_dollar}{project.version}</version>
     </dependency>
   </dependencies>
