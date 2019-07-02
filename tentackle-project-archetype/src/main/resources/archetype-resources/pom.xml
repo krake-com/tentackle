@@ -324,12 +324,6 @@
           <configuration>
             <verbosity>info</verbosity>
             <modelDefaults>${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
-            <backendNames>all</backendNames>
-            <mapSchemas>false</mapSchemas>
-            <dumpDir>${symbol_dollar}{wurbel.wurbelDir}/dump</dumpDir>
-            <dumpVariables>false</dumpVariables>
-            <dumpAsComment>false</dumpAsComment>
-            <bundleDir>${symbol_dollar}{wurbel.wurbelDir}/bundles</bundleDir>
             <backends>
               <backend>
                 <url>${symbol_dollar}{dbUrl}</url>
@@ -360,7 +354,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.8.1</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <release>11</release>
@@ -413,7 +407,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.1</version>
+          <version>2.22.2</version>
           <configuration>
             <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
@@ -422,7 +416,13 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.1.2</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.1.1</version>
         </plugin>
 
         <plugin>
@@ -437,13 +437,13 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>3.1.0</version>
         </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>3.1.0</version>
           <dependencies>
             <dependency>
               <groupId>org.ow2.asm</groupId>

@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
 
+import org.tentackle.common.Settings;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ForeignKey;
 import org.tentackle.model.Index;
@@ -31,10 +32,14 @@ import org.tentackle.model.Model;
 import org.tentackle.model.ModelException;
 import org.tentackle.sql.BackendInfo;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Generate sql script to create the tables.
@@ -51,6 +56,18 @@ public class CreateSqlMojo extends AbstractSqlMojo {
              property = "tentackle.createSqlFile")
   private String sqlFileName;
 
+  /**
+   * Optional filesets to prepend to the generated sql file.
+   */
+  @Parameter
+  protected List<FileSet> prependFilesets;
+
+  /**
+   * Optional filesets to append to the generated sql file.
+   */
+  @Parameter
+  protected List<FileSet> appendFilesets;
+
 
   @Override
   protected String getSqlFileName() {
@@ -60,6 +77,18 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   @Override
   protected Collection<BackendInfo> getBackendInfosToExecute() {
     return backendInfos.values();
+  }
+
+  @Override
+  protected void createSqlFile(BackendInfo backendInfo) throws MojoExecutionException {
+    super.createSqlFile(backendInfo);
+    copyFileSets(prependFilesets);
+  }
+
+  @Override
+  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
+    copyFileSets(appendFilesets);
+    super.closeResources(backendInfo);
   }
 
   @Override
@@ -154,6 +183,35 @@ public class CreateSqlMojo extends AbstractSqlMojo {
                   getPathRelativeToBasedir(sqlDirName) + File.separator + sqlFile.getName() + " created");
 
     totalErrors += errorCount;
+  }
+
+
+  /**
+   * Copies the contents of the given filesets to the generated sql file.
+   *
+   * @param fileSets the filesets, null if none
+   */
+  protected void copyFileSets(List<FileSet> fileSets) throws MojoExecutionException {
+    if (fileSets != null) {
+      for (FileSet fileSet: fileSets) {
+        if (fileSet.getDirectory() == null) {
+          // relative to basedir if not given
+          fileSet.setDirectory(getMavenProject().getBasedir().getAbsolutePath());
+        }
+        for (String filename : new FileSetManager(getLog(), verbosityLevel.isDebug()).getIncludedFiles(fileSet)) {
+          String fullName = fileSet.getDirectory() + File.separator + filename;
+          try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fullName), Settings.getEncodingCharset()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+              sqlWriter.append(line).append('\n');
+            }
+          }
+          catch (IOException e) {
+            throw new MojoExecutionException("cannot read from " + fullName, e);
+          }
+        }
+      }
+    }
   }
 
 }

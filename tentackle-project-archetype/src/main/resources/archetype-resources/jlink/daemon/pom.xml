@@ -21,7 +21,7 @@
 
   <artifactId>${rootArtifactId}-jlink-daemon</artifactId>
   <packaging>jlink</packaging>
-  <name>JLink Daemon Image</name>
+  <name>${application} JLink Daemon Image</name>
   <description>Daemon JLink Module for ${application}</description>
 
   <properties>

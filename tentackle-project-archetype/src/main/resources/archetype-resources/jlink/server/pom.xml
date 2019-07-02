@@ -21,7 +21,7 @@
 
   <artifactId>${rootArtifactId}-jlink-server</artifactId>
   <packaging>jlink</packaging>
-  <name>JLink Server Image</name>
+  <name>${application} JLink Server Image</name>
   <description>Server JLink Module for ${application}</description>
 
   <properties>
@@ -43,6 +43,63 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>basesql</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <artifactItems>
+            <artifactItem>
+              <groupId>org.tentackle</groupId>
+              <artifactId>tentackle-test-pdo</artifactId>
+              <version>${symbol_dollar}{tentackle.version}</version>
+              <type>jar</type>
+              <outputDirectory>${symbol_dollar}{project.build.directory}</outputDirectory>
+              <includes>**/PostgreSQL/*.sql</includes>
+            </artifactItem>
+          </artifactItems>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-sql-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>allsql</id>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <phase>process-resources</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <sqlDir>${project.build.directory}/allsql</sqlDir>
+          <prependFilesets>
+            <prependFileset>
+              <directory>${project.basedir}/src/sql</directory>
+              <includes>
+                <include>*.sql</include>
+              </includes>
+            </prependFileset>
+          </prependFilesets>
+          <appendFilesets>
+            <appendFileset>
+              <directory>${project.build.directory}/sql/PostgreSQL</directory>
+              <includes>
+                <include>*.sql</include>
+              </includes>
+            </appendFileset>
+          </appendFilesets>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-maven-plugin</artifactId>
