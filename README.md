@@ -29,7 +29,7 @@ mvn --version
 ```
 
 ## Project Setup
-Setup your multi-module maven project via:
+Generate your project via the Tentackle Maven archetype:
 
 ```
 mvn archetype:generate 
@@ -43,7 +43,7 @@ you will be prompted for:
 * groupId: the group-ID of your project.
 * artifactId: the root artifact-ID. All module artifacts will be prefixed by this name (ex. `myapp-common`).
 * version: the project's version.
-* package: the base java package.
+* package: the Java base package.
 * application: the application's name (single word!)
 
 Example:
@@ -82,7 +82,7 @@ mvn -Pinitdb test
 ```
 This runs a special test, that persists some essential data, particularly users allowed to login.
 
-## Run!
+## Run
 ```
 cd ..
 jlink/server/target/jlink/bin/server.sh &
@@ -90,7 +90,7 @@ jlink/client/target/jlink/bin/client.sh
 ```
 A login window appears. Login with user `gonzo` and password `gonzo`.
 
-## Explore the with your favorite IDE
+## Explore the code with your favorite IDE
 You can use any Java IDE that supports at least Java 12, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
 for custom code folding regions, which are pretty cool to automatically collapse generated code.
