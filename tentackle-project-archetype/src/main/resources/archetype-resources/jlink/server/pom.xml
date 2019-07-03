@@ -62,7 +62,7 @@
               <artifactId>tentackle-test-pdo</artifactId>
               <version>${symbol_dollar}{tentackle.version}</version>
               <type>jar</type>
-              <outputDirectory>${symbol_dollar}{project.build.directory}</outputDirectory>
+              <outputDirectory>${symbol_dollar}{rootBasedir}/target/tmp</outputDirectory>
               <includes>**/PostgreSQL/*.sql</includes>
             </artifactItem>
           </artifactItems>
@@ -81,10 +81,10 @@
           </execution>
         </executions>
         <configuration>
-          <sqlDir>${project.build.directory}/allsql</sqlDir>
+          <sqlDir>${symbol_dollar}{project.build.directory}/sql</sqlDir>
           <prependFilesets>
             <prependFileset>
-              <directory>${project.basedir}/src/sql</directory>
+              <directory>${symbol_dollar}{project.basedir}/src/sql</directory>
               <includes>
                 <include>*.sql</include>
               </includes>
@@ -92,7 +92,7 @@
           </prependFilesets>
           <appendFilesets>
             <appendFileset>
-              <directory>${project.build.directory}/sql/PostgreSQL</directory>
+              <directory>${symbol_dollar}{rootBasedir}/target/tmp/sql/PostgreSQL</directory>
               <includes>
                 <include>*.sql</include>
               </includes>
@@ -115,7 +115,7 @@
           <verbosity>info</verbosity>
           <propertyDescriptors>
             <propertyDescriptor>
-              <input>${dbPasswd}</input>
+              <input>${symbol_dollar}{dbPasswd}</input>
               <converter>@org.tentackle.common.Cryptor</converter>
               <property>encryptedPasswd</property>
             </propertyDescriptor>
@@ -125,7 +125,7 @@
           <dependency>
             <groupId>${groupId}</groupId>
             <artifactId>common</artifactId>
-            <version>${project.version}</version>
+            <version>${symbol_dollar}{project.version}</version>
           </dependency>
         </dependencies>
       </plugin>

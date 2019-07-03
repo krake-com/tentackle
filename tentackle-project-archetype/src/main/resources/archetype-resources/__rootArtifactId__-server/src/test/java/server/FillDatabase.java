@@ -14,6 +14,7 @@ import ${package}.pdo.md.UserGroup;
 import ${package}.pdo.td.Message;
 import org.testng.annotations.Test;
 
+import org.tentackle.log.Logger;
 import org.tentackle.ns.pdo.NumberPool;
 import org.tentackle.ns.pdo.NumberRange;
 import org.tentackle.test.pdo.AbstractPdoTest;
@@ -24,12 +25,14 @@ import org.tentackle.test.pdo.AbstractPdoTest;
  */
 public class FillDatabase extends AbstractPdoTest {
 
+  private static final Logger LOGGER = Logger.get(FillDatabase.class);
+
   public FillDatabase() {
     super(TransactionType.CLASS, true);   // commit!
   }
 
 
-  @Test(groups = { TestConstants.GROUP_CI_INIT })
+  @Test(groups = { TestConstants.GROUP_INITDB })
   public void setupPools() {
     NumberPool pool = on(NumberPool.class);
     pool.setRealm(Constants.POOL_REALM);
@@ -43,14 +46,17 @@ public class FillDatabase extends AbstractPdoTest {
     pool.getNumberRangeList().add(range);
 
     pool.save();
+
+    LOGGER.info("pool {0} created", pool);
   }
 
-  @Test(groups = { TestConstants.GROUP_CI_INIT })
+  @Test(groups = { TestConstants.GROUP_INITDB })
   public void addUsersAndGroups() {
     UserGroup group = on(UserGroup.class);
     group.setName("ADMINS");
     group.setComment("all admins");
     group = group.persist();
+    LOGGER.info("group {0} created", group);
 
     User user = on(User.class);
     user.setName("GONZO");
@@ -81,6 +87,8 @@ public class FillDatabase extends AbstractPdoTest {
     user.setSystemPreferencesOnly(true);
     user = user.persist();
     user.updatePasswordHash(${application}Helper.hash(new char[] {'d', 'a', 'e', 'm', 'o', 'n'}));
+
+    LOGGER.info("users created");
   }
 
 }

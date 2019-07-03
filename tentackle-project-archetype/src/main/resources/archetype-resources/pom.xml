@@ -28,6 +28,7 @@
 
   <properties>
     <rootBasedir>${symbol_dollar}{project.basedir}</rootBasedir>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
@@ -388,7 +389,7 @@
               <dependency>    <!-- necessary for fx-rdc processors because deps are not recognized here -->
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
-                <version>12</version>
+                <version>12.0.1</version>
               </dependency>
             </annotationProcessorPaths>
           </configuration>

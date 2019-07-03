@@ -2,11 +2,11 @@
 #set( $symbol_dollar = '$' )
 #set( $symbol_escape = '\' )
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
-<suite name="ci-init suite">
+<suite name="initdb suite">
   <test name="initialize CI database">
     <groups>
       <run>
-        <include name="ci-init" />
+        <include name="initdb" />
       </run>
     </groups>
     <packages>

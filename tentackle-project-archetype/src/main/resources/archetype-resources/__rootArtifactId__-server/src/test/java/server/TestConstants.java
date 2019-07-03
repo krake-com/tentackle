@@ -13,6 +13,6 @@ package ${package}.server;
 public class TestConstants {
 
   /** test group to initialize the CI database. */
-  public static final String GROUP_CI_INIT = "ci-init";
+  public static final String GROUP_INITDB = "initdb";
 
 }
