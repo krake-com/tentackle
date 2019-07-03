@@ -106,14 +106,14 @@
   <profiles>
     <profile>
       <!-- profile to initialize the CI database -->
-      <id>ci-init</id>
+      <id>initdb</id>
       <build>
         <plugins>
           <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
               <suiteXmlFiles>
-                <suiteXmlFile>src/test/resources/ci-init-testng.xml</suiteXmlFile>
+                <suiteXmlFile>src/test/resources/initdb-testng.xml</suiteXmlFile>
               </suiteXmlFiles>
             </configuration>
           </plugin>
