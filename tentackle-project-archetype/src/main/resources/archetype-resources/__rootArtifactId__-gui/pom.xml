@@ -39,13 +39,13 @@
     </dependency>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>persistence</artifactId>
+      <artifactId>${rootArtifactId}-persistence</artifactId>
       <version>${symbol_dollar}{project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${groupId}</groupId>
-      <artifactId>domain</artifactId>
+      <artifactId>${rootArtifactId}-domain</artifactId>
       <version>${symbol_dollar}{project.version}</version>
       <scope>test</scope>
     </dependency>
