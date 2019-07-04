@@ -1,7 +1,7 @@
 
 # Quickstart
-This quickstart will create a typical modular Tentackle project, that serves as a starting point for your project.
-It's for Unix/Linux, but works on Windows accordingly. The database used is PostgreSQL, but in principle
+The steps below will create a typical modular Tentackle project, that serves as a starting point for your project.
+The database used by default is PostgreSQL, but in principle
 you can use any relational database (see the Tentackle docs for more info).
 
 ## Prerequisites
@@ -24,10 +24,10 @@ When all dependencies have been pulled from [Maven Central](https://search.maven
 you will be prompted for:
 
 * groupId: the group-ID of your project.
-* artifactId: the root artifact-ID. All module artifacts will be prefixed by this name (ex. `myapp-common`).
+* artifactId: the root artifact-ID. All module artifact-IDs will be prefixed by this name, separated by a hyphen (ex. `myapp-common`).
 * version: the project's version.
 * package: the Java base package.
-* application: the application's name (single word!)
+* application: the application's name used as a prefix in Java classnames (i.e. no spaces, first letter in uppercase, etc...)
 
 Example:
 ```
@@ -38,9 +38,10 @@ Define value for property 'package' com.example: : com.example.myapp
 Define value for property 'application': MyApp
 
 ```
-When finished, the project will be located in a directory with the same name as the `artifactId`.
+The project is generated into a subfolder with the same name as the `artifactId`.
 Change to that directory and build the project:
 ```
+cd myapp
 mvn -Pjlink clean install
 ```
 Notice: the profile `jlink` instructs Maven to build the Jlink images as well.
@@ -54,7 +55,7 @@ Example:
 CREATE USER myapp WITH PASSWORD 'myapp';
 CREATE DATABASE myapp OWNER myapp;
 ```
-Back on the Unix shell, run the SQL script to create the tables:
+Back on the shell, run the SQL script to create the tables:
 ```
 psql -U myapp myapp < jlink/server/target/sql/PostgreSQL/createmodel.sql
 ```
@@ -73,11 +74,13 @@ jlink/client/target/jlink/bin/client.sh
 ```
 A login window appears. Login with user `gonzo` and password `gonzo`.
 
+Notice: on Windows, the scripts are named `server.cmd` and `client.cmd`.
+
 ## Explore the code with your favorite IDE
 You can use any Java IDE that supports at least Java 12, JPMS (Jigsaw) and Maven. 
 There are no special plugins necessary. However, not all IDEs provide support
-for custom code folding regions, which are pretty cool to automatically collapse generated code.
+for custom code folding regions, which are pretty nice to automatically collapse generated code.
 IntelliJ and Netbeans work fine out of the box.
-Others may need some extra plugins and configuration.
+Others may need some extra plugins or configuration.
 
 For more info, see the [Tentackle Website](https://tentackle.org)
