@@ -36,6 +36,22 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.function.Function;
 
+interface CryptorHolder {
+
+  private static Cryptor loadCryptor() {
+    try {
+      return ServiceFactory.createService(Cryptor.class);
+    }
+    catch (TentackleRuntimeException rx) {
+      // no application specific cryptor configured! That's ok, although not recommended.
+      return null;
+    }
+  }
+
+  Cryptor INSTANCE = loadCryptor();
+}
+
+
 /**
  * A simple en- and decryptor.<br>
  * Each application should provide a concrete instance with a confidential salt and passphase
@@ -56,32 +72,19 @@ import java.util.function.Function;
  * Cryptor also implements a {@link Function}{@code <String,String>} to encrypt strings like passwords to base64
  * and thus can directly be used by the tentackle-maven-plugin to generate properties for filtered resources.
  * <p>
- * IMPORTANT: at least the passphrase should *NOT* be part of the application! If an attacker gets access to the
- * jars, it's a no-brainer to write a small java program that happily decrypts all your data. Instead, provide the
- * passphrase via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.<br>
- * For a secure client/server communication, it's better to use TLS/SSL anyway.
+ * Notice: the security of symmetric encryption algorithms in general depends on the confidentiality of the passphrase. Thus, the passphrase
+ * should ideally not be part of the application, but provided via some external media, a mounted USB-stick, manual input, PGP keyring, whatever.
+ * However, in practice this isn't always feasible...
  */
 public class Cryptor implements Function<String, String> {
-
-  private static boolean cryptorLoaded;
-  private static Cryptor cryptor;
 
   /**
    * Gets the optional application specific cryptor singleton.
    *
    * @return the cryptor, null if no {@code @Service(Cryptor.class)} configured
    */
-  public static synchronized Cryptor getInstance() {
-    if (!cryptorLoaded) {
-      cryptorLoaded = true;
-      try {
-        cryptor = ServiceFactory.createService(Cryptor.class);
-      }
-      catch (TentackleRuntimeException rx) {
-        // no application specific cryptor configured! That's ok, although not recommended.
-      }
-    }
-    return cryptor;
+  public static Cryptor getInstance() {
+    return CryptorHolder.INSTANCE;
   }
 
 
