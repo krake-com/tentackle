@@ -183,6 +183,11 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
   }
 
   @Override
+  public boolean isTableSerialProvided() {
+    return true;
+  }
+
+  @Override
   public boolean isNormTextProvided() {
     return true;
   }
@@ -197,6 +202,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
     super.getFields(rs);
     if (rs.configureSection(CLASSVARIABLES)) {
       rs.configureColumn(CN_NORMTEXT);
+      rs.configureColumn(CN_TABLESERIAL);
       rs.configureColumn(CN_MESSAGENUMBER);
       rs.configureColumn(CN_WHEN);
       rs.configureColumn(CN_MESSAGETYPE);
@@ -212,6 +218,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
       throw new PersistenceException(getSession(), "no valid row");
     }
     setNormText(rs.getString());
+    setTableSerial(rs.getLong());
     messageNumber = rs.getString();
     when = rs.getTimestamp();
     messageType = MessageType.toInternal(rs.getString());
@@ -228,6 +235,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
   public int setFields(PreparedStatementWrapper st) {
     int ndx = super.setFields(st);
     st.setString(++ndx, getNormText());
+    st.setLong(++ndx, getTableSerial());
     st.setString(++ndx, messageNumber);
     st.setTimestamp(++ndx, when);
     st.setString(++ndx, StringHelper.trim(messageType == null ? null : messageType.toExternal(), 30));
@@ -245,6 +253,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
   public String createInsertSql() {
     return Backend.SQL_INSERT_INTO + getTableName() + Backend.SQL_LEFT_PARENTHESIS +
            CN_NORMTEXT + Backend.SQL_COMMA +
+           CN_TABLESERIAL + Backend.SQL_COMMA +
            CN_MESSAGENUMBER + Backend.SQL_COMMA +
            CN_WHEN + Backend.SQL_COMMA +
            CN_MESSAGETYPE + Backend.SQL_COMMA +
@@ -266,6 +275,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
            Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR_COMMA +
+           Backend.SQL_PAR_COMMA +
            Backend.SQL_PAR + Backend.SQL_RIGHT_PARENTHESIS;
   }
 
@@ -273,6 +283,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
   public String createUpdateSql() {
     return Backend.SQL_UPDATE + getTableName() + Backend.SQL_SET +
            CN_NORMTEXT + Backend.SQL_EQUAL_PAR_COMMA +
+           CN_TABLESERIAL + Backend.SQL_EQUAL_PAR_COMMA +
            CN_MESSAGENUMBER + Backend.SQL_EQUAL_PAR_COMMA +
            CN_WHEN + Backend.SQL_EQUAL_PAR_COMMA +
            CN_MESSAGETYPE + Backend.SQL_EQUAL_PAR_COMMA +
