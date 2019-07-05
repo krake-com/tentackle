@@ -37,6 +37,7 @@ import org.tentackle.session.TableName;
  * integrity := ${symbol_dollar}integrity
  *
  * ${symbol_pound}${symbol_pound} attributes
+ * [tableserial]
  * String(${symbol_dollar}msg_no)                  messageNumber         message_no      message number [key, normtext, @NotNull]
  * Timestamp                        when                  mwhen           timestamp of message [@NotNull]
  * MessageType<String>(${symbol_dollar}msg_type)   messageType           mtype           the message type [trimwrite, @NotNull]

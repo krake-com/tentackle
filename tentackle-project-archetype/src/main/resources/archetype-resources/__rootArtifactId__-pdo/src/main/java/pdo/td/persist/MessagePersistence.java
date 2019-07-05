@@ -87,7 +87,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return message number
    */
-  @Persistent(ordinal=1, comment="message number")
+  @Persistent(ordinal=2, comment="message number")
   @NotNull
   @Bindable(options="MAXCOLS=10")
   @DomainKey
@@ -106,7 +106,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return timestamp of message
    */
-  @Persistent(ordinal=2, comment="timestamp of message")
+  @Persistent(ordinal=3, comment="timestamp of message")
   @NotNull
   @Bindable(options="AUTOSELECT")
   Timestamp getWhen();
@@ -124,7 +124,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return the message type
    */
-  @Persistent(ordinal=3, comment="the message type")
+  @Persistent(ordinal=4, comment="the message type")
   @NotNull
   @Bindable(options="MAXCOLS=30")
   MessageType getMessageType();
@@ -142,7 +142,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return class id if message refers to a PDO
    */
-  @Persistent(ordinal=4, comment="class id if message refers to a PDO")
+  @Persistent(ordinal=5, comment="class id if message refers to a PDO")
   @Bindable(options="AUTOSELECT")
   Integer getRefersToClassId();
 
@@ -159,7 +159,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return object id if message refers to a PDO
    */
-  @Persistent(ordinal=5, comment="object id if message refers to a PDO")
+  @Persistent(ordinal=6, comment="object id if message refers to a PDO")
   @Bindable(options="AUTOSELECT")
   Long getRefersToPdoId();
 
@@ -176,7 +176,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return refers text or toString of refersToPdo
    */
-  @Persistent(ordinal=6, comment="refers text or toString of refersToPdo")
+  @Persistent(ordinal=7, comment="refers text or toString of refersToPdo")
   @Bindable(options="MAXCOLS=30")
   String getRefersToText();
 
@@ -193,7 +193,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return ID of the responsible orgunit
    */
-  @Persistent(ordinal=7, comment="ID of the responsible orgunit")
+  @Persistent(ordinal=8, comment="ID of the responsible orgunit")
   @Bindable(options="AUTOSELECT")
   Long getOrgUnitId();
 
@@ -210,7 +210,7 @@ public interface MessagePersistence extends PersistentObject<Message> {
    *
    * @return message text
    */
-  @Persistent(ordinal=8, comment="message text")
+  @Persistent(ordinal=9, comment="message text")
   @Bindable(options="MAXCOLS=1024")
   String getText();
 
