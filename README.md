@@ -35,7 +35,7 @@ When all dependencies have been pulled from [Maven Central](https://search.maven
 you will be prompted for:
 
 * **groupId**: the group-ID of your project.
-* **artifactId**: the root artifact-ID. All module artifact-IDs will be prefixed by this name, separated by a hyphen (ex. `myapp-common`).
+* **artifactId**: the root artifact-ID. All module artifact-IDs will be prefixed by this name, separated by a hyphen (e.g. `myapp-gui`).
 * **version**: the project's version.
 * **package**: the Java base package.
 * **application**: the application's name. It is used as a prefix in several Java classnames (i.e. no spaces, first letter in uppercase, etc...)
@@ -80,15 +80,20 @@ This runs a special test, that persists some essential data,
 particularly users allowed to connect to the middle-tier server.
 
 ## Run
-Start the middle-tier server first and then the FX desktop client:
+Start the middle-tier server first, then the daemon and finally the FX desktop client:
 ```
 cd ..
 jlink/server/target/jlink/bin/server.sh &
+jlink/daemon/target/jlink/bin/daemon.sh &
 jlink/client/target/jlink/bin/client.sh
 ```
 A login window appears. Login with user `gonzo` and password `gonzo`.
 
-Notice: on Windows, the scripts are named `server.cmd` and `client.cmd`.
+The daemon just logs events like login/logout in `jlink/daemon/target/jlink/logs/daemon.log`.
+Take a look at the other logs in `jlink/server/target/jlink/logs` and 
+`jlink/client/target/jlink/logs`.
+
+Notice: on Windows, the scripts are named `server.cmd`, `daemon.cmd` and `client.cmd`.
 
 ## Explore the code with your favorite IDE
 You can use any Java IDE that supports at least Java 11, JPMS (Jigsaw) and Maven. 
@@ -97,4 +102,5 @@ for custom code folding regions, which are pretty nice to automatically collapse
 [IntelliJ](https://www.jetbrains.com/idea/) and [Netbeans](https://netbeans.apache.org/) work fine out of the box.
 Others may need some extra plugins or configuration.
 
+## Next Steps
 For more info, see the [Tentackle Website](https://tentackle.org)
