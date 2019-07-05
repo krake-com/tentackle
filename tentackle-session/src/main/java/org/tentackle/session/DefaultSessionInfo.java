@@ -352,7 +352,17 @@ public class DefaultSessionInfo implements SessionInfo, Serializable, Cloneable 
     buf.append('[');
     buf.append(userId);
     buf.append("]/");
-    buf.append(password == null ? "<no_passwd>" : "<passwd>");
+    if (encryptedPassword != null) {
+      buf.append("<enc.passwd>");
+    }
+    else {
+      if (password != null) {
+        buf.append("<passwd>");
+      }
+      else {
+        buf.append("<no-passwd>");
+      }
+    }
     if (applicationName != null) {
       buf.append('/');
       buf.append(applicationName);
