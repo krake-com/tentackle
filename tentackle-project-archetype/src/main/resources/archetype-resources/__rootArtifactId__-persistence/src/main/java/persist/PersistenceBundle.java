@@ -14,7 +14,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for persistence-related strings.
+ * Bundle for translations of the persistence module.
  */
 @Bundle
 public class PersistenceBundle {

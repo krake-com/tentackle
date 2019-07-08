@@ -10,7 +10,6 @@ package ${package}.gui;
 import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.md.User;
 import ${package}.pdo.md.UserGroup;
-import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Modality;
@@ -25,10 +24,10 @@ import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
+ * Application specific security dialog factory.<br>
  * Implements the selection of the grantee.
  */
 @Service(SecurityDialogFactory.class)

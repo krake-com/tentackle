@@ -14,7 +14,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for server-related strings.
+ * Bundle for translations of the server module.
  */
 @Bundle
 public class ServerBundle {

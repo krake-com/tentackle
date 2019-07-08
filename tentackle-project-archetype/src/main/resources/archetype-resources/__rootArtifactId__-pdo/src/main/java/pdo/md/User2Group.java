@@ -59,9 +59,9 @@ import org.tentackle.session.TableName;
  * NM-relation link between user and usergroup
  */
 @TableName(value =/**/"md.user2group"/**/, // @wurblet < Inject --string ${symbol_dollar}tablename
-        mapSchema =/**/false/**/, // @wurblet < Inject ${symbol_dollar}mapSchema
-        prefix =/**/""/**/)       // @wurblet < Inject --string ${symbol_dollar}tablePrefix
-@ClassId(/**/1003/**/) // @wurblet < Inject ${symbol_dollar}classid
+           mapSchema =/**/false/**/,       // @wurblet < Inject ${symbol_dollar}mapSchema
+           prefix =/**/""/**/)             // @wurblet < Inject --string ${symbol_dollar}tablePrefix
+@ClassId(/**/1003/**/)                     // @wurblet < Inject ${symbol_dollar}classid
 @Singular("User2Group")
 @Plural("User2Groups")
 public interface User2Group extends MasterData<User2Group>, User2GroupPersistence, User2GroupDomain {

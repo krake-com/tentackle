@@ -24,7 +24,7 @@ import java.util.spi.ResourceBundleProvider;
  * Interface to determine the module hierarchy.<br>
  * Provides a hook to access resources from within a module.
  * <p>
- * Each module must include exactly one such an implementation and provide it via module-info.
+ * Each module must include exactly one such implementation and provide it via module-info.
  * <p>
  * Since ModuleHook extends {@link ResourceBundleProvider}, all classes must implement the following
  * method as follows:

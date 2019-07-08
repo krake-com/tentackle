@@ -14,7 +14,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for PDO-related strings.
+ * Bundle for translations of the PDO module.
  */
 @Bundle
 public class PdoBundle {
