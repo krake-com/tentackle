@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * A mojo to generate propertyDescriptors from other propertyDescriptors.
+ * Generates maven properties from other maven properties.
  * <p>
  * Example:
  * <pre>
@@ -50,6 +50,11 @@ import java.util.function.Function;
  *     &lt;/propertyDescriptor&gt;
  *   &lt;/propertyDescriptors&gt;
  * </pre>
+ * <p>
+ * The converter is a FQCN of a singleton with a no-args constructor. Because it must be
+ * in the classpath of the {@code tentackle-maven-plugin}, its artifact must be placed
+ * within the plugin's {@code <dependencies>}.<br>
+ * If the FQCN starts with an {@code @}, the converter is looked up via {@code META-INF/services}.
  * <p>
  * Important: the converters must be stateless because their instances are cached!
  *

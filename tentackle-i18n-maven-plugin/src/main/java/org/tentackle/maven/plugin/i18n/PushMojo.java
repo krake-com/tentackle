@@ -33,7 +33,8 @@ import java.util.Properties;
 
 
 /**
- * Push resource bundles to the database backend.
+ * Pushes resource bundles to the database backend.<br>
+ * Existing translations are left unchanged.
  *
  * @author harald
  */

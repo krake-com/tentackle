@@ -24,7 +24,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 /**
  * Validates the database against the model.<br>
  * The build fails if something to migrate found.<br>
- * Alternative to the validate configuration option.
+ * Alternative to the {@code validate} configuration option of the {@code migrate} goal.
  */
 @Mojo(name = "validate")
 public class ValidateSqlMojo extends MigrateSqlMojo {

@@ -33,8 +33,8 @@ import java.util.List;
 /**
  * Generates code and meta-information prior to wurbeling and compiling the test sources.
  * <p>
- * Processes up all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
- * Processing results are either written to files in analyzeDir or placed on heap
+ * Processes all annotations annotated with {@code @Analyze}, such as {@code @Service}.<br>
+ * Processing results are either written to files in {@code analyzeDir} or placed on heap
  * for being picked up by wurblets, depending on the handler implementation for
  * each annotation.
  *

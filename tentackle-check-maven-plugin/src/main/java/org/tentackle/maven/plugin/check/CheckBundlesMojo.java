@@ -37,7 +37,7 @@ import java.util.Set;
 
 
 /**
- * Mojo to verify all bundle getString() invocations.
+ * Verifies all bundle getString() invocations.
  * <p>
  * Finds all invocations of <code>&lt;reference&gt;.getString(&lt;string-literal&gt;)</code>.<br>
  * Where <code>&lt;reference&gt;</code> is:
