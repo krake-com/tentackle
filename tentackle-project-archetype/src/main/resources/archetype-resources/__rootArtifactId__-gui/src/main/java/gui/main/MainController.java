@@ -55,8 +55,6 @@ import java.util.ResourceBundle;
 @FxControllerService
 public class MainController extends AbstractFxController implements DomainContextProvider {
 
-  private static final String CSS_VIEWMODE = "viewmode";
-
   @FXML
   private BorderPane borderPane;
 

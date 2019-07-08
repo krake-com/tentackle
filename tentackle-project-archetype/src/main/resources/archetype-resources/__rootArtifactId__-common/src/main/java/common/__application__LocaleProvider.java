@@ -21,9 +21,9 @@ import java.util.Locale;
 @Service(LocaleProvider.class)
 public class ${application}LocaleProvider extends LocaleProvider {
 
-  private static final Locale primaryLocale = Locale.ENGLISH;
+  private static final Locale PRIMARY_LOCALE = Locale.ENGLISH;
 
-  private static final Locale[] secondaryLocales = {
+  private static final Locale[] SECONDARY_LOCALES = {
     Locale.GERMAN
   };
 
@@ -31,13 +31,13 @@ public class ${application}LocaleProvider extends LocaleProvider {
   public Locale getEffectiveLocale(Locale locale) {
     if (locale != null) {
       String localeStr = locale.toString();
-      for (Locale secondaryLocale : secondaryLocales) {
+      for (Locale secondaryLocale : SECONDARY_LOCALES) {
         if (localeStr.startsWith(secondaryLocale.toString())) {
           return secondaryLocale;
         }
       }
     }
-    return primaryLocale;
+    return PRIMARY_LOCALE;
   }
 
 }

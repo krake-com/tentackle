@@ -7,8 +7,6 @@
 
 package ${package}.pdo;
 
-import ${package}.pdo.md.User;
-
 import org.tentackle.misc.Convertible;
 import org.tentackle.pdo.PdoRuntimeException;
 

@@ -14,7 +14,7 @@ import org.tentackle.common.LocaleProvider;
 import java.util.ResourceBundle;
 
 /**
- * Bundle for GUI module.
+ * Bundle for translations of the GUI module.
  */
 @Bundle
 public class GuiBundle {
