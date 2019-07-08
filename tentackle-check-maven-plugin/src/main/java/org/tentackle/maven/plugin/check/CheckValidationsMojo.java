@@ -49,7 +49,7 @@ import java.util.MissingResourceException;
 
 
 /**
- * Mojo to verify all annotation-based validations.<br>
+ * Verifies all annotation-based validations.<br>
  * Scans for validator annotations (annotated with &#64;Validation), creates the validators and
  * their compound values for message and condition. If the compound values are scripts,
  * the scripts will be compiled. If a message-script is an i18n-script (see &#64;MessageScriptConverter),

@@ -42,7 +42,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Generate sql script to create the tables.
+ * Generates an SQL-script to create the database tables according to the model.
  *
  * @author harald
  */

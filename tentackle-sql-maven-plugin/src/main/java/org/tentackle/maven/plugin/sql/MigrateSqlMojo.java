@@ -59,7 +59,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 /**
- * Generate sql script to migrate the tables.
+ * Generates an SQL-script to migrate the database tables according to the model.
  *
  * @author harald
  */

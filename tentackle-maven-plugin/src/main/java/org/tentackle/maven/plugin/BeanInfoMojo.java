@@ -39,7 +39,7 @@ import java.io.PrintStream;
 import java.util.List;
 
 /**
- * A mojo to find all BeanInfo-files and create a manifest from.
+ * Finds all BeanInfo-files and creates a manifest from.
  *
  * @author harald
  */
