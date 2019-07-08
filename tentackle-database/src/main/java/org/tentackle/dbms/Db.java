@@ -1205,16 +1205,6 @@ public class Db implements Session, Cloneable {
 
 
   /**
-   * Clears all passwords (stored in char[]-arrays) so
-   * that they are no more visible in memory.
-   */
-  public void clearPassword() {
-    sessionInfo.clearPassword();
-    backendInfo.clearPassword();
-  }
-
-
-  /**
    * Registers a close handler.
    *
    * @param closeHandler the handler

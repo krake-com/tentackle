@@ -19,6 +19,7 @@
 package org.tentackle.sql;
 
 import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -226,11 +227,7 @@ public class BackendInfo {
    * that they are no more visible in memory.
    */
   public void clearPassword() {
-    if (password != null) {
-      for (int i=0; i < password.length; i++) {
-        password[i] = 0;
-      }
-    }
+    StringHelper.blank(password);
   }
 
   /**
