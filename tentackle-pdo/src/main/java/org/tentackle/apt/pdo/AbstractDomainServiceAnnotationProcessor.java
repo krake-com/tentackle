@@ -19,15 +19,16 @@
 
 package org.tentackle.apt.pdo;
 
-import java.util.Set;
+import org.tentackle.apt.AbstractServiceAnnotationProcessor;
+import org.tentackle.common.Constants;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.apt.AbstractServiceAnnotationProcessor;
-import org.tentackle.common.Constants;
+import java.util.Set;
 
 /**
  * Base class for DomainObjectServiceAnnotationProcessor and DomainOperationServiceAnnotationProcessor.
@@ -67,8 +68,7 @@ public class AbstractDomainServiceAnnotationProcessor extends AbstractServiceAnn
 
     for (Element elem: element.getEnclosedElements()) {
       if (elem.getKind() == ElementKind.FIELD &&
-          !elem.getModifiers().contains(Modifier.STATIC) &&
-          !elem.getModifiers().contains(Modifier.FINAL)) {
+          !elem.getModifiers().contains(Modifier.STATIC)) {
         boolean suppressed = false;
         swAnno = elem.getAnnotation(SuppressWarnings.class);
         if (swAnno != null) {
@@ -83,7 +83,8 @@ public class AbstractDomainServiceAnnotationProcessor extends AbstractServiceAnn
           processingEnv.getMessager().printMessage(
             Diagnostic.Kind.WARNING,
             "PDO domain logic should be stateless! Consider making '" +
-                    elem + "' final or annotate it with @SuppressWarnings(\"stateful-domain-logic\").", elem);
+            elem + "' effectively immutable and annotate it with @SuppressWarnings(\"" +
+            Constants.SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC + "\").", elem);
         }
       }
     }
