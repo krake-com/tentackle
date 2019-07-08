@@ -67,8 +67,7 @@ public class AbstractDomainServiceAnnotationProcessor extends AbstractServiceAnn
 
     for (Element elem: element.getEnclosedElements()) {
       if (elem.getKind() == ElementKind.FIELD &&
-          !elem.getModifiers().contains(Modifier.STATIC) &&
-          !elem.getModifiers().contains(Modifier.FINAL)) {
+          !elem.getModifiers().contains(Modifier.STATIC)) {
         boolean suppressed = false;
         swAnno = elem.getAnnotation(SuppressWarnings.class);
         if (swAnno != null) {
@@ -83,7 +82,8 @@ public class AbstractDomainServiceAnnotationProcessor extends AbstractServiceAnn
           processingEnv.getMessager().printMessage(
             Diagnostic.Kind.WARNING,
             "PDO domain logic should be stateless! Consider making '" +
-                    elem + "' final or annotate it with @SuppressWarnings(\"stateful-domain-logic\").", elem);
+            elem + "' effectively immutable and annotate it with @SuppressWarnings(\"" +
+            Constants.SUPPRESS_WARNINGS_STATEFUL_DOMAIN_LOGIC + "\").", elem);
         }
       }
     }
