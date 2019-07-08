@@ -34,16 +34,6 @@ import java.util.Properties;
  * Abstract class to handle the application's lifecycle for a console application (no gui).
  * Tentackle applications should extend this class and invoke {@link #start}.
  * To shutdown gracefully, application should invokd {@link #stop}.
- * <p>
- * The subclass just needs to provide a main-method, for example:
- * <pre>
-  MyAbstractApplication app = new MyAbstractApplication();
-  app.start(args);
-
-  // do something...
-
-  app.stop();
- </pre>
  *
  * @author harald
  */
