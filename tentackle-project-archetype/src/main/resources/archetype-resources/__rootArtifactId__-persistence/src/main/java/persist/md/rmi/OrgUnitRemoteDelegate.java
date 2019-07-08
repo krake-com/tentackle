@@ -8,7 +8,6 @@
 package ${package}.persist.md.rmi;
 
 import ${package}.pdo.md.OrgUnit;
-import ${package}.persist.md.AbstractPersistentMasterDataRemoteDelegate;
 import ${package}.persist.md.OrgUnitPersistenceImpl;
 
 import org.tentackle.pdo.DomainContext;

@@ -8,7 +8,6 @@
 package ${package}.persist.md.rmi;
 
 import ${package}.pdo.md.User2Group;
-import ${package}.persist.md.AbstractPersistentMasterDataRemoteDelegateImpl;
 import ${package}.persist.md.User2GroupPersistenceImpl;
 
 import org.tentackle.dbms.rmi.RemoteDbSessionImpl;
