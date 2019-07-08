@@ -80,7 +80,7 @@ import static org.tentackle.sql.Backend.*;
 
 
 /**
- * AbstractApplication database object.<br>
+ * Abstract database object.<br>
  * Extends {@link AbstractDbObject} with features necessary in nearly all
  * desktop enterprise applications.
  * <p>

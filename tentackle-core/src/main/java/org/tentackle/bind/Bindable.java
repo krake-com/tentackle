@@ -26,7 +26,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Annotates a member of a class for eligibility in GUI bindings.
  * <p>
- * The class may any kind of class (not necessarily a bean, but maybe),
+ * The class may be any kind of class (not necessarily a bean, but maybe),
  * usually a PDO or a GUI-view. The members may be regular objects
  * or primitives. Annotated objects itself may contain annotated members.
  * In fact, only the leafs of such binding hierarchies are actuelly bound.
