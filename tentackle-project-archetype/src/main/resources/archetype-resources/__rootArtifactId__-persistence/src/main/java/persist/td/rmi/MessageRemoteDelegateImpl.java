@@ -10,7 +10,6 @@ package ${package}.persist.td.rmi;
 import ${package}.pdo.MessageType;
 import ${package}.pdo.md.OrgUnit;
 import ${package}.pdo.td.Message;
-import ${package}.persist.td.AbstractPersistentTransactionDataRemoteDelegateImpl;
 import ${package}.persist.td.MessagePersistenceImpl;
 
 import org.tentackle.common.Timestamp;
