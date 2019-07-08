@@ -8,7 +8,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>11.4.0.0</version>
+    <version>11.4.0.1-SNAPSHOT</version>
     <!-- not a module of tentackle-parent -->
     <!-- to be build separately -->
   </parent>
@@ -16,11 +16,11 @@
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
   <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. 8. must be omitted -->
-  <version>4.0.0</version>
+  <version>4.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>11.4.0.0</tentackle.version>
+    <tentackle.version>11.4.0.1-SNAPSHOT</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>
