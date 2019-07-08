@@ -214,19 +214,18 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
           if (me == null) {
             LOGGER.warning("cleaning up unreferenced remote session {0}", name);
           }
-          LOGGER.info("end {0}", this);
-          for (WeakReference<RemoteDelegate> ref : exportedDelegates) {
-            RemoteDelegate delegate = ref.get();
-            if (delegate != null) {
-              con.unexportRemoteObject(delegate);
-            }
-          }
-          exportedDelegates.clear();
-          if (me != null) {
-            unexportMe(me);
-          }
           cleanup(false);
           closeDb(false);
+        }
+        for (WeakReference<RemoteDelegate> ref : exportedDelegates) {
+          RemoteDelegate delegate = ref.get();
+          if (delegate != null) {
+            con.unexportRemoteObject(delegate);
+          }
+        }
+        exportedDelegates.clear();
+        if (me != null) {
+          unexportMe(me);
         }
       }
       catch (RemoteException | RuntimeException ex) {
@@ -273,6 +272,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
     }
 
     void unexportMe(RemoteDbSessionImpl remoteSession) throws RemoteException {
+      LOGGER.info("end {0}", remoteSession);
       con.unexportRemoteObject(remoteSession);
     }
 
@@ -357,6 +357,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
                                      rmiServer.getLoginClientSocketFactory(),
                                      rmiServer.getLoginServerSocketFactory());
     LOGGER.info("begin {0}", this);
+    clientInfo.clearPassword();   // no more needed
   }
 
   @Override
@@ -684,6 +685,7 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
       resources.closeDb(cleanup);
       closedSince = System.currentTimeMillis();
     }
+    cleanable.clean();
   }
 
 

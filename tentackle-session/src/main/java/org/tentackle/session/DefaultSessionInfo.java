@@ -29,6 +29,7 @@ import org.tentackle.misc.ImmutableException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Properties;
@@ -49,7 +50,8 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   private String userName;                      // name of the user
   private char[] password;                      // user's password
-  private String encryptedPassword;             // base64 encrypted password if a Cryptor is available
+  private byte[] encryptedPassword;             // base64 encrypted password if a Cryptor is available
+  private transient boolean cleared;            // true if password was cleared (else set or no password set)
   private long userId;                          // the user id
   private int userClassId;                      // the user class id
   private String applicationName;               // an optional application name
@@ -242,9 +244,10 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
   @Override
   public void setPassword(char[] password)  {
     assertMutable();
+    cleared = false;
     Cryptor cryptor = Cryptor.getInstance();
     if (cryptor != null) {
-      encryptedPassword = password == null ? null : cryptor.encrypt64(password);
+      encryptedPassword = password == null ? null : cryptor.encrypt(password);
       this.password = null;
     }
     else {
@@ -264,20 +267,28 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    */
   @Override
   public void clearPassword() {
-    StringHelper.blank(password);
-    encryptedPassword = null;
+    if (password != null) {
+      Arrays.fill(password, ' ');
+      password = null;
+      cleared = true;
+    }
+    if (encryptedPassword != null) {
+      Arrays.fill(encryptedPassword, (byte) 0);
+      encryptedPassword = null;
+      cleared = true;
+    }
   }
 
 
   /**
    * Gets the password.
    *
-   * @return the password
+   * @return the password, null if cleared or not set at all
    */
   @Override
   public char[] getPassword() {
-    if (encryptedPassword != null) {
-      return Cryptor.getInstance().decrypt64ToChars(encryptedPassword);
+    if (encryptedPassword != null && !cleared) {
+      return Cryptor.getInstance().decryptToChars(encryptedPassword);
     }
     return password;
   }
@@ -363,15 +374,20 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
     buf.append('[');
     buf.append(userId);
     buf.append("]/");
-    if (encryptedPassword != null) {
-      buf.append("<enc.passwd>");
+    if (cleared) {
+      buf.append("<cleared>");
     }
     else {
-      if (password != null) {
-        buf.append("<passwd>");
+      if (encryptedPassword != null) {
+        buf.append("<enc.passwd>");
       }
       else {
-        buf.append("<no-passwd>");
+        if (password != null) {
+          buf.append("<passwd>");
+        }
+        else {
+          buf.append("<no-passwd>");
+        }
       }
     }
     if (applicationName != null) {

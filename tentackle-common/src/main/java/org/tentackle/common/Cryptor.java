@@ -205,6 +205,23 @@ public class Cryptor implements Function<String, String> {
   }
 
   /**
+   * Encrypts a char array.<br>
+   * The method clears all traces in memory, including the passed char array.
+   *
+   * @param chars the char array to encrypt
+   * @return the encrypted bytes
+   */
+  public byte[] encrypt(char[] chars) {
+    CharBuffer charBuffer = CharBuffer.wrap(chars);
+    ByteBuffer byteBuffer = Settings.getEncodingCharset().encode(charBuffer);
+    byte[] data = byteBuffer.array();
+    byte[] encryptedData = encrypt(data, 0, byteBuffer.remaining());
+    Arrays.fill(charBuffer.array(), ' ');
+    Arrays.fill(data, (byte) 0);
+    return encryptedData;
+  }
+
+  /**
    * Encrypts a char array to base64 encoding.<br>
    * The method clears all traces in memory, including the passed char array.
    *
@@ -212,13 +229,7 @@ public class Cryptor implements Function<String, String> {
    * @return the encrypted string in base64 encoding
    */
   public String encrypt64(char[] chars) {
-    CharBuffer charBuffer = CharBuffer.wrap(chars);
-    ByteBuffer byteBuffer = Settings.getEncodingCharset().encode(charBuffer);
-    byte[] data = byteBuffer.array();
-    String base64 = Base64.getEncoder().encodeToString(encrypt(data, 0, byteBuffer.remaining()));
-    Arrays.fill(charBuffer.array(), ' ');
-    Arrays.fill(data, (byte) 0);
-    return base64;
+    return Base64.getEncoder().encodeToString(encrypt(chars));
   }
 
   /**
@@ -231,6 +242,16 @@ public class Cryptor implements Function<String, String> {
     return encrypt64(text.getBytes(Settings.getEncodingCharset()));
   }
 
+
+  /**
+   * Decrypts encrypted data to chars.
+   *
+   * @param encryptedData the encrypted data
+   * @return the char array
+   */
+  public char[] decryptToChars(byte[] encryptedData) {
+    return toChars( decrypt(encryptedData));
+  }
 
   /**
    * Decrypts a base64 encoded string.
@@ -250,15 +271,7 @@ public class Cryptor implements Function<String, String> {
    * @return the decrypted data
    */
   public char[] decrypt64ToChars(String encryptedText) {
-    byte[] data = decrypt64ToBytes(encryptedText);
-    ByteBuffer byteBuffer = ByteBuffer.wrap(data);
-    CharBuffer charBuffer = Settings.getEncodingCharset().decode(byteBuffer);
-    char[] chars = new char[charBuffer.remaining()];
-    charBuffer.get(chars);
-    Arrays.fill(data, (byte) 0);
-    Arrays.fill(byteBuffer.array(), (byte) 0);
-    Arrays.fill(charBuffer.array(), ' ');
-    return chars;
+    return toChars(decrypt64ToBytes(encryptedText));
   }
 
   /**
@@ -327,6 +340,18 @@ public class Cryptor implements Function<String, String> {
     catch (NoSuchPaddingException | NoSuchAlgorithmException e) {
       throw new TentackleRuntimeException("creating cipher failed", e);
     }
+  }
+
+
+  private char[] toChars(byte[] data) {
+    ByteBuffer byteBuffer = ByteBuffer.wrap(data);
+    CharBuffer charBuffer = Settings.getEncodingCharset().decode(byteBuffer);
+    char[] chars = new char[charBuffer.remaining()];
+    charBuffer.get(chars);
+    Arrays.fill(data, (byte) 0);
+    Arrays.fill(byteBuffer.array(), (byte) 0);
+    Arrays.fill(charBuffer.array(), ' ');
+    return chars;
   }
 
 }
