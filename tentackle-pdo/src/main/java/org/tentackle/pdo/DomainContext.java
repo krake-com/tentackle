@@ -18,7 +18,6 @@
 
 // Created on September 2, 2002, 3:55 PM
 
-
 package org.tentackle.pdo;
 
 import java.util.Collection;
@@ -27,38 +26,49 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 
-
 /**
- * The application's domain context.
+ * The domain context.
  * <p>
- * Basically, this is a holder for a logical {@link Session}.
- * All {@link PersistentObject}s refer to a DomainContext instead of a {@link Session}.
+ * Basically, a domain context is a {@link SessionHolder} with additional information
+ * about the root entity and the application's context.<br>
+ * All {@link PersistentDomainObject}s must refer to a {@code DomainContext}.
  * The DomainContext carries the application's higher level context
  * which can be used to hold domain-related information, for example to implement multi-tenancy.
+ * As this is application specific, it is recommended to provide an application specific context
+ * via a {@link DomainContextFactory}.
  * <p>
- * Furthermore, all PDOs must be either a root-entity or a direct or indirect component of a root-entity.
- * Each root-entity maintains its own copy of the application's domain context, which is known as
- * the root-context. The root-entity and all its components refer to that root-context.
+ * Furthermore, since all PDOs must be either a root-entity or a direct or indirect component of a root-entity,
+ * each root-entity maintains its own copy of the domain context, which is known as
+ * the root-context. The root-entity and all of its components refer to that root-context and therefore
+ * "know" their root entity. This information is used, for example, by the {@link org.tentackle.security.SecurityManager}
+ * and when persisting child components at level 2 and greater (via the optional column {@code rootId}).
  * <p>
- * The DomainContext can be extended
- * to hold the ID(s) of the object(s) describing the context. Because
- * an {@link PersistentDomainObject} carries a reference to that context, it can serve as
+ * The DomainContext can be extended to hold the ID(s) of the object(s) describing the context in multi-tenant systems.
+ * Because a {@link PersistentDomainObject} carries a reference to that context, it can serve as
  * a root for a logical data space. For example, a {@link PersistentObject#selectAll()}
  * of accounts will deliver only the accounts belonging to that particular space.<br>
  * All classes depending on those extended contexts must also implement
  * an appropriate extension of {@link DomainContextDependable}. By further subclassing,
  * a context hierarchy can be achieved. For example, in a financial
- * accounting system, the hierarchy could be: TenantDb -&gt; FiscalYearDb -&gt; BookDb
- * with corresponding TenantDependable -&gt; FiscalYearDependable -&gt; BookDependable.
- * It is recommended to subclass AbstractPersistentObject accordingly, i.e. TenantDbObject -&gt;
- * FiscalYearDbObject -&gt; BookDbObject and/or to override the methods in {@link DomainContextDependable}
- * by applying multiple inheritance emulation via the Wurbelizer.
+ * accounting system, the hierarchy could be:
+ * <pre>
+ * TenantContext -&gt; FiscalYearContext -&gt; BookContext
+ * </pre>
+ * with corresponding
+ * <pre>
+ * TenantDependable -&gt; FiscalYearDependable -&gt; BookDependable.
+ * </pre>
+ * and the root entities of that contexts
+ * <pre>
+ * Tenant -&gt; FiscalYear -&gt; Book.
+ * </pre>
  * <p>
- * Note: the wurblets support multitenancy by means of the options
- * CONTEXT, CONTEXTID and UNIQUE.
+ * The domain model supports multitenancy by means of the option {@code CONTEXT}.
+ * When generating the finders, the {@code WHERE}-clause is automatically {@code AND}ed with the context column
+ * using the value from the domain context.
  * <p>
  * The domain context may also be used to hold references to objects and collections of objects
- * that belong to the same root entity (aka "entity context").
+ * that belong to the same root entity (a.k.a. "entity context").
  *
  * @author harald
  */
@@ -106,26 +116,21 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    */
   void assertPermissions();
 
-
   /**
    * Gets the object that spans this context.<br>
    * The default implementation returns null.
-   * Must be overridden in subclasses.
    *
    * @return the root object, null if in default context
    */
   PersistentDomainObject<?> getContextPdo();
 
-
   /**
-   * Gets the ID of the context object.
+   * Gets the ID of the context object.<br>
    * The default implementation returns 0.
-   * Must be overridden in subclasses.
    *
    * @return the object ID, 0 if in default context
    */
   long getContextId();
-
 
   /**
    * Determines whether this context belongs to an inheritance hierarchy that
@@ -159,7 +164,6 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    */
   boolean isWithinContext(long contextId, int contextClassId);
 
-
   /**
    * Returns the generic string representation of this context.
    * <p>
@@ -168,7 +172,6 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    * @return the String as <code>Classname[contextId]</code>
    */
   String toGenericString();
-
 
   /**
    * Get the long diagnostic string of this context.<br>
@@ -203,7 +206,6 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    */
   DomainContext getNonRootContext();
 
-
   /**
    * Gets the root entity for this context.
    *
@@ -225,7 +227,6 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
    */
   int getRootClassId();
 
-
   /**
    * Sets the context in a {@link DomainContextDependable}.<br>
    * The method invokes <code>obj.setDomainContext()</code> only if the context really differs.
@@ -245,7 +246,6 @@ public interface DomainContext extends SessionHolder, Comparable<DomainContext>,
       obj.setDomainContext(this);
     }
   }
-
 
   /**
    * Sets the context in a list of {@link DomainContextDependable}s.
