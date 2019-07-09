@@ -35,7 +35,8 @@ interface Session$ThreadLocal {
 
 
 /**
- * The session all PDOs live in.
+ * The session.<br>
+ * Describes a persistence and security context.
  *
  * @author harald
  */
