@@ -287,7 +287,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
    */
   @Override
   public char[] getPassword() {
-    if (encryptedPassword != null && !cleared) {
+    if (encryptedPassword != null) {
       return Cryptor.getInstance().decryptToChars(encryptedPassword);
     }
     return password;
