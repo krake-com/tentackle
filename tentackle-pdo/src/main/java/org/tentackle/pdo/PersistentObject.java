@@ -681,8 +681,7 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   /**
    * Selects all objects of this class.<br>
    * Eager relations are loaded as well, but limited to the first level to prevent join hogs.
-   * If more than one level must be eagerly loaded, use explicit finders.<br>
-   * Notice that tracked objects are returned as a {@link org.tentackle.misc.TrackedList}.
+   * If more than one level must be eagerly loaded, use explicit finders.
    *
    * @return the list of objects
    */
