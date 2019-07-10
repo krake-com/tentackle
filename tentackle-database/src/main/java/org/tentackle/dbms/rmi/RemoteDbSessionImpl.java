@@ -658,7 +658,9 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   protected void cleanup(boolean crashed) {
     DbUtilities.getInstance().cleanupRemoteSession(this);
-    resources.cleanup(crashed);
+    if (resources != null) {
+      resources.cleanup(crashed);
+    }
   }
 
 
@@ -681,11 +683,15 @@ public abstract class RemoteDbSessionImpl implements RemoteDbSession, Exportable
    */
   protected void closeDb(boolean cleanup) {
     if (closedSince == 0) {
-      resources.me = this;    // programmatic cleanup
-      resources.closeDb(cleanup);
+      if (resources != null) {
+        resources.me = this;    // programmatic cleanup
+        resources.closeDb(cleanup);
+      }
       closedSince = System.currentTimeMillis();
     }
-    cleanable.clean();
+    if (cleanable != null) {
+      cleanable.clean();
+    }
   }
 
 
