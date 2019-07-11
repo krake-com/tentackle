@@ -9,6 +9,7 @@ package ${package}.persist.md.rmi;
 
 import ${package}.pdo.md.OrgUnit;
 import ${package}.persist.md.OrgUnitPersistenceImpl;
+import ${package}.persist.rmi.RemoteSecurable;
 
 import org.tentackle.pdo.DomainContext;
 
@@ -22,7 +23,7 @@ import java.rmi.RemoteException;
  * @param <P> the persistence implementation
  */
 public interface OrgUnitRemoteDelegate<T extends OrgUnit<T>, P extends OrgUnitPersistenceImpl<T,P>>
-       extends AbstractPersistentMasterDataRemoteDelegate<T,P> {
+       extends AbstractPersistentMasterDataRemoteDelegate<T,P>, RemoteSecurable {
 
   // @wurblet inclrmi Include --missingok .${symbol_dollar}classname/methods
 

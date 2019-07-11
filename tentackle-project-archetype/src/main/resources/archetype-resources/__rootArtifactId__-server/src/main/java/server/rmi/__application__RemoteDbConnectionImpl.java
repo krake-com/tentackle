@@ -8,7 +8,7 @@
 package ${package}.server.rmi;
 
 import ${package}.common.Version;
-import ${package}.persist.md.rmi.OrgUnitRemoteDelegate;
+import ${package}.persist.rmi.RemoteSecurable;
 import ${package}.persist.rmi.${application}Connection;
 
 import org.tentackle.dbms.rmi.RemoteDbConnectionImpl;
@@ -52,7 +52,7 @@ public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl
   @Override
   public int exportRemoteObject(Remote remoteObject, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
           throws RemoteException {
-    if (remoteObject instanceof OrgUnitRemoteDelegate) {
+    if (remoteObject instanceof RemoteSecurable) {
       // users and groups should be transmitted encrypted only and
       // userPI provides methods to select and update the hashed passwords:
       // use the socket factories of the login phase (hopefully configured for SSL).
