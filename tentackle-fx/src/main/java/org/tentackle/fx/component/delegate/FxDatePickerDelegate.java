@@ -6,6 +6,18 @@
 
 package org.tentackle.fx.component.delegate;
 
+import javafx.application.Platform;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.TextFormatter;
+import javafx.util.StringConverter;
+
+import org.tentackle.common.StringHelper;
+import org.tentackle.fx.FxRuntimeException;
+import org.tentackle.fx.FxTextComponentDelegate;
+import org.tentackle.fx.ValueTranslator;
+import org.tentackle.fx.component.FxDatePicker;
+
 import java.sql.Time;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -14,16 +26,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import javafx.application.Platform;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.TextFormatter;
-import javafx.util.StringConverter;
-import org.tentackle.common.StringHelper;
-import org.tentackle.fx.FxRuntimeException;
-import org.tentackle.fx.FxTextComponentDelegate;
-import org.tentackle.fx.ValueTranslator;
-import org.tentackle.fx.component.FxDatePicker;
 
 /**
  * Delegate for FxDatePicker.
@@ -142,7 +144,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
 		public String toString(LocalDate object) {
-      if (getError() == null && component.isChangeable()) {
+      if (component.isChangeable()) {
         if (object != null) {
           // merge localDate into lastDate
           GregorianCalendar cal = new GregorianCalendar();

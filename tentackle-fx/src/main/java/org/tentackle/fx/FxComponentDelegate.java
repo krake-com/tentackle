@@ -284,7 +284,6 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
       try {
         updatingModel = true;
         if (!getNode().isDisabled()) {
-          setError(null);
           try {
             if (binding != null) {
               binding.setModelValue(binding.getViewValue());
@@ -429,9 +428,13 @@ public abstract class FxComponentDelegate extends FxControlDelegate implements F
   @Override
   public void triggerViewModified() {
     if (savedObjectValid) {
-      setViewModified(!Objects.equals(getViewObject(), getSavedViewObject()));
+      boolean viewModified = !Objects.equals(getViewObject(), getSavedViewObject());
+      setViewModified(viewModified);
       if (getParentContainer() != null) {
         getParentContainer().triggerViewModified();
+      }
+      if (viewModified) {
+        setError(null);
       }
     }
   }
