@@ -19,7 +19,6 @@
 
 package org.tentackle.fx.rdc.crud;
 
-import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
@@ -795,26 +794,27 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         errors.append(error.getText());
       }
     }
-    if (errors.length() > 0) {
-      LOGGER.info("validation errors:\n{0}", errors.toString());
-      Fx.error(errors.toString());
-    }
-    if (warnings.length() > 0) {
-      LOGGER.info("validation warnings:\n{0}", warnings.toString());
-      Fx.info(warnings.toString());
+
+    if (warnings.length() > 0 && errors.length() > 0) {
+      errors.append("\n\n").append(warnings);
+      warnings.setLength(0);
     }
 
-    Platform.runLater(() -> {
-      for (InteractiveError error : errorList) {
-        if (!error.isWarning()) {
-          FxControl control = error.getControl();
-          if (control instanceof FxComponent) {
-            ((FxComponent) control).setError(error.getText());
+    if (errors.length() > 0) {
+      Fx.error(errors.toString()).setOnHidden(event -> {
+        for (InteractiveError error : errorList) {
+          if (!error.isWarning()) {
+            FxControl control = error.getControl();
+            if (control instanceof FxComponent) {
+              ((FxComponent) control).setError(error.getText());
+            }
           }
         }
-      }
-    });
-
+      });
+    }
+    else if (warnings.length() > 0) {
+      Fx.info(warnings.toString());
+    }
   }
 
 }
