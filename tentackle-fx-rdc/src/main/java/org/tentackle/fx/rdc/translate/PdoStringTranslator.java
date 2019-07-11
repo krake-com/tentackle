@@ -145,8 +145,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
             if (pdoAddon.getPdo() == null) {
               // no such pdo: try interactive search
               proxy.setUniqueDomainKey(udk);
-              pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
-              Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+              runSearch(proxy);
             }
           }
           else {
@@ -164,8 +163,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
                   // this usually means that the input is malformed, incomplete, whatever.
                   // in such cases get the PDO from the search dialog
                   presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                  pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
-                  Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+                  runSearch(proxy);
                   return pdoAddon.getPdo();
                 }
                 catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
@@ -178,8 +176,7 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
               if (pdoAddon.getPdo() == null) {
                 // no such pdo: try search
                 presetSearchCriteria(proxy, udkClass, v);    // try to preset the proxy, if possible
-                pdoAddon.searchPdo(proxy, found -> pdoAddon.setPdo(found));
-                Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+                runSearch(proxy);
               }
             }
             catch (RuntimeException rex) {
@@ -194,6 +191,19 @@ public class PdoStringTranslator<T extends PersistentDomainObject<T>> extends Va
     };
   }
 
+  /**
+   * Runs the interactive search.
+   *
+   * @param proxy the proxy object
+   */
+  protected void runSearch(T proxy) {
+    pdoAddon.searchPdo(proxy, found -> {
+      pdoAddon.setPdo(found);
+      getComponent().setViewValue(found);
+      getComponent().updateModel();
+      Platform.runLater(() -> ((Node) getComponent()).requestFocus());
+    });
+  }
 
   /**
    * Creates the PDO style implementation.

@@ -144,7 +144,7 @@ public class FxDatePickerDelegate extends FxTextComponentDelegate {
     @Override
     @SuppressWarnings({ "unchecked", "rawtypes" })
 		public String toString(LocalDate object) {
-      if (getError() == null && component.isChangeable()) {
+      if (component.isChangeable()) {
         if (object != null) {
           // merge localDate into lastDate
           GregorianCalendar cal = new GregorianCalendar();
