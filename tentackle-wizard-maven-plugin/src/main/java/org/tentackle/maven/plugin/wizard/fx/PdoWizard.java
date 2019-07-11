@@ -21,7 +21,6 @@ package org.tentackle.maven.plugin.wizard.fx;
 import freemarker.template.TemplateException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 
 import org.tentackle.bind.Bindable;
 import org.tentackle.fx.AbstractFxController;
@@ -172,8 +171,7 @@ public class PdoWizard extends AbstractFxController {
           try {
             List<ValidationResult> results = gen.generate();
             if (results.isEmpty()) {
-              Alert info = Fx.info("files generated!");
-              info.setOnHidden(event -> close());
+              Fx.info("PDO classes generated!").setOnHidden(event -> close());
             }
             else {
               Fx.error(ValidationUtilities.getInstance().resultsToMessage(results));
