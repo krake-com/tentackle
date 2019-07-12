@@ -50,7 +50,7 @@ public class DefaultSessionInfo implements SessionInfo, Cloneable {
 
   private String userName;                      // name of the user
   private char[] password;                      // user's password
-  private byte[] encryptedPassword;             // base64 encrypted password if a Cryptor is available
+  private byte[] encryptedPassword;             // encrypted password if a Cryptor is available
   private transient boolean cleared;            // true if password was cleared (else set or no password set)
   private long userId;                          // the user id
   private int userClassId;                      // the user class id
