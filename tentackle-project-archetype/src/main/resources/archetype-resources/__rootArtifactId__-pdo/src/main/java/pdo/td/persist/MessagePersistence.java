@@ -285,6 +285,6 @@ public interface MessagePersistence extends PersistentObject<Message> {
    * @param pattern the normtext pattern
    * @return the messages
    */
-  TrackedList<Message> findBy(String messageNumber, Timestamp from, Timestamp until, MessageType type, OrgUnit orgUnit, String pattern);
+  TrackedList<Message> findBy(String messageNumber, Timestamp from, Timestamp until, MessageType type, OrgUnit<?> orgUnit, String pattern);
 
 }

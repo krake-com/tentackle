@@ -160,7 +160,7 @@ public class MainController extends AbstractFxController implements DomainContex
    * Asks the user whether to exit the application and does so if yes.
    */
   public void exit() {
-    Fx.yes(resources.getString("ExitAction"), false, () -> Platform.exit());
+    Fx.yes(resources.getString("ExitAction"), false, Platform::exit);
   }
 
 

@@ -612,7 +612,7 @@ public class MessagePersistenceImpl extends AbstractPersistentTransactionData<Me
           String messageNumber,
           Timestamp from, Timestamp until,
           MessageType type,
-          OrgUnit orgUnit,
+          OrgUnit<?> orgUnit,
           String pattern) {
 
     // @wurblet findBy RemoteMethod

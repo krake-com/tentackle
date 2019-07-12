@@ -21,6 +21,7 @@ public abstract class AbstractPersistentMasterData<T extends MasterData<T>, P ex
 
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates an application database object.
@@ -31,7 +32,6 @@ public abstract class AbstractPersistentMasterData<T extends MasterData<T>, P ex
   public AbstractPersistentMasterData(T pdo, DomainContext context) {
     super(pdo, context);
   }
-
 
   /**
    * Creates an application database object without a domain context
@@ -55,13 +55,14 @@ public abstract class AbstractPersistentMasterData<T extends MasterData<T>, P ex
     super(pdo);
   }
 
-
   /**
    * Creates an application database object without a database context.
    */
   public AbstractPersistentMasterData() {
     super();
   }
+
+  //</editor-fold>
 
 }
 

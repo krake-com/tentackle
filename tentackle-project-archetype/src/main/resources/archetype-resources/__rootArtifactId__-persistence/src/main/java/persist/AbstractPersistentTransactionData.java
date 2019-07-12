@@ -21,6 +21,7 @@ public abstract class AbstractPersistentTransactionData<T extends TransactionDat
 
   private static final long serialVersionUID = 1L;
 
+  //<editor-fold defaultstate="collapsed" desc="constructors">
 
   /**
    * Creates an application database object.
@@ -31,7 +32,6 @@ public abstract class AbstractPersistentTransactionData<T extends TransactionDat
   public AbstractPersistentTransactionData(T pdo, DomainContext context) {
     super(pdo, context);
   }
-
 
   /**
    * Creates an application database object without a domain context
@@ -55,12 +55,13 @@ public abstract class AbstractPersistentTransactionData<T extends TransactionDat
     super(pdo);
   }
 
-
   /**
    * Creates an application database object without a database context.
    */
   public AbstractPersistentTransactionData() {
     super();
   }
+
+  //</editor-fold>
 
 }
