@@ -105,7 +105,7 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
 
   /**
    * Gets the validation mappers to map the validation results to the controls.<br>
-   * If {@link #getValidationRoot()} returns a non-null value, a set with a default mapper
+   * If {@link #getValidationPath()} returns a non-null value, a set with a default mapper
    * will be created.
    *
    * @return the mappers, null if none
