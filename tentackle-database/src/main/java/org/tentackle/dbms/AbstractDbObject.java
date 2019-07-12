@@ -59,34 +59,12 @@ import static org.tentackle.sql.Backend.SQL_WHEREALL;
 /**
  * A persistent low-level database object.
  * <p>
- * All persistent objects must extend AbstractDbObject, which provides the generic
- * functionality of persistent objects. Every AbstractDbObject is associated
+ * All persistent objects must extend {@code AbstractDbObject}, which provides the generic
+ * functionality of persistent objects. Every {@code AbstractDbObject} is associated
  * to a logical {@link Session}, which can be either local or remote.
  * The application-specific configuration is achieved by implementing and/or
- * overriding methods (pure OO-approach). These methods are generated
- * by wurblets (see https://wurbelizer.org) which are already provided by Tentackle.
- * <p>
- * AbstractDbObjects have the following predefined attributes:
- * <ul>
- *  <li>
- *  <strong>id</strong>: a unique number (long) that identifies the object. The number is
- *  guaranteed to be unique for all objects of the same class.
- *  </li>
- *  <li>
- *  <strong>serial</strong>: the object's serial number. When an object is first
- *  persisted it gets the serial 1. Every update increments the serial. The serial
- *  is primarily used for optimistic locking and cache synchronization.
- *  </li>
- *  <li>
- *  <strong>tableSerial</strong>: a serial number for all objects of this class
- *  (per table or relation in database lingo). This attribute is optional and
- *  allows to determine which objects have been modified/inserted/deleted since
- *  the last change to any object within the same class.
- *  </li>
- *  <li>
- *  <strong>classId</strong>: a class id, if this class is a leaf in a single- or multi-table inheritance tree.
- *  </li>
- * </ul>
+ * overriding methods (pure OO-approach). These methods are usually generated
+ * by wurblets (see https://wurbelizer.org) according to a model.
  *
  * @param <P> the persistent class type
  */

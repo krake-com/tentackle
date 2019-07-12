@@ -19,8 +19,6 @@
 
 package org.tentackle.domain;
 
-import java.io.Serializable;
-import java.util.List;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainException;
 import org.tentackle.pdo.DomainObject;
@@ -31,8 +29,11 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.reflect.ReflectionHelper;
 import org.tentackle.session.Session;
 
+import java.io.Serializable;
+import java.util.List;
+
 /**
- * The abstract domain object.
+ * Base domain implementation of a PDO.
  *
  * @param <T> the PDO class
  * @param <D> the domain object class
