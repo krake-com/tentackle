@@ -2,7 +2,7 @@
 #set( $symbol_dollar = '$' )
 #set( $symbol_escape = '\' )
 
-open module ${package}.persist {
+module ${package}.persist {
   exports ${package}.persist;
   exports ${package}.persist.md;
   exports ${package}.persist.md.rmi;
