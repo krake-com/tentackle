@@ -35,16 +35,7 @@ public class Version {
     return ResourceBundle.getBundle(Version.class.getName());
   }
 
-  /**
-   * Prints the version.
-   *
-   * @param args command line args (ignored)
-   */
-  public static void main(String[] args) {
-    System.out.println("${application} Version " + RELEASE + " (" + DATE + ")");
-  }
 
-  private Version() {
-  }
+  private Version() {}
 
 }
