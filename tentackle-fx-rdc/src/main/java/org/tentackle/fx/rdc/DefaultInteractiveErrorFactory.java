@@ -29,6 +29,8 @@ import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationUtilities;
 
+import java.util.NavigableSet;
+
 /**
  * Default interactive error factory.
  *
@@ -38,7 +40,7 @@ import org.tentackle.validate.ValidationUtilities;
 public class DefaultInteractiveErrorFactory implements InteractiveErrorFactory {
 
   @Override
-  public InteractiveError createInteractiveError(TreeSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult) {
+  public InteractiveError createInteractiveError(NavigableSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult) {
 
     // translate to the correct binder and binding path
     ValidationUtilities.MapResult mapResult =

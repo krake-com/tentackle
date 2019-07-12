@@ -27,6 +27,10 @@ import org.tentackle.pdo.DomainContextProvider;
 import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.validate.ValidationMapper;
+import org.tentackle.validate.ValidationUtilities;
+
+import java.util.NavigableSet;
+import java.util.TreeSet;
 
 /**
  * FxController to edit a PDO.
@@ -87,11 +91,33 @@ public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends Abs
   }
 
   /**
-   * Gets the validation mappers to map the validation results to the controls.
+   * Gets the validation root path.<br>
+   * By default, the server returns validation results with a validation path that starts with the entity baseclassname
+   * (the first character in lowercase). If the bound PDO variable of the editor uses a different name,
+   * a {@link ValidationMapper} is necessary to map the results back to the form.<br>
+   * This method is provided to reduce the amount of application code.
+   *
+   * @return the validation root path, default is null
+   * @see #getValidationMappers()
+   */
+  public String getValidationPath() {
+    return null;
+  }
+
+  /**
+   * Gets the validation mappers to map the validation results to the controls.<br>
+   * If {@link #getValidationPath()} returns a non-null value, a set with a default mapper
+   * will be created.
    *
    * @return the mappers, null if none
    */
-  public TreeSet<ValidationMapper> getValidationMappers() {
+  public NavigableSet<ValidationMapper> getValidationMappers() {
+    String validationPath = getValidationPath();
+    if (validationPath != null) {
+      NavigableSet<ValidationMapper> validationMappers = new TreeSet<>();
+      validationMappers.add(new ValidationMapper(ValidationUtilities.getInstance().getDefaultValidationPath(getPdo()), getBinder(), validationPath, null));
+      return validationMappers;
+    }
     return null;
   }
 

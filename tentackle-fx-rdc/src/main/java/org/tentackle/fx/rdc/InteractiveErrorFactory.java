@@ -26,6 +26,7 @@ import org.tentackle.fx.FxControl;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationResult;
 
+import java.util.NavigableSet;
 
 interface InteractiveErrorFactory$Singleton {
   InteractiveErrorFactory INSTANCE = ServiceFactory.createService(InteractiveErrorFactory.class);
@@ -55,7 +56,7 @@ public interface InteractiveErrorFactory {
    * @param validationResult the validation result
    * @return the interactive error
    */
-  InteractiveError createInteractiveError(TreeSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult);
+  InteractiveError createInteractiveError(NavigableSet<ValidationMapper> mappers, Binder binder, ValidationResult validationResult);
 
   /**
    * Creates an interactive error explicitly.
