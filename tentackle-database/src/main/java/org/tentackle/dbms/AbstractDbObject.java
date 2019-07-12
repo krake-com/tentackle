@@ -776,7 +776,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Checks whether this object is already persistant in the db
+   * Checks whether this object is already persistent in the db
    * or only residing in memory.
    * If an object isNew(), it means that it can be inserted.
    * This does not mean, that the object never has been stored in the db,
@@ -923,7 +923,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
 
   /**
-   * Determines whether the object should be written to persistant
+   * Determines whether the object should be written to persistent
    * storage because it has been modified.<p>
    * By definition, an object is 'modified' if the object OR ANY
    * of its components are modified. See DbRelations.wrbl on how

@@ -31,7 +31,7 @@ import java.text.MessageFormat;
 import java.util.Objects;
 
 /**
- * The application specific remote session.
+ * Application specific remote session.
  */
 public class ${application}RemoteDbSessionImpl extends RemoteDbSessionImpl implements ${application}RemoteDbSession {
 

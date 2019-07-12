@@ -24,16 +24,19 @@ import java.util.List;
 /**
  * A List with the ability to tell whether it has been structurally modified.
  * <p>
- * A TrackedList distinguishes between additions
- * and removals. A replacement is treated as a removal followed
- * by an addition. All removed objects are kept in a separate list.
+ * TrackedList distinguishes between additions and removals.
+ * A replacement is treated as a removal followed by an addition.
+ * All removed objects are kept in a separate list.
  * <p>
  * The main usage is in OR-mapping to check whether a list should
- * be written back to persistant storage or not and which elements
- * have to be deleted and which to be inserted or updated. However,
- * the TrackedList is not restricted to PDOs.
+ * be written back to persistent storage and which elements
+ * have to be deleted and which to be inserted or updated.
+ * However, the TrackedList is not restricted to PDOs.
  * <p>
- * The TrackedList support snapshots. There may be as many snapshots
+ * TrackedList can be made immutable. If the objects in the list implement
+ * {@link Immutable}, they will be set to immutable as well.
+ * <p>
+ * TrackedList supports snapshots. There may be as many snapshots
  * as needed. Reverting to a snapshot restores the complete state
  * at the time the snapshot was taken and invalidates all later snapshots.
  * Snapshots also save the state of the objects contained in the list

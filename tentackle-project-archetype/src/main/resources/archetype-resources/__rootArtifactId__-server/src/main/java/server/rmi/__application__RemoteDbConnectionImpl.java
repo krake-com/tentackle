@@ -25,13 +25,21 @@ import java.rmi.server.RMIServerSocketFactory;
 import java.util.Objects;
 
 /**
- * The application specific remote connection.
+ * Application specific remote connection.
  */
 public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl implements ${application}Connection {
 
-
   private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates a connection.
+   *
+   * @param server the RMI-server
+   * @param port the tcp-port, 0 = system default
+   * @param csf the client socket factory, null = system default
+   * @param ssf the rmiServer socket factory, null = system default
+   * @throws RemoteException if failed to export object
+   */
   public ${application}RemoteDbConnectionImpl(RmiServer server, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
           throws RemoteException {
     super(server, port, csf, ssf);
@@ -53,9 +61,7 @@ public class ${application}RemoteDbConnectionImpl extends RemoteDbConnectionImpl
   public int exportRemoteObject(Remote remoteObject, int port, RMIClientSocketFactory csf, RMIServerSocketFactory ssf)
           throws RemoteException {
     if (remoteObject instanceof RemoteSecurable) {
-      // users and groups should be transmitted encrypted only and
-      // userPI provides methods to select and update the hashed passwords:
-      // use the socket factories of the login phase (hopefully configured for SSL).
+      // use the login factories, configured for SSL (hopefully...)
       csf = getRmiServer().getLoginClientSocketFactory();
       ssf = getRmiServer().getLoginServerSocketFactory();
       port = getRmiServer().getLoginPort();
