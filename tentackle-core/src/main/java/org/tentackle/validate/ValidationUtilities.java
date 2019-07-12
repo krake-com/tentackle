@@ -19,6 +19,16 @@
 
 package org.tentackle.validate;
 
+import org.tentackle.bind.Binder;
+import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
+import org.tentackle.reflect.EffectiveClassProvider;
+import org.tentackle.reflect.ReflectionHelper;
+import org.tentackle.validate.validator.FailedValidationResult;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
@@ -31,17 +41,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.NavigableSet;
 import java.util.function.Supplier;
-import org.tentackle.bind.Binder;
-import org.tentackle.common.LocaleProvider;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceFactory;
-import org.tentackle.common.StringHelper;
-import org.tentackle.log.Logger;
-import org.tentackle.reflect.EffectiveClassProvider;
-import org.tentackle.reflect.ReflectionHelper;
-import org.tentackle.validate.validator.FailedValidationResult;
 
 
 interface ValidationUtilitiesHolder {
@@ -577,7 +578,7 @@ public class ValidationUtilities {
    * @param bindingPath the binding path
    * @return the mapped binder and bindingpath
    */
-  public MapResult mapValidationPath(TreeSet<ValidationMapper> mappers, Binder binder, String bindingPath) {
+  public MapResult mapValidationPath(NavigableSet<ValidationMapper> mappers, Binder binder, String bindingPath) {
 
     Binder currentBinder = binder;
     String currentPath = bindingPath;
