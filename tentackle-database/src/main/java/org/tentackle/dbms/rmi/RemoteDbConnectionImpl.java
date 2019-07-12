@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.dbms.rmi;
 
 import org.tentackle.common.ExceptionHelper;
@@ -33,28 +32,20 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 
-
-
 /**
  * Server side RMI-connection implementation.
  * <p>
- Overview of what happens in a Tentackle RMI application rmiServer:
- <ul>
- * <li>client gets a reference to a RemoteDbConnection in the rmiServer</li>
- * <li>client invokes login() on the connection and gets a reference to
- *   a RemoteDbSession.</li>
- * <li>each session runs in its own thread (rmiServer and client) and the rmiServer
-   session gets its own Db.</li>
- * <li>all further client requests work through the session object and
- *     the remote delegates created within the session</li>
+ * Overview of what happens in a Tentackle RMI application rmiServer:
+ * <ul>
+ * <li>client gets a reference to a RemoteDbConnection</li>
+ * <li>client invokes login() on the connection and gets a reference to a RemoteDbSession.</li>
+ * <li>each session runs in its own thread (rmiServer and client) and the rmiServer session gets its own Db.</li>
+ * <li>all further client requests work through the session object and the remote delegates created within the session</li>
  * <li>the client invokes logout() to close the session and Db.</li>
- * <li>in case the client terminates abnormally (without invoking logout())
- *   a timeout runs logout() via finalize().</li>
+ * <li>in case the client terminates abnormally (without invoking logout()) a timeout runs logout() via its cleanable.</li>
  * </ul>
  * @author harald
  */
-
-
 public abstract class RemoteDbConnectionImpl extends RemoteServerObject implements RemoteDbConnection {
 
   private static final long serialVersionUID = -1008588987968414154L;
