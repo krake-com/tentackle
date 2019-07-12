@@ -125,4 +125,9 @@ public class UserGroupEditor extends PdoEditor<UserGroup> {
     return contextMenu;
   }
 
+  @Override
+  public String getValidationPath() {
+    return "group";
+  }
+
 }
