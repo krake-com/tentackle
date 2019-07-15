@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -42,6 +43,13 @@ import java.util.Set;
  * Determines the strategy how to invoke jlink.
  */
 public class JlinkResolver {
+
+  /**
+   * Jdeps output cache.
+   * Speeds up the build process if multiple images are created within the same maven run.
+   */
+  private static final Map<Artifact, List<String>> JDEPS_MAP = new HashMap<>();
+
 
   /**
    * Holds the resolver results.
@@ -516,14 +524,18 @@ public class JlinkResolver {
   }
 
   private void runJdeps(Artifact artifact) throws MojoExecutionException {
-    ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
-    if (jdeps12AndNewer) {
-      // necessary since java 12
-      jdepsRunner.arg("--ignore-missing-deps");
+    List<String> lines = JDEPS_MAP.get(artifact);   // no computeIfAbsent due to checked exception
+    if (lines == null) {
+      ToolRunner jdepsRunner = new ToolRunner(mojo.getJdepsTool()).arg("--list-deps");
+      if (jdeps12AndNewer) {
+        // necessary since java 12
+        jdepsRunner.arg("--ignore-missing-deps");
+      }
+      lines = jdepsRunner.arg(artifact.getFile()).run().getOutput();
+      JDEPS_MAP.put(artifact, lines);
     }
-    jdepsRunner.arg(artifact.getFile());
 
-    for (String line: jdepsRunner.run().getOutput()) {
+    for (String line: lines) {
       line = line.trim();
       if (!line.isEmpty() && !line.contains(" ")) {   // a valid module name (no "not found" and such)
         mojo.getLog().debug(artifact + " (non-module): " + line);
