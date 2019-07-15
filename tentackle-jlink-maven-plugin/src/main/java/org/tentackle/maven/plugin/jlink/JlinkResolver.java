@@ -38,6 +38,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Determines the strategy how to invoke jlink.
@@ -48,7 +49,7 @@ public class JlinkResolver {
    * Jdeps output cache.
    * Speeds up the build process if multiple images are created within the same maven run.
    */
-  private static final Map<Artifact, List<String>> JDEPS_MAP = new HashMap<>();
+  private static final Map<Artifact, List<String>> JDEPS_MAP = new ConcurrentHashMap<>();
 
 
   /**
