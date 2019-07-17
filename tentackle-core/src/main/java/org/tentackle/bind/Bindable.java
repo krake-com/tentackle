@@ -29,7 +29,7 @@ import java.lang.annotation.RetentionPolicy;
  * The class may be any kind of class (not necessarily a bean, but maybe),
  * usually a PDO or a GUI-view. The members may be regular objects
  * or primitives. Annotated objects itself may contain annotated members.
- * In fact, only the leafs of such binding hierarchies are actuelly bound.
+ * In fact, only the leafs of such binding hierarchies are actually bound.
  * <p>
  *
  * @author harald
