@@ -19,8 +19,8 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
-import java.util.Map;
+import org.tentackle.common.Constants;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -29,7 +29,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.common.Constants;
+import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -77,23 +78,20 @@ public class BundleHandler extends AbstractAnalyzeHandler {
           String fileName = Constants.BUNDLE_SERVICE_PATH + annotationName;
 
           if (processor.isDebugLogging()) {
-            processor.getProcessingEnvironment().getMessager().printMessage(
-                    Diagnostic.Kind.NOTE, "appending '" + bundleName + "' to " + fileName);
+            print(Diagnostic.Kind.NOTE, "appending '" + bundleName + "' to " + fileName, element);
           }
 
           try {
             processor.getResourceManager(processor.getServiceDir()).getWriter(fileName).println(bundleName);
           }
           catch (IOException ex) {
-            processor.getProcessingEnvironment().getMessager().printMessage(
-                    Diagnostic.Kind.ERROR, "file generation error: " + ex);
+            print(Diagnostic.Kind.ERROR, "file generation error: " + ex, element);
             return;
           }
         }
       }
       else {
-        processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
+        print(Diagnostic.Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
       }
     }
   }
