@@ -83,7 +83,7 @@ public class IncludeWurblet extends AbstractWurblet {
   @Override
   public void cleanup() throws WurbelException {
     if (delete && WurbelHelper.deleteFile(filename)) {
-      getContainer().getLogger().warning("included file '" + filename + "' deleted");
+      getContainer().getLogger().info("included file '" + filename + "' deleted");
     }
   }
 
