@@ -40,12 +40,6 @@ public class ${application}Daemon extends ConsoleApplication {
   }
 
   @Override
-  protected void configureSessionInfo(SessionInfo sessionInfo) {
-    super.configureSessionInfo(sessionInfo);
-    sessionInfo.setClientVersionInfo(Version.RELEASE);
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public User getUser(DomainContext context, long userId) {
     return Pdo.create(User.class, context).selectCached(userId);

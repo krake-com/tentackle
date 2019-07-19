@@ -57,13 +57,6 @@ public class ${application}FxClient extends UpdatableDesktopApplication<MainCont
   }
 
   @Override
-  public ${application}SessionInfo createSessionInfo(String username, char[] password, String sessionPropertiesBaseName) {
-    ${application}SessionInfo sessionInfo = (${application}SessionInfo) super.createSessionInfo(username, password, sessionPropertiesBaseName);
-    sessionInfo.setClientVersionInfo(Version.RELEASE);
-    return sessionInfo;
-  }
-
-  @Override
   protected void configurePreferences() {
     super.configurePreferences();
     User user = getUser(getDomainContext());    // must exist!
