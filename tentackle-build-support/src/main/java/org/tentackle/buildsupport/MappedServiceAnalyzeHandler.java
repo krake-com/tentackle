@@ -19,8 +19,10 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
-import java.util.Map;
+import org.tentackle.common.Constants;
+import org.tentackle.common.MappedService;
+import org.tentackle.common.StringHelper;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -29,8 +31,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
-import org.tentackle.common.Constants;
-import org.tentackle.common.MappedService;
+import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -96,9 +98,8 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
           }
         }
         if (serviceClassName == null) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "no value method in annotation " + ANNOTATION_NAME, element);
-          return;
+          print(Kind.ERROR, "no value method in @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
+          continue;
         }
 
         // determine the serviced pdo class
@@ -120,36 +121,32 @@ public class MappedServiceAnalyzeHandler extends AbstractAnalyzeHandler {
             break;
           }
         }
+
         if (servicedClassName == null) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "no value method in annotation " + serviceClassName, element);
-          return;
+          print(Kind.ERROR, "cannot determine " + serviceClassName +
+                            " via @" + StringHelper.lastAfter(ANNOTATION_NAME, '.'), element);
         }
+        else {
+          String configuration = servicingClassName + " = " + servicedClassName;
+          String relativeName = Constants.MAPPED_SERVICE_PATH + serviceClassName;
 
-        String configuration = servicingClassName + " = " + servicedClassName;
-        String relativeName = Constants.MAPPED_SERVICE_PATH + serviceClassName;
+          if (processor.isDebugLogging()) {
+            print(Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
+          }
 
-        if (processor.isDebugLogging()) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
-        }
-
-        try {
-          processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).
-                  println(configuration);
-          processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
-                  servicingClassName.replace('.', '/') + "/service.log").
-                  println(serviceClassName + ": " + configuration);
-        }
-        catch (IOException ex) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "file generation error: " + ex, element);
-          return;
+          try {
+            processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).println(configuration);
+            processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
+                servicingClassName.replace('.', '/') + "/service.log").println(serviceClassName + ": " + configuration);
+          }
+          catch (IOException ex) {
+            print(Kind.ERROR, "file generation error: " + ex, element);
+            return;
+          }
         }
       }
       else {
-        processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
+        print(Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
       }
     }
   }

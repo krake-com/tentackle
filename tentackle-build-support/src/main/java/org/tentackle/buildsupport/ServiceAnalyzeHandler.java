@@ -19,8 +19,11 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
-import java.util.Map;
+import org.tentackle.common.Constants;
+import org.tentackle.common.Service;
+import org.tentackle.common.ServiceName;
+import org.tentackle.common.StringHelper;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -29,9 +32,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
-import org.tentackle.common.Constants;
-import org.tentackle.common.Service;
-import org.tentackle.common.ServiceName;
+import java.io.IOException;
+import java.util.Map;
 
 
 /**
@@ -127,39 +129,33 @@ public class ServiceAnalyzeHandler extends AbstractAnalyzeHandler {
         }
 
         if (servicedClassName == null) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "no value method in annotation " + annotationName, element);
-          return;
+          print(Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annotationName, '.'), element);
         }
-
-        // remove double quotes if service was given as a name (@ServiceName)
-        if (servicedClassName.charAt(0) == '"' && servicedClassName.length() > 1) {
-          servicedClassName = servicedClassName.substring(1, servicedClassName.length() - 1);
-        }
+        else {
+          // remove double quotes if service was given as a name (@ServiceName)
+          if (servicedClassName.charAt(0) == '"' && servicedClassName.length() > 1) {
+            servicedClassName = servicedClassName.substring(1, servicedClassName.length() - 1);
+          }
 
         String relativeName = Constants.DEFAULT_SERVICE_PATH + servicedClassName;
 
-        if (processor.isDebugLogging()) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName, element);
-        }
+          if (processor.isDebugLogging()) {
+            print(Kind.NOTE, "appending '" + servicingClassName + "' to " + relativeName, element);
+          }
 
-        try {
-          processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).
-                  println(servicingClassName);
-          processor.getResourceManager(processor.getAnalyzeDir()).getWriter(servicingClassName.replace('.', '/') +
-                  "/service.log").
-                  println(servicedClassName);
-        }
-        catch (IOException ex) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "file generation error: " + ex, element);
-          return;
+          try {
+            processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).println(servicingClassName);
+            processor.getResourceManager(processor.getAnalyzeDir())
+                     .getWriter(servicingClassName.replace('.', '/') + "/service.log").println(servicedClassName);
+          }
+          catch (IOException ex) {
+            print(Kind.ERROR, "file generation error: " + ex, element);
+            return;
+          }
         }
       }
       else {
-        processor.getProcessingEnvironment().getMessager().printMessage(
-                  Kind.ERROR, "annotated element '" + element + "' is not a class", element);
+        print(Kind.ERROR, "annotated element '" + element + "' is not a class", element);
       }
     }
   }

@@ -18,6 +18,10 @@
 
 package org.tentackle.buildsupport;
 
+import org.tentackle.common.StringHelper;
+
+import javax.lang.model.element.Element;
+import javax.tools.Diagnostic;
 import java.io.File;
 import java.util.StringTokenizer;
 
@@ -43,6 +47,19 @@ abstract public class AbstractAnalyzeHandler implements AnalyzeHandler {
       file = new File(file, token);
     }
     return file;
+  }
+
+  /**
+   * Prints a message of the specified kind at the location of the
+   * element.
+   *
+   * @param kind the kind of message
+   * @param msg  the message
+   * @param e    the element to use as a position hint
+   */
+  protected void print(Diagnostic.Kind kind, CharSequence msg, Element e) {
+    getProcessor().getProcessingEnvironment().getMessager().printMessage(
+        kind, msg + " [" + StringHelper.lastAfter(getClass().getName(), '.') + "]", e);
   }
 
 }

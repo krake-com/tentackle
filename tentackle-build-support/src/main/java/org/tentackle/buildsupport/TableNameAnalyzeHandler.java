@@ -19,8 +19,9 @@
 
 package org.tentackle.buildsupport;
 
-import java.io.IOException;
-import java.util.Map;
+import org.tentackle.common.Constants;
+import org.tentackle.common.StringHelper;
+
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -29,8 +30,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import org.tentackle.common.Constants;
-import org.tentackle.common.StringHelper;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Handler for the {@code @TableName} annotation.
@@ -95,60 +96,46 @@ public class TableNameAnalyzeHandler extends AbstractAnalyzeHandler {
                   break;
 
                 default:
-                  processor.getProcessingEnvironment().getMessager().printMessage(
-                          Diagnostic.Kind.WARNING,
-                          "unknown method '" + methodName + "' in annotation " + annotationType, element);
+                  print(Diagnostic.Kind.WARNING, "unknown method '" + methodName + "' in annotation " + annotationType, element);
               }
             }
-
-            if (tableName == null) {
-              processor.getProcessingEnvironment().getMessager().printMessage(
-                      Diagnostic.Kind.ERROR, "no value method in annotation " + annotationType, element);
-              return;
-            }
-
             break;
           }
         }
 
         if (tableName == null) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "internal logic error", element);
+          print(Diagnostic.Kind.ERROR, "no value method in @" + StringHelper.lastAfter(annotationType.getClass().getName(), '.'), element);
         }
+        else {
+          // notice: tablename is a string enclosed in doublequotes!
 
-        // notice: tablename is a string enclosed in doublequotes!
+          if (mapSchema) {
+            tableName = tableName.replace('.', '_');
+          }
+          if (prefix != null) {
+            tableName = tableName.substring(0, 1) + prefix + tableName.substring(1);
+          }
 
-        if (mapSchema) {
-          tableName = tableName.replace('.', '_');
-        }
-        if (prefix != null) {
-          tableName = tableName.substring(0, 1) + prefix + tableName.substring(1);
-        }
+          String configuration = servicingClassName + " = " + tableName;
+          String relativeName = Constants.MAPPED_SERVICE_PATH + annoName;
 
-        String configuration = servicingClassName + " = " + tableName;
-        String relativeName = Constants.MAPPED_SERVICE_PATH + annoName;
+          if (processor.isDebugLogging()) {
+            print(Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
+          }
 
-        if (processor.isDebugLogging()) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.NOTE, "appending '" + configuration + "' to " + relativeName, element);
-        }
-
-        try {
-          processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).
-                  println(configuration);
-          processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
-                  servicingClassName.replace('.', '/') + "/service.log").
-                  println(annoName + ": " + configuration);
-        }
-        catch (IOException ex) {
-          processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "file generation error: " + ex, element);
-          return;
+          try {
+            processor.getResourceManager(processor.getServiceDir()).getWriter(relativeName).println(configuration);
+            processor.getResourceManager(processor.getAnalyzeDir()).getWriter(
+                servicingClassName.replace('.', '/') + "/service.log").println(annoName + ": " + configuration);
+          }
+          catch (IOException ex) {
+            print(Diagnostic.Kind.ERROR, "file generation error: " + ex, element);
+            return;
+          }
         }
       }
       else {
-        processor.getProcessingEnvironment().getMessager().printMessage(
-                  Diagnostic.Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
+        print(Diagnostic.Kind.ERROR, "annotated element '" + element + "' is not a class or interface", element);
       }
     }
   }
