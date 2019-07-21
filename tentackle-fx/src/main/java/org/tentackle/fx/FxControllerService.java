@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Service(FxController.class)
-@Analyze("org.tentackle.buildsupport.FxControllerBundleHandler")
+@Analyze("org.tentackle.buildsupport.FxControllerBundleAnalyzeHandler")
 public @interface FxControllerService {
 
   /**

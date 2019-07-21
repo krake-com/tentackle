@@ -33,7 +33,7 @@ import org.tentackle.common.Constants;
  *
  * @author harald
  */
-public class FxControllerBundleHandler extends BundleHandler {
+public class FxControllerBundleAnalyzeHandler extends BundleAnalyzeHandler {
 
   @Override
   protected String getBundleName(Element element, String annotationName) {
