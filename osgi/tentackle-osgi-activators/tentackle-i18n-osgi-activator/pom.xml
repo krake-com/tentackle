@@ -10,7 +10,6 @@
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-i18n-osgi-activator</artifactId>
-  <version>2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Tentackle I18N OSGi Bundle Activator</name>

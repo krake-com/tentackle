@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-domain</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Domain</name>
   <description>Tentackle Domain Layer</description>

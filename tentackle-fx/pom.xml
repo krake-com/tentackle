@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-fx</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle FX</name>
   <description>UI components based on FX</description>

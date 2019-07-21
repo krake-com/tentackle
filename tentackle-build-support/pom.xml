@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-build-support</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Build Support</name>
   <description>Support for building applications</description>

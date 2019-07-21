@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-swing-rdc</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Swing Rich Desktop Client</name>
   <description>Rich Desktop Client based on Tentackle Swing</description>

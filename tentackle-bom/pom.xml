@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-bom</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Tentackle BOM</name>
   <description>Tentackle Bill Of Materials</description>

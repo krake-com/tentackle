@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-tools</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Tentackle Tools</name>
   <description>Tools for the Tentackle Framework</description>

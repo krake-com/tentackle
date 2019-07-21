@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-log-slf4j</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Logging SLF4J</name>
   <description>SLF4J Logging Adapter for Tentackle</description>

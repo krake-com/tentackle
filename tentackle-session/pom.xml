@@ -9,7 +9,6 @@
   </parent>
 
   <artifactId>tentackle-session</artifactId>
-  <version>8.2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Tentackle Session</name>
   <description>The session layer of the Tentackle Framework</description>
