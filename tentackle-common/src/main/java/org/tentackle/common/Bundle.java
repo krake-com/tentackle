@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Analyze("org.tentackle.buildsupport.BundleHandler")
+@Analyze("org.tentackle.buildsupport.BundleAnalyzeHandler")
 public @interface Bundle {
 
   /**

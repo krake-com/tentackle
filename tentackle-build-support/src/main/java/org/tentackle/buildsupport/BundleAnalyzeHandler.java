@@ -39,7 +39,7 @@ import java.util.Map;
  *
  * @author harald
  */
-public class BundleHandler extends AbstractAnalyzeHandler {
+public class BundleAnalyzeHandler extends AbstractAnalyzeHandler {
 
   private AnalyzeProcessor processor;     // the annotation processor
 
