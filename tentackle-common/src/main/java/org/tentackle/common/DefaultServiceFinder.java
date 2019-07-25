@@ -22,6 +22,7 @@ package org.tentackle.common;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringBufferInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -297,18 +298,19 @@ public class DefaultServiceFinder implements ServiceFinder {
    */
   @Override
   public synchronized Map<String, String> createNameMap(String serviceName) {
-
     Map<String, String> nameMap = new HashMap<>();
 
     for (Map.Entry<String, URL> entry :
             ServiceFactory.getServiceFinder(Constants.MAPPED_SERVICE_PATH).findServiceConfigurations(serviceName).entrySet()) {
 
       String configuration = entry.getKey();
-      List<String> parts = StringHelper.split(configuration, ":= ");
-      if (parts.size() != 2) {
+      int ndx = StringHelper.indexAnyOf(configuration, ":=");
+      if (ndx < 0) {
         throw new TentackleRuntimeException("invalid service configuration '" + configuration + "' in " + entry.getValue());
       }
-      nameMap.putIfAbsent(parts.get(1), parts.get(0));
+      String key = StringHelper.parseString(configuration.substring(ndx + 1).trim());
+      String value = configuration.substring(0, ndx).trim();
+      nameMap.putIfAbsent(key, value);
     }
 
     return nameMap;

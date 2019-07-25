@@ -182,6 +182,27 @@ public final class StringHelper {
 
 
   /**
+   * Returns the first index of any of the given characters.
+   *
+   * @param str the string
+   * @param anyOf the characters
+   * @return the index to the first character found, -1 if no such character
+   */
+  public static int indexAnyOf(String str, String anyOf) {
+    int index = -1;
+    if (anyOf != null && str != null) {
+      for (int i = 0; i < anyOf.length(); i++) {
+        index = str.indexOf(anyOf.charAt(i));
+        if (index >= 0) {
+          break;
+        }
+      }
+    }
+    return index;
+  }
+
+
+  /**
    * Takes a string, surrounds it with double-quotes and escapes all double-quotes
    * already in the string according to Unix rules.
    * Example:
