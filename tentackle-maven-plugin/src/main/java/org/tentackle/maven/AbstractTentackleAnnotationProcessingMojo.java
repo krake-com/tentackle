@@ -20,25 +20,27 @@
 package org.tentackle.maven;
 
 import com.sun.tools.javac.api.JavacTool;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.shared.model.fileset.FileSet;
+import org.apache.maven.shared.model.fileset.util.FileSetManager;
+import org.wurbelizer.misc.Constants;
+
+import org.tentackle.buildsupport.AbstractTentackleProcessor;
+
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.shared.model.fileset.FileSet;
-import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.tentackle.buildsupport.AbstractTentackleProcessor;
-import org.wurbelizer.misc.Constants;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -232,7 +234,12 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
           processFileSet(fs);
         }
         else {
-          getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+          if (sourceDir.exists()) {
+            getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+          }
+          else {
+            getLog().info("no sourceDir " + sourceDir.getAbsolutePath());
+          }
         }
       }
     }

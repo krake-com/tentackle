@@ -114,7 +114,12 @@ public class BeanInfoMojo extends AbstractTentackleMojo {
             processFileSet(fs, ps);
           }
           else {
-            getLog().warn("no or empty sourceDir " + sourceDir.getAbsolutePath());
+            if (sourceDir.exists()) {
+              getLog().warn("empty sourceDir " + sourceDir.getAbsolutePath());
+            }
+            else {
+              getLog().info("no sourceDir " + sourceDir.getAbsolutePath());
+            }
           }
         }
       }
