@@ -191,9 +191,10 @@ public final class StringHelper {
   public static int indexAnyOf(String str, String anyOf) {
     int index = -1;
     if (anyOf != null && str != null) {
-      for (int i = 0; i < anyOf.length(); i++) {
-        index = str.indexOf(anyOf.charAt(i));
-        if (index >= 0) {
+      for (int i = 0; i < str.length(); i++) {
+        char c = str.charAt(i);
+        if (anyOf.indexOf(c) >= 0) {
+          index = i;
           break;
         }
       }
