@@ -383,16 +383,6 @@ public class AbstractDbObjectRemoteDelegateImpl<P extends AbstractDbObject<P>>
   }
 
   @Override
-  public long getModificationCount() throws RemoteException {
-    try {
-      return dbObject.getModificationCount();
-    }
-    catch (RuntimeException e) {
-      throw createException(e);
-    }
-  }
-
-  @Override
   public boolean isReferenced(long id) throws RemoteException {
     try {
       P obj = newInstance().selectObject(id);

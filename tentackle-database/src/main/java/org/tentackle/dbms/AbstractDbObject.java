@@ -19,10 +19,6 @@
 
 package org.tentackle.dbms;
 
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 import org.tentackle.dbms.rmi.AbstractDbObjectRemoteDelegate;
 import org.tentackle.dbms.rmi.DbObjectResult;
 import org.tentackle.log.Logger;
@@ -40,6 +36,11 @@ import org.tentackle.session.Persistent;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionHolder;
 import org.tentackle.sql.Backend;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
 import static org.tentackle.sql.Backend.SQL_ALLSTAR;
 import static org.tentackle.sql.Backend.SQL_AND;
@@ -2534,18 +2535,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the modification counter
    */
   public long getModificationCount () {
-    if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().getModificationCount();
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
-    else  {
-      // local
-      return ModificationTracker.getInstance().getSerial(getTableName());
-    }
+    return ModificationTracker.getInstance().getSerial(getTableName());
   }
 
 

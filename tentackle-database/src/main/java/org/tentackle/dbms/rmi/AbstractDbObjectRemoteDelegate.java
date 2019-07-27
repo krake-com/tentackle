@@ -20,10 +20,11 @@
 
 package org.tentackle.dbms.rmi;
 
-import java.rmi.RemoteException;
-import java.util.List;
 import org.tentackle.dbms.AbstractDbObject;
 import org.tentackle.misc.IdSerialTuple;
+
+import java.rmi.RemoteException;
+import java.util.List;
 
 
 
@@ -91,8 +92,6 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
   DbObjectResult deleteObject(P obj) throws RemoteException;
 
   long countModification() throws RemoteException;
-
-  long getModificationCount() throws RemoteException;
 
   boolean isReferenced(long id) throws RemoteException;
 }

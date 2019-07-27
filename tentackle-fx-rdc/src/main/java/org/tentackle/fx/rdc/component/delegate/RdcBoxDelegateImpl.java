@@ -35,7 +35,8 @@ public class RdcBoxDelegateImpl {
 
   private final FxComponent component;
   private final Supplier<ObservableList> itemSupplier;
-  private boolean loadPdosPending;
+  private long lastModificationCount;   // 0 if no pdo, -1 if load initial serial, else last serial at time of selectAll
+  private PersistentDomainObject proxy;
 
   /**
    * Creates the delegate impl.
@@ -54,9 +55,8 @@ public class RdcBoxDelegateImpl {
    * @param type the type
    */
   public void prepareSetType(Class<?> type) {
-    if (PersistentDomainObject.class.isAssignableFrom(type)) {
-      loadPdosPending = true;
-    }
+    lastModificationCount = PersistentDomainObject.class.isAssignableFrom(type) ? -1 : 0;
+    proxy = null;
   }
 
   /**
@@ -64,15 +64,30 @@ public class RdcBoxDelegateImpl {
    */
   @SuppressWarnings("unchecked")
   public void prepareSetViewValue() {
-    if (loadPdosPending) {
-      loadPdosPending = false;
-      FxComponentBinding binding = component.getBinding();
-      DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
-      if (context != null) {
-        PersistentDomainObject pdo = Pdo.create((Class<PersistentDomainObject>) component.getType(), context);
+    if (lastModificationCount != 0) {
+      boolean loadItems = false;
+      if (proxy == null) {
+        FxComponentBinding binding = component.getBinding();
+        DomainContext context = binding.getBinder().getBindingProperty(DomainContext.class);
+        if (context != null) {
+          proxy = Pdo.create((Class<PersistentDomainObject>) component.getType(), context);
+          loadItems = true;
+        }
+      }
+      else {
+        long modificationCount = proxy.getModificationCount();
+        if (modificationCount != lastModificationCount) {
+          lastModificationCount = modificationCount;
+          loadItems = true;
+        }
+      }
+
+      if (loadItems) {
         ObservableList items = itemSupplier.get();
-        items.clear();
-        items.addAll(pdo.selectAllCached());
+        items.setAll(proxy.selectAllCached());
+        if (lastModificationCount == -1) {
+          lastModificationCount = proxy.getModificationCount();
+        }
       }
     }
   }
