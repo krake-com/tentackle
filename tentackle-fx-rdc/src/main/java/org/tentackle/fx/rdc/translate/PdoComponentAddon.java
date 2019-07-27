@@ -220,10 +220,10 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
 
   /**
    * Returns a list of all pdos.<br>
-   * Used in comboboxes and choiceboxes to initialize the component's drop down list.
+   * Used in comboboxes and choiceboxes to initialize the component's item list.
    *
    * @param proxy the proxy pdo
-   * @return the list of all allowed PDOs
+   * @return the list of all PDOs
    */
   public List<T> selectAll(T proxy) {
     return proxy.selectAllCached();

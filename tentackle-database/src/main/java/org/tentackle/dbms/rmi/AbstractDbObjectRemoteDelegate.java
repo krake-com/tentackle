@@ -92,7 +92,5 @@ public interface AbstractDbObjectRemoteDelegate<P extends AbstractDbObject<P>> e
 
   long countModification() throws RemoteException;
 
-  long getModificationCount() throws RemoteException;
-
   boolean isReferenced(long id) throws RemoteException;
 }
