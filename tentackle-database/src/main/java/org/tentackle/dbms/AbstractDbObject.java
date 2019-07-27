@@ -2484,18 +2484,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    * @return the modification counter
    */
   public long getModificationCount () {
-    if (getSession().isRemote())  {
-      try {
-        return getRemoteDelegate().getModificationCount();
-      }
-      catch (RemoteException e) {
-        throw PersistenceException.createFromRemoteException(this, e);
-      }
-    }
-    else  {
-      // local
-      return ModificationTracker.getInstance().getSerial(getTableName());
-    }
+    return ModificationTracker.getInstance().getSerial(getTableName());
   }
 
 
