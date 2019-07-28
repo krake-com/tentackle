@@ -83,8 +83,6 @@ public class RdcBoxDelegateImpl {
       }
 
       if (loadItems) {
-        ObservableList items = itemSupplier.get();
-        items.setAll(proxy.selectAllCached());
         if (lastModificationCount == -1) {
           lastModificationCount = proxy.getModificationCount();
         }
