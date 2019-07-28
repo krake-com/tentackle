@@ -88,6 +88,8 @@ public class RdcBoxDelegateImpl {
         if (lastModificationCount == -1) {
           lastModificationCount = proxy.getModificationCount();
         }
+        ObservableList items = itemSupplier.get();
+        items.setAll(proxy.selectAllCached());
       }
     }
   }
