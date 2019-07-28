@@ -89,11 +89,11 @@ public class RdcBoxDelegateImpl {
       }
 
       if (loadItems) {
-        ObservableList items = itemSupplier.get();
-        items.setAll(pdoAddonSupplier.get().selectAll(proxy));
         if (lastModificationCount == -1) {
           lastModificationCount = proxy.getModificationCount();
         }
+        ObservableList items = itemSupplier.get();
+        items.setAll(pdoAddonSupplier.get().selectAll(proxy));
       }
     }
   }
