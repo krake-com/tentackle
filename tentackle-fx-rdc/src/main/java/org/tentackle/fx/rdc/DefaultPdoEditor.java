@@ -137,6 +137,10 @@ public class DefaultPdoEditor<T extends PersistentDomainObject<T>> extends PdoEd
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
   }
 
+  @Override
+  public String getValidationPath() {
+    return PDO;
+  }
 
   /**
    * Gets the first focusable node.
