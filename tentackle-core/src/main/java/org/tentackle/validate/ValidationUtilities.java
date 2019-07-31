@@ -40,9 +40,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
 
@@ -602,29 +604,42 @@ public class ValidationUtilities {
 
     if (mappers != null) {
       // translate validation path to binding path and optionally switch to other binders
+      Set<String> doneSet = new HashSet<>();  // to detect binder/mapper loops
       for (;;) {
-        /**
-         * The bindingpath from the results is always longer than the bindingpath of the validation mapper, hence
-         * lowerEntry.
+        /*
+         * The bindingpath from the results is always longer than the bindingpath of the validation mapper,
+         * hence lowerEntry.
          */
         ValidationMapper mapper = mappers.lower(new ValidationMapper(currentPath, currentBinder, null, null));
         if (mapper != null) {
           // some mapper found
           if (currentPath.startsWith(mapper.getValidationPath()) &&
-                  (mapper.getBinder() == null || mapper.getBinder().equals(currentBinder))) {
+              (mapper.getBinder() == null || mapper.getBinder().equals(currentBinder))) {
+
             currentPath = mapper.getBindingPath() + currentPath.substring(mapper.getValidationPath().length());
+
             if (mapper.getNextBinder() != null) {
               currentBinder = mapper.getNextBinder();
+              LOGGER.fine("{0}:{1} translated to {2}:{3}",
+                          binder.getInstanceNumber(), bindingPath, currentBinder.getInstanceNumber(), currentPath);
             }
-            LOGGER.fine("{0}:{1} translated to {2}:{3}",
-                    binder.getInstanceNumber(), bindingPath,
-                    currentBinder.getInstanceNumber(), currentPath);
+            else {
+              LOGGER.fine("{0}:{1} translated to {2}",
+                          binder.getInstanceNumber(), bindingPath, currentPath);
+              break;
+            }
           }
           else {
             break;
           }
         }
         else {
+          break;
+        }
+
+        // add current binder + binding path to already done set
+        if (!doneSet.add(currentBinder.getInstanceNumber() + ":" + currentPath)) {
+          LOGGER.warning("validation mapper loop detected for {0}:{1}", currentBinder.getInstanceNumber(), currentPath);
           break;
         }
       }
