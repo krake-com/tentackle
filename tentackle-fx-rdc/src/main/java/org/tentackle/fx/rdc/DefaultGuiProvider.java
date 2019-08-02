@@ -259,14 +259,14 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
 
   @Override
   public <P extends PersistentDomainObject<P>> String getTreeText(P parent) {
-    if (getPdo() instanceof ShortLongText) {
-      return ((ShortLongText) getPdo()).getShortText() + " : " + ((ShortLongText) getPdo()).getLongText();
-    }
     return getPdo().toString();
   }
 
   @Override
   public <P extends PersistentDomainObject<P>> String getToolTipText(P parent) {
+    if (getPdo() instanceof ShortLongText) {
+      return ((ShortLongText) getPdo()).getLongText();
+    }
     return getTreeText(parent);
   }
 

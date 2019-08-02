@@ -10,6 +10,7 @@ package ${package}.pdo.md.persist;
 import ${package}.pdo.md.OrgUnit;
 
 import org.tentackle.bind.Bindable;
+import org.tentackle.misc.ShortLongText;
 import org.tentackle.pdo.DomainKey;
 import org.tentackle.pdo.PersistentObject;
 import org.tentackle.session.Persistent;
@@ -21,7 +22,7 @@ import org.tentackle.validate.validator.NotNull;
  *
  * @param <T> the orgunit type
  */
-public interface OrgUnitPersistence<T extends OrgUnit<T>> extends PersistentObject<T> {
+public interface OrgUnitPersistence<T extends OrgUnit<T>> extends PersistentObject<T>, ShortLongText {
 
   // @wurblet attributeNames AttributeNames
 
