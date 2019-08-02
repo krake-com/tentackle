@@ -19,7 +19,6 @@
 
 package org.tentackle.pdo;
 
-import java.util.List;
 import org.tentackle.bind.Bindable;
 import org.tentackle.common.Timestamp;
 import org.tentackle.misc.IdSerialTuple;
@@ -38,6 +37,8 @@ import org.tentackle.session.SessionDependable;
 import org.tentackle.validate.ScopeConfigurator;
 import org.tentackle.validate.Validateable;
 import org.tentackle.validate.ValidationFailedException;
+
+import java.util.List;
 
 /**
  * Interface for the persistent part of a PDO.
@@ -60,24 +61,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   long getId();
 
   /**
-   * Sets the unique identification number.<br>
-   * Does <em>not</em> set this object to be modified, see {@link #isModified}.
-   *
-   * @param id the ID
-   */
-  @Override
-  void setId(long id);
-
-  /**
-   * Sets the serial number.<br>
-   * Does <em>not</em> set this object to be modified, see {@link #isModified}.
-   *
-   * @param serial the serial number
-   */
-  @Override
-  void setSerial(long serial);
-
-  /**
    * Gets the serial number.<br>
    * Whenever the object is persisted, the serial is incremented by one.
    *
@@ -94,15 +77,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return true if pdo is using the tableSerial column, false if not
    */
   boolean isTableSerialProvided();
-
-  /**
-   * Sets the table serial number.<br>
-   * The table serial is the modification count of the whole table.<br>
-   * Does <em>not</em> set this object to be modified, see {@link #isModified}.
-   *
-   * @param tableSerial the new table serial
-   */
-  void setTableSerial(long tableSerial);
 
   /**
    * Gets the table serial.
@@ -122,6 +96,24 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the id string
    */
   String toIdString();
+
+  /**
+   * Returns whether this an abstract PDO.<br>
+   * Abstract PDOs are real objects but cannot be persisted.
+   * They may be used to retrieve data for the concrete implementations, however.
+   *
+   * @return true if abstract PDO
+   */
+  boolean isAbstract();
+
+  /**
+   * Returns whether this PDO is a composite.<br>
+   * Composite PDOs consist of other component PDOs, defined via composite relations.<br>
+   * Notice that a <em>composite root entity</em> is synonym to the <em>aggregate root</em> in DDD lingo.
+   *
+   * @return true if object is a composite, false if not.
+   */
+  boolean isComposite();
 
   /**
    * Returns whether this object is a root entity.<br>
@@ -165,13 +157,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   long getRootId();
 
   /**
-   * Sets the ID of the root entity this component belongs to.
-   *
-   * @param rootId the root id
-   */
-  void setRootId(long rootId);
-
-  /**
    * Indicates whether this entity's model provides a root-class-ID column.<br>
    * The column is added in components that belong to different root entity classes.
    *
@@ -187,13 +172,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   @Persistent(comment = "root class id")
   @Bindable
   int getRootClassId();
-
-  /**
-   * Sets the class ID of the root entity this component belongs to.
-   *
-   * @param rootClassId the root class id
-   */
-  void setRootClassId(int rootClassId);
 
   /**
    * Gets the database table name for the class of this object.
@@ -291,21 +269,22 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   void reserveId();
 
   /**
+   * Reserves a given ID.<br>
+   * It doesn't matter whether the ID is negative or positive.
+   * Reserving 0 clears the reservation.
+   * <p>
+   * Throws a {@link PersistenceException} if the object is not new.
+   *
+   * @param id the ID to reserve, 0 to clear the reservation
+   */
+  void reserveId(long id);
+
+  /**
    * Checks whether object is deleted.
    *
    * @return true if object has been removed from the database
    */
   boolean isDeleted();
-
-  /**
-   * Sets the modified flag.<p>
-   * For optimizations it is possible to skip objects that have not
-   * been modified. The modified-attribute is cleared whenever the
-   * object is persisted.
-   *
-   * @param modified is true if object is flagged modified, false if not.
-   */
-  void setModified(boolean modified);
 
   /**
    * Returns whether the modification state is available.<br>
@@ -357,6 +336,22 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return true if referenced
    */
   boolean isReferenced();
+
+  /**
+   * Checks whether this object can be removed.
+   * <p>
+   * Should be invoked before operations that may have an impact on the
+   * referential integrity, for example to enable a delete button in the UI.<br>
+   * The default implementation returns {@code !isNew() && !isReferenced()}.
+   *
+   * @return true if removable
+   */
+  boolean isRemovable();
+
+  /**
+   * Removes this object from the database.
+   */
+  void delete();
 
   /**
    * Sets this object's expiration flag.<br>
@@ -500,31 +495,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   boolean isCacheable();
 
   /**
-   * Returns whether this an abstract PDO.<br>
-   * Abstract PDOs are real objects but cannot be persisted.
-   * They may be used to retrieve data for the concrete implementations, however.
-   *
-   * @return true if abstract PDO
-   */
-  boolean isAbstract();
-
-  /**
-   * Checks whether this object can be removed.
-   * <p>
-   * Should be invoked before operations that may have an impact on the
-   * referential integrity, for example to enable a delete button in the UI.<br>
-   * The default implementation returns {@code !isNew() && !isReferenced()}.
-   *
-   * @return true if removable
-   */
-  boolean isRemovable();
-
-  /**
-   * Removes this object from the database.
-   */
-  void delete();
-
-  /**
    * Searches for a "pattern" in this object.<br>
    * The default implementation looks for the pattern in the normtext.
    *
@@ -609,17 +579,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
    * @return the locking object, null if not locked
    */
   <U extends PersistentDomainObject<U>> U getTokenLockObject();
-
-  /**
-   * Sets the locking object.
-   * <p>
-   * CAUTION: the method is provided for rare corner cases like administration tools.
-   * Don't use it for regular locking/unlocking!
-   *
-   * @param <U> the locking object type
-   * @param obj the locking object, null to clear.
-   */
-  <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj);
 
   /**
    * Transfers the token lock to another user.<br>
@@ -800,25 +759,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   T persistTokenLocked();
 
   /**
-   * Gets the optional transient data object.<br>
-   * The default implementation does nothing.
-   *
-   * @return the transient data, null if none.
-   */
-  Object getTransientData();
-
-  /**
-   * Sets the optional transient data object.<br>
-   * When objects need to be reloaded from storage, all non-persistent
-   * data attached to the object would be lost. In such cases the application may use
-   * getTransientData() and setTransientData() to keep the non-persistent attributes.<br>
-   * The default implementation does nothing.
-   *
-   * @param data the transient data
-   */
-  void setTransientData(Object data);
-
-  /**
    * Gets the id of the user currently editing this object.
    *
    * @return the id or 0 if not being edited currently.
@@ -826,15 +766,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   @Persistent(comment = "userId of token holder")
   @Bindable
   long getEditedBy();
-
-  /**
-   * Sets the user editing this object.
-   * Does *NOT* alter isModified().
-   *
-   * @param editedBy the id of the user, 0 to clear.
-   *
-   */
-  void setEditedBy(long editedBy);
 
   /**
    * Gets the time since when this object is being edited.
@@ -846,14 +777,6 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   Timestamp getEditedSince();
 
   /**
-   * Sets the time since when this object is being edited.
-   * Does *NOT* alter isModified().
-   *
-   * @param editedSince the time, null to clear.
-   */
-  void setEditedSince(Timestamp editedSince);
-
-  /**
    * Gets the time since when this object is being edited.
    *
    * @return the time, null if not being edited.
@@ -863,35 +786,11 @@ public interface PersistentObject<T extends PersistentDomainObject<T>>
   Timestamp getEditedExpiry();
 
   /**
-   * Sets the time when the token should expire.
-   * Does *NOT* alter isModified().
-   *
-   * @param editedExpiry the expiration time, null to clear.
-   */
-  void setEditedExpiry(Timestamp editedExpiry);
-
-  /**
-   * Returns whether this PDO is a composite.<br>
-   * Composite PDOs consist of other component PDOs, defined via composite relations.<br>
-   * Notice that a <em>composite root entity</em> is synonym to the <em>aggregate root</em> in DDD lingo.
-   *
-   * @return true if object is a composite, false if not.
-   */
-  boolean isComposite();
-
-  /**
-   * Indicates whether this entity's model provides a normtext column.
+   * Indicates whether this entity's model provides at least one normtext column.
    *
    * @return true if pdo is using the normtext column, false if not.
    */
   boolean isNormTextProvided();
-
-  /**
-   * Sets the normtext.
-   *
-   * @param normText the normtext
-   */
-  void setNormText(String normText);
 
   /**
    * Gets the normtext.<br>

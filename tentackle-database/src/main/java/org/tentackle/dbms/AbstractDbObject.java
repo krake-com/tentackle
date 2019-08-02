@@ -650,7 +650,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param id the object id
    */
-  @Override
   public void setId (long id) {
     assertMutable();
     this.id = id;
@@ -675,7 +674,6 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @param serial the serial number
    */
-  @Override
   public void setSerial (long serial) {
     assertMutable();
     this.serial = serial;
@@ -750,6 +748,21 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
         id = -id;
       }
     }
+  }
+
+
+  /**
+   * Reserves a given ID.<br>
+   * It doesn't matter whether the ID is negative or positive.
+   * Reserving 0 clears the reservation.
+   * <p>
+   * Throws a {@link PersistenceException} if the object is not new.
+   *
+   * @param id the ID to reserve, 0 to clear the reservation
+   */
+  public void reserveId(long id) {
+    assertNew();
+    this.id = id < 0 ? id : -id;
   }
 
 
@@ -3058,10 +3071,18 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    */
   protected void assertNotNew() {
     if (isNew()) {
-      throw new NotFoundException(this, id == 0 ? "object is new" : "object is deleted");
+      throw new PersistenceException(this, id == 0 ? "object is new" : "object is deleted");
     }
   }
 
+  /**
+   * Asserts that object is new.
+   */
+  protected void assertNew() {
+    if (!isNew()) {
+      throw new PersistenceException(this, "object is not new");
+    }
+  }
 
   /**
    * Asserts that this object is not overloaded.<br>

@@ -19,8 +19,9 @@
 
 package org.tentackle.pdo;
 
-import java.io.Serializable;
 import org.tentackle.common.Timestamp;
+
+import java.io.Serializable;
 
 
 /**
@@ -63,18 +64,6 @@ public class TokenLockInfo implements Serializable {
    */
   public TokenLockInfo(PersistentObject<?> pdo) {
     this(pdo.getEditedBy(), pdo.getEditedSince(), pdo.getEditedExpiry());
-  }
-
-
-  /**
-   * Applies the edited token from a PDO.
-   *
-   * @param pdo the PDO
-   */
-  public void applyTo(PersistentObject<?> pdo) {
-    pdo.setEditedBy(getEditedBy());
-    pdo.setEditedSince(getEditedSince());
-    pdo.setEditedExpiry(getEditedExpiry());
   }
 
   @Override

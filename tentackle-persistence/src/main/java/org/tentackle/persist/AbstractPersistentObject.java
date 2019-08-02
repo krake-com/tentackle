@@ -634,7 +634,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return rootId;
   }
 
-  @Override
+  /**
+   * Sets the ID of the root entity this component belongs to.
+   *
+   * @param rootId the root id
+   */
   public void setRootId(long rootId) {
     this.rootId = rootId;
   }
@@ -649,7 +653,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return rootClassId;
   }
 
-  @Override
+  /**
+   * Sets the class ID of the root entity this component belongs to.
+   *
+   * @param rootClassId the root class id
+   */
   public void setRootClassId(int rootClassId) {
     this.rootClassId = rootClassId;
   }
@@ -678,9 +686,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Sets the normtext.
+   *
    * @param normText the normtext
    */
-  @Override
   public void setNormText (String normText) {
     assertMutable();
     if (!Objects.equals(this.normText, normText)) {
@@ -3421,7 +3429,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @param editedBy the id of the user, 0 to clear.
    *
    */
-  @Override
   public void setEditedBy(long editedBy) {
     this.editedBy = editedBy;
   }
@@ -3504,7 +3511,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param editedSince the time, null to clear.
    */
-  @Override
   public void setEditedSince(Timestamp editedSince) {
     this.editedSince = editedSince;
   }
@@ -3526,7 +3532,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param editedExpiry the expiration time, null to clear.
    */
-  @Override
   public void setEditedExpiry(Timestamp editedExpiry) {
     this.editedExpiry = editedExpiry;
   }
@@ -3547,11 +3552,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   }
 
   /**
-   * Sets the user/group/role-object editing this object.
+   * Sets the locking object.
+   * <p>
+   * CAUTION: the method is provided for rare corner cases like administration tools.
+   * Don't use it for regular locking/unlocking!
    *
-   * @param obj the object, null to clear.
+   * @param <U> the locking object type
+   * @param obj the locking object, null to clear.
    */
-  @Override
   public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj)  {
     setEditedBy(obj == null ? 0 : obj.getPersistenceDelegate().getId());
   }
@@ -3559,6 +3567,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   public boolean isCountingModificationForTokenLock() {
     return false;
+  }
+
+  /**
+   * Applies the given token lock info.
+   *
+   * @param tokenLockInfo the editedBy info
+   */
+  public void applyTokenLockInfo(TokenLockInfo tokenLockInfo) {
+    if (tokenLockInfo != null) {
+      setEditedBy(tokenLockInfo.getEditedBy());
+      setEditedSince(tokenLockInfo.getEditedSince());
+      setEditedExpiry(tokenLockInfo.getEditedExpiry());
+    }
   }
 
   /**
@@ -3596,17 +3617,13 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     Db db = getSession();
     if (db.isRemote())  {
       try {
-        TokenLockInfo token = getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime);
-        token.applyTo(this);
+        applyTokenLockInfo(getRemoteDelegate().updateTokenLock(getId(), tokenExpiry, userId, curTime));
       }
       catch (RemoteException e) {
         RuntimeException rex = PersistenceException.createFromRemoteException(this, e);
         if (rex instanceof LockException) {
           LockException lx = (LockException) rex;
-          TokenLockInfo token = lx.getTokenLockInfo();
-          if (token != null) {
-            token.applyTo(this);
-          }
+          applyTokenLockInfo(lx.getTokenLockInfo());
         }
         throw rex;
       }
@@ -3828,7 +3845,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @return the transient data, null if none.
    */
-  @Override
   public Object getTransientData()  {
     return null;
   }
@@ -3842,7 +3858,6 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    *
    * @param data the transient data
    */
-  @Override
   public void setTransientData(Object data) {
   }
 
@@ -3894,7 +3909,14 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return validated;
   }
 
-  @Override
+  /**
+   * Sets the modified flag.<p>
+   * For optimizations it is possible to skip objects that have not
+   * been modified. The modified-attribute is cleared whenever the
+   * object is persisted.
+   *
+   * @param modified is true if object is flagged modified, false if not.
+   */
   public void setModified(boolean modified) {
     super.setModified(modified);
     validated = !modified;

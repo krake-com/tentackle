@@ -28,22 +28,12 @@ import java.io.Serializable;
  */
 public interface Identifiable extends Serializable {
 
-
   /**
    * Gets the identification number.<br>
    *
    * @return the ID, 0 if invalid
    */
   long getId();
-
-
-  /**
-   * Sets the identification number.
-   *
-   * @param id the ID
-   */
-  void setId(long id);
-
 
   /**
    * Gets the generic string.<br>
