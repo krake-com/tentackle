@@ -19,14 +19,17 @@
 
 package org.tentackle.fx.rdc;
 
-import java.util.Objects;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.input.MouseEvent;
+
+import org.tentackle.common.StringHelper;
 import org.tentackle.pdo.PersistentDomainObject;
+
+import java.util.Objects;
 
 /**
  * A PDO tree cell.
@@ -106,8 +109,8 @@ public class PdoTreeCell<T extends PersistentDomainObject<T>> extends TreeCell<T
         String treeText = provider.getTreeText(parentItem == null ? null : parentItem.getPdo());
         setText(treeText);
         String tooltipText = provider.getToolTipText(parentItem == null ? null : parentItem.getPdo());
-        if (Objects.equals(treeText, tooltipText)) {
-          tooltipText = null; // same as treetext -> no tooltip (default)
+        if (StringHelper.isAllWhitespace(tooltipText) || Objects.equals(treeText, tooltipText)) {
+          tooltipText = null; // empty or same as treetext -> no tooltip (default)
         }
         setTooltip(tooltipText == null ? null : new Tooltip(tooltipText));
         setGraphic(provider.createIcon());
