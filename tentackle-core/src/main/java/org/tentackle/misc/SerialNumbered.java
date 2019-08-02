@@ -36,13 +36,6 @@ public interface SerialNumbered {
   long getSerial();
 
   /**
-   * Sets the serial.
-   *
-   * @param serial the serial
-   */
-  void setSerial(long serial);
-
-  /**
    * Returns whether the serial is valid.
    *
    * @return true if virgin object without a valid serial

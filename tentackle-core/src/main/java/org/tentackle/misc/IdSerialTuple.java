@@ -34,12 +34,12 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
   /**
    * The object id.
    */
-  private long id;
+  private final long id;
 
   /**
    * The serial number (version).
    */
-  private long serial;
+  private final long serial;
 
 
   /**
@@ -93,11 +93,6 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
   }
 
   @Override
-  public void setId(long id) {
-    this.id = id;
-  }
-
-  @Override
   public String toString() {
     return "[" + id + "/" + serial + "]";
   }
@@ -110,11 +105,6 @@ public class IdSerialTuple implements Identifiable, SerialNumbered, Cloneable, C
   @Override
   public long getSerial() {
     return serial;
-  }
-
-  @Override
-  public void setSerial(long serial) {
-    this.serial = serial;
   }
 
   @Override

@@ -19,9 +19,10 @@
 
 package org.tentackle.misc;
 
-import java.util.Iterator;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.util.Iterator;
 
 /**
  * Tests the identifiable map.
@@ -35,7 +36,7 @@ public class IdentifiableMapTest {
     private static long idCount;
 
     private final Number number;
-    private long id;
+    private final long id;
 
     private NumberIdentifiable(Number number) {
       this.number = number;
@@ -45,11 +46,6 @@ public class IdentifiableMapTest {
     @Override
     public long getId() {
       return id;
-    }
-
-    @Override
-    public void setId(long id) {
-      this.id = id;
     }
 
     @Override

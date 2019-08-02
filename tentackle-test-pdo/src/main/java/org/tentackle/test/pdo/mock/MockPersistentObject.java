@@ -19,8 +19,6 @@
 
 package org.tentackle.test.pdo.mock;
 
-import java.util.Collections;
-import java.util.List;
 import org.tentackle.common.Timestamp;
 import org.tentackle.log.Logger;
 import org.tentackle.misc.IdSerialTuple;
@@ -38,6 +36,9 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScope;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A mocked persistence object.
@@ -147,7 +148,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return session;
   }
 
-  @Override
   public void setId(long id) {
     this.id = id;
   }
@@ -157,7 +157,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return id < 0 ? -id : id;
   }
 
-  @Override
   public void setSerial(long serial) {
     this.serial = serial;
   }
@@ -167,7 +166,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return serial;
   }
 
-  @Override
   public void setTableSerial(long tableSerial) {
     this.tableSerial = tableSerial;
   }
@@ -213,6 +211,11 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   }
 
   @Override
+  public void reserveId(long id) {
+    throw new UnsupportedOperationException(UNSUPPORTED);
+  }
+
+  @Override
   public boolean isDeleted() {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -222,7 +225,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public void setModified(boolean modified) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -383,12 +385,10 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public Object getTransientData() {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public void setTransientData(Object data) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -398,7 +398,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public void setEditedBy(long editedBy) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -428,7 +427,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public void setEditedSince(Timestamp editedSince) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -438,7 +436,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public void setEditedExpiry(Timestamp editedExpiry) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -448,7 +445,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
 
-  @Override
   public <U extends PersistentDomainObject<U>> void setTokenLockObject(U obj) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -588,7 +584,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
   public void discardSnapshots() {
   }
 
-  @Override
   public void setNormText(String normText) {
     throw new UnsupportedOperationException(UNSUPPORTED);
   }
@@ -698,7 +693,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return rootId;
   }
 
-  @Override
   public void setRootId(long rootId) {
     this.rootId = rootId;
   }
@@ -708,7 +702,6 @@ public class MockPersistentObject<T extends PersistentDomainObject<T>, P extends
     return rootClassId;
   }
 
-  @Override
   public void setRootClassId(int rootClassId) {
     this.rootClassId = rootClassId;
   }
