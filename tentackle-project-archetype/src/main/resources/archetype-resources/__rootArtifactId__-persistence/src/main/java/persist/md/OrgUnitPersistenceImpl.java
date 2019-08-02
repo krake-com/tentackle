@@ -15,6 +15,7 @@ import ${package}.pdo.td.Message;
 import ${package}.persist.AbstractPersistentMasterData;
 import ${package}.persist.md.rmi.OrgUnitRemoteDelegate;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.dbms.DbObjectClassVariables;
 import org.tentackle.dbms.PreparedStatementWrapper;
 import org.tentackle.dbms.ResultSetWrapper;
@@ -454,4 +455,13 @@ public class OrgUnitPersistenceImpl<T extends OrgUnit<T>, P extends OrgUnitPersi
 
   //</editor-fold>//GEN-END:cache
 
+  @Override
+  public String getShortText() {
+    return getName();
+  }
+
+  @Override
+  public String getLongText() {
+    return StringHelper.firstLine(getComment());
+  }
 }
