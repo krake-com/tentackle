@@ -204,6 +204,9 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * @param operation the operation
    */
   public void setOperation(T operation) {
+    if (this.operation != null && this.operation != operation) {
+      throw new PersistenceException("cannot change operation proxy once set");
+    }
     this.operation = operation;
   }
 
