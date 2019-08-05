@@ -19,36 +19,27 @@
 package org.tentackle.pdo;
 
 /**
- * Holder for a PDO.
+ * Provider for an {@link Operation}.
  *
- * @param <T> the PDO type
+ * @param <T> the operation type
  * @author harald
  */
-public interface PdoHolder<T extends PersistentDomainObject<T>> {
+public interface OperationProvider<T extends Operation<T>> {
 
   /**
-   * Gets the PDO.<br>
+   * Gets the operation.<br>
    *
-   * @return the pdo
+   * @return the operation
    */
-  T getPdo();
-
+  T getOperation();
 
   /**
-   * Sets the PDO.<br>
-   *
-   * @param pdo the pdo
-   */
-  void setPdo(T pdo);
-
-
-  /**
-   * Creates a new instance of the same type as the PDO.
+   * Creates a new instance of the same type as the operation.
    *
    * @return the new instance
    */
-  default T on() {
-    return PdoFactory.getInstance().create(getPdo());
+  default T op() {
+    return OperationFactory.getInstance().create(getOperation());
   }
 
 }

@@ -65,7 +65,11 @@ public class MockDomainOperation<T extends Operation<T>, D extends MockDomainOpe
     return operation;
   }
 
-  @Override
+  /**
+   * Sets the operation.<br>
+   *
+   * @param operation the operation
+   */
   public void setOperation(T operation) {
     this.operation = operation;
   }

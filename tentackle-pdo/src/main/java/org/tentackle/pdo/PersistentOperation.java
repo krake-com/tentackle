@@ -28,6 +28,6 @@ import org.tentackle.session.SessionDependable;
  * @author harald
  */
 public interface PersistentOperation<T extends Operation<T>>
-       extends PersistenceDelegate<T>, OperationHolder<T>, DomainContextDependable, SessionDependable {
+       extends PersistenceDelegate<T>, OperationProvider<T>, DomainContextDependable, SessionDependable {
 
 }

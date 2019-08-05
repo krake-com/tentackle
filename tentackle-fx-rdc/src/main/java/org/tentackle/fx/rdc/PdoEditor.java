@@ -23,7 +23,6 @@ import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.validate.ValidationMapper;
 import org.tentackle.validate.ValidationUtilities;
@@ -38,7 +37,7 @@ import java.util.TreeSet;
  * @param <T> the pdo type
  */
 public abstract class PdoEditor<T extends PersistentDomainObject<T>> extends AbstractFxController
-                implements PdoHolder<T>, DomainContextProvider {
+                implements PdoController<T>, DomainContextProvider {
 
   /**
    * Requests the initial focus after stage is shown.

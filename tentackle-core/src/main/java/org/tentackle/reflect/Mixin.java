@@ -22,6 +22,7 @@ package org.tentackle.reflect;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,7 +39,42 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   private static final long serialVersionUID = 1L;
 
   /**
-   * cache to speed up the decision whether a given class (name) implements the declClass.
+   * Key to speed up lookup of constructors.
+   */
+  private static class ConstructorKey {
+    private final Class implClass;
+    private final Class[] parameterTypes;
+
+    public ConstructorKey(Class implClass, Class[] parameterTypes) {
+      this.implClass = implClass;
+      this.parameterTypes = parameterTypes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ConstructorKey that = (ConstructorKey) o;
+      if (implClass != null ? !implClass.equals(that.implClass) : that.implClass != null) return false;
+      if (!Arrays.equals(parameterTypes, that.parameterTypes)) return false;
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = implClass != null ? implClass.hashCode() : 0;
+      result = 31 * result + Arrays.hashCode(parameterTypes);
+      return result;
+    }
+  }
+
+  /**
+   * Cache to speed up constructor lookup.
+   */
+  private static final Map<ConstructorKey, Constructor> CONSTRUCTOR_MAP = new ConcurrentHashMap<>();
+
+  /**
+   * Cache to speed up the decision whether a given class (name) implements the declClass.
    * The map is <given-class> => <declClass> => Boolean and thus can be used for all instances
    * of PdoMixin.
    */
@@ -121,7 +157,9 @@ public class Mixin<T, M extends Serializable> implements Serializable {
 
 
   /**
-   * Creates the delegate instance for the implementation class.
+   * Creates the delegate instance for the implementation class.<br>
+   * Since delegates may be found in superclasses we need some expensive isAssignableFrom checking.
+   * However, the constructors found are cached by a map, which speeds up again.
    *
    * @param constructorArgumentClasses the constructor argument classes
    * @param constructorArguments the constructor arguments
@@ -136,37 +174,45 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
+    // notice: we're not using method handles since invokeWithArguments is much slower than invoking a constructor.
+    // don't know why, but that's the observation.
     if (!isDummy()) {
-      // find the constructor and create the object
-      Constructor<?>[] cons = implClass.getConstructors();
-      for (Constructor<?> con : cons) {
-        Class<?>[] params = con.getParameterTypes();
-        if (params.length == constructorArgumentClasses.length) {
-          boolean allParmsMatch = true;
-          for (int i = 0; i < params.length; i++) {
-            if (!constructorArgumentClasses[i].isAssignableFrom(params[i])) {
-              allParmsMatch = false;
+      ConstructorKey key = new ConstructorKey(implClass, constructorArgumentClasses);
+      Constructor constructor = CONSTRUCTOR_MAP.get(key);   // no computeIfAbsent cause of exception below
+      if (constructor == null) {
+        // find the constructor and create the object
+        Constructor<?>[] cons = implClass.getConstructors();
+        for (Constructor<?> con : cons) {
+          Class<?>[] params = con.getParameterTypes();
+          if (params.length == constructorArgumentClasses.length) {
+            boolean allParmsMatch = true;
+            for (int i = 0; i < params.length; i++) {
+              if (!constructorArgumentClasses[i].isAssignableFrom(params[i])) {
+                allParmsMatch = false;
+                break;
+              }
+            }
+            if (allParmsMatch) {
+              constructor = con;
               break;
             }
           }
-          if (allParmsMatch) {
-            delegate = (M) con.newInstance(constructorArguments);
-            break;
-          }
         }
+        if (constructor == null) {
+          StringBuilder paramsAsString = new StringBuilder();
+          for (Class<?> paramClass : constructorArgumentClasses) {
+            if (paramsAsString.length() > 0) {
+              paramsAsString.append(", ");
+            }
+            paramsAsString.append(paramClass.getName());
+          }
+          throw new NoSuchMethodException("no matching constructor found for " +
+                                          implClass.getName() + "(" + paramsAsString + ")");
+        }
+        CONSTRUCTOR_MAP.put(key, constructor);
       }
 
-      if (delegate == null) {
-        StringBuilder paramsAsString = new StringBuilder();
-        for (Class<?> paramClass : constructorArgumentClasses) {
-          if (paramsAsString.length() > 0) {
-            paramsAsString.append(", ");
-          }
-          paramsAsString.append(paramClass.getName());
-        }
-        throw new NoSuchMethodException("no matching constructor found for " +
-                                        implClass.getName() + "(" + paramsAsString + ")");
-      }
+      delegate = (M) constructor.newInstance(constructorArguments);
     }
   }
 

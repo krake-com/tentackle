@@ -87,7 +87,11 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
     return pdo;
   }
 
-  @Override
+  /**
+   * Sets the PDO.<br>
+   *
+   * @param pdo the pdo
+   */
   public void setPdo(T pdo) {
     if (pdo == null) {
       throw new NullPointerException("pdo must not be null");

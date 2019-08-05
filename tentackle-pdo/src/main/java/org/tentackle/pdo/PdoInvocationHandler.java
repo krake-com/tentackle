@@ -68,7 +68,6 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   // preloaded methods of PdoHolder
   private static final Method TOGENERICSTRING_METHOD;
   private static final Method GETPDO_METHOD;
-  private static final Method SETPDO_METHOD;
   private static final Method ON_METHOD;
 
   // preloaded methods of EffectiveClassProvider
@@ -85,9 +84,8 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
       GETDOMAINDELEGATE_METHOD = PersistentDomainObject.class.getDeclaredMethod("getDomainDelegate");
       GETPERSISTENCEDELEGATE_METHOD = PersistentDomainObject.class.getDeclaredMethod("getPersistenceDelegate");
       TOGENERICSTRING_METHOD = Identifiable.class.getDeclaredMethod("toGenericString");
-      GETPDO_METHOD = PdoHolder.class.getDeclaredMethod("getPdo");
-      SETPDO_METHOD = PdoHolder.class.getDeclaredMethod("setPdo", PersistentDomainObject.class);
-      ON_METHOD = PdoHolder.class.getDeclaredMethod("on");
+      GETPDO_METHOD = PdoProvider.class.getDeclaredMethod("getPdo");
+      ON_METHOD = PdoProvider.class.getDeclaredMethod("on");
       GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
       GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
@@ -191,7 +189,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceDelegate.setPdo(pdo);
+    PersistenceDelegateLinker.getInstance().linkPersistentObject(pdo, persistenceDelegate);
     persistenceMixin.setDelegate(persistenceDelegate);
 
     domainMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class },
@@ -216,7 +214,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, DomainContext.class },
                                     new Object[] { pdo, context });
 
-    domainDelegate.setPdo(pdo);
+    DomainDelegateLinker.getInstance().linkDomainObject(pdo, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -238,7 +236,7 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
     persistenceMixin.createDelegate(new Class<?>[] { PersistentDomainObject.class, Session.class },
                                     new Object[] { pdo, session });
 
-    domainDelegate.setPdo(pdo);
+    DomainDelegateLinker.getInstance().linkDomainObject(pdo, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -251,9 +249,9 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
    * @param domainDelegate the domain delegate
    */
   public void setupDelegates(T pdo, PersistentObject<T> persistenceDelegate, DomainObject<T> domainDelegate) {
-    persistenceDelegate.setPdo(pdo);
+    PersistenceDelegateLinker.getInstance().linkPersistentObject(pdo, persistenceDelegate);
     persistenceMixin.setDelegate(persistenceDelegate);
-    domainDelegate.setPdo(pdo);
+    DomainDelegateLinker.getInstance().linkDomainObject(pdo, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -344,13 +342,10 @@ public class PdoInvocationHandler<T extends PersistentDomainObject<T>> implement
         return clazz.getName() + '[' + pdo.getId() + '/' + pdo.getSerial() + ']';
       }
     }
-    else if (declaringClass == PdoHolder.class &&
-        !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
+    else if (declaringClass == PdoProvider.class &&
+             !method.equals(ON_METHOD)) {    // on() should be executed via mixin below!
       if (method.equals(GETPDO_METHOD)) {
         return proxy;
-      }
-      else if (method.equals(SETPDO_METHOD)) {
-        throw new PdoRuntimeException("method " + SETPDO_METHOD + " not allowed on PDO " + clazz);
       }
     }
 

@@ -65,7 +65,6 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
 
   // preloaded methods of OperationHolder
   private static final Method GETOPERATION_METHOD;
-  private static final Method SETOPERATION_METHOD;
 
   // preloaded methods of EffectiveClassProvider
   private static final Method GETEFFECTIVECLASS_METHOD;
@@ -80,9 +79,8 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
       COMPARETO_METHOD = Comparable.class.getDeclaredMethod("compareTo", Object.class);
       GETDOMAINDELEGATE_METHOD = Operation.class.getDeclaredMethod("getDomainDelegate");
       GETPERSISTENCEDELEGATE_METHOD = Operation.class.getDeclaredMethod("getPersistenceDelegate");
-      GETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("getOperation");
-      SETOPERATION_METHOD = OperationHolder.class.getDeclaredMethod("setOperation", Operation.class);
-      OP_METHOD = OperationHolder.class.getDeclaredMethod("op");
+      GETOPERATION_METHOD = OperationProvider.class.getDeclaredMethod("getOperation");
+      OP_METHOD = OperationProvider.class.getDeclaredMethod("op");
       GETEFFECTIVECLASS_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveClass");
       GETEFFECTIVESUPERCLASSES_METHOD = EffectiveClassProvider.class.getDeclaredMethod("getEffectiveSuperClasses");
     }
@@ -212,7 +210,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate)
          throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
-    persistenceDelegate.setOperation(operation);
+    PersistenceDelegateLinker.getInstance().linkPersistentOperation(operation, persistenceDelegate);
     persistenceMixin.setDelegate(persistenceDelegate);
 
     domainMixin.createDelegate(new Class<?>[] { Operation.class },
@@ -237,7 +235,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, DomainContext.class },
                                     new Object[] { operation, context });
 
-    domainDelegate.setOperation(operation);
+    DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -259,7 +257,7 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
     persistenceMixin.createDelegate(new Class<?>[] { Operation.class, Session.class },
                                     new Object[] { operation, session });
 
-    domainDelegate.setOperation(operation);
+    DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -272,9 +270,9 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
    * @param domainDelegate the domain delegate
    */
   public void setupDelegates(T operation, PersistentOperation<T> persistenceDelegate, DomainOperation<T> domainDelegate) {
-    persistenceDelegate.setOperation(operation);
+    PersistenceDelegateLinker.getInstance().linkPersistentOperation(operation, persistenceDelegate);
     persistenceMixin.setDelegate(persistenceDelegate);
-    domainDelegate.setOperation(operation);
+    DomainDelegateLinker.getInstance().linkDomainOperation(operation, domainDelegate);
     domainMixin.setDelegate(domainDelegate);
   }
 
@@ -373,13 +371,10 @@ public class OperationInvocationHandler<T extends Operation<T>> implements Invoc
         return list;
       }
     }
-    else if (declaringClass == OperationHolder.class &&
+    else if (declaringClass == OperationProvider.class &&
              !method.equals(OP_METHOD)) {    // op() should be executed via mixin below, if overridden
       if (method.equals(GETOPERATION_METHOD)) {
         return proxy;
-      }
-      else if (method.equals(SETOPERATION_METHOD)) {
-        throw new PdoRuntimeException("method " + SETOPERATION_METHOD + " not allowed on operation " + clazz);
       }
     }
 

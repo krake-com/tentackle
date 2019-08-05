@@ -28,7 +28,7 @@ import org.tentackle.session.SessionProvider;
  * @author harald
  */
 public interface DomainObject<T extends PersistentDomainObject<T>>
-       extends DomainDelegate<T>, PdoHolder<T>, DomainContextProvider, SessionProvider {
+       extends DomainDelegate<T>, PdoProvider<T>, DomainContextProvider, SessionProvider {
 
   /**
    * Returns whether PDO provides a unique domain key.<br>

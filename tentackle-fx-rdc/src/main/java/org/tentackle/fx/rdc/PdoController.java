@@ -16,37 +16,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.pdo;
+package org.tentackle.fx.rdc;
+
+import org.tentackle.fx.FxController;
+import org.tentackle.pdo.PersistentDomainObject;
 
 /**
- * Holder for an {@link Operation}.
+ * FX controller for a persistent domain object.
  *
- * @param <T> the operation type
- * @author harald
+ * @param <T> the pdo type
  */
-public interface OperationHolder<T extends Operation<T>> {
+public interface PdoController<T extends PersistentDomainObject<T>> extends FxController {
 
   /**
-   * Gets the operation.<br>
+   * Sets the PDO.
    *
-   * @return the operation
+   * @param pdo the pdo
    */
-  T getOperation();
+  void setPdo(T pdo);
 
   /**
-   * Sets the operation.<br>
+   * Gets the PDO.
    *
-   * @param operation the operation
+   * @return the pdo
    */
-  void setOperation(T operation);
-
-  /**
-   * Creates a new instance of the same type as the operation.
-   *
-   * @return the new instance
-   */
-  default T op() {
-    return OperationFactory.getInstance().create(getOperation());
-  }
+  T getPdo();
 
 }

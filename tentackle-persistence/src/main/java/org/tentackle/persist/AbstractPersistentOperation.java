@@ -198,9 +198,13 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
     return operation;
   }
 
-  @Override
-  public void setOperation(T po) {
-    this.operation = po;
+  /**
+   * Sets the operation.<br>
+   *
+   * @param operation the operation
+   */
+  public void setOperation(T operation) {
+    this.operation = operation;
   }
 
   /**

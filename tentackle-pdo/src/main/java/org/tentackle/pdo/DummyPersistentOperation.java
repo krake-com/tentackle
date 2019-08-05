@@ -19,9 +19,10 @@
 
 package org.tentackle.pdo;
 
-import java.io.Serializable;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
+
+import java.io.Serializable;
 
 
 /**
@@ -132,9 +133,13 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
     return operation;
   }
 
-  @Override
-  public void setOperation(T po) {
-    this.operation = po;
+  /**
+   * Sets the operation.<br>
+   *
+   * @param operation the operation
+   */
+  public void setOperation(T operation) {
+    this.operation = operation;
   }
 
   /**

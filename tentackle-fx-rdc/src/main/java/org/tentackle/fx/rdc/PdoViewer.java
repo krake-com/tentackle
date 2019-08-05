@@ -18,8 +18,6 @@
 
 package org.tentackle.fx.rdc;
 
-import org.tentackle.fx.FxController;
-import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -42,7 +40,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @param <T> the PDO type
  * @param <C> the controller type
  */
-public class PdoViewer<T extends PersistentDomainObject<T>, C extends FxController & PdoHolder<T>>
+public class PdoViewer<T extends PersistentDomainObject<T>, C extends PdoController<T>>
        extends PdoEditor<T> {
 
   private final C viewController;
@@ -71,7 +69,11 @@ public class PdoViewer<T extends PersistentDomainObject<T>, C extends FxControll
     return viewController.getPdo();
   }
 
-  @Override
+  /**
+   * Sets the PDO.<br>
+   *
+   * @param pdo the pdo
+   */
   public void setPdo(T pdo) {
     viewController.setPdo(pdo);
   }

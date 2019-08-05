@@ -19,14 +19,15 @@
 
 package org.tentackle.domain;
 
-import java.io.Serializable;
-import java.util.List;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.Session;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * The abstract domain operation.
@@ -76,7 +77,11 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
     return operation;
   }
 
-  @Override
+  /**
+   * Sets the operation.<br>
+   *
+   * @param operation the operation
+   */
   public void setOperation(T operation) {
     this.operation = operation;
   }

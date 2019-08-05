@@ -28,6 +28,6 @@ import org.tentackle.session.SessionProvider;
  * @author harald
  */
 public interface DomainOperation<T extends Operation<T>>
-       extends DomainDelegate<T>, OperationHolder<T>, DomainContextProvider, SessionProvider {
+       extends DomainDelegate<T>, OperationProvider<T>, DomainContextProvider, SessionProvider {
 
 }

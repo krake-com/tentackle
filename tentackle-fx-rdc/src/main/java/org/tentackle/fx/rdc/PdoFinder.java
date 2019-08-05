@@ -28,7 +28,6 @@ import org.tentackle.fx.AbstractFxController;
 import org.tentackle.fx.table.TotalsTableView;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 
 /**
@@ -39,7 +38,7 @@ import org.tentackle.pdo.PersistentDomainObject;
  * @param <T> the pdo type
  */
 public abstract class PdoFinder<T extends PersistentDomainObject<T>> extends AbstractFxController
-                implements PdoHolder<T>, DomainContextProvider {
+                implements PdoController<T>, DomainContextProvider {
 
 
   private boolean searchRunningInBackground;

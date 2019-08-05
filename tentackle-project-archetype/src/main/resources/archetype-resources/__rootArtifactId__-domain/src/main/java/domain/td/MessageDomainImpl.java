@@ -18,7 +18,7 @@ import org.tentackle.common.Timestamp;
 import org.tentackle.domain.AbstractDomainObject;
 import org.tentackle.pdo.DomainObjectService;
 import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PdoHolder;
+import org.tentackle.pdo.PdoProvider;
 import org.tentackle.pdo.PdoUtilities;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.SessionUtilities;
@@ -99,8 +99,8 @@ public class MessageDomainImpl extends AbstractDomainObject<Message, MessageDoma
     
     me().setMessageType(messageType);
 
-    if (refersTo instanceof PdoHolder) {
-      refersTo = ((PdoHolder) refersTo).getPdo();
+    if (refersTo instanceof PdoProvider) {
+      refersTo = ((PdoProvider) refersTo).getPdo();
     }
 
     if (refersTo instanceof PersistentDomainObject) {
