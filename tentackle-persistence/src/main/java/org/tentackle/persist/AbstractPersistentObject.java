@@ -300,6 +300,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * Clones this persistent object.<br>
    * The method is final to prevent applications from overriding it and
    * spoiling the contract with {@link #createSnapshot()}.
+   * <p>
+   * Notice that the proxy pdo is cleared to null in the cloned PO.
    *
    * @return the cloned persistent object
    */
@@ -307,7 +309,9 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @SuppressWarnings("unchecked")
   protected final P clone() {
     try {
-      return (P) super.clone();
+      P clonedPo = (P) super.clone();
+      ((AbstractPersistentObject) clonedPo).pdo = null;
+      return clonedPo;
     }
     catch (CloneNotSupportedException cnx) {
       // shouldn't happen, but one never knows...
