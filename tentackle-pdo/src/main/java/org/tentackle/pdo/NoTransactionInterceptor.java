@@ -19,12 +19,13 @@
 
 package org.tentackle.pdo;
 
-import java.lang.reflect.Method;
 import org.tentackle.reflect.AbstractInterceptor;
 import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 import org.tentackle.session.SessionProvider;
+
+import java.lang.reflect.Method;
 
 /**
  * Implementation for the no-transaction interception.
@@ -43,8 +44,8 @@ public class NoTransactionInterceptor extends AbstractInterceptor {
       if (session.isTxRunning()) {
         boolean cachedOnly = ((NoTransaction) getAnnotation()).cachedOnly();
         // may be an operation as well, hence the test
-        PersistentDomainObject<?> pdo = orgProxy instanceof PdoHolder ?
-                ((PdoHolder) orgProxy).getPdo() : null;
+        PersistentDomainObject<?> pdo = orgProxy instanceof PdoProvider ?
+                                        ((PdoProvider) orgProxy).getPdo() : null;
         if (pdo != null && !pdo.getPersistenceDelegate().isRootEntity()) {
           PersistentDomainObject<?> root = pdo.getPersistenceDelegate().getDomainContext().getRootEntity();
           if (root == null) {

@@ -30,7 +30,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.component.FxTableView;
 import org.tentackle.fx.table.TableConfiguration;
 import org.tentackle.pdo.DomainContextProvider;
-import org.tentackle.pdo.PdoHolder;
+import org.tentackle.pdo.PdoProvider;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.Collection;
@@ -43,7 +43,7 @@ import java.util.ResourceBundle;
  * @param <T> the PDO type
  * @author harald
  */
-public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoHolder<T>, DomainContextProvider {
+public interface GuiProvider<T extends PersistentDomainObject<T>> extends PdoProvider<T>, DomainContextProvider {
 
   /**
    * Returns whether a resource bundle is provided.

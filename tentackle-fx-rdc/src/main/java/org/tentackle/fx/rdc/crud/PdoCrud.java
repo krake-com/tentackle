@@ -53,6 +53,7 @@ import org.tentackle.fx.rdc.EventListenerProxy;
 import org.tentackle.fx.rdc.GuiProviderFactory;
 import org.tentackle.fx.rdc.InteractiveError;
 import org.tentackle.fx.rdc.InteractiveErrorFactory;
+import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEditor;
 import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.Rdc;
@@ -61,7 +62,6 @@ import org.tentackle.fx.rdc.security.SecurityDialogFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.LockException;
-import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.NotFoundException;
 import org.tentackle.validate.ValidationFailedException;
@@ -80,7 +80,7 @@ import java.util.function.Consumer;
  * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
-public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoHolder<T> {
+public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoController<T> {
 
   private static final Logger LOGGER = Logger.get(PdoCrud.class);
 
@@ -459,7 +459,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
   public void newPdo() {
     releasePdo(released -> {
       if (released) {
-        setPdo(on());
+        setPdo(getPdo().on());
         getEditor().requestInitialFocus();
       }
     });
@@ -524,7 +524,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
     T pdo = getPdo();
     pdo.delete();
     if (!closeIfModal()) {
-      setPdo(on());
+      setPdo(pdo.on());
       getEditor().requestInitialFocus();
     }
     eventProxy.fireEvent(new PdoEvent(pdo, getView(), PdoEvent.DELETE));
@@ -579,7 +579,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
             if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
               oldPdo.releaseTokenLock();
             }
-            setPdo(on());
+            setPdo(oldPdo.on());
             released.accept(Boolean.TRUE);
           }
           else {  // cancel

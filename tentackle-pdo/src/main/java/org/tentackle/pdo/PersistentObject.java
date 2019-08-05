@@ -47,7 +47,7 @@ import java.util.List;
  * @author harald
  */
 public interface PersistentObject<T extends PersistentDomainObject<T>>
-       extends PersistenceDelegate<T>, PdoHolder<T>, Snapshotable<T>, Identifiable, Modifiable, SerialNumbered,
+       extends PersistenceDelegate<T>, PdoProvider<T>, Snapshotable<T>, Identifiable, Modifiable, SerialNumbered,
                Validateable, Immutable, ScopeConfigurator, DomainContextDependable, SessionDependable {
 
   /**

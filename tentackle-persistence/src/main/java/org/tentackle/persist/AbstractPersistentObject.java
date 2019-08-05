@@ -269,7 +269,11 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
     return pdo;
   }
 
-  @Override
+  /**
+   * Sets the PDO.<br>
+   *
+   * @param pdo the pdo
+   */
   public void setPdo(T pdo) {
     this.pdo = pdo;
   }

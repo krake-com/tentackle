@@ -59,6 +59,7 @@ import org.tentackle.fx.component.FxTreeView;
 import org.tentackle.fx.container.FxBorderPane;
 import org.tentackle.fx.container.FxHBox;
 import org.tentackle.fx.rdc.GuiProviderFactory;
+import org.tentackle.fx.rdc.PdoController;
 import org.tentackle.fx.rdc.PdoEvent;
 import org.tentackle.fx.rdc.PdoFinder;
 import org.tentackle.fx.rdc.Rdc;
@@ -67,7 +68,6 @@ import org.tentackle.fx.rdc.RdcRuntimeException;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.table.TablePopup;
 import org.tentackle.fx.table.TotalsTableView;
-import org.tentackle.pdo.PdoHolder;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.ModificationTracker;
 import org.tentackle.task.AbstractTask;
@@ -85,7 +85,7 @@ import java.util.stream.Collectors;
  * @param <T> the PDO type
  */
 @FxControllerService(binding = FxControllerService.BINDING.NO)
-public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoHolder<T> {
+public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxController implements PdoController<T> {
 
   @FXML
   private FxBorderPane borderPane;
@@ -706,7 +706,7 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
    * Creates a new PDO.
    */
   public void createPdo() {
-    T nPdo = on();
+    T nPdo = getPdo().on();
     if (getPdo().isUniqueDomainKeyProvided()) {
       nPdo.setUniqueDomainKey(getPdo().getUniqueDomainKey());
     }
