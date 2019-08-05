@@ -20,6 +20,7 @@
 package org.tentackle.domain;
 
 import org.tentackle.pdo.DomainContext;
+import org.tentackle.pdo.DomainException;
 import org.tentackle.pdo.DomainOperation;
 import org.tentackle.pdo.Operation;
 import org.tentackle.pdo.PersistenceDelegate;
@@ -83,6 +84,9 @@ public abstract class AbstractDomainOperation<T extends Operation<T>, D extends 
    * @param operation the operation
    */
   public void setOperation(T operation) {
+    if (this.operation != null && this.operation != operation) {
+      throw new DomainException("cannot change operation proxy once set");
+    }
     this.operation = operation;
   }
 
