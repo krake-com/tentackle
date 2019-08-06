@@ -33,6 +33,7 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 
@@ -175,19 +176,6 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   }
 
 
-//  @Override
-//  public PersistentOperation<T> newInstance() {
-//    try {
-//      @SuppressWarnings("unchecked")
-//      T obj = (T) getClass().getDeclaredConstructor().newInstance();
-//      obj.setSession(getSession());
-//      return obj;
-//    }
-//    catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-//      throw new PersistenceException(getSession(), "creating new object failed", e);
-//    }
-//  }
-
   @Override
   public T me() {
     return operation;
@@ -204,9 +192,6 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
    * @param operation the operation
    */
   public void setOperation(T operation) {
-    if (this.operation != null && this.operation != operation) {
-      throw new PersistenceException("cannot change operation proxy once set");
-    }
     this.operation = operation;
   }
 
