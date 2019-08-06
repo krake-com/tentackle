@@ -39,6 +39,7 @@ import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.FxUtilities;
 import org.tentackle.fx.rdc.crud.PdoCrud;
 import org.tentackle.fx.rdc.search.PdoSearch;
+import org.tentackle.log.Logger;
 import org.tentackle.pdo.PersistentDomainObject;
 import org.tentackle.session.AbstractSessionTask;
 import org.tentackle.session.ModificationTracker;
@@ -63,6 +64,8 @@ interface RdcUtilitiesHolder {
  */
 @Service(RdcUtilities.class)    // defaults to self
 public class RdcUtilities {
+  
+  private static final Logger LOGGER = Logger.get(RdcUtilities.class);
 
   /**
    * The singleton.
@@ -378,6 +381,7 @@ public class RdcUtilities {
           }
         }
         catch (RuntimeException rx) {
+          LOGGER.severe("background task failed", rx);
           Platform.runLater(() -> Fx.error(rx.getLocalizedMessage(), rx));
         }
       }
