@@ -87,9 +87,6 @@ public abstract class AbstractDomainObject<T extends PersistentDomainObject<T>, 
    * @param pdo the pdo
    */
   public void setPdo(T pdo) {
-    if (this.pdo != null && this.pdo != pdo) {
-      throw new DomainException("cannot change pdo proxy once set");
-    }
     this.pdo = pdo;
   }
 
