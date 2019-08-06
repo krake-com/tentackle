@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,12 +22,12 @@ package org.tentackle.reflect;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Mixin for PDOs.<br>
- * Used to implement dynamic proxies.
+ * Mixin to implement dynamic proxies.
  *
  * @param <T> the type the mixin is mixed in
  * @param <M> the type of the mixin
@@ -38,7 +38,42 @@ public class Mixin<T,M> implements Serializable {
   private static final long serialVersionUID = 1L;
 
   /**
-   * cache to speed up the decision whether a given class (name) implements the declClass.
+   * Key to speed up lookup of constructors.
+   */
+  private static class ConstructorKey {
+    private final Class implClass;
+    private final Class[] parameterTypes;
+
+    public ConstructorKey(Class implClass, Class[] parameterTypes) {
+      this.implClass = implClass;
+      this.parameterTypes = parameterTypes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ConstructorKey that = (ConstructorKey) o;
+      if (implClass != null ? !implClass.equals(that.implClass) : that.implClass != null) return false;
+      if (!Arrays.equals(parameterTypes, that.parameterTypes)) return false;
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = implClass != null ? implClass.hashCode() : 0;
+      result = 31 * result + Arrays.hashCode(parameterTypes);
+      return result;
+    }
+  }
+
+  /**
+   * Cache to speed up constructor lookup.
+   */
+  private static final Map<ConstructorKey, Constructor> CONSTRUCTOR_MAP = new ConcurrentHashMap<>();
+
+  /**
+   * Cache to speed up the decision whether a given class (name) implements the declClass.
    * The map is <given-class> => <declClass> => Boolean and thus can be used for all instances
    * of PdoMixin.
    */
@@ -62,7 +97,7 @@ public class Mixin<T,M> implements Serializable {
    */
   @SuppressWarnings("unchecked")
   public Mixin(ClassMapper mapper, Class<T> clazz, Class<?> superInterface)
-         throws ClassNotFoundException {
+      throws ClassNotFoundException {
 
     if (clazz == null) {
       throw new NullPointerException("clazz must not be null");
@@ -121,7 +156,9 @@ public class Mixin<T,M> implements Serializable {
 
 
   /**
-   * Creates the delegate instance for the implementation class.
+   * Creates the delegate instance for the implementation class.<br>
+   * Since delegates may be found in superclasses we need some expensive isAssignableFrom checking.
+   * However, the constructors found are cached by a map, which speeds up again.
    *
    * @param constructorArgumentClasses the constructor argument classes
    * @param constructorArguments the constructor arguments
@@ -129,45 +166,51 @@ public class Mixin<T,M> implements Serializable {
    * @throws NoSuchMethodException if no matching constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   @SuppressWarnings("unchecked")
   public void createDelegate(Class<?>[] constructorArgumentClasses, Object[] constructorArguments)
-         throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-                IllegalArgumentException, InvocationTargetException {
+      throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
 
+    // notice: we're not using method handles since invokeWithArguments is much slower than invoking a constructor.
+    // don't know why, but that's the observation.
     if (!isDummy()) {
-      // find the constructor and create the object
-      Constructor<?>[] cons = implClass.getConstructors();
-      for (Constructor<?> con : cons) {
-        Class<?>[] params = con.getParameterTypes();
-        if (params.length == constructorArgumentClasses.length) {
-          boolean allParmsMatch = true;
-          for (int i = 0; i < params.length; i++) {
-            if (!constructorArgumentClasses[i].isAssignableFrom(params[i])) {
-              allParmsMatch = false;
+      ConstructorKey key = new ConstructorKey(implClass, constructorArgumentClasses);
+      Constructor constructor = CONSTRUCTOR_MAP.get(key);   // no computeIfAbsent cause of exception below
+      if (constructor == null) {
+        // find the constructor and create the object
+        Constructor<?>[] cons = implClass.getConstructors();
+        for (Constructor<?> con : cons) {
+          Class<?>[] params = con.getParameterTypes();
+          if (params.length == constructorArgumentClasses.length) {
+            boolean allParmsMatch = true;
+            for (int i = 0; i < params.length; i++) {
+              if (!constructorArgumentClasses[i].isAssignableFrom(params[i])) {
+                allParmsMatch = false;
+                break;
+              }
+            }
+            if (allParmsMatch) {
+              constructor = con;
               break;
             }
           }
-          if (allParmsMatch) {
-            delegate = (M) con.newInstance(constructorArguments);
-            break;
-          }
         }
+        if (constructor == null) {
+          StringBuilder paramsAsString = new StringBuilder();
+          for (Class<?> paramClass : constructorArgumentClasses) {
+            if (paramsAsString.length() > 0) {
+              paramsAsString.append(", ");
+            }
+            paramsAsString.append(paramClass.getName());
+          }
+          throw new NoSuchMethodException("no matching constructor found for " +
+                                          implClass.getName() + "(" + paramsAsString + ")");
+        }
+        CONSTRUCTOR_MAP.put(key, constructor);
       }
 
-      if (delegate == null) {
-        StringBuilder paramsAsString = new StringBuilder();
-        for (Class<?> paramClass : constructorArgumentClasses) {
-          if (paramsAsString.length() > 0) {
-            paramsAsString.append(", ");
-          }
-          paramsAsString.append(paramClass.getName());
-        }
-        throw new NoSuchMethodException("no matching constructor found for " +
-                                        implClass.getName() + "(" + paramsAsString + ")");
-      }
+      delegate = (M) constructor.newInstance(constructorArguments);
     }
   }
 
@@ -219,6 +262,9 @@ public class Mixin<T,M> implements Serializable {
    * @return true if clazz belongs to this mixin
    */
   public boolean matches(Class<?> clazz) {
+    // we cannot simply clazz.isAssignableFrom(implClass) because the implementation
+    // could theoretically extend classes that should not be treated as "implemented".
+    // Hence, we must check the interfaces.
     Map<Class<?>,Boolean> clazzMap = MATCH_CACHE.get(clazz);
     Boolean m = null;
     if (clazzMap == null) {
