@@ -27,8 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Mixin for PDOs.<br>
- * Used to implement dynamic proxies.
+ * Mixin to implement dynamic proxies.
  *
  * @param <T> the type the mixin is mixed in
  * @param <M> the type of the mixin
@@ -167,7 +166,6 @@ public class Mixin<T, M extends Serializable> implements Serializable {
    * @throws NoSuchMethodException if no matching constructor found
    * @throws InstantiationException if delegate could not be instantiated
    * @throws IllegalAccessException if delegate could not be instantiated
-   * @throws IllegalArgumentException if delegate could not be instantiated
    * @throws InvocationTargetException if delegate could not be instantiated
    */
   @SuppressWarnings("unchecked")
