@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.script;
+package org.tentackle.script.jsr223;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -24,18 +24,21 @@ import javax.script.CompiledScript;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import org.tentackle.log.Logger;
+import org.tentackle.script.AbstractScript;
+import org.tentackle.script.ScriptRuntimeException;
+import org.tentackle.script.ScriptVariable;
 
 /**
  * A script based on JSR-223.
  *
- * @author harald
+ * @author harald, bei
  */
-public class AbstractJSRScript extends AbstractScript {
+public class JSR223Script extends AbstractScript {
 
   private static final long serialVersionUID = 1L;
 
 
-  private static final Logger LOGGER = Logger.get(AbstractJSRScript.class);
+  private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
 
   /** the JSR compiled script. */
@@ -53,13 +56,13 @@ public class AbstractJSRScript extends AbstractScript {
    *
    * @param language the language instance
    */
-  public AbstractJSRScript(AbstractJSRScriptingLanguage language) {
+  public JSR223Script(JSR223ScriptingLanguage language) {
     super(language, false);   // JSR does not provide the concept of caching script classes
   }
 
   @Override
-  public AbstractJSRScriptingLanguage getLanguage() {
-    return (AbstractJSRScriptingLanguage) super.getLanguage();
+  public JSR223ScriptingLanguage getLanguage() {
+    return (JSR223ScriptingLanguage) super.getLanguage();
   }
 
   /**
@@ -90,7 +93,14 @@ public class AbstractJSRScript extends AbstractScript {
       scriptCode = getEffectiveCode();
       if (compiledScript == null) {
         LOGGER.fine("compiling script:\n{0}", scriptCode);
-        compiledScript = ((Compilable) getLanguage().getEngine()).compile(scriptCode);
+        LOGGER.fine("language = {0}",getLanguage());
+        if ( getLanguage() != null ) {
+            LOGGER.fine("engine = {0}", getLanguage().getEngine());
+
+            if (getLanguage().getEngine() != null) {
+                compiledScript = ((Compilable) getLanguage().getEngine()).compile(scriptCode);
+            }
+        }
       }
       else  {
         LOGGER.fine("re-using compiled script:\n{0}", scriptCode);
@@ -155,7 +165,7 @@ public class AbstractJSRScript extends AbstractScript {
    * @throws ScriptException if execution failed
    */
   protected Object executeImpl(CompiledScript script, Bindings bindings) throws ScriptException {
-    return compiledScript.eval(bindings);
+    return compiledScript == null ? null : compiledScript.eval(bindings);
   }
 
 }

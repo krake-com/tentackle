@@ -118,18 +118,41 @@ public class DefaultScriptFactory implements ScriptFactory {
    */
   protected void loadLanguages() {
     if (languages == null) {
+
+      languages = new HashMap<>();
+
+      // collect languages from other instances of @Service(ScriptFactory.class)
+      try {
+        for (Class<ScriptFactory> clazz : ServiceFactory.getServiceFinder().findServiceProviders(ScriptFactory.class)) {
+          if (!clazz.equals(this.getClass())) {
+            ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
+            for (ScriptingLanguage language : factory.getLanguages()) {
+              for (String abbrv : language.getAbbreviations()) {
+                String abbrvLC = abbrv.toLowerCase();
+                languages.put(abbrvLC, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrvLC, clazz.getName());
+              }
+            }
+          }
+        }
+      }
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+              NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+        throw new ScriptRuntimeException("error using ScriptFactory", nfe);
+      }
+
       // load all languages via @Service
       // the abbreviations override previous ones in classpath
       // dto. for the default language
       // so it's easy to change the default or the meaning of an abbreviation
-      languages = new HashMap<>();
+
       try {
         for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
           ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
           for (String abbrv: language.getAbbreviations()) {
             String abbrvLC = abbrv.toLowerCase();
             languages.put(abbrvLC, language);
-            LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
+            LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service ", language, abbrvLC, clazz.getName());
           }
         }
       }
