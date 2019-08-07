@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.script;
 
 import org.tentackle.common.ServiceFactory;
@@ -81,6 +80,15 @@ public interface ScriptFactory {
    * @return the language, never null
    */
   ScriptingLanguage getLanguage(String abbreviation);
+
+
+  /**
+   * Check if a scripting language is available.
+   *
+   * @param abbreviation one of the abbreviations for that language, null or empty string if default language
+   * @return true if the scripting language is available
+   */
+  boolean isLanguageAvailable(String abbreviation);
 
 
   /**

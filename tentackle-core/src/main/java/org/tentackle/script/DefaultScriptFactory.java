@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.script;
 
 import org.tentackle.common.Service;
@@ -27,7 +26,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
 
 /**
  * Default implementation of a script factory.
@@ -43,12 +41,12 @@ public class DefaultScriptFactory implements ScriptFactory {
   /**
    * The map of abbreviations to supported scripting languages.
    */
-  private Map<String,ScriptingLanguage> languages;
+  protected Map<String,ScriptingLanguage> languages;
 
   /**
    * The default language.
    */
-  private ScriptingLanguage defaultLanguage;
+  protected ScriptingLanguage defaultLanguage;
 
 
   @Override
@@ -57,50 +55,36 @@ public class DefaultScriptFactory implements ScriptFactory {
     LOGGER.info("default scripting language is {0}", defaultLanguage);
   }
 
-
   @Override
   public synchronized void setDefaultLanguage(String abbreviation) {
     setDefaultLanguage(getLanguage(abbreviation));
   }
-
 
   @Override
   public synchronized ScriptingLanguage getDefaultLanguage() {
     return defaultLanguage;
   }
 
-
   @Override
   public synchronized Set<ScriptingLanguage> getLanguages() {
-    loadLanguages();
-    return Set.copyOf(languages.values());
+    return Set.copyOf(getLanguagesMap().values());
   }
 
-
   @Override
-  public synchronized ScriptingLanguage getLanguage(String abbreviation) {
-
-    loadLanguages();   // make sure that all languages are loaded
-
-    ScriptingLanguage language;
-
-    if (abbreviation != null && !abbreviation.isEmpty()) {
-      abbreviation = abbreviation.toLowerCase();
-      language = languages.get(abbreviation);
-    }
-    else  {
-      language = getDefaultLanguage();
-    }
-
+  public ScriptingLanguage getLanguage(String abbreviation) {
+    ScriptingLanguage language = getLanguageImpl(abbreviation);
     if (language == null) {
       throw new ScriptRuntimeException(abbreviation == null ?
-              "default scripting language undefined" :
-              ("unsupported scripting language '" + abbreviation + "'"));
+                                       "default scripting language undefined" :
+                                       ("unsupported scripting language '" + abbreviation + "'"));
     }
-
     return language;
   }
 
+  @Override
+  public boolean isLanguageAvailable(String abbreviation) {
+    return getLanguageImpl(abbreviation) != null;
+  }
 
   @Override
   public Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe) {
@@ -113,30 +97,68 @@ public class DefaultScriptFactory implements ScriptFactory {
   }
 
 
+
   /**
-   * Loads the languages if not already loaded.
+   * Gets the scripting language.
+   *
+   * @param abbreviation one of the abbreviations for that language, null or empty string if default language
+   * @return the language, null if no such language or no default language if abbreviation was null
+   */
+  protected synchronized ScriptingLanguage getLanguageImpl(String abbreviation) {
+    ScriptingLanguage language;
+
+    if (abbreviation != null && !abbreviation.isEmpty()) {
+      abbreviation = abbreviation.toLowerCase();
+      language = getLanguagesMap().get(abbreviation);
+    }
+    else  {
+      language = getDefaultLanguage();
+    }
+
+    return language;
+  }
+
+  /**
+   * Gets the languages map.<br>
+   * Maps the abbreviation to the language.<br>
+   * Loads the languages if not yet done.<br>
+   * Invoked from with a synchronized block.
+   *
+   * @return the language map, never null
+   */
+  protected Map<String, ScriptingLanguage> getLanguagesMap() {
+    if (languages == null) {
+      languages = new HashMap<>();
+      loadLanguages();
+    }
+    return languages;
+  }
+
+  /**
+   * Loads the languages.<br>
+   * Invoked from with a synchronized block.
    */
   protected void loadLanguages() {
-    if (languages == null) {
-      // load all languages via @Service
-      // the abbreviations override previous ones in classpath
-      // dto. for the default language
-      // so it's easy to change the default or the meaning of an abbreviation
-      languages = new HashMap<>();
-      try {
-        for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
-          ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
-          for (String abbrv: language.getAbbreviations()) {
+    // load all languages via @Service
+    // the abbreviations don't override previous ones in classpath
+    // dto. for the default language
+    // so it's easy to change the default or the meaning of an abbreviation
+    try {
+      for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
+        ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
+        for (String abbrv: language.getAbbreviations()) {
+          if (abbrv != null) {
             String abbrvLC = abbrv.toLowerCase();
-            languages.put(abbrvLC, language);
-            LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
+            if (languages.putIfAbsent(abbrvLC, language) == null) {
+              LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
+            }
           }
         }
       }
-      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
-        throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
-      }
+    }
+    catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+        NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+      throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
     }
   }
 

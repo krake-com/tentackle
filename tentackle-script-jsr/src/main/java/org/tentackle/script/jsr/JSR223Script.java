@@ -16,35 +16,34 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.script;
+package org.tentackle.script.jsr;
+
+import org.tentackle.log.Logger;
+import org.tentackle.script.AbstractScript;
+import org.tentackle.script.ScriptRuntimeException;
+import org.tentackle.script.ScriptVariable;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
+import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
-import org.tentackle.log.Logger;
 
 /**
  * A script based on JSR-223.
  *
- * @author harald
+ * @author harald, bei
  */
-public class AbstractJSRScript extends AbstractScript {
+public class JSR223Script extends AbstractScript {
 
   private static final long serialVersionUID = 1L;
 
-
-  private static final Logger LOGGER = Logger.get(AbstractJSRScript.class);
-
-
-  /** the JSR compiled script. */
-  private CompiledScript compiledScript;
-
- /** the source code of the compiled script. */
-  private volatile String scriptCode;
+  private static final Logger LOGGER = Logger.get(JSR223Script.class);
 
 
+  private CompiledScript compiledScript;      // the JSR compiled script
+  private volatile String scriptCode;         // the source code of the compiled script
   private boolean executed;                   // true if script has been executed and result is valid
   private Object result;                      // the last execution result
 
@@ -53,13 +52,13 @@ public class AbstractJSRScript extends AbstractScript {
    *
    * @param language the language instance
    */
-  public AbstractJSRScript(AbstractJSRScriptingLanguage language) {
+  public JSR223Script(JSR223ScriptingLanguage language) {
     super(language, false);   // JSR does not provide the concept of caching script classes
   }
 
   @Override
-  public AbstractJSRScriptingLanguage getLanguage() {
-    return (AbstractJSRScriptingLanguage) super.getLanguage();
+  public JSR223ScriptingLanguage getLanguage() {
+    return (JSR223ScriptingLanguage) super.getLanguage();
   }
 
   /**
@@ -72,7 +71,6 @@ public class AbstractJSRScript extends AbstractScript {
     return compiledScript == null ? parse() : compiledScript;
   }
 
-
   @Override
   public boolean isParsed() {
     return compiledScript != null;
@@ -83,16 +81,16 @@ public class AbstractJSRScript extends AbstractScript {
     compiledScript = null;
   }
 
-
   @Override
   public CompiledScript parse() {
     try {
       scriptCode = getEffectiveCode();
       if (compiledScript == null) {
-        LOGGER.fine("compiling script:\n{0}", scriptCode);
-        compiledScript = ((Compilable) getLanguage().getEngine()).compile(scriptCode);
+        ScriptEngine engine = getLanguage().getEngineFactory().getScriptEngine();
+        LOGGER.fine("compiling script with {0}:\n{1}", engine, scriptCode);
+        compiledScript = ((Compilable) engine).compile(scriptCode);
       }
-      else  {
+      else {
         LOGGER.fine("re-using compiled script:\n{0}", scriptCode);
       }
       return compiledScript;
@@ -155,7 +153,7 @@ public class AbstractJSRScript extends AbstractScript {
    * @throws ScriptException if execution failed
    */
   protected Object executeImpl(CompiledScript script, Bindings bindings) throws ScriptException {
-    return compiledScript.eval(bindings);
+    return compiledScript == null ? null : compiledScript.eval(bindings);
   }
 
 }
