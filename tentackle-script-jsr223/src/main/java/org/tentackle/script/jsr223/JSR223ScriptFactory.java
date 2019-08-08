@@ -135,9 +135,17 @@ public class JSR223ScriptFactory implements ScriptFactory {
             for (ScriptEngineFactory engineFactory : engineFactories) {
                 JSR223ScriptingLanguage language = new JSR223ScriptingLanguage(engineFactory);
                 for (String abbrv : language.getAbbreviations()) {
-                    String abbrvLC = abbrv.toLowerCase();
-                    languages.put(abbrvLC, language);
-                    LOGGER.info("JSR223ScriptFactory added scripting language {0} as {1}", language, abbrvLC);
+                    if ( abbrv != null ) {
+                        String abbrvLC = abbrv.toLowerCase();
+                        languages.put(abbrvLC, language);
+                        LOGGER.info("JSR223ScriptFactory added scripting language {0} as {1}", language, abbrvLC);
+                    }
+                }
+                String name = language.getName();
+                if ( name != null ) {
+                    String nameLC = name.toLowerCase();
+                    languages.put(nameLC, language);
+                    LOGGER.info("JSR223ScriptFactory added scripting language {0} as {1}", language, nameLC);
                 }
             }
         }
