@@ -50,6 +50,8 @@ public class CompoundValueTest {
     @Test
     public void testCompountValue() {
         try {
+            System.setProperty("polyglot.js.nashorn-compat","true");
+
             ScriptFactory.getInstance().setDefaultLanguage("js");
 
             CompoundValue par = new CompoundValue("100", Integer.class);
@@ -80,8 +82,6 @@ public class CompoundValueTest {
             Assert.assertTrue(result instanceof String);
             Assert.assertTrue(result.equals("224.0") || result.equals("224"));
 
-            /* these currently fail on graalvm
-
             par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
             result = par.getValue(this);
             Assert.assertTrue(result instanceof String);
@@ -91,7 +91,7 @@ public class CompoundValueTest {
             result = par.getValue(this);
             Assert.assertTrue(result instanceof String);
             Assert.assertEquals(((String) result), "the method says " + sayHello());
-            */
+
 
             // test parsing only
             new CompoundValue("100", Integer.class).parse(this.getClass());
@@ -100,9 +100,8 @@ public class CompoundValueTest {
             new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
             new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
 
-            // these currently fail on graalvm
-            //new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
-            //new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
+            new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
+            new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
 
         } catch (Exception e) {
             e.printStackTrace();

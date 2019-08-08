@@ -43,6 +43,8 @@ public class ValidationTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testScopes() {
+
+    System.setProperty("polyglot.js.nashorn-compat","true");
     ScriptFactory.getInstance().setDefaultLanguage("js");
 
     Class<AllScope> all = (Class<AllScope>) ValidationScopeFactory.getInstance().getValidationScope(AllScope.NAME);
@@ -59,6 +61,9 @@ public class ValidationTest {
 
   @Test
   public void testValidate() {
+
+    System.setProperty("polyglot.js.nashorn-compat","true");
+    ScriptFactory.getInstance().setDefaultLanguage("js");
 
     TestObject object = new TestObject();
 
@@ -96,8 +101,8 @@ public class ValidationTest {
     for (ValidationResult result: results) {
       Reporter.log("4: " + result + "<br/>");
     }
-    // this currently fails on graalvm
-    //Assert.assertTrue(results.size() == 1);
+
+    Assert.assertTrue(results.size() == 1);
 
 
     object.percent = 50;

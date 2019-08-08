@@ -51,6 +51,9 @@ public class JSR223ScriptFactory implements ScriptFactory {
      */
     private ScriptingLanguage defaultLanguage;
 
+    public JSR223ScriptFactory() {
+        super();
+    }
 
     @Override
     public void setDefaultLanguage(ScriptingLanguage language) {
