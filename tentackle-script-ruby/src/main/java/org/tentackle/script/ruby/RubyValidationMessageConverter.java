@@ -19,7 +19,7 @@
 
 package org.tentackle.script.ruby;
 
-import org.tentackle.validate.validator.JavaScriptValidationMessageConverter;
+import org.tentackle.validate.validator.AbstractScriptValidationMessageConverter;
 import org.tentackle.validate.validator.MessageScriptConverter;
 
 /**
@@ -28,7 +28,7 @@ import org.tentackle.validate.validator.MessageScriptConverter;
  * @author harald
  */
 @MessageScriptConverter(RubyLanguage.NAME)
-public class RubyValidationMessageConverter extends JavaScriptValidationMessageConverter {
+public class RubyValidationMessageConverter extends AbstractScriptValidationMessageConverter {
 
   // same as for java script (object is translated to @object)
 

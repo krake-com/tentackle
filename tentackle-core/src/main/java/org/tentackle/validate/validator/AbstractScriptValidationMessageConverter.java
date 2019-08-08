@@ -29,12 +29,7 @@ import org.tentackle.validate.ValidationUtilities;
  *
  * @author harald
  */
-@MessageScriptConverter(JavaScriptValidationMessageConverter.JAVASCRIPT_NAME)
-public class JavaScriptValidationMessageConverter implements ScriptConverter {
-
-  /** the primary language name. */
-  public static final String JAVASCRIPT_NAME = "ECMAScript";
-
+public abstract class AbstractScriptValidationMessageConverter implements ScriptConverter {
 
   private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
 

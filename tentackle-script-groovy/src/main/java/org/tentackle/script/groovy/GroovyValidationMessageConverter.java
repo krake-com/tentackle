@@ -19,7 +19,7 @@
 
 package org.tentackle.script.groovy;
 
-import org.tentackle.validate.validator.JavaScriptValidationMessageConverter;
+import org.tentackle.validate.validator.AbstractScriptValidationMessageConverter;
 import org.tentackle.validate.validator.MessageScriptConverter;
 
 /**
@@ -28,7 +28,7 @@ import org.tentackle.validate.validator.MessageScriptConverter;
  * @author harald
  */
 @MessageScriptConverter(GroovyLanguage.NAME)
-public class GroovyValidationMessageConverter extends JavaScriptValidationMessageConverter {
+public class GroovyValidationMessageConverter extends AbstractScriptValidationMessageConverter {
 
   // same as for java script
 
