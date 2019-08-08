@@ -16,13 +16,12 @@ public class JSR223ScriptFactoryTest {
     @Test
     public void testGetLanguages() {
         try {
-            JSR223ScriptFactory factory = new JSR223ScriptFactory();
+            JSR223ScriptFactory factory = JSR223ScriptFactory.getInstance();
 
             for (ScriptingLanguage language : factory.getLanguages()) {
                 for (String abbrv : language.getAbbreviations()) {
                     if ( abbrv != null ) {
-                        String abbrvLC = abbrv.toLowerCase();
-                        LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrvLC);
+                        LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrv);
                     }
                 }
                 LOGGER.info("DefaultScriptFactory found scripting language {0} by name {1}", language, language.getName());
@@ -33,9 +32,9 @@ public class JSR223ScriptFactoryTest {
         }
     }
 
-    @Test void testLanguages() {
+    @Test void testLanguageJS() {
         try {
-            JSR223ScriptFactory factory = new JSR223ScriptFactory();
+            JSR223ScriptFactory factory = JSR223ScriptFactory.getInstance();
             ScriptingLanguage lang = factory.getLanguage("js");
             if (lang != null) {
                 String code = "Math.pow(a,b)";

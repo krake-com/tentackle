@@ -20,8 +20,7 @@ public class DefaultScriptFactoryTest {
             for (ScriptingLanguage language : factory.getLanguages()) {
                 for (String abbrv : language.getAbbreviations()) {
                     if ( abbrv != null ) {
-                        String abbrvLC = abbrv.toLowerCase();
-                        LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrvLC);
+                        LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrv);
                     }
                 }
                 LOGGER.info("DefaultScriptFactory found scripting language {0} by name {1}", language, language.getName());
@@ -32,7 +31,7 @@ public class DefaultScriptFactoryTest {
         }
     }
 
-    @Test void testLanguages() {
+    @Test void testLanguageJS() {
         try {
             ScriptFactory factory = ScriptFactory.getInstance();
             ScriptingLanguage lang = factory.getLanguage("js");

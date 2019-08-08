@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collection;
+import java.util.HashSet;
 
 
 /**
@@ -128,15 +129,37 @@ public class DefaultScriptFactory implements ScriptFactory {
           if (!clazz.equals(this.getClass())) {
             ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
             for (ScriptingLanguage language : factory.getLanguages()) {
+              HashSet dupSet = new HashSet<>();
               for (String abbrv : language.getAbbreviations()) {
                 if (abbrv != null) {
-                  String abbrvLC = abbrv.toLowerCase();
-                  languages.put(abbrvLC, language);
-                  LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrvLC, clazz.getName());
+                  if (!dupSet.contains(abbrv)) {
+                    languages.put(abbrv, language);
+                    LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrv, clazz.getName());
+                    dupSet.add(abbrv);
+                  }
+                }
+              }
+              String name = language.getName();
+              if (name != null) {
+                if (!dupSet.contains(name)) {
+                  languages.put(name, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, name, clazz.getName());
+                  dupSet.add(name);
+                }
+                String nameLC = name.toLowerCase();
+                if (!nameLC.equals(name)) {
+                  if (!dupSet.contains(nameLC)) {
+                    languages.put(nameLC, language);
+                    LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, nameLC, clazz.getName());
+                    dupSet.add(nameLC);
+                  }
                 }
               }
             }
           }
+        }
+        if ( languages.size() == 1 ) {
+          setDefaultLanguage(languages.keySet().toArray(new String[0])[0]);
         }
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
@@ -153,16 +176,29 @@ public class DefaultScriptFactory implements ScriptFactory {
         for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
           ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
           for (String abbrv: language.getAbbreviations()) {
-            String abbrvLC = abbrv.toLowerCase();
+            HashSet dupSet = new HashSet<>();
             if (abbrv != null) {
-              languages.put(abbrvLC, language);
-              LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service ", language, abbrvLC, clazz.getName());
+              if (!dupSet.contains(abbrv)) {
+                languages.put(abbrv, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service {2}", language, abbrv, clazz.getName());
+                dupSet.add(abbrv);
+              }
             }
             String name = language.getName();
             if ( name != null ) {
+              if (!dupSet.contains(abbrv)) {
+                languages.put(name, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, name, clazz.getName());
+                dupSet.add(name);
+              }
               String nameLC = name.toLowerCase();
-              languages.put(nameLC, language);
-              LOGGER.info("DefaultScriptFactory added scripting language {0} as {1}", language, nameLC);
+              if ( ! nameLC.equals(name)) {
+                if (!dupSet.contains(abbrv)) {
+                  languages.put(nameLC, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, nameLC, clazz.getName());
+                  dupSet.add(nameLC);
+                }
+              }
             }
           }
         }
