@@ -1,7 +1,7 @@
 package org.tentackle.script.jsr223;
 
 import org.tentackle.log.Logger;
-import org.tentackle.script.DefaultScriptFactory;
+import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptVariable;
 import org.tentackle.script.ScriptingLanguage;
@@ -16,13 +16,17 @@ public class DefaultScriptFactoryTest {
     public void testGetLanguages() {
 
         try {
-            DefaultScriptFactory factory = new DefaultScriptFactory();
-
+            ScriptFactory factory = ScriptFactory.getInstance();
+            Assert.assertNotNull(factory);
+            LOGGER.info("factory="+factory);
             for (ScriptingLanguage language : factory.getLanguages()) {
                 for (String abbrv : language.getAbbreviations()) {
-                    String abbrvLC = abbrv.toLowerCase();
-                    LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrvLC);
+                    if ( abbrv != null ) {
+                        String abbrvLC = abbrv.toLowerCase();
+                        LOGGER.info("DefaultScriptFactory found scripting language {0} as {1}", language, abbrvLC);
+                    }
                 }
+                LOGGER.info("DefaultScriptFactory found scripting language {0} by name {1}", language, language.getName());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -32,7 +36,7 @@ public class DefaultScriptFactoryTest {
 
     @Test void testLanguages() {
         try {
-            DefaultScriptFactory factory = new DefaultScriptFactory();
+            ScriptFactory factory = ScriptFactory.getInstance();
             ScriptingLanguage lang = factory.getLanguage("js");
             if (lang != null) {
                 String code = "Math.pow(a,b)";

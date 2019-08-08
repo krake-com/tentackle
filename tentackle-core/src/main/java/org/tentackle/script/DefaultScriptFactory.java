@@ -128,9 +128,11 @@ public class DefaultScriptFactory implements ScriptFactory {
             ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
             for (ScriptingLanguage language : factory.getLanguages()) {
               for (String abbrv : language.getAbbreviations()) {
-                String abbrvLC = abbrv.toLowerCase();
-                languages.put(abbrvLC, language);
-                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrvLC, clazz.getName());
+                if (abbrv != null) {
+                  String abbrvLC = abbrv.toLowerCase();
+                  languages.put(abbrvLC, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrvLC, clazz.getName());
+                }
               }
             }
           }
@@ -151,8 +153,16 @@ public class DefaultScriptFactory implements ScriptFactory {
           ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
           for (String abbrv: language.getAbbreviations()) {
             String abbrvLC = abbrv.toLowerCase();
-            languages.put(abbrvLC, language);
-            LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service ", language, abbrvLC, clazz.getName());
+            if (abbrv != null) {
+              languages.put(abbrvLC, language);
+              LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service ", language, abbrvLC, clazz.getName());
+            }
+            String name = language.getName();
+            if ( name != null ) {
+              String nameLC = name.toLowerCase();
+              languages.put(nameLC, language);
+              LOGGER.info("DefaultScriptFactory added scripting language {0} as {1}", language, nameLC);
+            }
           }
         }
       }
