@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,12 @@
 
 package org.tentackle.script;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
 
+import java.util.Collection;
 
-interface ScriptFactory$Singleton {
+
+interface ScriptFactoryHolder {
   ScriptFactory INSTANCE = ServiceFactory.createService(ScriptFactory.class, DefaultScriptFactory.class);
 }
 
@@ -41,33 +42,43 @@ public interface ScriptFactory {
    * @return the singleton
    */
   static ScriptFactory getInstance() {
-    return ScriptFactory$Singleton.INSTANCE;
+    return ScriptFactoryHolder.INSTANCE;
   }
 
 
   /**
    * Sets the default language.
+   * <p>
+   * Throws ScriptRuntimeException if no such language.
    *
    * @param abbreviation the abbreviation for the default language
-   * @throws ScriptRuntimeException if no such language
    */
   void setDefaultLanguage(String abbreviation);
 
 
   /**
+   * Sets the default language.
+   *
+   * @param language the language
+   */
+  void setDefaultLanguage(ScriptingLanguage language);
+
+
+  /**
    * Gets the default language.
    *
-   * @return the the default language
+   * @return the default language, null if none
    */
   ScriptingLanguage getDefaultLanguage();
 
 
   /**
    * Gets the scripting language.
+   * <p>
+   * Throws  ScriptRuntimeException if no such language.
    *
    * @param abbreviation one of the abbreviations for that language, null or empty string if default language
    * @return the language, never null
-   * @throws ScriptRuntimeException if no such language
    */
   ScriptingLanguage getLanguage(String abbreviation);
 
@@ -84,14 +95,15 @@ public interface ScriptFactory {
    * Creates a script object.
    * <p>
    * Implementations of the {@link ScriptFactory} must implement this method.
+   * <p>
+   * Throws {@link ScriptRuntimeException} if creating the script failed.
    *
    * @param abbreviation the scripting language, null or empty for default
    * @param code the scripting code
    * @param cached use caching if possible (script may be used more than once)
    * @param threadSafe true if script must be threadsafe
    * @return the script
-   * @throws ScriptRuntimeException if creating the script failed
    */
-  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe) throws ScriptRuntimeException;
+  Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe);
 
 }

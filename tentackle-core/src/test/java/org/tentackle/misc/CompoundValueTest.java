@@ -65,33 +65,10 @@ public class CompoundValueTest {
     Assert.assertTrue(result instanceof Timestamp);
     Reporter.log(result.toString() + "<br/>");
 
-    result = new CompoundValue("#!{ 200 > 100 }").getValue();
-    Assert.assertTrue(result instanceof Boolean);
-    Assert.assertTrue((Boolean) result);
-
-    result = new CompoundValue("#!{ 123.0 + 101.0 }", String.class).getValue();
-    Reporter.log(result.toString() + "<br/>");
-    Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(result.equals("224.0"));
-
-    par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
-    result = par.getValue(this);
-    Assert.assertTrue(result instanceof String);
-    Assert.assertTrue(result.equals("the method says " + sayHello()));
-
-    par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
-    result = par.getValue(this);
-    Assert.assertTrue(result instanceof String);
-    Assert.assertEquals(((String) result), "the method says " + sayHello());
-
     // test parsing only
     new CompoundValue("100", Integer.class).parse(this.getClass());
     new CompoundValue("$sayHello").parse(this.getClass());
     new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
-    new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
-    new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
-    new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
-    new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
   }
 
 }

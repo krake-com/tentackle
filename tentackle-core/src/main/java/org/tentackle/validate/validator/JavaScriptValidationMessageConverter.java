@@ -22,7 +22,6 @@ package org.tentackle.validate.validator;
 import org.tentackle.misc.CompoundValue;
 import org.tentackle.script.ScriptConverter;
 import org.tentackle.script.ScriptingLanguage;
-import org.tentackle.script.nashorn.JavaScriptLanguage;
 import org.tentackle.validate.ValidationUtilities;
 
 /**
@@ -30,8 +29,12 @@ import org.tentackle.validate.ValidationUtilities;
  *
  * @author harald
  */
-@MessageScriptConverter(JavaScriptLanguage.NAME)
+@MessageScriptConverter(JavaScriptValidationMessageConverter.JAVASCRIPT_NAME)
 public class JavaScriptValidationMessageConverter implements ScriptConverter {
+
+  /** the primary language name. */
+  public static final String JAVASCRIPT_NAME = "ECMAScript";
+
 
   private static final String VALIDATION_UTILITIES_NAME = ValidationUtilities.class.getName();
 

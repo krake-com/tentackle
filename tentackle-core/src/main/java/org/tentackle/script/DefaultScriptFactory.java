@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,14 +19,15 @@
 
 package org.tentackle.script;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import org.tentackle.common.Service;
 import org.tentackle.common.ServiceFactory;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
-import org.tentackle.script.nashorn.JavaScriptLanguage;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Collection;
 
 
 /**
@@ -37,9 +38,6 @@ import org.tentackle.script.nashorn.JavaScriptLanguage;
 @Service(ScriptFactory.class)
 public class DefaultScriptFactory implements ScriptFactory {
 
-  /**
-   * logger for this class.
-   */
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultScriptFactory.class);
 
 
@@ -52,49 +50,30 @@ public class DefaultScriptFactory implements ScriptFactory {
    * The default language.
    */
   private ScriptingLanguage defaultLanguage;
-  private ScriptingLanguage loggedDefaultLanguage;
+
+
+  @Override
+  public void setDefaultLanguage(ScriptingLanguage language) {
+    defaultLanguage = language;
+    LOGGER.info("default scripting language is {0}", defaultLanguage);
+  }
 
 
   @Override
   public synchronized void setDefaultLanguage(String abbreviation) {
-    defaultLanguage = getLanguage(abbreviation);
+    setDefaultLanguage(getLanguage(abbreviation));
   }
 
 
   @Override
   public synchronized ScriptingLanguage getDefaultLanguage() {
-    if (loggedDefaultLanguage != defaultLanguage) {
-      // log default language once
-      LOGGER.info("default scripting language is {0}", defaultLanguage);
-      loggedDefaultLanguage = defaultLanguage;
-    }
     return defaultLanguage;
   }
 
 
   @Override
   public synchronized Collection<ScriptingLanguage> getLanguages() {
-    if (languages == null) {
-      // load all languages via @Service
-      // the abbreviations override previous ones in classpath
-      // dto. for the default language
-      // so it's easy to change the default or the meaning of an abbreviation
-      languages = new HashMap<>();
-      try {
-        for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
-          ScriptingLanguage language = clazz.newInstance();
-          for (String abbrv: language.getAbbreviations()) {
-            String abbrvLC = abbrv.toLowerCase();
-            languages.put(abbrvLC, language);
-            LOGGER.info("added scripting language {0} as {1}", language, abbrvLC);
-          }
-        }
-        setDefaultLanguage(JavaScriptLanguage.NAME);
-      }
-      catch (ClassNotFoundException | InstantiationException | IllegalAccessException nfe) {
-        throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
-      }
-    }
+    loadLanguages();
     return languages.values();
   }
 
@@ -102,7 +81,7 @@ public class DefaultScriptFactory implements ScriptFactory {
   @Override
   public synchronized ScriptingLanguage getLanguage(String abbreviation) {
 
-    getLanguages();   // make sure that all languages are loaded
+    loadLanguages();   // make sure that all languages are loaded
 
     ScriptingLanguage language;
 
@@ -132,6 +111,57 @@ public class DefaultScriptFactory implements ScriptFactory {
     script.setThreadSafe(threadSafe);
     LOGGER.fine("created scripting object {0}", script);
     return script;
+  }
+
+
+  /**
+   * Loads the languages if not already loaded.
+   */
+  protected void loadLanguages() {
+    if (languages == null) {
+
+      languages = new HashMap<>();
+
+      // collect languages from other instances of @Service(ScriptFactory.class)
+      try {
+        for (Class<ScriptFactory> clazz : ServiceFactory.getServiceFinder().findServiceProviders(ScriptFactory.class)) {
+          if (!clazz.equals(this.getClass())) {
+            ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
+            for (ScriptingLanguage language : factory.getLanguages()) {
+              for (String abbrv : language.getAbbreviations()) {
+                String abbrvLC = abbrv.toLowerCase();
+                languages.put(abbrvLC, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrvLC, clazz.getName());
+              }
+            }
+          }
+        }
+      }
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+              NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+        throw new ScriptRuntimeException("error using ScriptFactory", nfe);
+      }
+
+      // load all languages via @Service
+      // the abbreviations override previous ones in classpath
+      // dto. for the default language
+      // so it's easy to change the default or the meaning of an abbreviation
+
+      try {
+        for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
+          ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
+          for (String abbrv: language.getAbbreviations()) {
+            String abbrvLC = abbrv.toLowerCase();
+            languages.put(abbrvLC, language);
+            LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service ", language, abbrvLC, clazz.getName());
+          }
+        }
+      }
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+          NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+        throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
+      }
+    }
   }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.script;
+package org.tentackle.script.jsr223;
 
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -25,21 +25,21 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
+import org.tentackle.script.AbstractScript;
+import org.tentackle.script.ScriptRuntimeException;
+import org.tentackle.script.ScriptVariable;
 
 /**
  * A script based on JSR-223.
  *
- * @author harald
+ * @author harald, bei
  */
-public class AbstractJSRScript extends AbstractScript {
+public class JSR223Script extends AbstractScript {
 
   private static final long serialVersionUID = 1L;
 
 
-  /**
-   * logger for this class.
-   */
-  private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJSRScript.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(JSR223Script.class);
 
 
   /** the JSR compiled script. */
@@ -57,13 +57,13 @@ public class AbstractJSRScript extends AbstractScript {
    *
    * @param language the language instance
    */
-  public AbstractJSRScript(AbstractJSRScriptingLanguage language) {
+  public JSR223Script(JSR223ScriptingLanguage language) {
     super(language, false);   // JSR does not provide the concept of caching script classes
   }
 
   @Override
-  public AbstractJSRScriptingLanguage getLanguage() {
-    return (AbstractJSRScriptingLanguage) super.getLanguage();
+  public JSR223ScriptingLanguage getLanguage() {
+    return (JSR223ScriptingLanguage) super.getLanguage();
   }
 
   /**
@@ -89,35 +89,43 @@ public class AbstractJSRScript extends AbstractScript {
 
 
   @Override
-  public CompiledScript parse() throws ScriptRuntimeException {
+  public CompiledScript parse() {
     try {
       scriptCode = getEffectiveCode();
       if (compiledScript == null) {
         LOGGER.fine("compiling script:\n{0}", scriptCode);
-        compiledScript = ((Compilable) getLanguage().getEngine()).compile(scriptCode);
+        LOGGER.fine("language = {0}",getLanguage());
+        if ( getLanguage() != null ) {
+            LOGGER.fine("engine = {0}", getLanguage().getEngine());
+
+            if (getLanguage().getEngine() != null) {
+                compiledScript = ((Compilable) getLanguage().getEngine()).compile(scriptCode);
+            }
+        }
       }
       else  {
         LOGGER.fine("re-using compiled script:\n{0}", scriptCode);
       }
       return compiledScript;
     }
-    catch (Exception ex) {
+    catch (ScriptException ex) {
       throw new ScriptRuntimeException("creating script failed: " + this, ex);
     }
   }
 
 
   @Override
-  public void execute(ScriptVariable... variables) throws ScriptRuntimeException {
+  public void execute(ScriptVariable... variables) {
 
     executed = false;
     result = null;
 
     final CompiledScript script = getCompiledScript();
 
-    if (LOGGER.isFinerLoggable()) {
-      LOGGER.finer("execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
-    }
+
+      if (LOGGER.isFinerLoggable()) {
+          LOGGER.finer("execute: \n" + scriptCode + "\nwith args: " + ScriptVariable.variablesToString(variables));
+      }
 
     try {
       Bindings bindings = new SimpleBindings();
@@ -135,7 +143,7 @@ public class AbstractJSRScript extends AbstractScript {
         result = executeImpl(script, bindings);
       }
     }
-    catch (Exception ex) {
+    catch (ScriptException ex) {
       throw new ScriptRuntimeException(ex);
     }
 
@@ -161,7 +169,7 @@ public class AbstractJSRScript extends AbstractScript {
    * @throws ScriptException if execution failed
    */
   protected Object executeImpl(CompiledScript script, Bindings bindings) throws ScriptException {
-    return compiledScript.eval(bindings);
+    return compiledScript == null ? null : compiledScript.eval(bindings);
   }
 
 }

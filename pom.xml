@@ -50,6 +50,7 @@
     <module>tentackle-log-util</module>
     <module>tentackle-log-log4j</module>
     <module>tentackle-log-slf4j</module>
+    <module>tentackle-script-jsr223</module>
     <module>tentackle-script-groovy</module>
     <module>tentackle-script-ruby</module>
     <module>tentackle-domain</module>
@@ -70,6 +71,7 @@
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>
+    <module>tentackle-test-script-jsr223</module>
     <module>tentackle-bom</module>
     <module>tentackle-tools</module>
   </modules>
