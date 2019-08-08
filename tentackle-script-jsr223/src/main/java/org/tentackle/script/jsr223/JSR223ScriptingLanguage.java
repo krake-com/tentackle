@@ -24,6 +24,8 @@ import org.tentackle.script.Script;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptContext;
+import javax.script.Bindings;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,10 +96,22 @@ public class JSR223ScriptingLanguage extends AbstractScriptingLanguage {
       default:
         this.engine = new ScriptEngineManager().getEngineByName(name);
     }
+    setUpOptions();
+
   }
 
   public JSR223ScriptingLanguage(ScriptEngineFactory engineFactory) {
-      this.engineFactory = engineFactory;
+
+    this.engineFactory = engineFactory;
+    setUpOptions();
+  }
+
+  private void setUpOptions() {
+    if ( getEngine() != null ) {
+      Bindings bindings = getEngine().getBindings(ScriptContext.ENGINE_SCOPE);
+      bindings.put("polyglot.js.allowHostAccess", true);
+      bindings.put("polyglot.js.allowAllAccess", true);
+    }
   }
 
   /**
