@@ -17,11 +17,6 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tentackle-script-jsr223</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tentackle-core</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>   <!-- avoid transitive dependency -->
@@ -31,6 +26,11 @@
       <artifactId>tentackle-common</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>   <!-- avoid transitive dependency -->
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tentackle-script-jsr223</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
