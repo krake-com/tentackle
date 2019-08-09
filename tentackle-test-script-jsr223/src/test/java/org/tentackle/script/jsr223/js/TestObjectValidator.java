@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.script.jsr223;
+package org.tentackle.script.jsr223.js;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
