@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.script.jsr223;
+package org.tentackle.script.jsr223.js;
 
 import org.tentackle.common.DMoney;
 import org.tentackle.validate.validator.Greater;

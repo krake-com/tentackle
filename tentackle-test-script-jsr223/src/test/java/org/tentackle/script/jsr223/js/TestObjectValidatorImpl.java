@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.script.jsr223;
+package org.tentackle.script.jsr223.js;
 
 import java.util.List;
 import org.tentackle.validate.ValidationContext;
