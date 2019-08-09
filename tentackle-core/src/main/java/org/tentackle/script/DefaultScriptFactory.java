@@ -113,6 +113,7 @@ public class DefaultScriptFactory implements ScriptFactory {
     LOGGER.fine("created scripting object {0}", script);
     return script;
   }
+  HashSet dupSet = new HashSet<>();
 
 
   /**
@@ -122,44 +123,107 @@ public class DefaultScriptFactory implements ScriptFactory {
     if (languages == null) {
 
       languages = new HashMap<>();
+      String factoryName = "default";
 
-      // collect languages from other instances of @Service(ScriptFactory.class)
+      // load all languages via @Service
+      // abbreviations do not override previous ones in classpath
+      // those defined earlier have higher significance
+      // languages explitly defined by a ScriptingLanguage Service
+      // have higher significane than those defined by another ScriptFactory Service
+      //
       try {
-        for (Class<ScriptFactory> clazz : ServiceFactory.getServiceFinder().findServiceProviders(ScriptFactory.class)) {
-          if (!clazz.equals(this.getClass())) {
-            ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
-            for (ScriptingLanguage language : factory.getLanguages()) {
-              HashSet dupSet = new HashSet<>();
-              for (String abbrv : language.getAbbreviations()) {
-                if (abbrv != null) {
-                  if (!dupSet.contains(abbrv)) {
-                    languages.put(abbrv, language);
-                    LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrv, clazz.getName());
-                    dupSet.add(abbrv);
-                  }
-                }
+        for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
+          ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
+          for (String abbrv: language.getAbbreviations()) {
+            if (abbrv != null) {
+              if (!languages.containsKey(abbrv)) {
+                languages.put(abbrv, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service {2}", language, abbrv, clazz.getName());
               }
-              String name = language.getName();
-              if (name != null) {
-                if (!dupSet.contains(name)) {
-                  languages.put(name, language);
-                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, name, clazz.getName());
-                  dupSet.add(name);
+              abbrv = factoryName + ":" + abbrv;
+              if (!languages.containsKey(abbrv)) {
+                languages.put(abbrv, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrv, clazz.getName());
+              }
+            }
+            String name = language.getName();
+            if ( name != null ) {
+              if (!languages.containsKey(name)) {
+                languages.put(name, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, name, clazz.getName());
+              }
+              String nameLC = name.toLowerCase();
+              name = factoryName + ":" + name;
+              if (!languages.containsKey(name)) {
+                languages.put(name, language);
+                LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, name, clazz.getName());
+              }
+              if ( ! nameLC.equals(name)) {
+                if (!languages.containsKey(nameLC)) {
+                  languages.put(nameLC, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, nameLC, clazz.getName());
                 }
-                String nameLC = name.toLowerCase();
-                if (!nameLC.equals(name)) {
-                  if (!dupSet.contains(nameLC)) {
-                    languages.put(nameLC, language);
-                    LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, nameLC, clazz.getName());
-                    dupSet.add(nameLC);
-                  }
+                nameLC = factoryName + ":" + nameLC;
+                if (!languages.containsKey(nameLC)) {
+                  languages.put(nameLC, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, nameLC, clazz.getName());
                 }
               }
             }
           }
         }
-        if ( languages.size() == 1 ) {
-          setDefaultLanguage(languages.keySet().toArray(new String[0])[0]);
+      }
+      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
+              NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
+        throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
+      }
+      // collect languages from other instances of @Service(ScriptFactory.class)
+      // abbreviations do not override previous ones in classpath
+      // those defined earlier have higher significance
+      try {
+        for (Class<ScriptFactory> clazz : ServiceFactory.getServiceFinder().findServiceProviders(ScriptFactory.class)) {
+          if (!clazz.equals(this.getClass())) {
+            ScriptFactory factory = clazz.getDeclaredConstructor().newInstance();
+            factoryName = factory.getName();
+            for (ScriptingLanguage language : factory.getLanguages()) {
+              for (String abbrv : language.getAbbreviations()) {
+                if (abbrv != null) {
+                  if (!languages.containsKey(abbrv)) {
+                    languages.put(abbrv, language);
+                    LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrv, factory.getName());
+                    abbrv = factoryName + ":" + abbrv;
+                    if (!languages.containsKey(abbrv)) {
+                      languages.put(abbrv, language);
+                      LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from factory {2}", language, abbrv, factory.getName());
+                    }                  }
+                }
+              }
+              String name = language.getName();
+              if (name != null) {
+                if (!languages.containsKey(name)) {
+                  languages.put(name, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, name, factory.getName());
+                }
+                String nameLC = name.toLowerCase();
+                name = factoryName + ":" + name;
+                if (!languages.containsKey(name)) {
+                  languages.put(name, language);
+                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, name, factory.getName());
+                }
+                if (!nameLC.equals(name)) {
+                  if (!languages.containsKey(nameLC)) {
+                    languages.put(nameLC, language);
+                    LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, nameLC, factory.getName());
+                  }
+                  nameLC = factoryName + ":" + nameLC;
+                  if (!languages.containsKey(nameLC)) {
+                    languages.put(nameLC, language);
+                    LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from factory {2}", language, nameLC, factory.getName());
+                  }
+                }
+              }
+            }
+          }
         }
       }
       catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
@@ -167,47 +231,13 @@ public class DefaultScriptFactory implements ScriptFactory {
         throw new ScriptRuntimeException("error using ScriptFactory", nfe);
       }
 
-      // load all languages via @Service
-      // the abbreviations override previous ones in classpath
-      // dto. for the default language
-      // so it's easy to change the default or the meaning of an abbreviation
-
-      try {
-        for (Class<ScriptingLanguage> clazz: ServiceFactory.getServiceFinder().findServiceProviders(ScriptingLanguage.class)) {
-          ScriptingLanguage language = clazz.getDeclaredConstructor().newInstance();
-          for (String abbrv: language.getAbbreviations()) {
-            HashSet dupSet = new HashSet<>();
-            if (abbrv != null) {
-              if (!dupSet.contains(abbrv)) {
-                languages.put(abbrv, language);
-                LOGGER.info("DefaultScriptFactory added scripting language {0} as {1} from service {2}", language, abbrv, clazz.getName());
-                dupSet.add(abbrv);
-              }
-            }
-            String name = language.getName();
-            if ( name != null ) {
-              if (!dupSet.contains(abbrv)) {
-                languages.put(name, language);
-                LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, name, clazz.getName());
-                dupSet.add(name);
-              }
-              String nameLC = name.toLowerCase();
-              if ( ! nameLC.equals(name)) {
-                if (!dupSet.contains(abbrv)) {
-                  languages.put(nameLC, language);
-                  LOGGER.info("DefaultScriptFactory added scripting language {0} by name {1} from service {2}", language, nameLC, clazz.getName());
-                  dupSet.add(nameLC);
-                }
-              }
-            }
-          }
-        }
-      }
-      catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException |
-          NoSuchMethodException | SecurityException | InvocationTargetException nfe) {
-        throw new ScriptRuntimeException("supported scripting languages could not be determined", nfe);
+      if ( languages.size() == 1 ) {
+        setDefaultLanguage(languages.keySet().toArray(new String[0])[0]);
       }
     }
   }
 
+  @Override public String getName() {
+    return "default";
+  }
 }

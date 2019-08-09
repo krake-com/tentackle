@@ -122,11 +122,11 @@ public class JSR223ScriptFactoryImpl implements ScriptFactory {
      * Loads the languages if not already loaded.
      */
     protected void loadLanguages() {
+
         if (languages == null) {
             // load all languages via ScriptEngineManager
-            // the abbreviations override previous ones in classpath
-            // dto. for the default language
-            // so it's easy to change the default or the meaning of an abbreviation
+            // abbreviations do not override previous ones in classpath
+            // those defined earlier have higher significance
             ScriptEngineManager manager = new ScriptEngineManager();
             languages = new HashMap<>();
             List<ScriptEngineFactory> engineFactories = manager.getEngineFactories();
@@ -137,34 +137,34 @@ public class JSR223ScriptFactoryImpl implements ScriptFactory {
             LOGGER.info("JSR223ScriptFactory adding " + engineFactories.size() +
                     " JSR223 scripting engines");
             for (ScriptEngineFactory engineFactory : engineFactories) {
-                HashSet dupSet = new HashSet<>();
                 JSR223ScriptingLanguage language = new JSR223ScriptingLanguage(engineFactory);
                 for (String abbrv : language.getAbbreviations()) {
                     if ( abbrv != null ) {
-                        if ( ! dupSet.contains(abbrv) ) {
+                        if ( ! languages.containsKey(abbrv) ) {
                             languages.put(abbrv, language);
                             LOGGER.info("JSR223ScriptFactory added scripting language {0} as {1}", language, abbrv);
-                            dupSet.add(abbrv);
                         }
                     }
                 }
                 String name = language.getName();
                 if ( name != null ) {
-                    if ( ! dupSet.contains(name) ) {
+                    if ( ! languages.containsKey(name) ) {
                         languages.put(name, language);
                         LOGGER.info("JSR223ScriptFactory added scripting language {0} by name {1}", language, name);
-                        dupSet.add(name);
                     }
                     String nameLC = name.toLowerCase();
                     if ( ! nameLC.equals(name)) {
-                        if ( ! dupSet.contains(nameLC) ) {
+                        if ( ! languages.containsKey(nameLC) ) {
                             languages.put(nameLC, language);
                             LOGGER.info("JSR223ScriptFactory added scripting language {0} by name {1}", language, nameLC);
-                            dupSet.add(nameLC);
                         }
                     }
                 }
             }
         }
+    }
+
+    @Override public String getName() {
+        return "jsr223";
     }
 }
