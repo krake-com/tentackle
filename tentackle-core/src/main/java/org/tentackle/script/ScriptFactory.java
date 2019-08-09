@@ -106,4 +106,13 @@ public interface ScriptFactory {
    */
   Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe);
 
+  /**
+   * Gets the script factory name.
+   * <p>
+   * The name must be unique!
+   *
+   * @return the name
+   */
+  String getName();
+
 }
