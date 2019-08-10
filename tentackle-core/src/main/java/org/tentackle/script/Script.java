@@ -95,6 +95,12 @@ public interface Script {
    */
   boolean isParsed();
 
+  /**
+   * Checks whether the script should be executed interactive.
+   *
+   * @return true if executed interactice
+   */
+  boolean isInteractive();
 
   /**
    * Sets a converter that will translate the script before being parsed.

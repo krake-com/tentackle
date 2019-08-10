@@ -115,4 +115,12 @@ public interface ScriptFactory {
    */
   String getName();
 
+  /**
+   * Check if a scripting language is available in this ScriptFactory.
+   *
+   * @param abbreviation one of the abbreviations for that language, null or empty string if default language
+   * @return true if the scripting language is available.
+   */
+    boolean isLanguageAvailable(String abbreviation);
+
 }
