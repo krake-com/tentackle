@@ -43,16 +43,40 @@ public abstract class AbstractScript implements Script {
   /** true if execution works in parallel for more than one thread. */
   private volatile boolean threadSafe;
 
+  /** true if the language is interactive, false otherwise. */
+  private volatile boolean interactive;
+
 
   /**
+   * Creates a script.
+   *
+   * @param language the language instance
+   */
+  public AbstractScript(ScriptingLanguage language) {
+    this(language, false, false);
+  }
+
+   /**
    * Creates a script.
    *
    * @param language the language instance
    * @param cached true if use caching, if possible
    */
   public AbstractScript(ScriptingLanguage language, boolean cached) {
+    this(language, cached, false);
+  }
+
+  /**
+   * Creates a script.
+   *
+   * @param language the language instance
+   * @param cached true if use caching, if possible
+   * @param cached true if use interactive mode
+   */
+  public AbstractScript(ScriptingLanguage language, boolean cached, boolean interacticve) {
     this.language = language;
     this.cached = cached;
+    this.interactive = interactive;
   }
 
   @Override
@@ -132,4 +156,8 @@ public abstract class AbstractScript implements Script {
     return converter;
   }
 
+  @Override
+  public boolean isInteractive() {
+    return interactive;
+  }
 }

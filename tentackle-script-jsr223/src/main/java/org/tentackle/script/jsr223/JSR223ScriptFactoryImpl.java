@@ -60,7 +60,7 @@ public class JSR223ScriptFactoryImpl implements ScriptFactory {
     @Override
     public void setDefaultLanguage(ScriptingLanguage language) {
         defaultLanguage = language;
-        LOGGER.info("JSR22ScriptFactory default scripting language is {0}", defaultLanguage);
+        LOGGER.info("JSR223ScriptFactory default scripting language is {0}", defaultLanguage);
     }
 
 
@@ -164,5 +164,22 @@ public class JSR223ScriptFactoryImpl implements ScriptFactory {
 
     @Override public String getName() {
         return "jsr223";
+    }
+
+    @Override public boolean isLanguageAvailable(String abbreviation) {
+
+        loadLanguages();   // make sure that all languages are loaded
+
+        ScriptingLanguage language;
+
+        if (abbreviation != null && !abbreviation.isEmpty()) {
+            abbreviation = abbreviation.toLowerCase();
+            language = languages.get(abbreviation);
+        }
+        else  {
+            language = getDefaultLanguage();
+        }
+
+        return language != null;
     }
 }

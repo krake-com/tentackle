@@ -14,11 +14,10 @@ public class JavaScriptLanguageTest {
     @Test
     public void testJavaScript() {
 
-        ScriptingLanguage scriptLanguage = ScriptFactory.getInstance().getLanguage("js");
-
-        if (scriptLanguage == null) {
-            Reporter.log("testJavaScript test skipped, js language not found");
+        if ( ! ScriptFactory.getInstance().isLanguageAvailable("js") ) {
+            Reporter.log("testValidate test skipped, js language not available");
         } else {
+
 
             String code = "amount * (rate / 12) / (1 - Math.pow((1 + rate / 12), -numberOfMonths))";
             Script script = ScriptFactory.getInstance().createScript("js", code, false, false);

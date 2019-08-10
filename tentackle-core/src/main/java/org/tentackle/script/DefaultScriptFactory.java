@@ -240,4 +240,22 @@ public class DefaultScriptFactory implements ScriptFactory {
   @Override public String getName() {
     return "default";
   }
+
+  @Override public boolean isLanguageAvailable(String abbreviation) {
+
+    loadLanguages();   // make sure that all languages are loaded
+
+    ScriptingLanguage language;
+
+    if (abbreviation != null && !abbreviation.isEmpty()) {
+      abbreviation = abbreviation.toLowerCase();
+      language = languages.get(abbreviation);
+    }
+    else  {
+      language = getDefaultLanguage();
+    }
+
+    return language != null;
+  }
+
 }

@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
 /**
  * CompoundValue Test.
  *
- * @author harald
+ * @author harald, bei
  */
 public class CompoundValueTest {
 
@@ -52,9 +52,9 @@ public class CompoundValueTest {
     @Test
     public void testCompountValue() {
         try {
-            ScriptingLanguage scriptLanguage = ScriptFactory.getInstance().getLanguage("js");
-            if ( scriptLanguage == null ) {
-                Reporter.log("testCompountValue test skipped, js language not found");
+
+            if ( ! ScriptFactory.getInstance().isLanguageAvailable("js") ) {
+                Reporter.log("testValidate test skipped, js language not available");
             } else {
 
                 ScriptFactory.getInstance().setDefaultLanguage("js");
