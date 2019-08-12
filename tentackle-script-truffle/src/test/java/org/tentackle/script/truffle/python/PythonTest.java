@@ -17,7 +17,7 @@
  */
 
 
-package org.tentackle.script.truffle.ruby;
+package org.tentackle.script.truffle.python;
 
 import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
@@ -58,7 +58,7 @@ public class PythonTest {
                   new ScriptVariable("numberOfMonths", i));
         }
         long endTime = System.currentTimeMillis();
-        Reporter.log("duration (ruby): " + (endTime - startTime) / 1000.0 + " seconds<br/>");
+        Reporter.log("duration (python): " + (endTime - startTime) / 1000.0 + " seconds<br/>");
 
         startTime = System.currentTimeMillis();
         for (int i = 1; i < 10000; i++) {
