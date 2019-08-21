@@ -23,7 +23,7 @@ import org.tentackle.validate.validator.AbstractScriptValidationMessageConverter
 import org.tentackle.validate.validator.MessageScriptConverter;
 
 /**
- * Converts a validator message script.
+ * Converts a Groovy validator message script.
  *
  * @author harald
  */
