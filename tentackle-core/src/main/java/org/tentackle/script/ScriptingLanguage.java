@@ -53,9 +53,10 @@ public interface ScriptingLanguage {
   /**
    * Creates a script.
    * <p>
+   * Throws {@link ScriptRuntimeException} if script cannot be created.
+   *
    * @param cached true if use caching if possible because script code may used more than once
    * @return the created script object
-   * @throws ScriptRuntimeException if script cannot be created
    */
   Script createScript(boolean cached);
 

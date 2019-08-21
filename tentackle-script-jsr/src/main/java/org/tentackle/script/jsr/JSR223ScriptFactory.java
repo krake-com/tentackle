@@ -1,0 +1,58 @@
+/*
+ * Tentackle - https://tentackle.org
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of thJSR223ScriptFactoryTeste License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+package org.tentackle.script.jsr;
+
+import org.tentackle.common.Service;
+import org.tentackle.log.Logger;
+import org.tentackle.log.LoggerFactory;
+import org.tentackle.script.DefaultScriptFactory;
+import org.tentackle.script.ScriptFactory;
+
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+
+/**
+ * Implementation of a script factory using JSR223.
+ *
+ * @author bei, harald
+ */
+@Service(ScriptFactory.class)
+public class JSR223ScriptFactory extends DefaultScriptFactory {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(JSR223ScriptFactory.class);
+
+
+  @Override
+  protected void loadLanguages() {
+    // load all languages via ScriptEngineManager
+    for (ScriptEngineFactory engineFactory : new ScriptEngineManager().getEngineFactories()) {
+      if (engineFactory != null) {
+        JSR223ScriptingLanguage language = new JSR223ScriptingLanguage(engineFactory);
+        for (String abbrv : language.getAbbreviations()) {
+          if (abbrv != null && languages.putIfAbsent(abbrv, language) == null) {
+            LOGGER.info("added scripting language {0} as {1}", language, abbrv);
+          }
+        }
+      }
+    }
+
+    super.loadLanguages();    // load the non-JSR languages (but don't override abbreviations)
+  }
+
+}

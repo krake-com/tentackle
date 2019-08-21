@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.script;
 
 
@@ -95,12 +94,6 @@ public interface Script {
    */
   boolean isParsed();
 
-  /**
-   * Checks whether the script should be executed interactive.
-   *
-   * @return true if executed interactice
-   */
-  boolean isInteractive();
 
   /**
    * Sets a converter that will translate the script before being parsed.
