@@ -21,14 +21,15 @@ package org.tentackle.script.jsr;
 import org.tentackle.validate.validator.AbstractScriptValidationMessageConverter;
 import org.tentackle.validate.validator.MessageScriptConverter;
 
+/**
+ * Converts a Nashorn validator message script.
+ *
+ * @author harald
+ */
 @MessageScriptConverter(ECMAScriptValidationMessageConverter.NAME)
 public class ECMAScriptValidationMessageConverter extends AbstractScriptValidationMessageConverter {
 
   /** the primary language name. */
   public static final String NAME = "ECMAScript";
-
-  public ECMAScriptValidationMessageConverter() {
-    super();
-  }
 
 }
