@@ -50,7 +50,7 @@
     <module>tentackle-log-util</module>
     <module>tentackle-log-log4j</module>
     <module>tentackle-log-slf4j</module>
-    <module>tentackle-script-jsr223</module>
+    <module>tentackle-script-jsr</module>
     <module>tentackle-script-truffle</module>
     <module>tentackle-script-groovy</module>
     <module>tentackle-script-ruby</module>
@@ -72,7 +72,6 @@
     <module>tentackle-web</module>
     <module>tentackle-test-pdo</module>
     <module>tentackle-test-fx-rdc</module>
-    <module>tentackle-test-script-jsr223</module>
     <module>tentackle-bom</module>
     <module>tentackle-tools</module>
   </modules>
@@ -222,34 +221,34 @@
 	    <artifactId>truffle-api</artifactId>
         <version>${graalvm.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.graalvm.sdk</groupId>
-        <artifactId>graal-sdk</artifactId>
-        <version>${graalvm.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.graalvm.js</groupId>
-        <artifactId>js</artifactId>
-        <version>${graalvm.version}</version>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.graalvm.js</groupId>
-        <artifactId>js-scriptengine</artifactId>
-        <version>${graalvm.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.graalvm.tools</groupId>
-        <artifactId>profiler</artifactId>
-        <version>${graalvm.version}</version>
-        <scope>runtime</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.graalvm.tools</groupId>
-        <artifactId>chromeinspector</artifactId>
-        <version>${graalvm.version}</version>
-        <scope>runtime</scope>
-      </dependency>
+<!--      <dependency>-->
+<!--        <groupId>org.graalvm.sdk</groupId>-->
+<!--        <artifactId>graal-sdk</artifactId>-->
+<!--        <version>${graalvm.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.graalvm.js</groupId>-->
+<!--        <artifactId>js</artifactId>-->
+<!--        <version>${graalvm.version}</version>-->
+<!--        <scope>runtime</scope>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.graalvm.js</groupId>-->
+<!--        <artifactId>js-scriptengine</artifactId>-->
+<!--        <version>${graalvm.version}</version>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.graalvm.tools</groupId>-->
+<!--        <artifactId>profiler</artifactId>-->
+<!--        <version>${graalvm.version}</version>-->
+<!--        <scope>runtime</scope>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.graalvm.tools</groupId>-->
+<!--        <artifactId>chromeinspector</artifactId>-->
+<!--        <version>${graalvm.version}</version>-->
+<!--        <scope>runtime</scope>-->
+<!--      </dependency>-->
 
       <!-- test dependencies -->
       <dependency>

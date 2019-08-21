@@ -1,16 +1,16 @@
 /**
  * Tentackle - http://www.tentackle.org
- *
+ * <p>
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- *
+ * <p>
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -19,23 +19,24 @@
 
 package org.tentackle.script.truffle.js;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import org.tentackle.validate.DefaultSeverity;
 import org.tentackle.validate.Validation;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.ValidationSeverity;
 import org.tentackle.validate.scope.AllScope;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * Validator annotation.
  *
  * @author harald
  */
-@Target({ ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Validation(TestObjectValidatorImpl.class)
@@ -64,14 +65,14 @@ public @interface TestObjectValidator {
    *
    * @return the validation scopes.
    */
-	Class<? extends ValidationScope>[] scope() default { AllScope.class };
+  Class<? extends ValidationScope>[] scope() default {AllScope.class};
 
   /**
    * The application specific validation severities.
    *
    * @return the severities
    */
-  Class<? extends ValidationSeverity>[] severity() default { DefaultSeverity.class };
+  Class<? extends ValidationSeverity>[] severity() default {DefaultSeverity.class};
 
   /**
    * Determines whether the validation process stops if this validator fails.

@@ -1,5 +1,5 @@
-/**
- * Tentackle - http://www.tentackle.org
+/*
+ * Tentackle - https://tentackle.org
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -15,7 +15,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
 
 package org.tentackle.script;
 
@@ -80,7 +79,7 @@ public interface Script {
    * @return the compilation result (usually a script object)
    * @throws ScriptRuntimeException if parsing failed
    */
-  Object parse() throws ScriptRuntimeException;
+  Object parse();
 
 
   /**
@@ -95,12 +94,6 @@ public interface Script {
    */
   boolean isParsed();
 
-  /**
-   * Checks whether the script should be executed interactive.
-   *
-   * @return true if executed interactice
-   */
-  boolean isInteractive();
 
   /**
    * Sets a converter that will translate the script before being parsed.
@@ -125,7 +118,7 @@ public interface Script {
    * @param variables the script variables
    * @throws ScriptRuntimeException if execution failed
    */
-  void execute(ScriptVariable... variables) throws ScriptRuntimeException;
+  void execute(ScriptVariable... variables);
 
 
   /**

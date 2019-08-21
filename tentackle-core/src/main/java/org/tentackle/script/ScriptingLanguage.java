@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,9 +53,10 @@ public interface ScriptingLanguage {
   /**
    * Creates a script.
    * <p>
+   * Throws {@link ScriptRuntimeException} if script cannot be created.
+   *
    * @param cached true if use caching if possible because script code may used more than once
    * @return the created script object
-   * @throws ScriptRuntimeException if script cannot be created
    */
   Script createScript(boolean cached);
 

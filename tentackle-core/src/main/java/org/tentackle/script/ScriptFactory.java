@@ -16,12 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.script;
 
 import org.tentackle.common.ServiceFactory;
 
-import java.util.Collection;
+import java.util.Set;
 
 
 interface ScriptFactoryHolder {
@@ -84,11 +83,20 @@ public interface ScriptFactory {
 
 
   /**
+   * Check if a scripting language is available.
+   *
+   * @param abbreviation one of the abbreviations for that language, null or empty string if default language
+   * @return true if the scripting language is available
+   */
+  boolean isLanguageAvailable(String abbreviation);
+
+
+  /**
    * Gets all scripting languages.
    *
    * @return the languages
    */
-  Collection<ScriptingLanguage> getLanguages();
+  Set<ScriptingLanguage> getLanguages();
 
 
   /**
@@ -105,22 +113,5 @@ public interface ScriptFactory {
    * @return the script
    */
   Script createScript(String abbreviation, String code, boolean cached, boolean threadSafe);
-
-  /**
-   * Gets the script factory name.
-   * <p>
-   * The name must be unique!
-   *
-   * @return the name
-   */
-  String getName();
-
-  /**
-   * Check if a scripting language is available in this ScriptFactory.
-   *
-   * @param abbreviation one of the abbreviations for that language, null or empty string if default language
-   * @return true if the scripting language is available.
-   */
-    boolean isLanguageAvailable(String abbreviation);
 
 }

@@ -19,16 +19,14 @@
 
 package org.tentackle.script.truffle.js;
 
-import java.sql.Timestamp;
-
-import org.tentackle.misc.CompoundValue;
-import org.tentackle.script.DefaultScriptFactory;
-import org.tentackle.script.Script;
-import org.tentackle.script.ScriptFactory;
-import org.tentackle.script.ScriptingLanguage;
 import org.testng.Assert;
 import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
+
+import org.tentackle.misc.CompoundValue;
+import org.tentackle.script.ScriptFactory;
+import org.tentackle.script.ScriptingLanguage;
 
 /**
  * CompoundValue Test.
@@ -37,66 +35,58 @@ import org.testng.annotations.Test;
  */
 public class CompoundValueTest {
 
-    /**
-     * The method grabbed by CompoundValue("$sayHello").
-     *
-     * @return the hello string
-     */
-    public String sayHello() {
-        return "hello!";
+  /**
+   * The method grabbed by CompoundValue("$sayHello").
+   *
+   * @return the hello string
+   */
+  public String sayHello() {
+    return "hello!";
+  }
+
+  public boolean thisIsFalse() {
+    return false;
+  }
+
+  @Test
+  public void testCompountValue() {
+
+    if (!ScriptFactory.getInstance().isLanguageAvailable("js")) {
+      throw new SkipException("testValidate test skipped, js language not available");
     }
 
-    public boolean thisIsFalse() {
-        return false;
-    }
+    ScriptingLanguage scriptLanguage = ScriptFactory.getInstance().getLanguage("js");
 
-    @Test
-    public void testCompountValue() {
+    ScriptFactory.getInstance().setDefaultLanguage("js");
 
-        try {
+    Object result = new CompoundValue("#!{ 200 > 100 }").getValue();
+    Assert.assertTrue(result instanceof Boolean);
+    Assert.assertTrue((Boolean) result);
 
-            if ( ! ScriptFactory.getInstance().isLanguageAvailable("js") ) {
-                Reporter.log("testValidate test skipped, js language not available");
-            } else {
-                ScriptingLanguage scriptLanguage = ScriptFactory.getInstance().getLanguage("js");
+    result = new CompoundValue("#!{ 123.0 + 101.0 }", String.class).getValue();
+    Reporter.log(result.toString() + "<br/>");
+    Assert.assertTrue(result instanceof String);
+    Assert.assertTrue(result.equals("224.0") || result.equals("224"));
 
-                ScriptFactory.getInstance().setDefaultLanguage("js");
+    CompoundValue par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
+    result = par.getValue(this);
+    Assert.assertTrue(result instanceof String);
+    Assert.assertTrue(result.equals("the method says " + sayHello()));
 
-                Object result = new CompoundValue("#!{ 200 > 100 }").getValue();
-                Assert.assertTrue(result instanceof Boolean);
-                Assert.assertTrue((Boolean) result);
-
-                result = new CompoundValue("#!{ 123.0 + 101.0 }", String.class).getValue();
-                Reporter.log(result.toString() + "<br/>");
-                Assert.assertTrue(result instanceof String);
-                Assert.assertTrue(result.equals("224.0") || result.equals("224"));
-
-                CompoundValue par = new CompoundValue("#!{ 'the method says ' + object.sayHello() }");
-                result = par.getValue(this);
-                Assert.assertTrue(result instanceof String);
-                Assert.assertTrue(result.equals("the method says " + sayHello()));
-
-                par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
-                result = par.getValue(this);
-                Assert.assertTrue(result instanceof String);
-                Assert.assertEquals(((String) result), "the method says " + sayHello());
+    par = new CompoundValue("#!js{ 'the method says ' + object.sayHello() }");
+    result = par.getValue(this);
+    Assert.assertTrue(result instanceof String);
+    Assert.assertEquals(((String) result), "the method says " + sayHello());
 
 
-                // test parsing only
-                new CompoundValue("100", Integer.class).parse(this.getClass());
-                new CompoundValue("$sayHello").parse(this.getClass());
-                new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
-                new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
-                new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
+    // test parsing only
+    new CompoundValue("100", Integer.class).parse(this.getClass());
+    new CompoundValue("$sayHello").parse(this.getClass());
+    new CompoundValue("$org.tentackle.misc.DateHelper.now").parse(this.getClass());
+    new CompoundValue("#!{ 200 > 100 }").parse(this.getClass());
+    new CompoundValue("#!{ 123.0 + 101.0 }", String.class).parse(this.getClass());
 
-                new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
-                new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail("Exception thrown", e.getCause());
-        }
-
-
-    }
+    new CompoundValue("#!{ 'the method says ' + object.sayHello() }").parse(this.getClass());
+    new CompoundValue("#!js{ 'the method says ' + object.sayHello }").parse(this.getClass());
+  }
 }
