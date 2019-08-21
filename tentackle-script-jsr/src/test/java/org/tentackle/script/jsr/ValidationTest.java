@@ -20,10 +20,10 @@ package org.tentackle.script.jsr;
 
 import org.testng.Assert;
 import org.testng.Reporter;
+import org.testng.SkipException;
 import org.testng.annotations.Test;
 
 import org.tentackle.script.ScriptFactory;
-import org.tentackle.script.ScriptingLanguage;
 import org.tentackle.validate.ValidationResult;
 import org.tentackle.validate.ValidationScopeFactory;
 import org.tentackle.validate.ValidationUtilities;
@@ -47,7 +47,6 @@ public class ValidationTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testScopes() {
-
     Class<AllScope> all = (Class<AllScope>) ValidationScopeFactory.getInstance().getValidationScope(AllScope.NAME);
     Class<ChangeableScope> changeable = (Class<ChangeableScope>) ValidationScopeFactory.getInstance().getValidationScope(ChangeableScope.NAME);
     Class<InteractiveScope> interactive = (Class<InteractiveScope>) ValidationScopeFactory.getInstance().getValidationScope(InteractiveScope.NAME);
@@ -63,74 +62,65 @@ public class ValidationTest {
   @Test
   public void testValidate() {
 
-    ScriptingLanguage scriptLanguage = null;
-
-    try {
-      if (!ScriptFactory.getInstance().isLanguageAvailable("js")) {
-        Reporter.log("testValidate test skipped, js language not available");
-      }
-      else {
-        ScriptFactory.getInstance().setDefaultLanguage("js");
-
-        TestObject object = new TestObject();
-
-        List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(object.getClass());
-        for (Validator validator : validators) {
-          Reporter.log("1: " + validator + "<br/>");
-        }
-        Assert.assertEquals(validators.size(), 9);
-
-
-        object.text = null;
-        object.percent = 200;
-
-        AllScope allScopeImpl = ValidationScopeFactory.getInstance().getAllScope();
-        List<? extends ValidationResult> results = ValidationUtilities.getInstance().validateFields(validators, allScopeImpl, "object", object);
-        for (ValidationResult result : results) {
-          Reporter.log("2: " + result + "<br/>");
-        }
-        Assert.assertTrue(results.size() == 5);
-
-        object.text = "blah";
-        object.percent = 80;
-        object.value = 250;
-
-        results = ValidationUtilities.getInstance().validateFields(validators, null, "object", object);
-        for (ValidationResult result : results) {
-          Reporter.log("3: " + result + "<br/>");
-        }
-        Assert.assertTrue(results.isEmpty());
-
-        object.percent = 87;
-
-        results = ValidationUtilities.getInstance().validateFields(validators, null, "object", object);
-        for (ValidationResult result : results) {
-          Reporter.log("4: " + result + "<br/>");
-        }
-        Assert.assertTrue(results.size() == 1);
-
-        object.percent = 50;
-        validators = ValidatorCache.getInstance().getObjectValidators(object.getClass());
-        Assert.assertTrue(validators.size() == 1);
-
-        results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
-        for (ValidationResult result : results) {
-          Reporter.log("5: " + result + "<br/>");
-        }
-        Assert.assertTrue(results.isEmpty());
-
-        object.percent = 81;
-
-        results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
-        for (ValidationResult result : results) {
-          Reporter.log("6: " + result + "<br/>");
-        }
-        Assert.assertTrue(results.size() == 1);
-      }
+    if (!ScriptFactory.getInstance().isLanguageAvailable("js")) {
+      throw new SkipException("testValidate test skipped, js language not available");
     }
-    catch (Exception e) {
-      e.printStackTrace();
-      Assert.fail("Exception thrown", e.getCause());
+
+    ScriptFactory.getInstance().setDefaultLanguage("js");
+
+    TestObject object = new TestObject();
+
+    List<Validator> validators = ValidatorCache.getInstance().getFieldValidators(object.getClass());
+    for (Validator validator : validators) {
+      Reporter.log("1: " + validator + "<br/>");
     }
+    Assert.assertEquals(validators.size(), 9);
+
+
+    object.text = null;
+    object.percent = 200;
+
+    AllScope allScopeImpl = ValidationScopeFactory.getInstance().getAllScope();
+    List<? extends ValidationResult> results = ValidationUtilities.getInstance().validateFields(validators, allScopeImpl, "object", object);
+    for (ValidationResult result : results) {
+      Reporter.log("2: " + result + "<br/>");
+    }
+    Assert.assertTrue(results.size() == 5);
+
+    object.text = "blah";
+    object.percent = 80;
+    object.value = 250;
+
+    results = ValidationUtilities.getInstance().validateFields(validators, null, "object", object);
+    for (ValidationResult result : results) {
+      Reporter.log("3: " + result + "<br/>");
+    }
+    Assert.assertTrue(results.isEmpty());
+
+    object.percent = 87;
+
+    results = ValidationUtilities.getInstance().validateFields(validators, null, "object", object);
+    for (ValidationResult result : results) {
+      Reporter.log("4: " + result + "<br/>");
+    }
+    Assert.assertTrue(results.size() == 1);
+
+    object.percent = 50;
+    validators = ValidatorCache.getInstance().getObjectValidators(object.getClass());
+    Assert.assertTrue(validators.size() == 1);
+
+    results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
+    for (ValidationResult result : results) {
+      Reporter.log("5: " + result + "<br/>");
+    }
+    Assert.assertTrue(results.isEmpty());
+
+    object.percent = 81;
+
+    results = ValidationUtilities.getInstance().validateObject(validators, null, "object", null, object, object.getClass());
+    for (ValidationResult result : results) {
+      Reporter.log("6: " + result + "<br/>");
+    }
+    Assert.assertTrue(results.size() == 1);
   }
 }
