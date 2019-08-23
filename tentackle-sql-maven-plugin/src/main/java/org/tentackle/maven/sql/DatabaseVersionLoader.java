@@ -18,6 +18,8 @@
 
 package org.tentackle.maven.sql;
 
+import org.apache.maven.plugin.MojoExecutionException;
+
 import org.tentackle.sql.BackendInfo;
 
 /**
@@ -34,7 +36,8 @@ public interface DatabaseVersionLoader {
    * @param mojo the sql mojo
    * @param backendInfo the backend info
    * @return the version string
+   * @throws MojoExecutionException if something failed
    */
-  String getDatabaseVersion(AbstractSqlMojo mojo, BackendInfo backendInfo);
+  String getDatabaseVersion(AbstractSqlMojo mojo, BackendInfo backendInfo) throws MojoExecutionException;
 
 }
