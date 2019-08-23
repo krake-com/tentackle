@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,6 +71,7 @@ import java.util.regex.PatternSyntaxException;
  * <li>hint &lt;tablename&gt;: migration hint (regular expression). Used to select automatic migrations that were commented out
  * as alternatives by the table migrator.</li>
  * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated
+ * <li>--: comment describing the hint (not copied to the generated SQL)</li>
  * </ul>
  *
  * Several hints for the same table/section will be concatenated.
@@ -81,6 +82,7 @@ public class MigrationHints {
 
   // keywords
 
+  private static final String COMMENT = "--";
   private static final String BEFORE_ALL = "before all";
   private static final String AFTER_ALL = "after all";
   private static final String BEFORE = "before";
@@ -366,12 +368,12 @@ public class MigrationHints {
           hintDirNames = new ArrayList<>();
           hintDirNames.add(fileset.getDirectory());   // use given directory
         }
-        for (String propertiesDirName: hintDirNames) {
-          fileset.setDirectory(propertiesDirName);
+        for (String hintDirName: hintDirNames) {
+          fileset.setDirectory(hintDirName);
           String[] fileNames = fileSetManager.getIncludedFiles(fileset);
           if (fileNames.length > 0) {
             for (String filename : fileNames) {
-              File hintFile = new File(new File(propertiesDirName), filename);
+              File hintFile = new File(new File(hintDirName), filename);
               if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
                 logger.debug("loading migration hints from " + hintFile);
                 StringBuilder buf = new StringBuilder();
@@ -395,14 +397,12 @@ public class MigrationHints {
                 try {
                   while (lineTokenizer.hasMoreTokens()) {
                     String line = lineTokenizer.nextToken();
-                    if (line.length() == 1) {
-                      if (delims.contains(line)) {
-                        // delimiter
-                        if (line.equals("\n")) {
-                          lineNumber++;
-                        }
-                        continue;
+                    if (line.length() == 1 && delims.contains(line)) {
+                      // delimiter
+                      if (line.equals("\n")) {
+                        lineNumber++;
                       }
+                      continue;
                     }
                     Section newSection = nextSection(line);
                     if (newSection != null) {
@@ -468,6 +468,9 @@ public class MigrationHints {
     }
     else if (line.startsWith(DEPEND)) {
       section = new Section(DEPEND);
+    }
+    else if (line.startsWith(COMMENT)) {
+      section = new Section(COMMENT);
     }
 
     if (section != null) {
