@@ -16,24 +16,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-package org.tentackle.maven.plugin.sql;
+package org.tentackle.maven.sql;
 
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Mojo;
-
-import org.tentackle.maven.sql.MigrateSqlMojo;
+import org.tentackle.sql.BackendInfo;
 
 /**
- * Validates the database against the model.<br>
- * The build fails if something to migrate found.<br>
- * Alternative to the validate configuration option.
+ * Determines the database version in an application-specific way.<br>
+ * The implementing class must provide a no-args constructor.
+ *
+ * @see BackendInfoParameter#minVersion
  */
-@Mojo(name = "validate")
-public class ValidateSqlMojo extends MigrateSqlMojo {
+public interface DatabaseVersionLoader {
 
-  @Override
-  protected void validate() throws MojoExecutionException {
-    validate = true;    // turn on validate option
-    super.validate();
-  }
+  /**
+   * Determines the database version.
+   *
+   * @param mojo the sql mojo
+   * @param backendInfo the backend info
+   * @return the version string
+   */
+  String getDatabaseVersion(AbstractSqlMojo mojo, BackendInfo backendInfo);
+
 }
