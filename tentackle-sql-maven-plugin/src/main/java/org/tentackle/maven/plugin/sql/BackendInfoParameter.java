@@ -19,15 +19,16 @@
 package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.building.SettingsProblem;
 import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
 import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 import org.apache.maven.shared.model.fileset.FileSet;
 
+import org.tentackle.common.StringHelper;
 import org.tentackle.sql.BackendInfo;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -95,10 +96,12 @@ public class BackendInfoParameter {
    * Optional minimum version number.<br>
    * This is usually the version of the database model.
    * <p>
-   * There are 2 kinds of filters:
+   * There are 3 kinds of filters:
    * <ol>
    * <li>Strings holding a fixed version number, e.g. 3.1.0</li>
    * <li>String starting with 'SELECT' which is an SQL-select returning a version number (the current database version)</li>
+   * <li>FQCN of a class with a no-args constructor implementing {@link DatabaseVersionLoader}. Notice that this class must
+   * be added to the classpath via plugin dependencies.</li>
    * </ol>
    * If given, the version number will be applied to the <em>directories</em> of the hint-files.
    */
@@ -166,36 +169,60 @@ public class BackendInfoParameter {
    * Load the migration hints.
    *
    * @param backendInfo the backend info
-   * @param logger the maven logger
+   * @param mojo the sql mojo
    * @param verbose true if verbose
    * @param resourceDirs resource dirs, null if none
    * @return the hints the migration hints
    * @throws MojoExecutionException if failed
    */
-  public MigrationHints loadMigrationHints(BackendInfo backendInfo, Log logger, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
+  public MigrationHints loadMigrationHints(BackendInfo backendInfo, AbstractSqlMojo mojo, boolean verbose, List<String> resourceDirs) throws MojoExecutionException {
     MigrationHints hints = new MigrationHints();
-    if (minVersion != null && minVersion.toUpperCase().startsWith("SELECT ")) {
-      String effectiveFilter = null;
-      try (Connection con = backendInfo.connect()) {
-        try (Statement stmt = con.createStatement()) {
-          ResultSet rs = stmt.executeQuery(minVersion);
-          if (rs.next()) {
-            effectiveFilter = rs.getString(1);
+
+    if (minVersion != null) {
+      if (minVersion.toUpperCase().startsWith("SELECT ")) {
+        String effectiveFilter = null;
+        try (Connection con = backendInfo.connect()) {
+          try (Statement stmt = con.createStatement()) {
+            ResultSet rs = stmt.executeQuery(minVersion);
+            if (rs.next()) {
+              effectiveFilter = rs.getString(1);
+            }
+          }
+          if (effectiveFilter == null) {
+            throw new MojoExecutionException(minVersion + " returned no results!");
+          }
+          minVersion = effectiveFilter;
+        }
+        catch (SQLException sx) {
+          throw new MojoExecutionException("cannot retrieve filter from database", sx);
+        }
+      }
+      else if (StringHelper.isFQCN(minVersion)) {
+        try {
+          Class<?> clazz = Class.forName(minVersion);
+          if (DatabaseVersionLoader.class.isAssignableFrom(clazz)) {
+            DatabaseVersionLoader versionLoader = (DatabaseVersionLoader) clazz.getConstructor().newInstance();
+            minVersion = versionLoader.getDatabaseVersion(mojo, backendInfo);
+          }
+          else {
+            throw new MojoExecutionException(clazz + " is not a DatabaseVersionLoader");
           }
         }
-        if (effectiveFilter == null) {
-          throw new MojoExecutionException(minVersion + " returned no results!");
+        catch (ClassNotFoundException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+          throw new MojoExecutionException("cannot create DatabaseVersionLoader", e);
         }
-        minVersion = effectiveFilter;
-      }
-      catch (SQLException sx) {
-        throw new MojoExecutionException("cannot retrieve filter from database", sx);
       }
     }
+
     if (minVersion != null) {
-      logger.debug("applying filter '" + minVersion + "'");
+      mojo.getLog().debug("applying filter '" + minVersion + "'");
     }
-    hints.load(migrationHints, minVersion, logger, verbose, resourceDirs);
+    else {
+      mojo.getLog().debug("no version filter");
+    }
+
+    hints.load(migrationHints, minVersion, mojo.getLog(), verbose, resourceDirs);
+
     return hints;
   }
 
