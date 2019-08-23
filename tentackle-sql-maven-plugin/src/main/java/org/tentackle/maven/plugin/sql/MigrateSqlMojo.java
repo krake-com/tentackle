@@ -273,7 +273,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
 
   @Override
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
-    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, getLog(), verbosityLevel.isDebug(), resourceDirs);
+    MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), resourceDirs);
     migrationHints.put(backendInfo.getUrl(), hints);
     getLog().info(backendInfo + ": version " + backendParameter.minVersion);
   }

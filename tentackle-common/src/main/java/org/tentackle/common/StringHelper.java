@@ -477,6 +477,18 @@ public final class StringHelper {
 
 
   /**
+   * Checks whether given string is a fully qualified classname (FQCN).<br>
+   * The class must belong to a package!
+   *
+   * @param className the classname
+   * @return true if FQCN
+   */
+  public static boolean isFQCN(String className) {
+    return className.contains(".") && isValidJavaClassName(className);
+  }
+
+
+  /**
    * Checks that given string is a valid Java classname.<br>
    * Both classnames with a full classpath or without are validated.
    *
