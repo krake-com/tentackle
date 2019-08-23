@@ -73,6 +73,7 @@ import java.util.regex.PatternSyntaxException;
  * <li>hint &lt;tablename&gt;: migration hint (regular expression). Used to select automatic migrations that were commented out
  * as alternatives by the table migrator.</li>
  * <li>depend &lt;tablename&gt;: tablename, tablename,... wait until all given tablenames are migrated
+ * <li>--: comment describing the hint (not copied to the generated SQL)</li>
  * </ul>
  *
  * Several hints for the same table/section will be concatenated.
@@ -83,6 +84,7 @@ public class MigrationHints {
 
   // keywords
 
+  private static final String COMMENT = "--";
   private static final String ALWAYS_BEFORE = "always before";
   private static final String ALWAYS_AFTER = "always after";
   private static final String BEFORE_ALL = "before all";
@@ -513,6 +515,9 @@ public class MigrationHints {
     }
     else if (line.startsWith(DEPEND)) {
       section = new Section(DEPEND);
+    }
+    else if (line.startsWith(COMMENT)) {
+      section = new Section(COMMENT);
     }
 
     if (section != null) {
