@@ -87,7 +87,7 @@
     <javafx.version>12.0.1</javafx.version>
     <ow2.asm.version>7.1</ow2.asm.version>
     <maven.version>3.6.0</maven.version>
-    <postgresql.version>42.2.5</postgresql.version>
+    <postgresql.version>42.2.6</postgresql.version>
     <maven.resources.plugin.version>3.1.0</maven.resources.plugin.version>
     <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>2.22.1</maven.surefire.plugin.version>
@@ -188,45 +188,45 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-api</artifactId>
-        <version>2.12.0</version>
+        <version>2.12.1</version>
       </dependency>
       <!-- still not modularized -->
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-core</artifactId>
-        <version>2.12.0</version>
+        <version>2.12.1</version>
       </dependency>
 
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.26</version>
+        <version>1.7.28</version>
       </dependency>
 
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.7.0</version>
+        <version>9.2.8.0</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>2.5.7</version>
+        <version>2.5.8</version>
         <classifier>indy</classifier>
       </dependency>
 
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
-        <version>2.3.28</version>
+        <version>2.3.29</version>
       </dependency>
 
       <!-- test dependencies -->
       <dependency>
         <groupId>org.testng</groupId>
         <artifactId>testng</artifactId>
-        <version>6.14.3</version>
+        <version>6.14.3</version>  <!-- module test-pdo fails with 7.0.0 -->
         <scope>test</scope>
         <exclusions>
           <exclusion>
@@ -355,7 +355,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
-          <version>3.7.1</version>
+          <version>3.8.2</version>
           <configuration>
             <siteDirectory>${rootBasedir}/src/site</siteDirectory>
           </configuration>
@@ -431,7 +431,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <!-- need to stick with 3.0.1 since 3.1.0 cannot doc a non-module referencing a module
+          <!-- need to stick with 3.0.1 since 3.1.0 and 3.1.1 cannot doc a non-module referencing a module
                (such as buildsupport which deps on common) -->
           <version>3.0.1</version>
           <dependencies>
