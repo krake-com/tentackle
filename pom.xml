@@ -87,7 +87,7 @@
     <javac.version.require>1.8.0-45</javac.version.require>
     <javac.lint>unchecked,deprecation</javac.lint>
     <maven.version>3.3.9</maven.version>
-    <postgresql.version>42.2.5</postgresql.version>
+    <postgresql.version>42.2.6</postgresql.version>
     <graalvm.version>19.1.1</graalvm.version>
 
     <!-- for tentackle-fx+rdc: java 9 multi-release jars via antrun because not supported by maven yet -->
@@ -194,26 +194,26 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.26</version>
+        <version>1.7.28</version>
       </dependency>
 
       <dependency>
         <groupId>org.jruby</groupId>
         <artifactId>jruby</artifactId>
-        <version>9.2.7.0</version>
+        <version>9.2.8.0</version>
       </dependency>
 
       <dependency>
         <groupId>org.codehaus.groovy</groupId>
         <artifactId>groovy</artifactId>
-        <version>2.5.7</version>
+        <version>2.5.8</version>
         <classifier>indy</classifier>
       </dependency>
 
       <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
-        <version>2.3.28</version>
+        <version>2.3.29</version>
       </dependency>
 
       <dependency>

@@ -17,7 +17,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 package org.tentackle.swing.bind;
 
 import org.tentackle.bind.BindingException;
@@ -29,8 +28,6 @@ import org.tentackle.swing.FormCalendarField;
 import org.tentackle.swing.FormComponent;
 import org.tentackle.swing.FormFieldComponent;
 import org.tentackle.swing.SqlDateField;
-import org.tentackle.swing.bind.DefaultFormComponentBinding;
-import org.tentackle.swing.bind.FormComponentBinder;
 
 /**
  * Binding for {@link DateFormField} and {@link FormCalendarField}.
