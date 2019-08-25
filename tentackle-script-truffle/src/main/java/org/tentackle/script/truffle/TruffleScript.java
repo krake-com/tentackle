@@ -29,26 +29,20 @@ import org.tentackle.script.ScriptVariable;
 
 /**
  * A script based on GraalVM Truffle Scripting.
- * <p>
- * TODO: works but the ruby-part is wacky.
  *
- * @author bei
+ * @author bei, harald
  */
 public class TruffleScript extends AbstractScript {
 
   private static final long serialVersionUID = 1L;
 
-
   private static final Logger LOGGER = LoggerFactory.getLogger(TruffleScript.class);
+
 
   private volatile String scriptCode;         // the source code of the compiled script
   private boolean executed;                   // true if script has been executed and result is val
   private Object result;                      // the last execution result
   private Source source;                      // the truffle source
-  private ScriptVariable[] variables;         // script variables
-
-  private boolean ruby;                       // true if script language is ruby
-  private Object[] vals;                      // for ruby only: no variable binding
 
 
   /**
@@ -57,15 +51,14 @@ public class TruffleScript extends AbstractScript {
    * @param language the language instance
    * @param cached   true if use caching, if possible
    */
-  public TruffleScript(TruffleScriptingLanguage language, boolean cached) {
+  public TruffleScript(TruffleLanguage language, boolean cached) {
     super(language, cached);
-    ruby = "ruby".equals(getLanguage().getTruffleLanguage().getId());
   }
 
 
   @Override
-  public TruffleScriptingLanguage getLanguage() {
-    return (TruffleScriptingLanguage) super.getLanguage();
+  public TruffleLanguage getLanguage() {
+    return (TruffleLanguage) super.getLanguage();
   }
 
   @Override
@@ -82,46 +75,13 @@ public class TruffleScript extends AbstractScript {
     try {
       scriptCode = getEffectiveCode();
       if (source == null) {
-        LOGGER.fine("parsing script:\n{0}", scriptCode);
-        LOGGER.fine("language = {0}", getLanguage());
-
-        vals = new Object[0];
-
-        if (ruby && (variables != null)) {
-          vals = new Object[variables.length];
-
-          StringBuffer sb = new StringBuffer();
-          sb.append("lambda { |");
-
-          int i = 0;
-          for (ScriptVariable v : variables) {
-            if (i > 0) {
-              sb.append(",");
-            }
-            sb.append(v.getName());
-            vals[i] = v.getValue();
-            LOGGER.fine("ScriptVariable[{0}]={1}", i, vals[i]);
-            i++;
-          }
-          sb.append("| ");
-          sb.append(scriptCode);
-          sb.append("}");
-          scriptCode = sb.toString();
-          LOGGER.fine("lambda script:\n{0}", scriptCode);
-
+        LOGGER.fine("parsing language {0}, script:\n{1}", getLanguage().getName(), scriptCode);
+        try {
+          source = Source.newBuilder(getLanguage().getGraalVmLanguage().getId(), scriptCode, null).cached(isCached()).name(null).interactive(false).buildLiteral();
         }
-
-        if (getLanguage() != null) {
-          if (getLanguage().getTruffleLanguage() != null) {
-            LOGGER.fine("language.language.id = {0}", getLanguage().getTruffleLanguage().getId());
-            try {
-              source = Source.newBuilder(getLanguage().getTruffleLanguage().getId(), scriptCode, null).cached(isCached()).name(null).interactive(false).buildLiteral();
-            }
-            catch (Exception e) {
-              LOGGER.warning("error creating sozrce", e);
-              e.printStackTrace();
-            }
-          }
+        catch (Exception e) {
+          LOGGER.warning("error creating sozrce", e);
+          e.printStackTrace();
         }
       }
       else {
@@ -134,16 +94,11 @@ public class TruffleScript extends AbstractScript {
     }
   }
 
-  public Source getParsedSource(ScriptVariable... variables) {
-    this.variables = variables;
-
-    return source == null ? parse() : source;
-  }
 
   @Override
   public void execute(ScriptVariable... variables) {
 
-    Source source = getParsedSource(variables);
+    Source source = parse();
 
     executed = false;
     result = null;
@@ -153,41 +108,29 @@ public class TruffleScript extends AbstractScript {
     }
 
     try {
-
-      Value bindings = TruffleScriptFactory.getContext().getBindings(getLanguage().getTruffleLanguage().getId());
-
       if (variables != null) {
+        Value bindings = TruffleScriptFactory.getContext().getBindings(getLanguage().getGraalVmLanguage().getId());
         for (ScriptVariable variable : variables) {
-          if (usesMemberBindings()) {
-            try {
-              bindings.putMember(variable.getName(), variable.getValue());
-            }
-            catch (Exception e) {
-              throw new ScriptRuntimeException("putMember not supported for language " + getLanguage());
-            }
-          }
+          bindings.putMember(variable.getName(), variable.getValue());
         }
       }
+
       if (isThreadSafe()) {
         synchronized (source) {
-          result = executeImpl(source, vals);
+          result = executeImpl(source);
         }
       }
       else {
-        result = executeImpl(source, vals);
+        result = executeImpl(source);
       }
     }
-    catch (Exception ex) {
+    catch (RuntimeException ex) {
       throw new ScriptRuntimeException(ex);
     }
 
     LOGGER.finer("returned: {0}", result.toString());
 
     executed = true;
-  }
-
-  public boolean usesMemberBindings() {
-    return !ruby;
   }
 
   @Override
@@ -198,9 +141,15 @@ public class TruffleScript extends AbstractScript {
     return result;
   }
 
-
+  /**
+   * Transforms the return value of a script to a java object.
+   *
+   * @param val the graal value
+   * @return the java object
+   */
   protected Object toObject(Value val) {
-    Object obj = null;
+    Object obj;
+
     if (val == null || val.isNull()) {
       obj = null;
     }
@@ -246,6 +195,7 @@ public class TruffleScript extends AbstractScript {
     else {
       obj = val;
     }
+
     return obj;
   }
 
@@ -253,28 +203,10 @@ public class TruffleScript extends AbstractScript {
    * Executes the given script.
    *
    * @param source the source code unit
-   * @param arguments the script arguments, null if via binding
    * @return the script result
    */
-  protected Object executeImpl(Source source, Object arguments[]) {
-    Value val = null;
-    try {
-      if (source != null) {
-        if (usesMemberBindings()) {
-          val = TruffleScriptFactory.getContext().eval(source);
-        }
-        else if (ruby) {
-          val = TruffleScriptFactory.getContext().eval(source);
-          val = val.execute(arguments);
-        }
-      }
-    }
-    catch (Exception e) {
-      LOGGER.warning("error executing script", e);
-      e.printStackTrace();
-    }
-
-    return toObject(val);
+  protected Object executeImpl(Source source) {
+    return toObject(TruffleScriptFactory.getContext().eval(source));
   }
 
 }

@@ -21,12 +21,17 @@ import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Language;
 
 import org.tentackle.common.Service;
+import org.tentackle.common.ServiceFactory;
+import org.tentackle.common.StringHelper;
 import org.tentackle.log.Logger;
 import org.tentackle.log.LoggerFactory;
 import org.tentackle.script.DefaultScriptFactory;
 import org.tentackle.script.ScriptFactory;
+import org.tentackle.script.ScriptRuntimeException;
 
-import java.util.Locale;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 interface TruffleContextHolder {
@@ -44,6 +49,24 @@ public class TruffleScriptFactory extends DefaultScriptFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TruffleScriptFactory.class);
 
+  private final Map<String, Class<TruffleLanguage>> supportedLanguages;
+
+  @SuppressWarnings("unchecked")
+  public TruffleScriptFactory() {
+    supportedLanguages = new HashMap<>();
+    for (Map.Entry<String,String> entry:
+        ServiceFactory.getServiceFinder().createNameMap(TruffleLanguageService.class.getName()).entrySet()) {
+      try {
+        String language = StringHelper.stripEnclosingDoubleQuotes(entry.getKey());
+        Class<TruffleLanguage> clazz = (Class<TruffleLanguage>) Class.forName(entry.getValue());
+        supportedLanguages.put(language, clazz);
+      }
+      catch (ClassNotFoundException ex) {
+        throw new ScriptRuntimeException("truffle language configuration failed", ex);
+      }
+    }
+  }
+
   /**
    * Gets the truffle context.
    *
@@ -54,37 +77,23 @@ public class TruffleScriptFactory extends DefaultScriptFactory {
   }
 
 
-  private static final String[] ABBREVIATIONS_JAVASCRIPT = {"javascript", "JavaScript", "js", "trufflejs", "ECMAScript", "ecmascript"};
-  private static final String[] ABBREVIATIONS_RUBY = {"ruby", "truffleruby", "Ruby", "truffleRuby"};
-  private static final String[] ABBREVIATIONS_R = {"r", "R", "fastr", "FASTR"};
-
-
-  protected String[] getAbbreviations(Language language) {
-    switch (language.getName()) {
-      case "JavaScript":
-        return ABBREVIATIONS_JAVASCRIPT;
-
-      case "Ruby":
-        return ABBREVIATIONS_RUBY;
-
-      case "R":
-        return ABBREVIATIONS_R;
-
-      default:
-        return new String[]{language.getId(), language.getId().toLowerCase(Locale.US),
-                            language.getName(), language.getName().toLowerCase(Locale.US)};
-    }
-  }
-
   /**
    * Loads the languages if not already loaded.
    */
   protected void loadLanguages() {
-    for (Language truffleLanguage : getContext().getEngine().getLanguages().values()) {
-      TruffleScriptingLanguage language = new TruffleScriptingLanguage(truffleLanguage, getAbbreviations(truffleLanguage));
-      for (String abbrv : language.getAbbreviations()) {
-        if (languages.putIfAbsent(abbrv, language) == null) {
-          LOGGER.info("added scripting language {0} as {1}", language, abbrv);
+    for (Language graalVmLanguage : getContext().getEngine().getLanguages().values()) {
+      Class<TruffleLanguage> extendedClass = supportedLanguages.get(graalVmLanguage.getName());
+      if (extendedClass != null) {
+        try {
+          TruffleLanguage language = extendedClass.getConstructor(Language.class).newInstance(graalVmLanguage);
+          for (String abbrv : language.getAbbreviations()) {
+            if (languages.putIfAbsent(abbrv, language) == null) {
+              LOGGER.info("added scripting language {0} as {1}", language, abbrv);
+            }
+          }
+        }
+        catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+          throw new ScriptRuntimeException("cannot load truffle language " + graalVmLanguage.getName());
         }
       }
     }

@@ -37,7 +37,7 @@ import org.tentackle.script.ScriptVariable;
 public class PythonTest {
 
   @Test
-  public void testRuby() {
+  public void testPython() {
     if (!ScriptFactory.getInstance().isLanguageAvailable("python")) {
       throw new SkipException("testValidate test skipped, python language not available");
     }

@@ -13,7 +13,7 @@ public class RLanguageTest {
 
 
   @Test
-  public void testJavaScript() {
+  public void testFastR() {
 
     if (!ScriptFactory.getInstance().isLanguageAvailable("R")) {
       throw new SkipException("testValidate test skipped, R language not available");

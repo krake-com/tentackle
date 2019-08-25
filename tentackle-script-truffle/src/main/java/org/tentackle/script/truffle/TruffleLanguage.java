@@ -23,26 +23,25 @@ import org.graalvm.polyglot.Language;
 import org.tentackle.script.AbstractScriptingLanguage;
 import org.tentackle.script.Script;
 
+import java.util.Locale;
+
 
 /**
  * A scripting language based on GraalVM Truffle.
  *
  * @author bei, harald
  */
-public class TruffleScriptingLanguage extends AbstractScriptingLanguage {
+public abstract class TruffleLanguage extends AbstractScriptingLanguage {
 
   private final Language language;      // the Graal scripting language
-  private final String[] abbreviations; // the abbreviations to load the language
 
   /**
    * Creates a scripting language by name
    *
-   * @param language      the graal language
-   * @param abbreviations the abbreviations
+   * @param language the graal language
    */
-  public TruffleScriptingLanguage(Language language, String[] abbreviations) {
+  public TruffleLanguage(Language language) {
     this.language = language;
-    this.abbreviations = abbreviations;
   }
 
   @Override
@@ -52,10 +51,16 @@ public class TruffleScriptingLanguage extends AbstractScriptingLanguage {
 
   @Override
   public String[] getAbbreviations() {
-    return abbreviations;
+    return new String[]{language.getId(), language.getId().toLowerCase(Locale.US),
+                        language.getName(), language.getName().toLowerCase(Locale.US)};
   }
 
-  public Language getTruffleLanguage() {
+  /**
+   * Gets the native language.
+   *
+   * @return the graalvm native language
+   */
+  public Language getGraalVmLanguage() {
     return language;
   }
 
