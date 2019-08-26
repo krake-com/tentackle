@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.7.0-SNAPSHOT</version>
+    <version>8.2.7.0</version>
   </parent>
 
   <artifactId>tentackle-bom</artifactId>
@@ -64,6 +64,16 @@
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-script-ruby</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-script-jsr</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-script-truffle</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

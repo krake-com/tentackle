@@ -8,17 +8,17 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent</artifactId>
-    <version>8.2.6.0</version>
+    <version>8.2.7.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
   <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. 8. must be omitted -->
-  <version>2.6.0</version>
+  <version>2.7.0</version>
   <packaging>pom</packaging>
 
   <properties>
-    <tentackle.version>8.2.6.0</tentackle.version>
+    <tentackle.version>8.2.7.0</tentackle.version>
   </properties>
 
   <name>Tentackle OSGi Parent</name>
@@ -41,6 +41,7 @@
     <module>tentackle.i18n.osgi</module>
     <module>tentackle.script.groovy.osgi</module>
     <module>tentackle.script.ruby.osgi</module>
+    <module>tentackle.script.jsr.osgi</module>
     <module>tentackle.web.osgi</module>
     <!-- OSGI doesnt work with multi-release jars -->
     <!--<module>tentackle.fx.osgi</module>-->
