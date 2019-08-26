@@ -73,6 +73,11 @@
       </dependency>
       <dependency>
         <groupId>org.tentackle</groupId>
+        <artifactId>tentackle-script-jsr</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.tentackle</groupId>
         <artifactId>tentackle-domain</artifactId>
         <version>${project.version}</version>
       </dependency>
