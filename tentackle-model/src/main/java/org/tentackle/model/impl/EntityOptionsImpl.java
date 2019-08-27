@@ -315,6 +315,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
         editedByAttribute.setName(Constants.AN_EDITEDBY);
         editedByAttribute.getOptions().setComment("being edited by user id");
         editedByAttribute.getOptions().setFromSuper(true);
+        editedByAttribute.getOptions().setDefaultValue(0L);
         entity.getAttributes().add(0, editedByAttribute);
       }
     }
