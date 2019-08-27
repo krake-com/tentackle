@@ -148,6 +148,7 @@ public class EntityFactoryImpl implements EntityFactory {
     serialAttribute.setName(Constants.AN_SERIAL);
     serialAttribute.getOptions().setComment("object serial");
     serialAttribute.getOptions().setFromSuper(true);
+    serialAttribute.getOptions().setDefaultValue(1L);
     entity.getAttributes().add(serialAttribute);
 
     // process the lines
