@@ -384,8 +384,12 @@ public class IndexImpl implements Index {
         for (int position = 0; position < getAttributes().size(); position++) {
           IndexAttribute indexAttribute = getAttributes().get(position);
           IndexAttribute otherAttribute = otherIndex.getAttributes().get(position);
-          if (!indexAttribute.isDescending() == otherAttribute.isDescending() ||
-              !indexAttribute.getAttribute().getColumnName().equals(otherAttribute.getAttribute().getColumnName())) {
+          Attribute indexAttr = indexAttribute.getAttribute();
+          Attribute otherAttr = otherAttribute.getAttribute();
+          String indexColumnName = indexAttr == null ? null : indexAttr.getColumnName();
+          String otherColumnName = otherAttr == null ? null : otherAttr.getColumnName();
+          if (indexAttribute.isDescending() != otherAttribute.isDescending() ||
+              !Objects.equals(indexColumnName, otherColumnName)) {
             logicallyEqual = false;
             break;
           }
