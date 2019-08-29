@@ -24,7 +24,7 @@ import java.io.File;
 
 
 interface VersionFileFilterHolder {
-  VersionFileFilter INSTANCE = ServiceFactory.createService(VersionFileFilter.class);
+  VersionFileFilter INSTANCE = ServiceFactory.createService(VersionFileFilter.class, SemanticVersionFileFilter.class, false);
 }
 
 /**

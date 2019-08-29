@@ -250,20 +250,23 @@ public class ServiceFactory {
    * @param <T> the service type
    * @param serviceClass the service class
    * @param defaultClass the default class if no service found
+   * @param logDefault true if log warning with stacktrace if default implementation is used
    * @return an instance of the service
    */
-  public static <T> T createService(Class<T> serviceClass, Class<? extends T> defaultClass) {
+  public static <T> T createService(Class<T> serviceClass, Class<? extends T> defaultClass, boolean logDefault) {
     try {
       return createService(serviceClass);
     }
     catch (TentackleRuntimeException re) {
       try {
-        // we cannot use LOGGER here because this may use the createService as well
-        java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(
-                java.util.logging.Level.WARNING,
-                "creating service for " + serviceClass.getName() +
-                " failed -> creating default " + defaultClass.getName(),
-                re);
+        if (logDefault) {
+          // we cannot use LOGGER here because this may use the createService as well
+          java.util.logging.Logger.getLogger(ServiceFactory.class.getName()).log(
+              java.util.logging.Level.WARNING,
+              "creating service for " + serviceClass.getName() +
+              " failed -> creating default " + defaultClass.getName(),
+              re);
+        }
         return defaultClass.getDeclaredConstructor().newInstance();
       }
       catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException |
@@ -271,6 +274,18 @@ public class ServiceFactory {
         throw new TentackleRuntimeException("cannot create default instance " + defaultClass + " for " + serviceClass, ex);
       }
     }
+  }
+
+  /**
+   * Utility method to create a service instance with a default if not found.<br>
+   *
+   * @param <T> the service type
+   * @param serviceClass the service class
+   * @param defaultClass the default class if no service found
+   * @return an instance of the service
+   */
+  public static <T> T createService(Class<T> serviceClass, Class<? extends T> defaultClass) {
+    return createService(serviceClass, defaultClass, true);
   }
 
 
