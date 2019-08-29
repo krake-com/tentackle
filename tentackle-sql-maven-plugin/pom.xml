@@ -52,24 +52,6 @@
           </execution>
         </executions>
       </plugin>
-
-      <plugin>
-        <groupId>org.tentackle</groupId>
-        <artifactId>tentackle-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <executions>
-          <execution>
-            <id>analyze</id>
-            <goals>
-              <goal>analyze</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <verbosity>info</verbosity>
-          <showCompileOutput>true</showCompileOutput>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 
