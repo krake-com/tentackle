@@ -165,6 +165,33 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
       }
       getLog().info("migration hint filter: " + VersionFileFilter.getInstance().getName());
       backendMigrationHints = migrationHints.get(backendInfo.getUrl());
+      if (backendMigrationHints != null) {
+        if (backendMigrationHints.getHintFileNames().isEmpty()) {
+          getLog().info("no migration hints applied");
+        }
+        else {
+          StringBuilder buf = new StringBuilder();
+          buf.append("migration hints: ");
+          boolean needComma = false;
+          for (String hintFileName : backendMigrationHints.getHintFileNames()) {
+            if (needComma) {
+              buf.append(", ");
+            }
+            else {
+              needComma = true;
+            }
+            buf.append(hintFileName);
+            if (buf.length() > 80) {
+              getLog().info(buf.toString());
+              buf.setLength(0);
+              needComma = false;
+            }
+          }
+          if (needComma) {
+            getLog().info(buf.toString());
+          }
+        }
+      }
       sqlCode = new StringBuilder();
       splittedMigrations = new LinkedHashMap<>();
       migratedEntitiesMap = new HashMap<>();
@@ -275,7 +302,8 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
   protected void processBackend(BackendInfoParameter backendParameter, BackendInfo backendInfo) throws MojoExecutionException {
     MigrationHints hints = backendParameter.loadMigrationHints(backendInfo, this, verbosityLevel.isDebug(), resourceDirs);
     migrationHints.put(backendInfo.getUrl(), hints);
-    getLog().info(backendInfo + ": version " + backendParameter.minVersion);
+    getLog().info("backend: " + backendInfo);
+    getLog().info("version: " + backendParameter.minVersion);
   }
 
   @Override

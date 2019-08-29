@@ -131,6 +131,7 @@ public class MigrationHints {
   }
 
 
+  private final List<String> hintFileNames;                       // applied hint files
   private final StringBuilder alwaysBefore;                       // SQL to execute at the very beginning (unconditionally)
   private final StringBuilder alwaysAfter;                        // SQL to execute at the very end (unconditionally)
   private final StringBuilder beforeAll;                          // SQL to execute at the very beginning
@@ -266,6 +267,7 @@ public class MigrationHints {
    * Creates the migration hints for a backend.
    */
   public MigrationHints() {
+    hintFileNames = new ArrayList<>();
     alwaysBefore = new StringBuilder();
     alwaysAfter = new StringBuilder();
     beforeAll = new StringBuilder();
@@ -278,6 +280,15 @@ public class MigrationHints {
     dependencies = new HashMap<>();
   }
 
+  /**
+   * Gets the names of the analyzed hintfiles.<br>
+   * The directory name is included as well.
+   *
+   * @return the hint file names
+   */
+  public List<String> getHintFileNames() {
+    return hintFileNames;
+  }
 
   /**
    * Gets the sql code to be executed before anything else, unconditionally.
@@ -417,6 +428,7 @@ public class MigrationHints {
               File hintFile = new File(new File(hintDirName), filename);
               if (VersionFileFilter.getInstance().isValid(version, hintFile)) {
                 logger.debug("loading migration hints from " + hintFile);
+                hintFileNames.add(hintFile.getParentFile().getName() + "/" + hintFile.getName());
                 StringBuilder buf = new StringBuilder();
                 try (BufferedReader reader = new BufferedReader(
                                                new InputStreamReader(
