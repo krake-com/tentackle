@@ -75,7 +75,8 @@ public class SemanticVersionFileFilter implements VersionFileFilter {
           }
         }
       }
-      return !allEqual || !versionTokenizer.hasMoreTokens();    // 3.2.0 is newer than 3.2-SNAPSHOT
+      return !allEqual ||
+             !versionTokenizer.hasMoreTokens() && hintTokenizer.hasMoreTokens();    // 3.2.0 is newer than 3.2-SNAPSHOT
     }
     return true;
   }
