@@ -18,8 +18,6 @@
 
 package org.tentackle.maven.sql;
 
-import org.tentackle.common.Service;
-
 import java.io.File;
 import java.util.StringTokenizer;
 
@@ -29,7 +27,7 @@ import java.util.StringTokenizer;
  *
  * @author harald
  */
-@Service(VersionFileFilter.class)
+//@Service(VersionFileFilter.class)  no @Service anno since it's part of the plugin itself
 public class SemanticVersionFileFilter implements VersionFileFilter {
 
   @Override
