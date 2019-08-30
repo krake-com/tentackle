@@ -702,41 +702,53 @@ public class ModelImpl implements Model {
       }
     }
 
-    // do some automatic settings
+    // do some automatic settings and verifications
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
+      if (entity.getOptions().isCached() && !entity.isRootEntityAccordingToModel()) {
+        errors.add(new ModelError(entity,"component " + entity + " cannot be cached"));
+      }
+
       for (Relation relation: entity.getRelations()) {
         if (relation.getEntity().getOptions().getTrackType().isTracked()) {
           ((RelationImpl) relation).setTracked(true);
         }
-        if (relation.isComposite() && relation.getForeignEntity() != null) {
-          if (relation.getRelationType() == RelationType.LIST) {
-            // check if there is a lazy object relation back to me
-            Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
-            if (parentRelation == null) {
-              // check by entity instead of name (in case relation name was changed)
-              List<Relation> parentRelations = relation.getForeignEntity().getRelations(entity, true);
-              if (parentRelations.size() == 1) {
-                parentRelation = parentRelations.get(0);
+        if (relation.getForeignEntity() != null) {
+          if (relation.isComposite()) {
+            if (relation.getRelationType() == RelationType.LIST) {
+              // check if there is a lazy object relation back to me
+              Relation parentRelation = relation.getForeignEntity().getRelation(entity.getName(), true);
+              if (parentRelation == null) {
+                // check by entity instead of name (in case relation name was changed)
+                List<Relation> parentRelations = relation.getForeignEntity().getRelations(entity, true);
+                if (parentRelations.size() == 1) {
+                  parentRelation = parentRelations.get(0);
+                }
+              }
+              if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
+                  parentRelation.getSelectionType() == SelectionType.LAZY) {
+                // 1:N composite lazy relations without a linkMethod don't make sense
+                ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
+                if (parentRelation.getEntity().getOptions().isRemote()) {
+                  ((RelationImpl) parentRelation).setSerialized(true);
+                }
               }
             }
-            if (parentRelation != null && parentRelation.getRelationType() == RelationType.OBJECT &&
-                parentRelation.getSelectionType() == SelectionType.LAZY) {
-              // 1:N composite lazy relations without a linkMethod don't make sense
-              ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
-              if (parentRelation.getEntity().getOptions().isRemote()) {
-                ((RelationImpl) parentRelation).setSerialized(true);
-              }
+            if (relation.getLinkMethodName() != null) {
+              // if a link is defined for a composite (even for OBJECT), it will be referenced
+              ((RelationImpl) relation).setReferenced(true);
+            }
+            if (!relation.isTracked() && entity.getIntegrity().isCompositesCheckedByDatabase()) {
+              errors.add(new ModelError(relation,
+                                        "untracked relation " + relation + " not allowed in conjunction with " +
+                                        entity.getIntegrity() + "-integrity in " + entity));
             }
           }
-          if (relation.getLinkMethodName() != null) {
-            // if a link is defined for a composite (even for OBJECT), it will be referenced
-            ((RelationImpl) relation).setReferenced(true);
-          }
-          if (!relation.isTracked() && entity.getIntegrity().isCompositesCheckedByDatabase()) {
-            errors.add(new ModelError(relation,
-                    "untracked relation " + relation + " not allowed in conjunction with " +
-                    entity.getIntegrity() + "-integrity in " + entity));
+          else if (relation.getRelationType() == RelationType.OBJECT) {
+            if (relation.getForeignEntity().getOptions().isCached() && !relation.isSerialized()) {
+              ((RelationImpl) relation).setSelectionType(SelectionType.ALWAYS);
+              ((RelationImpl) relation).setSelectionCached(true);
+            }
           }
         }
       }

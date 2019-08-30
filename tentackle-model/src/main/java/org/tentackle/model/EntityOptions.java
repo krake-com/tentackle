@@ -120,4 +120,12 @@ public interface EntityOptions extends CommonOptions {
    */
   boolean isProvided();
 
+  /**
+   * Returns whether the entity provides a cache.<br>
+   * Only applicable to root entities.
+   *
+   * @return true if cached
+   */
+  boolean isCached();
+
 }

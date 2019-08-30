@@ -157,6 +157,9 @@ public class GlobalOptionsPrinter {
       if (options.isProvided()) {
         buf.append(EntityOptionsImpl.OPTION_PROVIDED).append(',');
       }
+      if (options.isCached()) {
+        buf.append(EntityOptionsImpl.OPTION_CACHED).append(',');
+      }
     }
     else {
       printBool(buf, CommonOptionsImpl.BIND_SIZE, options.isMaxCol(), modelDefaults.getSize());
