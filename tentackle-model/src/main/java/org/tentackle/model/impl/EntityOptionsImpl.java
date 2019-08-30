@@ -67,6 +67,8 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   /** entity provided by externally. */
   public static final String OPTION_PROVIDED = "PROVIDED";
 
+  /** entity provides a cache. */
+  public static final String OPTION_CACHED = "CACHED";
 
 
 
@@ -85,6 +87,7 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   private boolean rootClassIdProvided;
   private boolean remote;
   private boolean provided;
+  private boolean cached;
   private List<String> sorting;   // != null if '|' found
 
 
@@ -142,6 +145,10 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
         case OPTION_PROVIDED:
           setProvided(on);
+          break;
+
+        case OPTION_CACHED:
+          setCached(on);
           break;
 
         case OPTION_TABLESERIAL:
@@ -268,6 +275,11 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
   @Override
   public boolean isProvided() {
     return provided;
+  }
+
+  @Override
+  public boolean isCached() {
+    return cached;
   }
 
   @Override
@@ -422,5 +434,9 @@ public class EntityOptionsImpl extends CommonOptionsImpl implements EntityOption
 
   public void setProvided(boolean provided) {
     this.provided = provided;
+  }
+
+  public void setCached(boolean cached) {
+    this.cached = cached;
   }
 }

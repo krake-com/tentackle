@@ -625,7 +625,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public void validate() throws ModelException {
 
-    getRelationType();    // force loading of relation type if not set yet
+    RelationType type = getRelationType();    // force loading of relation type if not set yet
 
     if (className == null) {
       throw createModelException("missing classname");
