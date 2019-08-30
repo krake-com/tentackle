@@ -120,6 +120,9 @@ public class AttributeOptionsPrinter {
         buf.append(new AnnotationPrinter(anno).print()).append(',');
       }
     }
+    for (String stereotype: options.getStereotypes()) {
+      buf.append('#').append(stereotype).append(',');
+    }
 
     if (buf.length() > 0 && buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);

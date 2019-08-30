@@ -18,6 +18,8 @@
 
 package org.tentackle.model;
 
+import java.util.List;
+
 /**
  * Options common for attributes and entities.
  *
@@ -32,6 +34,13 @@ public interface CommonOptions {
    * @return the comment
    */
   String getComment();
+
+  /**
+   * Gets the list of custom stereotypes.
+   *
+   * @return the stereotypes
+   */
+  List<String> getStereotypes();
 
   /**
    * The bind options.

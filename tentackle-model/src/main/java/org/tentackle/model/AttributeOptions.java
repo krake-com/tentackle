@@ -35,7 +35,8 @@ public interface AttributeOptions extends CommonOptions {
   Attribute getAttribute();
 
   /**
-   * list of annotations.
+   * Gets the list of annotations.
+   *
    * @return the annotations
    */
   List<String> getAnnotations();

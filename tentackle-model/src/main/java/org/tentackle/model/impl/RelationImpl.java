@@ -138,6 +138,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   private int ordinal;
   private List<String> annotations;
+  private List<String> stereotypes;
   private RelationLine sourceLine;
   private String name;
   private String comment;
@@ -190,6 +191,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.sourceInfo = sourceInfo;
 
     annotations = new ArrayList<>();
+    stereotypes = new ArrayList<>();
     methodArgs = new ArrayList<>();
     accessScope = AccessScope.PUBLIC;
   }
@@ -290,8 +292,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     for (Map.Entry<String,String> entry: line.getProperties().entrySet()) {
 
       String prop = entry.getKey();
-      if (prop.startsWith("@")) {
+      if (prop.startsWith("@") && !StringHelper.isAllWhitespace(prop.substring(1))) {
         getAnnotations().add(prop);
+        continue;
+      }
+      if (prop.startsWith("#")) {
+        String stereotype = prop.substring(1);
+        if (!StringHelper.isAllWhitespace(stereotype)) {
+          getStereotypes().add(stereotype);
+        }
         continue;
       }
 
@@ -561,6 +570,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setAnnotations(List<String> annotations) {
     this.annotations = annotations;
+  }
+
+  @Override
+  public List<String> getStereotypes() {
+    return stereotypes;
+  }
+
+  public void setStereotypes(List<String> stereotypes) {
+    this.stereotypes = stereotypes;
   }
 
   @Override

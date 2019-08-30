@@ -186,8 +186,16 @@ public class AttributeImpl implements Attribute, Comparable<AttributeImpl> {
     for (String option: line.getOptions()) {
       if (!getOptions().processOption(option)) {
         if (option.startsWith("@")) {
-          // treat as annotation
-          getOptions().getAnnotations().add(option);
+          if (!StringHelper.isAllWhitespace(option.substring(1))) {
+            // treat as annotation
+            getOptions().getAnnotations().add(option);
+          }
+        }
+        else if (option.startsWith("#")) {
+          String stereotype = option.substring(1);
+          if (!StringHelper.isAllWhitespace(stereotype)) {
+            getOptions().getStereotypes().add(stereotype);
+          }
         }
         else {
           throw line.createModelException("illegal attribute option: " + option);
