@@ -7,12 +7,12 @@ table := invoice
 integrity := related
 
 ## attributes
-[size, autoselect, tracked, tokenlock, tableserial | -id total]
+[size, autoselect, tracked, tokenlock, tableserial, #CUSTOM | -id total]
 
 long             subsidiaryId    subsidiary_id     subsidiary ID [context, @MyAnno("blah")]
 String(10)       invoiceNo       invoice_no        the unique invoice number [uc]
 Date             invoiceDate     invoice_date      the invoice's date
-Long             customerId      customer_id       object ID of the customer [uc, @NotNull]
+Long             customerId      customer_id       object ID of the customer [uc, @NotNull, #blah="wow!"]
 String(200)      address         address           the address (multiline) [default "blah\nx ", uc]
 DMoney           total           total             sum (without tax)
 DMoney           tax             tax               tax (vat)
@@ -39,11 +39,13 @@ InvoiceLine:
 
 # the customer object
 Customer: select = cached,
-          @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}")
+          @NotNull(message="{ @('please_enter_the_customer') }", condition="{object?.invoiceDate != null}"),
+          #COOL, #HAPPY
 
 ## validations
 invoiceNo:    @NotNull(message="{ @('please_enter_the_invoice-number') }")
 invoiceDate:  @NotNull(scope=AllScope.class, message="{ @('please_enter_the_invoice-date') }", condition="{ object?.printed == null }")
 total:        @NotNull(scope=PersistenceScope.class),
-              @Greater(value="0", scope=PersistenceScope.class, condition="{ object.printed != null }")
+              @Greater(value="0", scope=PersistenceScope.class, condition="{ object.printed != null }"),
+              #WARM
 Lines:        @NotNull

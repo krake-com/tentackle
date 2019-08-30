@@ -76,6 +76,8 @@ public class ModelTest {
       assertEquals(entity.getClassId(), 1);
       assertEquals(entity.getIntegrity(), Integrity.RELATED);
       assertEquals(entity.getOptions().getAccessScope(), AccessScope.PUBLIC);
+      assertEquals(entity.getOptions().getStereotypes().size(),1);
+      assertEquals(entity.getOptions().getStereotypes().get(0),"CUSTOM");
 
       assertTrue(entity.getOptions().isBindable());
       assertTrue(entity.getOptions().isMaxCol());
@@ -136,6 +138,8 @@ public class ModelTest {
       assertEquals(attribute.getOptions().getBindOptions(), "AUTOSELECT,UC");
       assertEquals(attribute.getOptions().getAnnotations().size(), 1);
       assertEquals(attribute.getOptions().getAnnotations().get(0), "@NotNull");
+      assertEquals(attribute.getOptions().getStereotypes().size(),1);
+      assertEquals(attribute.getOptions().getStereotypes().get(0),"blah=\"wow!\"");
 
       attribute = entity.getAttributes().get(8);
       assertEquals(attribute.getDataType(), DataType.STRING);
@@ -204,7 +208,9 @@ public class ModelTest {
       assertNotNull(attribute);
       assertSame(attribute.getRelation(), relation);
       assertEquals(attribute.getName(), "customerId");
-
+      assertEquals(relation.getStereotypes().size(),2);
+      assertEquals(relation.getStereotypes().get(0),"COOL");
+      assertEquals(relation.getStereotypes().get(1),"HAPPY");
     }
     catch (IOException | ModelException ex) {
       fail(ex.toString());

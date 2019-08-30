@@ -190,6 +190,9 @@ public class GlobalOptionsPrinter {
       printBool(buf, EntityOptionsImpl.OPTION_REMOTE, options.isRemote(), modelDefaults.getRemote());
     }
 
+    for (String stereotype: options.getStereotypes()) {
+      buf.append('#').append(stereotype).append(',');
+    }
 
     if (buf.charAt(buf.length() - 1) == ',') {
       buf.setLength(buf.length() - 1);

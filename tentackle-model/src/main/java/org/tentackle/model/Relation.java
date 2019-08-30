@@ -99,9 +99,17 @@ public interface Relation extends ModelElement {
 
   /**
    * list of annotations.
+   *
    * @return the annotations
    */
   List<String> getAnnotations();
+
+  /**
+   * Gets the list of custom stereotypes.
+   *
+   * @return the stereotypes
+   */
+  List<String> getStereotypes();
 
 
   // relation = ....

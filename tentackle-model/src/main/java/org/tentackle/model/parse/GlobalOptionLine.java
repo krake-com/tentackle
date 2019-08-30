@@ -18,10 +18,12 @@
 
 package org.tentackle.model.parse;
 
+import org.tentackle.common.StringHelper;
+import org.tentackle.model.ModelException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import org.tentackle.model.ModelException;
 
 /**
  * Global options line.
@@ -36,6 +38,7 @@ import org.tentackle.model.ModelException;
 public class GlobalOptionLine extends SingleLine {
 
   private List<String> options;
+  private List<String> stereotypes;
   private List<String> sortings;
 
 
@@ -68,9 +71,18 @@ public class GlobalOptionLine extends SingleLine {
     }
     OptionParser parser = new OptionParser(optionsText, true);
     options = new ArrayList<>();
+    stereotypes = new ArrayList<>();
     String option;
     while ((option = parser.nextOption()) != null) {
-      options.add(option);
+      if (option.startsWith("#")) {
+        String stereotype = option.substring(1);
+        if (!StringHelper.isAllWhitespace(stereotype)) {
+          stereotypes.add(stereotype);
+        }
+      }
+      else {
+        options.add(option);
+      }
     }
 
     sortings = new ArrayList<>();
@@ -92,6 +104,17 @@ public class GlobalOptionLine extends SingleLine {
   public List<String> getOptions() throws ModelException {
     assertParsed();
     return options;
+  }
+
+  /**
+   * Gets the stereotypes.
+   *
+   * @return the sterotypes
+   * @throws ModelException if not parsed
+   */
+  public List<String> getStereotypes() throws ModelException {
+    assertParsed();
+    return stereotypes;
   }
 
   /**

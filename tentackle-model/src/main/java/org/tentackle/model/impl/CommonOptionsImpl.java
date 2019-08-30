@@ -24,6 +24,9 @@ import org.tentackle.model.CommonOptions;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.tentackle.common.Constants.BIND_COLS;
 import static org.tentackle.common.Constants.BIND_LINES;
 import static org.tentackle.common.Constants.BIND_MAXCOLS;
@@ -83,6 +86,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
   private final SourceInfo sourceInfo;
 
   private String comment;
+  private List<String> stereotypes;
   private StringBuilder bindOptions;
   private boolean noDeclare;
   private boolean noMethod;
@@ -111,6 +115,7 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    */
   public CommonOptionsImpl(SourceInfo sourceInfo) {
     this.sourceInfo = sourceInfo;
+    stereotypes = new ArrayList<>();
     bindOptions = new StringBuilder();
     accessScope = AccessScope.PUBLIC;
   }
@@ -302,6 +307,15 @@ public abstract class CommonOptionsImpl implements CommonOptions {
    */
   public void setComment(String comment) {
     this.comment = comment;
+  }
+
+  @Override
+  public List<String> getStereotypes() {
+    return stereotypes;
+  }
+
+  public void setStereotypes(List<String> stereotypes) {
+    this.stereotypes = stereotypes;
   }
 
   @Override

@@ -152,17 +152,17 @@ public class RelationPrinter {
 
     if (relation.isDeletionFromMainClass() ||
         relation.isDeletionCascaded() &&
-            (configuration.getModelDefaults() == null ||
-             configuration.getModelDefaults().getDeletionCascaded() == null ||
-             !configuration.getModelDefaults().getDeletionCascaded())) {
+        (configuration.getModelDefaults() == null ||
+         configuration.getModelDefaults().getDeletionCascaded() == null ||
+         !configuration.getModelDefaults().getDeletionCascaded())) {
       if (needComma) {
         buf.append(",\n");
       }
       lead(buf).append(RelationImpl.DELETE).append(" =");
       if (relation.isDeletionCascaded() &&
-            (configuration.getModelDefaults() == null ||
-             configuration.getModelDefaults().getDeletionCascaded() == null ||
-             !configuration.getModelDefaults().getDeletionCascaded())) {
+          (configuration.getModelDefaults() == null ||
+           configuration.getModelDefaults().getDeletionCascaded() == null ||
+           !configuration.getModelDefaults().getDeletionCascaded())) {
         buf.append(' ').append(RelationImpl.CASCADE);
       }
       needComma = true;
@@ -188,7 +188,7 @@ public class RelationPrinter {
       }
       lead(buf).append(RelationImpl.ARGS).append(" =");
       boolean firstSkipped = false;
-      for (MethodArgument arg: relation.getMethodArgs()) {
+      for (MethodArgument arg : relation.getMethodArgs()) {
         if (firstSkipped) {
           buf.append(' ').append(arg.getForeignAttribute()).append('[').append(arg.getMethodArgument()).append(']');
         }
@@ -225,12 +225,23 @@ public class RelationPrinter {
     }
 
     List<String> annotations = relation.getAnnotations();
-    if (annotations != null && !annotations.isEmpty()) {
+    if (annotations != null) {
       for (String annotation : annotations) {
         if (needComma) {
           buf.append(",\n");
         }
         lead(buf).append(new AnnotationPrinter(annotation).print());
+        needComma = true;
+      }
+    }
+    List<String> stereotypes = relation.getStereotypes();
+    if (stereotypes != null) {
+      for (String stereotype : stereotypes) {
+        if (needComma) {
+          buf.append(",\n");
+        }
+        lead(buf).append('#').append(stereotype);
+        needComma = true;
       }
     }
 

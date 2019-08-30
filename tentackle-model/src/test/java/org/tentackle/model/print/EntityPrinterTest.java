@@ -50,13 +50,13 @@ public class EntityPrinterTest {
 " * integrity := $integrity\n" +
 " * \n" +
 " * ## attributes\n" +
-" * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED | -id +total]\n" +
+" * [TABLESERIAL,TOKENLOCK,SIZE,BIND,TRACKED,#CUSTOM | -id +total]\n" +
 " * long          subsidiaryId  subsidiary_id  subsidiary ID [CONTEXT,@MyAnno(\"blah\")]\n" +
 " * String(10)    invoiceNo     invoice_no     the unique invoice number [UC]\n" +
 " * Date          invoiceDate   invoice_date   the invoice's date\n" +
-" * Long          customerId    customer_id    object ID of the customer [UC]\n" +
+" * Long          customerId    customer_id    object ID of the customer [UC,#blah=\"wow!\"]\n" +
 " * String(200)   address       address        the address (multiline) [UC,DEFAULT \"blah\\nx \"]\n" +
-" * DMoney        total         total          sum (without tax)\n" +
+" * DMoney        total         total          sum (without tax) [#WARM]\n" +
 " * DMoney        tax           tax            tax (vat)\n" +
 " * Timestamp     printed       printed        first printed [UTC,DEFAULT \"1970-01-01 00:00:00\"]\n" +
 " * Double(10,2)  someDouble    some_double    digits with scale\n" +
@@ -81,7 +81,9 @@ public class EntityPrinterTest {
 " * # the customer object\n" +
 " * Customer:\n" +
 " *     select = cached,\n" +
-" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\")\n" +
+" *     @NotNull(message=\"{ @('please_enter_the_customer') }\", condition=\"{object?.invoiceDate != null}\"),\n" +
+" *     #COOL,\n" +
+" *     #HAPPY\n" +
 " * \n" +
 " * ## annotations\n" +
 " * invoiceNo:\n" +

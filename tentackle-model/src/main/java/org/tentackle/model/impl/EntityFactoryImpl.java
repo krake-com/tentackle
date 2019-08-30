@@ -355,6 +355,9 @@ public class EntityFactoryImpl implements EntityFactory {
         throw line.createModelException("illegal global option: " + option);
       }
     }
+
+    options.setStereotypes(line.getStereotypes());
+
     for (String sorting: line.getSortings()) {
       if (!options.processSorting(sorting)) {
         throw line.createModelException("illegal global sorting: " + sorting);
@@ -379,8 +382,15 @@ public class EntityFactoryImpl implements EntityFactory {
     AttributeOptionsImpl attributeOptions = (AttributeOptionsImpl) attribute.getOptions();
     for (String option: line.getOptions()) {
       if (option.startsWith("@")) {
-        // annotation
-        attributeOptions.getAnnotations().add(option);
+        if (!StringHelper.isAllWhitespace(option.substring(1))) {
+          attributeOptions.getAnnotations().add(option);
+        }
+      }
+      else if (option.startsWith("#")) {
+        String stereotype = option.substring(1);
+        if (!StringHelper.isAllWhitespace(stereotype)) {
+          attributeOptions.getStereotypes().add(stereotype);
+        }
       }
       else  {
         if (!attributeOptions.processOption(option.toUpperCase())) {
@@ -405,8 +415,15 @@ public class EntityFactoryImpl implements EntityFactory {
     }
     for (String option: line.getOptions()) {
       if (option.startsWith("@")) {
-        // annotation
-        relation.getAnnotations().add(option);
+        if (!StringHelper.isAllWhitespace(option.substring(1))) {
+          relation.getAnnotations().add(option);
+        }
+      }
+      else if (option.startsWith("#")) {
+        String stereotype = option.substring(1);
+        if (!StringHelper.isAllWhitespace(stereotype)) {
+          relation.getStereotypes().add(stereotype);
+        }
       }
       else  {
         throw line.createModelException("illegal option '" + option + "' for relation " + relation);
