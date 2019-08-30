@@ -371,8 +371,8 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
    */
 
   // NumberPool numberPool via numberPoolId (NumberPool)
-  private transient NumberPool numberPool;
-  private transient boolean numberPoolLoaded;
+  private NumberPool numberPool;
+  private boolean numberPoolLoaded;
 
   @Override
   public NumberPool getNumberPool()  {
@@ -383,11 +383,30 @@ public class NumberRangePersistenceImpl extends AbstractPersistentObject<NumberR
     return numberPool;
   }
 
+  /**
+   * Gets numberPool without performing a select if not loaded.
+   *
+   * @return numberPool NumberPool
+   */
+  public NumberPool getNumberPoolBlunt() {
+    return numberPool;
+  }
+
   @Override
   public void setNumberPool(NumberPool numberPool)  {
     assertMutable();
     this.numberPool = numberPool;
     setNumberPoolId(numberPool == null ? 0 : numberPool.getId());
+    numberPoolLoaded = true;
+  }
+
+  /**
+   * Sets numberPool without setting any attributes.
+   *
+   * @param numberPool NumberPool
+   */
+  public void setNumberPoolBlunt(NumberPool numberPool) {
+    this.numberPool = numberPool;
     numberPoolLoaded = true;
   }
 

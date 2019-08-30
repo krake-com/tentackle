@@ -696,6 +696,9 @@ public class ModelImpl implements Model {
                 parentRelation.getSelectionType() == SelectionType.LAZY) {
               // 1:N composite lazy relations without a linkMethod don't make sense
               ((RelationImpl) relation).setLinkMethodName("set" + StringHelper.firstToUpper(parentRelation.getName()));
+              if (parentRelation.getEntity().getOptions().isRemote()) {
+                ((RelationImpl) parentRelation).setSerialized(true);
+              }
             }
           }
           if (relation.getLinkMethodName() != null) {
