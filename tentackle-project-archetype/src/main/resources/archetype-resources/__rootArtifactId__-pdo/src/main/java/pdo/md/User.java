@@ -34,6 +34,7 @@ import org.tentackle.session.TableName;
  * integrity := ${symbol_dollar}integrity
  *
  * ${symbol_pound}${symbol_pound} attributes
+ * [cached]
  * String(64)   password                      password        hashed password [MUTE]
  * boolean      loginAllowed                  login_allowed   true if login is allowed
  * boolean      passwordChangeable            passwd_chgbl    user allowed to change its own password?

@@ -32,7 +32,7 @@ import org.tentackle.session.TableName;
  * integrity := ${symbol_dollar}integrity
  *
  * ${symbol_pound}${symbol_pound} attributes
- * [+name]
+ * [cached | +name]
  * String(${symbol_dollar}ou_name)       name        name        short name [key, uc, normtext]
  * String(${symbol_dollar}ou_comment)    comment     ocomment    optional comment [normtext]
  *

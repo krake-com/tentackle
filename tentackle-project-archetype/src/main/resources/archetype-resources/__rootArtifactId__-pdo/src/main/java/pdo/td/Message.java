@@ -57,8 +57,7 @@ import org.tentackle.session.TableName;
  *
  * ${symbol_pound}${symbol_pound} relations
  * OrgUnit:
- *    relation = normtext,
- *    select = cached
+ *    relation = normtext
  *
  * @<
  */

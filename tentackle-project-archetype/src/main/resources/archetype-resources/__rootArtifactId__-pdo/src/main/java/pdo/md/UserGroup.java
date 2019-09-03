@@ -34,6 +34,7 @@ import org.tentackle.session.TableName;
  * integrity := ${symbol_dollar}integrity
  *
  * ${symbol_pound}${symbol_pound} attributes
+ * [cached]
  *
  * ${symbol_pound}${symbol_pound} indexes
  *
