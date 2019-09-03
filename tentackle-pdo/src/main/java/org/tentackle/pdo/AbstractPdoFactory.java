@@ -19,10 +19,11 @@
 
 package org.tentackle.pdo;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Proxy;
 import org.tentackle.reflect.ClassMapper;
 import org.tentackle.session.Session;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 
 /**
  * Base implementation of a {@link PdoFactory}.
@@ -348,23 +349,45 @@ public abstract class AbstractPdoFactory implements PdoFactory {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>> getPersistentClass(Class<T> clazz) {
+  public <T extends PersistentDomainObject<T>> Class<PersistentObject<T>> getPersistenceClass(String className) {
     try {
-      return (Class<? extends PersistentObject<T>>) getPersistenceMapper().map(clazz);
+      return (Class<PersistentObject<T>>) getPersistenceMapper().mapLenient(className);
     }
-    catch (ClassNotFoundException nfe) {
-      throw new PdoRuntimeException("could not map " + clazz + " to persistence class", nfe);
+    catch (ClassNotFoundException ex) {
+      throw new PdoRuntimeException("could not create persistence class for " + className, ex);
     }
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends PersistentDomainObject<T>> Class<? extends DomainObject<T>> getDomainClass(Class<T> clazz) {
+  public <T extends PersistentDomainObject<T>> Class<DomainObject<T>> getDomainClass(String className) {
     try {
-      return (Class<? extends DomainObject<T>>) getDomainMapper().map(clazz);
+      return (Class<DomainObject<T>>) getDomainMapper().mapLenient(className);
     }
-    catch (ClassNotFoundException nfe) {
-      throw new PdoRuntimeException("could not map " + clazz + " to domain class", nfe);
+    catch (ClassNotFoundException ex) {
+      throw new PdoRuntimeException("could not create domain class for " + className, ex);
+    }
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> PersistentObject<T> createPersistenceDelegate(String className) {
+    Class<PersistentObject<T>> clazz = getPersistenceClass(className);
+    try {
+      return clazz.getConstructor().newInstance();
+    }
+    catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+      throw new PdoRuntimeException("could not create persistence delegate for " + clazz, ex);
+    }
+  }
+
+  @Override
+  public <T extends PersistentDomainObject<T>> DomainObject<T> createDomainDelegate(String className) {
+    Class<DomainObject<T>> clazz = getDomainClass(className);
+    try {
+      return clazz.getConstructor().newInstance();
+    }
+    catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException ex) {
+      throw new PdoRuntimeException("could not create domain delegate for " + className, ex);
     }
   }
 

@@ -1366,7 +1366,8 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
       if (className == null) {
         throw new PersistenceException(po, "no such PDO class for classId " + classId + " in " + po.toGenericString());
       }
-      po = (P) Pdo.create(className, getDomainContext()).getPersistenceDelegate();
+      // no PdoFactory#createPersistenceDelegate, since we need a complete PDO
+      po = (P) PdoFactory.getInstance().create(className, getDomainContext()).getPersistenceDelegate();
       po = po.readFromResultSetWrapper(rs);   // invoke the concrete implementation
     }
     if (po.getContextId() >= 0 || po.getDomainContext() == null) {
@@ -2605,10 +2606,10 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * @return the persistence class
    */
   @SuppressWarnings("unchecked")
-  public <R extends PersistentDomainObject<R>> Class<? extends AbstractPersistentObject<?,?>> getPersistenceClass(Class<R> clazz) {
-    Class<?> persistenceClass = Pdo.create(clazz).getPersistenceDelegate().getClass();
+  public <R extends PersistentDomainObject<R>> Class<? extends AbstractPersistentObject<R,?>> getPersistenceClass(Class<R> clazz) {
+    Class<?> persistenceClass = PdoFactory.getInstance().getPersistenceClass(clazz.getName());
     if (AbstractPersistentObject.class.isAssignableFrom(persistenceClass)) {
-      return (Class<? extends AbstractPersistentObject<?,?>>) persistenceClass;
+      return (Class<? extends AbstractPersistentObject<R,?>>) persistenceClass;
     }
     throw new PersistenceException(this, "persistence class not compatible: " + persistenceClass);
   }

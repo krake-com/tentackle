@@ -207,18 +207,36 @@ public interface OperationFactory {
    * Gets the class implementing the persistence layer.
    *
    * @param <T> the operation class
-   * @param clazz the pdo class
-   * @return the persistent class
+   * @param className the name of operation-class, usually an interface
+   * @return the persistence class
    */
-  <T extends Operation<T>> Class<? extends PersistentOperation<T>> getPersistentClass(Class<T> clazz);
+  <T extends Operation<T>> Class<PersistentOperation<T>> getPersistenceClass(String className);
 
   /**
-   * Gets the class implementing the persistence layer.
+   * Gets the class implementing the domain layer.
    *
    * @param <T> the operation class
-   * @param clazz the pdo class
+   * @param className the name of operation-class, usually an interface
    * @return the domain class
    */
-  <T extends Operation<T>> Class<? extends DomainOperation<T>> getDomainClass(Class<T> clazz);
+  <T extends Operation<T>> Class<DomainOperation<T>> getDomainClass(String className);
+
+  /**
+   * Creates the delegate implementing the persistence layer.
+   *
+   * @param <T> the operation class
+   * @param className the name of operation-class, usually an interface
+   * @return the persistent delegate
+   */
+  <T extends Operation<T>> PersistentOperation<T> createPersistenceDelegate(String className);
+
+  /**
+   * Creates the delegate implementing the domain layer.
+   *
+   * @param <T> the operation class
+   * @param className the name of operation-class, usually an interface
+   * @return the domain delegate
+   */
+  <T extends Operation<T>> DomainOperation<T> createDomainDelegate(String className);
 
 }
