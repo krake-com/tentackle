@@ -82,9 +82,9 @@ public class PdoFactoryTest {
     Assert.assertEquals("1234.00", LogItInterceptor.lastResult);
     Assert.assertEquals("BlahDomain", invoice.toString());
     Assert.assertEquals(invoice.getEffectiveClass(), SingleInvoice.class);
-    Assert.assertEquals(pdoFactory.getDomainClass(SingleInvoice.class), SingleInvoiceDomainImpl.class);
+    Assert.assertEquals(pdoFactory.getDomainClass(SingleInvoice.class.getName()), SingleInvoiceDomainImpl.class);
     Assert.assertEquals(invoice.getDomainDelegate().getClass(), SingleInvoiceDomainImpl.class);
-    Assert.assertEquals(pdoFactory.getPersistentClass(SingleInvoice.class), InvoicePersistenceImpl.class);
+    Assert.assertEquals(pdoFactory.getPersistenceClass(SingleInvoice.class.getName()), InvoicePersistenceImpl.class);
     Assert.assertEquals(invoice.getPersistenceDelegate().getClass(), InvoicePersistenceImpl.class);
 
     CollectiveInvoice collinv = pdoFactory.create(CollectiveInvoice.class);
@@ -96,7 +96,7 @@ public class PdoFactoryTest {
     Assert.assertEquals("9999.00", LogItInterceptor.lastResult);
     Assert.assertEquals("CollectiveBlahDomain", collinv.toString());
     Assert.assertEquals(collinv.getEffectiveClass(), CollectiveInvoice.class);
-    Assert.assertEquals(pdoFactory.getDomainClass(CollectiveInvoice.class), CollectiveInvoiceDomainImpl.class);
+    Assert.assertEquals(pdoFactory.getDomainClass(CollectiveInvoice.class.getName()), CollectiveInvoiceDomainImpl.class);
     Assert.assertEquals(collinv.getDomainDelegate().getClass(), CollectiveInvoiceDomainImpl.class);
     Assert.assertEquals(collinv.getPersistenceDelegate().getClass(), InvoicePersistenceImpl.class);
 

@@ -208,18 +208,36 @@ public interface PdoFactory {
    * Gets the class implementing the persistence layer.
    *
    * @param <T> the PDO type
-   * @param clazz the pdo class
-   * @return the persistent class
+   * @param className the name of PDO-class, usually an interface
+   * @return the persistence class
    */
-  <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>> getPersistentClass(Class<T> clazz);
+  <T extends PersistentDomainObject<T>> Class<PersistentObject<T>> getPersistenceClass(String className);
 
   /**
-   * Gets the class implementing the persistence layer.
+   * Gets the class implementing the domain layer.
    *
    * @param <T> the PDO type
-   * @param clazz the pdo class
+   * @param className the name of PDO-class, usually an interface
    * @return the domain class
    */
-  <T extends PersistentDomainObject<T>> Class<? extends DomainObject<T>> getDomainClass(Class<T> clazz);
+  <T extends PersistentDomainObject<T>> Class<DomainObject<T>> getDomainClass(String className);
+
+  /**
+   * Creates the delegate implementing the persistence layer.
+   *
+   * @param <T> the PDO type
+   * @param className the name of PDO-class, usually an interface
+   * @return the persistent delegate
+   */
+  <T extends PersistentDomainObject<T>> PersistentObject<T> createPersistenceDelegate(String className);
+
+  /**
+   * Creates the delegate implementing the domain layer.
+   *
+   * @param <T> the PDO type
+   * @param className the name of PDO-class, usually an interface
+   * @return the domain delegate
+   */
+  <T extends PersistentDomainObject<T>> DomainObject<T> createDomainDelegate(String className);
 
 }

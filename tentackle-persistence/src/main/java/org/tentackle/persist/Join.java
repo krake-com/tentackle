@@ -19,6 +19,12 @@
 
 package org.tentackle.persist;
 
+import org.tentackle.common.Constants;
+import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoFactory;
+import org.tentackle.pdo.PersistentDomainObject;
+import org.tentackle.sql.JoinType;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,10 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import org.tentackle.common.Constants;
-import org.tentackle.pdo.Pdo;
-import org.tentackle.pdo.PersistentDomainObject;
-import org.tentackle.sql.JoinType;
 
 /**
  * PDO join.
@@ -133,7 +135,7 @@ public class Join<T extends PersistentDomainObject<T>, J extends PersistentDomai
     lastJoinedPdoMap = new HashMap<>();
     listJoin = columnName.endsWith(ENDS_WITH_ID);
     explicitIdAliasRequired = !listJoin &&
-            ((AbstractPersistentObject) Pdo.create(joinedClass).getPersistenceDelegate()).isExplicitIdAliasRequiredInJoins();
+                              ((AbstractPersistentObject) PdoFactory.getInstance().createPersistenceDelegate(joinedClass.getName())).isExplicitIdAliasRequiredInJoins();
   }
 
   /**

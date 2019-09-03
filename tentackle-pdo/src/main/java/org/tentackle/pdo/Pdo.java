@@ -250,31 +250,6 @@ public class Pdo {
   }
 
 
-  /**
-   * Gets the class implementing the persistence layer.
-   *
-   * @param <T> the PDO type
-   * @param clazz the pdo class
-   * @return the persistent class
-   */
-  public static <T extends PersistentDomainObject<T>> Class<? extends PersistentObject<T>>
-         getPersistentObjectClass(Class<T> clazz) {
-    return PdoFactory.getInstance().getPersistentClass(clazz);
-  }
-
-
-  /**
-   * Gets the class implementing the persistence layer.
-   *
-   * @param <T> the PDO type
-   * @param clazz the pdo class
-   * @return the domain class
-   */
-  public static <T extends PersistentDomainObject<T>> Class<? extends DomainObject<T>> getDomainObjectClass(Class<T> clazz) {
-    return PdoFactory.getInstance().getDomainClass(clazz);
-  }
-
-
   // ------------------- methods to create an implementation of an Operation --------------
 
 
@@ -438,31 +413,6 @@ public class Pdo {
                                                            DomainOperation<T> domainDelegate) {
     return OperationFactory.getInstance().create(className, persistenceDelegate, domainDelegate);
   }
-
-
-  /**
-   * Gets the class implementing the persistence layer.
-   *
-   * @param <T> the operation type
-   * @param clazz the operation class
-   * @return the persistent class
-   */
-  public static <T extends Operation<T>> Class<? extends PersistentOperation<T>> getPersistentOperationClass(Class<T> clazz) {
-    return OperationFactory.getInstance().getPersistentClass(clazz);
-  }
-
-
-  /**
-   * Gets the class implementing the persistence layer.
-   *
-   * @param <T> the operation type
-   * @param clazz the operation class
-   * @return the domain class
-   */
-  public static <T extends Operation<T>> Class<? extends DomainOperation<T>> getDomainOperationClass(Class<T> clazz) {
-    return OperationFactory.getInstance().getDomainClass(clazz);
-  }
-
 
 
   // ------------------- methods to create PDO-caches ----------------------------
