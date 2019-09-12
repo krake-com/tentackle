@@ -744,11 +744,11 @@ public class ModelImpl implements Model {
                                         entity.getIntegrity() + "-integrity in " + entity));
             }
           }
-          else if (relation.getRelationType() == RelationType.OBJECT) {
-            if (relation.getForeignEntity().getOptions().isCached() && !relation.isSerialized()) {
-              ((RelationImpl) relation).setSelectionType(SelectionType.ALWAYS);
-              ((RelationImpl) relation).setSelectionCached(true);
-            }
+          else if (relation.getRelationType() == RelationType.OBJECT &&
+                   relation.getForeignEntity().getOptions().isCached() && !relation.isSerialized() &&
+                   ((RelationImpl) relation).isSelectionTypeDetermined()) {
+            ((RelationImpl) relation).setSelectionType(SelectionType.ALWAYS);
+            ((RelationImpl) relation).setSelectionCached(true);
           }
         }
       }
