@@ -159,6 +159,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean partOfNormText;
   private Attribute countAttribute;
   private SelectionType selectionType;
+  private boolean selectionTypeDetermined;
   private boolean selectionCached;
   private String selectionWurbletArguments;
   private String methodName;
@@ -581,6 +582,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     this.stereotypes = stereotypes;
   }
 
+  /**
+   * Returns whether selection type was determined by rule.
+   *
+   * @return false if provided by the model, true if by automatic rule
+   */
+  public boolean isSelectionTypeDetermined() {
+    return selectionTypeDetermined;
+  }
+
   @Override
   public String getGetterSetterComment() {
     StringBuilder buf = new StringBuilder();
@@ -656,6 +666,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     // defaults
     if (selectionType == null) {
       selectionType = selectionCached ? SelectionType.ALWAYS : SelectionType.LAZY;
+      selectionTypeDetermined = true;
     }
 
     // check constraints
