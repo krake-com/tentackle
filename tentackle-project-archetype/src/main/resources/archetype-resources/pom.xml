@@ -34,10 +34,10 @@
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <wurbelizer.version>12.0-SNAPSHOT</wurbelizer.version>
+    <wurbelizer.version>13.0-SNAPSHOT</wurbelizer.version>
     <wurbel.wurbelDir>${symbol_dollar}{rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
-    <tentackle.version>12.0-SNAPSHOT</tentackle.version>
+    <tentackle.version>13.0-SNAPSHOT</tentackle.version>
     <tentackle.serviceDir>${symbol_dollar}{project.build.directory}/generated-resources/services</tentackle.serviceDir>
     <tentackle.testServiceDir>${symbol_dollar}{project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
     <tentackle.manifestDirectory>${symbol_dollar}{project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
