@@ -89,6 +89,11 @@ import java.io.IOException;
  * Again, the folder is only created if necessary.<br>
  * Additional resources, such as property files or logger configurations, are copied to the <code>conf</code> directory and
  * this directory is added to the classpath.
+ * <p>
+ * The generation of the ZIP-file and attachment of the artifact for installation and deployment can be replaced by an
+ * application-specific implementation. This allows further modification of the generated image or files in the jlink target
+ * directory. It is also possible to add a more than one artifact, for example, each with a different configuration.
+ * To do so, you simply provide a plugin dependency that contains a class annotated with {@code @Service(ArtifactCreator.class)}.
  */
 @Mojo(name = "jlink",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
@@ -117,7 +122,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
    * Strip debug information.<br>
    * Corresponds to the <code>jlink</code> option <code>--strip-debug</code>.
    */
-  @Parameter( defaultValue = "false" )
+  @Parameter(defaultValue = "false")
   private boolean stripDebug;
 
   /**
@@ -131,21 +136,21 @@ public class JlinkMojo extends AbstractJlinkMojo {
    * Suppresses a fatal error when signed modular JARs are linked in the runtime image.<br>
    * Corresponds to the <code>jlink</code> option <code>--ignore-signing-information</code>
    */
-  @Parameter( defaultValue = "false" )
+  @Parameter(defaultValue = "false")
   private boolean ignoreSigningInformation;
 
   /**
    * Suppress the <code>includes</code> directory.<br>
    * Corresponds to the <code>jlink</code> option <code>--no-header-files</code>.
    */
-  @Parameter( defaultValue = "false" )
+  @Parameter(defaultValue = "false")
   private boolean noHeaderFiles;
 
   /**
    * Suppress the <code>man</code> directory.<br>
    * Corresponds to the <code>jlink</code> option <code>--no-man-pages</code>
    */
-  @Parameter( defaultValue = "false" )
+  @Parameter(defaultValue = "false")
   private boolean noManPages;
 
   /**
@@ -157,8 +162,15 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * The directory where to store the ZIP file.
    */
-  @Parameter(defaultValue = "${project.build.directory}", required = true)
+  @Parameter(defaultValue = "${project.build.directory}")
   private File zipDirectory;
+
+  /**
+   * Disables the generation of a ZIP file and does not add an artifact for installation and deployment.<br>
+   * If {@code true}, no {@link ArtifactCreator} will be invoked.
+   */
+  @Parameter(defaultValue = "false")
+  private boolean noArtifact;
 
   /**
    * The generated ZIP file name.
@@ -250,7 +262,9 @@ public class JlinkMojo extends AbstractJlinkMojo {
 
     super.executeImpl();
 
-    ArtifactCreator.getInstance().createAndAttachArtifact(this);
+    if (!noArtifact) {
+      ArtifactCreator.getInstance().createAndAttachArtifact(this);
+    }
   }
 
   /**
