@@ -97,7 +97,8 @@ import java.io.IOException;
 
 public class JlinkMojo extends AbstractJlinkMojo {
 
-  private static final String ZIP_EXTENSION = "zip";
+  /** file extension for ZIP files. */
+  public static final String ZIP_EXTENSION = "zip";
 
   /**
    * File of the jlink tool.
@@ -171,6 +172,25 @@ public class JlinkMojo extends AbstractJlinkMojo {
   @Parameter(defaultValue = "${project.build.directory}/jlink", required = true)
   private File imageDirectory;
 
+
+  /**
+   * Gets the directory where to store the ZIP-file.
+   *
+   * @return the ZIP target folder
+   */
+  public File getZipDirectory() {
+    return zipDirectory;
+  }
+
+  /**
+   * Gets the ZIP file's name without extension.
+   *
+   * @return the final name
+   */
+  public String getFinalName() {
+    return finalName;
+  }
+
   /**
    * Gets the directory created by jlink holding the image.
    *
@@ -178,6 +198,41 @@ public class JlinkMojo extends AbstractJlinkMojo {
    */
   public File getImageDirectory() {
     return imageDirectory;
+  }
+
+  /**
+   * Creates the zip file.
+   *
+   * @return the created file
+   * @throws MojoExecutionException if some archiver or IO errors occurred
+   */
+  public File createZipFile() throws MojoExecutionException {
+    File zipFile = new File(zipDirectory, finalName + "." + ZIP_EXTENSION);
+    zipArchiver.addDirectory(getImageDirectory());
+    zipArchiver.setDestFile(zipFile);
+    try {
+      zipArchiver.createArchive();
+    }
+    catch (ArchiverException | IOException e) {
+      throw new MojoExecutionException(e.getMessage(), e);
+    }
+    return zipFile;
+  }
+
+  /**
+   * The zip file will be installed and deployed with an additional classifier
+   * showing the operating system and the platform.
+   *
+   * @return the classifier
+   * @throws MojoExecutionException if no os.name
+   */
+  public String getClassifier() throws MojoExecutionException {
+    try {
+      return StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
+    }
+    catch (RuntimeException ex) {
+      throw new MojoExecutionException(ex.getMessage());
+    }
   }
 
   @Override
@@ -194,7 +249,7 @@ public class JlinkMojo extends AbstractJlinkMojo {
 
     super.executeImpl();
 
-    getProjectHelper().attachArtifact(getMavenProject(), ZIP_EXTENSION, getClassifier(), createZipFile());
+    ArtifactCreator.getInstance().createAndAttachArtifact(this);
   }
 
   /**
@@ -254,32 +309,4 @@ public class JlinkMojo extends AbstractJlinkMojo {
     return false;
   }
 
-  private File createZipFile() throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, finalName + "." + ZIP_EXTENSION);
-    zipArchiver.addDirectory(getImageDirectory());
-    zipArchiver.setDestFile(zipFile);
-    try {
-      zipArchiver.createArchive();
-    }
-    catch (ArchiverException | IOException e) {
-      throw new MojoExecutionException(e.getMessage(), e);
-    }
-    return zipFile;
-  }
-
-  /**
-   * The zip file will be installed and deployed with an additional classifier
-   * showing the operating system and the platform.
-   *
-   * @return the classifier
-   * @throws MojoExecutionException if no os.name
-   */
-  private String getClassifier() throws MojoExecutionException {
-    try {
-      return StringHelper.getPlatform() + "-" + StringHelper.getArchitecture();
-    }
-    catch (RuntimeException ex) {
-      throw new MojoExecutionException(ex.getMessage());
-    }
-  }
 }
