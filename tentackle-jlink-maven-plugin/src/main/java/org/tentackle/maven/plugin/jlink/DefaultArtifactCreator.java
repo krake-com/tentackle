@@ -28,7 +28,10 @@ public class DefaultArtifactCreator implements ArtifactCreator {
 
   @Override
   public void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException {
-    mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(), JlinkMojo.ZIP_EXTENSION, mojo.getClassifier(), mojo.createZipFile());
+    mojo.getProjectHelper().attachArtifact(mojo.getMavenProject(),
+                                           JlinkMojo.ZIP_EXTENSION,
+                                           mojo.getClassifier(),
+                                           mojo.createZipFile(mojo.getFinalName()));
   }
 
 }

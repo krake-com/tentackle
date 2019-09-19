@@ -203,11 +203,12 @@ public class JlinkMojo extends AbstractJlinkMojo {
   /**
    * Creates the zip file.
    *
+   * @param name the filename without extension
    * @return the created file
    * @throws MojoExecutionException if some archiver or IO errors occurred
    */
-  public File createZipFile() throws MojoExecutionException {
-    File zipFile = new File(zipDirectory, finalName + "." + ZIP_EXTENSION);
+  public File createZipFile(String name) throws MojoExecutionException {
+    File zipFile = new File(zipDirectory, name + "." + ZIP_EXTENSION);
     zipArchiver.addDirectory(getImageDirectory());
     zipArchiver.setDestFile(zipFile);
     try {
