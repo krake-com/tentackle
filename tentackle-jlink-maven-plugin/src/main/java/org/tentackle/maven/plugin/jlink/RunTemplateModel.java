@@ -43,6 +43,10 @@ public class RunTemplateModel extends HashMap<String, String> {
     this.mojo = mojo;
     this.result = result;
 
+    putValue("phase", mojo.getMojoExecution().getLifecyclePhase());
+    putValue("goal", mojo.getMojoExecution().getGoal());
+    putValue("id", mojo.getMojoExecution().getExecutionId());
+
     putValue("mainModule", mojo.getMainModule());
     putValue("mainClass", mojo.getMainClass());
     putValue("modulePath", result.generateModulePath());
@@ -50,12 +54,17 @@ public class RunTemplateModel extends HashMap<String, String> {
 
     // all system properties in camelCase, e.g. "os.name" converts to "osName"
     for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
+      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
     }
 
     // dto. for all maven properties
     for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
+      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
+    }
+
+    // the optional variables
+    for (Entry<String, Object> entry : mojo.getVariables().entrySet()) {
+      putValue(StringHelper.toCamelCase(entry.getKey()), entry.getValue());
     }
   }
 

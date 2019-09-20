@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -148,6 +149,12 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private List<String> excludeModules;
 
   /**
+   * Extra variables for template or artifact generation.
+   */
+  @Parameter
+  private Map<String, Object> variables;
+
+  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -254,6 +261,14 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     return excludeModules == null ? Collections.emptyList() : excludeModules;
   }
 
+  /**
+   * Gets the extra variables for templates or artifact generation.
+   *
+   * @return the variables, never null
+   */
+  public Map<String, Object> getVariables() {
+    return variables == null ? Collections.emptyMap() : variables;
+  }
 
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {

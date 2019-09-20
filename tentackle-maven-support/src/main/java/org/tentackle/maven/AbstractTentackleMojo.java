@@ -22,6 +22,7 @@ package org.tentackle.maven;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -59,6 +60,14 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
              readonly = true,
              required = true)
   private MavenProject mavenProject;
+
+  /**
+   * The mojo execution.
+   */
+  @Parameter(defaultValue = "${mojoExecution}",
+             readonly = true,
+             required = true)
+  private MojoExecution mojoExecution;
 
   /**
    * The settings.<br>
@@ -131,6 +140,15 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
    */
   public MavenProject getMavenProject() {
     return mavenProject;
+  }
+
+  /**
+   * Gets the mojo execution.
+   *
+   * @return the execution
+   */
+  public MojoExecution getMojoExecution() {
+    return mojoExecution;
   }
 
   /**
