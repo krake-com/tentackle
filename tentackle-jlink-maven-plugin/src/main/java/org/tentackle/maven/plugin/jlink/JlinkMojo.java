@@ -71,6 +71,7 @@ import java.io.IOException;
  * The freemarker templates are copied to the project's template folder, if it does not exist, i.e.
  * when the goal is invoked the first time.
  * They become part of the project and can be changed easily according to project specific needs (for example by adding runtime arguments).
+ * <p>
  * The template model provides the following variables:
  *
  * <ul>
@@ -78,9 +79,12 @@ import java.io.IOException;
  *   <li><code>mainClass</code>: the name of the main class.</li>
  *   <li><code>modulePath</code>: the module path.</li>
  *   <li><code>classPath</code>: the class path</li>
+ *   <li><code>phase</code>: the mojo lifecycle phase</li>
  *   <li><code>goal</code>: the plugin goal (jlink or jpackage)</li>
+ *   <li><code>id</code>: the execution id</li>
  *   <li>all system properties (dots in property names translated to camelCase, e.g. "os.name" becomes "osName"</li>
  *   <li>all maven properties (translated to camelCase as well)</li>
+ *   <li>the optional variables from the plugin configuration</li>
  * </ul>
  *
  * Modules not passed to <code>jlink</code> and automatic modules are copied to the <code>mp</code> folder
@@ -258,8 +262,6 @@ public class JlinkMojo extends AbstractJlinkMojo {
 
   @Override
   public void executeImpl() throws MojoExecutionException, MojoFailureException {
-    getMavenProject().getProperties().setProperty("goal", "jlink");    // property for run template
-
     super.executeImpl();
 
     if (!noArtifact) {

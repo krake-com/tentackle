@@ -29,8 +29,39 @@ interface ArtifactCreatorHolder {
 
 /**
  * Creates and attaches the artifact to be deployed.<br>
- * May be replaced via &#64;{@link org.tentackle.common.Service} annotation within an application-specific plugin dependency.
- * For example, to create further modify the files or create a bunch of ZIP-files with different configurations.
+ * May be replaced via &#64;{@link org.tentackle.common.Service} annotation from within an application-specific plugin dependency.
+ * For example, to further modify the files or create a bunch of artifacts with different configurations.
+ * <p>
+ * Example:
+ * <pre>
+ *   &#64;Service(ArtifactCreator.class)
+ *   public class SpecialArtifactCreator implements ArtifactCreator {
+ *
+ *     &#64;Override
+ *     public void createAndAttachArtifact(JlinkMojo mojo) throws MojoExecutionException {
+ *       ...
+ *     }
+ *   }
+ * </pre>
+ *
+ * Add as plugin dependency:
+ *
+ * <pre>
+ *   &lt;plugin&gt;
+ *     &lt;groupId&gt;org.tentackle&lt;/groupId&gt;
+ *     &lt;artifactId&gt;tentackle-jlink-maven-plugin&lt;/artifactId&gt;
+ *     &lt;dependencies&gt;
+ *       &lt;dependency&gt;
+ *         &lt;groupId&gt;com.example&lt;/groupId&gt;
+ *         &lt;artifactId&gt;special-creator&lt;/artifactId&gt;
+ *         &lt;version&gt;1.0&lt;/version&gt;
+ *       &lt;/dependency&gt;
+ *     &lt;/dependencies&gt;
+ *     &lt;configuration&gt;
+ *       ...
+ *     &lt;/configuration&gt;
+ *   &lt;/plugin&gt;
+ * </pre>
  */
 public interface ArtifactCreator {
 
