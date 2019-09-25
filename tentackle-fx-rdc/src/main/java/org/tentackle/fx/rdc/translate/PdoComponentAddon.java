@@ -191,12 +191,12 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       inSearchOrEdit = true;
       try {
         searchPdo(proxy, found -> {
+          inSearchOrEdit = false;
           if (found != null && component.isChangeable()) {
             pdo = found;
             component.setViewValue(pdo);
             component.updateModel();
           }
-          inSearchOrEdit = false;
         });
       }
       catch (RuntimeException rx) {
