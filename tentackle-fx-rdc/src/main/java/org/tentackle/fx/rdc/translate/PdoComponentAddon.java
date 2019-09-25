@@ -38,6 +38,7 @@ import org.tentackle.fx.rdc.RdcFxRdcBundle;
 import org.tentackle.fx.rdc.RdcUtilities;
 import org.tentackle.pdo.DomainContext;
 import org.tentackle.pdo.Pdo;
+import org.tentackle.pdo.PdoRuntimeException;
 import org.tentackle.pdo.PersistentDomainObject;
 
 import java.util.List;
@@ -169,8 +170,19 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
    */
   public void search() {
     if (!inSearchOrEdit) {
+      T proxy;
+      try {
+        proxy = createPdo();    // before setting inSearchOrEdit in case T is not mapped to an entity
+      }
+      catch (PdoRuntimeException px) {
+        if (pdo == null) {
+          return;   // do nothing: cannot search unmapped type such as PersistentDomainObject.class itself
+        }
+        // try the supplier's type
+        proxy = pdo.on();
+      }
       inSearchOrEdit = true;
-      searchPdo(createPdo(), found -> {
+      searchPdo(proxy, found -> {
         if (found != null && component.isChangeable()) {
           pdo = found;
           component.setViewValue(pdo);
