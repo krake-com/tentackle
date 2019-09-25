@@ -30,6 +30,7 @@ import org.tentackle.session.TableName;
  * ${symbol_pound} User to Group N:M Link
  * name := ${symbol_dollar}classname
  * table := ${symbol_dollar}tablename
+ * alias := u2g
  * id := ${symbol_dollar}classid
  * integrity := ${symbol_dollar}integrity
  *
