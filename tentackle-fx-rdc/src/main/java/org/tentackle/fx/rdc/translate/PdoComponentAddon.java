@@ -152,15 +152,22 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
       pdo = pdoSupplier.get();
       if (pdo != null) {
         inSearchOrEdit = true;
-        ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
-        pdoList.add(pdo);
-        RdcUtilities.getInstance().displayCrudStage(
-            pdo, pdoList, !pdo.isImmutable(), Modality.APPLICATION_MODAL, Fx.getStage((Node) component),
-            p -> {
-              pdo = p;
-              inSearchOrEdit = false;
-            },
-            null);
+        try {
+          ObservableList<T> pdoList = FXCollections.observableArrayList();    // pdo list will disable new,delete and find buttons!
+          pdoList.add(pdo);
+
+          RdcUtilities.getInstance().displayCrudStage(
+              pdo, pdoList, !pdo.isImmutable(), Modality.APPLICATION_MODAL, Fx.getStage((Node) component),
+              p -> {
+                pdo = p;
+                inSearchOrEdit = false;
+              },
+              null);
+        }
+        catch (RuntimeException rx) {
+          inSearchOrEdit = false;
+          throw rx;
+        }
       }
     }
   }
@@ -182,14 +189,20 @@ public class PdoComponentAddon<T extends PersistentDomainObject<T>> {
         proxy = pdo.on();
       }
       inSearchOrEdit = true;
-      searchPdo(proxy, found -> {
-        if (found != null && component.isChangeable()) {
-          pdo = found;
-          component.setViewValue(pdo);
-          component.updateModel();
-        }
+      try {
+        searchPdo(proxy, found -> {
+          if (found != null && component.isChangeable()) {
+            pdo = found;
+            component.setViewValue(pdo);
+            component.updateModel();
+          }
+          inSearchOrEdit = false;
+        });
+      }
+      catch (RuntimeException rx) {
         inSearchOrEdit = false;
-      });
+        throw rx;
+      }
     }
   }
 
