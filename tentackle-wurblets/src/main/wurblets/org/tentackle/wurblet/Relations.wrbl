@@ -89,6 +89,18 @@ For more options, see {\@link ModelWurblet}.
 ]@
   @(type)@ @(rel.getGetterName())@();
 @[
+        if (rel.isBluntDeclared()) {
+]@
+
+  /**
+   * Gets @(var)@ without performing a select if not loaded.
+   *
+   * \@return @(var)@ @(rel.getComment())@
+   */
+  @(type)@ @(rel.getGetterName())@Blunt();
+@[
+        }
+
         if (nmRel != null) {
 ]@
 
