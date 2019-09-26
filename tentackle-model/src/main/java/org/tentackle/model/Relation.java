@@ -212,6 +212,13 @@ public interface Relation extends ModelElement {
   boolean isPartOfNormText();
 
   /**
+   * Returns whether the blunt-method becomes part if the interface.
+   *
+   * @return true if declared in interface, false if only implementation generated
+   */
+  boolean isBluntDeclared();
+
+  /**
    * Returns the attribute that holds the number of elements of a 1:N relation.<br>
    * Applies only to composite non-reversed list relations.<br>
    * If set, this column gets the number of elements in the list when the PDO is persisted.

@@ -500,6 +500,13 @@ For more options, see {\@link DbModelWurblet}.
 @[
         if (rel.getSelectionType() == SelectionType.LAZY || rel.getSelectionType() == SelectionType.EAGER) {
           if (rel.getRelationType() == RelationType.LIST && !rel.isReversed()) {
+            if (rel.isBluntDeclared()) {
+]@
+
+  \@Override
+@[
+            }
+            else {
 ]@
 
   /**
@@ -507,6 +514,9 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return @(var)@ @(rel.getComment())@
    */
+@[
+            }
+]@
   @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
     if (!@(var)@Loaded) {
       @(var)@ = new @(effType)@(@(rel.isTracked() ? "false" : "")@);
@@ -520,6 +530,13 @@ For more options, see {\@link DbModelWurblet}.
 @[
           }
           else if (rel.getRelationType() == RelationType.OBJECT && rel.isSerialized()) {
+            if (rel.isBluntDeclared()) {
+]@
+
+  \@Override
+@[
+            }
+            else {
 ]@
 
   /**
@@ -527,6 +544,9 @@ For more options, see {\@link DbModelWurblet}.
    *
    * \@return @(var)@ @(rel.getComment())@
    */
+@[
+            }
+]@
   @(scope)@ @(type)@ @(rel.getGetterName())@Blunt() {
     return @(var)@;
   }

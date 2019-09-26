@@ -125,6 +125,9 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   /** add toString value to the partOfNormText. */
   public static final String PART_OF_NORMTEXT = "normtext";
 
+  /** add blunt method to interface. */
+  public static final String BLUNT_DECLARED = "blunt";
+
   /** cached selection flag. */
   public static final String CACHED = "cached";
 
@@ -157,6 +160,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   private boolean shallow;
   private boolean immutable;
   private boolean partOfNormText;
+  private boolean bluntDeclared;
   private Attribute countAttribute;
   private SelectionType selectionType;
   private boolean selectionTypeDetermined;
@@ -368,6 +372,10 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
               case PART_OF_NORMTEXT:
                 setPartOfNormText(true);
+                break;
+
+              case BLUNT_DECLARED:
+                setBluntDeclared(true);
                 break;
 
               default:
@@ -653,7 +661,7 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
   @Override
   public void validate() throws ModelException {
 
-    RelationType type = getRelationType();    // force loading of relation type if not set yet
+    getRelationType();    // force loading of relation type if not set yet
 
     if (className == null) {
       throw createModelException("missing classname");
@@ -670,6 +678,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
     }
 
     // check constraints
+
+    if (bluntDeclared) {
+      if (accessScope != AccessScope.PUBLIC) {
+        throw createModelException("access scope must be public to declare blunt method in interface");
+      }
+      if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
+        throw createModelException("blunt methods are only generated for eager or lazy relations");
+      }
+    }
 
     if (composite) {
       if (selectionType != SelectionType.LAZY && selectionType != SelectionType.EAGER) {
@@ -922,6 +939,15 @@ public class RelationImpl implements Relation, Comparable<RelationImpl> {
 
   public void setPartOfNormText(boolean partOfNormText) {
     this.partOfNormText = partOfNormText;
+  }
+
+  @Override
+  public boolean isBluntDeclared() {
+    return bluntDeclared;
+  }
+
+  public void setBluntDeclared(boolean bluntDeclared) {
+    this.bluntDeclared = bluntDeclared;
   }
 
   @Override
