@@ -331,8 +331,9 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
    *
    * @param backendInfo the backend info
    * @throws MojoExecutionException if closing failed
+   * @throws MojoFailureException if build failure
    */
-  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
+  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
     if (connection != null) {
       try {
         connection.close();
