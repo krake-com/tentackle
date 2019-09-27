@@ -23,6 +23,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.tentackle.common.StringHelper;
 
 import java.util.HashMap;
+import java.util.StringTokenizer;
 
 /**
  * Holds the template model for the run script generator.
@@ -43,6 +44,48 @@ public class RunTemplateModel extends HashMap<String, String> {
     this.mojo = mojo;
     this.result = result;
 
+    StringTokenizer stok = new StringTokenizer(mojo.getVariablesPrecedence(), " \t\r\n,");
+
+    while (stok.hasMoreTokens()) {
+      String token = stok.nextToken();
+      switch (token.toUpperCase()) {
+        case "SYSTEM":
+        case "SYS":
+          // all system properties in camelCase, e.g. "os.name" converts to "osName"
+          for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
+            putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
+          }
+          break;
+
+        case "MAVEN":
+        case "MVN":
+        case "PROPERTIES":
+        case "PROPS":
+        case "POM":
+          // dto. for all maven properties
+          for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
+            putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
+          }
+          break;
+
+        case "VARIABLES":
+        case "VARS":
+        case "VAR":
+        case "EXTRA":
+        case "EXTRAS":
+        case "TEMPLATE":
+          // the optional template variables
+          for (Entry<String, Object> entry : mojo.getVariables().entrySet()) {
+            putValue(StringHelper.toCamelCase(entry.getKey()), entry.getValue());
+          }
+          break;
+
+        default:
+          throw new MojoExecutionException("unknown variables order keyword: " + token);
+      }
+    }
+
+    // the following fixed properties cannot be overridden:
     putValue("phase", mojo.getMojoExecution().getLifecyclePhase());
     putValue("goal", mojo.getMojoExecution().getGoal());
     putValue("id", mojo.getMojoExecution().getExecutionId());
@@ -51,21 +94,6 @@ public class RunTemplateModel extends HashMap<String, String> {
     putValue("mainClass", mojo.getMainClass());
     putValue("modulePath", result.generateModulePath());
     putValue("classPath", result.generateClassPath());
-
-    // all system properties in camelCase, e.g. "os.name" converts to "osName"
-    for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
-    }
-
-    // dto. for all maven properties
-    for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
-    }
-
-    // the optional variables
-    for (Entry<String, Object> entry : mojo.getVariables().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey()), entry.getValue());
-    }
   }
 
   /**

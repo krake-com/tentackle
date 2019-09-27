@@ -155,6 +155,20 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   private Map<String, Object> variables;
 
   /**
+   * Defines the precedence of properties and variables.<br>
+   * By default, system properties are overridden by maven properties which are overridden by the extra template variables.
+   * <p>
+   * The case insensitive keywords are:
+   * <ul>
+   *   <li>{@code system, sys}: for system properties</li>
+   *   <li>{@code maven, mvn, properties, props, pom}: maven properties</li>
+   *   <li>{@code variables, vars, var, extras, extra, template}: extra template variables</li>
+   * </ul>
+   */
+  @Parameter(defaultValue = "system, maven, variables", required = true)
+  private String variablesPrecedence;
+
+  /**
    * Gets the template directory.
    *
    * @return the directory holding the wizard templates
@@ -269,6 +283,16 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
   public Map<String, Object> getVariables() {
     return variables == null ? Collections.emptyMap() : variables;
   }
+
+  /**
+   * Gets the order how properties and variables override each other.
+   *
+   * @return default is system, maven, variables
+   */
+  public String getVariablesPrecedence() {
+    return variablesPrecedence;
+  }
+
 
   @Override
   public void prepareExecute() throws MojoExecutionException, MojoFailureException {
