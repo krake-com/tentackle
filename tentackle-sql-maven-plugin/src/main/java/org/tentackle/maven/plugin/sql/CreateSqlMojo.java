@@ -19,6 +19,7 @@
 package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.shared.model.fileset.FileSet;
@@ -86,7 +87,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
   }
 
   @Override
-  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException {
+  protected void closeResources(BackendInfo backendInfo) throws MojoExecutionException, MojoFailureException {
     copyFileSets(appendFilesets);
     super.closeResources(backendInfo);
   }
