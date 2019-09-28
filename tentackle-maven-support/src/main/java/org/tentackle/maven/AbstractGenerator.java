@@ -19,6 +19,7 @@ package org.tentackle.maven;
 
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
+import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.io.IOException;
 public class AbstractGenerator {
 
   private File templateDirectory;
+  private Log logger;
 
   /**
    * Gets the freemarker template directory.
@@ -46,6 +48,24 @@ public class AbstractGenerator {
    */
   public void setTemplateDirectory(File templateDirectory) {
     this.templateDirectory = templateDirectory;
+  }
+
+  /**
+   * Gets the maven logger.
+   *
+   * @return the logger
+   */
+  public Log getLogger() {
+    return logger;
+  }
+
+  /**
+   * Sets the maven logger.
+   *
+   * @param logger the logger
+   */
+  public void setLogger(Log logger) {
+    this.logger = logger;
   }
 
   /**

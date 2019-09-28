@@ -324,7 +324,7 @@ public abstract class AbstractJlinkMojo extends AbstractTentackleMojo {
     }
 
     // generate the script to run the application in the bin subdirectory
-    new RunGenerator(this, result).generate();
+    new ScriptGenerator(this, result).generate();
   }
 
   /**

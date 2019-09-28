@@ -52,6 +52,7 @@ public class MigrateGenerator extends AbstractGenerator {
     this.backendInfo = backendInfo;
     this.migratedEntitiesMap = migratedEntitiesMap;
     setTemplateDirectory(templateFile.getParentFile());
+    setLogger(mojo.getLog());
   }
 
   /**

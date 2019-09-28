@@ -17,12 +17,12 @@
  */
 package org.tentackle.maven.plugin.wizard;
 
-import java.util.HashMap;
+import org.tentackle.maven.AbstractTemplateModel;
 
 /**
  * Freemarker model for the operation templates.
  */
-public class OperationTemplateModel extends HashMap<String, String> {
+public class OperationTemplateModel extends AbstractTemplateModel {
 
   /**
    * Creates the model from the generator.
@@ -30,6 +30,8 @@ public class OperationTemplateModel extends HashMap<String, String> {
    * @param generator the operation generator
    */
   public OperationTemplateModel(OperationGenerator generator) {
+    super(generator.getLogger());
+
     putValue("profile", generator.getProfile().getName());
     
     putValue("operationPackage", generator.getProfile().getOperationPackage());
@@ -55,7 +57,4 @@ public class OperationTemplateModel extends HashMap<String, String> {
     putValue("remoteEnabled", generator.isRemoteEnabled());
   }
 
-  private void putValue(String key, Object value) {
-    put(key, value == null ? "" : value.toString());
-  }
 }

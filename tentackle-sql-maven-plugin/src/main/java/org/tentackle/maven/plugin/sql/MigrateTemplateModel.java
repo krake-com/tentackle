@@ -20,10 +20,9 @@ package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.common.StringHelper;
+import org.tentackle.maven.AbstractTemplateModel;
 import org.tentackle.sql.BackendInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -44,9 +43,7 @@ import java.util.Map;
  *   CREATE VIEW xyzzy ...
  * </pre>
  */
-public class MigrateTemplateModel extends HashMap<String, Object> {
-
-  private final MigrateSqlMojo mojo;
+public class MigrateTemplateModel extends AbstractTemplateModel {
 
   /**
    * Creates the model.
@@ -57,26 +54,16 @@ public class MigrateTemplateModel extends HashMap<String, Object> {
    * @throws MojoExecutionException if module path could not generated
    */
   public MigrateTemplateModel(MigrateSqlMojo mojo, BackendInfo backendInfo, Map<String, Boolean> migratedEntitiesMap) throws MojoExecutionException {
-    this.mojo = mojo;
+    super(mojo.getLog());
 
     putValue("url", backendInfo.getUrl());
     put("migrate", migratedEntitiesMap);
 
     // all system properties in camelCase, e.g. "os.name" converts to "osName"
-    for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
-    }
+    addProperties(System.getProperties());
 
     // dto. for all maven properties
-    for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue().toString());
-    }
-  }
-
-  private void putValue(String key, Object value) {
-    String val = value == null ? "" : value.toString();
-    put(key, val);
-    mojo.getLog().debug("script variable " + key + " = \"" + val + "\"");
+    addProperties(mojo.getMavenProject().getProperties());
   }
 
 }

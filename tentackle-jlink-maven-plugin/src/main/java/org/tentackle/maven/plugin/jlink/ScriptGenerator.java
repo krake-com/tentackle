@@ -22,6 +22,7 @@ import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.maven.AbstractGenerator;
+import org.tentackle.maven.AbstractTemplateModel;
 import org.tentackle.maven.GeneratedFile;
 import org.tentackle.maven.GeneratedString;
 
@@ -30,9 +31,9 @@ import java.io.IOException;
 import java.util.StringTokenizer;
 
 /**
- * Generator for the run script.
+ * Generator for the run and update scripts.
  */
-public class RunGenerator extends AbstractGenerator {
+public class ScriptGenerator extends AbstractGenerator {
 
   private final AbstractJlinkMojo mojo;
   private final JlinkResolver.Result result;
@@ -43,21 +44,22 @@ public class RunGenerator extends AbstractGenerator {
    * @param mojo the jlink mojo
    * @param result the resolver results
    */
-  public RunGenerator(AbstractJlinkMojo mojo, JlinkResolver.Result result) {
+  public ScriptGenerator(AbstractJlinkMojo mojo, JlinkResolver.Result result) {
     this.mojo = mojo;
     this.result = result;
     setTemplateDirectory(mojo.getTemplateDir());
+    setLogger(mojo.getLog());
   }
 
   /**
-   * Generates the script.
+   * Generates the scripts.
    *
    * @throws MojoExecutionException if I/O or template error
    */
   public void generate() throws MojoExecutionException {
     try {
       Configuration cfg = createFreemarkerConfiguration();
-      RunTemplateModel model = new RunTemplateModel(mojo, result);
+      AbstractTemplateModel model = TemplateModelCreator.getInstance().createModel(mojo, result);
       String output = new GeneratedString(cfg, model, mojo.getNameTemplate()).generate();
       StringTokenizer stok = new StringTokenizer(output);
       if (stok.hasMoreTokens()) {
