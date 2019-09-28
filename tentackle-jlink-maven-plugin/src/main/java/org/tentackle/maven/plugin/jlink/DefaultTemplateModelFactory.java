@@ -66,7 +66,7 @@ public class DefaultTemplateModelFactory implements TemplateModelFactory {
           break;
 
         default:
-          throw new MojoExecutionException("unknown variables order keyword: " + token);
+          throw new MojoExecutionException("unknown variables precedence keyword: " + token);
       }
     }
 
