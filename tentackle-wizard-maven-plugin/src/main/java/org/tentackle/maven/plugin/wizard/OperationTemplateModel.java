@@ -17,12 +17,12 @@
  */
 package org.tentackle.maven.plugin.wizard;
 
-import org.tentackle.maven.AbstractTemplateModel;
+import org.tentackle.maven.TemplateModel;
 
 /**
  * Freemarker model for the operation templates.
  */
-public class OperationTemplateModel extends AbstractTemplateModel {
+public class OperationTemplateModel extends TemplateModel {
 
   /**
    * Creates the model from the generator.

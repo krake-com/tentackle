@@ -21,25 +21,25 @@ package org.tentackle.maven.plugin.jlink;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.common.ServiceFactory;
-import org.tentackle.maven.AbstractTemplateModel;
+import org.tentackle.maven.TemplateModel;
 
-interface TemplateModelCreatorHolder {
-  TemplateModelCreator INSTANCE = ServiceFactory.createService(TemplateModelCreator.class, DefaultTemplateModelCreator.class, false);
+interface TemplateModelFactoryHolder {
+  TemplateModelFactory INSTANCE = ServiceFactory.createService(TemplateModelFactory.class, DefaultTemplateModelFactory.class, false);
 }
 
 /**
- * Creates the freemarker template model.
+ * Factory for the freemarker template model.
  * <p>
  * May be replaced via &#64;{@link org.tentackle.common.Service} annotation from within an application-specific plugin dependency.
  * For example, to add template variables from other sources.
  * <p>
  * Example:
  * <pre>
- *   &#64;Service(TemplateModelCreator.class)
- *   public class SpecialTemplateModelCreator implements TemplateModelCreator {
+ *   &#64;Service(TemplateModelFactory.class)
+ *   public class SpecialTemplateModelFactory implements TemplateModelFactory {
  *
  *     &#64;Override
- *     public AbstractTemplateModel createModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+ *     public TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
  *       ...
  *     }
  *   }
@@ -64,15 +64,15 @@ interface TemplateModelCreatorHolder {
  *   &lt;/plugin&gt;
  * </pre>
  */
-public interface TemplateModelCreator {
+public interface TemplateModelFactory {
 
   /**
    * The singleton.
    *
    * @return the singleton
    */
-  static TemplateModelCreator getInstance() {
-    return TemplateModelCreatorHolder.INSTANCE;
+  static TemplateModelFactory getInstance() {
+    return TemplateModelFactoryHolder.INSTANCE;
   }
 
   /**
@@ -83,6 +83,6 @@ public interface TemplateModelCreator {
    * @return the model
    * @throws MojoExecutionException if model creation failed
    */
-  AbstractTemplateModel createModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException;
+  TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException;
 
 }

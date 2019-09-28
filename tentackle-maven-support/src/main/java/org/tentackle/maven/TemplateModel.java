@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Base class for freemarker template models.
+ * The freemarker template model.
  */
-public class AbstractTemplateModel extends HashMap<String, Object> {
+public class TemplateModel extends HashMap<String, Object> {
 
   private final Log logger;   // the maven logger
 
@@ -38,7 +38,7 @@ public class AbstractTemplateModel extends HashMap<String, Object> {
    *
    * @param logger the maven logger
    */
-  public AbstractTemplateModel(Log logger) {
+  public TemplateModel(Log logger) {
     this.logger = logger;
   }
 

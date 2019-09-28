@@ -20,7 +20,7 @@ package org.tentackle.maven.plugin.sql;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.maven.AbstractTemplateModel;
+import org.tentackle.maven.TemplateModel;
 import org.tentackle.sql.BackendInfo;
 
 import java.util.Map;
@@ -43,7 +43,7 @@ import java.util.Map;
  *   CREATE VIEW xyzzy ...
  * </pre>
  */
-public class MigrateTemplateModel extends AbstractTemplateModel {
+public class MigrateTemplateModel extends TemplateModel {
 
   /**
    * Creates the model.
