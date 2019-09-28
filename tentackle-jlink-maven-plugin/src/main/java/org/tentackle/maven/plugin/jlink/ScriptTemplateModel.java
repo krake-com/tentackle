@@ -20,18 +20,14 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.common.StringHelper;
+import org.tentackle.maven.AbstractTemplateModel;
 
-import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
- * Holds the template model for the run script generator.
+ * Holds the template model for the script generator.
  */
-public class RunTemplateModel extends HashMap<String, String> {
-
-  private final AbstractJlinkMojo mojo;
-  private final JlinkResolver.Result result;
+public class ScriptTemplateModel extends AbstractTemplateModel {
 
   /**
    * Creates the model.
@@ -40,9 +36,8 @@ public class RunTemplateModel extends HashMap<String, String> {
    * @param result the resolver results
    * @throws MojoExecutionException if module path could not generated
    */
-  public RunTemplateModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
-    this.mojo = mojo;
-    this.result = result;
+  public ScriptTemplateModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+    super(mojo.getLog());
 
     StringTokenizer stok = new StringTokenizer(mojo.getVariablesPrecedence(), " \t\r\n,");
 
@@ -52,9 +47,7 @@ public class RunTemplateModel extends HashMap<String, String> {
         case "SYSTEM":
         case "SYS":
           // all system properties in camelCase, e.g. "os.name" converts to "osName"
-          for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-            putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
-          }
+          addProperties(System.getProperties());
           break;
 
         case "MAVEN":
@@ -63,9 +56,7 @@ public class RunTemplateModel extends HashMap<String, String> {
         case "PROPS":
         case "POM":
           // dto. for all maven properties
-          for (Entry<Object, Object> entry : mojo.getMavenProject().getProperties().entrySet()) {
-            putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
-          }
+          addProperties(mojo.getMavenProject().getProperties());
           break;
 
         case "VARIABLES":
@@ -75,9 +66,7 @@ public class RunTemplateModel extends HashMap<String, String> {
         case "EXTRAS":
         case "TEMPLATE":
           // the optional template variables
-          for (Entry<String, Object> entry : mojo.getVariables().entrySet()) {
-            putValue(StringHelper.toCamelCase(entry.getKey()), entry.getValue());
-          }
+          addMap(mojo.getVariables());
           break;
 
         default:
@@ -94,18 +83,6 @@ public class RunTemplateModel extends HashMap<String, String> {
     putValue("mainClass", mojo.getMainClass());
     putValue("modulePath", result.generateModulePath());
     putValue("classPath", result.generateClassPath());
-  }
-
-  /**
-   * Adds a key-value pair to the model.
-   *
-   * @param key the key
-   * @param value the value
-   */
-  public void putValue(String key, Object value) {
-    String val = value == null ? "" : value.toString();
-    put(key, val);
-    mojo.getLog().debug("script variable " + key + " = \"" + val + "\"");
   }
 
 }
