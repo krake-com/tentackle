@@ -77,6 +77,6 @@ public class TemplateModel extends HashMap<String, Object> {
   public void putValue(String key, Object value) {
     String val = value == null ? "" : value.toString();
     put(key, val);
-    logger.debug("script variable " + key + " = \"" + val + "\"");
+    logger.debug("template variable " + key + " = \"" + val + "\"");
   }
 }
