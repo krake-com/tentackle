@@ -22,9 +22,9 @@ import freemarker.template.TemplateException;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.tentackle.maven.AbstractGenerator;
-import org.tentackle.maven.AbstractTemplateModel;
 import org.tentackle.maven.GeneratedFile;
 import org.tentackle.maven.GeneratedString;
+import org.tentackle.maven.TemplateModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +59,7 @@ public class ScriptGenerator extends AbstractGenerator {
   public void generate() throws MojoExecutionException {
     try {
       Configuration cfg = createFreemarkerConfiguration();
-      AbstractTemplateModel model = TemplateModelCreator.getInstance().createModel(mojo, result);
+      TemplateModel model = TemplateModelFactory.getInstance().create(mojo, result);
       String output = new GeneratedString(cfg, model, mojo.getNameTemplate()).generate();
       StringTokenizer stok = new StringTokenizer(output);
       if (stok.hasMoreTokens()) {

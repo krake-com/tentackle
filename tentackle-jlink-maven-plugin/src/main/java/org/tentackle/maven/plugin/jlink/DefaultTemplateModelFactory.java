@@ -20,24 +20,20 @@ package org.tentackle.maven.plugin.jlink;
 
 import org.apache.maven.plugin.MojoExecutionException;
 
-import org.tentackle.maven.AbstractTemplateModel;
+import org.tentackle.maven.TemplateModel;
 
 import java.util.StringTokenizer;
 
 /**
- * Holds the template model for the script generator.
+ * Default factory for the template model.
  */
-public class ScriptTemplateModel extends AbstractTemplateModel {
+//@Service(TemplateModelFactory.class)  no @Service anno since it's part of the plugin itself
+public class DefaultTemplateModelFactory implements TemplateModelFactory {
 
-  /**
-   * Creates the model.
-   *
-   * @param mojo the jlink mojo
-   * @param result the resolver results
-   * @throws MojoExecutionException if module path could not generated
-   */
-  public ScriptTemplateModel(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
-    super(mojo.getLog());
+  @Override
+  public TemplateModel create(AbstractJlinkMojo mojo, JlinkResolver.Result result) throws MojoExecutionException {
+
+    TemplateModel model = new TemplateModel(mojo.getLog());
 
     StringTokenizer stok = new StringTokenizer(mojo.getVariablesPrecedence(), " \t\r\n,");
 
@@ -47,7 +43,7 @@ public class ScriptTemplateModel extends AbstractTemplateModel {
         case "SYSTEM":
         case "SYS":
           // all system properties in camelCase, e.g. "os.name" converts to "osName"
-          addProperties(System.getProperties());
+          model.addProperties(System.getProperties());
           break;
 
         case "MAVEN":
@@ -56,7 +52,7 @@ public class ScriptTemplateModel extends AbstractTemplateModel {
         case "PROPS":
         case "POM":
           // dto. for all maven properties
-          addProperties(mojo.getMavenProject().getProperties());
+          model.addProperties(mojo.getMavenProject().getProperties());
           break;
 
         case "VARIABLES":
@@ -66,7 +62,7 @@ public class ScriptTemplateModel extends AbstractTemplateModel {
         case "EXTRAS":
         case "TEMPLATE":
           // the optional template variables
-          addMap(mojo.getVariables());
+          model.addMap(mojo.getVariables());
           break;
 
         default:
@@ -75,14 +71,15 @@ public class ScriptTemplateModel extends AbstractTemplateModel {
     }
 
     // the following fixed properties cannot be overridden:
-    putValue("phase", mojo.getMojoExecution().getLifecyclePhase());
-    putValue("goal", mojo.getMojoExecution().getGoal());
-    putValue("id", mojo.getMojoExecution().getExecutionId());
+    model.putValue("phase", mojo.getMojoExecution().getLifecyclePhase());
+    model.putValue("goal", mojo.getMojoExecution().getGoal());
+    model.putValue("id", mojo.getMojoExecution().getExecutionId());
 
-    putValue("mainModule", mojo.getMainModule());
-    putValue("mainClass", mojo.getMainClass());
-    putValue("modulePath", result.generateModulePath());
-    putValue("classPath", result.generateClassPath());
+    model.putValue("mainModule", mojo.getMainModule());
+    model.putValue("mainClass", mojo.getMainClass());
+    model.putValue("modulePath", result.generateModulePath());
+    model.putValue("classPath", result.generateClassPath());
+
+    return model;
   }
-
 }

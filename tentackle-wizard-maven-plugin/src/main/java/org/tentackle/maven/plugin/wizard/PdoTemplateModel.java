@@ -17,12 +17,12 @@
  */
 package org.tentackle.maven.plugin.wizard;
 
-import org.tentackle.maven.AbstractTemplateModel;
+import org.tentackle.maven.TemplateModel;
 
 /**
  * Freemarker model for the PDO templates.
  */
-public class PdoTemplateModel extends AbstractTemplateModel {
+public class PdoTemplateModel extends TemplateModel {
 
   /**
    * Creates the model from the generator.
