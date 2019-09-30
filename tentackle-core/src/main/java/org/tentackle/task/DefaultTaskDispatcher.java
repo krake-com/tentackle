@@ -590,8 +590,10 @@ public class DefaultTaskDispatcher extends Thread implements TaskDispatcher, Sup
       }
     }
     catch (RuntimeException rex) {
-      LOGGER.severe("dispatcher failed", rex);
-      terminationCause = rex;
+      if (!stopRequested) {
+        LOGGER.severe("dispatcher failed", rex);
+        terminationCause = rex;
+      }
     }
 
     try {
