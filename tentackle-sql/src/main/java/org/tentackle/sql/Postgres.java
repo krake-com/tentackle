@@ -22,8 +22,10 @@ package org.tentackle.sql;
 import org.tentackle.common.Service;
 import org.tentackle.common.TentackleRuntimeException;
 import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 import org.tentackle.sql.metadata.PostgresColumnMetaData;
+import org.tentackle.sql.metadata.PostgresIndexColumnMetaData;
 import org.tentackle.sql.metadata.PostgresIndexMetaData;
 import org.tentackle.sql.metadata.TableMetaData;
 
@@ -127,6 +129,11 @@ public class Postgres extends AbstractSql92Backend {
   }
 
   @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return true;
+  }
+
+  @Override
   public boolean needTxForFetchsize() {
     return true;
   }
@@ -174,6 +181,11 @@ public class Postgres extends AbstractSql92Backend {
   @Override
   public IndexMetaData createIndexMetaData(TableMetaData tableMetaData) {
     return new PostgresIndexMetaData(tableMetaData);
+  }
+
+  @Override
+  public IndexColumnMetaData createIndexColumnMetaData(IndexMetaData indexMetaData) {
+    return new PostgresIndexColumnMetaData(indexMetaData);
   }
 
   @Override

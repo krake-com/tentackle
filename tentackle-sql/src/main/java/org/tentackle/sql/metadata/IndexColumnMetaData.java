@@ -18,9 +18,10 @@
 
 package org.tentackle.sql.metadata;
 
+import org.tentackle.common.StringHelper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.tentackle.common.StringHelper;
 
 
 /**
@@ -32,6 +33,7 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
 
   private final IndexMetaData indexMetaData;    // index column belongs to
   private String columnName;                    // column columnName
+  private String functionName;                  // optional function name
   private boolean descending;                   // true = DESC, false = ASC
   private int position;                         // ordinal position within index
 
@@ -53,6 +55,15 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
    */
   public void setupIndexColumnFromMetaData(ResultSet resultSet) throws SQLException {
     columnName = StringHelper.toLower(resultSet.getString("COLUMN_NAME"));
+    // check if functional index
+    int ndx1 = columnName.indexOf('(');
+    if (ndx1 >= 0) {
+      int ndx2 = columnName.lastIndexOf(')');
+      if (ndx2 > ndx1) {
+        functionName = columnName.substring(0, ndx1).trim().toUpperCase();
+        columnName = columnName.substring(ndx1 + 1, ndx2).trim().toLowerCase();
+      }
+    }
     String ascDesc = resultSet.getString("ASC_OR_DESC");
     descending = ascDesc != null && ascDesc.startsWith("D");
     position = resultSet.getShort("ORDINAL_POSITION");
@@ -88,6 +99,15 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
   }
 
   /**
+   * Gets the optional function name.
+   *
+   * @return the function in uppercase, null if none
+   */
+  public String getFunctionName() {
+    return functionName;
+  }
+
+  /**
    * Gets the ordinal position within the index.
    *
    * @return the position
@@ -105,8 +125,8 @@ public class IndexColumnMetaData implements Comparable<IndexColumnMetaData> {
    * Validates and postprocesses the index column data.
    */
   public void validate() {
+    // nothing to do
   }
-
 
   @Override
   public String toString() {

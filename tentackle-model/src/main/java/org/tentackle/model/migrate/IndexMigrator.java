@@ -26,6 +26,8 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.metadata.IndexColumnMetaData;
 import org.tentackle.sql.metadata.IndexMetaData;
 
+import java.util.Objects;
+
 /**
  * Handles the migration of indexes.
  *
@@ -199,7 +201,8 @@ public class IndexMigrator {
           IndexAttribute indexAttribute = modelIndex.getAttributes().get(position);
           IndexColumnMetaData indexColumn = dbIndex.getColumns().get(position);
           if (indexAttribute.isDescending() != indexColumn.isDescending() ||
-              !indexAttribute.getAttribute().getColumnName().equals(indexColumn.getColumnName())) {
+              !indexAttribute.getAttribute().getColumnName().equals(indexColumn.getColumnName()) ||
+              !Objects.equals(indexAttribute.getFunctionName(), indexColumn.getFunctionName())) {
             different = true;
             break;
           }

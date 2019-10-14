@@ -32,6 +32,7 @@ public class IndexAttributeImpl implements IndexAttribute {
   private final Index index;
 
   private Attribute attribute;
+  private String functionName;
   private boolean descending;
 
 
@@ -59,6 +60,11 @@ public class IndexAttributeImpl implements IndexAttribute {
   }
 
   @Override
+  public String getFunctionName() {
+    return functionName;
+  }
+
+  @Override
   public boolean isDescending() {
     return descending;
   }
@@ -66,6 +72,10 @@ public class IndexAttributeImpl implements IndexAttribute {
 
   public void setAttribute(Attribute attribute) {
     this.attribute = attribute;
+  }
+
+  public void setFunctionName(String functionName) {
+    this.functionName = functionName;
   }
 
   public void setDescending(boolean descending) {

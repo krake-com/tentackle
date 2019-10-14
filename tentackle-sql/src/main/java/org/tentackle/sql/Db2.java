@@ -91,6 +91,11 @@ public class Db2 extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return true;
+  }
+
+  @Override
   public String sqlCreateTableIntro(String tableName, String comment) {
     return appendContinuationString(super.sqlCreateTableIntro(tableName, comment));
   }
