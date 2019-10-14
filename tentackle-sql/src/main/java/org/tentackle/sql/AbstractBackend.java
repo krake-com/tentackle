@@ -997,6 +997,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return false;
+  }
+
+  @Override
   public void setDropIfExistsEnabled(boolean dropIfExistsEnabled) {
     this.dropIfExistsEnabled = dropIfExistsEnabled;
   }

@@ -1,5 +1,5 @@
 /*
- * Tentackle - http://www.tentackle.org.
+ * Tentackle - https://tentackle.org.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,32 @@ import java.util.StringTokenizer;
 
 /**
  * Index descriptor.
+ * <p>
+ * An index line is of the form:
+ * <pre>
+ *   [unique] index &lt;name&gt; := part1[ part2 ...]
+ * </pre>
+ *
+ * where {@code part} is:
+ * <pre>
+ *   [+|-]&lt;column&gt; | &lt;function&gt;(&lt;column&gt;) [asc|desc]
+ * </pre>
+ *
+ * where:
+ * <ul>
+ *   <li>{@code name}: is the index name (the table-name will be prepended, separated by an underscore)</li>
+ *   <li>{@code column}: is either the database column-name of the entity attribute name</li>
+ *   <li>{@code function}: is a function name</li>
+ *   <li>{@code ASC} or {@code +} for ascending order (default)</li>
+ *   <li>{@code DESC} or {@code -} for descending order</li>
+ * </ul>
+ *
+ * Examples:
+ * <pre>
+ *   unique index udk := code
+ *   index locid := location_id desc name
+ *   index ucmt := -upper(comment)
+ * </pre>
  *
  * @author harald
  */
@@ -154,15 +180,16 @@ public class IndexImpl implements Index {
 
     stok = new StringTokenizer(text, " \t,");
     IndexAttributeImpl indexAttribute = null;
+
     while (stok.hasMoreTokens()) {
       String token = stok.nextToken();
-      if (token.toLowerCase().equals("desc")) {
+      if (token.equalsIgnoreCase("desc")) {
         if (indexAttribute == null) {
           throw sourceLine.createModelException("keyword 'desc' must follow column name");
         }
         indexAttribute.setDescending(true);
       }
-      else if (token.toLowerCase().equals("asc")) {
+      else if (token.equalsIgnoreCase("asc")) {
         if (indexAttribute == null) {
           throw sourceLine.createModelException("keyword 'asc' must follow column name");
         }
@@ -183,19 +210,34 @@ public class IndexImpl implements Index {
           descending = Boolean.TRUE;
           token = token.substring(1);
         }
+
+        // check if functional index
+        String function = null;
+        String column = token;
+        int ndx1 = token.indexOf('(');
+        if (ndx1 >= 0) {
+          int ndx2 = token.indexOf(')', ndx1);
+          if (ndx2 >= 0) {
+            function = token.substring(0, ndx1).trim().toUpperCase();
+            column = token.substring(ndx1 + 1, ndx2).trim().toLowerCase();
+          }
+        }
+
         // check if column name exists
         for (Attribute attribute: entity.getAttributes()) {
-          if (attribute.getColumnName().equals(token) ||
-              attribute.getName().equals(token)) {
+          if (attribute.getColumnName().equals(column) ||
+              attribute.getName().equals(column)) {
             // found
             indexAttribute = factory.createIndexAttribute(this);
             indexAttribute.setAttribute(attribute);
+            indexAttribute.setFunctionName(function);
             if (descending != null) {
               indexAttribute.setDescending(descending);
             }
             break;
           }
         }
+
         if (indexAttribute == null) {
           // not found
           throw sourceLine.createModelException("undefined column name: " + token);
@@ -305,6 +347,11 @@ public class IndexImpl implements Index {
     for (Backend backend: factory.getBackends()) {
       try {
         backend.assertValidName(SqlNameType.INDEX_NAME, createDatabaseIndexName(entity));
+        for (IndexAttribute attribute : getAttributes()) {
+          if (attribute.getFunctionName() != null && !backend.isFunctionBasedIndexSupported()) {
+            throw createModelException("function-based index not supported by " + backend);
+          }
+        }
       }
       catch (RuntimeException rex) {
         throw new ModelException(rex.getMessage(), this, rex);
@@ -372,8 +419,13 @@ public class IndexImpl implements Index {
         for (int position = 0; position < getAttributes().size(); position++) {
           IndexAttribute indexAttribute = getAttributes().get(position);
           IndexAttribute otherAttribute = otherIndex.getAttributes().get(position);
-          if (!indexAttribute.isDescending() == otherAttribute.isDescending() ||
-              !indexAttribute.getAttribute().getColumnName().equals(otherAttribute.getAttribute().getColumnName())) {
+          Attribute indexAttr = indexAttribute.getAttribute();
+          Attribute otherAttr = otherAttribute.getAttribute();
+          String indexColumnName = indexAttr == null ? null : indexAttr.getColumnName();
+          String otherColumnName = otherAttr == null ? null : otherAttr.getColumnName();
+          if (indexAttribute.isDescending() != otherAttribute.isDescending() ||
+              !Objects.equals(indexColumnName, otherColumnName) ||
+              !Objects.equals(indexAttribute.getFunctionName(), otherAttribute.getFunctionName())) {
             logicallyEqual = false;
             break;
           }

@@ -32,6 +32,12 @@ public interface IndexAttribute {
    */
   Attribute getAttribute();
 
+  /**
+   * Gets the name of the function.
+   *
+   * @return the function name, null if no function-based index
+   */
+  String getFunctionName();
 
   /**
    * Returns whether the attribute is descending.

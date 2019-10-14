@@ -227,6 +227,11 @@ public class Oracle extends AbstractSql2003Backend {
   }
 
   @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return true;
+  }
+
+  @Override
   public void assertValidName(SqlNameType nameType, String name) {
     super.assertValidName(nameType, name);
     assertNameLength(nameType, name);

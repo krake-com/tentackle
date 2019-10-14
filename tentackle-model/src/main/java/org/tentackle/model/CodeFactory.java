@@ -286,11 +286,18 @@ public class CodeFactory {
     String[] columnNames = new String[index.getAttributes().size()];
     int attributeCount = 0;
     for (IndexAttribute indexAttribute : index.getAttributes()) {
-      if (indexAttribute.isDescending()) {
-        columnNames[attributeCount] = "-" + indexAttribute.getAttribute().getColumnName();
+      String indexPart;
+      if (indexAttribute.getFunctionName() != null) {
+        indexPart = indexAttribute.getFunctionName() + "(" + indexAttribute.getAttribute().getColumnName() + ")";
       }
       else {
-        columnNames[attributeCount] = indexAttribute.getAttribute().getColumnName();
+        indexPart = indexAttribute.getAttribute().getColumnName();
+      }
+      if (indexAttribute.isDescending()) {
+        columnNames[attributeCount] = "-" + indexPart;
+      }
+      else {
+        columnNames[attributeCount] = indexPart;
       }
       attributeCount++;
     }

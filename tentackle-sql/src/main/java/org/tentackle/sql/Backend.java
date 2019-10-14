@@ -217,7 +217,9 @@ public interface Backend {
 
 
   /**
-   * Checks whether the backend belongs to the given jdbc url.
+   * Checks whether the backend belongs to the given jdbc url.<br>
+   * If multiple backend implementations are provided for the same database type,
+   * only one backend should match the URL. The others must be selected via name.
    *
    * @param url the jdbc url
    * @return true if matches
@@ -826,7 +828,7 @@ public interface Backend {
    * @param indexName the name of the index
    * @param unique true if index is unique
    * @param filterCondition the filter condition (null if none)
-   * @param columnNames the column names (with a leading '-' if descending)
+   * @param columnNames the column names (with a leading '-' if descending). Simple function-based indexes are also supported.
    * @return the SQL code
    */
   String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition, String... columnNames);
@@ -934,7 +936,6 @@ public interface Backend {
    */
   String toQuotedString(String str);
 
-
   /**
    * Optimize SQL code.<br>
    * Replace WHERE 1=1 AND/OR to WHERE.
@@ -946,7 +947,6 @@ public interface Backend {
    */
   String optimizeSql(String sql);
 
-
   /**
    * Returns whether the backend supports releasing savepoints explicitly.
    * If not, the savepoints are released when the transaction finishs.
@@ -954,6 +954,13 @@ public interface Backend {
    * @return true if release is supported, else false
    */
   boolean isReleaseSavepointSupported();
+
+  /**
+   * Returns whether function based indexes are supported.
+   *
+   * @return true if supported
+   */
+  boolean isFunctionBasedIndexSupported();
 
   /**
    * Some database support drop index/constraint/column IF EXISTS.<br>
