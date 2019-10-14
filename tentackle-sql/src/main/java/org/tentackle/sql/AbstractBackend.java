@@ -1010,6 +1010,11 @@ public abstract class AbstractBackend implements Backend {
   }
 
   @Override
+  public boolean isFunctionBasedIndexSupported() {
+    return false;
+  }
+
+  @Override
   public boolean isFilteredIndexSupported() {
     return false;
   }

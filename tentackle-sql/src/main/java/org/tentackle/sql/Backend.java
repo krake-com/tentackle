@@ -828,7 +828,7 @@ public interface Backend {
    * @param indexName the name of the index
    * @param unique true if index is unique
    * @param filterCondition the filter condition (null if none)
-   * @param columnNames the column names (with a leading '-' if descending)
+   * @param columnNames the column names (with a leading '-' if descending). Simple function-based indexes are also supported.
    * @return the SQL code
    */
   String sqlCreateIndex(String tableName, String indexName, boolean unique, String filterCondition, String... columnNames);
@@ -936,7 +936,6 @@ public interface Backend {
    */
   String toQuotedString(String str);
 
-
   /**
    * Optimize SQL code.<br>
    * Replace WHERE 1=1 AND/OR to WHERE.
@@ -947,7 +946,6 @@ public interface Backend {
    * @return the optimized sql code
    */
   String optimizeSql(String sql);
-
 
   /**
    * Returns whether the backend supports releasing savepoints explicitly.
@@ -964,6 +962,13 @@ public interface Backend {
    * @return true if supported, false if treat as varchar
    */
   boolean isClobSupported();
+
+  /**
+   * Returns whether function based indexes are supported.
+   *
+   * @return true if supported
+   */
+  boolean isFunctionBasedIndexSupported();
 
   /**
    * Returns whether backend supports filtered indexes.
