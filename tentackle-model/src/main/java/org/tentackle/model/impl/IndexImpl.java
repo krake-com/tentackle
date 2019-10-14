@@ -436,7 +436,8 @@ public class IndexImpl implements Index {
           String indexColumnName = indexAttr == null ? null : indexAttr.getColumnName();
           String otherColumnName = otherAttr == null ? null : otherAttr.getColumnName();
           if (indexAttribute.isDescending() != otherAttribute.isDescending() ||
-              !Objects.equals(indexColumnName, otherColumnName)) {
+              !Objects.equals(indexColumnName, otherColumnName) ||
+              !Objects.equals(indexAttribute.getFunctionName(), otherAttribute.getFunctionName())) {
             logicallyEqual = false;
             break;
           }
