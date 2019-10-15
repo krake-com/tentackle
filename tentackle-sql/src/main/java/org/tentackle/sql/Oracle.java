@@ -21,6 +21,9 @@ package org.tentackle.sql;
 
 import org.tentackle.common.Service;
 import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.sql.metadata.ColumnMetaData;
+import org.tentackle.sql.metadata.OracleColumnMetaData;
+import org.tentackle.sql.metadata.TableMetaData;
 
 import java.sql.Connection;
 import java.sql.Date;
@@ -226,10 +229,12 @@ public class Oracle extends AbstractSql2003Backend {
     return name != null && (name.startsWith("tmp_") || name.startsWith("TMP_"));
   }
 
-  @Override
-  public boolean isFunctionBasedIndexSupported() {
-    return true;
-  }
+  // Oracle supports function-based indexes, but does not return a usable JDBC metadata.
+  // -> migration would always fail.
+//  @Override
+//  public boolean isFunctionBasedIndexSupported() {
+//    return true;
+//  }
 
   @Override
   public void assertValidName(SqlNameType nameType, String name) {
@@ -256,6 +261,11 @@ public class Oracle extends AbstractSql2003Backend {
       return Boolean.TRUE.equals(value) ? "1" : "0";
     }
     return super.valueToLiteral(sqlType, value);
+  }
+
+  @Override
+  public ColumnMetaData createColumnMetaData(TableMetaData tableMetaData) {
+    return new OracleColumnMetaData(tableMetaData);
   }
 
   @Override
