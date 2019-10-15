@@ -78,7 +78,13 @@ public class IndexPrinter {
       else {
         buf.append('+');
       }
+      if (attr.getFunctionName() != null) {
+        buf.append(attr.getFunctionName()).append('(');
+      }
       buf.append(attr.getAttribute().getColumnName());
+      if (attr.getFunctionName() != null) {
+        buf.append(')');
+      }
     }
     if (index.getFilterCondition() != null) {
       buf.append(" | ").append(index.getFilterCondition());
