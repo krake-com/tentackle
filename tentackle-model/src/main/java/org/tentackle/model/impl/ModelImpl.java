@@ -832,45 +832,69 @@ public class ModelImpl implements Model {
         // determine the meaningful letters: Start and end of camel case words
         StringBuilder letters = new StringBuilder();
         char lastChar = '_';
+        boolean lastCharAppended = false;
         for (int i=0; i < entity.getName().length(); i++) {
           char currentChar = entity.getName().charAt(i);
-          if (Character.isUpperCase(currentChar)) {
+          // each uppercase letter and digit (2=to, 4=for, etc...)
+          if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
             letters.append(currentChar);
           }
           lastChar = currentChar;
         }
         if (letters.length() <= 1) {
+          // append the last character, if only one Uppercase letter (e.g. Shipment -> st)
           letters.append(lastChar);
+          lastCharAppended = true;
         }
         String alias = letters.toString().toLowerCase();
 
-        if (aliasMap.get(alias) == null) {
-          // found a new alias: check agains reserved word
-          boolean aliasValid = true;
-          for (Backend backend: getEntityFactory().getBackends()) {
-            try {
-              backend.assertValidName(SqlNameType.TABLE_ALIAS, alias);
-            }
-            catch (RuntimeException rex) {
-              aliasValid = false;
-              break;
-            }
-          }
-          if (aliasValid) {
+        if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
+          ((EntityImpl) entity).setTableAlias(alias);
+          aliasMap.put(alias, entity);
+          continue; // valid table alias found!
+        }
+
+        if (!lastCharAppended) {
+          // try with added last character
+          letters.append(lastChar);
+          alias = letters.toString().toLowerCase();
+          if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
             ((EntityImpl) entity).setTableAlias(alias);
             aliasMap.put(alias, entity);
-            continue;
+            continue; // valid table alias found!
           }
         }
 
-        // just take the first letter and count. This will always work
-        for (int count=1; ; count++) {
-          String numberedAlias = alias.substring(0, 1) + count;
-          if (aliasMap.get(numberedAlias) == null) {
-            // found a new alias
-            ((EntityImpl) entity).setTableAlias(numberedAlias);
-            aliasMap.put(numberedAlias, entity);
-            break;
+        // alias already exists.
+        // If lastchar was added (Shipment -> st), try the first 3 chars, then the first 4, finally 5 non-vocal chars
+        letters.setLength(1);
+        boolean nonVocalNameFound = false;
+        for (int i=1; i < entity.getName().length() && i < 6; i++) {
+          char c = Character.toLowerCase(entity.getName().charAt(i));
+          if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
+            letters.append(c);
+            if (letters.length() >= 3) {
+              alias = letters.toString().toLowerCase();
+              if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
+                ((EntityImpl) entity).setTableAlias(alias);
+                aliasMap.put(alias, entity);
+                nonVocalNameFound = true;
+                break;
+              }
+            }
+          }
+        }
+
+        if (!nonVocalNameFound) {
+          // just take the first letter and count. This will always work
+          for (int count = 1; ; count++) {
+            String numberedAlias = alias.substring(0, 1) + count;
+            if (aliasMap.get(numberedAlias) == null) {
+              // found a new alias
+              ((EntityImpl) entity).setTableAlias(numberedAlias);
+              aliasMap.put(numberedAlias, entity);
+              break;
+            }
           }
         }
       }
@@ -945,6 +969,27 @@ public class ModelImpl implements Model {
     }
   }
 
+  /**
+   * Checks if a table alias is a valid name for all backends.
+   *
+   * @param alias the table alias
+   * @return true if ok
+   */
+  protected boolean isValidTableAlias(String alias) {
+    boolean valid = true;
+
+    for (Backend backend: getEntityFactory().getBackends()) {
+      try {
+        backend.assertValidName(SqlNameType.TABLE_ALIAS, alias);
+      }
+      catch (RuntimeException rex) {
+        valid = false;
+        break;
+      }
+    }
+
+    return valid;
+  }
 
   /**
    * Updates the composite path.
