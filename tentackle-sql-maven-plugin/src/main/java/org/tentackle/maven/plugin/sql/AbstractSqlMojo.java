@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 
 /**
@@ -523,13 +524,70 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         }
         PrintConfiguration configuration = new PrintConfiguration(dumpAsComment, dumpVariables, defaults,
         optionAnnotations, dumpColumnGap);
+
+        Map<String, String> aliasesMap = new TreeMap<>();     // alias:entityname
+        Map<String, String> tableMap = new TreeMap<>();       // tablename:entityname
+        Map<Integer, String> classidMap = new TreeMap<>();    // classid:entityname
+
         for (Entity entity : Model.getInstance().getAllEntitites()) {
+          if (entity.getDefinedTableAlias() != null) {
+            aliasesMap.put(entity.getDefinedTableAlias(), entity.getName() + " (configured)");
+          }
+          else if (entity.getTableAlias() != null) {
+            aliasesMap.put(entity.getTableAlias(), entity.getName());
+          }
+          if (entity.getTableName() != null) {
+            tableMap.put(entity.getTableName(), entity.getName());
+          }
+          if (entity.getClassId() != 0) {
+            classidMap.put(entity.getClassId(), entity.getName());
+          }
+
           File dumpFile = new File(dumpDir, entity.getName() + ".txt");
           try (BufferedWriter writer =
-               new BufferedWriter(
-               new OutputStreamWriter(
-               new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
+                   new BufferedWriter(
+                       new OutputStreamWriter(
+                           new FileOutputStream(dumpFile), Settings.getEncodingCharset()))) {
             writer.write(new EntityPrinter(entity, configuration).print());
+          }
+        }
+
+        File file = new File(dumpDir, "_aliases_.txt");
+        try (BufferedWriter writer =
+                 new BufferedWriter(
+                     new OutputStreamWriter(
+                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+          for (Map.Entry<String,String> entry : aliasesMap.entrySet()) {
+            writer.write(entry.getKey());
+            writer.write(" = ");
+            writer.write(entry.getValue());
+            writer.newLine();
+          }
+        }
+
+        file = new File(dumpDir, "_tables_.txt");
+        try (BufferedWriter writer =
+                 new BufferedWriter(
+                     new OutputStreamWriter(
+                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+          for (Map.Entry<String,String> entry : tableMap.entrySet()) {
+            writer.write(entry.getKey());
+            writer.write(" = ");
+            writer.write(entry.getValue());
+            writer.newLine();
+          }
+        }
+
+        file = new File(dumpDir, "_classid_.txt");
+        try (BufferedWriter writer =
+                 new BufferedWriter(
+                     new OutputStreamWriter(
+                         new FileOutputStream(file), Settings.getEncodingCharset()))) {
+          for (Map.Entry<Integer,String> entry : classidMap.entrySet()) {
+            writer.write(entry.getKey().toString());
+            writer.write(" = ");
+            writer.write(entry.getValue());
+            writer.newLine();
           }
         }
       }
