@@ -18,11 +18,13 @@
 
 package org.tentackle.i18n;
 
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.ResourceBundle;
 import org.tentackle.i18n.pdo.StoredBundle;
 import org.tentackle.i18n.pdo.StoredBundleKey;
+
+import java.util.Enumeration;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.ResourceBundle;
 
 /**
  * ResourceBundle loaded from the database.
@@ -58,10 +60,7 @@ public class StoredResourceBundle extends ResourceBundle {
 
   @Override
   protected Object handleGetObject(String key) {
-    if (key == null) {
-      throw new NullPointerException("key is null");
-    }
-    return props.get(key);
+    return props.get(Objects.requireNonNull(key, "key"));
   }
 
   @Override

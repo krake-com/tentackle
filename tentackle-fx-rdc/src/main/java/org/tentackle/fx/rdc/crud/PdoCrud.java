@@ -70,6 +70,7 @@ import org.tentackle.validate.ValidationResult;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
@@ -234,9 +235,8 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
    */
   @Override
   public void setPdo(T pdo) {
-    if (pdo == null) {
-      throw new NullPointerException("pdo must not be null");
-    }
+    Objects.requireNonNull(pdo, "pdo");
+
     getBinder().putBindingProperty(DomainContext.class, pdo.getDomainContext());
     editor.setPdo(pdo);   // set pdo before editor.isEditAllowed() is invoked below
 

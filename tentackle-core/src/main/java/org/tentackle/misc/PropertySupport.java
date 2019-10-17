@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Replacement for {@code java.beans.PropertyChangeSupport} as this becomes part of the Swing desktop module
@@ -104,9 +105,9 @@ public class PropertySupport {
    * @param newValue the new value
    */
   public void firePropertyChanged(String propertyName, Object oldValue, Object newValue) {
-    if (propertyName == null || propertyName.isEmpty()) {
-      // avoids NPEs and firing listeners twice if propertyName == ""
-      throw new IllegalArgumentException("missing property name");
+    if (Objects.requireNonNull(propertyName, "propertyName").isEmpty()) {
+      // avoids firing listeners twice if propertyName == ""
+      throw new IllegalArgumentException("empty propertyName");
     }
 
     List<PropertyListener> listeners = listenerMap.get(propertyName);

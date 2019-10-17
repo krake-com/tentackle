@@ -22,6 +22,8 @@ package org.tentackle.validate.validator;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.Validator;
 
+import java.util.Objects;
+
 /**
  * Simple failed result.
  *
@@ -72,8 +74,8 @@ public class FailedValidationResult extends AbstractValidationResult {
    */
   protected void checkArgs() {
     String message = getMessage();
-    if (message == null || message.length() == 0) {
-      throw new IllegalArgumentException("message must not be empty for a failed validation result");
+    if (Objects.requireNonNull(message, "message").isEmpty()) {
+      throw new IllegalArgumentException("empty message");
     }
   }
 

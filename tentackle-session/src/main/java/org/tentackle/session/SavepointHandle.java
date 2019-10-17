@@ -39,8 +39,8 @@ public class SavepointHandle implements Serializable {
    * @param name the savepoint's name
    */
   public SavepointHandle(String name) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must be non-null and not empty");
+    if (Objects.requireNonNull(name, "name").isEmpty()) {
+      throw new IllegalArgumentException("empty name");
     }
     this.name = name;
     this.id = null;

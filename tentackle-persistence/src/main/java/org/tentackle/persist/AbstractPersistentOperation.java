@@ -33,8 +33,8 @@ import org.tentackle.reflect.EffectiveClassProvider;
 import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.Objects;
 
 
 /**
@@ -155,12 +155,9 @@ public abstract class AbstractPersistentOperation<T extends Operation<T>, P exte
   @Override
   public void setDomainContext(DomainContext context)  {
     if (this.context != context) {
-      if (context == null) {
-        throw new IllegalArgumentException("domain context cannot be cleared to null");
-      }
       assertDomainContextMutable();
-      this.context = context;
-      setSessionHolder(this.context);
+      this.context = Objects.requireNonNull(context, "context");
+      setSessionHolder(context);
       determineContextId();
     }
   }

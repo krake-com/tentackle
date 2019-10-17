@@ -37,6 +37,7 @@ import org.tentackle.validate.Validator;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Common implemenation of a binding.
@@ -79,10 +80,7 @@ public class DefaultFxComponentBinding extends AbstractBinding implements FxComp
 
     super(binder, parents, member);
 
-    if (component == null) {
-      throw new NullPointerException("formComponent must not be null");
-    }
-    this.component = component;
+    this.component = Objects.requireNonNull(component, "component");
 
     updateComponentName();
     component.setBinding(this);

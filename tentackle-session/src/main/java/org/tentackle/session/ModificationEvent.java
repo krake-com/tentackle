@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Modification event.
@@ -62,7 +63,7 @@ public class ModificationEvent implements Serializable {
    * @param details the modification details, one for each name
    */
   public ModificationEvent(Session session, Collection<ModificationEventDetail> details) {
-    this.session = session;
+    this.session = Objects.requireNonNull(session, "session");
     if (details != null && !details.isEmpty()) {
       this.details = new HashMap<>();
       Iterator<ModificationEventDetail> iter = details.iterator();

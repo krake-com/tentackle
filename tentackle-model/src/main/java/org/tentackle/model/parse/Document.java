@@ -18,12 +18,14 @@
 
 package org.tentackle.model.parse;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
 import org.tentackle.common.Constants;
 import org.tentackle.model.ModelException;
 import org.tentackle.model.SourceInfo;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.StringTokenizer;
 
 /**
  * The input document.
@@ -45,10 +47,7 @@ public class Document {
    * @param text the model specification source
    */
   public Document(String text) {
-    if (text == null) {
-      throw new NullPointerException("document text cannot be null");
-    }
-    if (text.startsWith(Constants.ORIGIN_INFO_LEAD)) {
+    if (Objects.requireNonNull(text, "text").startsWith(Constants.ORIGIN_INFO_LEAD)) {
       // source info line
       int ndx = text.indexOf('\n');   // the end of line
       if (ndx > 0) {

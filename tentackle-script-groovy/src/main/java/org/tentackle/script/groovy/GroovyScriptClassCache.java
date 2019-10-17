@@ -19,7 +19,9 @@
 package org.tentackle.script.groovy;
 
 import groovy.lang.Script;
+
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,10 +41,7 @@ public class GroovyScriptClassCache {
    * @param name the name of cache
    */
   public GroovyScriptClassCache(String name) {
-    if (name == null) {
-      throw new NullPointerException("name must not be null");
-    }
-    this.name = name;
+    this.name = Objects.requireNonNull(name, "name");
     scriptClassMap = new ConcurrentHashMap<>();
   }
 

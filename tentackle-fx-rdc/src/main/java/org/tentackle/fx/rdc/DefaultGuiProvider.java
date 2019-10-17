@@ -32,6 +32,7 @@ import org.tentackle.pdo.PersistentDomainObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
@@ -93,10 +94,7 @@ public class DefaultGuiProvider<T extends PersistentDomainObject<T>> implements 
    * @param pdo the pdo
    */
   public void setPdo(T pdo) {
-    if (pdo == null) {
-      throw new NullPointerException("pdo must not be null");
-    }
-    this.pdo = pdo;
+    this.pdo = Objects.requireNonNull(pdo, "pdo");
   }
 
   @Override

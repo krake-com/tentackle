@@ -19,11 +19,8 @@
 
 package org.tentackle.bind;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import org.tentackle.log.Logger;
 import org.tentackle.common.StringHelper;
+import org.tentackle.log.Logger;
 import org.tentackle.validate.DefaultScope;
 import org.tentackle.validate.ValidationContext;
 import org.tentackle.validate.ValidationEvent;
@@ -36,6 +33,11 @@ import org.tentackle.validate.ValidatorCache;
 import org.tentackle.validate.scope.AllScope;
 import org.tentackle.validate.scope.ChangeableScope;
 import org.tentackle.validate.scope.MandatoryScope;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Common implemenation of a binding.
@@ -97,10 +99,9 @@ public abstract class AbstractBinding implements Binding {
    * @param member the member field to bind
    */
   public AbstractBinding(Binder binder, BindingMember[] parents, BindingMember member) {
-
-    this.binder  = binder;
+    this.binder  = Objects.requireNonNull(binder, "binder");
     this.parents = parents;
-    this.member  = member;
+    this.member  = Objects.requireNonNull(member, "member");
   }
 
   @Override

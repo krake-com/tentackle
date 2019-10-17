@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Random;
 
 
@@ -111,10 +112,10 @@ public class DefaultConnectionManager implements ConnectionManager {
   public DefaultConnectionManager(String name, int iniSize, int maxSize, int idOffset,
                                   int minMinutes, int maxMinutes) {
 
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("missing name");
+    this.name = Objects.requireNonNull(name, "name");
+    if (name.isEmpty()) {
+      throw new IllegalArgumentException("empty name");
     }
-
     if (iniSize < 1) {
       throw new IllegalArgumentException("initial size must be > 0");
     }
@@ -128,7 +129,6 @@ public class DefaultConnectionManager implements ConnectionManager {
       throw new IllegalArgumentException("maxMinutes must be >= minMinutes");
     }
 
-    this.name = name;
     this.iniSize = iniSize;
     this.idOffset = idOffset;
     this.maxDbSize = maxSize;     // Db and Cons use the same max-setting!

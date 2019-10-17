@@ -30,6 +30,7 @@ import org.tentackle.session.SessionInfo;
 import org.tentackle.session.SessionPool;
 
 import java.lang.ref.WeakReference;
+import java.util.Objects;
 
 
 /**
@@ -94,13 +95,9 @@ public class DefaultDbPool implements SessionPool {
       throw new IllegalArgumentException("illegal size parameters");
     }
 
-    if (name == null) {
-      throw new NullPointerException("name must not be null");
-    }
-
-    this.name = name;
-    this.conMgr = conMgr;
-    this.sessionInfo = sessionInfo;
+    this.name = Objects.requireNonNull(name, "name");
+    this.conMgr = Objects.requireNonNull(conMgr, "conMgr");
+    this.sessionInfo = Objects.requireNonNull(sessionInfo, "sessionInfo");
     this.iniSize = iniSize;
     this.incSize = incSize;
     this.minSize = minSize;

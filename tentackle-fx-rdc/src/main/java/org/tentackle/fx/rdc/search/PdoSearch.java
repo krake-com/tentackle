@@ -74,6 +74,7 @@ import org.tentackle.task.AbstractTask;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -225,9 +226,8 @@ public class PdoSearch<T extends PersistentDomainObject<T>> extends AbstractFxCo
   @Override
   @SuppressWarnings("unchecked")
   public void setPdo(T pdo) {
-    if (pdo == null) {
-      throw new NullPointerException("pdo must not be null");
-    }
+    Objects.requireNonNull(pdo, "pdo");
+
     createdPdo = null;
     finder.setPdo(pdo);
     finder.getContainer().updateView();

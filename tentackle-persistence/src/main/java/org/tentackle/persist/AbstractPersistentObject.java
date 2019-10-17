@@ -803,9 +803,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public void setDomainContext(DomainContext context)  {
     if (getDomainContext() != context) {
-      if (context == null) {
-        throw new IllegalArgumentException("domain context cannot be cleared to null");
-      }
+      Objects.requireNonNull(context, "context");
       assertDomainContextMutable();
       if (isRootEntity()) {
         // if this is a root entity: replace with root context

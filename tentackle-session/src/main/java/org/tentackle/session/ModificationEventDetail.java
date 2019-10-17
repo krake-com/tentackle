@@ -44,8 +44,8 @@ public class ModificationEventDetail implements Serializable {
    * @param name the modification name
    */
   public ModificationEventDetail(String name, long serial) {
-    if (name == null || name.isEmpty()) {
-      throw new IllegalArgumentException("name must be non-empty");
+    if (Objects.requireNonNull(name, "name").isEmpty()) {
+      throw new IllegalArgumentException("empty name");
     }
     this.name = name;
     this.serial = serial;

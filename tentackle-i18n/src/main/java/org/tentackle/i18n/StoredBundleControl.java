@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /**
@@ -81,22 +82,15 @@ public class StoredBundleControl extends ResourceBundle.Control implements Domai
 
   @Override
   public List<String> getFormats(String baseName) {
-    if (Session.getCurrentSession() == null) {
-      return super.getFormats(baseName);
-    }
-    if (baseName == null) {
-      throw new NullPointerException();
-    }
-    return FORMATS;
+    return Session.getCurrentSession() == null ? super.getFormats(baseName) : FORMATS;
   }
 
   @Override
   public ResourceBundle newBundle(String baseName, Locale locale, String format, ClassLoader loader, boolean reload)
           throws IllegalAccessException, InstantiationException, IOException {
 
-    if (baseName == null || locale == null) {
-      throw new IllegalArgumentException("baseName and locale must not be null");
-    }
+    Objects.requireNonNull(baseName, "baseName");
+    Objects.requireNonNull(locale, "locale");
 
     ResourceBundle bundle = null;
     StoredBundle.StoredBundleUDK key = null;

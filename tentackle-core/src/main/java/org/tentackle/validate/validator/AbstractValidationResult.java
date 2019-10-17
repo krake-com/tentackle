@@ -26,6 +26,8 @@ import org.tentackle.validate.ValidationRuntimeException;
 import org.tentackle.validate.ValidationScope;
 import org.tentackle.validate.Validator;
 
+import java.util.Objects;
+
 /**
  * Base implementation for validation results.
  *
@@ -114,17 +116,12 @@ public abstract class AbstractValidationResult implements ValidationResult {
    * @param validationContext the validation context
    */
   protected void setValidator(Validator validator, ValidationContext validationContext) {
-
-    if (validator == null) {
-      throw new IllegalArgumentException("validator must not be null");
-    }
-    this.validator    = validator;
-
+    this.validator    = Objects.requireNonNull(validator, "validator");
+    configuredScopes  = validator.getConfiguredScopes(Objects.requireNonNull(validationContext, "validationContext"));
     errorCode         = validator.getErrorCode();
     validationPath    = validationContext.getValidationPath();
     object            = validationContext.getObject();
     parentObject      = validationContext.getParentObject();
-    configuredScopes  = validator.getConfiguredScopes(validationContext);
   }
 
   @Override

@@ -19,6 +19,7 @@
 package org.tentackle.misc;
 
 import java.util.EventObject;
+import java.util.Objects;
 
 /**
  * Event fired when a property is modified.
@@ -47,10 +48,7 @@ public class PropertyEvent extends EventObject {
    */
   public PropertyEvent(Object source, String propertyName, Object oldValue, Object newValue) {
     super(source);
-    if (propertyName == null) {
-      throw new IllegalArgumentException("propertyName missing");
-    }
-    this.propertyName = propertyName;
+    this.propertyName = Objects.requireNonNull(propertyName, "propertyName");
     this.newValue = newValue;
     this.oldValue = oldValue;
   }
