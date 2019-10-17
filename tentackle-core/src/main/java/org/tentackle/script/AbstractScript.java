@@ -20,6 +20,8 @@ package org.tentackle.script;
 
 import org.tentackle.common.StringHelper;
 
+import java.util.Objects;
+
 /**
  * Abstract implementation of a script.
  *
@@ -98,8 +100,8 @@ public abstract class AbstractScript implements Script {
 
   @Override
   public void setCode(String code) {
-    if (code == null || code.isEmpty()) {
-      throw new IllegalArgumentException("code must not be empty");
+    if (Objects.requireNonNull(code, "code").isEmpty()) {
+      throw new IllegalArgumentException("empty code");
     }
     this.code = code;
     clearParsed();

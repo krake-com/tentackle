@@ -37,14 +37,8 @@ public class ServiceFinderKey {
    * @param servicePath the service path
    */
   public ServiceFinderKey(ClassLoader classLoader, String servicePath) {
-    if (classLoader == null) {
-      throw new IllegalArgumentException("classloader must not be null");
-    }
-    if (servicePath == null) {
-      throw new IllegalArgumentException("service path must not be null");
-    }
-    this.classLoader = classLoader;
-    this.servicePath = servicePath;
+    this.classLoader = Objects.requireNonNull(classLoader, "classLoader");
+    this.servicePath = Objects.requireNonNull(servicePath, "servicePath");
   }
 
   /**

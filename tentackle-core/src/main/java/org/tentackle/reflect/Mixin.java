@@ -24,6 +24,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -99,9 +100,7 @@ public class Mixin<T, M extends Serializable> implements Serializable {
   public Mixin(ClassMapper mapper, Class<T> clazz, Class<?> superInterface)
          throws ClassNotFoundException {
 
-    if (clazz == null) {
-      throw new NullPointerException("clazz must not be null");
-    }
+    Objects.requireNonNull(clazz, "clazz");
 
     if (mapper != null) {
       // get the implementation class via classmapper

@@ -19,11 +19,13 @@
 
 package org.tentackle.reflect;
 
+import org.tentackle.log.Logger;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.tentackle.log.Logger;
 
 /**
  * Cache to speed up method lookup by reflection.
@@ -116,10 +118,7 @@ public class MethodCache {
    * @param name the cache's name
    */
   public MethodCache(String name) {
-    if (name == null) {
-      throw new NullPointerException("cache must be given a name");
-    }
-    this.name = name;
+    this.name = Objects.requireNonNull(name, "name");
     methodMap = new ConcurrentHashMap<>();
   }
 

@@ -46,6 +46,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -91,14 +92,11 @@ public abstract class AbstractServerApplication extends AbstractApplication
    */
   @Override
   protected void setSessionInfo(SessionInfo sessionInfo) {
-    if (sessionInfo == null) {
-      throw new IllegalArgumentException("session info must not be null");
-    }
+    Objects.requireNonNull(sessionInfo, "sessionInfo");
     if (getSessionInfo() != null) {
       throw new PersistenceException("session info already set, cannot be changed in a running server");
     }
     sessionInfo.setImmutable(true);
-
     super.setSessionInfo(sessionInfo);
   }
 

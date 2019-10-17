@@ -45,6 +45,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -332,15 +333,10 @@ public class ManagedConnection {
    * @param connection the low level JDBC connection
    */
   public ManagedConnection(ConnectionManager manager, Backend backend, Connection connection) {
+    this.manager = Objects.requireNonNull(manager, "manager");
+    this.backend = Objects.requireNonNull(backend, "backend");
 
-    if (connection == null) {
-      throw new IllegalArgumentException("connection is null");
-    }
-
-    this.manager = manager;
-    this.backend = backend;
-
-    backendId = backend.getBackendId(connection);
+    backendId = backend.getBackendId(Objects.requireNonNull(connection, "connection"));
     instanceNumber = INSTANCE_COUNTER.incrementAndGet();
     MANAGED_CONNECTIONS.add(new WeakReference<>(this));
 
@@ -517,9 +513,7 @@ public class ManagedConnection {
    */
   public void attachSession(Db db) {
 
-    if (db == null) {
-      throw new IllegalArgumentException("db is null");
-    }
+    Objects.requireNonNull(db, "db");
 
     if (this.db != null) {
       if (this.db == db) {
@@ -585,9 +579,8 @@ public class ManagedConnection {
    * @param db the db to detach
    */
   public void detachSession(Db db) {
-    if (db == null) {
-      throw new IllegalArgumentException("db is null");
-    }
+    Objects.requireNonNull(db, "db");
+
     if (this.db != db) {
       throw new PersistenceException(db, "connection " + this + " not attached to " + db + " (instead attached to " + this.db + ")");
     }

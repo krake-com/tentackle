@@ -18,13 +18,6 @@
 
 package org.tentackle.misc;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.StringTokenizer;
 import org.tentackle.common.BMoney;
 import org.tentackle.common.DMoney;
 import org.tentackle.reflect.ReflectionHelper;
@@ -32,6 +25,15 @@ import org.tentackle.script.Script;
 import org.tentackle.script.ScriptFactory;
 import org.tentackle.script.ScriptRuntimeException;
 import org.tentackle.script.ScriptVariable;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Objects;
+import java.util.StringTokenizer;
 
 
 /**
@@ -552,15 +554,12 @@ public class CompoundValue {
   @SuppressWarnings("unchecked")
   private Object createConstantValue(Class<?> clazz, String value) {
 
-    if (clazz.isPrimitive()) {
+    if (Objects.requireNonNull(clazz, "clazz").isPrimitive()) {
       clazz = ReflectionHelper.primitiveToWrapperClass(clazz);
     }
 
-    if (value == null) {
-      throw new IllegalArgumentException("value must be non-null");
-    }
-    if (value.length() == 0) {
-      throw new IllegalArgumentException("value must not be the empty string");
+    if (Objects.requireNonNull(value, "value").isEmpty()) {
+      throw new IllegalArgumentException("empty value");
     }
 
     try {

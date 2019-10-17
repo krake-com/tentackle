@@ -513,10 +513,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param integrity the integrity
    */
   public void setIntegrity(Integrity integrity) {
-    if (integrity == null) {
-      throw new IllegalArgumentException("integrity cannot be set to null");
-    }
-    this.integrity = integrity;
+    this.integrity = Objects.requireNonNull(integrity, "integrity");
   }
 
   /**
@@ -525,10 +522,7 @@ public class EntityImpl implements Entity, Comparable<EntityImpl> {
    * @param inheritanceType the inheritance type
    */
   public void setInheritanceType(InheritanceType inheritanceType) {
-    if (inheritanceType == null) {
-      throw new IllegalArgumentException("inheritance type cannot be set to null");
-    }
-    this.inheritanceType = inheritanceType;
+    this.inheritanceType = Objects.requireNonNull(inheritanceType, "inhertanceType");
   }
 
   /**

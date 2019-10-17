@@ -23,6 +23,7 @@ import org.tentackle.session.PersistenceException;
 import org.tentackle.session.Session;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 
 /**
@@ -108,11 +109,8 @@ public class DummyPersistentOperation<T extends Operation<T>> implements Persist
   @Override
   public void setDomainContext(DomainContext context)  {
     if (this.context != context) {
-      if (context == null) {
-        throw new IllegalArgumentException("domain context cannot be cleared to null");
-      }
       assertDomainContextMutable();
-      this.context = context;
+      this.context = Objects.requireNonNull(context, "context");
       determineContextId();
     }
   }
