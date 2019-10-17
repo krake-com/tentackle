@@ -564,6 +564,28 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
         throw new MojoFailureException("creating model dump failed", ex);
       }
     }
+
+    // check for numbered fallback aliases
+    try {
+      StringBuilder aliasBuf = new StringBuilder();
+
+      for (Entity entity : Model.getInstance().getAllEntitites()) {
+        String alias = entity.getTableAlias();
+        if (alias != null && alias.length() == 2 && Character.isDigit(alias.charAt(1))) {
+          if (aliasBuf.length() > 0) {
+            aliasBuf.append(", ");
+          }
+          aliasBuf.append(entity).append('=').append(alias);
+        }
+      }
+
+      if (aliasBuf.length() > 0) {
+        getLog().warn("consider specifying explicit table aliases for: " + aliasBuf);
+      }
+    }
+    catch (ModelException ex) {
+      throw new MojoFailureException("analyzing table aliases failed", ex);
+    }
   }
 
 
