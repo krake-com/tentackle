@@ -64,7 +64,7 @@ import java.util.TreeMap;
  *
  * @author harald
  */
-@Mojo(name = "migrate")
+@Mojo(name = "migrate", aggregator = true)
 public class MigrateSqlMojo extends AbstractSqlMojo {
 
   private static final String DEFAULT_SCHEMA = "<default>";     // default schema name
@@ -375,7 +375,7 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
         Arrays.sort(fileNames);
         for (String filename : fileNames) {
           // check if file exists
-          File modelFile = new File(modelDir, filename);
+          File modelFile = new File(modelDirName, filename);
           if (!modelFile.exists()) {
             getLog().error("no such modelfile: " + filename);
             errorCount++;
@@ -385,7 +385,10 @@ public class MigrateSqlMojo extends AbstractSqlMojo {
               getLog().info("processing " + modelFile);
             }
             try {
-              Entity entity = Model.getInstance().loadByFileName(modelFile.getPath(), defaults, aliases);
+              Entity entity = Model.getInstance().getByFilePath(modelFile.getAbsolutePath());
+              if (entity == null) {
+                throw new MojoExecutionException("no entity for path " + modelFile.getAbsolutePath());
+              }
               if (entity.getTableProvidingEntity() != entity || entity.getOptions().isProvided()) {
                 continue;   // skip
               }

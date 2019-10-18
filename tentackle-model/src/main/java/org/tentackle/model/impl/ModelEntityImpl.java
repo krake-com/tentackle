@@ -19,9 +19,10 @@
 
 package org.tentackle.model.impl;
 
-import java.io.File;
 import org.tentackle.model.Entity;
 import org.tentackle.model.ModelException;
+
+import java.io.File;
 
 /**
  * Entity as a component of a model.
@@ -31,7 +32,7 @@ import org.tentackle.model.ModelException;
 public class ModelEntityImpl implements ModelEntity {
 
   private final Entity entity;      // the entity
-  private final String fileName;    // the filename
+  private final String filePath;    // the file path
   private final File file;          // its source file
   private final long lastModified;  // the last modification time
 
@@ -40,18 +41,18 @@ public class ModelEntityImpl implements ModelEntity {
    * Creates a model entity.
    *
    * @param entity the entity
-   * @param fileName the modelfile's filename
+   * @param filePath the modelfile's path
    * @throws ModelException if file does not exist or is not a regular file
    */
-  public ModelEntityImpl(Entity entity, String fileName) throws ModelException {
+  public ModelEntityImpl(Entity entity, String filePath) throws ModelException {
     this.entity = entity;
-    this.fileName = fileName;
-    file = new File(fileName);
+    this.filePath = filePath;
+    file = new File(filePath);
     if (!file.exists()) {
-      throw new ModelException(fileName + " does not exist");
+      throw new ModelException(filePath + " does not exist");
     }
     if (!file.isFile()) {
-      throw new ModelException(fileName + " is not a regular file");
+      throw new ModelException(filePath + " is not a regular file");
     }
     lastModified = file.lastModified();
   }
@@ -61,40 +62,16 @@ public class ModelEntityImpl implements ModelEntity {
     return entity.toString();
   }
 
-  /**
-   * Gets the entity.
-   *
-   * @return the entity
-   */
   @Override
   public Entity getEntity() {
     return entity;
   }
 
-  /**
-   * Gets the filename.
-   *
-   * @return the filename
-   */
   @Override
-  public String getFileName() {
-    return fileName;
+  public String getFilePath() {
+    return filePath;
   }
 
-  /**
-   * Gets the model file.
-   *
-   * @return the file
-   */
-  public File getFile() {
-    return file;
-  }
-
-  /**
-   * Returns whether the modelfile has changed.
-   *
-   * @return true if changed
-   */
   @Override
   public boolean hasChanged() {
     return file.lastModified() > lastModified;

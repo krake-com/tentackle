@@ -36,11 +36,11 @@ public interface ModelEntity {
   Entity getEntity();
 
   /**
-   * Gets the filename.
+   * Gets the path of the modelfile.
    *
-   * @return the filename
+   * @return the canonical file path
    */
-  String getFileName();
+  String getFilePath();
 
   /**
    * Returns whether the modelfile has changed.

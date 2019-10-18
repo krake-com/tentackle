@@ -26,7 +26,7 @@ import org.apache.maven.plugins.annotations.Mojo;
  * The build fails if something to migrate found.<br>
  * Alternative to the {@code validate} configuration option of the {@code migrate} goal.
  */
-@Mojo(name = "validate")
+@Mojo(name = "validate", aggregator = true)
 public class ValidateSqlMojo extends MigrateSqlMojo {
 
   @Override

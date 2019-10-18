@@ -18,8 +18,9 @@
 
 package org.tentackle.model;
 
-import java.util.Collection;
 import org.tentackle.common.ServiceFactory;
+
+import java.util.Collection;
 
 
 interface ModelHolder {
@@ -99,13 +100,13 @@ public interface Model {
   Collection<Entity> getAllEntitites() throws ModelException;
 
   /**
-   * Gets the entity by the mapfile name.
+   * Gets the entity by the mapfile path.
    *
-   * @param fileName the name of the mapfile
+   * @param filePath the pathname of the mapfile
    * @return the entity, null if no such entity
    * @throws ModelException if the model is inconsistent
    */
-  Entity getByFileName(String fileName) throws ModelException;
+  Entity getByFilePath(String filePath) throws ModelException;
 
   /**
    * Gets the entity by its name.
@@ -129,13 +130,13 @@ public interface Model {
    * Loads an entity for a given mapfile name.<br>
    * Entities are cached so they are loaded and parsed only once.
    *
-   * @param fileName the name of the mapfile
+   * @param filePath the path of the mapfile
    * @param defaults optional model defaults, null if none
    * @param aliases optional entity aliases, null if none
    * @return the entity
    * @throws ModelException if no such mapfile or parsing error
    */
-  Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
+  Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException;
 
   /**
    * Gets all foreign keys.

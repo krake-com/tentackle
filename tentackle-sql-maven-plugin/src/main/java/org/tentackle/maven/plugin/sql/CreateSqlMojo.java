@@ -47,7 +47,7 @@ import java.util.List;
  *
  * @author harald
  */
-@Mojo(name = "create")
+@Mojo(name = "create", aggregator = true)
 public class CreateSqlMojo extends AbstractSqlMojo {
 
   /**
@@ -129,7 +129,7 @@ public class CreateSqlMojo extends AbstractSqlMojo {
       Arrays.sort(fileNames);
       for (String filename : fileNames) {
         // check if file exists
-        File modelFile = new File(modelDir, filename);
+        File modelFile = new File(modelDirName, filename);
         if (!modelFile.exists()) {
           getLog().error("no such modelfile: " + filename);
           errorCount++;
@@ -139,9 +139,9 @@ public class CreateSqlMojo extends AbstractSqlMojo {
             getLog().info("processing " + modelFile);
           }
           try {
-            Entity entity = Model.getInstance().getByFileName(modelFile.getPath());
+            Entity entity = Model.getInstance().getByFilePath(modelFile.getAbsolutePath());
             if (entity == null) {
-              throw new MojoExecutionException("no entity for path " + modelFile.getPath());
+              throw new MojoExecutionException("no entity for path " + modelFile.getAbsolutePath());
             }
             if (entity.getTableProvidingEntity() == entity && !entity.getOptions().isProvided()) {
               // create table
