@@ -200,7 +200,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return toolChain;
   }
 
-
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     prepareExecute();
@@ -243,7 +242,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     // default does nothing
   }
 
-
   /**
    * Determines the encode charset.
    */
@@ -254,7 +252,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       org.wurbelizer.misc.Settings.setEncodingCharset(cs);
     }
   }
-
 
   /**
    * sets the verbosity.
@@ -273,7 +270,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       verbosityLevel = getLog().isDebugEnabled() ? Verbosity.DEBUG : Verbosity.DEFAULT;
     }
   }
-
 
   /**
    * Gets the path relative to the basedir.<br>
@@ -307,7 +303,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return path;
   }
 
-
   /**
    * Finds all resource directories.
    */
@@ -323,7 +318,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       }
     }
   }
-
 
   /**
    * Checks if given directory resides in resources.
@@ -342,7 +336,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return null;
   }
 
-
   /**
    * Gets the canonical path of diven directory.
    *
@@ -358,30 +351,6 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
       throw new MojoExecutionException("cannot determine canonical path of " + dir, ex);
     }
   }
-
-
-  /**
-   * Checks the configuration.<br>
-   *
-   * @return true if continue with execution, false to skip
-   * @throws MojoExecutionException if validation failed
-   */
-  protected boolean validate() throws MojoExecutionException {
-    determineEncoding();
-    determineVerbosity();
-    if (mavenProject.getBasedir() == null) {
-      throw new MojoExecutionException("missing project.baseDir");
-    }
-    if (skip == null && "pom".equals(mavenProject.getPackaging())) {
-      skip = true;    // nothing to do here
-    }
-    if (Boolean.TRUE.equals(skip)) {
-      getLog().info("skipped");
-      return false;
-    }
-    return true;
-  }
-
 
   /**
    * Gets the toolfinder to locate tools like java, jdeps, jlink, etc.
@@ -411,4 +380,44 @@ public abstract class AbstractTentackleMojo extends AbstractMojo {
     return buffer.lines().collect(Collectors.joining(System.getProperty("line.separator")));
   }
 
+
+  /**
+   * Returns whether reactor execution is recursive.
+   *
+   * @return true if recursive, false if non-recursive (--non-recursive or -N option set, or plugin is an aggregator)
+   */
+  protected boolean isExecutionRecursive() {
+    return mavenSession.getRequest().isRecursive() && !mojoExecution.getMojoDescriptor().isAggregator();
+  }
+
+  /**
+   * Determines whether mojo should be skipped by default.
+   *
+   * @return true if mojo should be skipped by default
+   */
+  protected boolean isSkippedByDefault() {
+    return "pom".equals(mavenProject.getPackaging()) && isExecutionRecursive();
+  }
+
+  /**
+   * Checks the configuration.<br>
+   *
+   * @return true if continue with execution, false to skip
+   * @throws MojoExecutionException if validation failed
+   */
+  protected boolean validate() throws MojoExecutionException {
+    determineEncoding();
+    determineVerbosity();
+    if (mavenProject.getBasedir() == null) {
+      throw new MojoExecutionException("missing project.baseDir");
+    }
+    if (skip == null && isSkippedByDefault()) {
+      skip = true;    // nothing to do here
+    }
+    if (Boolean.TRUE.equals(skip)) {
+      getLog().info("skipped");
+      return false;
+    }
+    return true;
+  }
 }

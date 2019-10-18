@@ -41,6 +41,7 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.BackendFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -654,8 +655,13 @@ public class ModelWurblet extends AbstractJavaWurblet {
 
     try {
       if (getModelName().indexOf(File.separatorChar) >= 0) {
-        // is a filename (load it if it's not already loaded)
-        entity = model.loadByFileName(getModelName(), modelDefaults, entityAliases);
+        // is a filepath (load it if it's not already loaded)
+        try {
+          entity = model.loadByFilePath(new File(getModelName()).getCanonicalPath(), modelDefaults, entityAliases);
+        }
+        catch (IOException ex) {
+          throw new ModelException("cannot determine canonical path of model " + getModelName(), ex);
+        }
       }
       else  {
         // is an entity name

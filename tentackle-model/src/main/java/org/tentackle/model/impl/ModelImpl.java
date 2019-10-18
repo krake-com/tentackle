@@ -43,7 +43,6 @@ import org.tentackle.sql.Backend;
 import org.tentackle.sql.SqlNameType;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -66,8 +65,8 @@ import java.util.TreeMap;
 @Service(Model.class)
 public class ModelImpl implements Model {
 
-  /** cached entities mapped by filename. */
-  private final Map<String,ModelEntity> mapByFileName;
+  /** cached entities mapped by filepath. */
+  private final Map<String,ModelEntity> mapByFilePath;
 
   /** cached entities mapped by entity name. */
   private final Map<String,ModelEntity> mapByEntityName;
@@ -96,7 +95,7 @@ public class ModelImpl implements Model {
     entityFactory = createEntityFactory();
     mapByEntityName = new TreeMap<>();    // tree map for implicit sort by name
     mapByClassId = new HashMap<>();
-    mapByFileName = new HashMap<>();
+    mapByFilePath = new HashMap<>();
     modelDirs = new HashMap<>();
   }
 
@@ -122,11 +121,8 @@ public class ModelImpl implements Model {
     if (dir == null || dir.hasChanged()) {
       dir = createModelDirectory(modelDir, defaults, aliases);
       modelDirs.put(modelDir, dir);
-      for (String fileName : dir.getFileNames()) {
-        File file = new File(fileName);
-        if (!file.isHidden()) {
-          loadByFileName(file.getPath(), defaults, aliases, false);
-        }
+      for (String filePath : dir.getFilePaths()) {
+        loadByFilePath(filePath, defaults, aliases, false);
       }
       updateRelations(defaults, aliases);
     }
@@ -179,7 +175,7 @@ public class ModelImpl implements Model {
   public synchronized void clearModel() {
     mapByEntityName.clear();
     mapByClassId.clear();
-    mapByFileName.clear();
+    mapByFilePath.clear();
     modelDirs.clear();
   }
 
@@ -213,11 +209,11 @@ public class ModelImpl implements Model {
 
 
   @Override
-  public synchronized Entity getByFileName(String fileName) throws ModelException {
-    ModelEntity modelEntity = mapByFileName.get(fileName);
+  public synchronized Entity getByFilePath(String filePath) throws ModelException {
+    ModelEntity modelEntity = mapByFilePath.get(filePath);
     if (modelEntity != null && modelEntity.hasChanged()) {
       refreshModel();
-      modelEntity = mapByFileName.get(fileName);
+      modelEntity = mapByFilePath.get(filePath);
     }
     return modelEntity == null ? null : modelEntity.getEntity();
   }
@@ -246,27 +242,27 @@ public class ModelImpl implements Model {
 
 
   @Override
-  public Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
-    return loadByFileName(fileName, defaults, aliases, true);
+  public Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases) throws ModelException {
+    return loadByFilePath(filePath, defaults, aliases, true);
   }
 
 
   /**
-   * Loads an entity for a given mapfile name.<br>
+   * Loads an entity for a given mapfile path.<br>
    * Entities are cached so they are loaded and parsed only once.
    *
-   * @param fileName the name of the mapfile
+   * @param filePath the path of the mapfile
    * @param defaults optional model defaults, null if none
    * @param aliases optional entity aliases, null if none
    * @param updateRelations true if update the related entites in the model
    * @return the entity
    * @throws ModelException if no such mapfile or parsing error
    */
-  protected synchronized Entity loadByFileName(String fileName, ModelDefaults defaults, EntityAliases aliases,
+  protected synchronized Entity loadByFilePath(String filePath, ModelDefaults defaults, EntityAliases aliases,
                                                boolean updateRelations)
             throws ModelException {
 
-    ModelEntity modelEntity = mapByFileName.get(fileName);
+    ModelEntity modelEntity = mapByFilePath.get(filePath);
 
     if (modelEntity != null && modelEntity.hasChanged()) {
       // check modification time
@@ -277,11 +273,11 @@ public class ModelImpl implements Model {
 
       // load from file
       try {
-        Entity entity = parseEntity(defaults, fileName);
-        modelEntity = createModelEntity(entity, fileName);
+        Entity entity = parseEntity(defaults, filePath);
+        modelEntity = createModelEntity(entity, filePath);
       }
       catch (ModelException mex) {
-        String msg = "parsing '" + fileName + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
+        String msg = "parsing '" + filePath + "' failed:\n    " + ExceptionHelper.concatenateMessages(mex);
         throw new ModelException(msg, mex.getElement(), mex);
       }
 
@@ -336,14 +332,14 @@ public class ModelImpl implements Model {
       }
     }
 
-    String fileName = modelEntity.getFileName();
+    String filePath = modelEntity.getFilePath();
 
     // append to maps
-    mapByFileName.put(fileName, modelEntity);    // must be new...
+    mapByFilePath.put(filePath, modelEntity);    // must be new...
     ModelEntity oldModelEntity = mapByEntityName.put(modelEntity.getEntity().getName().toLowerCase(), modelEntity);
     if (modelEntity.getEntity().getClassId() != 0) {
       if (oldModelEntity != null && oldModelEntity.getEntity().getClassId() != modelEntity.getEntity().getClassId()) {
-        throw new ModelException("duplicate entity " + modelEntity.getEntity().getName() + " in file " + fileName, modelEntity.getEntity());
+        throw new ModelException("duplicate entity " + modelEntity.getEntity().getName() + " in file " + filePath, modelEntity.getEntity());
       }
       oldModelEntity = mapByClassId.put(modelEntity.getEntity().getClassId(), modelEntity);
       if (oldModelEntity != null && !oldModelEntity.getEntity().getName().equals(modelEntity.getEntity().getName())) {
@@ -826,6 +822,7 @@ public class ModelImpl implements Model {
       }
     }
 
+    // generate automatic alias if not specified in model
     for (ModelEntity modelEntity: mapByEntityName.values()) {
       Entity entity = modelEntity.getEntity();
       if (entity.getTableName() != null && entity.getTableAlias() == null) {
@@ -833,7 +830,7 @@ public class ModelImpl implements Model {
         StringBuilder letters = new StringBuilder();
         char lastChar = '_';
         boolean lastCharAppended = false;
-        for (int i=0; i < entity.getName().length(); i++) {
+        for (int i = 0; i < entity.getName().length(); i++) {
           char currentChar = entity.getName().charAt(i);
           // each uppercase letter and digit (2=to, 4=for, etc...)
           if (Character.isUpperCase(currentChar) || Character.isDigit(currentChar)) {
@@ -846,55 +843,39 @@ public class ModelImpl implements Model {
           letters.append(lastChar);
           lastCharAppended = true;
         }
-        String alias = letters.toString().toLowerCase();
 
-        if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
-          ((EntityImpl) entity).setTableAlias(alias);
-          aliasMap.put(alias, entity);
-          continue; // valid table alias found!
-        }
+        if (!applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+          // alias already exists
 
-        if (!lastCharAppended) {
-          // try with added last character
-          letters.append(lastChar);
-          alias = letters.toString().toLowerCase();
-          if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
-            ((EntityImpl) entity).setTableAlias(alias);
-            aliasMap.put(alias, entity);
-            continue; // valid table alias found!
+          if (!lastCharAppended) {
+            // try with appended last character
+            letters.append(lastChar);
+            if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+              continue;   // yep! -> next entity
+            }
           }
-        }
 
-        // alias already exists.
-        // If lastchar was added (Shipment -> st), try the first 3 chars, then the first 4, finally 5 non-vocal chars
-        letters.setLength(1);
-        boolean nonVocalNameFound = false;
-        for (int i=1; i < entity.getName().length() && i < 6; i++) {
-          char c = Character.toLowerCase(entity.getName().charAt(i));
-          if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
-            letters.append(c);
-            if (letters.length() >= 3) {
-              alias = letters.toString().toLowerCase();
-              if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
-                ((EntityImpl) entity).setTableAlias(alias);
-                aliasMap.put(alias, entity);
-                nonVocalNameFound = true;
-                break;
+          // If lastchar was added (Shipment -> st), try the first 3 chars, then the first 4, finally 5 non-vocal chars
+          letters.setLength(1);
+          boolean nonVocalNameFound = false;
+          for (int i = 1; i < entity.getName().length() && i < 6; i++) {
+            char c = Character.toLowerCase(entity.getName().charAt(i));
+            if (c != 'a' && c != 'e' && c != 'i' && c != 'o' && c != 'u') {
+              letters.append(c);
+              if (letters.length() >= 3) {
+                if (applyTableAlias(aliasMap, entity, letters.toString().toLowerCase())) {
+                  nonVocalNameFound = true;
+                  break;
+                }
               }
             }
           }
-        }
 
-        if (!nonVocalNameFound) {
-          // just take the first letter and count. This will always work
-          for (int count = 1; ; count++) {
-            String numberedAlias = alias.substring(0, 1) + count;
-            if (aliasMap.get(numberedAlias) == null) {
-              // found a new alias
-              ((EntityImpl) entity).setTableAlias(numberedAlias);
-              aliasMap.put(numberedAlias, entity);
-              break;
-            }
+          if (!nonVocalNameFound) {
+            // just take the first letter and count. This will always work
+            String aliasPrefix = entity.getName().substring(0, 1).toLowerCase();
+            int count = 1;
+            while (!applyTableAlias(aliasMap, entity, aliasPrefix + count++)) ;
           }
         }
       }
@@ -967,6 +948,24 @@ public class ModelImpl implements Model {
     if (!errors.isEmpty()) {
       throw new ModelException(errors);
     }
+  }
+
+  /**
+   * Applies the table alias if unique and valid.
+   *
+   * @param aliasMap the map holding the aliases mapped to entities
+   * @param entity the entity to apply the alias to
+   * @param alias the alias
+   * @return true if applied, false if alias already exists or is not valid for at least one backend
+   */
+  protected boolean applyTableAlias(Map<String,Entity> aliasMap, Entity entity, String alias) {
+    if (aliasMap.get(alias) == null && isValidTableAlias(alias)) {
+      // found a new alias
+      ((EntityImpl) entity).setTableAlias(alias);
+      aliasMap.put(alias, entity);
+      return true;
+    }
+    return false;
   }
 
   /**

@@ -629,7 +629,8 @@ public abstract class AbstractSqlMojo extends AbstractTentackleMojo {
 
       for (Entity entity : Model.getInstance().getAllEntitites()) {
         String alias = entity.getTableAlias();
-        if (alias != null && alias.length() == 2 && Character.isDigit(alias.charAt(1))) {
+        if (entity.getDefinedTableAlias() == null && alias != null && alias.length() > 1 &&
+            StringHelper.isAllDigits(alias.substring(1))) {
           if (aliasBuf.length() > 0) {
             aliasBuf.append(", ");
           }

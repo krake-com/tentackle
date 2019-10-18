@@ -19,9 +19,10 @@
 
 package org.tentackle.model.impl;
 
-import java.util.List;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
+
+import java.util.List;
 
 /**
  * A directory holding model files.
@@ -33,16 +34,16 @@ public interface ModelDirectory {
   /**
    * Gets the directory path.
    *
-   * @return the path
+   * @return the canonical path
    */
   String getPath();
 
   /**
-   * Gets the model file names.
+   * Gets the model file paths.
    *
-   * @return the list of names, never null
+   * @return the list of canonical path names, never null
    */
-  List<String> getFileNames();
+  List<String> getFilePaths();
 
   /**
    * Gets the model defaults.

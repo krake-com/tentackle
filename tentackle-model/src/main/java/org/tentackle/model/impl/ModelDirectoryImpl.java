@@ -19,12 +19,14 @@
 
 package org.tentackle.model.impl;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.ModelDefaults;
 import org.tentackle.model.ModelException;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Default implementation of a {@link ModelDirectory}.
@@ -34,9 +36,9 @@ import org.tentackle.model.ModelException;
 public class ModelDirectoryImpl implements ModelDirectory {
 
   private final File dir;                       // the directory file
+  private final String path;                    // canonical path
   private final ModelDefaults modelDefaults;    // the model defaults used for that directory
   private final EntityAliases entityAliases;    // the aliases used for that directory
-
   private long lastModified;                    // the last modification time
 
 
@@ -56,71 +58,51 @@ public class ModelDirectoryImpl implements ModelDirectory {
     if (!dir.isDirectory()) {
       throw new ModelException(modelDir + " is not a directory");
     }
+    try {
+      path = dir.getCanonicalPath();
+    }
+    catch (IOException e) {
+      throw new ModelException("cannot determine path of model directory " + dir, e);
+    }
     lastModified = dir.lastModified();
     modelDefaults = defaults;
     entityAliases = aliases;
   }
 
-  /**
-   * Gets the directory path.
-   *
-   * @return the path
-   */
   @Override
   public String getPath() {
-    return dir.getAbsolutePath();
+    return path;
   }
 
-  /**
-   * Gets the model file names.
-   *
-   * @return the list of names, never null
-   */
   @Override
-  public List<String> getFileNames() {
-    List<String> names = new ArrayList<>();
+  public List<String> getFilePaths() {
+    List<String> paths = new ArrayList<>();
     File[] files = dir.listFiles();
     if (files != null) {
       for (File file : files) {
-        names.add(file.getAbsolutePath());
+        if (file.isFile() && !file.isHidden()) {
+          paths.add(new File(path, file.getName()).getAbsolutePath());
+        }
       }
     }
-    return names;
+    return paths;
   }
 
-  /**
-   * Gets the model defaults.
-   *
-   * @return the defaults, null if none
-   */
   @Override
   public ModelDefaults getModelDefaults() {
     return modelDefaults;
   }
 
-  /**
-   * Gets the entity aliases.
-   *
-   * @return the aliases, null if none
-   */
   @Override
   public EntityAliases getEntityAliases() {
     return entityAliases;
   }
 
-  /**
-   * Returns whether the directory has changed.
-   *
-   * @return true if changed
-   */
   @Override
   public boolean hasChanged() {
     return dir.lastModified() > lastModified;
   }
 
-  /**
-   * Marks this directory dirty.
-   */
   @Override
   public void markDirty() {
     lastModified = 0;
