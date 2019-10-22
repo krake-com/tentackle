@@ -34,7 +34,7 @@ For more options, see {\@link AbstractWurblet}.
         outBuf.append(String.valueOf(chars, 0, numRead));
       }
       if (translate) {
-        outBuf = WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET));
+        WurbelHelper.translateVariables(outBuf, getContainer().getProperties(Wurbler.PROPSPACE_WURBLET));
       }
       if (outBuf.indexOf(Constants.ORIGIN_INFO_LEAD) == 0) {
         // remove info line
