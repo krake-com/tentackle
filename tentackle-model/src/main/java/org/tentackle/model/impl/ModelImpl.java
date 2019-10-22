@@ -24,6 +24,7 @@ import org.tentackle.common.Service;
 import org.tentackle.common.Settings;
 import org.tentackle.common.StringHelper;
 import org.tentackle.model.Attribute;
+import org.tentackle.model.CustomModelValidator;
 import org.tentackle.model.Entity;
 import org.tentackle.model.EntityAliases;
 import org.tentackle.model.EntityFactory;
@@ -80,6 +81,9 @@ public class ModelImpl implements Model {
   /** the entity factory. */
   private final EntityFactory entityFactory;
 
+  /** application specific model validators. */
+  private final Collection<CustomModelValidator> customModelValidators;
+
   /** the foreign keys. */
   private Collection<ForeignKey> foreignKeys;
 
@@ -97,6 +101,7 @@ public class ModelImpl implements Model {
     mapByClassId = new HashMap<>();
     mapByFilePath = new HashMap<>();
     modelDirs = new HashMap<>();
+    customModelValidators = CustomModelValidator.loadValidators();
   }
 
   @Override
@@ -167,6 +172,11 @@ public class ModelImpl implements Model {
         }
       }
       entity.validate();  // validate again
+    }
+
+    // run the application-specific validators
+    for (CustomModelValidator validator: customModelValidators) {
+      validator.validate(this);
     }
   }
 
