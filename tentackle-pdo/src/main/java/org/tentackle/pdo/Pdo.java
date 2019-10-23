@@ -51,7 +51,7 @@ public class Pdo {
    * @param <T> the PDO type
    * @return the snapshot, null if pdo is null
    */
-  public static <T extends PersistentDomainObject<T>> T createSnapShot(T pdo) {
+  public static <T extends PersistentDomainObject<T>> T createSnapshot(T pdo) {
     return pdo == null ? null : pdo.getPersistenceDelegate().createSnapshot();
   }
 
