@@ -62,7 +62,7 @@ public class TemplateModel extends HashMap<String, Object> {
    */
   public void addMap(Map<String, Object> map) {
     for (Entry<String, Object> entry : map.entrySet()) {
-      putValue(StringHelper.toCamelCase(entry.getKey().toString()), entry.getValue());
+      putValue(StringHelper.toCamelCase(entry.getKey()), entry.getValue());
     }
   }
 

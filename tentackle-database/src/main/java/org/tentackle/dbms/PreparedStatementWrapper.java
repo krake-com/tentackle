@@ -243,7 +243,7 @@ public class PreparedStatementWrapper extends StatementWrapper implements Backen
     if (sql != null) {
       throw new PersistenceException(getSession(), "invocation not allowed for prepared statements");
     }
-    return super.executeUpdate(sql);
+    return super.executeUpdate(null);
   }
 
 

@@ -326,7 +326,10 @@ public abstract class AbstractTentackleAnnotationProcessingMojo extends Abstract
    */
   private void processFileSet(FileSet fileSet) throws MojoFailureException, MojoExecutionException {
 
-    if (fileSet.getDirectory() == null && sourceDir != null) {
+    if (fileSet.getDirectory() == null) {
+      if (sourceDir == null) {
+        throw new MojoExecutionException("no sourceDir configured");
+      }
       // directory missing: use sourceDir as default
       fileSet.setDirectory(sourceDir.getAbsolutePath());
     }

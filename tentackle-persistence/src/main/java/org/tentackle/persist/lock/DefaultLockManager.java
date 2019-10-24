@@ -407,7 +407,7 @@ public class DefaultLockManager implements LockManager {
    */
   protected void reloadLocks(Db session) {
     lockMap.clear();
-    createTokenLock((Db) session).selectAllObjects().forEach(lock -> lockMap.put(new PdoKey(lock), lock));
+    createTokenLock(session).selectAllObjects().forEach(lock -> lockMap.put(new PdoKey(lock), lock));
   }
 
 

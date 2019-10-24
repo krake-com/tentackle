@@ -396,14 +396,17 @@ public abstract class AbstractWizardMojo extends AbstractMojo {
     if (dir.isDirectory()) {
       boolean containsJavaFiles = false;
       boolean empty = true;
-      for (File file : dir.listFiles()) {
-        if (!file.isHidden()) {
-          empty = false;
-          if (file.isDirectory()) {
-            checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
-          }
-          else if (file.getName().endsWith(".java")) {
-            containsJavaFiles = true;
+      File[] files = dir.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if (!file.isHidden()) {
+            empty = false;
+            if (file.isDirectory()) {
+              checkDir(project, file, packages, packageName.isEmpty() ? file.getName() : packageName + "." + file.getName());
+            }
+            else if (file.getName().endsWith(".java")) {
+              containsJavaFiles = true;
+            }
           }
         }
       }
