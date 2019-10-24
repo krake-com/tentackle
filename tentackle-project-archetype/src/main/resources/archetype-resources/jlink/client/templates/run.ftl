@@ -23,7 +23,14 @@ bin\java -cp ${classPath} ${mainClass}
   </#if>
 <#else>
 #!/bin/sh
+  <#if osName?upper_case?contains("MAC")>
+abs_path() {
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
+cd $(dirname $(dirname $(abs_path "$0")))
+  <#else>
 cd $(dirname $(dirname $(readlink -f "$0")))
+  </#if>
 mkdir logs 2>/dev/null
   <#if mainModule != "">
     <#-- modular application (using GTK2 since DnD doesnt work with GTK3) -->
