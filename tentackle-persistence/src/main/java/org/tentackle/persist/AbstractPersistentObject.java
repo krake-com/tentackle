@@ -1698,27 +1698,36 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Reloads the object.<p>
-   * Note: to make sure that any lazy inits are cleared,
-   * the returned object is always a new object.
+   * Restores transient data, if present.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   @Override
   public T reload() {
-    return Pdo.create(getPdo()).select(getId());
+    Object data = getTransientData();
+    T obj = Pdo.create(getPdo()).select(getId());
+    if (obj != null && data != null) {
+      ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+    }
+    return obj;
   }
 
 
   /**
-   * Reloads the object with a write lock.
+   * Reloads the object with a write lock.<br>
+   * Restores transient data, if present.
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
   @Override
   public T reloadForUpdate() {
-    return Pdo.create(getPdo()).selectForUpdate(getId());
+    Object data = getTransientData();
+    T obj = Pdo.create(getPdo()).selectForUpdate(getId());
+    if (obj != null && data != null) {
+      ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+    }
+    return obj;
   }
-
 
 
   /**
@@ -3193,10 +3202,19 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
   @Override
   public T persist() {
     assertRootEntity();
-    if (!getSession().isRemote()) {
-      assertWritePermission();  // check only once at server side
+    T obj;
+    if (getSession().isRemote()) {
+      Object data = getTransientData();
+      obj = persistImpl();
+      if (obj != null && data != null) {
+        ((AbstractPersistentObject) obj.getPersistenceDelegate()).setTransientData(data);
+      }
     }
-    return persistImpl();
+    else {
+      assertWritePermission();  // check only once at server side
+      obj = persistImpl();
+    }
+    return obj;
   }
 
   @Override
@@ -3848,22 +3866,25 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
 
   /**
    * Gets the optional transient data object.<br>
+   * When objects need to be reloaded from storage, all non-persistent
+   * data attached to the object would be lost. The methods {@link #persist()},
+   * {@link #reload()} and {@link #reloadForUpdate()} preserve that data via
+   * {@link #getTransientData()} and {@link #setTransientData(Object)}.
+   * Applications must override those methods.<br>
    * The default implementation does nothing.
    *
-   * @return the transient data, null if none.
+   * @return the transient data, null if none
+   * @see #setTransientData(Object)
    */
   public Object getTransientData()  {
     return null;
   }
 
   /**
-   * Sets the optional transient data object.<br>
-   * Sometimes, e.g. when objects need to be reloaded from storage, all non-persistent
-   * data attached to the object would be lost. In such cases the framework invokes
-   * getTransientData() and setTransientData() to keep the non-persistent attributes.<br>
-   * The default implementation does nothing.
+   * Sets the optional transient data object.
    *
    * @param data the transient data
+   * @see #getTransientData()
    */
   public void setTransientData(Object data) {
   }
