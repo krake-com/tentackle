@@ -3869,7 +3869,7 @@ public abstract class AbstractPersistentObject<T extends PersistentDomainObject<
    * When objects need to be reloaded from storage, all non-persistent
    * data attached to the object would be lost. The methods {@link #persist()},
    * {@link #reload()} and {@link #reloadForUpdate()} preserve that data via
-   * {@link #getTransientData()} and {@link #setTransientData(Object)}.
+   * {@code getTransientData()} and {@code setTransientData(Object)}.
    * Applications must override those methods.<br>
    * The default implementation does nothing.
    *

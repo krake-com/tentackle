@@ -18,9 +18,10 @@
 
 package org.tentackle.model.print;
 
+import org.tentackle.model.ModelDefaults;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.tentackle.model.ModelDefaults;
 
 /**
  * Holds parameters to configure the generated output.
@@ -51,7 +52,7 @@ public class PrintConfiguration {
     this.usingVariables = usingVariables;
     this.modelDefaults = modelDefaults;
     this.optionAnnotations = optionAnnotations == null ? new ArrayList<>() : optionAnnotations;
-    this.columnGap = columnGap < 1 ? 1 : columnGap;
+    this.columnGap = Math.max(columnGap, 1);
   }
 
   /**
