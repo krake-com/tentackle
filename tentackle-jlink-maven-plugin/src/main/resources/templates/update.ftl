@@ -36,7 +36,14 @@ if exist update\bin (if exist update\conf (if exist update\include (if exist upd
 )
 <#else>
 #!/bin/sh
+  <#if osName?upper_case?contains("MAC")>
+abs_path() {
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
+cd $(dirname $(dirname $(dirname $(abs_path "$0"))))
+  <#else>
 cd $(dirname $(dirname $(dirname $(readlink -f "$0"))))
+  </#if>
 if [ -d update/bin ] && [ -d update/conf ] && [ -d update/include ] && [ -d update/legal ] && [ -d update/lib ]; then
   if [ -f update/bin/`basename $0` ]; then
     rm -fr bin conf include legal lib mp cp
