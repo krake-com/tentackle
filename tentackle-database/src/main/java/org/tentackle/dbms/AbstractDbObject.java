@@ -1422,7 +1422,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
    *
    * @return the object if reloaded, else null (never <em>this</em>)
    */
-  public P reloadLockedObject() {
+  public P reloadObjectForUpdate() {
     return newInstance().selectObjectForUpdate(id);
   }
 
@@ -1830,7 +1830,7 @@ public abstract class AbstractDbObject<P extends AbstractDbObject<P>>
 
   /**
    * Performs a dummy update.<br>
-   * The method is provided as an alternative to {@link #reloadLockedObject} or {@link #selectObjectForUpdate}
+   * The method is provided as an alternative to {@link #reloadObjectForUpdate} or {@link #selectObjectForUpdate}
    * to lock the object during a transaction by updating the ID without changing it.
    */
   @SuppressWarnings("unchecked")
