@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi-activators</artifactId>
-    <version>4.0.1</version>
+    <version>5.0.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-pdo-osgi-activator</artifactId>
-  <version>4.0.1</version>
+  <version>5.0.0</version>
   <packaging>jar</packaging>
 
   <name>Tentackle PDO OSGi Bundle Activator</name>
