@@ -576,7 +576,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
             released.accept(Boolean.TRUE);
           }
           else if (Boolean.FALSE.equals(answer)) {    // discard changes
-            if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
+            if (!oldPdo.isNew() && oldPdo.isTokenLockedByMe()) {
               oldPdo.releaseTokenLock();
             }
             setPdo(oldPdo.on());
@@ -588,7 +588,7 @@ public class PdoCrud<T extends PersistentDomainObject<T>> extends AbstractFxCont
         });
       }
       else {
-        if (!oldPdo.isNew() && oldPdo.isTokenLockProvided() && oldPdo.isTokenLockedByMe()) {
+        if (!oldPdo.isNew() && oldPdo.isTokenLockedByMe()) {
           try {
             oldPdo.releaseTokenLock();
           }
