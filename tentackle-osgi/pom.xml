@@ -16,7 +16,7 @@
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle-parent-osgi</artifactId>
   <!-- OSGI semantic versioning is restricted to x.y.z[.timestamp], i.e. 8. must be omitted -->
-  <version>5.0.0</version>
+  <version>5.1.0</version>
   <packaging>pom</packaging>
 
   <properties>

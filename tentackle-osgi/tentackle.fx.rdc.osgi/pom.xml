@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.tentackle</groupId>
     <artifactId>tentackle-parent-osgi</artifactId>
-    <version>5.0.0</version>
+    <version>5.1.0</version>
   </parent>
 
   <groupId>org.tentackle</groupId>
   <artifactId>tentackle.fx.rdc.osgi</artifactId>
-  <version>5.0.0</version>
+  <version>5.1.0</version>
   <packaging>bundle</packaging>
 
   <name>Tentackle FX RDC OSGi Bundle</name>
