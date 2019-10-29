@@ -82,9 +82,8 @@
     <dependency.locations.enabled>false</dependency.locations.enabled>
     <javac.lint>unchecked,deprecation,removal,requires-transitive-automatic,requires-automatic</javac.lint>
     <javac.version.src>13</javac.version.src>
-    <javac.version.target>13</javac.version.target>
-    <java.version>13</java.version>
-    <javafx.version>13</javafx.version>
+    <javac.version.target>${javac.version.src}</javac.version.target>
+    <javafx.version>13.0.1</javafx.version>
     <ow2.asm.version>7.2</ow2.asm.version>
     <maven.version>3.6.0</maven.version>
     <postgresql.version>42.2.8</postgresql.version>
@@ -527,8 +526,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[${java.version},)</version>
-                  <message>[ERROR] The currently supported version of Java is ${java.version} or higher</message>
+                  <version>[${javac.version.src},)</version>
+                  <message>[ERROR] The currently supported version of Java is ${javac.version.src} or higher</message>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>[${maven.version},)</version>

@@ -358,7 +358,7 @@
           <version>${maven.compiler.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
-            <release>11</release>
+            <release>${javac.version.src}</release>
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
@@ -412,6 +412,13 @@
           <configuration>
             <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.ow2.asm</groupId>
+              <artifactId>asm</artifactId>
+              <version>${ow2.asm.version}</version> <!-- Use newer version of ASM -->
+            </dependency>
+          </dependencies>
         </plugin>
 
         <plugin>
