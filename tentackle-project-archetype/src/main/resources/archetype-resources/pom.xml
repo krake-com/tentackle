@@ -5,53 +5,53 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>${groupId}</groupId>
-  <artifactId>${artifactId}</artifactId>
-  <version>${version}</version>
+  <groupId>\${groupId}</groupId>
+  <artifactId>\${artifactId}</artifactId>
+  <version>\${version}</version>
   <packaging>pom</packaging>
 
-  <name>${application} Parent</name>
-  <description>Parent Project for ${application}</description>
+  <name>\${application} Parent</name>
+  <description>Parent Project for \${application}</description>
 
   <modules>
-    <module>${rootArtifactId}-common</module>
-    <module>${rootArtifactId}-pdo</module>
-    <module>${rootArtifactId}-domain</module>
-    <module>${rootArtifactId}-persistence</module>
-    <module>${rootArtifactId}-gui</module>
-    <module>${rootArtifactId}-client</module>
-    <module>${rootArtifactId}-server</module>
-    <module>${rootArtifactId}-daemon</module>
+    <module>\${rootArtifactId}-common</module>
+    <module>\${rootArtifactId}-pdo</module>
+    <module>\${rootArtifactId}-domain</module>
+    <module>\${rootArtifactId}-persistence</module>
+    <module>\${rootArtifactId}-gui</module>
+    <module>\${rootArtifactId}-client</module>
+    <module>\${rootArtifactId}-server</module>
+    <module>\${rootArtifactId}-daemon</module>
     <!-- jlink images are built with profile "jlink" only, see jlink/pom.xml -->
     <module>jlink</module>
   </modules>
 
   <properties>
-    <rootBasedir>${symbol_dollar}{project.basedir}</rootBasedir>
+    <rootBasedir>\${symbol_dollar}{project.basedir}</rootBasedir>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <wurbelizer.version>11.2.3.1</wurbelizer.version>
-    <wurbel.wurbelDir>${symbol_dollar}{rootBasedir}/target/wurbel</wurbel.wurbelDir>
+    <wurbelizer.version>${wurbelizer.version}</wurbelizer.version>
+    <wurbel.wurbelDir>\${symbol_dollar}{rootBasedir}/target/wurbel</wurbel.wurbelDir>
 
-    <tentackle.version>11.5.0.0</tentackle.version>
-    <tentackle.serviceDir>${symbol_dollar}{project.build.directory}/generated-resources/services</tentackle.serviceDir>
-    <tentackle.testServiceDir>${symbol_dollar}{project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
-    <tentackle.manifestDirectory>${symbol_dollar}{project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
-    <tentackle.modelDir>${symbol_dollar}{wurbel.wurbelDir}/model</tentackle.modelDir>
-    <tentackle.sqlDir>${symbol_dollar}{wurbel.wurbelDir}/sql</tentackle.sqlDir>
+    <tentackle.version>${project.version}</tentackle.version>
+    <tentackle.serviceDir>\${symbol_dollar}{project.build.directory}/generated-resources/services</tentackle.serviceDir>
+    <tentackle.testServiceDir>\${symbol_dollar}{project.build.directory}/generated-test-resources/services</tentackle.testServiceDir>
+    <tentackle.manifestDirectory>\${symbol_dollar}{project.build.directory}/generated-resources/manifest</tentackle.manifestDirectory>
+    <tentackle.modelDir>\${symbol_dollar}{wurbel.wurbelDir}/model</tentackle.modelDir>
+    <tentackle.sqlDir>\${symbol_dollar}{wurbel.wurbelDir}/sql</tentackle.sqlDir>
     <tentackle.modelDefaults>remote, bind, size, autoselect, tracked, root, rootid, rootclassid</tentackle.modelDefaults>
 
-    <postgres.version>42.2.5</postgres.version>
-    <dbUrl>jdbc:postgresql://localhost/${artifactId}</dbUrl>
-    <dbUser>${artifactId}</dbUser>
-    <dbPasswd>${artifactId}</dbPasswd>
-    <dbService>rmi://localhost:8888/${application}Server</dbService>
-    <updateService>rmi://localhost:8890/${application}Update</updateService>
-    <updateURL>http://localhost/${artifactId}/downloads</updateURL>
+    <postgres.version>${postgresql.version}</postgres.version>
+    <dbUrl>jdbc:postgresql://localhost/\${artifactId}</dbUrl>
+    <dbUser>\${artifactId}</dbUser>
+    <dbPasswd>\${artifactId}</dbPasswd>
+    <dbService>rmi://localhost:8888/\${application}Server</dbService>
+    <updateService>rmi://localhost:8890/\${application}Update</updateService>
+    <updateURL>http://localhost/\${artifactId}/downloads</updateURL>
 
   </properties>
 
@@ -60,7 +60,7 @@
       <dependency>
         <groupId>org.tentackle</groupId>
         <artifactId>tentackle-bom</artifactId>
-        <version>${symbol_dollar}{tentackle.version}</version>
+        <version>\${symbol_dollar}{tentackle.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -77,7 +77,7 @@
       <dependency>
         <groupId>org.postgresql</groupId>
         <artifactId>postgresql</artifactId>
-        <version>${symbol_dollar}{postgres.version}</version>
+        <version>\${symbol_dollar}{postgres.version}</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -115,40 +115,40 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-wizard-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <configuration>
             <profiles>
               <PdoProfile>
                 <name>masterdata</name>
-                <pdoPackage>${package}.pdo.md</pdoPackage>
+                <pdoPackage>\${package}.pdo.md</pdoPackage>
                 <minClassId>1000</minClassId>
                 <tablePrefix>md.</tablePrefix>
                 <pdoInterface>MasterData</pdoInterface>
                 <persistenceImplementation>AbstractPersistentMasterData</persistenceImplementation>
-                <domainPackage>${package}.pdo.md.domain</domainPackage>
-                <persistencePackage>${package}.pdo.md.persist</persistencePackage>
-                <domainImplPackage>${package}.domain.md</domainImplPackage>
-                <persistenceImplPackage>${package}.persist.md</persistenceImplPackage>
+                <domainPackage>\${package}.pdo.md.domain</domainPackage>
+                <persistencePackage>\${package}.pdo.md.persist</persistencePackage>
+                <domainImplPackage>\${package}.domain.md</domainImplPackage>
+                <persistenceImplPackage>\${package}.persist.md</persistenceImplPackage>
               </PdoProfile>
               <PdoProfile>
                 <name>transactiondata</name>
-                <pdoPackage>${package}.pdo.td</pdoPackage>
+                <pdoPackage>\${package}.pdo.td</pdoPackage>
                 <minClassId>2000</minClassId>
                 <tablePrefix>td.</tablePrefix>
                 <pdoInterface>TransactionData</pdoInterface>
                 <persistenceImplementation>AbstractPersistentTransactionData</persistenceImplementation>
-                <domainPackage>${package}.pdo.td.domain</domainPackage>
-                <persistencePackage>${package}.pdo.td.persist</persistencePackage>
-                <domainImplPackage>${package}.domain.td</domainImplPackage>
-                <persistenceImplPackage>${package}.persist.td</persistenceImplPackage>
+                <domainPackage>\${package}.pdo.td.domain</domainPackage>
+                <persistencePackage>\${package}.pdo.td.persist</persistencePackage>
+                <domainImplPackage>\${package}.domain.td</domainImplPackage>
+                <persistenceImplPackage>\${package}.persist.td</persistenceImplPackage>
               </PdoProfile>
               <OperationProfile>
                 <name>operation</name>
-                <operationPackage>${package}.pdo.operation</operationPackage>
-                <domainPackage>${package}.pdo.operation</domainPackage>
-                <persistencePackage>${package}.pdo.operation</persistencePackage>
-                <domainImplPackage>${package}.domain.operation</domainImplPackage>
-                <persistenceImplPackage>${package}.persist.operation</persistenceImplPackage>
+                <operationPackage>\${package}.pdo.operation</operationPackage>
+                <domainPackage>\${package}.pdo.operation</domainPackage>
+                <persistencePackage>\${package}.pdo.operation</persistencePackage>
+                <domainImplPackage>\${package}.domain.operation</domainImplPackage>
+                <persistenceImplPackage>\${package}.persist.operation</persistenceImplPackage>
               </OperationProfile>
             </profiles>
           </configuration>
@@ -157,7 +157,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <executions>
             <execution>
               <id>analyze</id>
@@ -175,7 +175,7 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-check-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <executions>
             <execution>
               <id>bundles</id>
@@ -200,7 +200,7 @@
             <dependency>
               <groupId>org.tentackle</groupId>
               <artifactId>tentackle-script-groovy</artifactId>
-              <version>${symbol_dollar}{tentackle.version}</version>
+              <version>\${symbol_dollar}{tentackle.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -208,19 +208,19 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-i18n-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <configuration>
             <verbosity>info</verbosity>
             <locales>de</locales>
-            <url>${symbol_dollar}{dbUrl}</url>
-            <user>${symbol_dollar}{dbUser}</user>
-            <password>${symbol_dollar}{dbPasswd}</password>
+            <url>\${symbol_dollar}{dbUrl}</url>
+            <user>\${symbol_dollar}{dbUser}</user>
+            <password>\${symbol_dollar}{dbPasswd}</password>
           </configuration>
           <dependencies>
             <dependency>
               <groupId>org.postgresql</groupId>
               <artifactId>postgresql</artifactId>
-              <version>${symbol_dollar}{postgres.version}</version>
+              <version>\${symbol_dollar}{postgres.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -228,14 +228,14 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-jlink-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <extensions>true</extensions>
         </plugin>
 
         <plugin>
           <groupId>org.wurbelizer</groupId>
           <artifactId>wurbelizer-maven-plugin</artifactId>
-          <version>${symbol_dollar}{wurbelizer.version}</version>
+          <version>\${symbol_dollar}{wurbelizer.version}</version>
           <executions>
             <execution>
               <goals>
@@ -248,7 +248,7 @@
               <wurbletDependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-persistence-wurblets</artifactId>
-                <version>${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.version}</version>
               </wurbletDependency>
             </wurbletDependencies>
             <verbosity>info</verbosity>
@@ -301,10 +301,10 @@
               <foldtype>collapsed</foldtype>
               <mapSchema>false</mapSchema>
               <tablePrefix />
-              <model>${symbol_dollar}{tentackle.modelDir}</model>
+              <model>\${symbol_dollar}{tentackle.modelDir}</model>
               <backends>oracle, postgresql</backends>
               <integrity>full</integrity>
-              <modelDefaults>${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
+              <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
 
               <!-- model column sizes -->
               <ou_name>20</ou_name>
@@ -321,19 +321,19 @@
         <plugin>
           <groupId>org.tentackle</groupId>
           <artifactId>tentackle-sql-maven-plugin</artifactId>
-          <version>${symbol_dollar}{tentackle.version}</version>
+          <version>\${symbol_dollar}{tentackle.version}</version>
           <configuration>
             <verbosity>info</verbosity>
-            <modelDefaults>${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
+            <modelDefaults>\${symbol_dollar}{tentackle.modelDefaults}</modelDefaults>
             <backends>
               <backend>
-                <url>${symbol_dollar}{dbUrl}</url>
-                <user>${symbol_dollar}{dbUser}</user>
-                <password>${symbol_dollar}{dbPasswd}</password>
+                <url>\${symbol_dollar}{dbUrl}</url>
+                <user>\${symbol_dollar}{dbUser}</user>
+                <password>\${symbol_dollar}{dbPasswd}</password>
                 <schemaNames>td, md</schemaNames>
                 <migrationHints>
                   <fileset>
-                    <directory>${symbol_dollar}{rootBasedir}/src/main/migrate/postgres</directory>
+                    <directory>\${symbol_dollar}{rootBasedir}/src/main/migrate/postgres</directory>
                     <includes>
                       <include>**/*.hints</include>
                     </includes>
@@ -347,7 +347,7 @@
             <dependency>
               <groupId>org.postgresql</groupId>
               <artifactId>postgresql</artifactId>
-              <version>${symbol_dollar}{postgres.version}</version>
+              <version>\${symbol_dollar}{postgres.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -355,41 +355,41 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>${maven.compiler.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <release>11</release>
             <showWarnings>true</showWarnings>
             <showDeprecation>true</showDeprecation>
             <compilerArgs>
-              <arg>-Xlint:unchecked</arg>
+              <arg>-Xlint:${javac.lint}</arg>
             </compilerArgs>
             <!-- necessary since Java 9, see https://issues.apache.org/jira/browse/MCOMPILER-310 -->
             <annotationProcessorPaths>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-core</artifactId>
-                <version>${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-pdo</artifactId>
-                <version>${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-fx</artifactId>
-                <version>${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.tentackle</groupId>
                 <artifactId>tentackle-fx-rdc</artifactId>
-                <version>${symbol_dollar}{tentackle.version}</version>
+                <version>\${symbol_dollar}{tentackle.version}</version>
               </dependency>
               <dependency>    <!-- necessary for fx-rdc processors because deps are not recognized here -->
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
-                <version>12.0.1</version>
+                <version>${javafx.version}</version>
               </dependency>
             </annotationProcessorPaths>
           </configuration>
@@ -398,7 +398,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>${maven.resources.plugin.version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
             <escapeString>\</escapeString>
@@ -408,7 +408,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.2</version>
+          <version>${maven.surefire.plugin.version}</version>
           <configuration>
             <argLine>-Duser.language=en -Duser.region=US</argLine>
           </configuration>
@@ -449,7 +449,7 @@
             <dependency>
               <groupId>org.ow2.asm</groupId>
               <artifactId>asm</artifactId>
-              <version>7.0</version>
+              <version>${ow2.asm.version}</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -464,28 +464,28 @@
 
     <resources>
       <resource>
-        <directory>${symbol_dollar}{project.basedir}/src/main/resources</directory>
+        <directory>\${symbol_dollar}{project.basedir}/src/main/resources</directory>
       </resource>
       <resource>
-        <directory>${symbol_dollar}{project.basedir}/src/main/filtered-resources</directory>
+        <directory>\${symbol_dollar}{project.basedir}/src/main/filtered-resources</directory>
         <filtering>true</filtering>
       </resource>
       <!--  additional source directory for generated service files -->
       <resource>
-        <directory>${symbol_dollar}{tentackle.serviceDir}</directory>
+        <directory>\${symbol_dollar}{tentackle.serviceDir}</directory>
       </resource>
     </resources>
 
     <testResources>
       <testResource>
-        <directory>${symbol_dollar}{project.basedir}/src/test/resources</directory>
+        <directory>\${symbol_dollar}{project.basedir}/src/test/resources</directory>
       </testResource>
       <testResource>
-        <directory>${symbol_dollar}{project.basedir}/src/test/filtered-resources</directory>
+        <directory>\${symbol_dollar}{project.basedir}/src/test/filtered-resources</directory>
         <filtering>true</filtering>
       </testResource>
       <testResource>
-        <directory>${symbol_dollar}{tentackle.testServiceDir}</directory>
+        <directory>\${symbol_dollar}{tentackle.testServiceDir}</directory>
       </testResource>
     </testResources>
 
