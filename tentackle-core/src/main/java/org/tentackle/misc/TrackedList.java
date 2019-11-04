@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * A List with the ability to tell whether it has been structurally modified.
  * <p>
- * TrackedList distinguishes between additions and removals.
+ * {@code TrackedList} distinguishes between additions and removals.
  * A replacement is treated as a removal followed by an addition.
  * All removed objects are kept in a separate list.
  * <p>
@@ -33,15 +33,18 @@ import java.util.List;
  * have to be deleted and which to be inserted or updated.
  * However, the TrackedList is not restricted to PDOs.
  * <p>
- * TrackedList can be made immutable. If the objects in the list implement
+ * {@code TrackedList} can be made immutable. If the objects in the list implement
  * {@link Immutable}, they will be set to immutable as well.
  * <p>
- * TrackedList supports snapshots. There may be as many snapshots
+ * {@code TrackedList} supports snapshots. There may be as many snapshots
  * as needed. Reverting to a snapshot restores the complete state
  * at the time the snapshot was taken and invalidates all later snapshots.
  * Snapshots also save the state of the objects contained in the list
  * if they implement {@link Snapshotable}. Otherwise only the references
  * to those objects are copied to the snapshot. Snapshots are immutable.
+ * <p>
+ * {@code TrackedList} may be configured to throw a {@link NullPointerException} when trying
+ * to add a null value to the list.
  *
  * @author harald
  *
@@ -189,5 +192,21 @@ public interface TrackedList<E> extends List<E>, ImmutableCollection<E>, Snapsho
    * @return true if listener(s) removed, false if no such listener
    */
   boolean removeListener(TrackedListListener<E> listener);
+
+  /**
+   * Returns whether adding null values is allowed.
+   *
+   * @return true if allowed (default)
+   */
+  boolean isNullAllowed();
+
+  /**
+   * Configures the list whether to allow adding null values.<br>
+   * By default, {@code TrackedList}s can be used as a drop-in replacement for {@link java.util.ArrayList} and
+   * allow nulls. Otherwise any attempt to add a null-value will result in a {@link NullPointerException}.
+   *
+   * @param nullAllowed true if allowed, false if throw NPE
+   */
+  void setNullAllowed(boolean nullAllowed);
 
 }

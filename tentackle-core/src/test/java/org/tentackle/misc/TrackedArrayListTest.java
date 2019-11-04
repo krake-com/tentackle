@@ -18,13 +18,15 @@
 
 package org.tentackle.misc;
 
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.log.Logger;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
 /**
  * Test for TrackedArrayList.
@@ -184,6 +186,15 @@ public class TrackedArrayListTest {
     }
     catch (ImmutableException imex) {
       Assert.fail("must not throw ImmutableException");
+    }
+
+    list.setNullAllowed(false);
+    try {
+      list.add(null);
+      Assert.fail("must throw NullPointerException");
+    }
+    catch (NullPointerException npe) {
+      // ok
     }
 
     TrackedList<Integer> list2 = new TrackedArrayList<>();

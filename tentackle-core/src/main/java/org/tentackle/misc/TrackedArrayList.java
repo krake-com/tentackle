@@ -19,17 +19,19 @@
 
 package org.tentackle.misc;
 
+import org.tentackle.common.TentackleRuntimeException;
+import org.tentackle.log.Logger;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
-import org.tentackle.common.TentackleRuntimeException;
-import org.tentackle.log.Logger;
-
+import java.util.function.UnaryOperator;
 
 
 /**
@@ -46,6 +48,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   private static final Logger LOGGER = Logger.get(TrackedArrayList.class);
 
+  private boolean noNulls;                          // true if adding null-values throws an NPE
   private boolean modified;                         // initial modification parameter or from setModified(true)
   private boolean removed;                          // some object has been removed
   private boolean added;                            // some object has been added
@@ -103,6 +106,16 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
     super(collection);
   }
 
+
+  @Override
+  public boolean isNullAllowed() {
+    return !noNulls;
+  }
+
+  @Override
+  public void setNullAllowed(boolean nullAllowed) {
+    noNulls = !nullAllowed;
+  }
 
   /**
    * Clones the list.<br>
@@ -226,6 +239,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
             super.add(obj);
             ++i;
           }
+          noNulls = mySnapshot.noNulls;
           removedObjects = mySnapshot.removedObjects;
           removedObjectsFiltered = mySnapshot.removedObjectsFiltered;
           modified = mySnapshot.modified;
@@ -506,6 +520,32 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   }
 
 
+  /**
+   * Asserts whether null-values are allowed.
+   *
+   * @param element the element to add
+   */
+  protected void assertNullAllowed(E element) {
+    if (noNulls && element == null) {
+      throw new NullPointerException("adding null-values is not allowed");
+    }
+  }
+
+  /**
+   * Asserts whether null-values are allowed.
+   *
+   * @param collection the collection containing elements to be added to this list
+   */
+  protected void assertNullAllowed(Collection<? extends E> collection) {
+    if (noNulls) {
+      for (E element : collection) {
+        if (element == null) {
+          throw new NullPointerException("adding collections with null-values is not allowed");
+        }
+      }
+    }
+  }
+
 
   /**
    * Appends the specified element to the end of this list.
@@ -515,6 +555,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   public boolean add(E element) {
+    assertNullAllowed(element);
     if (super.add(element)) {
       added = true;
       removeRemovedObject(element);
@@ -536,6 +577,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   public void add(int index, E element) {
+    assertNullAllowed(element);
     super.add(index, element);
     removeRemovedObject(element);
     added = true;
@@ -559,6 +601,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   public boolean addAll(Collection<? extends E> collection) {
+    assertNullAllowed(collection);
     if (super.addAll(collection))  {
       added = true;
       removeRemovedObjects(collection);
@@ -588,6 +631,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    */
   @Override
   public boolean addAll(int index, Collection<? extends E> collection) {
+    assertNullAllowed(collection);
     if (super.addAll(index, collection))  {
       added = true;
       removeRemovedObjects(collection);
@@ -750,9 +794,11 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param index index of the element to replace
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
+   * @see #replace(int, Object)
    */
   @Override
   public E set(int index, E element) {
+    assertNullAllowed(element);
     E obj = super.set(index, element);
     if (obj != element)  {    // if not exactly the same instance
       addRemovedObject(obj);
@@ -774,6 +820,7 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
 
   @Override
   public void addBlunt(E element) {
+    assertNullAllowed(element);
     super.add(element);
   }
 
@@ -791,8 +838,8 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
   /**
    * Replaces the element at the specified position in this list with
    * the specified element.<br>
-   * The old element will replace the existing one <em>without</em> affecting the modification state
-   * of the list.<br>
+   * The new element will replace the existing one <em>without</em> affecting the modification state
+   * of the list!
    * Futhermore, no event will be fired.<br>
    * Useful if parts of an object tree are reloaded (for example from the
    * database backend) and should not change the modification state
@@ -801,11 +848,31 @@ public class TrackedArrayList<E> extends ImmutableArrayList<E> implements Tracke
    * @param index index of the element to replace
    * @param element element to be stored at the specified position
    * @return the element previously at the specified position
+   * @see #set(int, Object)
    */
   @Override
   public E replace(int index, E element) {
+    assertNullAllowed(element);
     filterRemovedObjects();   // in case replaced object is in list of removed objects
     return super.set(index, element);
+  }
+
+  /**
+   * Replaces each element of this list with the result of applying the operator to that element.<br>
+   * The elements will be replaced <em>without</em> affecting the modification state of the list!
+   * Futhermore, no events will be fired.<br>
+   *
+   * @param operator the operator to apply to each element
+   */
+  @Override
+  public void replaceAll(UnaryOperator<E> operator) {
+    if (noNulls) {
+      Objects.requireNonNull(operator, "operator");
+      super.replaceAll(e -> Objects.requireNonNull(operator.apply(e), "operator must not return a null-value"));
+    }
+    else {
+      super.replaceAll(operator);
+    }
   }
 
   @Override
