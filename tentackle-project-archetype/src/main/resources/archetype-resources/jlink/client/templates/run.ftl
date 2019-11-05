@@ -33,8 +33,8 @@ cd $(dirname $(dirname $(readlink -f "$0")))
   </#if>
 mkdir logs 2>/dev/null
   <#if mainModule != "">
-    <#-- modular application (using GTK2 since DnD doesnt work with GTK3) -->
-bin/java -Djdk.gtk.version=2${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} \
+    <#-- modular application -->
+bin/java ${(modulePath!="")?then(" -p " + modulePath, "")}${(classPath!="")?then(" -cp " + classPath, "")} \
   --add-exports javafx.graphics/com.sun.javafx.css=org.tentackle.fx \
   --add-exports javafx.graphics/com.sun.javafx.scene=org.tentackle.fx \
   --add-exports javafx.graphics/com.sun.javafx.scene.traversal=org.tentackle.fx \
