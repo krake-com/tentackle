@@ -273,6 +273,11 @@
         <version>3.6.0</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.maven.shared</groupId>
+        <artifactId>maven-dependency-tree</artifactId>
+        <version>3.0.1</version>
+      </dependency>
+      <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-java</artifactId>
         <version>1.0.3</version>

@@ -160,6 +160,13 @@
           <version>\${symbol_dollar}{tentackle.version}</version>
           <executions>
             <execution>
+              <!-- determine version.orgOpenjfx.javafxControls for compiler plugin below -->
+              <id>versions</id>
+              <goals>
+                <goal>versions</goal>
+              </goals>
+            </execution>
+            <execution>
               <id>analyze</id>
               <goals>
                 <goal>analyze</goal>
@@ -169,6 +176,8 @@
           <configuration>
             <verbosity>info</verbosity>
             <showCompileOutput>true</showCompileOutput>
+            <addToProperties>true</addToProperties>
+            <scope>compile</scope>
           </configuration>
         </plugin>
 
@@ -389,7 +398,8 @@
               <dependency>    <!-- necessary for fx-rdc processors because deps are not recognized here -->
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-controls</artifactId>
-                <version>${javafx.version}</version>
+                <!-- determined via tentackle:versions plugin above -->
+                <version>\${symbol_dollar}{version.orgOpenjfx.javafxControls}</version>
               </dependency>
             </annotationProcessorPaths>
           </configuration>

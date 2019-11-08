@@ -20,6 +20,10 @@
       <artifactId>tentackle-maven-support</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-dependency-tree</artifactId>
+    </dependency>
   </dependencies>
 
   <properties>
