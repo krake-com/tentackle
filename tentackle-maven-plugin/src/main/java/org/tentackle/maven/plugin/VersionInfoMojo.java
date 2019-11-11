@@ -34,14 +34,11 @@ import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
 import org.apache.maven.shared.dependency.graph.DependencyNode;
 
 import org.tentackle.common.StringHelper;
-import org.tentackle.maven.AbstractTentackleMojo;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -90,7 +87,7 @@ import java.util.stream.Collectors;
       aggregator = true,
       defaultPhase = LifecyclePhase.VALIDATE,
       requiresDependencyResolution = ResolutionScope.COMPILE)
-public class VersionInfoMojo extends AbstractTentackleMojo {
+public class VersionInfoMojo extends AbstractVersionInfoMojo {
 
   /**
    * Optional dependency scope.
@@ -140,32 +137,18 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
         }
       }
 
-      // unique sort by property name
-      Map<String, String> versionsMap = new TreeMap<>();    // property:version
-      for (Artifact artifact : artifacts) {
-        versionsMap.put(createPropertyName(artifact), artifact.getVersion());
-      }
-
-      StringBuilder buf = new StringBuilder();
-      for (Map.Entry<String, String> entry : versionsMap.entrySet()) {
-        String name = entry.getKey();
-        String version = entry.getValue();
-        String propertyXML = "<" + name + ">" + version + "</" + name + ">";
-        if (verbosityLevel.isInfo()) {
-          buf.append('\n').append(propertyXML);
-        }
-      }
+      String versions = generateVersionProperties(artifacts);
 
       if (verbosityLevel.isInfo()) {
         String depStr = "dependencies";
         if (scope != null) {
           depStr += " for scope '" + scope + "'";
         }
-        if (buf.length() > 0) {
-          getLog().info("versions of 3rd-party " + depStr + ":" + buf);
+        if (versions.isEmpty()) {
+          getLog().warn("no 3rd-party " + depStr + " found");
         }
         else {
-          getLog().warn("no 3rd-party " + depStr + " found");
+          getLog().info("versions of 3rd-party " + depStr + ":" + versions);
         }
       }
     }
@@ -209,11 +192,4 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
     }
   }
 
-  private String createPropertyName(Artifact artifact) {
-    return "version." + camalize(artifact.getGroupId()) + "." + camalize(artifact.getArtifactId());
-  }
-
-  private String camalize(String str) {
-    return StringHelper.toCamelCase(str.replace('-', '.').replace('_', '.'));
-  }
 }
