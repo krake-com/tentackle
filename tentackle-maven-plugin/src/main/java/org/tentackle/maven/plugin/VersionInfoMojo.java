@@ -105,11 +105,6 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
   private DependencyGraphBuilder dependencyGraphBuilder;
 
   /**
-   * All modules of the project.
-   */
-  private List<MavenProject> allProjects;
-
-  /**
    * Collected module artifacts to exclude.
    */
   private Set<Artifact> modules;
@@ -127,7 +122,7 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
 
       ProjectBuildingRequest buildingRequest = new DefaultProjectBuildingRequest(getMavenSession().getProjectBuildingRequest());
 
-      allProjects = getMavenProject().getCollectedProjects();
+      List<MavenProject> allProjects = getMavenProject().getCollectedProjects();
       if (allProjects.isEmpty()) {
         allProjects.add(getMavenProject());
       }
