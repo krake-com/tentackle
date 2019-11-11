@@ -102,13 +102,11 @@ public class PluginVersionInfoMojo extends AbstractVersionInfoMojo {
 
       String versions = generateVersionProperties(pluginArtifacts);
 
-      if (verbosityLevel.isInfo()) {
-        if (versions.isEmpty()) {
-          getLog().warn("no plugins found");
-        }
-        else {
-          getLog().info("versions of plugins:" + versions);
-        }
+      if (versions.isEmpty()) {
+        getLog().warn("no plugins found");
+      }
+      else {
+        getLog().info("versions of plugins:" + versions);
       }
     }
     else {
