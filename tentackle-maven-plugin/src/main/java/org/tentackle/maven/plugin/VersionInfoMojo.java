@@ -45,15 +45,46 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * Mojo to determine the versions of all 3rd-party dependencies.<br>
- * There are 2 use cases:
- * <ul>
- *   <li>log versions as properties in XML: to copy the output into an existing pom.</li>
- *   <li>add the version properties to the current project: useful if the project refers to
- *   a dependency used by a third-party dependency. Avoids version mismatchs when setting the
- *   version manually.</li>
- * </ul>
+ * Mojo to determine the versions of all 3rd-party dependencies of the current project.<br>
+ * It logs the versions in XML-format ready to use within the properties section of a pom file.
+ * The property names are of the form {@code version.groupIdInCamelCase.artifactIdInCamelCase}.<br>
+ * If no dependency scope is given, the dependencies of all scopes are listed.
+ * <p>
+ * Example:
+ * <pre>
+ *   mvn -Dscope=compile tentackle:versions
+ *   ...
+ *   [INFO] 
+ *   [INFO] --- tentackle-maven-plugin:11.5.1.0:versions (default-cli) @ myapplic-parent ---
+ *   [INFO] versions of 3rd-party dependencies for scope 'compile':
+ *   &lt;version.orgCodehausGroovy.groovy&gt;2.5.8&lt;/version.orgCodehausGroovy.groovy&gt;
+ *   &lt;version.orgOpenjfx.javafxBase&gt;13.0.1&lt;/version.orgOpenjfx.javafxBase&gt;
+ *   &lt;version.orgOpenjfx.javafxControls&gt;13.0.1&lt;/version.orgOpenjfx.javafxControls&gt;
+ *   &lt;version.orgOpenjfx.javafxFxml&gt;13.0.1&lt;/version.orgOpenjfx.javafxFxml&gt;
+ *   &lt;version.orgOpenjfx.javafxGraphics&gt;13.0.1&lt;/version.orgOpenjfx.javafxGraphics&gt;
+ *   &lt;version.orgOpenjfx.javafxMedia&gt;13.0.1&lt;/version.orgOpenjfx.javafxMedia&gt;
+ *   &lt;version.orgOpenjfx.javafxWeb&gt;13.0.1&lt;/version.orgOpenjfx.javafxWeb&gt;
+ *   &lt;version.orgSlf4j.slf4jApi&gt;1.7.28&lt;/version.orgSlf4j.slf4jApi&gt;
+ *   &lt;version.orgTentackle.tentackleCommon&gt;11.5.1.0&lt;/version.orgTentackle.tentackleCommon&gt;
+ *   &lt;version.orgTentackle.tentackleCore&gt;11.5.1.0&lt;/version.orgTentackle.tentackleCore&gt;
+ *   &lt;version.orgTentackle.tentackleDatabase&gt;11.5.1.0&lt;/version.orgTentackle.tentackleDatabase&gt;
+ *   &lt;version.orgTentackle.tentackleDomain&gt;11.5.1.0&lt;/version.orgTentackle.tentackleDomain&gt;
+ *   &lt;version.orgTentackle.tentackleFx&gt;11.5.1.0&lt;/version.orgTentackle.tentackleFx&gt;
+ *   &lt;version.orgTentackle.tentackleFxRdc&gt;11.5.1.0&lt;/version.orgTentackle.tentackleFxRdc&gt;
+ *   &lt;version.orgTentackle.tentackleFxRdcPoi&gt;11.5.1.0&lt;/version.orgTentackle.tentackleFxRdcPoi&gt;
+ *   &lt;version.orgTentackle.tentackleFxRdcUpdate&gt;11.5.1.0&lt;/version.orgTentackle.tentackleFxRdcUpdate&gt;
+ *   &lt;version.orgTentackle.tentackleI18n&gt;11.5.1.0&lt;/version.orgTentackle.tentackleI18n&gt;
+ *   &lt;version.orgTentackle.tentackleLogSlf4j&gt;11.5.1.0&lt;/version.orgTentackle.tentackleLogSlf4j&gt;
+ *   &lt;version.orgTentackle.tentacklePdo&gt;11.5.1.0&lt;/version.orgTentackle.tentacklePdo&gt;
+ *   &lt;version.orgTentackle.tentacklePersistence&gt;11.5.1.0&lt;/version.orgTentackle.tentacklePersistence&gt;
+ *   &lt;version.orgTentackle.tentackleScriptGroovy&gt;11.5.1.0&lt;/version.orgTentackle.tentackleScriptGroovy&gt;
+ *   &lt;version.orgTentackle.tentackleSession&gt;11.5.1.0&lt;/version.orgTentackle.tentackleSession&gt;
+ *   &lt;version.orgTentackle.tentackleSql&gt;11.5.1.0&lt;/version.orgTentackle.tentackleSql&gt;
+ *   &lt;version.orgTentackle.tentackleUpdate&gt;11.5.1.0&lt;/version.orgTentackle.tentackleUpdate&gt;
+ *   ...
+ * </pre>
  *
+ * Notice: the whole project must have been successfully built before invoking this goal.
  */
 @Mojo(name = "versions",
       aggregator = true,
@@ -66,12 +97,6 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
    */
   @Parameter(property = "scope" )
   private String scope;
-
-  /**
-   * True if add the version properties to the current maven project.
-   */
-  @Parameter
-  private boolean addToProperties;
 
   /**
    * The default depencency builder.
@@ -134,23 +159,18 @@ public class VersionInfoMojo extends AbstractTentackleMojo {
         if (verbosityLevel.isInfo()) {
           buf.append('\n').append(propertyXML);
         }
-        if (addToProperties) {
-          // add to all projects (inheritance already happened, so we must inherit explicitly
-          for (MavenProject project : allProjects) {
-            project.getProperties().setProperty(name, version);
-            if (verbosityLevel.isDebug()) {
-              getLog().info("added property " + propertyXML);
-            }
-          }
-        }
       }
 
       if (verbosityLevel.isInfo()) {
+        String depStr = "dependencies";
+        if (scope != null) {
+          depStr += " for scope '" + scope + "'";
+        }
         if (buf.length() > 0) {
-          getLog().info("versions of all 3rd-party dependencies:" + buf);
+          getLog().info("versions of 3rd-party " + depStr + ":" + buf);
         }
         else {
-          getLog().warn("no 3rd-party dependencies found");
+          getLog().warn("no 3rd-party " + depStr + " found");
         }
       }
     }
