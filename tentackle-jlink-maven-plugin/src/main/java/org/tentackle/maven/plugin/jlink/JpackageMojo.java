@@ -34,7 +34,29 @@ import java.io.IOException;
 
 /**
  * Mojo to create an application installer package.<br>
- * Still WIP. Will be cont'd when Java 13 RC is out.
+ * Still WIP. Will be cont'd when Java 14 RC is out.
+ * <p>
+ * Notice that with java 14 the package tool still does not support invoking a script,
+ * but we can leave off the java-module/class without getting an error.
+ * As a result, the following command will now work (in target):
+ * <pre>
+ * jpackage -d installer --runtime-image jlink
+ * </pre>
+ * This will simply read all files created by the jlink-mojo in target/jlink and create an
+ * installer in target/installer. On linux, the files will be installed in a subfolder in /opt.
+ * The subfolder contains exactly the same files as in target/jlink. Not much gained, at least on linux.
+ * <p>
+ * The following problems/questions still exist:
+ * <ul>
+ *   <li>linux: the log files cannot remain in the installer dir, since it is owned by root and not writable for normal users
+ *   (another config for logback.xml, as a filtered resource pointing to user's home?)</li>
+ *   <li>what is executed when clicking on the icon, if no java-module/class is given?
+ *   Maybe, we should provide a wrapper java class that simply invokes the script?</li>
+ *   <li>auto update wouldn't work as non-root user as well. However, this is already covered by
+ *   apt update/uprade / yum update (assumed, we provide a repo)</li>
+ *   <li>same applies to macs</li>
+ *   <li>on the other hand: windows is the main target for installers and that should work, hopefully</li>
+ * </ul>
  */
 @Mojo(name = "jpackage",
       requiresDependencyResolution = ResolutionScope.RUNTIME,
