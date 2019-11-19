@@ -110,6 +110,7 @@ public class OperationWizard extends AbstractFxController {
       gen.setProfile(profiles.get(0));
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_OPERATION));
+    gen.setLogger(mojo.getLog());
   }
 
   @Override

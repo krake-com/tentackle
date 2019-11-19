@@ -123,6 +123,7 @@ public class PdoWizard extends AbstractFxController {
     }
     gen.setTemplateDirectory(new File(mojo.getTemplateDir(), Constants.CATEGORY_PDO));
     gen.setStatusDir(mojo.getStatusDir());
+    gen.setLogger(mojo.getLog());
   }
 
   @Override
