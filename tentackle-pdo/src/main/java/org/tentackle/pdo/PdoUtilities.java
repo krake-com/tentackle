@@ -73,6 +73,11 @@ public class PdoUtilities {
 
 
   /**
+   * The map of pdo members.
+   */
+  private final Map<Class<?>, List<PdoMember>> memberMap = new ConcurrentHashMap<>();
+
+  /**
    * The map of tablenames.
    */
   private final Map<Class<?>, String> tableNameMap = new ConcurrentHashMap<>();
@@ -536,37 +541,39 @@ public class PdoUtilities {
    * @return the members sorted by the model's ordinal
    */
   public <T extends PersistentDomainObject<T>> List<PdoMember> getMembers(Class<T> clazz) {
-    List<PdoMember> members = new ArrayList<>();
-    for (Method method: clazz.getMethods()) {
-      String name = method.getName();
-      if (!Modifier.isStatic(method.getModifiers()) && !method.getReturnType().equals(Void.class)) {
-        if (name.startsWith("is")) {
-          name = StringHelper.firstToLower(name.substring(2));
+    return memberMap.computeIfAbsent(clazz, cls -> {
+      List<PdoMember> members = new ArrayList<>();
+      for (Method method : cls.getMethods()) {
+        String name = method.getName();
+        if (!Modifier.isStatic(method.getModifiers()) && !method.getReturnType().equals(Void.class)) {
+          if (name.startsWith("is")) {
+            name = StringHelper.firstToLower(name.substring(2));
+          }
+          else if (name.startsWith("get")) {
+            name = StringHelper.firstToLower(name.substring(3));
+          }
+          else continue;    // not a getter
         }
-        else if (name.startsWith("get")) {
-          name = StringHelper.firstToLower(name.substring(3));
-        }
-        else continue;    // not a getter
-      }
-      Persistent anno = method.getAnnotation(Persistent.class);
-      if (anno != null) {   // getter annotated with @Persistent
-        Method setter = null;
-        try {
-          setter = clazz.getMethod("set" + StringHelper.firstToUpper(name), method.getReturnType());
-        }
-        catch (NoSuchMethodException e) {
-          // no setter
-        }
-        PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
-                              PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
+        Persistent anno = method.getAnnotation(Persistent.class);
+        if (anno != null) {   // getter annotated with @Persistent
+          Method setter = null;
+          try {
+            setter = cls.getMethod("set" + StringHelper.firstToUpper(name), method.getReturnType());
+          }
+          catch (NoSuchMethodException e) {
+            // no setter
+          }
+          PdoMember.Type type = List.class.isAssignableFrom(method.getReturnType()) ||
+                                PersistentDomainObject.class.isAssignableFrom(method.getReturnType()) ?
                                 PdoMember.Type.RELATION : PdoMember.Type.ATTRIBUTE;
-        members.add(new PdoMember(type, name, method, setter, anno.component(), anno.parent(),
-                                  method.getAnnotation(DomainKey.class) != null,
-                                  anno.comment(), anno.ordinal()));
+          members.add(new PdoMember(type, name, method, setter, anno.component(), anno.parent(),
+                                    method.getAnnotation(DomainKey.class) != null,
+                                    anno.comment(), anno.ordinal()));
+        }
       }
-    }
-    members.sort(Comparator.comparingInt(PdoMember::getOrdinal));
-    return members;
+      members.sort(Comparator.comparingInt(PdoMember::getOrdinal));
+      return members;
+    });
   }
 
 

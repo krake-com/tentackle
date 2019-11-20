@@ -30,8 +30,6 @@ import org.tentackle.fx.translate.ObservableListTranslator;
 import org.tentackle.pdo.Pdo;
 import org.tentackle.pdo.PersistentDomainObject;
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -52,31 +50,27 @@ public class PdoObservableListTranslator<T extends PersistentDomainObject<T>, C 
    *
    * @param component the component
    */
-  @SuppressWarnings("unchecked")
   public PdoObservableListTranslator(FxComponent component) {
     super(component);
+  }
 
-    if (component instanceof FxTableView) {
-      Type genType = component.getGenericType();
-      if (genType instanceof ParameterizedType) {
-        Type[] typeArguments = ((ParameterizedType) genType).getActualTypeArguments();
-        if (typeArguments != null && typeArguments.length == 1) {
-          Class<T> elemClass = (Class<T>) typeArguments[0];
-          if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
-            // is a PDO: get table configurator
-            T pdo = Pdo.create(elemClass);
-            GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
-            TableConfiguration<T> config = provider.createTableConfiguration();
-            if (config.getBindingType() == TableConfiguration.BINDING.YES) {
-              config.getBinder().bind();
-            }
-            else if (config.getBindingType() == TableConfiguration.BINDING.INHERITED) {
-              config.getBinder().bindAllInherited();
-            }
-            config.configure((FxTableView<T>) component);
-          }
-        }
+  @Override
+  protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
+    if (PersistentDomainObject.class.isAssignableFrom(elemClass)) {
+      // is a PDO: get table configurator
+      T pdo = Pdo.create(elemClass);
+      GuiProvider<T> provider = GuiProviderFactory.getInstance().createGuiProvider(pdo);
+      TableConfiguration<T> config = provider.createTableConfiguration();
+      if (config.getBindingType() == TableConfiguration.BINDING.YES) {
+        config.getBinder().bind();
       }
+      else if (config.getBindingType() == TableConfiguration.BINDING.INHERITED) {
+        config.getBinder().bindAllInherited();
+      }
+      config.configure(tableView);
+    }
+    else {
+      super.configureTableView(tableView, elemClass);
     }
   }
 

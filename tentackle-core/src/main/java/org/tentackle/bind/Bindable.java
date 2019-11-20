@@ -20,8 +20,10 @@
 package org.tentackle.bind;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotates a member of a class for eligibility in GUI bindings.
@@ -36,7 +38,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-
+@Target({ ElementType.FIELD, ElementType.METHOD })
 public @interface Bindable {
 
   /**

@@ -24,11 +24,20 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 
+import org.tentackle.bind.BindableType;
+import org.tentackle.common.BundleFactory;
+import org.tentackle.common.LocaleProvider;
 import org.tentackle.fx.FxComponent;
+import org.tentackle.fx.FxFactory;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.ValueTranslatorService;
+import org.tentackle.fx.component.FxTableView;
+import org.tentackle.fx.table.TableConfiguration;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.function.Function;
 
 /**
@@ -47,15 +56,27 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
    *
    * @param component the component
    */
+  @SuppressWarnings("unchecked")
   public ObservableListTranslator(FxComponent component) {
     super(component);
+
+    if (component instanceof FxTableView) {
+      Type genType = component.getGenericType();
+      if (genType instanceof ParameterizedType) {
+        Type[] typeArguments = ((ParameterizedType) genType).getActualTypeArguments();
+        if (typeArguments != null && typeArguments.length == 1) {
+          configureTableView((FxTableView<T>) component, (Class<T>) typeArguments[0]);
+        }
+      }
+    }
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Function<C, ObservableList<T>> toViewFunction() {
     return m -> {
-      ObservableList<T> items = m instanceof ObservableList ? (ObservableList<T>) m : FXCollections.observableList(m);
+      ObservableList<T> items = m instanceof ObservableList ? (ObservableList<T>) m :
+                                (m == null ? FXCollections.emptyObservableList() : FXCollections.observableList(m));
       if (getComponent() instanceof TableView) {
         boolean sortable = false;
         for (TableColumn<T,?> column: ((TableView<T>) getComponent()).getColumns()) {
@@ -78,6 +99,37 @@ public class ObservableListTranslator<T, C extends List<T>> extends AbstractValu
   public Function<ObservableList<T>, C> toModelFunction() {
     // no conversion back to model because list is updated by ObservableList from the view.
     throw new FxRuntimeException("conversion to model is not applicable to lists");
+  }
+
+
+  /**
+   * Configures the tableview if translator bound to it.
+   *
+   * @param tableView the tableview
+   * @param elemClass the list's elememt class
+   */
+  protected void configureTableView(FxTableView<T> tableView, Class<T> elemClass) {
+    BindableType bindableType = elemClass.getAnnotation(BindableType.class);
+    if (bindableType != null) {
+      ResourceBundle bundle = null;
+      String bundleName = bindableType.resources();
+      if (bundleName.isEmpty()) {
+        bundleName = elemClass.getName();
+      }
+      if (!BindableType.RESOURCES_NONE.equals(bundleName)) {
+        bundle = BundleFactory.getBundle(bundleName, LocaleProvider.getInstance().getLocale());
+      }
+      TableConfiguration<T> configuration = FxFactory.getInstance().createTableConfiguration(elemClass, null);
+      configuration.addBindableColumns(elemClass, bindableType.declaredOnly(), bundle);
+      if (bindableType.declaredOnly()) {
+        configuration.getBinder().bind();
+      }
+      else {
+        configuration.getBinder().bindAllInherited();
+      }
+      configuration.getBinder().assertAllBound();
+      configuration.configure(tableView);
+    }
   }
 
 }
