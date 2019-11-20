@@ -23,6 +23,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.control.TableColumn;
 
 import org.tentackle.common.LocaleProvider;
+import org.tentackle.common.StringHelper;
 import org.tentackle.fx.FxRuntimeException;
 import org.tentackle.fx.bind.FxBindingFactory;
 import org.tentackle.fx.bind.FxTableBinder;
@@ -35,6 +36,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.prefs.BackingStoreException;
 
@@ -164,6 +166,15 @@ public class DefaultTableConfiguration<S> implements TableConfiguration<S> {
   public void addColumnConfiguration(TableColumnConfiguration<S, ?> columnConfiguration) {
     nameColumnConfigMap.put(columnConfiguration.getName(), columnConfiguration);
     columnColumnConfigMap.put(columnConfiguration.getTableColumn(), columnConfiguration);
+  }
+
+  @Override
+  public void addBindableColumns(Class<? extends S> objectClass, boolean declaredOnly, ResourceBundle bundle) {
+    for (String memberName : FxBindingFactory.getInstance().getBindableCache().getBindableMap(objectClass, declaredOnly).keySet()) {
+      String columnName = StringHelper.firstToLower(memberName);
+      String displayName = bundle != null ? bundle.getString(columnName) : memberName;
+      addColumn(columnName, displayName);
+    }
   }
 
   @Override
